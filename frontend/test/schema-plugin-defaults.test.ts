@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { defineReportKind } from "mlform/kit";
+import { defineReportKind } from "mlform/view";
 import { z } from "zod";
 import { describe, expect, test } from "vite-plus/test";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
@@ -53,7 +53,7 @@ describe("schema plugin defaults", () => {
       bindings: [],
       customReportDefinitions: [definition()],
     });
-    expect(runtime.formSchema.reports[0]).toEqual(
+    expect(runtime.formSchema.reports?.[0]).toEqual(
       expect.objectContaining({ endpoint: "/api/analyzer/explanations" }),
     );
   });

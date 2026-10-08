@@ -4,11 +4,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { adoptShadowRules } from "@/capabilities/prediction-runtime/mlform/shadow-rules";
+import type { FormViewController } from "mlform/view";
 
 const RESULTS_TAB = "results";
 
 /** The tabs view MLForm attaches to its host element in tabs layout. */
-type TabsHost = HTMLElement & { view?: { setActiveTab: (tabId: string) => void } };
+type TabsHost = HTMLElement & { view?: FormViewController };
 
 /** Inputs in one tab, model results in the other (when the schema has reports). */
 export const runTabsLayout = (fieldIds: string[], reportIds: string[]) => ({
@@ -32,7 +33,7 @@ export const runTabsLayout = (fieldIds: string[], reportIds: string[]) => ({
 });
 
 export const showRunResults = (host: HTMLElement) =>
-  (host as TabsHost).view?.setActiveTab(RESULTS_TAB);
+  (host as TabsHost).view?.navigation.activate(RESULTS_TAB);
 
 /**
  * MLForm's tabs repeat each tab's title as a heading inside the panel ("Inputs"

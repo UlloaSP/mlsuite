@@ -21,6 +21,7 @@ import type {
 } from "@/capabilities/prediction-runtime/mlform/shared";
 import { hasBlockingIssues, isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { withResolvedDisplayKeys } from "@/capabilities/prediction-runtime/mlform/display-key";
+import { withSeriesColumns } from "./series-schema";
 import { questionnaireConfigError } from "@/capabilities/prediction-runtime/feedback/questionnaire-config";
 
 export type ValidateMlformSchemaOptions = {
@@ -60,7 +61,14 @@ const appendProductIssues = (schema: unknown, issues: CompatIssue[]): void => {
             });
           }
         });
-      } else if (field.mappedTo === undefined) {
+      } else if (
+        field.mappedTo === undefined &&
+        !(
+          field.kind === "series" &&
+          Array.isArray(field.aggregations) &&
+          field.aggregations.length > 0
+        )
+      ) {
         issues.push({
           path: ["fields", index, "mappedTo"],
           message: `Schema field ${index + 1} falta mappedTo`,
@@ -104,7 +112,7 @@ export const validateMlformSchema = (
   schema: unknown,
   options: ValidateMlformSchemaOptions = {},
 ): CompatValidationResult => {
-  const runtimeSchema = withResolvedDisplayKeys(schema);
+  const runtimeSchema = withSeriesColumns(withResolvedDisplayKeys(schema));
   const result = validateSchema(runtimeSchema, createValidationRegistry(options));
   const issues = result.issues.map((issue) => toCompatIssue(issue, runtimeSchema));
   appendProductIssues(runtimeSchema, issues);

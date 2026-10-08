@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ReportConfig, SubmitRequest, Transport } from "mlform/runtime";
+import type { ReportConfig, Transport } from "mlform/runtime";
 import type { ReportResult } from "mlform/schema";
 import { createFanoutTransport } from "mlform/transport";
 import { getBackendBaseUrl } from "@/shared/config/runtime";
@@ -154,7 +154,7 @@ export const createSchemaRunTransport = (
       const reports = request.reports as readonly ReportConfig[];
       return runBinding(binding, requestRecord(request.modelValues), fields, reports);
     },
-    merge: (outcomes, request: SubmitRequest) => {
+    merge: (outcomes, request) => {
       const reports = request.reports as readonly ReportConfig[];
       const canonical = requestRecord(request.modelValues);
       const inputData = requestRecord(request.displayValues);

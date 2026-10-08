@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
-import { defineReportKind } from "mlform/kit";
+import { defineReportKind } from "mlform/view";
 import { z } from "zod";
 import { mountSchemaRunForm } from "@/capabilities/prediction-runtime/mlform/schema-run-mount";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";

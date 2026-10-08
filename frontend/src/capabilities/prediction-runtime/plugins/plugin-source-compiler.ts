@@ -74,14 +74,22 @@ const assertDefinition = (value: unknown, { plugin, defineName }: CompileSpec): 
   if (typeof value.kind !== "string" || value.kind.trim().length === 0) {
     throw new Error(`${label} definition must define non-empty string "kind".`);
   }
-  if (!isRecord(value.schema) || typeof value.schema.safeParse !== "function") {
-    throw new Error(`${label} definition must expose Zod schema as "schema".`);
-  }
-  if (!isRecord(value.definition) || !isRecord(value.presenter)) {
+  if (
+    value.category !== plugin ||
+    typeof value.register !== "function" ||
+    !isRecord(value.definition) ||
+    !isRecord(value.presenter)
+  ) {
     throw new Error(`${label} module must export MLForm ${defineName}(...).`);
   }
-  if (typeof value.describe !== "function") {
-    throw new Error(`${label} definition must expose "describe(config, ctx)".`);
+  if (
+    !isRecord(value.definition.schema) ||
+    typeof value.definition.schema.safeParse !== "function"
+  ) {
+    throw new Error(`${label} definition must expose a Zod config schema.`);
+  }
+  if (typeof value.presenter.describe !== "function") {
+    throw new Error(`${label} presenter must expose "describe(config, ctx)".`);
   }
 };
 

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { describe, expect, test, vi, afterEach } from "vite-plus/test";
 import { createForm, executeFormPipeline } from "mlform/runtime";
-import { defineReportKind } from "mlform/kit";
+import { defineReportKind } from "mlform/view";
 import { z } from "zod";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
 import {

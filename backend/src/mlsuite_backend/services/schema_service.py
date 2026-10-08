@@ -1,3 +1,5 @@
+from typing import cast
+
 import pandas as pd
 from fastapi import UploadFile
 from mlschema import infer_schema
@@ -54,10 +56,32 @@ def _build_schema_fields(
     onehot_separator: str,
     original_labels: list[str] | None,
 ) -> list[dict[str, object]]:
-    fields = infer_schema(data_frame, onehot_separator=onehot_separator)
+    fields = [
+        _mlform_field(field)
+        for field in infer_schema(data_frame, onehot_separator=onehot_separator)
+    ]
     if features.generated and original_labels is not None:
         return _restore_positional_labels(fields, original_labels)
     return fields
+
+
+def _mlform_field(field: dict[str, object]) -> dict[str, object]:
+    if field.get("kind") != "series":
+        return field
+    # MLSchema 0.2.1 infers pairs; MLForm 0.1.25 uses explicit column ids.
+    config = {key: value for key, value in field.items() if key not in ("field1", "field2")}
+    config["columns"] = [
+        {
+            **{
+                name: value
+                for name, value in cast(dict[str, object], field[key]).items()
+                if name != "mappedTo"
+            },
+            "id": key,
+        }
+        for key in ("field1", "field2")
+    ]
+    return config
 
 
 def _build_schema_reports(runtime: RuntimeModel) -> list[dict[str, object]]:

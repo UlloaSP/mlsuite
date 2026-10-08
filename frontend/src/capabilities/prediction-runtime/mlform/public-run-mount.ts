@@ -3,13 +3,14 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { createMlRegistryPack } from "mlform/builtins";
+import { createBuiltinMlRegistry } from "mlform/builtins";
 import { mountForm } from "mlform/kit";
 import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
 import type { ReportConfig, SubmitErrorContext, SubmitRequest, Transport } from "mlform/runtime";
 import { validateSchema, type ReportResult } from "mlform/schema";
 import { toAnalyzerReportPayload } from "@/capabilities/prediction-runtime/data/report-normalization";
 import { withResolvedDisplayKeys } from "@/capabilities/prediction-runtime/mlform/display-key";
+import { withSeriesColumns } from "./series-schema";
 import { getPredictionDesignSystem } from "@/capabilities/prediction-runtime/mlform/headless-prediction";
 import {
   type JsonRecord,
@@ -87,8 +88,8 @@ export const mountPublicRunForm = ({
   onRunningChange,
   onRunError,
 }: Options): MountedPublicRunForm => {
-  const pack = createMlRegistryPack();
-  const result = validateSchema(withResolvedDisplayKeys(schema), pack.registry);
+  const registry = createBuiltinMlRegistry();
+  const result = validateSchema(withSeriesColumns(withResolvedDisplayKeys(schema)), registry);
   if (!result.success) throw new Error(result.issues[0]?.message ?? "Invalid MLForm schema.");
   // The reports of the last run that was made: a refused one leaves them on screen.
   let shown: readonly PublicRunReport[] = [];
@@ -114,8 +115,7 @@ export const mountPublicRunForm = ({
   };
   const mounted = mountForm(container, {
     schema: result.data,
-    registry: pack.registry,
-    descriptorRegistry: pack.descriptorRegistry,
+    registry,
     primitiveRegistry: createBuiltinPrimitiveRegistry(),
     transport,
     hooks: {

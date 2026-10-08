@@ -4,8 +4,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
-import { defineReportKind } from "mlform/kit";
+import { defineReportKind } from "mlform/view";
 import { createForm, executeFormPipeline } from "mlform/runtime";
+import type { ReportConfig, ReportFetchFactory } from "mlform/schema";
 import { z } from "zod";
 import { createSchemaRunTransport } from "@/capabilities/prediction-runtime/mlform/run-transport";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
@@ -18,7 +19,9 @@ const stringMeta = (value: unknown, fallback = ""): string =>
 const requestBody = (request: RequestInit | undefined): string =>
   typeof request?.body === "string" ? request.body : "";
 
-const customReportDefinition = (): CatalogReportDefinition => ({
+const customReportDefinition = (
+  fetch?: ReportFetchFactory<ReportConfig>,
+): CatalogReportDefinition => ({
   id: "report-plugin",
   fileName: "report.ts",
   source: "",
@@ -37,7 +40,7 @@ const customReportDefinition = (): CatalogReportDefinition => ({
       extra: z.string().optional(),
       feedbackQuestionnaire: z.unknown().optional(),
     }),
-    resolve: ({ payload }) => payload,
+    fetch,
     render: {
       content: ({ result }) => ({
         type: "text",
@@ -50,7 +53,7 @@ const customReportDefinition = (): CatalogReportDefinition => ({
   }),
 });
 
-const explanationFetch = ({ config }: { config: { endpoint?: string } }) => ({
+const explanationFetch: ReportFetchFactory<ReportConfig> = ({ config }) => ({
   submit: async (request: {
     reportContext?: {
       modelValues?: Record<string, unknown>;
@@ -58,7 +61,8 @@ const explanationFetch = ({ config }: { config: { endpoint?: string } }) => ({
     };
   }) => {
     const modelId = stringMeta(request.reportContext?.meta.modelId);
-    return fetch(`${config.endpoint ?? "/api/analyzer/explanations"}?modelId=${modelId}`, {
+    const endpoint = stringMeta(config.endpoint, "/api/analyzer/explanations");
+    return fetch(`${endpoint}?modelId=${modelId}`, {
       method: "POST",
       body: JSON.stringify({
         instance: request.reportContext?.modelValues,
@@ -200,18 +204,7 @@ describe("schema binding plugin policy", () => {
           new Response(JSON.stringify({ reports: [{ explanation: "root||leaf" }] })),
         ),
     );
-    const base = customReportDefinition();
-    const fetchDefinition = {
-      ...base,
-      definition: {
-        ...base.definition,
-        fetch: explanationFetch,
-        definition: {
-          ...base.definition.definition,
-          fetch: explanationFetch,
-        },
-      },
-    };
+    const fetchDefinition = customReportDefinition(explanationFetch);
     const runtime = createSchemaRunRuntime({
       schema: {
         fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],

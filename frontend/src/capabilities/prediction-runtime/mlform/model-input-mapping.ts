@@ -50,5 +50,14 @@ export const applySchemaRunInputMapping = (
       const value = readModelValue(modelValues, target);
       if (value.length > 0) payload[target] = value[0];
     }
+    if (field.kind === "series" && Array.isArray(field.aggregations)) {
+      field.aggregations.forEach((aggregation) => {
+        if (!isRecord(aggregation)) return;
+        const aggregateTarget = targetKey(mappedTarget(aggregation.mappedTo, binding));
+        if (!aggregateTarget) return;
+        const value = readModelValue(modelValues, aggregateTarget);
+        if (value.length > 0) payload[aggregateTarget] = value[0];
+      });
+    }
     return payload;
   }, {});

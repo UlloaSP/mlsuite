@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
+import { withSeriesColumns } from "@/capabilities/prediction-runtime/mlform/series-schema";
 import {
   useSchema,
   useSchemaDraft,
@@ -54,8 +55,10 @@ export function SchemaDraftEditorPage() {
 
   useEffect(() => {
     if (!draft) return;
-    setSchema(draft.formSchema);
-    setSchemaText(JSON.stringify(draft.formSchema, null, 2));
+    const formSchema =
+      draft.status === "PUBLISHED" ? draft.formSchema : withSeriesColumns(draft.formSchema);
+    setSchema(formSchema);
+    setSchemaText(JSON.stringify(formSchema, null, 2));
   }, [draft, setSchema, setSchemaText]);
 
   const save = async () => {

@@ -45,8 +45,8 @@ importers:
         specifier: ^1.47.0
         version: 1.47.0(react@19.3.0)
       mlform:
-        specifier: 0.1.23
-        version: 0.1.23
+        specifier: 0.1.25
+        version: 0.1.25
       monaco-editor:
         specifier: ^0.56.0
         version: 0.56.0
@@ -78,8 +78,8 @@ importers:
         specifier: ^2.0.8
         version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.5
+        version: 4.6.5
     devDependencies:
       '@tailwindcss/vite':
         specifier: ^4.3.3
@@ -2348,9 +2348,9 @@ packages:
     resolution: {integrity: sha512-7o1wEA2RyMP7Iu7GNba9vc0RWWGACJOCZBJX2GJWip0ikV+wcOsgVuY9uE8CPiyQhkGFSlhuSkZPavN7u1c2Fw==}
     engines: {node: '>=10'}
 
-  mlform@0.1.23:
-    resolution: {integrity: sha512-CcA/+BqGmK81g1WgikOfrBkiZ96KIfxwwQgBh6/yRkabup/Lsgf1gNr5MUjRhsTAT0NPl/V16QbgHKiHPGO+Jw==}
-    engines: {node: '>=24.9.0'}
+  mlform@0.1.25:
+    resolution: {integrity: sha512-T41lC9Nz6/MWocCeaiAsZWydVpE1oHgB/mRWEPbru2c2snXrditC5gGA+F/SEYv1daewLv/zxwvYtLW4Fe+BUg==}
+    engines: {node: '>=20.19.0'}
 
   monaco-editor@0.56.0:
     resolution: {integrity: sha512-sXboRm3BeBeLm938eaiyLMe0OxzfXIlZvbv4ir/jVgQy1zDhWjgmny0WoN45fuDKhCCQsYMbBJrv/A6jd8aCUg==}
@@ -2891,8 +2891,8 @@ packages:
   yuku-parser@0.9.5:
     resolution: {integrity: sha512-IBnAdNVMswWbJcM7woPluOudectJzFjJ1N8jVRxP9Uq4CIv5hZdBIcdmtRbFDYF/Ph2j2gVup4YJ4N9mh0jYFA==}
 
-  zod@4.4.3:
-    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
+  zod@4.6.5:
+    resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -4819,10 +4819,10 @@ snapshots:
     dependencies:
       brace-expansion: 2.1.7
 
-  mlform@0.1.23:
+  mlform@0.1.25:
     dependencies:
       lit: 3.3.3
-      zod: 4.4.3
+      zod: 4.6.5
 
   monaco-editor@0.56.0:
     dependencies:
@@ -5472,6 +5472,6 @@ snapshots:
       '@yuku-parser/binding-win32-arm64': 0.9.5
       '@yuku-parser/binding-win32-x64': 0.9.5
 
-  zod@4.4.3: {}
+  zod@4.6.5: {}
 
   zwitch@2.0.4: {}

@@ -4,14 +4,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { type Ref, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { createMlRegistryPack } from "mlform/builtins";
-import {
-  mountForm,
-  type FormViewController,
-  type FormViewSnapshot,
-  type MountedForm,
-} from "mlform/kit";
-import type { AfterSubmitContext, FormState, SubmitRequest, Transport } from "mlform/runtime";
+import { mountForm, type MountedForm } from "mlform/kit";
+import type { FormViewController, FormViewSnapshot } from "mlform/view";
+import type { FormState, SubmitRequest, Transport } from "mlform/runtime";
 import type { QuestionnaireSchema } from "@/capabilities/prediction-runtime/feedback/questionnaire-schema";
 import {
   buildQuestionnaireFormSchema,
@@ -26,6 +21,7 @@ import {
   toQuestionnaireSchema,
 } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
 import { getPredictionDesignSystem } from "@/capabilities/prediction-runtime/mlform/headless-prediction";
+import { withSeriesColumns } from "@/capabilities/prediction-runtime/mlform/series-schema";
 
 export type ReportQuestionnaireMountHandle = {
   submit(): Promise<Record<string, unknown>>;
@@ -114,20 +110,12 @@ const mountQuestionnaireHost = ({
 }: MountQuestionnaireHostOptions): (() => void) => {
   try {
     const mounted = mountForm(container, {
-      schema: buildQuestionnaireFormSchema(effectiveSchema),
+      schema: withSeriesColumns(buildQuestionnaireFormSchema(effectiveSchema)),
       layout: buildQuestionnaireWizardLayout(effectiveSchema),
-      registry: createMlRegistryPack().registry,
       transport: transport ?? createLocalQuestionnaireTransport(),
       initialValues,
       hooks: {
         beforeSubmit: () => onSubmittingChange?.(true),
-        afterSubmit: async ({ result }: AfterSubmitContext) => {
-          try {
-            await onSubmitted?.(submissionValues(result.inputs));
-          } finally {
-            onSubmittingChange?.(false);
-          }
-        },
         onSubmitError: () => onSubmittingChange?.(false),
       },
       designSystem: getPredictionDesignSystem(theme),
@@ -137,6 +125,25 @@ const mountQuestionnaireHost = ({
       },
       reportPane: "hidden",
     });
+
+    // Both kit actions and imperative submits finish before a callback can unmount the runtime.
+    const submit = mounted.form.submit.bind(mounted.form);
+    mounted.form.submit = async (options) => {
+      const result = await submit(options);
+      try {
+        await onSubmitted?.(submissionValues(result.inputs));
+        return result;
+      } catch (error) {
+        if (mounted.form.state.lifecycle === "active") {
+          mounted.form.setExternalErrors({
+            form: [error instanceof Error ? error.message : String(error)],
+          });
+        }
+        throw error;
+      } finally {
+        onSubmittingChange?.(false);
+      }
+    };
 
     if (mode === "embedded") {
       const style = document.createElement("style");

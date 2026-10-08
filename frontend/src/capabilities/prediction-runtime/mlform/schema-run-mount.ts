@@ -82,12 +82,12 @@ export const mountSchemaRunForm = ({
     onRunningChange?.(false);
     onSubmit?.(isRecord(next.raw.inputData) ? next.raw.inputData : {}, next.raw, false);
   };
-  const handleSubmitted = ({ result }: AfterSubmitContext) => {
+  const handleSubmitted = async ({ result }: AfterSubmitContext) => {
     submitted = {
       raw: isRecord(result.raw) ? result.raw : { raw: result.raw },
       contexts: (result.reportContexts ?? {}) as Record<string, ReportContext>,
     };
-    if (mounted && normalized.reports.length > 0) showRunResults(mounted.host);
+    if (mounted && normalized.reports.length > 0) await showRunResults(mounted.host);
     completeWhenSettled();
   };
   mounted = mountForm(container, {

@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { createMlRegistryPack } from "mlform/builtins";
-import { registerDefinedFieldKind, registerDefinedReportKind } from "mlform/kit";
+import { createBuiltinMlRegistry } from "mlform/builtins";
+import { createBuiltinDescriptorRegistry } from "mlform/view";
 import type { PrimitiveDescriptorRegistry } from "mlform/primitives";
 import type { FormSchema, Registry, Transport } from "mlform/runtime";
 import type {
@@ -41,12 +41,15 @@ const createRegistry = (
   fields: readonly CatalogFieldDefinition[],
   reports: readonly CatalogReportDefinition[],
 ) => {
-  const pack = createMlRegistryPack();
+  const pack = {
+    registry: createBuiltinMlRegistry(),
+    descriptorRegistry: createBuiltinDescriptorRegistry(),
+  };
   fields.forEach((definition) =>
-    registerDefinedFieldKind(pack.registry, pack.descriptorRegistry, definition.definition),
+    definition.definition.register(pack.registry, pack.descriptorRegistry),
   );
   reports.forEach((definition) =>
-    registerDefinedReportKind(pack.registry, pack.descriptorRegistry, definition.definition),
+    definition.definition.register(pack.registry, pack.descriptorRegistry),
   );
   return pack;
 };

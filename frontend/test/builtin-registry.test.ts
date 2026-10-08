@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, it } from "vite-plus/test";
-import { createMlRegistryPack } from "mlform/builtins";
+import { createBuiltinMlRegistry } from "mlform/builtins";
 import { schemaNeedsPluginCatalog } from "@/capabilities/prediction-runtime/mlform/schema-plugin-requirement";
 import { validateMlformSchema } from "@/capabilities/prediction-runtime/mlform/schema-validation";
 
@@ -18,7 +18,7 @@ const builtinSchema = {
 
 describe("MLForm builtin registry", () => {
   it("registers MLForm field and report builtins by default", () => {
-    const registry = createMlRegistryPack().registry;
+    const registry = createBuiltinMlRegistry();
 
     expect(registry.getField("text")).toBeDefined();
     expect(registry.getField("number")).toBeDefined();

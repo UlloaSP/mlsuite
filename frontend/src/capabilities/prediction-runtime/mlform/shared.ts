@@ -40,6 +40,7 @@ export type PredictionPayloadField = Pick<
 > & {
   mappedTo?: unknown;
   options?: unknown;
+  aggregations?: unknown;
 };
 
 export const isRecord = (value: unknown): value is JsonRecord =>
