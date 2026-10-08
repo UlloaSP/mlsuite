@@ -28,7 +28,7 @@ const safeFilePart = (value: string): string =>
     .slice(0, 80);
 
 export const schemaRunReviewerLabel = (item: PredictionResultFeedbackDto): string =>
-  item.userEmail || item.userName || `user-${item.userId ?? "unknown"}`;
+  item.userEmail || item.userName || (item.userId == null ? "Visitor" : `user-${item.userId}`);
 
 const feedbackRecord = (value: unknown): Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)

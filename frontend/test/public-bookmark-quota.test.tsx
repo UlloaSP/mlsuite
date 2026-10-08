@@ -22,6 +22,7 @@ const CONTEXT_PATH = "/api/workspace/context";
 const BOOKMARK_PATH = `/api/public/bookmarks/${PUBLIC_ID}`;
 const EXAMPLES_PATH = `${BOOKMARK_PATH}/examples`;
 const QUOTA_PATH = `${BOOKMARK_PATH}/quota`;
+const RUNS_PATH = `${BOOKMARK_PATH}/runs`;
 const RUN_PATH = `${BOOKMARK_PATH}/predictions`;
 const WORKSPACE_PATH = `/api/schema-bookmarks/public/${PUBLIC_ID}`;
 const PAGE = `/explore/${PUBLIC_ID}`;
@@ -50,18 +51,26 @@ const left = (remaining: number, limit = 3): PublicRunQuotaDto => ({
   remaining,
   resetsAt: remaining === limit ? null : RESETS_AT,
 });
+let runIds = 0;
 const ran = (quota: PublicRunQuotaDto, high = 0.8) =>
   json({
-    reports: [
-      {
-        key: "out0",
-        payload: {
-          kind: "classifier",
-          mapping: ["low", "high"],
-          probabilities: [[1 - high, high]],
+    run: {
+      id: (runIds += 1),
+      version: 2,
+      createdAt: AT,
+      inputs: { Age: 52 },
+      feedback: [],
+      reports: [
+        {
+          key: "out0",
+          payload: {
+            kind: "classifier",
+            mapping: ["low", "high"],
+            probabilities: [[1 - high, high]],
+          },
         },
-      },
-    ],
+      ],
+    },
     quota,
   });
 const refused = (code: string, limit: number) =>
@@ -100,6 +109,7 @@ beforeEach(() => {
     [ME_PATH]: [json({ status: 401, message: "Unauthorized", path: ME_PATH, timestamp: AT }, 401)],
     [BOOKMARK_PATH]: [json(bookmark)],
     [EXAMPLES_PATH]: [json([])],
+    [RUNS_PATH]: [json([])],
     [QUOTA_PATH]: [json(left(3))],
   };
   fetchMock = vi.fn(async (url: string) => {
@@ -128,12 +138,10 @@ async function openPage() {
 }
 
 /** MLForm lays the form out as two panes (Inputs, Results) in one element. */
-const form = (host: HTMLElement) => host.querySelector("mlf-form")!;
+const form = (host: HTMLElement) => host.querySelector("mlf-kit-tabs")!;
 const formRoot = (host: HTMLElement) => form(host).shadowRoot!;
 async function run(host: HTMLElement) {
-  await act(async () =>
-    formRoot(host).querySelector("mlf-submit-button")!.shadowRoot!.querySelector("button")!.click(),
-  );
+  await act(async () => formRoot(host).querySelector<HTMLButtonElement>(".btn-submit")!.click());
   await settle();
 }
 /** Reports render inside nested shadow roots, which `textContent` does not cross. */

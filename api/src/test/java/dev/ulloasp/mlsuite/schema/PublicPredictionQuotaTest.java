@@ -44,6 +44,8 @@ import dev.ulloasp.mlsuite.schema.domain.exception.PublicRunLimitException;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.security.identity.PublicCaller;
+import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
+import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.security.identity.PublicCallerArgumentResolver;
 
 /**
@@ -56,8 +58,8 @@ import dev.ulloasp.mlsuite.security.identity.PublicCallerArgumentResolver;
 class PublicPredictionQuotaTest extends PublicPredictionFixture {
 
     private static final Instant START = Instant.parse("2026-10-06T10:00:00Z");
-    private static final PublicCaller OTHER_VISITOR = new PublicCaller(false, "address:other");
-    private static final PublicCaller MEMBER = new PublicCaller(true, "user:7");
+    private static final PublicCaller OTHER_VISITOR = PublicCaller.anonymous("address:other", null);
+    private static final PublicCaller MEMBER = PublicCaller.signedIn(7L, null);
     private static final String CLIENT_ADDRESS = PublicCallerArgumentResolver.CLIENT_ADDRESS_HEADER;
 
     private final Clock clock = mock(Clock.class);
@@ -87,7 +89,7 @@ class PublicPredictionQuotaTest extends PublicPredictionFixture {
         assertEquals(new PublicRunQuotaDto(2, 2, null), quota.status(OTHER_VISITOR, "a"));
         for (int run = 0; run < 4; run++) quota.admit(MEMBER, "a");
         assertTrue(assertThrows(PublicRunLimitException.class, () -> quota.admit(MEMBER, "a")).isSignedIn());
-        assertEquals(new PublicRunQuotaDto(4, 4, null), quota.status(new PublicCaller(true, "user:8"), "a"));
+        assertEquals(new PublicRunQuotaDto(4, 4, null), quota.status(PublicCaller.signedIn(8L, null), "a"));
     }
 
     @Test
@@ -123,7 +125,7 @@ class PublicPredictionQuotaTest extends PublicPredictionFixture {
     @Test
     void theCountsKeptAreBoundedByForgettingTheOldest() {
         PublicPredictionQuota quota = new PublicPredictionQuota(1, 1, 2, clock);
-        PublicCaller third = new PublicCaller(false, "address:third");
+        PublicCaller third = PublicCaller.anonymous("address:third", null);
         quota.admit(VISITOR, "a");
         advance(Duration.ofMinutes(1));
         quota.admit(OTHER_VISITOR, "a");
@@ -257,17 +259,17 @@ class PublicPredictionQuotaTest extends PublicPredictionFixture {
         run(publicId).andExpect(status().isTooManyRequests());
 
         // Signing in from the exhausted network starts the account's own, higher count.
-        mockMvc.perform(signedIn(get("/api/public/bookmarks/{publicId}/quota", publicId), 7L))
+        mockMvc.perform(signedIn(get("/api/public/bookmarks/{publicId}/quota", publicId), owner.getId()))
                 .andExpect(jsonPath("$.limit").value(5))
                 .andExpect(jsonPath("$.remaining").value(5));
         for (int remaining = 4; remaining >= 0; remaining--) {
             // The account is counted wherever it connects from.
-            mockMvc.perform(signedIn(runRequest(publicId), 7L).header(CLIENT_ADDRESS, "198.51.100." + remaining))
+            mockMvc.perform(signedIn(runRequest(publicId), owner.getId()).header(CLIENT_ADDRESS, "198.51.100." + remaining))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.quota.limit").value(5))
                     .andExpect(jsonPath("$.quota.remaining").value(remaining));
         }
-        mockMvc.perform(signedIn(runRequest(publicId), 7L))
+        mockMvc.perform(signedIn(runRequest(publicId), owner.getId()))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(header().exists("Retry-After"))
                 .andExpect(jsonPath("$.code").value("SIGNED_IN_RUN_LIMIT_REACHED"))
@@ -275,9 +277,19 @@ class PublicPredictionQuotaTest extends PublicPredictionFixture {
                         + "in 24 hours."))
                 .andExpect(jsonPath("$.quota.limit").value(5))
                 .andExpect(jsonPath("$.quota.remaining").value(0));
-        mockMvc.perform(signedIn(runRequest(publicId), 8L))
+        mockMvc.perform(signedIn(runRequest(publicId), anotherAccount()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.quota.remaining").value(4));
+    }
+
+    private long anotherAccount() {
+        User[] other = new User[1];
+        inTransaction(() -> {
+            other[0] = new User("other-" + owner.getUsername(), "other-" + owner.getEmail(), "unused", "Other",
+                    SystemRole.USER);
+            entityManager.persist(other[0]);
+        });
+        return other[0].getId();
     }
 
     private SchemaBookmark other() {

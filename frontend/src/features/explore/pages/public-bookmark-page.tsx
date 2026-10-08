@@ -10,7 +10,7 @@ import {
   publicBookmarkExamplesQueryOptions,
   publicBookmarkQueryOptions,
 } from "@/features/explore/api/public-bookmark-api";
-import { PublicBookmarkForm } from "@/features/explore/components/PublicBookmarkForm";
+import { PublicBookmarkPanel } from "@/features/explore/components/PublicBookmarkPanel";
 import { PublicationNote } from "@/features/explore/components/PublicationNote";
 import { PublicFormSize } from "@/features/explore/components/PublicFormSize";
 import { WorkspaceBookmarkLink } from "@/features/explore/components/WorkspaceBookmarkLink";
@@ -32,8 +32,9 @@ const FACT = "inline-flex items-center gap-1.5";
  * its form is read and run through the public API, and the frame around it is chosen by the
  * router. Members of the organization that owns it also get the way into their workspace.
  *
- * It is laid out like the workspace's own run page: on wide screens the page keeps the height
- * of its frame and the form's panes scroll inside it; on narrow ones the page scrolls.
+ * It is laid out like the workspace's own run page: the form beside the runs this browser
+ * made; on wide screens the page keeps the height of its frame and the form scrolls inside
+ * it, on narrow ones the page scrolls.
  */
 export function PublicBookmarkPage() {
   const { publicId = "" } = useParams<{ publicId: string }>();
@@ -102,16 +103,7 @@ export function PublicBookmarkPage() {
           />
         ) : null}
         {/* A floor keeps the form usable on a short screen, where the page scrolls instead. */}
-        <section aria-label="Form" className="flex flex-col lg:min-h-128 lg:flex-1">
-          {/* A republished or moved bookmark is a new form, not an update of the mounted one. */}
-          <PublicBookmarkForm
-            key={`${bookmark.publicId}:${bookmark.version}`}
-            publicId={bookmark.publicId}
-            version={bookmark.version}
-            formSchema={bookmark.formSchema}
-            examples={examples}
-          />
-        </section>
+        <PublicBookmarkPanel bookmark={bookmark} examples={examples} />
       </AppSurface>
     </AppPage>
   );

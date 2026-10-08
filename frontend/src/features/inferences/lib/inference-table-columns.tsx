@@ -19,6 +19,7 @@ import {
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { formatTimestamp } from "@/shared/lib/date-time";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
+import type { PredictionRunCatalogItemDto } from "@/shared/api/openapi.gen";
 
 /** Renderers the page supplies each render, so column definitions never hold stale handlers. */
 export type InferenceTableMeta = {
@@ -45,6 +46,15 @@ export const GROUP_LABELS: Record<InferenceColumnGroup, string> = {
   outputs: "Outputs",
   feedback: "Feedback",
 };
+
+export const ORIGIN_LABELS: Record<PredictionRunCatalogItemDto["origin"], string> = {
+  WORKSPACE: "Workspace",
+  PUBLIC: "Public page",
+};
+
+/** Who made the run: a member by name, or a visitor of the public page, who has none. */
+export const inferenceAuthor = (item: PredictionRunCatalogItemDto): string | undefined =>
+  item.createdByName || item.createdByEmail || (item.origin === "PUBLIC" ? "Visitor" : undefined);
 
 /** Columns the table always shows and the columns menu cannot hide. */
 export const FIXED_COLUMN_IDS = ["name", "actions"];
@@ -140,12 +150,19 @@ const summaryColumns = (): InferenceColumnDef[] => [
     sortUndefined: "last",
     cell: ({ getValue }) => textCell(getValue()),
   }),
-  helper.accessor((row) => row.item.createdByName || row.item.createdByEmail || undefined, {
+  helper.accessor((row) => inferenceAuthor(row.item), {
     id: "author",
     header: "Author",
     size: 170,
     sortFn: sortByValue,
     sortUndefined: "last",
+    cell: ({ getValue }) => textCell(getValue()),
+  }),
+  helper.accessor((row) => ORIGIN_LABELS[row.item.origin], {
+    id: "origin",
+    header: "Origin",
+    size: 130,
+    sortFn: sortByValue,
     cell: ({ getValue }) => textCell(getValue()),
   }),
 ];

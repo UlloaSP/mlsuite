@@ -101,7 +101,10 @@ const respond = (url: unknown, init?: RequestInit): Response => {
   requests.push(`${method} ${path}`);
   if (path === `/api/public/bookmarks/${PUBLIC_ID}/predictions`) {
     publicRuns.push(JSON.parse(init?.body as string));
-    return json({ reports: [], quota: { limit: 50, remaining: 49, resetsAt: AT } });
+    return json({
+      run: { id: 1, version: 2, createdAt: AT, inputs: {}, reports: [], feedback: [] },
+      quota: { limit: 50, remaining: 49, resetsAt: AT },
+    });
   }
   if (path === `/api/public/bookmarks/${PUBLIC_ID}/quota`) {
     return json({ limit: 50, remaining: 50, resetsAt: null });
@@ -118,6 +121,7 @@ const respond = (url: unknown, init?: RequestInit): Response => {
   if (path === "/api/schema-bookmarks/70/examples") return json(server.examples);
   if (path === "/api/schema-bookmarks/70") return json(server.bookmark);
   if (path === `/api/public/bookmarks/${PUBLIC_ID}`) return json(publicBookmark);
+  if (path === `/api/public/bookmarks/${PUBLIC_ID}/runs`) return json([]);
   if (path === `/api/public/bookmarks/${PUBLIC_ID}/examples`) {
     return server.publicExamples === "unavailable"
       ? json({ status: 500, message: "Unavailable", path, timestamp: AT }, 500)
@@ -320,7 +324,7 @@ describe("examples on the public page", () => {
         if (child.shadowRoot) walk(child.shadowRoot);
       }
     };
-    const form = host.querySelector("mlf-form");
+    const form = host.querySelector("mlf-kit-tabs");
     if (form?.shadowRoot) walk(form.shadowRoot);
     return found;
   };
@@ -367,7 +371,7 @@ describe("examples on the public page", () => {
     // The second example replaces every value, including the ones it does not set.
     await choose(host, "Elderly case");
     expect(values(host)).toEqual(["81", ""]);
-    expect(host.querySelectorAll("mlf-form")).toHaveLength(1);
+    expect(host.querySelectorAll("mlf-kit-tabs")).toHaveLength(1);
   });
 
   test("a run submits the example the form was loaded with, and the visitor's edits to it", async () => {
@@ -377,9 +381,8 @@ describe("examples on the public page", () => {
     await choose(host, "Typical case");
     await changeValue(fields(host)[0], "60");
     const run = host
-      .querySelector("mlf-form")
-      ?.shadowRoot?.querySelector("mlf-submit-button")
-      ?.shadowRoot?.querySelector("button");
+      .querySelector("mlf-kit-tabs")
+      ?.shadowRoot?.querySelector<HTMLButtonElement>(".btn-submit");
     await act(async () => run?.click());
     await settle();
 

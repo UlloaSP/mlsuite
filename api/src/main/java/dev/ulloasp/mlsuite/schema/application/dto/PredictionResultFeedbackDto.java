@@ -1,6 +1,8 @@
 package dev.ulloasp.mlsuite.schema.application.dto;
 
 import java.time.OffsetDateTime;
+
+import jakarta.annotation.Nullable;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -12,9 +14,10 @@ import dev.ulloasp.mlsuite.user.domain.model.User;
 public record PredictionResultFeedbackDto(
         Long id,
         Long resultId,
-        Long userId,
-        String userName,
-        String userEmail,
+        /** Null when a visitor of the public page gave the feedback: they have no account. */
+        @Nullable Long userId,
+        @Nullable String userName,
+        @Nullable String userEmail,
         PredictionResultFeedbackType type,
         int order,
         JsonNode value,

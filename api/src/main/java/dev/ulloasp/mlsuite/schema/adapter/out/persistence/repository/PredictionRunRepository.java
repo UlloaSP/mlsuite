@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -69,6 +70,10 @@ public interface PredictionRunRepository extends JpaRepository<PredictionRun, Lo
     List<PredictionRun> searchByOrganizationId(Long organizationId, String search, Pageable pageable);
 
     boolean existsBySchemaVersionIdAndName(Long schemaVersionId, String name);
+
+    /** A visitor's runs of one bookmark, newest first: their session on its public page. */
+    List<PredictionRun> findByVisitorIdAndSchemaBookmarkIdOrderByCreatedAtDescIdDesc(
+            UUID visitorId, Long schemaBookmarkId, Pageable pageable);
 
     @Query("SELECT COUNT(r) > 0 FROM PredictionRun r WHERE r.schemaVersion.schema.id = :schemaId")
     boolean existsBySchemaId(Long schemaId);

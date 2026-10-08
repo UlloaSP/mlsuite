@@ -948,6 +948,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/bookmarks/{publicId}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["runs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/bookmarks/{publicId}/runs/{runId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["run"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/bookmarks/{publicId}/runs/{runId}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["saveFeedback"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/public/organizations/{organizationId}/logo": {
         parameters: {
             query?: never;
@@ -1777,6 +1825,12 @@ export interface components {
             status: "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED";
             token: string | null;
         };
+        Item: {
+            reportKey: string;
+            /** @enum {string} */
+            type: "OUTPUT" | "EXPLANATION";
+            value: components["schemas"]["JsonNode"];
+        };
         JsonNode: unknown;
         LoginRequest: {
             /** Format: email */
@@ -2097,10 +2151,10 @@ export interface components {
             type: "OUTPUT" | "EXPLANATION";
             /** Format: date-time */
             updatedAt: string;
-            userEmail: string;
+            userEmail: string | null;
             /** Format: int64 */
-            userId: number;
-            userName: string;
+            userId: number | null;
+            userName: string | null;
             value: components["schemas"]["JsonNode"];
         };
         PredictionRunCatalogItemDto: {
@@ -2114,6 +2168,8 @@ export interface components {
             /** Format: int64 */
             id: number;
             name: string;
+            /** @enum {string} */
+            origin: "WORKSPACE" | "PUBLIC";
             /** Format: int64 */
             schemaId: number;
             schemaName: string;
@@ -2138,6 +2194,8 @@ export interface components {
                 [key: string]: unknown;
             };
             name: string;
+            /** @enum {string} */
+            origin: "WORKSPACE" | "PUBLIC";
             results: components["schemas"]["PredictionResultDto"][];
             /** Format: int64 */
             schemaBookmarkId: number | null;
@@ -2193,7 +2251,7 @@ export interface components {
         };
         PublicPredictionDto: {
             quota: components["schemas"]["PublicRunQuotaDto"];
-            reports: components["schemas"]["PublicPredictionReportDto"][];
+            run: components["schemas"]["PublicRunDto"];
         };
         PublicPredictionReportDto: {
             key: string;
@@ -2207,6 +2265,28 @@ export interface components {
             };
             /** Format: int32 */
             version: number;
+        };
+        PublicRunDto: {
+            /** Format: date-time */
+            createdAt: string;
+            feedback: components["schemas"]["PublicRunFeedbackDto"][];
+            /** Format: int64 */
+            id: number;
+            inputs: {
+                [key: string]: unknown;
+            };
+            reports: components["schemas"]["PublicPredictionReportDto"][];
+            /** Format: int32 */
+            version: number;
+        };
+        PublicRunFeedbackDto: {
+            reportKey: string;
+            /** @enum {string} */
+            type: "OUTPUT" | "EXPLANATION";
+            value: components["schemas"]["JsonNode"];
+        };
+        PublicRunFeedbackRequest: {
+            items: components["schemas"]["Item"][];
         };
         PublicRunLimitDto: {
             /** @enum {string} */
@@ -2678,6 +2758,7 @@ export type InferenceTableDto = components['schemas']['InferenceTableDto'];
 export type InferenceTableRunDto = components['schemas']['InferenceTableRunDto'];
 export type InvitationCandidateDto = components['schemas']['InvitationCandidateDto'];
 export type InvitationDto = components['schemas']['InvitationDto'];
+export type Item = components['schemas']['Item'];
 export type JsonNode = components['schemas']['JsonNode'];
 export type LoginRequest = components['schemas']['LoginRequest'];
 export type MembershipActionsDto = components['schemas']['MembershipActionsDto'];
@@ -2713,6 +2794,9 @@ export type PublicBookmarkSummaryDto = components['schemas']['PublicBookmarkSumm
 export type PublicPredictionDto = components['schemas']['PublicPredictionDto'];
 export type PublicPredictionReportDto = components['schemas']['PublicPredictionReportDto'];
 export type PublicPredictionRequest = components['schemas']['PublicPredictionRequest'];
+export type PublicRunDto = components['schemas']['PublicRunDto'];
+export type PublicRunFeedbackDto = components['schemas']['PublicRunFeedbackDto'];
+export type PublicRunFeedbackRequest = components['schemas']['PublicRunFeedbackRequest'];
 export type PublicRunLimitDto = components['schemas']['PublicRunLimitDto'];
 export type PublicRunQuotaDto = components['schemas']['PublicRunQuotaDto'];
 export type PublishSchemaDraftRequest = components['schemas']['PublishSchemaDraftRequest'];
@@ -4579,6 +4663,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicRunQuotaDto"];
+                };
+            };
+        };
+    };
+    runs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRunDto"][];
+                };
+            };
+        };
+    };
+    run: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+                runId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRunDto"];
+                };
+            };
+        };
+    };
+    saveFeedback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+                runId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicRunFeedbackRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRunDto"];
                 };
             };
         };

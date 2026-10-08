@@ -40,6 +40,7 @@ import type {
   PredictionRunCatalogItemDto,
   SchemaVersionDto,
 } from "@/shared/api/openapi.gen";
+import { inferenceAuthor } from "@/features/inferences/lib/inference-table-columns";
 import { click, mount } from "./support/dom";
 
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
@@ -50,6 +51,7 @@ const summary = (id: number, overrides: Partial<PredictionRunCatalogItemDto> = {
   id,
   name: `Case ${id}`,
   status: "SUCCESS" as const,
+  origin: "WORKSPACE" as const,
   createdAt: `2026-07-2${id}T08:00:00Z`,
   updatedAt: `2026-07-2${id}T08:00:00Z`,
   schemaId: 2,
@@ -390,6 +392,7 @@ describe("inference table rows", () => {
       bookmarkId: "all",
       status: "all",
       feedback: "all",
+      origin: "all",
       conditions: [],
     };
     const ids = (overrides: Partial<InferenceFilters>) =>
@@ -410,6 +413,41 @@ describe("inference table rows", () => {
     expect(ids(where("2:input:income", "empty"))).toEqual([1]);
     expect(ids(where("2:input:income", "notEmpty"))).toEqual([2]);
     expect(ids(where("2:output:1:score", "gt", "1"))).toEqual([]);
+  });
+
+  test("a run from the public page is a visitor's: so named, so filtered, its feedback theirs", () => {
+    const rows = buildInferenceTableRows(
+      payload({
+        runs: [
+          {
+            summary: summary(3, { origin: "PUBLIC", createdByName: null, createdByEmail: null }),
+            inputData: { age: 70 },
+          },
+          { summary: summary(2), inputData: { age: 52, income: 900 } },
+        ],
+        results: [result(3), result(2)],
+        feedback: [{ ...answer(3, "No"), userId: null, userName: null, userEmail: null }],
+      }),
+    );
+    expect(inferenceAuthor(byId(rows, 3).item)).toBe("Visitor");
+    expect(inferenceAuthor(byId(rows, 2).item)).toBe("Ada Lovelace");
+    expect(byId(rows, 3).searchText).toContain("visitor");
+    expect(byId(rows, 3).columns.find((column) => column.group === "feedback")?.label).toContain(
+      "Visitor",
+    );
+    const ids = (origin: InferenceFilters["origin"]) =>
+      filterInferences(rows, {
+        query: "",
+        schemaId: "all",
+        bookmarkId: "all",
+        status: "all",
+        feedback: "all",
+        origin,
+        conditions: [],
+      }).map((row) => row.item.id);
+    expect(ids("PUBLIC")).toEqual([3]);
+    expect(ids("WORKSPACE")).toEqual([2]);
+    expect(ids("all")).toEqual([3, 2]);
   });
 
   test("infers numeric columns and lists the values a column shows", () => {
@@ -590,6 +628,7 @@ describe("inference filters dialog", () => {
     bookmarkId: "all",
     status: "SUCCESS",
     feedback: "all",
+    origin: "all",
     conditions: [{ columnId: "2:input:age", operator: "gt", value: "40" }],
   };
 
@@ -625,6 +664,7 @@ describe("inference filters dialog", () => {
       bookmarkId: "all",
       status: "all",
       feedback: "all",
+      origin: "all",
       conditions: [],
     });
   });

@@ -1,7 +1,6 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 
@@ -22,8 +21,8 @@ import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelReposit
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionDto;
-import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionReportDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionRequest;
+import dev.ulloasp.mlsuite.schema.application.dto.PublicRunOutcome;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicRunQuotaDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicPredictionUseCase;
 import dev.ulloasp.mlsuite.schema.application.service.PublicPredictionPlan.ModelCall;
@@ -31,12 +30,13 @@ import dev.ulloasp.mlsuite.security.identity.PublicCaller;
 import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
 
 /**
- * Runs a published bookmark for anyone and keeps no record: no run, no result, no feedback.
- * The visitor names only the bookmark; which models run, and with which features, is decided
- * here. This class is deliberately not transactional, and its endpoint is left out of
- * open-in-view (see OpenInViewConfig): planning reads the database and returns, then the runtime
- * is called with no connection held. What went wrong stays in the server log; the visitor gets a
- * message that names no model and repeats nothing the runtime said.
+ * Runs a published bookmark for anyone and keeps the run as the visitor's. The visitor names
+ * only the bookmark; which models run, and with which features, is decided here. This class is
+ * deliberately not transactional, and its endpoint is left out of open-in-view (see
+ * OpenInViewConfig): planning reads the database and returns, the runtime is called with no
+ * connection held, and the run is then recorded in a transaction of its own. What went wrong
+ * stays in the server log; the visitor gets a message that names no model and repeats nothing
+ * the runtime said.
  */
 @Service
 public class PublicPredictionService implements PublicPredictionUseCase {
@@ -44,6 +44,7 @@ public class PublicPredictionService implements PublicPredictionUseCase {
     private static final Logger log = LoggerFactory.getLogger(PublicPredictionService.class);
 
     private final PublicBookmarkService publicBookmarks;
+    private final PublicRunService runs;
     private final PublicPredictionQuota quota;
     private final ModelRepository modelRepository;
     private final ModelArtifactContentReader artifactReader;
@@ -54,6 +55,7 @@ public class PublicPredictionService implements PublicPredictionUseCase {
 
     public PublicPredictionService(
             PublicBookmarkService publicBookmarks,
+            PublicRunService runs,
             PublicPredictionQuota quota,
             ModelRepository modelRepository,
             ModelArtifactContentReader artifactReader,
@@ -61,6 +63,7 @@ public class PublicPredictionService implements PublicPredictionUseCase {
             ObjectMapper objectMapper,
             @Value("${mlsuite.public-prediction.max-concurrent}") int maxConcurrent) {
         this.publicBookmarks = publicBookmarks;
+        this.runs = runs;
         this.quota = quota;
         this.modelRepository = modelRepository;
         this.artifactReader = artifactReader;
@@ -77,11 +80,15 @@ public class PublicPredictionService implements PublicPredictionUseCase {
      * answered counts, including one whose values it could not use (422).
      */
     @Override
-    public PublicPredictionDto run(String publicId, PublicPredictionRequest request, PublicCaller caller) {
+    public PublicRunOutcome run(String publicId, PublicPredictionRequest request, PublicCaller caller) {
         PublicPredictionPlan plan = publicBookmarks.planPrediction(publicId, request);
         quota.admit(caller, publicId);
         try {
-            return new PublicPredictionDto(perform(plan), quota.status(caller, publicId));
+            Map<Long, Map<String, Object>> answers = perform(plan);
+            PublicRunService.Recorded recorded = runs.record(plan, answers, caller);
+            return new PublicRunOutcome(
+                    new PublicPredictionDto(recorded.run(), quota.status(caller, publicId)),
+                    recorded.issued() ? recorded.visitorId() : null);
         } catch (RuntimeException ex) {
             if (!(ex instanceof ResponseStatusException answer && answer.getStatusCode().is4xxClientError())) {
                 quota.giveBack(caller, publicId);
@@ -96,33 +103,24 @@ public class PublicPredictionService implements PublicPredictionUseCase {
         return quota.status(caller, publicId);
     }
 
-    private List<PublicPredictionReportDto> perform(PublicPredictionPlan plan) {
+    private Map<Long, Map<String, Object>> perform(PublicPredictionPlan plan) {
         // Admission follows the cheap checks and precedes the first artifact read.
         if (!runtimeSlots.tryAcquire()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
                     "Too many public runs are in progress. Try again in a moment.");
         }
         try {
-            return execute(plan);
+            Map<Long, Map<String, Object>> answers = new LinkedHashMap<>();
+            for (ModelCall call : plan.calls()) {
+                answers.put(call.modelId(), predict(plan.publicId(), call));
+            }
+            return answers;
         } finally {
             runtimeSlots.release();
         }
     }
 
-    private List<PublicPredictionReportDto> execute(PublicPredictionPlan plan) {
-        Map<Long, List<?>> outputs = new LinkedHashMap<>();
-        for (ModelCall call : plan.calls()) {
-            outputs.put(call.modelId(), predict(plan.publicId(), call));
-        }
-        return plan.reports().stream()
-                .flatMap(route -> outputs.getOrDefault(route.modelId(), List.of()).stream()
-                        .filter(output -> output instanceof Map<?, ?> report && route.kind().equals(report.get("kind")))
-                        .limit(1)
-                        .map(output -> new PublicPredictionReportDto(route.key(), payload((Map<?, ?>) output))))
-                .toList();
-    }
-
-    private List<?> predict(String publicId, ModelCall call) {
+    private Map<String, Object> predict(String publicId, ModelCall call) {
         try {
             Model model = modelRepository.findById(call.modelId()).orElseThrow();
             MultipartBodyBuilder parts = new MultipartBodyBuilder();
@@ -130,9 +128,9 @@ public class PublicPredictionService implements PublicPredictionUseCase {
                     .filename(model.getFileName())
                     .contentType(MediaType.APPLICATION_OCTET_STREAM);
             parts.part("data", objectMapper.writeValueAsString(call.input())).contentType(MediaType.APPLICATION_JSON);
-            return analyzerClient.post("/predict", parts.build()).get("reports") instanceof List<?> reports
-                    ? reports
-                    : List.of();
+            Map<String, Object> answer = new LinkedHashMap<>();
+            analyzerClient.post("/predict", parts.build()).forEach((key, value) -> answer.put(String.valueOf(key), value));
+            return answer;
         } catch (AnalyzerServiceException ex) {
             log.warn("Public bookmark {}: the runtime answered {} for model {}: {}",
                     publicId, ex.getStatus(), call.modelId(), ex.getDetail());
@@ -145,12 +143,6 @@ public class PublicPredictionService implements PublicPredictionUseCase {
             log.error("Public bookmark {}: model {} could not be run", publicId, call.modelId(), ex);
             throw failed();
         }
-    }
-
-    private static Map<String, Object> payload(Map<?, ?> report) {
-        Map<String, Object> payload = new LinkedHashMap<>();
-        report.forEach((key, value) -> payload.put(String.valueOf(key), value));
-        return payload;
     }
 
     private static ResponseStatusException failed() {

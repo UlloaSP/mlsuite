@@ -22,6 +22,7 @@ const CLEARED: InferenceFilterChoice = {
   bookmarkId: "all",
   status: "all",
   feedback: "all",
+  origin: "all",
   conditions: [],
 };
 
@@ -142,6 +143,18 @@ export function InferenceFiltersDialog({ filters, rows, onApply, onClose }: Prop
               { value: "COMPLETED", label: "Completed" },
               { value: "PENDING", label: "Pending" },
               { value: "NOT_REQUIRED", label: "Not configured" },
+            ]}
+          />
+        </AppFieldLabel>
+        <AppFieldLabel label="Origin">
+          <AppSelect
+            value={draft.origin}
+            className="w-full"
+            onValueChange={(origin) => set({ origin: origin as InferenceFilters["origin"] })}
+            options={[
+              { value: "all", label: "All origins" },
+              { value: "WORKSPACE", label: "Workspace" },
+              { value: "PUBLIC", label: "Public page" },
             ]}
           />
         </AppFieldLabel>

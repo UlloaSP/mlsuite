@@ -50,6 +50,7 @@ const URL_FILTER_DEFAULTS = {
   bookmark: "all",
   status: "all",
   feedback: "all",
+  origin: "all",
   where: "",
   sort: "createdAt.desc",
   inference: "",
@@ -60,6 +61,8 @@ const validStatus = (value: string): InferenceFilters["status"] =>
   value === "SUCCESS" || value === "PARTIAL_SUCCESS" || value === "FAILED" ? value : "all";
 const validFeedback = (value: string): InferenceFilters["feedback"] =>
   value === "COMPLETED" || value === "PENDING" || value === "NOT_REQUIRED" ? value : "all";
+const validOrigin = (value: string): InferenceFilters["origin"] =>
+  value === "WORKSPACE" || value === "PUBLIC" ? value : "all";
 
 export function InferencesPage({
   renderExportAction,
@@ -75,7 +78,8 @@ export function InferencesPage({
   const navigate = useNavigate();
   const actionDialog = useActionDialog();
   const urlFilters = useUrlFilters(URL_FILTER_DEFAULTS);
-  const { q, schema, bookmark, status, feedback, where, sort, inference } = urlFilters.values;
+  const { q, schema, bookmark, status, feedback, origin, where, sort, inference } =
+    urlFilters.values;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filters = useMemo<InferenceFilters>(
     () => ({
@@ -84,9 +88,10 @@ export function InferencesPage({
       bookmarkId: bookmark,
       status: validStatus(status),
       feedback: validFeedback(feedback),
+      origin: validOrigin(origin),
       conditions: parseConditions(where),
     }),
-    [q, schema, bookmark, status, feedback, where],
+    [q, schema, bookmark, status, feedback, origin, where],
   );
   const rows = useMemo(
     () => (data.data ? buildInferenceTableRows(data.data) : EMPTY_ROWS),
@@ -121,6 +126,7 @@ export function InferencesPage({
       bookmark: choice.bookmarkId,
       status: choice.status,
       feedback: choice.feedback,
+      origin: choice.origin,
       where: serializeConditions(choice.conditions),
     });
     setFiltersOpen(false);
@@ -219,6 +225,7 @@ export function InferencesPage({
               bookmarkId: "all",
               status: "all",
               feedback: "all",
+              origin: "all",
               conditions: [],
             })
           }

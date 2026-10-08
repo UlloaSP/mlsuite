@@ -63,8 +63,10 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
                                 Map.of("label", "Yes", "value", "yes", "mappedTo", "in2"),
                                 Map.of("label", "No", "value", "no", "mappedTo", "in3")))),
                 "reports", List.of(
-                        Map.of("kind", "classifier", "label", "Risk 1", "id", "out0", "mappedTo", "out0"),
-                        Map.of("kind", "classifier", "label", "Risk 2", "id", "out1", "mappedTo", "out1"),
+                        Map.of("kind", "classifier", "label", "Risk 1", "id", "out0", "mappedTo", "out0",
+                                "feedbackQuestionnaire", Map.of("steps", List.of())),
+                        Map.of("kind", "classifier", "label", "Risk 2", "id", "out1", "mappedTo", "out1",
+                                "feedbackQuestionnaire", Map.of("steps", List.of())),
                         Map.of("kind", "regressor", "label", "Score", "id", "out2", "mappedTo", "out2"))),
                 view.formSchema());
         String json = objectMapper.writeValueAsString(view);
@@ -74,7 +76,9 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
     }
 
     @Test
-    void aRunRoutesEachModelsFeaturesOnTheServerAndStoresNothing() throws Exception {
+    void aRunRoutesEachModelsFeaturesOnTheServerAndIsKeptAsTheVisitors() throws Exception {
+        long runsBefore = count("PredictionRun");
+        long resultsBefore = count("PredictionResult");
         List<MultiValueMap<String, HttpEntity<?>>> calls = new ArrayList<>();
         List<Boolean> transactionOpen = new ArrayList<>();
         List<Integer> connectionsHeld = new ArrayList<>();
@@ -100,16 +104,16 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
         assertEquals(List.of(false, false), transactionOpen);
         assertEquals(List.of(0, 0), connectionsHeld);
 
-        assertEquals(List.of("out0", "out1", "out2"), result.reports().stream().map(report -> report.key()).toList());
+        assertEquals(List.of("out0", "out1", "out2"), result.run().reports().stream().map(report -> report.key()).toList());
         assertEquals(List.of(CLASSIFIER, CLASSIFIER, REGRESSOR),
-                result.reports().stream().map(report -> report.payload()).toList());
+                result.run().reports().stream().map(report -> report.payload()).toList());
         String json = objectMapper.writeValueAsString(result);
         for (String secret : List.of("risk-forest", "risk-net", "risk.joblib", "leaked", "modelId")) {
             assertFalse(json.contains(secret), secret);
         }
-        for (String entity : List.of("PredictionRun", "PredictionResult", "PredictionResultFeedback")) {
-            assertEquals(0L, count(entity), entity);
-        }
+        // The run is kept as the organization's inference, one result per model; PublicRunSessionTest reads it.
+        assertEquals(runsBefore + 1, count("PredictionRun"));
+        assertEquals(resultsBefore + 2, count("PredictionResult"));
     }
 
     @Test
@@ -162,6 +166,7 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
 
     @Test
     void overHttpAnAnonymousRunHoldsNoDatabaseConnectionWhileTheRuntimeWorks() throws Exception {
+        long runsBefore = count("PredictionRun");
         List<Integer> connectionsHeld = new ArrayList<>();
         when(analyzer.post(eq("/predict"), any())).thenAnswer(call -> {
             connectionsHeld.add(dataSource.unwrap(HikariDataSource.class).getHikariPoolMXBean().getActiveConnections());
@@ -172,15 +177,13 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"version\":3,\"values\":{\"in0\":52,\"in1\":240.5}}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.reports.length()").value(2))
-                .andExpect(jsonPath("$.reports[0].key").value("out0"))
-                .andExpect(jsonPath("$.reports[1].key").value("out1"));
+                .andExpect(jsonPath("$.run.reports.length()").value(2))
+                .andExpect(jsonPath("$.run.reports[0].key").value("out0"))
+                .andExpect(jsonPath("$.run.reports[1].key").value("out1"));
 
         // Both models ran with the pool untouched: the request's read ended before the first call.
         assertEquals(List.of(0, 0), connectionsHeld);
-        for (String entity : List.of("PredictionRun", "PredictionResult", "PredictionResultFeedback")) {
-            assertEquals(0L, count(entity), entity);
-        }
+        assertEquals(runsBefore + 1, count("PredictionRun"));
     }
 
     @Test
@@ -189,7 +192,7 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
 
         PublicPredictionDto result = run(bookmark.getPublicId(), request(Map.of("in0", 52)));
 
-        assertEquals(List.of("out2"), result.reports().stream().map(report -> report.key()).toList());
+        assertEquals(List.of("out2"), result.run().reports().stream().map(report -> report.key()).toList());
     }
 
     @ParameterizedTest
@@ -296,7 +299,7 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
         assertEquals("Too many public runs are in progress. Try again in a moment.", busy.getReason());
 
         finish.countDown();
-        assertEquals(2, first.get(10, TimeUnit.SECONDS).reports().size());
+        assertEquals(2, first.get(10, TimeUnit.SECONDS).run().reports().size());
         // The slot is returned after a success and after a failure alike.
         when(analyzer.post(eq("/predict"), any())).thenThrow(new AnalyzerServiceException(500, "boom"));
         assertEquals(502, refused(bookmark.getPublicId(), request(Map.of("in0", 52))).getStatusCode().value());

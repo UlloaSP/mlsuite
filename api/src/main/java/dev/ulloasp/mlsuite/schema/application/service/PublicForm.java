@@ -33,15 +33,28 @@ public final class PublicForm {
     private static final String DEFAULT_ROUTE = "default";
     private static final String STORED_VALUE = "defaultValue";
     private static final String ONE_HOT = "onehot-category";
-    /** Report keys that belong to the workspace: editor bookkeeping and the feedback workflow. */
-    private static final Set<String> PRIVATE_REPORT_KEYS = Set.of(MODEL_ROUTING, "id", "source", "feedbackQuestionnaire");
+    private static final String QUESTIONNAIRE = "feedbackQuestionnaire";
+    /** Report keys that belong to the workspace: editor bookkeeping. The questionnaire is asked of visitors too. */
+    private static final Set<String> PRIVATE_REPORT_KEYS = Set.of(MODEL_ROUTING, "id", "source");
+    /** Reports the workspace's own feedback form asks an assessment of: kinds the kit renders itself. */
+    private static final Set<String> ASSESSED_KINDS = Set.of("classifier", "regressor");
 
-    /** A public report and where its result comes from. */
-    public record ReportRoute(String key, Long modelId, String kind) {
+    /**
+     * A public report and where its result comes from. {@code order} is the stored report's
+     * position and {@code storedId} its id, which is how the workspace tells feedback apart;
+     * {@code target} is the feature the model answers it under, as a workspace run stores it.
+     */
+    public record ReportRoute(String key, Long modelId, String kind, int order, String storedId, String target,
+            boolean assessed, boolean questioned) {
     }
 
-    /** A value of a run and where it goes: a visitor's, sent under {@code key}, or the schema's own. */
-    private record InputRoute(Object mappedTo, String key, Object stored) {
+    /**
+     * A value of a run and where it goes: a visitor's, sent under {@code key} and stored under
+     * the field's {@code displayKey} as the workspace stores it, or the schema's own. A one-hot
+     * field sends one key per option; the option whose key is active is the field's stored
+     * value, {@code optionValue}.
+     */
+    private record InputRoute(Object mappedTo, String key, String displayKey, Object optionValue, Object stored) {
     }
 
     private final List<BoundModel> models;
@@ -62,7 +75,7 @@ public final class PublicForm {
             if (field instanceof Map<?, ?> config && Boolean.TRUE.equals(config.get("hidden"))) {
                 routeStoredValue(config);
             } else {
-                shownFields.add(withInputKeys(field));
+                shownFields.add(withInputKeys(field, field instanceof Map<?, ?> config ? displayKey(config) : null, null));
             }
         }
         this.schema = Map.of(FIELDS, Collections.unmodifiableList(shownFields), REPORTS, reports);
@@ -81,6 +94,30 @@ public final class PublicForm {
     /** The inputs a visitor fills: a hidden field is not one of them. */
     public int inputCount() {
         return inputCount;
+    }
+
+    /**
+     * A run's values as a stored run keeps them: each under its field's display key, a one-hot
+     * field's as the option chosen. The workspace reads them back the same way it reads its
+     * own runs (PublicExampleInputs, the client's input display).
+     */
+    public Map<String, Object> storedInputs(Map<String, Object> values) {
+        Map<String, Object> stored = new LinkedHashMap<>();
+        for (InputRoute route : inputRoutes) {
+            if (route.key() == null || route.displayKey() == null || !values.containsKey(route.key())) continue;
+            Object value = values.get(route.key());
+            if (route.optionValue() == null) {
+                stored.putIfAbsent(route.displayKey(), value);
+            } else if (isActive(value)) {
+                stored.put(route.displayKey(), route.optionValue());
+            }
+        }
+        return stored;
+    }
+
+    private static boolean isActive(Object oneHot) {
+        return Boolean.TRUE.equals(oneHot) || "1".equals(oneHot)
+                || (oneHot instanceof Number number && number.doubleValue() == 1);
     }
 
     /** The results a run shows: one per report and model that produces it. */
@@ -121,26 +158,45 @@ public final class PublicForm {
         return ordered;
     }
 
-    /** Options of a field route to models too, so the key is replaced at every depth. */
-    private Object withInputKeys(Object value) {
+    /**
+     * Options of a field route to models too, so the key is replaced at every depth. Every key
+     * of a field is stored under the field's display key: a one-hot field's options all carry
+     * the one chosen value.
+     */
+    private Object withInputKeys(Object value, String displayKey, Object optionValue) {
         if (value instanceof List<?> items) {
-            return items.stream().map(this::withInputKeys).toList();
+            return items.stream().map(item -> withInputKeys(item, displayKey, optionValue)).toList();
         }
         if (value instanceof Map<?, ?> entries) {
             Map<Object, Object> copy = new LinkedHashMap<>();
             entries.forEach((key, entry) -> {
-                if (!MODEL_ROUTING.equals(key)) {
-                    copy.put(key, withInputKeys(entry));
+                if ("options".equals(key) && entry instanceof List<?> options) {
+                    copy.put(key, options.stream().map(option -> withInputKeys(option, displayKey,
+                            option instanceof Map<?, ?> config ? optionValue(config) : null)).toList());
+                } else if (!MODEL_ROUTING.equals(key)) {
+                    copy.put(key, withInputKeys(entry, displayKey, optionValue));
                 } else if (isRouting(entry)) {
                     String inputKey = "in" + inputKeys.size();
                     inputKeys.add(inputKey);
-                    inputRoutes.add(new InputRoute(entry, inputKey, null));
+                    inputRoutes.add(new InputRoute(entry, inputKey, displayKey, optionValue, null));
                     copy.put(key, inputKey);
                 }
             });
             return copy;
         }
         return value;
+    }
+
+    private static Object optionValue(Map<?, ?> option) {
+        return option.get("value") != null ? option.get("value") : option.get("label");
+    }
+
+    /** The key a stored run keeps a field's value under: the workspace's own resolution. */
+    private static String displayKey(Map<?, ?> field) {
+        for (String name : List.of("displayKey", "label", "id")) {
+            if (field.get(name) instanceof String text && !text.isBlank()) return text;
+        }
+        return null;
     }
 
     /**
@@ -157,28 +213,37 @@ public final class PublicForm {
             for (Object item : options) {
                 if (item instanceof Map<?, ?> option && isRouting(option.get(MODEL_ROUTING))) {
                     boolean selected = stored instanceof String value && value.equals(option.get("value"));
-                    inputRoutes.add(new InputRoute(option.get(MODEL_ROUTING), null, selected ? 1 : 0));
+                    inputRoutes.add(new InputRoute(option.get(MODEL_ROUTING), null, null, null, selected ? 1 : 0));
                 }
             }
         } else if (isRouting(field.get(MODEL_ROUTING))) {
-            inputRoutes.add(new InputRoute(field.get(MODEL_ROUTING), null, isScalar(stored) ? stored : null));
+            inputRoutes.add(new InputRoute(field.get(MODEL_ROUTING), null, null, null, isScalar(stored) ? stored : null));
         }
     }
 
     private List<Object> reportsPerModel(List<?> reports) {
-        return reports.stream().flatMap(report -> report instanceof Map<?, ?> config
-                ? reportPerModel(config)
-                : Stream.empty()).toList();
+        List<Object> expanded = new ArrayList<>();
+        for (int order = 0; order < reports.size(); order++) {
+            if (reports.get(order) instanceof Map<?, ?> config) {
+                expanded.addAll(reportPerModel(config, order));
+            }
+        }
+        return expanded;
     }
 
-    private Stream<Object> reportPerModel(Map<?, ?> report) {
+    private List<Object> reportPerModel(Map<?, ?> report, int order) {
         List<BoundModel> producers = models.stream()
                 .filter(model -> featureFor(report.get(MODEL_ROUTING), model) != null)
                 .toList();
+        String kind = String.valueOf(report.get("kind"));
+        String storedId = report.get("id") instanceof String id ? id
+                : report.get("label") instanceof String label ? label : String.valueOf(order);
         List<Object> expanded = new ArrayList<>();
         for (BoundModel model : producers) {
             String key = "out" + reportRoutes.size();
-            reportRoutes.add(new ReportRoute(key, model.id(), String.valueOf(report.get("kind"))));
+            reportRoutes.add(new ReportRoute(key, model.id(), kind, order, storedId,
+                    featureName(featureFor(report.get(MODEL_ROUTING), model)),
+                    ASSESSED_KINDS.contains(kind), report.get(QUESTIONNAIRE) instanceof Map<?, ?>));
             Map<Object, Object> copy = new LinkedHashMap<>();
             report.forEach((name, value) -> {
                 if (!PRIVATE_REPORT_KEYS.contains(name)) copy.put(name, value);
@@ -191,7 +256,7 @@ public final class PublicForm {
             }
             expanded.add(copy);
         }
-        return expanded.stream();
+        return expanded;
     }
 
     private static boolean isShownField(Object field) {

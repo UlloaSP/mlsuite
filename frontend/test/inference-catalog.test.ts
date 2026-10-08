@@ -16,6 +16,7 @@ const inference = (
   id: 11,
   name: "Fraud check",
   status: "SUCCESS",
+  origin: "WORKSPACE",
   createdAt: "2026-07-22T08:00:00Z",
   updatedAt: "2026-07-22T08:01:00Z",
   schemaId: 2,

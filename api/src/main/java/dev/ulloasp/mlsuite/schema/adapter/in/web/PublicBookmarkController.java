@@ -2,11 +2,13 @@ package dev.ulloasp.mlsuite.schema.adapter.in.web;
 
 import java.util.List;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,10 +19,15 @@ import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkExampleDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkSummaryDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionRequest;
+import dev.ulloasp.mlsuite.schema.application.dto.PublicRunDto;
+import dev.ulloasp.mlsuite.schema.application.dto.PublicRunFeedbackRequest;
+import dev.ulloasp.mlsuite.schema.application.dto.PublicRunOutcome;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicRunQuotaDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicPredictionUseCase;
+import dev.ulloasp.mlsuite.schema.application.port.in.PublicRunUseCase;
 import dev.ulloasp.mlsuite.security.identity.PublicCaller;
+import dev.ulloasp.mlsuite.security.identity.VisitorCookie;
 import dev.ulloasp.mlsuite.util.PageDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -34,6 +41,7 @@ public class PublicBookmarkController {
 
     private final PublicBookmarkUseCase publicBookmarks;
     private final PublicPredictionUseCase publicPredictions;
+    private final PublicRunUseCase publicRuns;
 
     @GetMapping
     public ResponseEntity<PageDto<PublicBookmarkSummaryDto>> list(
@@ -69,10 +77,37 @@ public class PublicBookmarkController {
         return ResponseEntity.ok(publicPredictions.quota(publicId, caller));
     }
 
-    /** Runs the bookmark once and returns the result; the caller is counted and nothing is stored. */
+    /**
+     * Runs the bookmark once, keeps the run as the caller's, and returns it. A caller whose
+     * browser had no visitor yet is given one in a cookie with the answer.
+     */
     @PostMapping("/{publicId}/predictions")
     public ResponseEntity<PublicPredictionDto> runPrediction(@PathVariable String publicId,
-            @Valid @RequestBody PublicPredictionRequest request, PublicCaller caller) {
-        return ResponseEntity.ok(publicPredictions.run(publicId, request, caller));
+            @Valid @RequestBody PublicPredictionRequest request, PublicCaller caller, HttpServletRequest http) {
+        PublicRunOutcome outcome = publicPredictions.run(publicId, request, caller);
+        ResponseEntity.BodyBuilder answer = ResponseEntity.ok();
+        if (outcome.issuedVisitorId() != null) {
+            answer.header(HttpHeaders.SET_COOKIE, VisitorCookie.issue(outcome.issuedVisitorId(), http).toString());
+        }
+        return answer.body(outcome.result());
+    }
+
+    /** The caller's own runs of the bookmark, newest first: their session on this page. */
+    @GetMapping("/{publicId}/runs")
+    public ResponseEntity<List<PublicRunDto>> runs(@PathVariable String publicId, PublicCaller caller) {
+        return ResponseEntity.ok(publicRuns.list(publicId, caller));
+    }
+
+    @GetMapping("/{publicId}/runs/{runId}")
+    public ResponseEntity<PublicRunDto> run(@PathVariable String publicId, @PathVariable Long runId,
+            PublicCaller caller) {
+        return ResponseEntity.ok(publicRuns.get(publicId, runId, caller));
+    }
+
+    /** The caller's answers about their run's reports, replacing any they gave before. */
+    @PutMapping("/{publicId}/runs/{runId}/feedback")
+    public ResponseEntity<PublicRunDto> saveFeedback(@PathVariable String publicId, @PathVariable Long runId,
+            @Valid @RequestBody PublicRunFeedbackRequest request, PublicCaller caller) {
+        return ResponseEntity.ok(publicRuns.saveFeedback(publicId, runId, request, caller));
     }
 }

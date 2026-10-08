@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAtom } from "jotai";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   mountPublicRunForm,
   type MountedPublicRunForm,
@@ -27,21 +27,30 @@ import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
 import { cx } from "@/shared/ui/cx";
-import type { PublicBookmarkDto, PublicBookmarkExampleDto } from "@/shared/api/openapi.gen";
+import type {
+  PublicBookmarkDto,
+  PublicBookmarkExampleDto,
+  PublicRunDto,
+} from "@/shared/api/openapi.gen";
 
 type Props = Pick<PublicBookmarkDto, "publicId" | "version" | "formSchema"> & {
   examples?: readonly PublicBookmarkExampleDto[];
+  /** Told of each run the server kept, as it answered. */
+  onRun: (run: PublicRunDto) => void;
+  /** Drawn under the form once a run was made: what became of it. */
+  afterRun?: ReactNode;
 };
 
 const hasFields = (schema: PublicBookmarkDto["formSchema"]) =>
   Array.isArray(schema.fields) && schema.fields.length > 0;
 
 /**
- * The form of a public bookmark, to fill and run: inputs beside results, as wide as the page
- * and as tall as the page lets it be, each pane scrolling inside. A run is one request that the
- * server routes to the bookmark's models; its result lives in this form until the next run or
- * until the page is left. Plugin fields and reports are code from an organization's private catalog, so a form
- * that uses them says so instead of loading that code for a visitor.
+ * The form of a public bookmark, to fill and run: its inputs and results in two tabs, as wide
+ * as the page and as tall as the page lets it be, scrolling inside. A run is one request that
+ * the server routes to the bookmark's models and keeps as this browser's; its result shows in
+ * the form until the next run, and stays in the page's runs. Plugin fields and reports are code
+ * from an organization's private catalog, so a form that uses them says so instead of loading
+ * that code for a visitor.
  *
  * A form that can be shown offers the bookmark's curated examples above it. Loading one starts
  * the form again with the example's inputs as the fields' starting values, as a saved run's are
@@ -51,8 +60,17 @@ const hasFields = (schema: PublicBookmarkDto["formSchema"]) =>
  * The server limits how often one caller runs one bookmark. The count it reports is shown under
  * the form, and with no run left the run action is withheld: the values and the last result stay.
  */
-export function PublicBookmarkForm({ publicId, version, formSchema, examples = [] }: Props) {
+export function PublicBookmarkForm({
+  publicId,
+  version,
+  formSchema,
+  examples = [],
+  onRun,
+  afterRun,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const onRunRef = useRef(onRun);
+  onRunRef.current = onRun;
   const mountedRef = useRef<MountedPublicRunForm | null>(null);
   const [theme] = useAtom(themeWithHtmlAtom);
   const [initialTheme] = useState(theme);
@@ -90,7 +108,8 @@ export function PublicBookmarkForm({ publicId, version, formSchema, examples = [
           try {
             const result = await runPublicBookmark(publicId, { version, values }, signal);
             queryClient.setQueryData(queryKey, result.quota);
-            return result.reports.map((report) => ({
+            onRunRef.current(result.run);
+            return result.run.reports.map((report) => ({
               key: report.key,
               payload: isRecord(report.payload) ? report.payload : {},
             }));
@@ -178,9 +197,10 @@ export function PublicBookmarkForm({ publicId, version, formSchema, examples = [
         />
       </div>
       <div className="flex shrink-0 flex-col gap-2">
+        {afterRun}
         {quota && !mountError ? <PublicRunQuota quota={quota} /> : null}
         <p className="text-sm text-fg-muted">
-          Runs from this page are not saved: a result stays here until you run again or leave.
+          Runs from this page are kept for this browser, with their results, in Your runs.
         </p>
       </div>
     </div>

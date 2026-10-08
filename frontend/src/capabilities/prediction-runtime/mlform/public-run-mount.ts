@@ -7,7 +7,7 @@ import { createMlSuiteRegistry } from "./builtin-registry";
 import { mountForm } from "mlform/kit";
 import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
 import type { ReportConfig, SubmitErrorContext, SubmitRequest, Transport } from "mlform/runtime";
-import { validateSchema, type ReportResult } from "mlform/schema";
+import { normalizeSchema, validateSchema, type ReportResult } from "mlform/schema";
 import { toAnalyzerReportPayload } from "@/capabilities/prediction-runtime/data/report-normalization";
 import { withResolvedDisplayKeys } from "@/capabilities/prediction-runtime/mlform/display-key";
 import { withSeriesColumns } from "./series-schema";
@@ -21,6 +21,11 @@ import {
   type PredictionTheme,
   isRecord,
 } from "@/capabilities/prediction-runtime/mlform/shared";
+import {
+  hideRunTabTitles,
+  runTabsLayout,
+  showRunResults,
+} from "@/capabilities/prediction-runtime/mlform/run-tabs-layout";
 import { adoptShadowRules } from "@/capabilities/prediction-runtime/mlform/shadow-rules";
 
 /** What the runtime returned for the report of the public form that carries this key. */
@@ -52,15 +57,9 @@ export type MountedPublicRunForm = {
 
 const RUN_WITHHELD = "data-run-withheld";
 
-/**
- * What the kit always draws and a public page must not show. Its count of fields, reports and
- * submits repeats the page's own, and counts fields a visitor never sees. Its status reads
- * "success" whenever the transport answered, and a refused or failed run answers too: the host
- * tells what happened to a run. Its submit action is hidden while the host withholds the run.
- */
+/** The kit's Run action is hidden while the host withholds the run; the fields and result stay. */
 const PUBLIC_RUN_RULES = `
-  .meta, .left-section .sticky-meta { display: none; }
-  :host([${RUN_WITHHELD}]) .form-actions { display: none; }
+  :host([${RUN_WITHHELD}]) .btn-submit { display: none; }
 `;
 
 /** MLForm's name for the backend behind a `mappedTo` that is a bare key. */
@@ -80,9 +79,10 @@ const toReportResult = (
 };
 
 /**
- * Mounts a public form to be filled and run, inputs beside results: the same fields and report
- * rendering as a workspace run, but one request decides the whole run and nothing here names a
- * model.
+ * Mounts a public form to be filled and run, its inputs and results in two tabs as the
+ * workspace's run form has them: the same fields and report rendering as a workspace run, but
+ * one request decides the whole run and nothing here names a model. A run that answered shows
+ * its results tab.
  */
 export const mountPublicRunForm = ({
   container,
@@ -98,6 +98,9 @@ export const mountPublicRunForm = ({
     registry,
   );
   if (!result.success) throw new Error(result.issues[0]?.message ?? "Invalid MLForm schema.");
+  // Layout references use the ids MLForm gives fields and reports once normalized.
+  const normalized = normalizeSchema(result.data, registry);
+  let host: HTMLElement | undefined;
   // The reports of the last run that was made: a refused one leaves them on screen.
   let shown: readonly PublicRunReport[] = [];
   const transport: Transport = {
@@ -113,6 +116,7 @@ export const mountPublicRunForm = ({
           request.signal,
         );
         shown = answered ?? shown;
+        if (answered && host && normalized.reports.length > 0) showRunResults(host);
       } catch (error) {
         shown = [];
         onRunError?.(error);
@@ -138,12 +142,12 @@ export const mountPublicRunForm = ({
         onRunError?.(error);
       },
     },
-    layout: { kind: "split" },
-    reportPane: "always",
+    layout: runTabsLayout(
+      normalized.fields.map((field) => field.id),
+      normalized.reports.map((report) => report.id),
+    ),
     reportFetchMode: "none",
     labels: {
-      form: "Inputs",
-      reports: "Results",
       submit: "Run",
       validating: "Checking inputs…",
       submitting: "Running…",
@@ -154,7 +158,9 @@ export const mountPublicRunForm = ({
     },
     designSystem: getPredictionDesignSystem(theme),
   });
+  host = mounted.host;
   connectStoredStatusConditions(mounted.form);
+  hideRunTabTitles(mounted.host);
   adoptShadowRules(mounted.host, PUBLIC_RUN_RULES);
   return {
     updateTheme: (nextTheme) => mounted.replaceDesignSystem(getPredictionDesignSystem(nextTheme)),
