@@ -9,21 +9,17 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Set;
 
-import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
-import javax.imageio.stream.ImageOutputStream;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Turns an uploaded picture into the logo that is stored: the centered square of it, at most
- * {@value #SIDE} pixels wide, since it is shown at a few dozen. A picture with transparency is
- * kept as PNG; an opaque one becomes a JPEG, which is far smaller for a photograph.
+ * {@value #SIDE} pixels wide, since it is shown at a few dozen. It is kept lossless as PNG: a
+ * logo is flat colour and sharp edges, which JPEG blurs into visible artifacts.
  */
 public final class OrganizationLogoImage {
 
@@ -33,7 +29,6 @@ public final class OrganizationLogoImage {
     /** Checked before decoding: a small file may still describe an image too large to hold. */
     private static final long MAX_PIXELS = 25_000_000L;
     private static final Set<String> FORMATS = Set.of("png", "jpeg");
-    private static final float JPEG_QUALITY = 0.85f;
 
     private OrganizationLogoImage() {
     }
@@ -52,9 +47,7 @@ public final class OrganizationLogoImage {
         BufferedImage square = source.getSubimage(
                 (source.getWidth() - side) / 2, (source.getHeight() - side) / 2, side, side);
         BufferedImage logo = scale(square, Math.min(side, SIDE), alpha);
-        return alpha
-                ? new Normalized(encodePng(logo), "image/png")
-                : new Normalized(encodeJpeg(logo), "image/jpeg");
+        return new Normalized(encodePng(logo), "image/png");
     }
 
     private static BufferedImage decode(byte[] upload) {
@@ -97,7 +90,7 @@ public final class OrganizationLogoImage {
         BufferedImage target = new BufferedImage(side, side, type(alpha));
         Graphics2D graphics = target.createGraphics();
         try {
-            graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
             graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
             graphics.drawImage(image, 0, 0, side, side, null);
         } finally {
@@ -117,24 +110,6 @@ public final class OrganizationLogoImage {
             return output.toByteArray();
         } catch (IOException failure) {
             throw new IllegalStateException("PNG encoding failed", failure);
-        }
-    }
-
-    private static byte[] encodeJpeg(BufferedImage image) {
-        ImageWriter writer = ImageIO.getImageWritersByFormatName("jpeg").next();
-        try (ByteArrayOutputStream output = new ByteArrayOutputStream();
-                ImageOutputStream stream = ImageIO.createImageOutputStream(output)) {
-            ImageWriteParam params = writer.getDefaultWriteParam();
-            params.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-            params.setCompressionQuality(JPEG_QUALITY);
-            writer.setOutput(stream);
-            writer.write(null, new IIOImage(image, null, null), params);
-            stream.flush();
-            return output.toByteArray();
-        } catch (IOException failure) {
-            throw new IllegalStateException("JPEG encoding failed", failure);
-        } finally {
-            writer.dispose();
         }
     }
 

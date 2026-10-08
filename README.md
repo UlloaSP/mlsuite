@@ -292,7 +292,7 @@ apps) are sent by the `frontend` nginx to `/api/public/bookmarks/<id>/preview`, 
 of Open Graph tags that redirects anyone else to the bookmark. The image in it is the
 organization's logo, read from `/api/public/organizations/<org id>/logo` by anyone, or
 the MLSuite mark when the organization has none. Logos are PNG or JPG uploads of up to
-2 MB, cropped to a square and stored at 256 pixels in the database.
+2 MB, cropped to a square and stored lossless as 256-pixel PNG in the database.
 
 Each caller may run one public bookmark a limited number of times in 24 hours, counted
 from their first run of it: `PUBLIC_PREDICTION_ANONYMOUS_RUNS_PER_DAY` (default `50`) for

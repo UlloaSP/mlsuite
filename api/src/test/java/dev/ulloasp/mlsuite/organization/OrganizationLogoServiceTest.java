@@ -66,7 +66,7 @@ class OrganizationLogoServiceTest {
     }
 
     @Test
-    void anOpaquePictureIsCroppedToItsCenterSquareShrunkAndStoredAsJpeg() throws IOException {
+    void aPictureIsCroppedToItsCenterSquareShrunkAndStoredAsPng() throws IOException {
         editable();
         // Wide, with a red center: the crop keeps the middle, the sides go.
         BufferedImage wide = new BufferedImage(1200, 600, BufferedImage.TYPE_INT_RGB);
@@ -80,13 +80,13 @@ class OrganizationLogoServiceTest {
         OrganizationDto result = service.replace(USER_ID, ORG_ID, upload(encode(wide, "png"), "image/png"));
 
         OrganizationLogo stored = storedLogo();
-        assertEquals("image/jpeg", stored.getContentType());
+        assertEquals("image/png", stored.getContentType());
         BufferedImage logo = ImageIO.read(new ByteArrayInputStream(stored.getContent()));
         assertEquals(256, logo.getWidth());
         assertEquals(256, logo.getHeight());
         Color corner = new Color(logo.getRGB(2, 2));
-        assertTrue(corner.getRed() > 200 && corner.getBlue() < 60, "the center of the picture is what is kept");
-        assertTrue(stored.getContent().length < 20_000, "a flat 256px JPEG is a few kilobytes");
+        assertEquals(Color.RED, corner, "the center of the picture is what is kept, lossless");
+        assertTrue(stored.getContent().length < 20_000, "a flat 256px PNG is a few kilobytes");
         assertNotNull(organization.getLogoUpdatedAt());
         assertEquals("/api/public/organizations/41/logo?v=" + organization.getLogoUpdatedAt().toInstant().toEpochMilli(),
                 result.logoUrl());
@@ -108,14 +108,14 @@ class OrganizationLogoServiceTest {
     }
 
     @Test
-    void aJpegUploadIsAccepted() throws IOException {
+    void aJpegUploadIsAcceptedAndStoredAsPng() throws IOException {
         editable();
         BufferedImage photo = new BufferedImage(300, 400, BufferedImage.TYPE_INT_RGB);
 
         service.replace(USER_ID, ORG_ID, upload(encode(photo, "jpeg"), "image/jpeg"));
 
         OrganizationLogo stored = storedLogo();
-        assertEquals("image/jpeg", stored.getContentType());
+        assertEquals("image/png", stored.getContentType());
         assertEquals(256, ImageIO.read(new ByteArrayInputStream(stored.getContent())).getWidth());
     }
 
