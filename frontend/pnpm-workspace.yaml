@@ -1,6 +1,6 @@
 #minimumReleaseAge: 100080
 minimumReleaseAgeExclude:
-  - mlform@0.1.23
+  - mlform@0.1.25
   - monaco-editor@0.56.0
 
 #  - react-doctor@0.8.1

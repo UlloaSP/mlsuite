@@ -6,8 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useAtom } from "jotai";
 import { RefreshCcw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createMlRegistryPack } from "mlform/builtins";
-import { mountForm, registerDefinedFieldKind, registerDefinedReportKind } from "mlform/kit";
+import { mountForm } from "mlform/kit";
+import { defineMLFormPlugin } from "mlform/view";
 import type { MountedForm } from "mlform/kit";
 import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
@@ -18,6 +18,8 @@ import { AppPanel } from "@/shared/ui/AppPanel";
 import { cx } from "@/shared/ui/cx";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { toMlformSchema } from "@/capabilities/prediction-runtime/mlform/schema-validation";
+import { createMlSuiteRegistry } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
+import { connectStoredStatusConditions } from "@/capabilities/prediction-runtime/mlform/stored-status-conditions";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 import {
   createSchemaPreviewTransport,
@@ -75,20 +77,18 @@ export function SchemaFormPreview({ schema }: Props) {
 
   useEffect(() => {
     if (showCatalogLoading || !containerRef.current || resolvedSchema.status !== "ready") return;
-    const pack = createMlRegistryPack();
-    catalog.data.fieldDefinitions.forEach((definition) => {
-      registerDefinedFieldKind(pack.registry, pack.descriptorRegistry, definition.definition);
-    });
-    resolvedSchema.reportDefinitions.forEach((definition) => {
-      registerDefinedReportKind(pack.registry, pack.descriptorRegistry, definition.definition);
-    });
     mountedRef.current?.unmount();
     setMountError(null);
     try {
       mountedRef.current = mountForm(containerRef.current, {
         schema: resolvedSchema.schema,
-        registry: pack.registry,
-        descriptorRegistry: pack.descriptorRegistry,
+        registry: createMlSuiteRegistry(),
+        plugins: [
+          defineMLFormPlugin({
+            fields: catalog.data.fieldDefinitions.map((item) => item.definition),
+            reports: resolvedSchema.reportDefinitions.map((item) => item.definition),
+          }),
+        ],
         primitiveRegistry: createBuiltinPrimitiveRegistry(),
         transport: createSchemaPreviewTransport(),
         layout: { kind: "split" },
@@ -103,6 +103,7 @@ export function SchemaFormPreview({ schema }: Props) {
         },
         designSystem: getPredictionDesignSystem(initialTheme),
       });
+      connectStoredStatusConditions(mountedRef.current.form);
     } catch (error) {
       mountedRef.current = null;
       setMountError(error instanceof Error ? error.message : String(error));

@@ -7,6 +7,7 @@ import {
   type ReportQuestionnaireMountHandle,
 } from "@/capabilities/prediction-runtime/feedback/ReportQuestionnaireMount";
 import type { Transport } from "mlform/runtime";
+import type { FormViewController } from "mlform/view";
 import { mount } from "./support/dom";
 
 const schema = {
@@ -105,4 +106,110 @@ test("preserves save errors without showing a saved summary", async () => {
   expect(saved).not.toHaveBeenCalled();
   expect(statuses).toEqual([true, false]);
   expect(container.querySelector("mlf-kit-wizard")).not.toBeNull();
+});
+
+test("the kit submit action completes before its callback removes the form", async () => {
+  const saved = vi.fn(() => {
+    flushSync(() => view.root.render(<p>Saved review</p>));
+  });
+  const view = await mountSettled(
+    <ReportQuestionnaireMount
+      schema={schema}
+      initialValues={{ answer: "Reviewed" }}
+      editable
+      theme="light"
+      mode="standalone"
+      onSubmitted={saved}
+    />,
+  );
+  await act(async () => {
+    view.host
+      .querySelector("mlf-kit-wizard")
+      ?.shadowRoot?.querySelector<HTMLButtonElement>(".btn-submit")
+      ?.click();
+    await flush();
+  });
+  expect(saved).toHaveBeenCalledWith({ answer: "Reviewed" });
+  expect(view.host.textContent).toBe("Saved review");
+});
+
+test("reports completion callback errors and allows another submission", async () => {
+  const ref = createRef<ReportQuestionnaireMountHandle>();
+  const statuses: boolean[] = [];
+  const saved = vi
+    .fn()
+    .mockRejectedValueOnce(new Error("Refresh failed"))
+    .mockResolvedValueOnce(undefined);
+  const { host } = await mountSettled(
+    <ReportQuestionnaireMount
+      ref={ref}
+      schema={schema}
+      initialValues={{ answer: "Reviewed" }}
+      editable
+      theme="light"
+      onSubmitted={saved}
+      onSubmittingChange={(value) => statuses.push(value)}
+    />,
+  );
+  await act(async () => {
+    await expect(ref.current!.submit()).rejects.toThrow("Refresh failed");
+  });
+  const wizard = host.querySelector<HTMLElement & { view: FormViewController }>("mlf-kit-wizard");
+  expect(wizard?.view.form.state.errors.form).toEqual(["Refresh failed"]);
+  await act(async () => {
+    await expect(ref.current!.submit()).resolves.toEqual({ answer: "Reviewed" });
+  });
+  expect(statuses).toEqual([true, false, true, false]);
+});
+
+test("keeps one feedback save and a busy host until its completion callback settles", async () => {
+  const ref = createRef<ReportQuestionnaireMountHandle>();
+  const statuses: boolean[] = [];
+  let finish!: () => void;
+  const saved = vi.fn(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const submit = vi.fn(async () => ({ raw: {}, reports: [] }));
+  const { host } = await mountSettled(
+    <ReportQuestionnaireMount
+      ref={ref}
+      schema={schema}
+      initialValues={{ answer: "Reviewed" }}
+      editable
+      theme="light"
+      mode="standalone"
+      transport={{ submit }}
+      onSubmitted={saved}
+      onSubmittingChange={(value) => statuses.push(value)}
+    />,
+  );
+  let first!: Promise<Record<string, unknown>>;
+  let second!: Promise<Record<string, unknown>>;
+  await act(async () => {
+    first = ref.current!.submit();
+    await flush();
+  });
+  const wizard = host.querySelector<HTMLElement & { view: FormViewController }>("mlf-kit-wizard")!;
+  expect(wizard.view.form.state.operation).toBe("idle");
+  expect(wizard.inert).toBe(true);
+  expect(wizard.getAttribute("aria-busy")).toBe("true");
+  await act(async () => {
+    wizard.shadowRoot?.querySelector<HTMLButtonElement>(".btn-submit")?.click();
+    second = ref.current!.submit();
+    await flush();
+  });
+  expect(submit).toHaveBeenCalledTimes(1);
+  expect(saved).toHaveBeenCalledTimes(1);
+  expect(statuses).toEqual([true]);
+  await act(async () => {
+    finish();
+    await expect(first).resolves.toEqual({ answer: "Reviewed" });
+    await expect(second).resolves.toEqual({ answer: "Reviewed" });
+  });
+  expect(statuses).toEqual([true, false]);
+  expect(wizard.inert).toBe(false);
+  expect(wizard.hasAttribute("aria-busy")).toBe(false);
 });

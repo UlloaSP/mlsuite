@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { WizardLayoutConfig } from "mlform/kit";
+import type { WizardLayoutConfig } from "mlform/view";
 import type { FieldConfig, FormSchema } from "mlform/runtime";
 
 export type QuestionnaireStep = {
