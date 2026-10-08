@@ -78,8 +78,9 @@ export const withStoredStatusConditions = <T>(schema: T): T => {
           !baseFieldConfigSchema.shape.disabledWhen.safeParse(validated).success
         )
           continue;
+        const storedCondition = structuredClone(condition);
         const predicate = (context: FieldConditionContext) =>
-          evaluateStoredCondition(condition, context, statusFor(tracker, context));
+          evaluateStoredCondition(storedCondition, context, statusFor(tracker, context));
         trackers.set(predicate, tracker);
         next[key] = predicate;
       }

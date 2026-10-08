@@ -22,6 +22,26 @@ const create = (schema: unknown, options: Partial<Parameters<typeof createForm>[
 };
 
 describe("stored form-status conditions", () => {
+  test("isolates mounted conditions from later changes to their source schema", () => {
+    const condition = stored("success");
+    const form = create({
+      fields: [
+        field,
+        {
+          ...field,
+          id: "controlled",
+          label: "Controlled",
+          mappedTo: "controlled",
+          disabledWhen: condition,
+        },
+      ],
+      reports: [],
+    });
+    condition.equals = "editing";
+    form.getField("value")!.setValue(2);
+    expect(form.getField("controlled")!.state.disabled).toBe(false);
+    form.dispose();
+  });
   test.each(["disabledWhen", "hiddenWhen", "readOnlyWhen"])(
     "preserves %s through editing, submission, and reset",
     async (key) => {
