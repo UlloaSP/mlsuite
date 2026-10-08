@@ -10,13 +10,18 @@ export type GuideContent = { title: string; description: string };
 export const SIDEBAR_INTRO: GuideContent = {
   title: "Welcome to MLsuite",
   description:
-    "This short tour covers the navigation. The menu follows the ML loop in order: models, schemas, inferences, then review. Hold Alt at any time to reveal a number shortcut on each entry.",
+    "This short tour covers the navigation. The menu opens with the public feed, then follows the ML loop in order: models, schemas, inferences, then review. Hold Alt at any time to reveal a number shortcut on each entry.",
 };
 
 export const GUIDE_CONTENT: Record<string, GuideContent> = {
   brand: {
     title: "Home",
     description: "Return to your home page from anywhere.",
+  },
+  "nav:Explore": {
+    title: "Explore",
+    description:
+      "Browse the bookmarks every organization has published. Anyone can open these pages, signed in or not.",
   },
   "workspace-switcher": {
     title: "Active organization",
@@ -60,6 +65,11 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
   "nav:Users": {
     title: "Users",
     description: "Manage platform accounts and their system roles.",
+  },
+  "nav:Moderation": {
+    title: "Moderation",
+    description:
+      "See every bookmark published on this MLsuite instance, open its public page, and unpublish what should not be public.",
   },
   "nav:Infra": {
     title: "Infrastructure",

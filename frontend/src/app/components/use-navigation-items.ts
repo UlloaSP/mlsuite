@@ -7,15 +7,21 @@ import { useLocation } from "react-router";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
+import { EXPLORE_NAVIGATION_ITEM } from "./explore-navigation";
 import { getActiveSchemaPath, getSchemaNavigationChildren } from "./schema-sidebar-navigation";
 import { useSectionMemory } from "./section-memory";
-import { INFRA_CHILDREN, type NavigationItem } from "./sidebar-navigation-support";
+import {
+  INFRA_CHILDREN,
+  type NavigationGroup,
+  type NavigationItem,
+} from "./sidebar-navigation-support";
 
 /**
- * Navigation the member may open, shared by the sidebar and the bar: the
- * organization's work, and (for superadmins) platform administration.
- * Alt+N shortcuts number both in order, workspace first. An entry for a section
- * the member is not in resumes where they last were in it.
+ * Navigation the member may open, shared by the sidebar and the bar: the public
+ * feed first, which every member has, then the organization's work and platform
+ * administration (for superadmins). Alt+N shortcuts number the entries in that order.
+ * An entry for a workspace or administration section the member is not in resumes
+ * where they last were in it; Explore always opens the feed.
  */
 export function useNavigationItems() {
   const location = useLocation();
@@ -96,6 +102,12 @@ export function useNavigationItems() {
         },
         { root: "/admin/users", to: "/admin/users", icon: SECTION_ICONS.users, label: "Users" },
         {
+          root: "/admin/public-bookmarks",
+          to: "/admin/public-bookmarks",
+          icon: SECTION_ICONS.moderation,
+          label: "Moderation",
+        },
+        {
           root: "/admin/infrastructure",
           to: "/admin/infrastructure",
           icon: SECTION_ICONS.infrastructure,
@@ -114,9 +126,21 @@ export function useNavigationItems() {
       ? item
       : { ...item, to: recall(item.root)?.href ?? item.to };
 
-  return {
+  const sections = {
     navigation: navigation.map(resume),
     administration: administration.map(resume),
+  };
+  const groups: NavigationGroup[] = [
+    { label: "Public", items: [EXPLORE_NAVIGATION_ITEM] },
+    { label: "Workspace", items: sections.navigation },
+    { label: "Administration", items: sections.administration },
+  ].filter((group) => group.items.length > 0);
+
+  return {
+    ...sections,
+    /** Every entry shown, grouped as the sidebar labels them; empty groups are left out. */
+    groups,
+    // Section memory belongs to the organization's sections, so the public feed is not one.
     activeRoot: [...navigation, ...administration].find(isParentActive)?.root,
     isParentActive,
     currentPath: `${location.pathname}${location.search}`,

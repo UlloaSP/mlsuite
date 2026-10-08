@@ -2,9 +2,11 @@ package dev.ulloasp.mlsuite.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.DriverManager;
+import java.sql.Statement;
 import java.util.Map;
 
 import org.flywaydb.core.Flyway;
@@ -29,9 +31,9 @@ class FlywayMigrationTest {
     void appliesCompleteHistoryToEmptyPostgresAndIsRepeatable() throws Exception {
         Flyway flyway = flyway("fresh", null);
 
-        assertEquals(6, flyway.migrate().migrationsExecuted);
+        assertEquals(9, flyway.migrate().migrationsExecuted);
         assertEquals(0, flyway.migrate().migrationsExecuted);
-        assertEquals("6", flyway.info().current().getVersion().toString());
+        assertEquals("9", flyway.info().current().getVersion().toString());
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
@@ -86,6 +88,20 @@ class FlywayMigrationTest {
                         (organization_id, invited_by_user_id, email, role, status, token, expires_at, created_at, updated_at)
                     VALUES (1, 1, 'viewer@example.test', 'VIEWER', 'PENDING', 'legacy-token', now(), now(), now())
                     """);
+            statement.execute("""
+                    INSERT INTO schema_artifact (organization_id, name, description, created_at, updated_at)
+                    VALUES (1, 'Risk', 'Estimates risk.', now(), now()), (1, 'Bare', NULL, now(), now())
+                    """);
+            statement.execute("""
+                    INSERT INTO schema_version (schema_id, version_number, form_schema_json, created_at)
+                    VALUES (1, 1, '{}', now()), (2, 1, '{}', now())
+                    """);
+            statement.execute("""
+                    INSERT INTO schema_bookmark (schema_id, schema_version_id, name, created_at, updated_at)
+                    VALUES (1, 1, 'production', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'),
+                           (1, 1, 'staging', now(), now()),
+                           (2, 2, 'draft', now(), now())
+                    """);
         }
 
         Flyway upgraded = Flyway.configure()
@@ -96,7 +112,7 @@ class FlywayMigrationTest {
                 .baselineOnMigrate(true)
                 .baselineVersion(MigrationVersion.fromVersion("1"))
                 .load();
-        assertEquals(5, upgraded.migrate().migrationsExecuted);
+        assertEquals(8, upgraded.migrate().migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
@@ -117,6 +133,88 @@ class FlywayMigrationTest {
         }
         assertLegacyRoleBackfilled("organization_membership", "OWNER", 22);
         assertLegacyRoleBackfilled("invitation", "VIEWER", 4);
+        assertPublishPermissionIsStorable();
+        assertBookmarksTookTheirSchemaDescription();
+        assertExamplesLeaveWithTheirRunOrBookmark();
+    }
+
+    /** V9: a bookmark that existed takes its schema's description once, and is not otherwise touched. */
+    private void assertBookmarksTookTheirSchemaDescription() throws Exception {
+        try (var connection = DriverManager.getConnection(
+                POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+                var statement = connection.createStatement();
+                var result = statement.executeQuery("""
+                        SELECT name, description, updated_at = '2026-01-01T00:00:00Z'
+                        FROM upgrade_path.schema_bookmark
+                        ORDER BY id
+                        """)) {
+            assertTrue(result.next());
+            assertEquals("production", result.getString(1));
+            assertEquals("Estimates risk.", result.getString(2));
+            assertTrue(result.getBoolean(3));
+            assertTrue(result.next());
+            assertEquals("Estimates risk.", result.getString(2));
+            assertTrue(result.next());
+            assertEquals("draft", result.getString(1));
+            assertNull(result.getString(2));
+        }
+    }
+
+    /**
+     * V8: deleting a run or a bookmark takes its example rows along, so none is orphaned.
+     * The schema and its bookmarks are the ones seeded before the upgrade.
+     */
+    private void assertExamplesLeaveWithTheirRunOrBookmark() throws Exception {
+        try (var connection = DriverManager.getConnection(
+                POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+                var statement = connection.createStatement()) {
+            statement.execute("SET search_path TO upgrade_path");
+            statement.execute("""
+                    INSERT INTO prediction_run
+                        (schema_version_id, schema_bookmark_id, name, input_data_json, status, created_at, updated_at)
+                    VALUES (1, 1, 'first', '{}', 'SUCCESS', now(), now()),
+                           (1, NULL, 'second', '{}', 'SUCCESS', now(), now())
+                    """);
+            statement.execute("""
+                    INSERT INTO schema_bookmark_example (schema_bookmark_id, prediction_run_id, public_id, created_at)
+                    VALUES (1, 1, 'example-1', now()), (1, 2, 'example-2', now()), (2, 2, 'example-3', now())
+                    """);
+
+            statement.execute("DELETE FROM prediction_run WHERE id = 2");
+            assertEquals(1, exampleRows(statement));
+            statement.execute("UPDATE prediction_run SET schema_bookmark_id = NULL");
+            statement.execute("DELETE FROM schema_bookmark WHERE id = 1");
+            assertEquals(0, exampleRows(statement));
+        }
+    }
+
+    private int exampleRows(Statement statement) throws Exception {
+        try (var result = statement.executeQuery("SELECT COUNT(*) FROM schema_bookmark_example")) {
+            assertTrue(result.next());
+            return result.getInt(1);
+        }
+    }
+
+    /** V7 widens the permission checks; existing bookmarks stay private. */
+    private void assertPublishPermissionIsStorable() throws Exception {
+        try (var connection = DriverManager.getConnection(
+                POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+                var statement = connection.createStatement()) {
+            assertEquals(2, statement.executeUpdate("""
+                    INSERT INTO upgrade_path.role_permission (role_definition_id, permission_key)
+                    SELECT id, 'PUBLISH_BOOKMARKS' FROM upgrade_path.role_definition
+                    """));
+            try (var result = statement.executeQuery("""
+                    SELECT column_default, is_nullable
+                    FROM information_schema.columns
+                    WHERE table_schema = 'upgrade_path' AND table_name = 'schema_bookmark'
+                      AND column_name = 'visibility'
+                    """)) {
+                assertTrue(result.next());
+                assertTrue(result.getString(1).startsWith("'PRIVATE'"));
+                assertEquals("NO", result.getString(2));
+            }
+        }
     }
 
     private void assertLegacyRoleBackfilled(String table, String systemKey, int permissions) throws Exception {

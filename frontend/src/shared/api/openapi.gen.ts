@@ -84,6 +84,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/public-bookmarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_11"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/public-bookmarks/{bookmarkId}/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["unpublish_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/users": {
         parameters: {
             query?: never;
@@ -113,7 +145,7 @@ export interface paths {
         delete: operations["delete_4"];
         options?: never;
         head?: never;
-        patch: operations["update_3"];
+        patch: operations["update_4"];
         trace?: never;
     };
     "/api/admin/users/{id}/password": {
@@ -443,7 +475,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -609,7 +641,7 @@ export interface paths {
         delete: operations["delete_2"];
         options?: never;
         head?: never;
-        patch: operations["update_2"];
+        patch: operations["update_3"];
         trace?: never;
     };
     "/api/organizations/{organizationId}/roles/{roleId}/duplicate": {
@@ -667,7 +699,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_9"];
         put?: never;
         post?: never;
         delete?: never;
@@ -705,7 +737,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["update_1"];
+        patch: operations["update_2"];
         trace?: never;
     };
     "/api/prediction-result-feedback/by-runs": {
@@ -779,7 +811,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_4"];
+        get: operations["get_5"];
         put?: never;
         post?: never;
         delete: operations["delete_5"];
@@ -796,6 +828,86 @@ export interface paths {
             cookie?: never;
         };
         get: operations["summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/bookmarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_8"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/bookmarks/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_4"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/bookmarks/{publicId}/examples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["examples"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/bookmarks/{publicId}/predictions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["runPrediction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/bookmarks/{publicId}/quota": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["quota"];
         put?: never;
         post?: never;
         delete?: never;
@@ -836,6 +948,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/schema-bookmarks/public/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getByPublicId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/schema-bookmarks/{bookmarkId}": {
         parameters: {
             query?: never;
@@ -846,6 +974,54 @@ export interface paths {
         get: operations["get_1"];
         put: operations["move"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["update_1"];
+        trace?: never;
+    };
+    "/api/schema-bookmarks/{bookmarkId}/examples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_7"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schema-bookmarks/{bookmarkId}/examples/{runId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["mark"];
+        post?: never;
+        delete: operations["unmark"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schema-bookmarks/{bookmarkId}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["publish_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -862,6 +1038,22 @@ export interface paths {
         get: operations["listForBookmark"];
         put?: never;
         post: operations["createForBookmark"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schema-bookmarks/{bookmarkId}/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["unpublish"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1437,6 +1629,7 @@ export interface components {
             permissionKeys: string[];
         };
         CreateSchemaBookmarkRequest: {
+            description?: string | null;
             name: string;
             /** Format: int64 */
             versionId: number;
@@ -1572,6 +1765,20 @@ export interface components {
             /** Format: int64 */
             version: number;
         };
+        ModeratedBookmarkDto: {
+            /** Format: int64 */
+            id: number;
+            name: string;
+            organizationName: string;
+            publicId: string;
+            schemaArchived: boolean;
+            schemaName: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: int32 */
+            version: number;
+            versionName: string | null;
+        };
         MoveSchemaBookmarkRequest: {
             /** Format: int64 */
             versionId: number;
@@ -1682,6 +1889,16 @@ export interface components {
             /** Format: int64 */
             totalItems: number;
         };
+        PageDtoModeratedBookmarkDto: {
+            hasNext: boolean;
+            items: components["schemas"]["ModeratedBookmarkDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
         PageDtoOrganizationCatalogItemDto: {
             hasNext: boolean;
             items: components["schemas"]["OrganizationCatalogItemDto"][];
@@ -1695,6 +1912,16 @@ export interface components {
         PageDtoPluginDto: {
             hasNext: boolean;
             items: components["schemas"]["PluginDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoPublicBookmarkSummaryDto: {
+            hasNext: boolean;
+            items: components["schemas"]["PublicBookmarkSummaryDto"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -1716,7 +1943,7 @@ export interface components {
             dangerous: boolean;
             description: string;
             /** @enum {string} */
-            key: "VIEW_WORKSPACE" | "VIEW_ORGANIZATION" | "EDIT_ORGANIZATION" | "DELETE_ORGANIZATION" | "TRANSFER_OWNERSHIP" | "VIEW_MEMBERS" | "INVITE_MEMBERS" | "MANAGE_MEMBER_ROLES" | "REMOVE_MEMBERS" | "VIEW_INVITATIONS" | "MANAGE_INVITATIONS" | "VIEW_MODELS" | "CREATE_MODELS" | "EDIT_MODELS" | "DELETE_MODELS" | "RUN_PREDICTIONS" | "EXPORT_PREDICTIONS" | "REVIEW" | "MANAGE_REVIEWS" | "VIEW_PLUGINS" | "MANAGE_PLUGINS" | "VIEW_AUDIT_LOG";
+            key: "VIEW_WORKSPACE" | "VIEW_ORGANIZATION" | "EDIT_ORGANIZATION" | "DELETE_ORGANIZATION" | "TRANSFER_OWNERSHIP" | "VIEW_MEMBERS" | "INVITE_MEMBERS" | "MANAGE_MEMBER_ROLES" | "REMOVE_MEMBERS" | "VIEW_INVITATIONS" | "MANAGE_INVITATIONS" | "VIEW_MODELS" | "CREATE_MODELS" | "EDIT_MODELS" | "DELETE_MODELS" | "RUN_PREDICTIONS" | "EXPORT_PREDICTIONS" | "PUBLISH_BOOKMARKS" | "REVIEW" | "MANAGE_REVIEWS" | "VIEW_PLUGINS" | "MANAGE_PLUGINS" | "VIEW_AUDIT_LOG";
             label: string;
         };
         PermissionGroupDto: {
@@ -1875,6 +2102,78 @@ export interface components {
             /** Format: int64 */
             lastId: number;
         };
+        PublicBookmarkDto: {
+            description: string | null;
+            formSchema: {
+                [key: string]: unknown;
+            };
+            /** Format: int32 */
+            inputCount: number;
+            name: string;
+            organizationName: string;
+            publicId: string;
+            /** Format: int32 */
+            reportCount: number;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: int32 */
+            version: number;
+        };
+        PublicBookmarkExampleDto: {
+            id: string;
+            inputs: {
+                [key: string]: unknown;
+            };
+            name: string;
+        };
+        PublicBookmarkSummaryDto: {
+            description: string | null;
+            /** Format: int32 */
+            inputCount: number;
+            name: string;
+            organizationName: string;
+            publicId: string;
+            /** Format: int32 */
+            reportCount: number;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        PublicPredictionDto: {
+            quota: components["schemas"]["PublicRunQuotaDto"];
+            reports: components["schemas"]["PublicPredictionReportDto"][];
+        };
+        PublicPredictionReportDto: {
+            key: string;
+            payload: {
+                [key: string]: unknown;
+            };
+        };
+        PublicPredictionRequest: {
+            values: {
+                [key: string]: unknown;
+            };
+            /** Format: int32 */
+            version: number;
+        };
+        PublicRunLimitDto: {
+            /** @enum {string} */
+            code: "ANONYMOUS_RUN_LIMIT_REACHED" | "SIGNED_IN_RUN_LIMIT_REACHED";
+            message: string;
+            path: string;
+            quota: components["schemas"]["PublicRunQuotaDto"];
+            /** Format: int32 */
+            status: number;
+            /** Format: date-time */
+            timestamp: string;
+        };
+        PublicRunQuotaDto: {
+            /** Format: int32 */
+            limit: number;
+            /** Format: int32 */
+            remaining: number;
+            /** Format: date-time */
+            resetsAt: string | null;
+        };
         PublishSchemaDraftRequest: {
             /** Format: int64 */
             expectedDraftRevision: number;
@@ -1925,7 +2224,7 @@ export interface components {
             /** Format: int64 */
             id: number;
             name: string;
-            permissionKeys: ("VIEW_WORKSPACE" | "VIEW_ORGANIZATION" | "EDIT_ORGANIZATION" | "DELETE_ORGANIZATION" | "TRANSFER_OWNERSHIP" | "VIEW_MEMBERS" | "INVITE_MEMBERS" | "MANAGE_MEMBER_ROLES" | "REMOVE_MEMBERS" | "VIEW_INVITATIONS" | "MANAGE_INVITATIONS" | "VIEW_MODELS" | "CREATE_MODELS" | "EDIT_MODELS" | "DELETE_MODELS" | "RUN_PREDICTIONS" | "EXPORT_PREDICTIONS" | "REVIEW" | "MANAGE_REVIEWS" | "VIEW_PLUGINS" | "MANAGE_PLUGINS" | "VIEW_AUDIT_LOG")[];
+            permissionKeys: ("VIEW_WORKSPACE" | "VIEW_ORGANIZATION" | "EDIT_ORGANIZATION" | "DELETE_ORGANIZATION" | "TRANSFER_OWNERSHIP" | "VIEW_MEMBERS" | "INVITE_MEMBERS" | "MANAGE_MEMBER_ROLES" | "REMOVE_MEMBERS" | "VIEW_INVITATIONS" | "MANAGE_INVITATIONS" | "VIEW_MODELS" | "CREATE_MODELS" | "EDIT_MODELS" | "DELETE_MODELS" | "RUN_PREDICTIONS" | "EXPORT_PREDICTIONS" | "PUBLISH_BOOKMARKS" | "REVIEW" | "MANAGE_REVIEWS" | "VIEW_PLUGINS" | "MANAGE_PLUGINS" | "VIEW_AUDIT_LOG")[];
             /** @enum {string} */
             scope: "SYSTEM" | "ORGANIZATION";
         };
@@ -1938,12 +2237,18 @@ export interface components {
         SchemaBookmarkDto: {
             /** Format: date-time */
             createdAt: string;
+            description: string | null;
+            /** Format: int64 */
+            exampleCount: number;
             /** Format: int64 */
             id: number;
             name: string;
+            publicId: string | null;
             /** Format: int64 */
             schemaId: number;
             schemaName: string;
+            /** Format: int64 */
+            staleExampleCount: number;
             /** Format: date-time */
             updatedAt: string;
             /** Format: int32 */
@@ -1951,6 +2256,18 @@ export interface components {
             /** Format: int64 */
             versionId: number;
             versionName: string | null;
+            /** @enum {string} */
+            visibility: "PRIVATE" | "PUBLIC";
+        };
+        SchemaBookmarkExampleDto: {
+            /** Format: int64 */
+            runId: number;
+            runName: string;
+            /** Format: int32 */
+            runVersion: number;
+            runVersionName: string | null;
+            /** @enum {string} */
+            status: "SERVED" | "BOOKMARK_PRIVATE" | "BOOKMARK_MOVED";
         };
         SchemaCatalogItemDto: {
             /** Format: date-time */
@@ -2200,6 +2517,10 @@ export interface components {
             name: string;
             permissionKeys: string[];
         };
+        UpdateSchemaBookmarkRequest: {
+            description?: string | null;
+            name: string;
+        };
         UpdateSchemaDraftRequest: {
             bindings: {
                 [key: string]: unknown;
@@ -2243,6 +2564,7 @@ export interface components {
             canManageMemberRoles: boolean;
             canManagePlugins: boolean;
             canManageReviews: boolean;
+            canPublishBookmarks: boolean;
             canRemoveMembers: boolean;
             canReview: boolean;
             canRunPredictions: boolean;
@@ -2305,6 +2627,7 @@ export type JsonNode = components['schemas']['JsonNode'];
 export type LoginRequest = components['schemas']['LoginRequest'];
 export type MembershipActionsDto = components['schemas']['MembershipActionsDto'];
 export type ModelDto = components['schemas']['ModelDto'];
+export type ModeratedBookmarkDto = components['schemas']['ModeratedBookmarkDto'];
 export type MoveSchemaBookmarkRequest = components['schemas']['MoveSchemaBookmarkRequest'];
 export type OrganizationAdminDashboardDto = components['schemas']['OrganizationAdminDashboardDto'];
 export type OrganizationAdminStatsDto = components['schemas']['OrganizationAdminStatsDto'];
@@ -2313,8 +2636,10 @@ export type OrganizationDto = components['schemas']['OrganizationDto'];
 export type OrganizationMembershipDto = components['schemas']['OrganizationMembershipDto'];
 export type OrganizationMembershipRowDto = components['schemas']['OrganizationMembershipRowDto'];
 export type PageDtoModelDto = components['schemas']['PageDtoModelDto'];
+export type PageDtoModeratedBookmarkDto = components['schemas']['PageDtoModeratedBookmarkDto'];
 export type PageDtoOrganizationCatalogItemDto = components['schemas']['PageDtoOrganizationCatalogItemDto'];
 export type PageDtoPluginDto = components['schemas']['PageDtoPluginDto'];
+export type PageDtoPublicBookmarkSummaryDto = components['schemas']['PageDtoPublicBookmarkSummaryDto'];
 export type PageDtoSchemaCatalogItemDto = components['schemas']['PageDtoSchemaCatalogItemDto'];
 export type PermissionDto = components['schemas']['PermissionDto'];
 export type PermissionGroupDto = components['schemas']['PermissionGroupDto'];
@@ -2327,6 +2652,14 @@ export type PredictionResultFeedbackDto = components['schemas']['PredictionResul
 export type PredictionRunCatalogItemDto = components['schemas']['PredictionRunCatalogItemDto'];
 export type PredictionRunDto = components['schemas']['PredictionRunDto'];
 export type PredictionRunSequenceDto = components['schemas']['PredictionRunSequenceDto'];
+export type PublicBookmarkDto = components['schemas']['PublicBookmarkDto'];
+export type PublicBookmarkExampleDto = components['schemas']['PublicBookmarkExampleDto'];
+export type PublicBookmarkSummaryDto = components['schemas']['PublicBookmarkSummaryDto'];
+export type PublicPredictionDto = components['schemas']['PublicPredictionDto'];
+export type PublicPredictionReportDto = components['schemas']['PublicPredictionReportDto'];
+export type PublicPredictionRequest = components['schemas']['PublicPredictionRequest'];
+export type PublicRunLimitDto = components['schemas']['PublicRunLimitDto'];
+export type PublicRunQuotaDto = components['schemas']['PublicRunQuotaDto'];
 export type PublishSchemaDraftRequest = components['schemas']['PublishSchemaDraftRequest'];
 export type RoleActionsDto = components['schemas']['RoleActionsDto'];
 export type RoleDefinitionDto = components['schemas']['RoleDefinitionDto'];
@@ -2335,6 +2668,7 @@ export type RoleSummaryDto = components['schemas']['RoleSummaryDto'];
 export type RoleTemplateDto = components['schemas']['RoleTemplateDto'];
 export type RolesResponseDto = components['schemas']['RolesResponseDto'];
 export type SchemaBookmarkDto = components['schemas']['SchemaBookmarkDto'];
+export type SchemaBookmarkExampleDto = components['schemas']['SchemaBookmarkExampleDto'];
 export type SchemaCatalogItemDto = components['schemas']['SchemaCatalogItemDto'];
 export type SchemaDraftChangeDto = components['schemas']['SchemaDraftChangeDto'];
 export type SchemaDraftDiffDto = components['schemas']['SchemaDraftDiffDto'];
@@ -2366,6 +2700,7 @@ export type UpdateOrganizationMembershipRoleRequest = components['schemas']['Upd
 export type UpdateOrganizationRequest = components['schemas']['UpdateOrganizationRequest'];
 export type UpdatePredictionResultFeedbackRequest = components['schemas']['UpdatePredictionResultFeedbackRequest'];
 export type UpdateRoleRequest = components['schemas']['UpdateRoleRequest'];
+export type UpdateSchemaBookmarkRequest = components['schemas']['UpdateSchemaBookmarkRequest'];
 export type UpdateSchemaDraftRequest = components['schemas']['UpdateSchemaDraftRequest'];
 export type UserDto = components['schemas']['UserDto'];
 export type WorkspaceContextDto = components['schemas']['WorkspaceContextDto'];
@@ -2485,6 +2820,53 @@ export interface operations {
             };
         };
     };
+    list_11: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoModeratedBookmarkDto"];
+                };
+            };
+        };
+    };
+    unpublish_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaBookmarkDto"];
+                };
+            };
+        };
+    };
     list_6: {
         parameters: {
             query?: {
@@ -2555,7 +2937,7 @@ export interface operations {
             };
         };
     };
-    update_3: {
+    update_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -3220,7 +3602,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -3547,7 +3929,7 @@ export interface operations {
             };
         };
     };
-    update_2: {
+    update_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -3700,7 +4082,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -3786,7 +4168,7 @@ export interface operations {
             };
         };
     };
-    update_1: {
+    update_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -3892,7 +4274,7 @@ export interface operations {
             };
         };
     };
-    get_4: {
+    get_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -3956,6 +4338,123 @@ export interface operations {
             };
         };
     };
+    list_8: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoPublicBookmarkSummaryDto"];
+                };
+            };
+        };
+    };
+    get_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicBookmarkDto"];
+                };
+            };
+        };
+    };
+    examples: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicBookmarkExampleDto"][];
+                };
+            };
+        };
+    };
+    runPrediction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicPredictionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicPredictionDto"];
+                };
+            };
+        };
+    };
+    quota: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRunQuotaDto"];
+                };
+            };
+        };
+    };
     readiness: {
         parameters: {
             query?: never;
@@ -3996,6 +4495,28 @@ export interface operations {
             };
         };
     };
+    getByPublicId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaBookmarkDto"];
+                };
+            };
+        };
+    };
     get_1: {
         parameters: {
             query?: never;
@@ -4032,6 +4553,120 @@ export interface operations {
                 "application/json": components["schemas"]["MoveSchemaBookmarkRequest"];
             };
         };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaBookmarkDto"];
+                };
+            };
+        };
+    };
+    update_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSchemaBookmarkRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaBookmarkDto"];
+                };
+            };
+        };
+    };
+    list_7: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaBookmarkExampleDto"][];
+                };
+            };
+        };
+    };
+    mark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+                runId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaBookmarkExampleDto"];
+                };
+            };
+        };
+    };
+    unmark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+                runId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    publish_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {
@@ -4088,6 +4723,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PredictionRunDto"];
+                };
+            };
+        };
+    };
+    unpublish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaBookmarkDto"];
                 };
             };
         };

@@ -539,8 +539,17 @@
       },
       "CreateSchemaBookmarkRequest": {
         "properties": {
+          "description": {
+            "maxLength": 800,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "name": {
-            "minLength": 1,
+            "maxLength": 180,
+            "minLength": 0,
             "type": "string"
           },
           "versionId": {
@@ -1025,6 +1034,55 @@
         ],
         "type": "object"
       },
+      "ModeratedBookmarkDto": {
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "organizationName": {
+            "type": "string"
+          },
+          "publicId": {
+            "type": "string"
+          },
+          "schemaArchived": {
+            "type": "boolean"
+          },
+          "schemaName": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "versionName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "organizationName",
+          "publicId",
+          "schemaArchived",
+          "schemaName",
+          "updatedAt",
+          "version",
+          "versionName"
+        ],
+        "type": "object"
+      },
       "MoveSchemaBookmarkRequest": {
         "properties": {
           "versionId": {
@@ -1414,6 +1472,39 @@
         ],
         "type": "object"
       },
+      "PageDtoModeratedBookmarkDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ModeratedBookmarkDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
       "PageDtoOrganizationCatalogItemDto": {
         "properties": {
           "hasNext": {
@@ -1455,6 +1546,39 @@
           "items": {
             "items": {
               "$ref": "#/components/schemas/PluginDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoPublicBookmarkSummaryDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PublicBookmarkSummaryDto"
             },
             "type": "array"
           },
@@ -1540,6 +1664,7 @@
               "DELETE_MODELS",
               "RUN_PREDICTIONS",
               "EXPORT_PREDICTIONS",
+              "PUBLISH_BOOKMARKS",
               "REVIEW",
               "MANAGE_REVIEWS",
               "VIEW_PLUGINS",
@@ -2085,6 +2210,231 @@
         ],
         "type": "object"
       },
+      "PublicBookmarkDto": {
+        "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "formSchema": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "inputCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "organizationName": {
+            "type": "string"
+          },
+          "publicId": {
+            "type": "string"
+          },
+          "reportCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "description",
+          "formSchema",
+          "inputCount",
+          "name",
+          "organizationName",
+          "publicId",
+          "reportCount",
+          "updatedAt",
+          "version"
+        ],
+        "type": "object"
+      },
+      "PublicBookmarkExampleDto": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "inputs": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "inputs",
+          "name"
+        ],
+        "type": "object"
+      },
+      "PublicBookmarkSummaryDto": {
+        "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "inputCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "organizationName": {
+            "type": "string"
+          },
+          "publicId": {
+            "type": "string"
+          },
+          "reportCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "description",
+          "inputCount",
+          "name",
+          "organizationName",
+          "publicId",
+          "reportCount",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "PublicPredictionDto": {
+        "properties": {
+          "quota": {
+            "$ref": "#/components/schemas/PublicRunQuotaDto"
+          },
+          "reports": {
+            "items": {
+              "$ref": "#/components/schemas/PublicPredictionReportDto"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "quota",
+          "reports"
+        ],
+        "type": "object"
+      },
+      "PublicPredictionReportDto": {
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": { },
+            "type": "object"
+          }
+        },
+        "required": [
+          "key",
+          "payload"
+        ],
+        "type": "object"
+      },
+      "PublicPredictionRequest": {
+        "properties": {
+          "values": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "version": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "values",
+          "version"
+        ],
+        "type": "object"
+      },
+      "PublicRunLimitDto": {
+        "properties": {
+          "code": {
+            "enum": [
+              "ANONYMOUS_RUN_LIMIT_REACHED",
+              "SIGNED_IN_RUN_LIMIT_REACHED"
+            ],
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "quota": {
+            "$ref": "#/components/schemas/PublicRunQuotaDto"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "path",
+          "quota",
+          "status",
+          "timestamp"
+        ],
+        "type": "object"
+      },
+      "PublicRunQuotaDto": {
+        "properties": {
+          "limit": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "remaining": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "resetsAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "limit",
+          "remaining",
+          "resetsAt"
+        ],
+        "type": "object"
+      },
       "PublishSchemaDraftRequest": {
         "properties": {
           "expectedDraftRevision": {
@@ -2285,6 +2635,7 @@
                 "DELETE_MODELS",
                 "RUN_PREDICTIONS",
                 "EXPORT_PREDICTIONS",
+                "PUBLISH_BOOKMARKS",
                 "REVIEW",
                 "MANAGE_REVIEWS",
                 "VIEW_PLUGINS",
@@ -2351,6 +2702,16 @@
             "format": "date-time",
             "type": "string"
           },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "exampleCount": {
+            "format": "int64",
+            "type": "integer"
+          },
           "id": {
             "format": "int64",
             "type": "integer"
@@ -2358,12 +2719,22 @@
           "name": {
             "type": "string"
           },
+          "publicId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "schemaId": {
             "format": "int64",
             "type": "integer"
           },
           "schemaName": {
             "type": "string"
+          },
+          "staleExampleCount": {
+            "format": "int64",
+            "type": "integer"
           },
           "updatedAt": {
             "format": "date-time",
@@ -2382,18 +2753,67 @@
               "string",
               "null"
             ]
+          },
+          "visibility": {
+            "enum": [
+              "PRIVATE",
+              "PUBLIC"
+            ],
+            "type": "string"
           }
         },
         "required": [
           "createdAt",
+          "description",
+          "exampleCount",
           "id",
           "name",
+          "publicId",
           "schemaId",
           "schemaName",
+          "staleExampleCount",
           "updatedAt",
           "version",
           "versionId",
-          "versionName"
+          "versionName",
+          "visibility"
+        ],
+        "type": "object"
+      },
+      "SchemaBookmarkExampleDto": {
+        "properties": {
+          "runId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "runName": {
+            "type": "string"
+          },
+          "runVersion": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "runVersionName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "enum": [
+              "SERVED",
+              "BOOKMARK_PRIVATE",
+              "BOOKMARK_MOVED"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "runId",
+          "runName",
+          "runVersion",
+          "runVersionName",
+          "status"
         ],
         "type": "object"
       },
@@ -3311,6 +3731,27 @@
         ],
         "type": "object"
       },
+      "UpdateSchemaBookmarkRequest": {
+        "properties": {
+          "description": {
+            "maxLength": 800,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "maxLength": 180,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
       "UpdateSchemaDraftRequest": {
         "properties": {
           "bindings": {
@@ -3462,6 +3903,9 @@
           "canManageReviews": {
             "type": "boolean"
           },
+          "canPublishBookmarks": {
+            "type": "boolean"
+          },
           "canRemoveMembers": {
             "type": "boolean"
           },
@@ -3505,6 +3949,7 @@
           "canManageMemberRoles",
           "canManagePlugins",
           "canManageReviews",
+          "canPublishBookmarks",
           "canRemoveMembers",
           "canReview",
           "canRunPredictions",
@@ -3699,6 +4144,97 @@
         ]
       }
     },
+    "/api/admin/public-bookmarks": {
+      "get": {
+        "operationId": "list_11",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 8,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "default": "",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "updated",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoModeratedBookmarkDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-bookmark-moderation-controller"
+        ]
+      }
+    },
+    "/api/admin/public-bookmarks/{bookmarkId}/unpublish": {
+      "post": {
+        "operationId": "unpublish_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaBookmarkDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-bookmark-moderation-controller"
+        ]
+      }
+    },
     "/api/admin/users": {
       "get": {
         "operationId": "list_6",
@@ -3820,7 +4356,7 @@
         ]
       },
       "patch": {
-        "operationId": "update_3",
+        "operationId": "update_4",
         "parameters": [
           {
             "in": "path",
@@ -4838,7 +5374,7 @@
     },
     "/api/organizations/{organizationId}/audit-events": {
       "get": {
-        "operationId": "list_8",
+        "operationId": "list_10",
         "parameters": [
           {
             "in": "path",
@@ -5352,7 +5888,7 @@
         ]
       },
       "patch": {
-        "operationId": "update_2",
+        "operationId": "update_3",
         "parameters": [
           {
             "in": "path",
@@ -5619,7 +6155,7 @@
     },
     "/api/plugins/runtime": {
       "get": {
-        "operationId": "list_7",
+        "operationId": "list_9",
         "responses": {
           "200": {
             "content": {
@@ -5694,7 +6230,7 @@
         ]
       },
       "patch": {
-        "operationId": "update_1",
+        "operationId": "update_2",
         "requestBody": {
           "content": {
             "application/json": {
@@ -5874,7 +6410,7 @@
         ]
       },
       "get": {
-        "operationId": "get_4",
+        "operationId": "get_5",
         "parameters": [
           {
             "in": "path",
@@ -5934,6 +6470,199 @@
         ]
       }
     },
+    "/api/public/bookmarks": {
+      "get": {
+        "operationId": "list_8",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "default": "",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "updated",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoPublicBookmarkSummaryDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-bookmark-controller"
+        ]
+      }
+    },
+    "/api/public/bookmarks/{publicId}": {
+      "get": {
+        "operationId": "get_4",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publicId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicBookmarkDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-bookmark-controller"
+        ]
+      }
+    },
+    "/api/public/bookmarks/{publicId}/examples": {
+      "get": {
+        "operationId": "examples",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publicId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PublicBookmarkExampleDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-bookmark-controller"
+        ]
+      }
+    },
+    "/api/public/bookmarks/{publicId}/predictions": {
+      "post": {
+        "operationId": "runPrediction",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publicId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicPredictionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPredictionDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-bookmark-controller"
+        ]
+      }
+    },
+    "/api/public/bookmarks/{publicId}/quota": {
+      "get": {
+        "operationId": "quota",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publicId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRunQuotaDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-bookmark-controller"
+        ]
+      }
+    },
     "/api/readiness": {
       "get": {
         "operationId": "readiness",
@@ -5977,6 +6706,36 @@
         ]
       }
     },
+    "/api/schema-bookmarks/public/{publicId}": {
+      "get": {
+        "operationId": "getByPublicId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publicId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaBookmarkDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-controller"
+        ]
+      }
+    },
     "/api/schema-bookmarks/{bookmarkId}": {
       "get": {
         "operationId": "get_1",
@@ -5991,6 +6750,45 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaBookmarkDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-controller"
+        ]
+      },
+      "patch": {
+        "operationId": "update_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSchemaBookmarkRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
@@ -6030,6 +6828,142 @@
           },
           "required": true
         },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaBookmarkDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks/{bookmarkId}/examples": {
+      "get": {
+        "operationId": "list_7",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SchemaBookmarkExampleDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-example-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks/{bookmarkId}/examples/{runId}": {
+      "delete": {
+        "operationId": "unmark",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "runId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-example-controller"
+        ]
+      },
+      "put": {
+        "operationId": "mark",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "runId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaBookmarkExampleDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-example-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks/{bookmarkId}/publish": {
+      "post": {
+        "operationId": "publish_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -6117,6 +7051,37 @@
         },
         "tags": [
           "prediction-run-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks/{bookmarkId}/unpublish": {
+      "post": {
+        "operationId": "unpublish",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaBookmarkDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-controller"
         ]
       }
     },

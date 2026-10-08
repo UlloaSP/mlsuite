@@ -13,7 +13,6 @@ export const protectedPages: RouteObject[] = [
   page("home", () =>
     import("@/app/pages/authenticated-home-page").then((m) => m.AuthenticatedHomePage),
   ),
-  page("welcome", () => import("@/app/pages/welcome-page").then((m) => m.WelcomePage)),
   page("profile", () => import("@/features/user/pages/profilePage").then((m) => m.ProfilePage)),
   page("settings", () => import("@/features/user/pages/SettingsPage").then((m) => m.SettingsPage)),
   page("notifications", () =>
@@ -58,6 +57,11 @@ export const protectedPages: RouteObject[] = [
     ),
     page("admin/users/create", () =>
       import("@/features/admin/pages/create-admin-user-page").then((m) => m.CreateAdminUserPage),
+    ),
+    page("admin/public-bookmarks", () =>
+      import("@/features/admin/pages/admin-public-bookmarks-page").then(
+        (m) => m.AdminPublicBookmarksPage,
+      ),
     ),
     page("admin/infrastructure", () =>
       import("@/features/infrastructure/pages/admin-infrastructure-page").then(

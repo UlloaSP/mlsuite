@@ -7,12 +7,13 @@ import { useMemo, type ReactNode } from "react";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { BreadcrumbProvider } from "@/shared/ui/breadcrumb/BreadcrumbProvider";
+import { EXPLORE_BREADCRUMB_ROOT } from "./explore-navigation";
 import { OrganizationMenuContent } from "./OrganizationMenuContent";
 import { sidebarMenuContent } from "./sidebar-menu-styles";
 
 /**
  * Every page trail starts at who the page belongs to: the current organization
- * (with its switcher), your account, or the platform administration.
+ * (with its switcher), your account, the platform administration, or the public feed.
  */
 export function AppBreadcrumbRoots({ children }: { children: ReactNode }) {
   const { data: context } = useWorkspaceContext();
@@ -37,6 +38,7 @@ export function AppBreadcrumbRoots({ children }: { children: ReactNode }) {
         : undefined,
       account: { label: user?.fullName ?? "Account", to: "/profile" },
       platform: { label: "Administration", to: "/workspace/organizations" },
+      public: EXPLORE_BREADCRUMB_ROOT,
     }),
     [context, user?.fullName],
   );

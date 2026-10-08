@@ -98,6 +98,11 @@ const bookmark = (id: number, name: string, schemaName: string): SchemaBookmarkD
   version: 1,
   versionName: "Snapshot 1",
   name,
+  description: null,
+  visibility: "PRIVATE",
+  publicId: null,
+  exampleCount: 0,
+  staleExampleCount: 0,
   createdAt: "2026-09-24T12:00:00Z",
   updatedAt: "2026-09-24T12:00:00Z",
 });

@@ -26,7 +26,7 @@ import {
 import { getPredictionDesignSystem } from "@/capabilities/prediction-runtime/mlform/headless-prediction";
 import { useSchemaPluginCatalog } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { MLFORM_SPLIT_CONTAINER_CLASS } from "@/features/schemas/lib/mlform-split-layout";
+import { MLFORM_SPLIT_CONTAINER_CLASS } from "@/capabilities/prediction-runtime/mlform/split-layout";
 
 type Props = {
   schema: unknown;
