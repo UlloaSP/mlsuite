@@ -16,12 +16,17 @@ import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { createLocalQuestionnaireTransport } from "@/capabilities/prediction-runtime/feedback/local-questionnaire-transport";
 import {
   getQuestionnaireValues,
-  submissionValues,
   submitQuestionnaire,
   toQuestionnaireSchema,
 } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
 import { getPredictionDesignSystem } from "@/capabilities/prediction-runtime/mlform/headless-prediction";
 import { withSeriesColumns } from "@/capabilities/prediction-runtime/mlform/series-schema";
+import { createMlSuiteRegistry } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
+import {
+  connectStoredStatusConditions,
+  withStoredStatusConditions,
+} from "@/capabilities/prediction-runtime/mlform/stored-status-conditions";
+import { attachQuestionnaireSubmission } from "./questionnaire-submission";
 
 export type ReportQuestionnaireMountHandle = {
   submit(): Promise<Record<string, unknown>>;
@@ -110,14 +115,13 @@ const mountQuestionnaireHost = ({
 }: MountQuestionnaireHostOptions): (() => void) => {
   try {
     const mounted = mountForm(container, {
-      schema: withSeriesColumns(buildQuestionnaireFormSchema(effectiveSchema)),
+      schema: withStoredStatusConditions(
+        withSeriesColumns(buildQuestionnaireFormSchema(effectiveSchema)),
+      ),
+      registry: createMlSuiteRegistry(),
       layout: buildQuestionnaireWizardLayout(effectiveSchema),
       transport: transport ?? createLocalQuestionnaireTransport(),
       initialValues,
-      hooks: {
-        beforeSubmit: () => onSubmittingChange?.(true),
-        onSubmitError: () => onSubmittingChange?.(false),
-      },
       designSystem: getPredictionDesignSystem(theme),
       labels: {
         submit: labels?.submit ?? (editable ? "Check answers" : "Reviewed"),
@@ -126,24 +130,8 @@ const mountQuestionnaireHost = ({
       reportPane: "hidden",
     });
 
-    // Both kit actions and imperative submits finish before a callback can unmount the runtime.
-    const submit = mounted.form.submit.bind(mounted.form);
-    mounted.form.submit = async (options) => {
-      const result = await submit(options);
-      try {
-        await onSubmitted?.(submissionValues(result.inputs));
-        return result;
-      } catch (error) {
-        if (mounted.form.state.lifecycle === "active") {
-          mounted.form.setExternalErrors({
-            form: [error instanceof Error ? error.message : String(error)],
-          });
-        }
-        throw error;
-      } finally {
-        onSubmittingChange?.(false);
-      }
-    };
+    connectStoredStatusConditions(mounted.form);
+    attachQuestionnaireSubmission(mounted, onSubmitted, onSubmittingChange);
 
     if (mode === "embedded") {
       const style = document.createElement("style");

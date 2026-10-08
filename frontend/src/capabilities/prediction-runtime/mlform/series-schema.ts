@@ -41,8 +41,16 @@ export const withSeriesColumns = <T>(schema: T): T => {
       return {
         ...config,
         columns: [
-          { ...field1, id: "field1" },
-          { ...field2, id: "field2" },
+          {
+            ...field1,
+            id: "field1",
+            ...(field1.kind === "date" ? { dateSerialization: "date-only" } : {}),
+          },
+          {
+            ...field2,
+            id: "field2",
+            ...(field2.kind === "date" ? { dateSerialization: "date-only" } : {}),
+          },
         ],
         ...(field.defaultValue === undefined
           ? {}

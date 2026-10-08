@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { mountForm } from "mlform/kit";
+import { connectStoredStatusConditions } from "./stored-status-conditions";
 import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
 import type { AfterSubmitContext, SubmitErrorContext } from "mlform/runtime";
 import { normalizeSchema, type ReportContext } from "mlform/schema";
@@ -120,6 +121,7 @@ export const mountSchemaRunForm = ({
     designSystem: getPredictionDesignSystem(theme),
   });
   const form = mounted;
+  connectStoredStatusConditions(form.form);
   hideRunTabTitles(form.host);
   const unsubscribe = form.form.subscribe(completeWhenSettled);
   return {

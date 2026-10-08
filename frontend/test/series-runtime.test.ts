@@ -8,6 +8,7 @@ import {
 } from "@/features/schemas/lib/bulk-upload";
 import { parseCsvPredictionFile } from "@/capabilities/prediction-runtime/data/parse-csv-prediction-file";
 import { schemaVersion } from "./support/api-fixtures";
+import { withSeriesColumns } from "@/capabilities/prediction-runtime/mlform/series-schema";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -28,6 +29,63 @@ const points = [
 ];
 
 describe("series runtime contract", () => {
+  test.each(["stored pair", "saved converted pair", "new columns"])(
+    "%s dates keep their declared model serialization",
+    async (format) => {
+      const legacy = {
+        ...pair,
+        field1: { kind: "date", label: "Date" },
+        defaultValue: [
+          ["2025-01-02T15:00:00.000Z", 2],
+          [null, 4],
+        ],
+      };
+      const converted = withSeriesColumns({ fields: [legacy], reports: [] });
+      const schema =
+        format === "stored pair"
+          ? { fields: [legacy], reports: [] }
+          : format === "saved converted pair"
+            ? converted
+            : {
+                fields: [
+                  {
+                    ...pair,
+                    columns: [
+                      { id: "date", kind: "date", label: "Date" },
+                      { id: "value", kind: "number", label: "Value" },
+                    ],
+                    defaultValue: [{ date: "2025-01-02T15:00:00.000Z", value: 2 }],
+                  },
+                ],
+                reports: [],
+              };
+      const runtime = createSchemaRunRuntime({ schema, bindings: [] });
+      const form = createForm({
+        schema: runtime.formSchema,
+        registry: runtime.registry,
+        transport: { submit: async () => ({ reports: [] }) },
+      });
+      const result = await form.submit();
+      const expected =
+        format === "new columns"
+          ? [{ date: "2025-01-02T15:00:00.000Z", value: 2 }]
+          : [
+              { field1: "2025-01-02", field2: 2 },
+              { field1: null, field2: 4 },
+            ];
+      expect(result.modelValues).toEqual({ history: expected });
+      const displayed =
+        format === "new columns"
+          ? [{ date: new Date("2025-01-02T15:00:00.000Z"), value: 2 }]
+          : [
+              { field1: new Date("2025-01-02T15:00:00.000Z"), field2: 2 },
+              { field1: null, field2: 4 },
+            ];
+      expect(result.displayValues).toEqual({ History: displayed });
+      expect(result.inputs[0].serializedValue).toEqual(expected);
+      form.dispose();
+    },
+  );
   test.each(
     [
       points,

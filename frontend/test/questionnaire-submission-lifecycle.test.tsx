@@ -161,3 +161,55 @@ test("reports completion callback errors and allows another submission", async (
   });
   expect(statuses).toEqual([true, false, true, false]);
 });
+
+test("keeps one feedback save and a busy host until its completion callback settles", async () => {
+  const ref = createRef<ReportQuestionnaireMountHandle>();
+  const statuses: boolean[] = [];
+  let finish!: () => void;
+  const saved = vi.fn(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const submit = vi.fn(async () => ({ raw: {}, reports: [] }));
+  const { host } = await mountSettled(
+    <ReportQuestionnaireMount
+      ref={ref}
+      schema={schema}
+      initialValues={{ answer: "Reviewed" }}
+      editable
+      theme="light"
+      mode="standalone"
+      transport={{ submit }}
+      onSubmitted={saved}
+      onSubmittingChange={(value) => statuses.push(value)}
+    />,
+  );
+  let first!: Promise<Record<string, unknown>>;
+  let second!: Promise<Record<string, unknown>>;
+  await act(async () => {
+    first = ref.current!.submit();
+    await flush();
+  });
+  const wizard = host.querySelector<HTMLElement & { view: FormViewController }>("mlf-kit-wizard")!;
+  expect(wizard.view.form.state.operation).toBe("idle");
+  expect(wizard.inert).toBe(true);
+  expect(wizard.getAttribute("aria-busy")).toBe("true");
+  await act(async () => {
+    wizard.shadowRoot?.querySelector<HTMLButtonElement>(".btn-submit")?.click();
+    second = ref.current!.submit();
+    await flush();
+  });
+  expect(submit).toHaveBeenCalledTimes(1);
+  expect(saved).toHaveBeenCalledTimes(1);
+  expect(statuses).toEqual([true]);
+  await act(async () => {
+    finish();
+    await expect(first).resolves.toEqual({ answer: "Reviewed" });
+    await expect(second).resolves.toEqual({ answer: "Reviewed" });
+  });
+  expect(statuses).toEqual([true, false]);
+  expect(wizard.inert).toBe(false);
+  expect(wizard.hasAttribute("aria-busy")).toBe(false);
+});

@@ -18,6 +18,8 @@ import { AppPanel } from "@/shared/ui/AppPanel";
 import { cx } from "@/shared/ui/cx";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { toMlformSchema } from "@/capabilities/prediction-runtime/mlform/schema-validation";
+import { createMlSuiteRegistry } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
+import { connectStoredStatusConditions } from "@/capabilities/prediction-runtime/mlform/stored-status-conditions";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 import {
   createSchemaPreviewTransport,
@@ -80,6 +82,7 @@ export function SchemaFormPreview({ schema }: Props) {
     try {
       mountedRef.current = mountForm(containerRef.current, {
         schema: resolvedSchema.schema,
+        registry: createMlSuiteRegistry(),
         plugins: [
           defineMLFormPlugin({
             fields: catalog.data.fieldDefinitions.map((item) => item.definition),
@@ -100,6 +103,7 @@ export function SchemaFormPreview({ schema }: Props) {
         },
         designSystem: getPredictionDesignSystem(initialTheme),
       });
+      connectStoredStatusConditions(mountedRef.current.form);
     } catch (error) {
       mountedRef.current = null;
       setMountError(error instanceof Error ? error.message : String(error));

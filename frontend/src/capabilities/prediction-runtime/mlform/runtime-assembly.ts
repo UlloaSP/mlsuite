@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { createBuiltinMlRegistry } from "mlform/builtins";
+import { createMlSuiteRegistry } from "./builtin-registry";
 import { createBuiltinDescriptorRegistry } from "mlform/view";
 import type { PrimitiveDescriptorRegistry } from "mlform/primitives";
 import type { FormSchema, Registry, Transport } from "mlform/runtime";
@@ -42,7 +42,7 @@ const createRegistry = (
   reports: readonly CatalogReportDefinition[],
 ) => {
   const pack = {
-    registry: createBuiltinMlRegistry(),
+    registry: createMlSuiteRegistry(),
     descriptorRegistry: createBuiltinDescriptorRegistry(),
   };
   fields.forEach((definition) =>
