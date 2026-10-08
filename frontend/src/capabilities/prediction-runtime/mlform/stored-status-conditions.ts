@@ -106,38 +106,23 @@ export const connectStoredStatusConditions = (form: FormController): void => {
   const setStatus = (status: Status, operation = "idle") => {
     for (const tracker of active) Object.assign(tracker, { status, operation });
   };
-  const editing = <T>(action: () => T): T => {
-    const previous = [...active].map((tracker) => ({
-      tracker,
-      status: tracker.status,
-      operation: tracker.operation,
-    }));
+  const setValues = form.setValues.bind(form);
+  const editing = (action: () => void): void => {
+    action();
     setStatus("editing");
-    try {
-      return action();
-    } catch (error) {
-      for (const item of previous)
-        Object.assign(item.tracker, { status: item.status, operation: item.operation });
-      throw error;
-    }
+    // Refresh flags after native preparation so a field can accept its first edit before locking.
+    setValues({});
   };
   for (const field of form.fields) {
     const setValue = field.setValue.bind(field);
-    field.setValue = (value) => {
-      const { visible, disabled, readOnly } = field.state;
-      return visible && !disabled && !readOnly ? editing(() => setValue(value)) : setValue(value);
-    };
+    field.setValue = (value) => editing(() => setValue(value));
     const blur = field.blur.bind(field);
-    field.blur = () => editing(blur);
+    field.blur = () => {
+      blur();
+      setStatus("editing");
+    };
   }
-  const setValues = form.setValues.bind(form);
-  form.setValues = (values) => {
-    const blocked = Object.keys(values).some((id) => {
-      const state = form.getField(id)?.state;
-      return !state || !state.visible || state.disabled || state.readOnly;
-    });
-    return blocked ? setValues(values) : editing(() => setValues(values));
-  };
+  form.setValues = (values) => editing(() => setValues(values));
   const reset = form.reset.bind(form);
   form.reset = () => {
     setStatus("idle");

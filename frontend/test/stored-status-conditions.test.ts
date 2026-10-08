@@ -22,6 +22,34 @@ const create = (schema: unknown, options: Partial<Parameters<typeof createForm>[
 };
 
 describe("stored form-status conditions", () => {
+  test.each([
+    ["disabledWhen", "field"],
+    ["hiddenWhen", "field"],
+    ["readOnlyWhen", "field"],
+    ["disabledWhen", "form"],
+    ["hiddenWhen", "form"],
+    ["readOnlyWhen", "form"],
+  ])("%s permits the first %s edit before locking that field", (key, target) => {
+    const form = create({
+      fields: [{ ...field, [key]: stored("editing") }],
+      reports: [],
+    });
+    const input = form.getField("value")!;
+    const change = (value: number) =>
+      target === "field" ? input.setValue(value) : form.setValues({ value });
+    expect(input.state).toMatchObject({ visible: true, disabled: false, readOnly: false });
+    change(2);
+    expect(input.state.value).toBe(2);
+    const flag =
+      key === "hiddenWhen" ? "visible" : key === "disabledWhen" ? "disabled" : "readOnly";
+    expect(input.state[flag]).toBe(key !== "hiddenWhen");
+    expect(() => change(3)).toThrow();
+    expect(input.state.value).toBe(2);
+    form.reset();
+    change(4);
+    expect(input.state.value).toBe(4);
+    form.dispose();
+  });
   test("isolates mounted conditions from later changes to their source schema", () => {
     const condition = stored("success");
     const form = create({
@@ -128,6 +156,7 @@ describe("stored form-status conditions", () => {
     await form.submit();
     expect(form.getField("success")!.state.readOnly).toBe(true);
     expect(() => form.getField("success")!.setValue(2)).toThrow("read-only");
+    expect(form.getField("success")!.state.readOnly).toBe(true);
     form.setValues({ value: 2 });
     expect(form.getField("success")!.state.readOnly).toBe(false);
     expect(form.state.submissionStatus).toBe("succeeded");
