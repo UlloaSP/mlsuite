@@ -30,10 +30,12 @@ const bookmark: PublicBookmarkDto = {
   publicId: PUBLIC_ID,
   name: "production",
   description: null,
+  publicationNote: null,
   version: 2,
   inputCount: 1,
   reportCount: 1,
   organizationName: "Acme Health",
+  organizationLogoUrl: null,
   formSchema: {
     fields: [{ kind: "number", label: "Age", mappedTo: "in0", defaultValue: 52 }],
     reports: [{ kind: "classifier", label: "Risk", id: "out0", mappedTo: "out0" }],

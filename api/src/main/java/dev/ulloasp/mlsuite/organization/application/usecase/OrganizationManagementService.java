@@ -71,7 +71,6 @@ public class OrganizationManagementService implements OrganizationManagementUseC
                 slug,
                 request.name().strip(),
                 request.description(),
-                owner.getAvatarUrl(),
                 actor));
         organization.setUpdatedBy(actor);
         roleSeedService.ensureOrganizationRoles(organization);

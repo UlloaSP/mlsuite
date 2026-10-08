@@ -41,7 +41,9 @@ const buildInit = (init?: RequestInit): RequestInit => ({
   ...init,
   headers: new Headers(init?.headers),
 });
-const toUrl = (path: string) => new URL(path, getBackendBaseUrl()).toString();
+/** An API path as a browser can fetch it, for `src` and `href` attributes. */
+export const apiUrl = (path: string) => new URL(path, getBackendBaseUrl()).toString();
+const toUrl = apiUrl;
 const isJson = (response: Response) =>
   response.headers.get("content-type")?.includes("application/json") ?? false;
 const nowIso = () => new Date().toISOString();

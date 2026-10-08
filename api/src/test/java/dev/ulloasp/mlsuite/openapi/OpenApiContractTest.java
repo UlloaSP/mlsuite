@@ -39,6 +39,7 @@ import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCreationUseCase;
 import dev.ulloasp.mlsuite.organization.application.port.in.OrganizationManagementUseCase;
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationCatalogService;
+import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationLogoService;
 import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginRuntimeSourcesUseCase;
 import dev.ulloasp.mlsuite.plugin.application.port.in.PluginCatalogUseCase;
 import dev.ulloasp.mlsuite.role.application.port.in.RoleCatalogUseCase;
@@ -84,7 +85,8 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
         AdminUserService.class, AnalyzerUseCase.class, AuditLogUseCase.class, AuthService.class,
         AuthenticationManager.class, GetCurrentUserProfileUseCase.class, InfrastructureService.class,
         InvitationManagementUseCase.class, ListPluginRuntimeSourcesUseCase.class, ModelCatalogUseCase.class,
-        ModelCreationUseCase.class, OrganizationCatalogService.class, OrganizationManagementUseCase.class,
+        ModelCreationUseCase.class, OrganizationCatalogService.class, OrganizationLogoService.class,
+        OrganizationManagementUseCase.class,
         PluginCatalogUseCase.class, PredictBookmarkCatalogUseCase.class, PredictionResultFeedbackUseCase.class,
         PredictionResultRepository.class, PredictionRunUseCase.class, PublicBookmarkModerationService.class,
         PublicBookmarkUseCase.class, PublicPredictionUseCase.class, RoleCatalogUseCase.class,

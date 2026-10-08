@@ -119,13 +119,14 @@ class BookmarkPublishingHttpTest {
     @Test
     void anonymousVisitorsReadAPublishedBookmarkWithoutInternalFields() throws Exception {
         when(publicBookmarks.getPublishedBookmark(PUBLIC_ID)).thenReturn(new PublicBookmarkDto(
-                PUBLIC_ID, "production", "Estimates risk.", 1, 1, 0, "Org",
+                PUBLIC_ID, "production", "Estimates risk.", "Published in Lancet 2026, doi:10.1000/xyz.", 1, 1, 0,
+                "Org", "/api/public/organizations/3/logo?v=1",
                 Map.of("fields", List.of(Map.of("kind", "number", "label", "Age"))),
                 OffsetDateTime.parse("2026-10-01T10:00:00Z")));
 
         mockMvc.perform(get("/api/public/bookmarks/{publicId}", PUBLIC_ID))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(9))
+                .andExpect(jsonPath("$.length()").value(11))
                 .andExpect(jsonPath("$.publicId").value(PUBLIC_ID))
                 .andExpect(jsonPath("$.name").value("production"))
                 .andExpect(jsonPath("$.description").value("Estimates risk."))
@@ -133,6 +134,8 @@ class BookmarkPublishingHttpTest {
                 .andExpect(jsonPath("$.inputCount").value(1))
                 .andExpect(jsonPath("$.reportCount").value(0))
                 .andExpect(jsonPath("$.organizationName").value("Org"))
+                .andExpect(jsonPath("$.organizationLogoUrl").value("/api/public/organizations/3/logo?v=1"))
+                .andExpect(jsonPath("$.publicationNote").value("Published in Lancet 2026, doi:10.1000/xyz."))
                 .andExpect(jsonPath("$.formSchema.fields[0].label").value("Age"))
                 .andExpect(jsonPath("$.updatedAt").exists())
                 .andExpect(jsonPath("$.id").doesNotExist())

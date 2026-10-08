@@ -67,6 +67,7 @@ const CARDIO: PublicBookmarkSummaryDto = {
   inputCount: 16,
   reportCount: 2,
   organizationName: "Acme Health",
+  organizationLogoUrl: null,
   updatedAt: AT,
 };
 const CHURN: PublicBookmarkSummaryDto = {
@@ -76,6 +77,7 @@ const CHURN: PublicBookmarkSummaryDto = {
   inputCount: 1,
   reportCount: 1,
   organizationName: "Bob Other Personal",
+  organizationLogoUrl: null,
   updatedAt: AT,
 };
 
@@ -230,7 +232,12 @@ describe("public feed page", () => {
   });
 
   test("a bookmark page's trail leads back to the feed", async () => {
-    const bookmark: PublicBookmarkDto = { ...CARDIO, version: 2, formSchema: { fields: [] } };
+    const bookmark: PublicBookmarkDto = {
+      ...CARDIO,
+      publicationNote: null,
+      version: 2,
+      formSchema: { fields: [] },
+    };
     fetchMock.mockResolvedValue(json(bookmark));
     const host = await page(`/explore/${CARDIO.publicId}`);
     await settle();

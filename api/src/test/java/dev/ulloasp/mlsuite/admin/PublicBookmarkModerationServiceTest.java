@@ -192,7 +192,7 @@ class PublicBookmarkModerationServiceTest {
 
     private Organization organization(String name) {
         String slug = name.toLowerCase().replace(' ', '-');
-        Organization organization = new Organization(slug, name, null, null, user(slug + "-owner", SystemRole.USER));
+        Organization organization = new Organization(slug, name, null, user(slug + "-owner", SystemRole.USER));
         entityManager.persist(organization);
         return organization;
     }

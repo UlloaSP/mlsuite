@@ -103,7 +103,8 @@ class PublicBookmarkModerationHttpTest {
     @Test
     void aSuperadminListsPublicBookmarksWithWhatAModeratorNeeds() throws Exception {
         when(moderation.list(1, 2, "acme", "organization")).thenReturn(new PageDto<>(
-                List.of(new ModeratedBookmarkDto(BOOKMARK_ID, "production", "Risk", true, "Acme Health", 3, "Baseline",
+                List.of(new ModeratedBookmarkDto(BOOKMARK_ID, "production", "Risk", true, "Acme Health",
+                        "/api/public/organizations/3/logo?v=1", 3, "Baseline",
                         PUBLIC_ID, OffsetDateTime.parse("2026-10-01T10:00:00Z"))),
                 1, 2, 3, false));
 
@@ -113,12 +114,13 @@ class PublicBookmarkModerationHttpTest {
                 .andExpect(jsonPath("$.totalItems").value(3))
                 .andExpect(jsonPath("$.hasNext").value(false))
                 .andExpect(jsonPath("$.items.length()").value(1))
-                .andExpect(jsonPath("$.items[0].length()").value(9))
+                .andExpect(jsonPath("$.items[0].length()").value(10))
                 .andExpect(jsonPath("$.items[0].id").value(BOOKMARK_ID))
                 .andExpect(jsonPath("$.items[0].name").value("production"))
                 .andExpect(jsonPath("$.items[0].schemaName").value("Risk"))
                 .andExpect(jsonPath("$.items[0].schemaArchived").value(true))
                 .andExpect(jsonPath("$.items[0].organizationName").value("Acme Health"))
+                .andExpect(jsonPath("$.items[0].organizationLogoUrl").value("/api/public/organizations/3/logo?v=1"))
                 .andExpect(jsonPath("$.items[0].version").value(3))
                 .andExpect(jsonPath("$.items[0].versionName").value("Baseline"))
                 .andExpect(jsonPath("$.items[0].publicId").value(PUBLIC_ID))

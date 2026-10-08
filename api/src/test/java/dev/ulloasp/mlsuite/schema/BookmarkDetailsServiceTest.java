@@ -69,11 +69,11 @@ class BookmarkDetailsServiceTest {
         memberWith(PermissionKey.CREATE_MODELS);
 
         SchemaBookmark described = service.createBookmark(USER_ID, SCHEMA_ID,
-                new CreateSchemaBookmarkRequest(" staging ", VERSION_ID, "  Estimates risk.  "));
+                new CreateSchemaBookmarkRequest(" staging ", VERSION_ID, "  Estimates risk.  ", null));
         SchemaBookmark blank = service.createBookmark(USER_ID, SCHEMA_ID,
-                new CreateSchemaBookmarkRequest("canary", VERSION_ID, "   "));
+                new CreateSchemaBookmarkRequest("canary", VERSION_ID, "   ", null));
         SchemaBookmark bare = service.createBookmark(USER_ID, SCHEMA_ID,
-                new CreateSchemaBookmarkRequest("plain", VERSION_ID, null));
+                new CreateSchemaBookmarkRequest("plain", VERSION_ID, null, null));
 
         assertEquals("staging", described.getName());
         assertEquals("Estimates risk.", described.getDescription());
@@ -89,11 +89,11 @@ class BookmarkDetailsServiceTest {
         memberWith(PermissionKey.CREATE_MODELS);
         when(bookmarks.findBySchemaIdAndName(SCHEMA_ID, "production")).thenReturn(Optional.of(existing));
 
-        service.createBookmark(USER_ID, SCHEMA_ID, new CreateSchemaBookmarkRequest("production", VERSION_ID, null));
+        service.createBookmark(USER_ID, SCHEMA_ID, new CreateSchemaBookmarkRequest("production", VERSION_ID, null, null));
         assertEquals("Estimates risk.", existing.getDescription());
 
         assertSame(existing, service.createBookmark(USER_ID, SCHEMA_ID,
-                new CreateSchemaBookmarkRequest("production", VERSION_ID, "Estimates risk from two inputs.")));
+                new CreateSchemaBookmarkRequest("production", VERSION_ID, "Estimates risk from two inputs.", null)));
         assertEquals("Estimates risk from two inputs.", existing.getDescription());
     }
 
@@ -106,7 +106,7 @@ class BookmarkDetailsServiceTest {
         memberWith(PermissionKey.CREATE_MODELS);
 
         SchemaBookmark updated = service.updateBookmark(USER_ID, BOOKMARK_ID,
-                new UpdateSchemaBookmarkRequest("  cardio-screening ", " Screens for cardiovascular risk. "));
+                new UpdateSchemaBookmarkRequest("  cardio-screening ", " Screens for cardiovascular risk. ", null));
 
         assertSame(bookmark, updated);
         assertEquals("cardio-screening", bookmark.getName());
@@ -117,8 +117,30 @@ class BookmarkDetailsServiceTest {
         assertEquals(BookmarkVisibility.PUBLIC, bookmark.getVisibility());
         assertSame(pinned, bookmark.getVersion());
 
-        service.updateBookmark(USER_ID, BOOKMARK_ID, new UpdateSchemaBookmarkRequest("cardio-screening", "  "));
+        service.updateBookmark(USER_ID, BOOKMARK_ID, new UpdateSchemaBookmarkRequest("cardio-screening", "  ", null));
         assertNull(bookmark.getDescription());
+    }
+
+    @Test
+    void thePublicationNoteIsKeptOnSaveUnlessGivenAndReplacedOnUpdate() {
+        SchemaBookmark existing = stored(described());
+        existing.setPublicationNote("Published in Lancet 2026.");
+        snapshot();
+        memberWith(PermissionKey.CREATE_MODELS);
+        when(bookmarks.findBySchemaIdAndName(SCHEMA_ID, "production")).thenReturn(Optional.of(existing));
+
+        service.createBookmark(USER_ID, SCHEMA_ID, new CreateSchemaBookmarkRequest("production", VERSION_ID, null, " "));
+        assertEquals("Published in Lancet 2026.", existing.getPublicationNote());
+        service.createBookmark(USER_ID, SCHEMA_ID,
+                new CreateSchemaBookmarkRequest("production", VERSION_ID, null, " doi:10.1000/xyz "));
+        assertEquals("doi:10.1000/xyz", existing.getPublicationNote());
+
+        service.updateBookmark(USER_ID, BOOKMARK_ID, new UpdateSchemaBookmarkRequest("production", "Estimates risk.", null));
+        assertNull(existing.getPublicationNote());
+        assertEquals("Estimates risk.", existing.getDescription());
+        service.updateBookmark(USER_ID, BOOKMARK_ID,
+                new UpdateSchemaBookmarkRequest("production", "Estimates risk.", "Terms of use apply."));
+        assertEquals("Terms of use apply.", existing.getPublicationNote());
     }
 
     @Test
@@ -131,14 +153,14 @@ class BookmarkDetailsServiceTest {
         when(bookmarks.findBySchemaIdAndName(SCHEMA_ID, "production")).thenReturn(Optional.of(bookmark));
 
         ResponseStatusException refused = assertThrows(ResponseStatusException.class, () -> service.updateBookmark(
-                USER_ID, BOOKMARK_ID, new UpdateSchemaBookmarkRequest("staging", "New text")));
+                USER_ID, BOOKMARK_ID, new UpdateSchemaBookmarkRequest("staging", "New text", null)));
 
         assertEquals(409, refused.getStatusCode().value());
         assertEquals("This schema already has a bookmark named \"staging\".", refused.getReason());
         assertEquals("production", bookmark.getName());
         assertEquals("Estimates risk.", bookmark.getDescription());
         // Keeping its own name is not a clash: only the description changes.
-        service.updateBookmark(USER_ID, BOOKMARK_ID, new UpdateSchemaBookmarkRequest("production", "New text"));
+        service.updateBookmark(USER_ID, BOOKMARK_ID, new UpdateSchemaBookmarkRequest("production", "New text", null));
         assertEquals("New text", bookmark.getDescription());
     }
 
@@ -148,7 +170,7 @@ class BookmarkDetailsServiceTest {
         memberWith(PermissionKey.CREATE_MODELS);
 
         assertEquals(400, assertThrows(ResponseStatusException.class, () -> service.updateBookmark(
-                USER_ID, BOOKMARK_ID, new UpdateSchemaBookmarkRequest("  ", "New text"))).getStatusCode().value());
+                USER_ID, BOOKMARK_ID, new UpdateSchemaBookmarkRequest("  ", "New text", null))).getStatusCode().value());
         assertEquals("production", bookmark.getName());
         assertEquals("Estimates risk.", bookmark.getDescription());
     }
@@ -159,7 +181,7 @@ class BookmarkDetailsServiceTest {
         memberWith(EnumSet.complementOf(EnumSet.of(PermissionKey.CREATE_MODELS)).toArray(PermissionKey[]::new));
 
         assertThrows(OrganizationAccessDeniedException.class, () -> service.updateBookmark(USER_ID, BOOKMARK_ID,
-                new UpdateSchemaBookmarkRequest("renamed", "New text")));
+                new UpdateSchemaBookmarkRequest("renamed", "New text", null)));
         assertEquals("production", bookmark.getName());
         verifyNoInteractions(bookmarks);
     }
@@ -170,7 +192,7 @@ class BookmarkDetailsServiceTest {
         when(bookmarks.findByIdAndOrganizationId(BOOKMARK_ID, ORG_ID)).thenReturn(Optional.empty());
 
         assertEquals(404, assertThrows(ResponseStatusException.class, () -> service.updateBookmark(
-                USER_ID, BOOKMARK_ID, new UpdateSchemaBookmarkRequest("renamed", null))).getStatusCode().value());
+                USER_ID, BOOKMARK_ID, new UpdateSchemaBookmarkRequest("renamed", null, null))).getStatusCode().value());
     }
 
     private static SchemaBookmark described() {

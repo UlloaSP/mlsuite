@@ -53,7 +53,7 @@ class AdminUserDeletionTest {
     @Test
     void personalOrganizationReturnsConflictInsteadOfUnexpectedError() {
         var target = user(SystemRole.USER);
-        var org = new Organization("qa-personal", "QA", null, null, target);
+        var org = new Organization("qa-personal", "QA", null, target);
         entityManager.persist(org);
         target.setCurrentOrganization(org);
         var owner = new RoleDefinition(org, RoleScope.ORGANIZATION, "Owner", "owner", "OWNER");

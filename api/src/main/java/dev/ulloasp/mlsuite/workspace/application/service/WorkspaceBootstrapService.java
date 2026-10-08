@@ -58,7 +58,6 @@ public class WorkspaceBootstrapService {
                 buildSlug(user),
                 buildName(user),
                 "Personal workspace",
-                user.getAvatarUrl(),
                 user));
         roleSeedService.ensureOrganizationRoles(organization);
         roleSeedService.reviewerRole(organization);

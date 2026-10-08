@@ -564,6 +564,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/organizations/{organizationId}/logo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["replace"];
+        post?: never;
+        delete: operations["remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/organizations/{organizationId}/members": {
         parameters: {
             query?: never;
@@ -900,6 +916,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/bookmarks/{publicId}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/public/bookmarks/{publicId}/quota": {
         parameters: {
             query?: never;
@@ -908,6 +940,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["quota"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/organizations/{organizationId}/logo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["read"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1631,6 +1679,7 @@ export interface components {
         CreateSchemaBookmarkRequest: {
             description?: string | null;
             name: string;
+            publicationNote?: string | null;
             /** Format: int64 */
             versionId: number;
         };
@@ -1769,6 +1818,7 @@ export interface components {
             /** Format: int64 */
             id: number;
             name: string;
+            organizationLogoUrl: string | null;
             organizationName: string;
             publicId: string;
             schemaArchived: boolean;
@@ -1807,7 +1857,6 @@ export interface components {
             totalSchemas: number;
         };
         OrganizationCatalogItemDto: {
-            avatarUrl: string | null;
             /** Format: date-time */
             createdAt: string;
             description: string | null;
@@ -1815,6 +1864,7 @@ export interface components {
             id: number;
             /** Format: int64 */
             inferenceCount: number;
+            logoUrl: string | null;
             /** Format: int64 */
             memberCount: number;
             /** Format: int64 */
@@ -1835,12 +1885,12 @@ export interface components {
             updatedByName: string;
         };
         OrganizationDto: {
-            avatarUrl: string | null;
             /** Format: date-time */
             createdAt: string;
             description: string | null;
             /** Format: int64 */
             id: number;
+            logoUrl: string | null;
             name: string;
             slug: string;
             /** Format: date-time */
@@ -2110,8 +2160,10 @@ export interface components {
             /** Format: int32 */
             inputCount: number;
             name: string;
+            organizationLogoUrl: string | null;
             organizationName: string;
             publicId: string;
+            publicationNote: string | null;
             /** Format: int32 */
             reportCount: number;
             /** Format: date-time */
@@ -2131,6 +2183,7 @@ export interface components {
             /** Format: int32 */
             inputCount: number;
             name: string;
+            organizationLogoUrl: string | null;
             organizationName: string;
             publicId: string;
             /** Format: int32 */
@@ -2244,6 +2297,7 @@ export interface components {
             id: number;
             name: string;
             publicId: string | null;
+            publicationNote: string | null;
             /** Format: int64 */
             schemaId: number;
             schemaName: string;
@@ -2520,6 +2574,7 @@ export interface components {
         UpdateSchemaBookmarkRequest: {
             description?: string | null;
             name: string;
+            publicationNote?: string | null;
         };
         UpdateSchemaDraftRequest: {
             bindings: {
@@ -3762,6 +3817,57 @@ export interface operations {
             };
         };
     };
+    replace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    logo: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationDto"];
+                };
+            };
+        };
+    };
+    remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationDto"];
+                };
+            };
+        };
+    };
     listMembers: {
         parameters: {
             query?: never;
@@ -4433,6 +4539,28 @@ export interface operations {
             };
         };
     };
+    preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+        };
+    };
     quota: {
         parameters: {
             query?: never;
@@ -4451,6 +4579,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicRunQuotaDto"];
+                };
+            };
+        };
+    };
+    read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
         };

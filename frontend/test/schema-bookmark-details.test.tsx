@@ -27,6 +27,7 @@ const bookmark = (overrides: Partial<SchemaBookmarkDto> = {}): SchemaBookmarkDto
   versionName: "Baseline",
   name: "production",
   description: "Estimates cardiovascular risk.",
+  publicationNote: null,
   visibility: "PRIVATE",
   publicId: null,
   exampleCount: 0,
@@ -67,6 +68,8 @@ const dialog = () => document.body.querySelector<HTMLElement>('[role="dialog"]')
 const nameField = () => dialog()!.querySelector<HTMLInputElement>('input[name="name"]')!;
 const descriptionField = () =>
   dialog()!.querySelector<HTMLTextAreaElement>('textarea[name="description"]')!;
+const noteField = () =>
+  dialog()!.querySelector<HTMLTextAreaElement>('textarea[name="publicationNote"]')!;
 
 async function openActions(name: string) {
   const trigger = document.body.querySelector<HTMLButtonElement>(
@@ -127,7 +130,11 @@ describe("a bookmark's name and description in its schema", () => {
       {
         method: "PATCH",
         path: "/api/schema-bookmarks/70",
-        body: { name: "cardio-screening", description: "Screens for cardiovascular risk." },
+        body: {
+          name: "cardio-screening",
+          description: "Screens for cardiovascular risk.",
+          publicationNote: null,
+        },
       },
     ]);
     expect(dialog()).toBeNull();
@@ -142,7 +149,29 @@ describe("a bookmark's name and description in its schema", () => {
     await click("Save changes");
     await settle();
 
-    expect(requests()[0].body).toEqual({ name: "production", description: null });
+    expect(requests()[0].body).toEqual({
+      name: "production",
+      description: null,
+      publicationNote: null,
+    });
+  });
+
+  test("the publication note is edited with the rest and sent trimmed", async () => {
+    fetchMock.mockResolvedValue(json(bookmark({ publicationNote: "doi:10.1000/xyz" })));
+    await openEditor(bookmark({ publicationNote: "Published in Lancet 2026." }));
+    expect(noteField().value).toBe("Published in Lancet 2026.");
+    expect(noteField().maxLength).toBe(1000);
+    expect(noteField().required).toBe(false);
+
+    await changeValue(noteField(), "  doi:10.1000/xyz ");
+    await click("Save changes");
+    await settle();
+
+    expect(requests()[0].body).toEqual({
+      name: "production",
+      description: "Estimates cardiovascular risk.",
+      publicationNote: "doi:10.1000/xyz",
+    });
   });
 
   test("a refusal keeps the dialog open with the reason the API gave", async () => {
@@ -198,7 +227,12 @@ describe("bookmarking a snapshot", () => {
       {
         method: "POST",
         path: "/api/schemas/5/bookmarks",
-        body: { name: "production", description: "Estimates cardiovascular risk.", versionId: 9 },
+        body: {
+          name: "production",
+          description: "Estimates cardiovascular risk.",
+          publicationNote: null,
+          versionId: 9,
+        },
       },
     ]);
     expect(toasts.success).toHaveBeenCalledExactlyOnceWith("Bookmark saved");
@@ -211,6 +245,11 @@ describe("bookmarking a snapshot", () => {
     await click("Save bookmark");
     await settle();
 
-    expect(requests()[0].body).toEqual({ name: "baseline", description: null, versionId: 9 });
+    expect(requests()[0].body).toEqual({
+      name: "baseline",
+      description: null,
+      publicationNote: null,
+      versionId: 9,
+    });
   });
 });

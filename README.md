@@ -27,6 +27,7 @@ If MLSuite goes in the wrong direction, the full stack is here for you to inspec
 - Extend reports and fields through plugins.
 - Export inputs, outputs, and feedback for downstream work.
 - Publish a schema bookmark to a public page at `/explore/<id>` where anyone, signed in or not, can fill its form and run it, with saved runs you mark as examples to fill it, and list every published bookmark in the public feed at `/explore`. Public runs are not saved.
+- Give an organization a logo, shown beside its name in the workspace and on its public pages, and give a public bookmark a publication note (the paper it was published in, a DOI, terms of use). Links shared to a public page unfurl with the bookmark's name, text and the publisher's logo.
 - Manage organizations, teams, roles, invitations, and workspace permissions.
 - Let superadmins review every public bookmark on the instance and unpublish any of them.
 - Monitor the local Compose stack through the operations service.
@@ -285,6 +286,13 @@ to another snapshot, and each public run are refused above it, because every run
 the artifact to the runtime. `PUBLIC_PREDICTION_MAX_CONCURRENT` (default `2`) is how
 many public runs may execute at once; further ones receive `503 Service Unavailable`
 until a slot frees. Public runs store nothing.
+
+A public page is drawn by the browser, so link-unfurling crawlers (social networks, chat
+apps) are sent by the `frontend` nginx to `/api/public/bookmarks/<id>/preview`, a page
+of Open Graph tags that redirects anyone else to the bookmark. The image in it is the
+organization's logo, read from `/api/public/organizations/<org id>/logo` by anyone, or
+the MLSuite mark when the organization has none. Logos are PNG or JPG uploads of up to
+2 MB, cropped to a square and stored lossless as 256-pixel PNG in the database.
 
 Each caller may run one public bookmark a limited number of times in 24 hours, counted
 from their first run of it: `PUBLIC_PREDICTION_ANONYMOUS_RUNS_PER_DAY` (default `50`) for

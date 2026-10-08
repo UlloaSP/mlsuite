@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Building2, FileJson2, GitCommitHorizontal, Globe, Lock, Tag } from "lucide-react";
+import { FileJson2, GitCommitHorizontal, Globe, Lock, Tag } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
@@ -12,6 +12,7 @@ import { AppBadge } from "@/shared/ui/AppBadge";
 import { appButtonClass } from "@/shared/ui/button-styles";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
+import { OrganizationMark } from "@/shared/ui/OrganizationMark";
 import { UnpublishBookmarkDialog } from "./UnpublishBookmarkDialog";
 import type { ModeratedBookmarkDto } from "@/shared/api/openapi.gen";
 
@@ -58,7 +59,11 @@ export function ModeratedBookmarkTile({
         metadata={
           <>
             <span className="inline-flex items-center gap-1">
-              <Building2 size={14} />
+              <OrganizationMark
+                className="size-4 rounded-sm"
+                iconSize={14}
+                logoUrl={item.organizationLogoUrl}
+              />
               {item.organizationName}
             </span>
             <span className="inline-flex items-center gap-1">
