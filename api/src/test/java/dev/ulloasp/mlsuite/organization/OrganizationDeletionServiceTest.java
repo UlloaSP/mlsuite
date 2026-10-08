@@ -42,7 +42,7 @@ class OrganizationDeletionServiceTest {
     void deletesEmptyCurrentOrganizationWithManagedOwnerAndRole() {
         var owner = new User("qa", "qa@example.test", "unused", "QA", SystemRole.USER);
         entityManager.persist(owner);
-        var org = new Organization("qa-empty", "QA", null, null, owner);
+        var org = new Organization("qa-empty", "QA", null, owner);
         entityManager.persist(org);
         owner.setCurrentOrganization(org);
         var role = new RoleDefinition(org, RoleScope.ORGANIZATION, "Owner", "owner", "OWNER");
@@ -73,7 +73,7 @@ class OrganizationDeletionServiceTest {
     void organizationWithModelIsPreserved() {
         var owner = new User("qa", "qa@example.test", "unused", "QA", SystemRole.USER);
         entityManager.persist(owner);
-        var org = new Organization("qa-used", "QA", null, null, owner);
+        var org = new Organization("qa-used", "QA", null, owner);
         entityManager.persist(org);
         var model = new Model();
         model.setName("QA model");

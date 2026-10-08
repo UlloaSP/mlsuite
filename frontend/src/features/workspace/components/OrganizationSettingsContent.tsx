@@ -14,6 +14,7 @@ import {
 } from "@/features/workspace/api/workspace.mutations";
 import { useOrganizationMembersQuery } from "@/features/workspace/api/workspace.queries";
 import { DeleteOrganizationDialog } from "./DeleteOrganizationDialog";
+import { OrganizationLogoSettings } from "./OrganizationLogoSettings";
 import { TransferOrganizationOwnerDialog } from "./TransferOrganizationOwnerDialog";
 import type { OrganizationDto, WorkspacePermissionsDto } from "@/shared/api/openapi.gen";
 
@@ -121,6 +122,10 @@ export function OrganizationSettingsContent({
               {update.isPending ? "Saving…" : "Save changes"}
             </AppButton>
           </form>
+        ) : null}
+
+        {permissions.canEditOrganization ? (
+          <OrganizationLogoSettings organization={organization} />
         ) : null}
 
         {permissions.canTransferOwnership ? (

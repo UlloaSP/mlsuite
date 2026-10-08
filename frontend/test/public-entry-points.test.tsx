@@ -45,9 +45,15 @@ const SUMMARY: PublicBookmarkSummaryDto = {
   inputCount: 0,
   reportCount: 0,
   organizationName: "Acme Health",
+  organizationLogoUrl: null,
   updatedAt: "2026-10-01T10:00:00Z",
 };
-const BOOKMARK: PublicBookmarkDto = { ...SUMMARY, version: 2, formSchema: { fields: [] } };
+const BOOKMARK: PublicBookmarkDto = {
+  ...SUMMARY,
+  publicationNote: null,
+  version: 2,
+  formSchema: { fields: [] },
+};
 const USER = { id: 9, fullName: "Ada Lovelace", email: "ada@acme.test", systemRole: "USER" };
 const WORKSPACE = {
   currentOrganization: { id: 3, name: "Ada Lovelace Personal", slug: "ada" },

@@ -2,6 +2,7 @@ package dev.ulloasp.mlsuite.admin.moderation;
 
 import java.time.OffsetDateTime;
 
+import dev.ulloasp.mlsuite.organization.application.dto.OrganizationLogoUrl;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
@@ -18,6 +19,7 @@ public record ModeratedBookmarkDto(
         String schemaName,
         boolean schemaArchived,
         String organizationName,
+        @Nullable String organizationLogoUrl,
         int version,
         @Nullable String versionName,
         String publicId,
@@ -32,6 +34,7 @@ public record ModeratedBookmarkDto(
                 schema.getName(),
                 schema.getArchivedAt() != null,
                 schema.getOrganization().getName(),
+                OrganizationLogoUrl.of(schema.getOrganization()),
                 version.getVersion(),
                 version.getName(),
                 bookmark.getPublicId(),

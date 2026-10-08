@@ -61,7 +61,7 @@ class SchemaDeletionServiceTest {
         reset(users, authorization);
         owner = new User("qa", "qa@example.test", "unused", "QA", SystemRole.USER);
         entityManager.persist(owner);
-        org = new Organization("qa-schema", "QA", null, null, owner);
+        org = new Organization("qa-schema", "QA", null, owner);
         entityManager.persist(org);
         schema = new Schema(org, "QA", null);
         entityManager.persist(schema);

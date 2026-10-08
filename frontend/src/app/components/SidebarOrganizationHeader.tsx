@@ -3,11 +3,11 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Building2, ChevronsUpDown } from "lucide-react";
+import { ChevronsUpDown } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { useLocation } from "react-router";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
-import { cx } from "@/shared/ui/cx";
+import { OrganizationMark } from "@/shared/ui/OrganizationMark";
 import type { SidebarPosition } from "@/shared/ui/sidebar-preferences";
 import { SidebarLabel } from "./app-sidebar/SidebarLabel";
 import { SidebarMenuButton } from "./app-sidebar/SidebarMenuButton";
@@ -43,9 +43,12 @@ export function SidebarOrganizationHeader({ side }: { side: SidebarPosition }) {
               className={sidebarMenuTrigger(collapsed)}
               title={organization.name}
             >
-              <span className={cx(SIDEBAR_MENU_TILE, "bg-fg text-fg-inverse")}>
-                <Building2 size={16} />
-              </span>
+              <OrganizationMark
+                className={SIDEBAR_MENU_TILE}
+                fallbackClassName="bg-fg text-fg-inverse"
+                iconSize={16}
+                logoUrl={organization.logoUrl}
+              />
               <SidebarLabel className={collapsed ? "w-0 flex-none text-left" : "flex-1 text-left"}>
                 <span className="block truncate text-sm font-semibold">{organization.name}</span>
                 <span className="block truncate text-xs font-normal text-fg-secondary">

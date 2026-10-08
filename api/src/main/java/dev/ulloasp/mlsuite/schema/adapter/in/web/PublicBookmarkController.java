@@ -2,6 +2,7 @@ package dev.ulloasp.mlsuite.schema.adapter.in.web;
 
 import java.util.List;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +22,7 @@ import dev.ulloasp.mlsuite.schema.application.port.in.PublicBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicPredictionUseCase;
 import dev.ulloasp.mlsuite.security.identity.PublicCaller;
 import dev.ulloasp.mlsuite.util.PageDto;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -45,6 +47,15 @@ public class PublicBookmarkController {
     @GetMapping("/{publicId}")
     public ResponseEntity<PublicBookmarkDto> get(@PathVariable String publicId) {
         return ResponseEntity.ok(publicBookmarks.getPublishedBookmark(publicId));
+    }
+
+    /** What a link to the bookmark's page unfurls to; nginx sends crawlers of that page here. */
+    @GetMapping(value = "/{publicId}/preview", produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> preview(@PathVariable String publicId, HttpServletRequest request) {
+        PublicBookmarkDto bookmark = publicBookmarks.getPublishedBookmark(publicId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_HTML)
+                .body(PublicBookmarkPreview.html(bookmark, PublicBookmarkPreview.origin(request)));
     }
 
     @GetMapping("/{publicId}/examples")

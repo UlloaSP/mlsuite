@@ -63,8 +63,10 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
         SchemaBookmark bookmark = bookmarkRepository.findBySchemaIdAndName(schemaId, name)
                 .orElseGet(() -> new SchemaBookmark(schema, version, name));
         point(bookmark, version);
-        String description = cleanDescription(request.description());
+        String description = cleanText(request.description());
         if (description != null) bookmark.setDescription(description);
+        String note = cleanText(request.publicationNote());
+        if (note != null) bookmark.setPublicationNote(note);
         return bookmarkRepository.save(bookmark);
     }
 
@@ -93,7 +95,8 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
                     "This schema already has a bookmark named \"%s\".".formatted(name));
         }
         bookmark.setName(name);
-        bookmark.setDescription(cleanDescription(request.description()));
+        bookmark.setDescription(cleanText(request.description()));
+        bookmark.setPublicationNote(cleanText(request.publicationNote()));
         return bookmark;
     }
 
@@ -163,7 +166,7 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
         return value.trim();
     }
 
-    private String cleanDescription(String value) {
+    private String cleanText(String value) {
         return value == null || value.isBlank() ? null : value.strip();
     }
 

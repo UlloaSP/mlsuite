@@ -9,6 +9,8 @@ import { acceptInvitation, declineInvitation } from "./invitations.api";
 import {
   createOrganization,
   deleteOrganization,
+  removeOrganizationLogo,
+  replaceOrganizationLogo,
   transferOrganizationOwnership,
   updateOrganization,
 } from "./organizations.api";
@@ -20,7 +22,11 @@ import {
   organizationMembersQueryKey,
   PENDING_INVITATIONS_QUERY_KEY,
 } from "./workspace.keys";
-import type { UpdateOrganizationRequest, WorkspaceContextDto } from "@/shared/api/openapi.gen";
+import type {
+  OrganizationDto,
+  UpdateOrganizationRequest,
+  WorkspaceContextDto,
+} from "@/shared/api/openapi.gen";
 
 export const useAcceptInvitation = () => {
   const qc = useQueryClient();
@@ -90,6 +96,34 @@ export const useUpdateOrganizationMutation = () => {
     },
   });
 };
+
+/** The logo is part of the organization: whatever shows the organization is refreshed. */
+const useOrganizationLogoMutation = <TVariables>(
+  mutationFn: (variables: TVariables) => Promise<OrganizationDto>,
+) => {
+  const queryClient = useQueryClient();
+  const invalidate = useInvalidateOrganizationQueries();
+  return useMutation({
+    meta: { errorHandledLocally: true },
+    mutationFn,
+    onSuccess: async (organization) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: organizationAdminDashboardQueryKey(organization.id),
+        }),
+        invalidate(),
+      ]);
+    },
+  });
+};
+
+export const useReplaceOrganizationLogoMutation = () =>
+  useOrganizationLogoMutation(({ organizationId, file }: { organizationId: number; file: File }) =>
+    replaceOrganizationLogo(organizationId, file),
+  );
+
+export const useRemoveOrganizationLogoMutation = () =>
+  useOrganizationLogoMutation((organizationId: number) => removeOrganizationLogo(organizationId));
 
 export const useSelectOrganization = () => {
   const qc = useQueryClient();

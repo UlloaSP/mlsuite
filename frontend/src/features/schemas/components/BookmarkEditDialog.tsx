@@ -18,7 +18,7 @@ type Props = {
   onClose: () => void;
 };
 
-/** Renames a bookmark and edits its description; its link, examples and runs stay with it. */
+/** Renames a bookmark and edits its texts; its link, examples and runs stay with it. */
 export function BookmarkEditDialog({ bookmark, open, onClose }: Props) {
   const mutation = useUpdateSchemaBookmarkMutation();
 
@@ -37,11 +37,12 @@ export function BookmarkEditDialog({ bookmark, open, onClose }: Props) {
       title="Edit bookmark"
       summary={
         bookmark.visibility === "PUBLIC"
-          ? "This bookmark is public: its name and description change on its public page too."
+          ? "This bookmark is public: its name, description and note change on its public page too."
           : "Runs, examples and links keep pointing to this bookmark under its new name."
       }
       defaultName={bookmark.name}
       defaultDescription={bookmark.description ?? ""}
+      defaultPublicationNote={bookmark.publicationNote ?? ""}
       open={open}
       error={mutation.error?.message}
       pending={mutation.isPending}

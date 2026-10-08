@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useOrganizationMembersQuery } from "@/features/workspace/api/workspace.queries";
 import { modifierName } from "@/shared/lib/relative-time";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
+import { OrganizationMark } from "@/shared/ui/OrganizationMark";
 import { DeleteOrganizationDialog } from "./DeleteOrganizationDialog";
 import { TransferOrganizationOwnerDialog } from "./TransferOrganizationOwnerDialog";
 import { EditableText, type OrganizationPatch } from "./OrganizationCatalogEditable";
@@ -48,8 +49,14 @@ export function OrganizationCatalogTile({
   return (
     <article className="grid gap-5 rounded-card border border-line bg-surface p-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(420px,0.9fr)_auto]">
       <div className="min-w-0 space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 space-y-2">
+        <div className="flex items-start gap-3">
+          <OrganizationMark
+            className="mt-0.5 size-10 rounded-xl"
+            fallbackClassName="bg-surface-subtle text-fg-secondary"
+            iconSize={18}
+            logoUrl={item.logoUrl}
+          />
+          <div className="min-w-0 flex-1 space-y-2">
             <EditableText
               as="title"
               disabled={disabled}

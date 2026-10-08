@@ -29,11 +29,10 @@ import lombok.Setter;
 })
 public class Organization {
 
-    public Organization(String slug, String name, String description, String avatarUrl, User createdBy) {
+    public Organization(String slug, String name, String description, User createdBy) {
         this.slug = slug;
         this.name = name;
         this.description = description;
-        this.avatarUrl = avatarUrl;
         this.createdBy = createdBy;
     }
 
@@ -50,8 +49,9 @@ public class Organization {
     @Column(name = "description", length = 600)
     private String description;
 
-    @Column(name = "avatar_url", length = 600)
-    private String avatarUrl;
+    /** When the logo in {@code organization_logo} was last replaced; null while there is none. */
+    @Column(name = "logo_updated_at", columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime logoUpdatedAt;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "created_by_user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_organization_creator"))

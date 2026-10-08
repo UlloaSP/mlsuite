@@ -114,7 +114,7 @@ class PublicBookmarkFeedServiceTest {
         assertEquals(2, page.totalItems());
         assertFalse(page.hasNext());
         assertEquals(new PublicBookmarkSummaryDto(cardio.getPublicId(), "production",
-                "Estimates cardiovascular risk.", 2, 2, "Acme Health", page.items().get(1).updatedAt()),
+                "Estimates cardiovascular risk.", 2, 2, "Acme Health", null, page.items().get(1).updatedAt()),
                 page.items().get(1));
         assertEquals("Globex Retail", page.items().get(0).organizationName());
         // The description is the bookmark's own: one without it shows none, whatever its schema says.
@@ -144,7 +144,7 @@ class PublicBookmarkFeedServiceTest {
         PublicBookmarkSummaryDto card = service.getPublishedBookmarkPage(0, 24, "cardio", "updated").items().get(0);
 
         assertEquals(Set.of("publicId", "name", "description", "inputCount", "reportCount",
-                "organizationName", "updatedAt"), mapper.convertValue(card, Map.class).keySet());
+                "organizationName", "organizationLogoUrl", "updatedAt"), mapper.convertValue(card, Map.class).keySet());
         String json = mapper.writeValueAsString(card);
         // Neither the member's address nor the organization's names for its schema and snapshot.
         for (String internal : List.of("qa@example.test", "Cardio risk", "Baseline", "Internal notes")) {
@@ -203,7 +203,7 @@ class PublicBookmarkFeedServiceTest {
     }
 
     private Organization organization(String slug, String name, User owner) {
-        Organization organization = new Organization(slug, name, null, null, owner);
+        Organization organization = new Organization(slug, name, null, owner);
         entityManager.persist(organization);
         return organization;
     }
