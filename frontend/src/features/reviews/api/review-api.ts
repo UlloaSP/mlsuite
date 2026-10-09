@@ -2,14 +2,10 @@ import { appFetch, json } from "@/shared/api/http";
 import type {
   CreatePredictionResultFeedbackRequest,
   PredictionResultFeedbackDto,
-  SchemaReviewContextDto,
   SchemaReviewRunDetailDto,
   SubmitSchemaReviewRunsRequest,
   UpdatePredictionResultFeedbackRequest,
 } from "@/shared/api/openapi.gen";
-
-export const getSchemaReviewInbox = (signal?: AbortSignal) =>
-  appFetch<SchemaReviewContextDto[]>("/api/schema-reviews/inbox", { signal });
 
 export const getSchemaReviewRunDetail = (
   reviewId: string,

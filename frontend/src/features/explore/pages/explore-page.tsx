@@ -3,11 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useQuery } from "@tanstack/react-query";
-import {
-  PUBLIC_BOOKMARK_PAGE_SIZE,
-  publicBookmarkPageQueryOptions,
-} from "@/features/explore/api/public-bookmark-api";
+import { usePublicBookmarkCatalog } from "@/features/explore/api/public-bookmark-api";
 import { ExploreVisitorIntro } from "@/features/explore/components/ExploreVisitorIntro";
 import { PublicBookmarkCard } from "@/features/explore/components/PublicBookmarkCard";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
@@ -35,9 +31,7 @@ export function ExplorePage() {
     initialSort: "updated",
     sorts: SORTS.map(({ value }) => value),
   });
-  const query = useQuery(
-    publicBookmarkPageQueryOptions(controls.page, controls.search, controls.sort),
-  );
+  const query = usePublicBookmarkCatalog(controls.search, controls.sort);
   const ExploreIcon = SECTION_ICONS.explore;
 
   return (
@@ -53,7 +47,6 @@ export function ExplorePage() {
       navigation={<ExploreVisitorIntro />}
       layout="grid"
       loadingLabel="Loading public bookmarks…"
-      pageSize={PUBLIC_BOOKMARK_PAGE_SIZE}
       filterLabel="Filter public bookmarks"
       filters={FILTERS}
       placeholder="Search by bookmark, description, or publisher"

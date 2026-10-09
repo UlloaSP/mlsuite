@@ -1,3 +1,7 @@
+import {
+  publicRunCatalogKey,
+  publicRunDetailOptions,
+} from "@/features/explore/api/public-catalog-api";
 /*
 SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
@@ -15,10 +19,7 @@ import {
   getQuestionnaireFieldDescriptors,
 } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
 import { ReportQuestionnaireMount } from "@/capabilities/prediction-runtime/feedback/ReportQuestionnaireMount";
-import {
-  publicRunsQueryOptions,
-  savePublicRunFeedback,
-} from "@/features/explore/api/public-bookmark-api";
+import { savePublicRunFeedback } from "@/features/explore/api/public-bookmark-api";
 import {
   buildPublicFeedbackSteps,
   isPublicRunReviewed,
@@ -57,10 +58,8 @@ export function PublicRunReview({ publicId, formSchema, run }: Props) {
     mutationFn: (values: Record<string, unknown>) =>
       savePublicRunFeedback(publicId, run.id, { items: publicFeedbackItems(steps, values) }),
     onSuccess: (saved) => {
-      const { queryKey } = publicRunsQueryOptions(publicId);
-      queryClient.setQueryData(queryKey, (runs: PublicRunDto[] | undefined) =>
-        runs?.map((item) => (item.id === saved.id ? saved : item)),
-      );
+      queryClient.setQueryData(publicRunDetailOptions(publicId, saved.id).queryKey, saved);
+      void queryClient.invalidateQueries({ queryKey: publicRunCatalogKey(publicId) });
       setEditing(false);
     },
   });

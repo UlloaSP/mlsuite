@@ -201,12 +201,13 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     }
 
     private Sort sort(String mode) {
+        Sort.Order byId = Sort.Order.asc("id");
         if ("name".equals(mode)) {
-            return Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.desc("updatedAt"));
+            return Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.desc("updatedAt"), byId);
         }
         if ("created".equals(mode)) {
-            return Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("name").ignoreCase());
+            return Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("name").ignoreCase(), byId);
         }
-        return Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("name").ignoreCase());
+        return Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("name").ignoreCase(), byId);
     }
 }

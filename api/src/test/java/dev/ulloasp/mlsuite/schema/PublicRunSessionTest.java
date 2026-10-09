@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -30,8 +31,10 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunOrigin;
+import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.security.identity.VisitorCookie;
+import dev.ulloasp.mlsuite.visitor.domain.model.Visitor;
 import jakarta.servlet.http.Cookie;
 
 /**
@@ -244,6 +247,45 @@ class PublicRunSessionTest extends PublicPredictionFixture {
                 .andExpect(status().isNotFound());
         // The run itself stays the organization's.
         assertEquals(runsBefore + 1, count("PredictionRun"));
+    }
+
+    @Test
+    void theCatalogPagesAndSearchesRunsOlderThanTheSessionListKeeps() throws Exception {
+        UUID visitorId = UUID.randomUUID();
+        inTransaction(() -> {
+            Visitor visitor = new Visitor(visitorId, OffsetDateTime.parse("2026-10-01T10:00:00Z"));
+            entityManager.persist(visitor);
+            for (int i = 0; i < 130; i++) {
+                PredictionRun run = new PredictionRun(bookmark, version, "public-" + i,
+                        Map.of("Age", i == 0 ? "needle" : i), PredictionRunStatus.SUCCESS);
+                run.setVisitor(visitor);
+                run.setOrigin(PredictionRunOrigin.PUBLIC);
+                entityManager.persist(run);
+            }
+        });
+        String runs = "/api/public/bookmarks/" + bookmark.getPublicId() + "/runs";
+        Cookie visitor = new Cookie(VisitorCookie.NAME, visitorId.toString());
+
+        mockMvc.perform(get(runs + "/catalog").param("page", "5").param("size", "24").cookie(visitor))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalItems").value(130))
+                .andExpect(jsonPath("$.items.length()").value(10))
+                .andExpect(jsonPath("$.hasNext").value(false));
+        mockMvc.perform(get(runs + "/catalog").param("search", "needle").cookie(visitor))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalItems").value(1));
+        mockMvc.perform(get(runs).cookie(visitor))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(100));
+        mockMvc.perform(get(runs + "/catalog"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalItems").value(0));
+        mockMvc.perform(get(runs + "/catalog").cookie(new Cookie(VisitorCookie.NAME, UUID.randomUUID().toString())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalItems").value(0));
+        inTransaction(() -> entityManager.find(SchemaBookmark.class, bookmark.getId())
+                .setVisibility(BookmarkVisibility.PRIVATE));
+        mockMvc.perform(get(runs + "/catalog").cookie(visitor)).andExpect(status().isNotFound());
     }
 
     private MockHttpServletRequestBuilder feedback(long runId, String body) {

@@ -5,28 +5,56 @@ import type { ReviewCandidate } from "./review-creation-api";
 import { ReviewCreationDialog } from "./ReviewCreationDialog";
 
 type Props = {
-  candidates: ReviewCandidate[];
+  /** How many inferences the whole server result holds. */
+  count: number;
+  /** The complete result, fetched when the dialog opens: never only the loaded pages. */
+  loadCandidates: () => Promise<ReviewCandidate[]>;
   organizationId: number | string;
   variant?: "primary" | "secondary";
 };
 
-export function ReviewCreationButton({ candidates, organizationId, variant = "primary" }: Props) {
+export function ReviewCreationButton({
+  count,
+  loadCandidates,
+  organizationId,
+  variant = "primary",
+}: Props) {
   const [open, setOpen] = useState(false);
+  const [snapshot, setSnapshot] = useState<ReviewCandidate[]>();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const show = async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      setSnapshot(await loadCandidates());
+      setOpen(true);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
       <AppButton
         type="button"
         variant={variant}
-        disabled={candidates.length === 0}
-        onClick={() => setOpen(true)}
+        disabled={loading || count === 0}
+        onClick={() => void show()}
       >
         <ClipboardCheck size={16} />
-        Create review
+        {loading ? "Preparing review…" : "Create review"}
       </AppButton>
-      {open ? (
+      {error ? (
+        <span role="alert" className="text-sm text-danger-fg">
+          Could not load review selection. Try again.
+        </span>
+      ) : null}
+      {open && snapshot ? (
         <ReviewCreationDialog
-          candidates={candidates}
+          candidates={snapshot}
           organizationId={organizationId}
           onClose={() => setOpen(false)}
         />

@@ -3,10 +3,15 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { ClipboardCheck } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
-import { publicRunsQueryOptions } from "@/features/explore/api/public-bookmark-api";
+import {
+  usePublicRunCatalog,
+  usePublicRunDetail,
+  publicRunCatalogKey,
+  publicRunDetailOptions,
+} from "@/features/explore/api/public-catalog-api";
 import { PublicBookmarkForm } from "@/features/explore/components/PublicBookmarkForm";
 import { PublicRunSession } from "@/features/explore/components/PublicRunSession";
 import { PublicRunView } from "@/features/explore/components/PublicRunView";
@@ -15,15 +20,10 @@ import {
   isPublicRunReviewed,
 } from "@/features/explore/lib/public-feedback-steps";
 import { AppButton } from "@/shared/ui/AppButton";
-import type {
-  PublicBookmarkDto,
-  PublicBookmarkExampleDto,
-  PublicRunDto,
-} from "@/shared/api/openapi.gen";
+import type { PublicBookmarkDto, PublicRunDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   bookmark: PublicBookmarkDto;
-  examples?: readonly PublicBookmarkExampleDto[];
 };
 
 const NO_RUNS: PublicRunDto[] = [];
@@ -34,22 +34,20 @@ const NO_RUNS: PublicRunDto[] = [];
  * can be reviewed from there; choosing an earlier one shows it in the form's place until the
  * visitor goes back. The form is hidden, not unmounted, meanwhile: its values stay.
  */
-export function PublicBookmarkPanel({ bookmark, examples }: Props) {
+export function PublicBookmarkPanel({ bookmark }: Props) {
   const queryClient = useQueryClient();
-  const runsQuery = useQuery(publicRunsQueryOptions(bookmark.publicId));
-  const runs = runsQuery.data ?? NO_RUNS;
+  const runsQuery = usePublicRunCatalog(bookmark.publicId);
+  const runs = runsQuery.data?.items ?? NO_RUNS;
   const [viewingId, setViewingId] = useState<number | null>(null);
   const [latestId, setLatestId] = useState<number | null>(null);
-  const viewing = runs.find((run) => run.id === viewingId) ?? null;
-  const latest = runs.find((run) => run.id === latestId) ?? null;
+  const viewingQuery = usePublicRunDetail(bookmark.publicId, viewingId);
+  const viewing = viewingQuery.data ?? null;
+  const latest = usePublicRunDetail(bookmark.publicId, latestId).data ?? null;
 
   const onRun = useCallback(
     (run: PublicRunDto) => {
-      const { queryKey } = publicRunsQueryOptions(bookmark.publicId);
-      queryClient.setQueryData(queryKey, (current: PublicRunDto[] | undefined) => [
-        run,
-        ...(current ?? []).filter((item) => item.id !== run.id),
-      ]);
+      queryClient.setQueryData(publicRunDetailOptions(bookmark.publicId, run.id).queryKey, run);
+      void queryClient.invalidateQueries({ queryKey: publicRunCatalogKey(bookmark.publicId) });
       setLatestId(run.id);
       setViewingId(null);
     },
@@ -64,12 +62,22 @@ export function PublicBookmarkPanel({ bookmark, examples }: Props) {
           isPublicRunReviewed(buildPublicFeedbackSteps(bookmark.formSchema, run)),
       ]),
     );
-    return (run: PublicRunDto) => byId.get(run.id) ?? false;
+    return (run: PublicRunDto) =>
+      byId.get(run.id) ??
+      (run.version === bookmark.version &&
+        isPublicRunReviewed(buildPublicFeedbackSteps(bookmark.formSchema, run)));
   }, [bookmark.formSchema, bookmark.version, runs]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
       <section aria-label="Form" className="flex min-h-0 min-w-0 flex-1 flex-col lg:min-h-128">
+        {viewingQuery.error ? (
+          <p role="alert">
+            {viewingQuery.error.message}{" "}
+            <AppButton onClick={() => void viewingQuery.refetch()}>Retry</AppButton>
+            <AppButton onClick={() => setViewingId(null)}>Back to form</AppButton>
+          </p>
+        ) : null}
         {viewing ? (
           <PublicRunView
             key={viewing.id}
@@ -78,14 +86,13 @@ export function PublicBookmarkPanel({ bookmark, examples }: Props) {
             onBack={() => setViewingId(null)}
           />
         ) : null}
-        <div className={viewing ? "hidden" : "flex min-h-0 flex-1 flex-col"}>
+        <div className={viewingId !== null ? "hidden" : "flex min-h-0 flex-1 flex-col"}>
           <PublicBookmarkForm
             // A republished or moved bookmark is a new form, not an update of the mounted one.
             key={`${bookmark.publicId}:${bookmark.version}`}
             publicId={bookmark.publicId}
             version={bookmark.version}
             formSchema={bookmark.formSchema}
-            examples={examples}
             onRun={onRun}
             afterRun={
               latest ? (
@@ -109,10 +116,14 @@ export function PublicBookmarkPanel({ bookmark, examples }: Props) {
       </section>
       <PublicRunSession
         runs={runs}
+        query={runsQuery}
         loading={runsQuery.isPending}
         reviewed={reviewed}
         selectedId={viewing?.id ?? latest?.id ?? null}
-        onSelect={(run) => setViewingId(run.id)}
+        onSelect={(run) => {
+          queryClient.setQueryData(publicRunDetailOptions(bookmark.publicId, run.id).queryKey, run);
+          setViewingId(run.id);
+        }}
       />
     </div>
   );

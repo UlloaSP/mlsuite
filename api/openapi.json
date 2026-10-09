@@ -245,6 +245,24 @@
         ],
         "type": "object"
       },
+      "BookmarkExampleStateDto": {
+        "properties": {
+          "example": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SchemaBookmarkExampleDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "example"
+        ],
+        "type": "object"
+      },
       "BulkInvitationRequest": {
         "properties": {
           "invitationIds": {
@@ -258,6 +276,123 @@
         },
         "required": [
           "invitationIds"
+        ],
+        "type": "object"
+      },
+      "CatalogSelectionItemDto": {
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail",
+          "id",
+          "title"
+        ],
+        "type": "object"
+      },
+      "CatalogSelectionPageDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogSelectionItemDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalAvailable": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalAvailable",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "CatalogSelectionRequest": {
+        "properties": {
+          "ids": {
+            "items": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "search": {
+            "type": "string"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "timeZone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ids",
+          "kind",
+          "locale",
+          "page",
+          "search",
+          "size",
+          "timeZone"
+        ],
+        "type": "object"
+      },
+      "Condition": {
+        "properties": {
+          "columnId": {
+            "type": "string"
+          },
+          "operator": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "columnId",
+          "operator",
+          "value"
         ],
         "type": "object"
       },
@@ -786,6 +921,205 @@
         ],
         "type": "object"
       },
+      "InferenceCatalogColumnDto": {
+        "properties": {
+          "choices": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "group": {
+            "enum": [
+              "inputs",
+              "outputs",
+              "feedback"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "number",
+              "text"
+            ],
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "schemaId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "schemaName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "choices",
+          "group",
+          "id",
+          "kind",
+          "label",
+          "schemaId",
+          "schemaName"
+        ],
+        "type": "object"
+      },
+      "InferenceCatalogMetadataDto": {
+        "properties": {
+          "bookmarks": {
+            "items": {
+              "$ref": "#/components/schemas/Option"
+            },
+            "type": "array"
+          },
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/InferenceCatalogColumnDto"
+            },
+            "type": "array"
+          },
+          "schemas": {
+            "items": {
+              "$ref": "#/components/schemas/Option"
+            },
+            "type": "array"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bookmarks",
+          "columns",
+          "schemas",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "InferenceCatalogRequest": {
+        "properties": {
+          "bookmarkId": {
+            "type": "string"
+          },
+          "conditions": {
+            "items": {
+              "$ref": "#/components/schemas/Condition"
+            },
+            "type": "array"
+          },
+          "feedback": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "origin": {
+            "type": "string"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "query": {
+            "type": "string"
+          },
+          "schemaId": {
+            "type": "string"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "sort": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "bookmarkId",
+          "conditions",
+          "feedback",
+          "locale",
+          "origin",
+          "page",
+          "query",
+          "schemaId",
+          "size",
+          "sort",
+          "status"
+        ],
+        "type": "object"
+      },
+      "InferenceCatalogRowDto": {
+        "properties": {
+          "displayValues": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "feedbackStatus": {
+            "enum": [
+              "COMPLETED",
+              "PENDING",
+              "NOT_REQUIRED",
+              "ERROR"
+            ],
+            "type": "string"
+          },
+          "item": {
+            "$ref": "#/components/schemas/PredictionRunCatalogItemDto"
+          },
+          "values": {
+            "additionalProperties": { },
+            "type": "object"
+          }
+        },
+        "required": [
+          "displayValues",
+          "feedbackStatus",
+          "item",
+          "values"
+        ],
+        "type": "object"
+      },
+      "InferenceFacetRequest": {
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/InferenceCatalogRequest"
+          },
+          "search": {
+            "type": "string"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "page",
+          "scope",
+          "search",
+          "size"
+        ],
+        "type": "object"
+      },
       "InferenceTableDto": {
         "properties": {
           "feedback": {
@@ -861,6 +1195,44 @@
           "email",
           "fullName",
           "id"
+        ],
+        "type": "object"
+      },
+      "InvitationCatalogDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InvitationDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalInvitations": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalInvitations",
+          "totalItems"
         ],
         "type": "object"
       },
@@ -960,6 +1332,44 @@
         "required": [
           "email",
           "password"
+        ],
+        "type": "object"
+      },
+      "MemberCatalogDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrganizationMembershipRowDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalMembers": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems",
+          "totalMembers"
         ],
         "type": "object"
       },
@@ -1131,6 +1541,21 @@
         },
         "required": [
           "versionId"
+        ],
+        "type": "object"
+      },
+      "Option": {
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "value"
         ],
         "type": "object"
       },
@@ -1478,6 +1903,138 @@
         ],
         "type": "object"
       },
+      "PageDtoAdminUserDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminUserDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoInferenceCatalogRowDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InferenceCatalogRowDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoInvitationCandidateDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InvitationCandidateDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoInvitationDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InvitationDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
       "PageDtoModelDto": {
         "properties": {
           "hasNext": {
@@ -1544,6 +2101,39 @@
         ],
         "type": "object"
       },
+      "PageDtoOption": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Option"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
       "PageDtoOrganizationCatalogItemDto": {
         "properties": {
           "hasNext": {
@@ -1552,6 +2142,105 @@
           "items": {
             "items": {
               "$ref": "#/components/schemas/OrganizationCatalogItemDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoOrganizationDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrganizationDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoOrganizationMembershipRowDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrganizationMembershipRowDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoPermissionGroupDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PermissionGroupDto"
             },
             "type": "array"
           },
@@ -1610,6 +2299,72 @@
         ],
         "type": "object"
       },
+      "PageDtoPredictBookmarkDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PredictBookmarkDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoPublicBookmarkExampleDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PublicBookmarkExampleDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
       "PageDtoPublicBookmarkSummaryDto": {
         "properties": {
           "hasNext": {
@@ -1643,6 +2398,204 @@
         ],
         "type": "object"
       },
+      "PageDtoPublicRunDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PublicRunDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoRoleDefinitionDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RoleDefinitionDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoRoleSummaryDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RoleSummaryDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoRoleTemplateDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RoleTemplateDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoSchemaBookmarkDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SchemaBookmarkDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoSchemaBookmarkExampleDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SchemaBookmarkExampleDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
       "PageDtoSchemaCatalogItemDto": {
         "properties": {
           "hasNext": {
@@ -1651,6 +2604,138 @@
           "items": {
             "items": {
               "$ref": "#/components/schemas/SchemaCatalogItemDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoSchemaChangeCatalogItemDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SchemaChangeCatalogItemDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoSchemaReviewAssignmentStatusDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SchemaReviewAssignmentStatusDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoSchemaReviewRunListItemDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SchemaReviewRunListItemDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoSchemaVersionDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SchemaVersionDto"
             },
             "type": "array"
           },
@@ -2609,6 +3694,145 @@
         ],
         "type": "object"
       },
+      "ReviewAssignmentCountsDto": {
+        "properties": {
+          "completed": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "completed",
+          "total"
+        ],
+        "type": "object"
+      },
+      "ReviewCatalogSummaryDto": {
+        "properties": {
+          "inProgressRuns": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "publicId": {
+            "type": "string"
+          },
+          "schema": {
+            "$ref": "#/components/schemas/SchemaDto"
+          },
+          "schemaVersion": {
+            "$ref": "#/components/schemas/SchemaVersionDto"
+          },
+          "submittedRuns": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalRuns": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "inProgressRuns",
+          "publicId",
+          "schema",
+          "schemaVersion",
+          "submittedRuns",
+          "totalRuns"
+        ],
+        "type": "object"
+      },
+      "ReviewInboxCatalogDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewInboxItemDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "pendingCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "revisionCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "pendingCount",
+          "revisionCount",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "ReviewInboxItemDto": {
+        "properties": {
+          "publicId": {
+            "type": "string"
+          },
+          "reviewId": {
+            "type": "string"
+          },
+          "reviewState": {
+            "enum": [
+              "PENDING",
+              "IN_PROGRESS",
+              "COMPLETED"
+            ],
+            "type": "string"
+          },
+          "run": {
+            "$ref": "#/components/schemas/PredictionRunDto"
+          },
+          "schemaName": {
+            "type": "string"
+          },
+          "stateEnteredAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "submittedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "publicId",
+          "reviewId",
+          "reviewState",
+          "run",
+          "schemaName",
+          "stateEnteredAt",
+          "submittedAt"
+        ],
+        "type": "object"
+      },
       "RoleActionsDto": {
         "properties": {
           "canAssign": {
@@ -2633,6 +3857,30 @@
           "canDuplicate",
           "canEdit",
           "canView"
+        ],
+        "type": "object"
+      },
+      "RoleCatalogMetadataDto": {
+        "properties": {
+          "permissionCatalog": {
+            "items": {
+              "$ref": "#/components/schemas/PermissionGroupDto"
+            },
+            "type": "array"
+          },
+          "roles": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "templates": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "permissionCatalog",
+          "roles",
+          "templates"
         ],
         "type": "object"
       },
@@ -3065,6 +4313,24 @@
           "updatedByAvatarUrl",
           "updatedByEmail",
           "updatedByName"
+        ],
+        "type": "object"
+      },
+      "SchemaChangeCatalogItemDto": {
+        "properties": {
+          "baseSnapshotName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "draft": {
+            "$ref": "#/components/schemas/SchemaDraftDto"
+          }
+        },
+        "required": [
+          "baseSnapshotName",
+          "draft"
         ],
         "type": "object"
       },
@@ -4045,6 +5311,34 @@
         ],
         "type": "object"
       },
+      "WorkspaceCurrentContextDto": {
+        "properties": {
+          "currentMembership": {
+            "$ref": "#/components/schemas/OrganizationMembershipDto"
+          },
+          "currentOrganization": {
+            "$ref": "#/components/schemas/OrganizationDto"
+          },
+          "membershipCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/WorkspacePermissionsDto"
+          },
+          "user": {
+            "$ref": "#/components/schemas/WorkspaceUserDto"
+          }
+        },
+        "required": [
+          "currentMembership",
+          "currentOrganization",
+          "membershipCount",
+          "permissions",
+          "user"
+        ],
+        "type": "object"
+      },
       "WorkspacePermissionsDto": {
         "properties": {
           "canCreateModels": {
@@ -4509,6 +5803,70 @@
         ]
       }
     },
+    "/api/admin/users/owner-candidates/catalog": {
+      "get": {
+        "operationId": "ownerCandidateUserCatalog",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoAdminUserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "admin-owner-catalog-controller"
+        ]
+      }
+    },
     "/api/admin/users/{id}": {
       "delete": {
         "operationId": "delete_4",
@@ -4901,6 +6259,69 @@
         ]
       }
     },
+    "/api/catalog-selection": {
+      "post": {
+        "operationId": "page_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogSelectionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogSelectionPageDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "catalog-selection-controller"
+        ]
+      }
+    },
+    "/api/catalog-selection/ids": {
+      "post": {
+        "operationId": "ids",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogSelectionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "catalog-selection-controller"
+        ]
+      }
+    },
     "/api/invitations/pending": {
       "get": {
         "operationId": "listPendingForUser",
@@ -4921,6 +6342,70 @@
         },
         "tags": [
           "invitation-controller"
+        ]
+      }
+    },
+    "/api/invitations/pending/catalog": {
+      "get": {
+        "operationId": "pendingInvitationCatalog",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoInvitationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "invitation-catalog-controller"
         ]
       }
     },
@@ -5617,6 +7102,79 @@
         ]
       }
     },
+    "/api/organizations/{organizationId}/invitation-candidates/catalog": {
+      "get": {
+        "operationId": "invitationCandidateCatalog",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoInvitationCandidateDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "invitation-catalog-controller"
+        ]
+      }
+    },
     "/api/organizations/{organizationId}/invitations": {
       "get": {
         "operationId": "listInvitations",
@@ -5721,6 +7279,79 @@
         },
         "tags": [
           "invitation-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/invitations/catalog": {
+      "get": {
+        "operationId": "invitationCatalog",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationCatalogDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "invitation-catalog-controller"
         ]
       }
     },
@@ -5909,6 +7540,152 @@
         ]
       }
     },
+    "/api/organizations/{organizationId}/members/catalog": {
+      "get": {
+        "operationId": "memberCatalog",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberCatalogDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "member-catalog-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/members/roles/catalog": {
+      "get": {
+        "operationId": "memberFilterRoleCatalog",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoRoleSummaryDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "member-catalog-controller"
+        ]
+      }
+    },
     "/api/organizations/{organizationId}/members/{membershipId}": {
       "delete": {
         "operationId": "removeMember",
@@ -5990,6 +7767,307 @@
         ]
       }
     },
+    "/api/organizations/{organizationId}/members/{membershipId}/roles/catalog": {
+      "get": {
+        "operationId": "assignableRoleCatalog",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "membershipId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoRoleSummaryDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "member-catalog-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/owner-candidates/catalog": {
+      "get": {
+        "operationId": "ownerCandidateCatalog",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoOrganizationMembershipRowDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "member-catalog-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/permissions/catalog": {
+      "get": {
+        "operationId": "permissionCatalog",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoPermissionGroupDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "role-list-catalog-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/role-templates/catalog": {
+      "get": {
+        "operationId": "roleTemplateCatalog",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoRoleTemplateDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "role-list-catalog-controller"
+        ]
+      }
+    },
     "/api/organizations/{organizationId}/roles": {
       "get": {
         "operationId": "list_5",
@@ -6060,6 +8138,79 @@
         ]
       }
     },
+    "/api/organizations/{organizationId}/roles/catalog": {
+      "get": {
+        "operationId": "roleCatalog",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoRoleDefinitionDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "role-list-catalog-controller"
+        ]
+      }
+    },
     "/api/organizations/{organizationId}/roles/from-template": {
       "post": {
         "operationId": "fromTemplate",
@@ -6098,6 +8249,37 @@
         },
         "tags": [
           "role-catalog-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/roles/metadata": {
+      "get": {
+        "operationId": "roleCatalogMetadata",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleCatalogMetadataDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "role-list-catalog-controller"
         ]
       }
     },
@@ -6601,6 +8783,129 @@
         ]
       }
     },
+    "/api/prediction-runs/catalog": {
+      "post": {
+        "operationId": "page",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InferenceCatalogRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoInferenceCatalogRowDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "inference-catalog-controller"
+        ]
+      }
+    },
+    "/api/prediction-runs/catalog/facets": {
+      "post": {
+        "operationId": "inferenceFacetCatalog",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InferenceFacetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoOption"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "inference-catalog-controller"
+        ]
+      }
+    },
+    "/api/prediction-runs/catalog/metadata": {
+      "post": {
+        "operationId": "metadata",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InferenceCatalogRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceCatalogMetadataDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "inference-catalog-controller"
+        ]
+      }
+    },
+    "/api/prediction-runs/catalog/selection": {
+      "post": {
+        "operationId": "selection",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InferenceCatalogRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PredictionRunCatalogItemDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "inference-catalog-controller"
+        ]
+      }
+    },
     "/api/prediction-runs/last-id": {
       "get": {
         "operationId": "lastId",
@@ -6782,6 +9087,150 @@
         },
         "tags": [
           "public-bookmark-controller"
+        ]
+      }
+    },
+    "/api/public/bookmarks/{id}/examples/catalog": {
+      "get": {
+        "operationId": "publicExampleCatalog",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoPublicBookmarkExampleDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "bookmark-list-catalog-controller"
+        ]
+      }
+    },
+    "/api/public/bookmarks/{id}/runs/catalog": {
+      "get": {
+        "operationId": "publicRunCatalog",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoPublicRunDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "bookmark-list-catalog-controller"
         ]
       }
     },
@@ -7133,6 +9582,70 @@
                     "$ref": "#/components/schemas/PredictBookmarkDto"
                   },
                   "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks/catalog": {
+      "get": {
+        "operationId": "predictBookmarkCatalog",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoPredictBookmarkDto"
                 }
               }
             },
@@ -7523,6 +10036,150 @@
         ]
       }
     },
+    "/api/schema-bookmarks/{id}/examples/catalog": {
+      "get": {
+        "operationId": "bookmarkExampleCatalog",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoSchemaBookmarkExampleDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "bookmark-list-catalog-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks/{id}/examples/{runId}/status": {
+      "get": {
+        "operationId": "bookmarkExampleStatus",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "runId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarkExampleStateDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "bookmark-list-catalog-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks/{id}/statistics": {
+      "get": {
+        "operationId": "bookmarkStatistics",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictBookmarkDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "bookmark-list-catalog-controller"
+        ]
+      }
+    },
     "/api/schema-drafts/{draftId}": {
       "get": {
         "operationId": "get",
@@ -7775,6 +10432,223 @@
         ]
       }
     },
+    "/api/schema-reviews/inbox/runs/catalog": {
+      "get": {
+        "operationId": "inboxRunCatalog",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewInboxCatalogDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-catalog-controller"
+        ]
+      }
+    },
+    "/api/schema-reviews/inbox/submit-pending": {
+      "post": {
+        "operationId": "submitInbox",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-controller"
+        ]
+      }
+    },
+    "/api/schema-reviews/inbox/{reviewId}": {
+      "get": {
+        "operationId": "inboxReview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reviewId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewCatalogSummaryDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-catalog-controller"
+        ]
+      }
+    },
+    "/api/schema-reviews/inbox/{reviewId}/runs/catalog": {
+      "get": {
+        "operationId": "inboxReviewRunCatalog",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reviewId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoSchemaReviewRunListItemDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-catalog-controller"
+        ]
+      }
+    },
+    "/api/schema-reviews/inbox/{reviewId}/runs/{runId}": {
+      "get": {
+        "operationId": "inboxRun",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reviewId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "runId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewInboxItemDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-catalog-controller"
+        ]
+      }
+    },
     "/api/schema-reviews/inferences/{predictionRunId}/assignments": {
       "get": {
         "operationId": "assignmentStatus",
@@ -7806,6 +10680,158 @@
         },
         "tags": [
           "schema-review-controller"
+        ]
+      }
+    },
+    "/api/schema-reviews/inferences/{runId}/assignments/catalog": {
+      "get": {
+        "operationId": "assignmentCatalog",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "runId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoSchemaReviewAssignmentStatusDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-catalog-controller"
+        ]
+      }
+    },
+    "/api/schema-reviews/inferences/{runId}/assignments/counts": {
+      "get": {
+        "operationId": "assignmentCounts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "runId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewAssignmentCountsDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-catalog-controller"
+        ]
+      }
+    },
+    "/api/schema-reviews/inferences/{runId}/assignments/{reviewRunId}/{reviewerId}": {
+      "get": {
+        "operationId": "assignment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "runId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "reviewRunId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "reviewerId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaReviewAssignmentStatusDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-catalog-controller"
         ]
       }
     },
@@ -8502,6 +11528,79 @@
         ]
       }
     },
+    "/api/schemas/{schemaId}/bookmarks/catalog": {
+      "get": {
+        "operationId": "schemaBookmarkCatalog",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schemaId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoSchemaBookmarkDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-repository-catalog-controller"
+        ]
+      }
+    },
     "/api/schemas/{schemaId}/drafts": {
       "get": {
         "operationId": "list_2",
@@ -8572,6 +11671,79 @@
         },
         "tags": [
           "schema-draft-controller"
+        ]
+      }
+    },
+    "/api/schemas/{schemaId}/drafts/catalog": {
+      "get": {
+        "operationId": "changeCatalog",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schemaId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoSchemaChangeCatalogItemDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-repository-catalog-controller"
         ]
       }
     },
@@ -8696,6 +11868,79 @@
         ]
       }
     },
+    "/api/schemas/{schemaId}/versions/catalog": {
+      "get": {
+        "operationId": "snapshotCatalog",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schemaId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoSchemaVersionDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-repository-catalog-controller"
+        ]
+      }
+    },
     "/api/search": {
       "get": {
         "operationId": "search",
@@ -8792,6 +12037,118 @@
         },
         "tags": [
           "workspace-controller"
+        ]
+      }
+    },
+    "/api/workspace/context/current": {
+      "get": {
+        "operationId": "currentContext",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceCurrentContextDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "workspace-catalog-controller"
+        ]
+      },
+      "patch": {
+        "operationId": "selectCurrentOrganization",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectOrganizationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceCurrentContextDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "workspace-catalog-controller"
+        ]
+      }
+    },
+    "/api/workspace/context/organizations/catalog": {
+      "get": {
+        "operationId": "organizationCatalog",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoOrganizationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "workspace-catalog-controller"
         ]
       }
     }

@@ -1,17 +1,12 @@
+import { appFetch, json } from "@/shared/api/http";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import {
-  createSchemaReviewFeedback,
-  updateSchemaReviewFeedback,
-  submitSchemaReviewRuns,
-} from "./review-api";
+import { createSchemaReviewFeedback, updateSchemaReviewFeedback } from "./review-api";
 import { saveSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-save";
 import type { SchemaFeedbackStep } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
 import { PREDICTION_RUN_CATALOG_QUERY_KEY } from "@/capabilities/prediction-runs/prediction-run-keys";
 import { INFERENCE_REVIEW_ASSIGNMENTS_ROOT_QUERY_KEY } from "@/capabilities/review-creation/review-creation-api";
 import { SCHEMA_REVIEW_INBOX_QUERY_KEY } from "./review-keys";
-
-export type ReviewSubmission = { reviewId: string; reviewRunIds: string[] };
 
 export const useSaveSchemaReviewFeedbackMutation = (reviewId: string, reviewRunId: string) => {
   const qc = useQueryClient();
@@ -48,12 +43,7 @@ export const useSubmitSchemaReviewInboxMutation = () => {
   const qc = useQueryClient();
   const organizationId = useCurrentOrganizationId() ?? "none";
   return useMutation({
-    mutationFn: (submissions: ReviewSubmission[]) =>
-      Promise.all(
-        submissions.map(({ reviewId, reviewRunIds }) =>
-          submitSchemaReviewRuns(reviewId, reviewRunIds),
-        ),
-      ),
+    mutationFn: () => appFetch<void>("/api/schema-reviews/inbox/submit-pending", json("POST", {})),
     onSuccess: () =>
       Promise.all([
         qc.invalidateQueries({ queryKey: PREDICTION_RUN_CATALOG_QUERY_KEY(organizationId) }),

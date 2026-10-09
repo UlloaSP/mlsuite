@@ -6,6 +6,7 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +26,8 @@ import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictBookmarkCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
+import dev.ulloasp.mlsuite.util.CatalogRequest;
+import dev.ulloasp.mlsuite.util.PageDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -46,6 +49,12 @@ public class SchemaBookmarkController {
     @GetMapping("/schema-bookmarks")
     public ResponseEntity<List<PredictBookmarkDto>> listOrganization(CurrentUser user) {
         return ResponseEntity.ok(predictCatalog.listBookmarks(user.userId()));
+    }
+
+    @GetMapping("/schema-bookmarks/catalog")
+    public PageDto<PredictBookmarkDto> predictBookmarkCatalog(CurrentUser user,
+            @ModelAttribute CatalogRequest request) {
+        return predictCatalog.catalog(user.userId(), request);
     }
 
     @PostMapping("/schemas/{schemaId}/bookmarks")

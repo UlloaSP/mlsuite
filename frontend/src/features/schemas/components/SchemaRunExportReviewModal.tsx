@@ -1,3 +1,4 @@
+import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { FileDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -98,22 +99,37 @@ export function SchemaRunExportReviewModal({
           <p className="mb-3 text-2xs font-semibold uppercase tracking-eyebrow text-fg-muted">
             Reviewers
           </p>
-          <div className="max-h-[48vh] overflow-auto border-y border-line">
-            {reviewers.map((reviewer) => {
-              const selected = !selection.excludedReviewers.has(reviewer);
-              return (
-                <button
-                  key={reviewer}
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => toggleReviewer(reviewer)}
-                  className="flex w-full items-center gap-3 border-b border-line px-2 py-3 text-left text-sm last:border-b-0 hover:bg-surface-muted"
-                >
-                  <AppCheckMark checked={selected} />
-                  <span className="min-w-0 truncate">{reviewer}</span>
-                </button>
-              );
-            })}
+          <div className="flex h-[48vh] flex-col border-y border-line">
+            <CatalogListPanel
+              scrollMemoryKey={false}
+              itemCount={reviewers.length}
+              hasNext={false}
+              isBusy={false}
+              isLoading={false}
+              onLoadMore={() => undefined}
+              errorMessage={null}
+              loadingLabel="Loading reviewers…"
+              emptyState={{
+                title: "No reviewers",
+                description: "These inferences have no reviewer answers.",
+              }}
+            >
+              {reviewers.map((reviewer) => {
+                const selected = !selection.excludedReviewers.has(reviewer);
+                return (
+                  <button
+                    key={reviewer}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => toggleReviewer(reviewer)}
+                    className="flex w-full items-center gap-3 border-b border-line px-2 py-3 text-left text-sm last:border-b-0 hover:bg-surface-muted"
+                  >
+                    <AppCheckMark checked={selected} />
+                    <span className="min-w-0 truncate">{reviewer}</span>
+                  </button>
+                );
+              })}
+            </CatalogListPanel>
           </div>
         </aside>
         <section aria-label="Inferences" className="min-w-0 px-6 py-4">
@@ -145,20 +161,35 @@ export function SchemaRunExportReviewModal({
               </AppButton>
             </div>
           </div>
-          <div className="border-y border-line">
-            {summaries.map((summary) => (
-              <SchemaRunExportRunRow
-                key={summary.run.id}
-                summary={summary}
-                open={openRunIds.has(summary.run.id)}
-                selection={selection}
-                onToggleOpen={() =>
-                  setOpenRunIds((current) => toggledInSet(current, summary.run.id))
-                }
-                onToggleRun={toggleRun}
-                onToggleRunReviewer={toggleRunReviewer}
-              />
-            ))}
+          <div className="flex h-[48vh] flex-col border-y border-line">
+            <CatalogListPanel
+              scrollMemoryKey={false}
+              itemCount={summaries.length}
+              hasNext={false}
+              isBusy={false}
+              isLoading={false}
+              onLoadMore={() => undefined}
+              errorMessage={null}
+              loadingLabel="Loading inferences…"
+              emptyState={{
+                title: "No inferences",
+                description: "Select inferences to export their reviews.",
+              }}
+            >
+              {summaries.map((summary) => (
+                <SchemaRunExportRunRow
+                  key={summary.run.id}
+                  summary={summary}
+                  open={openRunIds.has(summary.run.id)}
+                  selection={selection}
+                  onToggleOpen={() =>
+                    setOpenRunIds((current) => toggledInSet(current, summary.run.id))
+                  }
+                  onToggleRun={toggleRun}
+                  onToggleRunReviewer={toggleRunReviewer}
+                />
+              ))}
+            </CatalogListPanel>
           </div>
         </section>
       </AppSkeletonScope>

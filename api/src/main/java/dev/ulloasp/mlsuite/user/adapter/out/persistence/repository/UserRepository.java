@@ -8,6 +8,8 @@ package dev.ulloasp.mlsuite.user.adapter.out.persistence.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -39,6 +41,24 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
             ORDER BY LOWER(u.fullName) ASC, LOWER(u.email) ASC
             """)
     List<User> findEnabledUsersOutsideActiveOrganization(@Param("organizationId") Long organizationId);
+
+    /** Enabled users who are not active members of the organization, searched by name or e-mail. */
+    @Query("""
+            SELECT u FROM User u
+            WHERE u.enabled = true
+            AND NOT EXISTS (
+                SELECT 1 FROM OrganizationMembership m
+                WHERE m.organization.id = :organizationId
+                AND m.user.id = u.id
+                AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE
+            )
+            AND (
+                lower(u.fullName) LIKE :search ESCAPE '!'
+                OR lower(u.email) LIKE :search ESCAPE '!'
+            )
+            """)
+    Page<User> findInvitationCandidates(@Param("organizationId") Long organizationId,
+            @Param("search") String search, Pageable pageable);
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("UPDATE User u SET u.currentOrganization = null WHERE u.currentOrganization.id = :organizationId")

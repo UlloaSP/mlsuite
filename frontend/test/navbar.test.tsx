@@ -29,6 +29,10 @@ vi.mock("@/capabilities/workspace-context/session", () => ({
   useLogout: () => ({ mutate: vi.fn() }),
 }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
+  useWorkspaceOrganizationCatalog: () => ({
+    data: { items: [], totalItems: 0 },
+    hasNextPage: false,
+  }),
   useWorkspaceContext: () => ({
     data: {
       currentOrganization: { id: 7, name: "Acme", slug: "acme" },

@@ -12,7 +12,6 @@ import {
   useTransferOrganizationOwnershipMutation,
   useUpdateOrganizationMutation,
 } from "@/features/workspace/api/workspace.mutations";
-import { ORGANIZATION_CATALOG_PAGE_SIZE } from "@/features/workspace/api/workspace.keys";
 import { useOrganizationCatalogPageQuery } from "@/features/workspace/api/workspace.queries";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -63,12 +62,7 @@ export function OrganizationsPage() {
   const deleteMutation = useDeleteOrganizationMutation();
   const transferMutation = useTransferOrganizationOwnershipMutation();
   const canView = user?.systemRole === "SUPERADMIN";
-  const pageQuery = useOrganizationCatalogPageQuery(
-    controls.page,
-    controls.search,
-    controls.sort,
-    canView,
-  );
+  const pageQuery = useOrganizationCatalogPageQuery(controls.search, controls.sort, canView);
   const deleteOrganization = (organization: OrganizationCatalogItemDto) =>
     withFeedback(deleteMutation.mutateAsync(organization.id), "Organization deleted.");
   const patchOrganization = (organization: OrganizationCatalogItemDto, patch: OrganizationPatch) =>
@@ -113,7 +107,6 @@ export function OrganizationsPage() {
       }}
       isActionPending={isActionPending}
       loadingLabel="Loading organizations…"
-      pageSize={ORGANIZATION_CATALOG_PAGE_SIZE}
       filterLabel="Filter organizations"
       filters={FILTERS}
       placeholder="Search by name, slug, or description"

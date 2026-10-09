@@ -45,7 +45,7 @@ export function ReviewPredictionTrayGroup({
           <ChevronUp size={14} className={open ? "" : "rotate-180"} />
         </button>
       </div>
-      {open && count > 0 ? <div className="mt-3 overflow-y-auto xl:min-h-0">{children}</div> : null}
+      {open ? <div className="mt-3 flex min-h-0 flex-1 flex-col">{children}</div> : null}
     </section>
   );
 }

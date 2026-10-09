@@ -4,52 +4,46 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Search } from "lucide-react";
-import { useMemo, useState } from "react";
 import { Link } from "react-router";
-import { getModelAlgorithmLabel } from "@/capabilities/prediction-runtime/data/model-utils";
 import type { SchemaSourceModel } from "@/features/schemas/lib/merge";
 import { hasModelSchema } from "@/features/schemas/lib/schema-model-selection";
-import { SchemaModelOption } from "@/features/schemas/components/SchemaModelOption";
+import { SchemaModelOption } from "./SchemaModelOption";
 import { AppBadge } from "@/shared/ui/AppBadge";
-import { AppEmptyState } from "@/shared/ui/AppEmptyState";
-import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import { appButtonClass } from "@/shared/ui/button-styles";
-import { CatalogPaginationFooter } from "@/shared/ui/catalog/CatalogPaginationFooter";
-import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
-import { useStableLoading } from "@/shared/ui/useStableLoading";
-
-type Props = {
+import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
+import type { CatalogPage } from "@/shared/api/infinite-catalog";
+export type SchemaModelCatalog = {
+  data?: CatalogPage<SchemaSourceModel>;
   isLoading: boolean;
-  models: SchemaSourceModel[];
+  isFetching: boolean;
+  error: Error | null;
+  fetchNextPage: () => Promise<unknown>;
+  refetch: () => Promise<unknown>;
+  isFetchNextPageError: boolean;
+};
+export function SchemaModelPicker({
+  catalog,
+  search,
+  onSearchChange,
+  value,
+  onChange,
+}: {
+  catalog: SchemaModelCatalog;
+  search: string;
+  onSearchChange: (search: string) => void;
   value: SchemaSourceModel[];
   onChange: (value: SchemaSourceModel[]) => void;
-};
-
-const matches = (model: SchemaSourceModel, query: string) =>
-  `${model.name} ${getModelAlgorithmLabel(model)}`.toLowerCase().includes(query);
-
-/** Searchable, paginated model list; the selection lives in the page, so it survives paging. */
-export function SchemaModelPicker({ isLoading, models, value, onChange }: Props) {
-  const [query, setQuery] = useState("");
-  const normalized = query.trim().toLowerCase();
-  const filtered = useMemo(
-    () => (normalized ? models.filter((model) => matches(model, normalized)) : models),
-    [models, normalized],
-  );
-  const pagination = useClientCatalogPage(filtered, normalized, isLoading);
-  const showLoading = useStableLoading(isLoading);
+}) {
   const selectedIds = new Set(value.map((item) => String(item.id)));
-
   const toggle = (model: SchemaSourceModel) => {
     if (!hasModelSchema(model)) return;
-    if (selectedIds.has(String(model.id))) {
-      onChange(value.filter((item) => String(item.id) !== String(model.id)));
-      return;
-    }
-    onChange([...value, model]);
+    onChange(
+      selectedIds.has(String(model.id))
+        ? value.filter((item) => String(item.id) !== String(model.id))
+        : [...value, model],
+    );
   };
-
   return (
     <section
       aria-label="Models"
@@ -59,9 +53,7 @@ export function SchemaModelPicker({ isLoading, models, value, onChange }: Props)
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-semibold text-fg">Models</h2>
-            <AppBadge tone={value.length > 0 ? "accent" : "neutral"}>
-              {value.length} selected
-            </AppBadge>
+            <AppBadge tone={value.length ? "accent" : "neutral"}>{value.length} selected</AppBadge>
           </div>
           <p className="mt-0.5 text-xs text-fg-secondary">
             Each selected model contributes its inputs and reports to the schema.
@@ -72,33 +64,36 @@ export function SchemaModelPicker({ isLoading, models, value, onChange }: Props)
           className="w-full sm:w-64"
           placeholder="Search models"
           prefix={<Search className="size-4 text-fg-muted" />}
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          value={search}
+          onChange={(event) => onSearchChange(event.target.value)}
         />
       </div>
-
-      <div className="app-scroll flex min-h-60 flex-1 flex-col gap-2 overflow-y-auto p-4 lg:min-h-0">
-        {showLoading ? (
-          <AppLoadingState compact label="Loading models…" rows={4} />
-        ) : models.length === 0 ? (
-          <AppEmptyState
-            compact
-            title="No models yet"
-            description="Upload a model first; a schema is generated from its inputs."
-            action={
+      <div className="flex min-h-60 flex-1 flex-col px-4 lg:min-h-0">
+        <CatalogListPanel
+          key={search}
+          itemCount={catalog.data?.items.length ?? 0}
+          hasNext={catalog.data?.hasNext ?? false}
+          isLoading={catalog.isLoading}
+          isBusy={catalog.isFetching}
+          loadingLabel="Loading models…"
+          errorMessage={catalog.error?.message ?? null}
+          onLoadMore={() => catalog.fetchNextPage()}
+          onRetry={() =>
+            void (catalog.isFetchNextPageError ? catalog.fetchNextPage() : catalog.refetch())
+          }
+          emptyState={{
+            title: search ? "No matching models" : "No models yet",
+            description: search
+              ? "Try another name or algorithm."
+              : "Upload a model first; a schema is generated from its inputs.",
+            action: search ? undefined : (
               <Link className={appButtonClass({ size: "sm" })} to="/models/create">
                 Upload a model
               </Link>
-            }
-          />
-        ) : filtered.length === 0 ? (
-          <AppEmptyState
-            compact
-            title="No matching models"
-            description="Try another name or algorithm."
-          />
-        ) : (
-          pagination.visibleItems.map((model) => (
+            ),
+          }}
+        >
+          {catalog.data?.items.map((model) => (
             <SchemaModelOption
               key={model.id}
               available={hasModelSchema(model)}
@@ -106,18 +101,8 @@ export function SchemaModelPicker({ isLoading, models, value, onChange }: Props)
               selected={selectedIds.has(String(model.id))}
               onToggle={() => toggle(model)}
             />
-          ))
-        )}
-      </div>
-
-      <div className="shrink-0 px-4 pb-4">
-        <CatalogPaginationFooter
-          disabled={isLoading}
-          hasNext={pagination.hasNext}
-          page={pagination.page}
-          setPage={pagination.setPage}
-          totalPages={pagination.totalPages}
-        />
+          ))}
+        </CatalogListPanel>
       </div>
     </section>
   );

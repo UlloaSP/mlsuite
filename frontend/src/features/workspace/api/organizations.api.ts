@@ -9,7 +9,6 @@ import type {
   OrganizationAdminDashboardDto,
   OrganizationDto,
   OrganizationMembershipDto,
-  OrganizationMembershipRowDto,
   PageDtoOrganizationCatalogItemDto,
   TransferOrganizationOwnershipRequest,
   UpdateOrganizationMembershipRoleRequest,
@@ -27,14 +26,6 @@ export const getOrganizationAdminDashboard = (
   signal?: AbortSignal,
 ): Promise<OrganizationAdminDashboardDto> =>
   appFetch<OrganizationAdminDashboardDto>(`/api/organizations/${organizationId}/admin-dashboard`, {
-    signal,
-  });
-
-export const getOrganizationMembers = (
-  organizationId: number,
-  signal?: AbortSignal,
-): Promise<OrganizationMembershipRowDto[]> =>
-  appFetch<OrganizationMembershipRowDto[]>(`/api/organizations/${organizationId}/members`, {
     signal,
   });
 

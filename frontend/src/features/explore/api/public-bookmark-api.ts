@@ -3,13 +3,13 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { keepPreviousData, queryOptions } from "@tanstack/react-query";
+import { queryOptions } from "@tanstack/react-query";
 import { appFetch, isHttpError, json } from "@/shared/api/http";
 import { organizationQueryKey } from "@/shared/api/organization-query-key";
+import { useInfiniteCatalog } from "@/shared/api/infinite-catalog";
 import type {
   PageDtoPublicBookmarkSummaryDto,
   PublicBookmarkDto,
-  PublicBookmarkExampleDto,
   PublicPredictionDto,
   PublicPredictionRequest,
   PublicRunDto,
@@ -43,25 +43,14 @@ const publicBookmarkPath = (publicId: string) =>
 const getPublicBookmark = (publicId: string, signal?: AbortSignal): Promise<PublicBookmarkDto> =>
   appFetch<PublicBookmarkDto>(publicBookmarkPath(publicId), { signal });
 
-const getPublicBookmarkExamples = (
-  publicId: string,
-  signal?: AbortSignal,
-): Promise<PublicBookmarkExampleDto[]> =>
-  appFetch<PublicBookmarkExampleDto[]>(`${publicBookmarkPath(publicId)}/examples`, { signal });
-
 /** A bookmark that is private, unknown, or whose schema was archived answers 404. */
 export const isPublicBookmarkMissing = (error: unknown) =>
   isHttpError(error) && error.status === 404;
 
-/**
- * One page of the public feed. Any organization may publish or unpublish at any time, so
- * no mutation of this client keeps it fresh: every visit asks again, behind the page it had.
- */
-export const publicBookmarkPageQueryOptions = (page: number, search: string, sort: string) =>
-  queryOptions({
-    queryKey: ["public", "bookmarks", page, PUBLIC_BOOKMARK_PAGE_SIZE, search, sort] as const,
-    queryFn: ({ signal }) => getPublicBookmarkPage(page, search, sort, signal),
-    placeholderData: keepPreviousData,
+export const usePublicBookmarkCatalog = (search: string, sort: string) =>
+  useInfiniteCatalog({
+    queryKey: ["public", "bookmarks", "infinite", search, sort],
+    queryFn: (page, signal) => getPublicBookmarkPage(page, search, sort, signal),
     staleTime: 0,
     meta: { errorHandledLocally: true },
   });
@@ -80,19 +69,6 @@ export const publicBookmarkQueryOptions = (publicId: string) =>
   });
 
 /**
- * The curated examples a public bookmark serves. They only help fill the form, so a failed
- * request is not an error state: the page simply offers no examples.
- */
-export const publicBookmarkExamplesQueryOptions = (publicId: string) =>
-  queryOptions({
-    queryKey: ["public", "bookmark", publicId, "examples"] as const,
-    queryFn: ({ signal }) => getPublicBookmarkExamples(publicId, signal),
-    enabled: publicId !== "",
-    retry: (failures, error) => !isPublicBookmarkMissing(error) && failures < 1,
-    meta: { errorHandledLocally: true },
-  });
-
-/**
  * How many runs of the bookmark the caller has left. The server counts a visitor without a
  * session by network and a signed-in member by account, so each has its own entry; it is asked
  * on every visit, and a run replaces it with the count that came back.
@@ -102,22 +78,6 @@ export const publicRunQuotaQueryOptions = (publicId: string, caller: "visitor" |
     queryKey: ["public", "bookmark", publicId, "quota", caller] as const,
     queryFn: ({ signal }) =>
       appFetch<PublicRunQuotaDto>(`${publicBookmarkPath(publicId)}/quota`, { signal }),
-    staleTime: 0,
-    retry: false,
-    meta: { errorHandledLocally: true },
-  });
-
-/**
- * The runs this browser made on the bookmark, newest first: its session on the page, which the
- * server keeps under the visitor cookie it gave the browser on its first run. A run made from
- * the page is put at the front of this entry rather than fetched again.
- */
-export const publicRunsQueryOptions = (publicId: string) =>
-  queryOptions({
-    queryKey: ["public", "bookmark", publicId, "runs"] as const,
-    queryFn: ({ signal }) =>
-      appFetch<PublicRunDto[]>(`${publicBookmarkPath(publicId)}/runs`, { signal }),
-    enabled: publicId !== "",
     staleTime: 0,
     retry: false,
     meta: { errorHandledLocally: true },

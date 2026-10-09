@@ -16,7 +16,6 @@ import {
 } from "./model.api";
 import { modelKeys } from "./model.keys";
 import type { CreateModelRequest } from "./model.types";
-import type { ModelDto } from "@/shared/api/openapi.gen";
 
 const useInvalidateModelQueries = () => {
   const queryClient = useQueryClient();
@@ -53,17 +52,10 @@ export const useRenameModelMutation = () => {
 };
 
 export const useCreateModelMutation = () => {
-  const queryClient = useQueryClient();
-  const organizationId = useCurrentOrganizationId() ?? "none";
   const invalidate = useInvalidateModelQueries();
   return useMutation({
     mutationFn: (data: CreateModelRequest) => createModel(data),
-    onSuccess: async (created) => {
-      queryClient.setQueryData<ModelDto[]>(modelKeys.list(organizationId), (previous) =>
-        previous ? [created.model, ...previous] : [created.model],
-      );
-      await invalidate();
-    },
+    onSuccess: () => invalidate(),
   });
 };
 

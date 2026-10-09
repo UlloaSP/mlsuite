@@ -28,7 +28,6 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
 }));
 vi.mock("@/features/inferences/api/inference-api", () => ({
   useInference: () => ({ data: { id: 1, name: "Case 12" } }),
-  useInferenceReviewAssignments: () => ({ data: state.assignments, isLoading: false }),
 }));
 vi.mock("@/features/inferences/api/inference-mutations", () => ({
   useReopenInferenceReviewMutation: () => ({ mutateAsync: state.reopen, isPending: false }),
@@ -187,7 +186,7 @@ test("answers are only the chosen reviewer's", async () => {
   expect(container.textContent).toContain("No answers yet");
 });
 
-test("the reviews list uses the catalog's filters and pagination", async () => {
+test("the reviews list uses backend catalogs for review filters without a footer", async () => {
   state.assignments = Array.from({ length: 11 }, (_, index) =>
     assignment({
       reviewRunId: `run-${index}`,
@@ -196,9 +195,32 @@ test("the reviews list uses the catalog's filters and pagination", async () => {
     }),
   );
   await render(<InferenceReviewStatusSection inferenceId={1} inferenceName="Case 12" />);
-  expect(container.querySelectorAll("article")).toHaveLength(9);
-  expect(container.textContent).toContain("Page 1 of 2");
+  expect(container.querySelectorAll("article").length).toBeGreaterThan(0);
+  expect(container.querySelector("footer")).toBeNull();
 
   await click("Pending", container);
   expect(container.querySelectorAll("article")).toHaveLength(2);
 });
+
+vi.mock("@/features/inferences/api/inference-review-catalog", () => ({
+  useReviewAssignment: (_id: number, runId: string, reviewerId: string) => ({
+    data: state.assignments.find(
+      (item) => item.reviewRunId === runId && String(item.reviewer.id) === reviewerId,
+    ),
+    isLoading: false,
+  }),
+  useReviewAssignmentCatalog: (
+    _id: number,
+    { search, filter }: { search: string; filter: string },
+  ) => ({
+    data: {
+      items: state.assignments.filter(
+        (item) =>
+          (filter === "all" || item.reviewState === filter) &&
+          item.reviewer.fullName.includes(search),
+      ),
+      totalItems: state.assignments.length,
+    },
+    hasNextPage: false,
+  }),
+}));

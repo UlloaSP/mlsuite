@@ -89,13 +89,16 @@ const respond = (url: string, init?: RequestInit) => {
     return json({ items: [SUMMARY], page: 0, size: 24, totalItems: 1, hasNext: false });
   }
   if (pathname === `/api/public/bookmarks/${PUBLIC_ID}`) return json(BOOKMARK);
-  if (pathname === `/api/public/bookmarks/${PUBLIC_ID}/examples`) return json([]);
+  if (pathname === `/api/public/bookmarks/${PUBLIC_ID}/examples/catalog`)
+    return json({ items: [], page: 0, size: 24, totalItems: 0, hasNext: false });
+  if (pathname === `/api/public/bookmarks/${PUBLIC_ID}/runs/catalog`)
+    return json({ items: [], page: 0, size: 24, totalItems: 0, hasNext: false });
   if (pathname === `/api/public/bookmarks/${PUBLIC_ID}/quota`) {
     return json({ limit: 50, remaining: 50, resetsAt: null });
   }
   if (!api.signedIn) return json({ status: 401, message: "Unauthorized" }, 401);
   if (pathname === "/api/users/me") return json(USER);
-  if (pathname === "/api/workspace/context") return json(WORKSPACE);
+  if (pathname === "/api/workspace/context/current") return json(WORKSPACE);
   return json({ status: 404, message: "Not found" }, 404);
 };
 

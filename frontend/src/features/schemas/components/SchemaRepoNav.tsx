@@ -9,10 +9,10 @@ import { AppSkeleton } from "@/shared/ui/AppSkeleton";
 import { cx } from "@/shared/ui/cx";
 import { TAB_LIST_CLASS, tabCountClass, tabItemClass } from "@/shared/ui/tab-styles";
 import {
-  useSchemaBookmarks,
-  useSchemaDrafts,
-  useSchemaVersions,
-} from "@/features/schemas/api/schema-queries";
+  useBookmarkCatalog,
+  useChangeCatalog,
+  useSnapshotCatalog,
+} from "@/features/schemas/api/schema-catalog-queries";
 
 type Props = {
   active: "overview" | "changes" | "bookmarks" | "snapshots";
@@ -20,14 +20,15 @@ type Props = {
 };
 
 /** Loading is undefined (skeleton count); a failed count is null (no count) rather than a false 0. */
-const countOf = (query: { data?: readonly unknown[]; isError: boolean }) =>
-  query.isError ? null : query.data?.length;
+const countOf = (query: { data?: { totalItems: number }; isError: boolean }) =>
+  query.isError ? null : query.data?.totalItems;
 
-/** Counts come from the same cached queries the tab pages read. */
+/** Each count is the tab's unfiltered total, whatever filter the tab itself has applied. */
 export function SchemaRepoNav({ active, schemaId }: Props) {
-  const changes = countOf(useSchemaDrafts(schemaId));
-  const bookmarks = countOf(useSchemaBookmarks(schemaId));
-  const snapshots = countOf(useSchemaVersions(schemaId));
+  const controls = { search: "", filter: "all", sort: "updated" };
+  const changes = countOf(useChangeCatalog(schemaId, controls));
+  const bookmarks = countOf(useBookmarkCatalog(schemaId, controls));
+  const snapshots = countOf(useSnapshotCatalog(schemaId, controls));
   const items = [
     { id: "overview", label: "Overview", to: `/schemas/${schemaId}`, count: null, icon: null },
     {

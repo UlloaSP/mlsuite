@@ -18,11 +18,11 @@ const PUBLIC_ID = "8f6f3c0e-58a2-4c0b-9d0c-0d5c1f6e2a11";
 const AT = "2026-10-01T10:00:00Z";
 const RESETS_AT = "2026-10-07T14:32:00Z";
 const ME_PATH = "/api/users/me";
-const CONTEXT_PATH = "/api/workspace/context";
+const CONTEXT_PATH = "/api/workspace/context/current";
 const BOOKMARK_PATH = `/api/public/bookmarks/${PUBLIC_ID}`;
-const EXAMPLES_PATH = `${BOOKMARK_PATH}/examples`;
+const EXAMPLES_PATH = `${BOOKMARK_PATH}/examples/catalog`;
 const QUOTA_PATH = `${BOOKMARK_PATH}/quota`;
-const RUNS_PATH = `${BOOKMARK_PATH}/runs`;
+const RUNS_PATH = `${BOOKMARK_PATH}/runs/catalog`;
 const RUN_PATH = `${BOOKMARK_PATH}/predictions`;
 const WORKSPACE_PATH = `/api/schema-bookmarks/public/${PUBLIC_ID}`;
 const PAGE = `/explore/${PUBLIC_ID}`;
@@ -108,8 +108,8 @@ beforeEach(() => {
   answers = {
     [ME_PATH]: [json({ status: 401, message: "Unauthorized", path: ME_PATH, timestamp: AT }, 401)],
     [BOOKMARK_PATH]: [json(bookmark)],
-    [EXAMPLES_PATH]: [json([])],
-    [RUNS_PATH]: [json([])],
+    [EXAMPLES_PATH]: [json({ items: [], page: 0, size: 24, totalItems: 0, hasNext: false })],
+    [RUNS_PATH]: [json({ items: [], page: 0, size: 24, totalItems: 0, hasNext: false })],
     [QUOTA_PATH]: [json(left(3))],
   };
   fetchMock = vi.fn(async (url: string) => {

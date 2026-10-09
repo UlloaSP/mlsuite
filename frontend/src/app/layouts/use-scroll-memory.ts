@@ -6,7 +6,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigationType } from "react-router";
 
-const MAX_RESTORE_FRAMES = 60;
+// Content that is only laying out gets a moment; a catalog fetching its pages gets longer.
+const MAX_SETTLE_MS = 1_000;
+const MAX_LOADING_MS = 30_000;
 
 /**
  * Navigation state for returning to a place rather than visiting it anew (a
@@ -22,7 +24,7 @@ const wantsRestore = (state: unknown) =>
  * restoration never sees them. Containers marked `data-scroll-memory="<name>"`
  * have their position remembered per history entry and restored on back/forward;
  * new (PUSH) navigations start at the top, unless they return to a section
- * (`RESTORE_SCROLL_STATE`), which restores the last position seen at that URL. Restoring waits (up to ~1s) for content that
+ * (`RESTORE_SCROLL_STATE`), which restores the last position seen at that URL. Restoring waits for paged content that
  * is still loading to become tall enough.
  */
 export function useScrollMemory() {
@@ -37,7 +39,7 @@ export function useScrollMemory() {
       const element = event.target;
       if (!(element instanceof HTMLElement)) return;
       const name = element.dataset.scrollMemory;
-      if (!name) return;
+      if (!name || element.dataset.catalogRestoreTop) return;
       const entry = positions.current.get(location.key) ?? {};
       entry[name] = element.scrollTop;
       positions.current.set(location.key, entry);
@@ -60,21 +62,47 @@ export function useScrollMemory() {
     if (navigationType !== "POP" && !resuming) return;
     const saved = resuming ? byUrl.current.get(url) : positions.current.get(location.key);
     if (!saved) return;
-    let frames = 0;
+    const pending = new Map(Object.entries(saved));
+    const startedAt = performance.now();
     let frame = 0;
     const restore = () => {
-      let waiting = false;
-      for (const [name, top] of Object.entries(saved)) {
+      const elapsed = performance.now() - startedAt;
+      for (const [name, top] of pending) {
         const element = document.querySelector<HTMLElement>(`[data-scroll-memory="${name}"]`);
-        if (!element || element.scrollHeight - element.clientHeight < top) {
-          waiting = true;
+        const reachable = element != null && element.scrollHeight - element.clientHeight >= top;
+        // A catalog still fetching pages can grow to the offset; anything else only settles.
+        const loading = element?.dataset.catalogLoading === "true";
+        if (!reachable && elapsed < (loading ? MAX_LOADING_MS : MAX_SETTLE_MS)) {
+          if (element && loading && element.dataset.catalogRestoreTop !== String(top)) {
+            element.dataset.catalogRestoreTop = String(top);
+            element.dispatchEvent(new Event("catalog-restore"));
+          }
           continue;
         }
-        element.scrollTop = top;
+        if (element) {
+          element.scrollTop = top;
+          delete element.dataset.catalogRestoreTop;
+        }
+        pending.delete(name);
       }
-      if (waiting && frames++ < MAX_RESTORE_FRAMES) frame = requestAnimationFrame(restore);
+      if (pending.size > 0) frame = requestAnimationFrame(restore);
     };
+    const cancel = () => {
+      cancelAnimationFrame(frame);
+      pending.clear();
+      document
+        .querySelectorAll<HTMLElement>("[data-catalog-restore-top]")
+        .forEach((element) => delete element.dataset.catalogRestoreTop);
+    };
+    // Any input from the user takes over; the restore never fights it.
+    const inputs = ["wheel", "touchstart", "keydown", "pointerdown"] as const;
+    inputs.forEach((input) =>
+      document.addEventListener(input, cancel, { capture: true, passive: true, once: true }),
+    );
     frame = requestAnimationFrame(restore);
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      cancel();
+      inputs.forEach((input) => document.removeEventListener(input, cancel, { capture: true }));
+    };
   }, [location.key, location.state, navigationType, url]);
 }

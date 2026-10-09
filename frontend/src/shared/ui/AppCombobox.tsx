@@ -3,162 +3,201 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Check, ChevronDown } from "lucide-react";
-import { useId, useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
+import { Popover } from "radix-ui";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { SEARCH_DEBOUNCE_MS } from "@/shared/lib/use-debounced-value";
 import { CONTROL_HEIGHT } from "./control-size";
 import { cx } from "./cx";
 import { FIELD_FOCUS_RING } from "./focus-ring";
+import { ComboboxOptions } from "./ComboboxOptions";
 
-export interface AppComboboxItem {
-  id: number;
+export type RemoteComboboxProps<TId extends string | number = number> = {
+  onSearchChange?: (query: string) => void;
+  hasNext?: boolean;
+  onLoadMore?: () => unknown;
+  loading?: boolean;
+  error?: boolean;
+  onRetry?: () => unknown;
+  selectedItem?: AppComboboxItem<TId> | null;
+};
+
+export interface AppComboboxItem<TId extends string | number = number> {
+  id: TId;
   label: string;
   description?: string | null;
   avatarUrl?: string | null;
 }
 
-export function AppCombobox({
+export function AppCombobox<TId extends string | number = number>({
   value,
+  "aria-label": ariaLabel,
   items,
   placeholder,
   emptyLabel = "No results",
   disabled,
   onChange,
+  onSearchChange,
+  selectedItem,
+  ...remote
 }: {
-  value: number | null;
-  items: AppComboboxItem[];
+  "aria-label"?: string;
+  value: TId | null;
+  items: AppComboboxItem<TId>[];
   placeholder: string;
   emptyLabel?: string;
   disabled?: boolean;
-  onChange: (item: AppComboboxItem | null) => void;
-}) {
+  onChange: (item: AppComboboxItem<TId> | null) => void;
+} & RemoteComboboxProps<TId>) {
   const listboxId = useId();
+  const fieldRef = useRef<HTMLLabelElement>(null);
+  const searchTimer = useRef<number | undefined>(undefined);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
-  const selected = items.find((item) => item.id === value) ?? null;
+  const [picked, setPicked] = useState<AppComboboxItem<TId> | null>(null);
+  const selected =
+    items.find((item) => item.id === value) ??
+    (selectedItem?.id === value ? selectedItem : null) ??
+    (picked?.id === value ? picked : null);
   const normalizedQuery = query.trim().toLowerCase();
   const filtered = useMemo(
     () =>
-      normalizedQuery
+      normalizedQuery && !onSearchChange
         ? items.filter((item) =>
             `${item.label} ${item.description ?? ""}`.toLowerCase().includes(normalizedQuery),
           )
         : items,
-    [items, normalizedQuery],
+    [items, normalizedQuery, onSearchChange],
   );
   const expanded = open && !disabled;
+  // A failed remote request adds one "Retry" option after the loaded ones.
+  const optionCount = filtered.length + (remote.error ? 1 : 0);
   const optionId = (index: number) => `${listboxId}-option-${index}`;
-  const choose = (item: AppComboboxItem) => {
+  const search = (text: string, delayMs = 0) => {
+    window.clearTimeout(searchTimer.current);
+    if (!onSearchChange) return;
+    if (delayMs === 0) onSearchChange(text);
+    else searchTimer.current = window.setTimeout(() => onSearchChange(text), delayMs);
+  };
+  useEffect(() => () => window.clearTimeout(searchTimer.current), []);
+  useEffect(() => {
+    if (!open && value == null && picked) {
+      setPicked(null);
+      setQuery("");
+    }
+  }, [open, value, picked]);
+  // Pointer and focus on the field itself never dismiss its own list.
+  const keepField = (event: Event) => {
+    if (fieldRef.current?.contains(event.target as Node)) event.preventDefault();
+  };
+  const choose = (item: AppComboboxItem<TId>) => {
+    setPicked(item);
     onChange(item);
     setQuery(item.label);
     setOpen(false);
   };
+  const openList = () => {
+    setOpen(true);
+    setQuery(onSearchChange ? "" : (selected?.label ?? ""));
+    search("");
+    setActiveIndex(0);
+  };
 
   return (
-    <div className="relative">
-      <label
-        className={cx(
-          "inline-flex w-full items-center gap-3 rounded-control border border-line bg-surface px-3 text-sm text-fg-secondary transition",
-          CONTROL_HEIGHT.md,
-          FIELD_FOCUS_RING,
-          disabled && "cursor-not-allowed opacity-50",
-        )}
-      >
-        <input
-          value={open ? query : (selected?.label ?? query)}
-          disabled={disabled}
-          placeholder={placeholder}
-          role="combobox"
-          aria-label={placeholder}
-          aria-controls={listboxId}
-          aria-expanded={expanded}
-          aria-activedescendant={
-            expanded && filtered[activeIndex] ? optionId(activeIndex) : undefined
-          }
-          aria-autocomplete="list"
-          onFocus={() => {
-            setOpen(true);
-            setQuery(selected?.label ?? "");
-          }}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            onChange(null);
-            setOpen(true);
-            setActiveIndex(0);
-          }}
-          onBlur={() => setOpen(false)}
-          onKeyDown={(event) => {
-            if (event.key === "ArrowDown") {
-              event.preventDefault();
-              setOpen(true);
-              setActiveIndex((index) => Math.min(index + 1, filtered.length - 1));
-            }
-            if (event.key === "ArrowUp") {
-              event.preventDefault();
-              setActiveIndex((index) => Math.max(index - 1, 0));
-            }
-            if (event.key === "Enter" && open && filtered[activeIndex]) {
-              event.preventDefault();
-              choose(filtered[activeIndex]);
-            }
-            if (event.key === "Escape") {
-              setOpen(false);
-            }
-          }}
-          className="w-full bg-transparent text-fg outline-none placeholder:text-fg-muted"
-        />
-        <ChevronDown size={16} className="shrink-0 text-fg-muted" />
-      </label>
-      {expanded ? (
-        <div
-          id={listboxId}
-          role="listbox"
-          aria-label={placeholder}
-          className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20 max-h-64 overflow-y-auto rounded-menu border border-line bg-surface p-2 shadow-card"
-        >
-          {filtered.length ? (
-            filtered.map((item, index) => (
-              <div
-                key={item.id}
-                id={optionId(index)}
-                role="option"
-                aria-selected={index === activeIndex}
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  choose(item);
-                }}
-                className={cx(
-                  "flex w-full items-center gap-3 rounded-control px-3 py-2.5 text-left transition",
-                  index === activeIndex ? "bg-surface-muted" : "hover:bg-surface-muted",
-                )}
-              >
-                {item.avatarUrl ? (
-                  <img
-                    src={item.avatarUrl}
-                    alt=""
-                    className="size-9 shrink-0 rounded-control object-cover"
-                  />
-                ) : (
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-control bg-accent-subtle text-xs font-semibold text-accent-strong">
-                    {item.label.slice(0, 1).toUpperCase()}
-                  </span>
-                )}
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-fg">{item.label}</span>
-                  {item.description ? (
-                    <span className="block truncate text-xs text-fg-secondary">
-                      {item.description}
-                    </span>
-                  ) : null}
-                </span>
-                {selected?.id === item.id ? <Check size={16} aria-label="Selected" /> : null}
-              </div>
-            ))
-          ) : (
-            <div className="px-3 py-4 text-sm text-fg-secondary">{emptyLabel}</div>
+    <Popover.Root
+      open={expanded}
+      onOpenChange={(next) => {
+        if (!next) setOpen(false);
+      }}
+    >
+      <Popover.Anchor asChild>
+        <label
+          ref={fieldRef}
+          className={cx(
+            "inline-flex w-full items-center gap-3 rounded-control border border-line bg-surface px-3 text-sm text-fg-secondary transition",
+            CONTROL_HEIGHT.md,
+            FIELD_FOCUS_RING,
+            disabled && "cursor-not-allowed opacity-50",
           )}
-        </div>
-      ) : null}
-    </div>
+        >
+          <input
+            value={open ? query : (selected?.label ?? query)}
+            disabled={disabled}
+            placeholder={placeholder}
+            role="combobox"
+            aria-label={ariaLabel ?? placeholder}
+            aria-controls={listboxId}
+            aria-expanded={expanded}
+            aria-activedescendant={
+              expanded && activeIndex < optionCount ? optionId(activeIndex) : undefined
+            }
+            aria-autocomplete="list"
+            onFocus={openList}
+            onClick={() => {
+              if (!open) openList();
+            }}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              search(event.target.value, SEARCH_DEBOUNCE_MS);
+              onChange(null);
+              setOpen(true);
+              setActiveIndex(0);
+            }}
+            onBlur={() => setOpen(false)}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowDown") {
+                event.preventDefault();
+                setOpen(true);
+                setActiveIndex((index) => Math.min(index + 1, Math.max(optionCount - 1, 0)));
+              }
+              if (event.key === "ArrowUp") {
+                event.preventDefault();
+                setActiveIndex((index) => Math.max(index - 1, 0));
+              }
+              if (event.key === "Enter" && open && filtered[activeIndex]) {
+                event.preventDefault();
+                choose(filtered[activeIndex]);
+              } else if (event.key === "Enter" && open && remote.error) {
+                event.preventDefault();
+                void remote.onRetry?.();
+              }
+              if (event.key === "Escape") {
+                setOpen(false);
+              }
+            }}
+            className="w-full bg-transparent text-fg outline-none placeholder:text-fg-muted"
+          />
+          <ChevronDown size={16} className="shrink-0 text-fg-muted" />
+        </label>
+      </Popover.Anchor>
+      {/* In the top layer, so no scroll container, menu or virtual row clips or covers it. */}
+      <Popover.Portal>
+        <Popover.Content
+          role="presentation"
+          align="start"
+          sideOffset={8}
+          collisionPadding={8}
+          onOpenAutoFocus={(event) => event.preventDefault()}
+          onCloseAutoFocus={(event) => event.preventDefault()}
+          onPointerDownOutside={keepField}
+          onFocusOutside={keepField}
+          onEscapeKeyDown={() => setOpen(false)}
+          onMouseDown={(event) => event.preventDefault()}
+          className="z-(--z-popover) w-(--radix-popover-trigger-width) rounded-menu border border-line bg-surface shadow-card"
+        >
+          <ComboboxOptions
+            id={listboxId}
+            label={placeholder}
+            items={filtered}
+            activeIndex={activeIndex}
+            selectedId={selected?.id}
+            emptyLabel={emptyLabel}
+            onChoose={choose}
+            {...remote}
+          />
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }

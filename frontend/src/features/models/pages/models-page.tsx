@@ -12,7 +12,6 @@ import {
   useDuplicateModelMutation,
   useRenameModelMutation,
 } from "@/features/models/api/model.mutations";
-import { MODEL_CATALOG_PAGE_SIZE } from "@/features/models/api/model.keys";
 import { useModelCatalogPageQuery } from "@/features/models/api/model.queries";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
@@ -49,7 +48,6 @@ export function ModelsPage() {
     initialFilter: "active",
     initialSort: "updated",
     sorts: SORT_OPTIONS.map(({ value }) => value),
-    resetKey: organizationId,
   });
   const renameMutation = useRenameModelMutation();
   const archiveMutation = useArchiveModelMutation();
@@ -57,7 +55,6 @@ export function ModelsPage() {
   const duplicateMutation = useDuplicateModelMutation();
   const pageQuery = useModelCatalogPageQuery(
     organizationId,
-    controls.page,
     controls.search,
     controls.sort,
     controls.filter,
@@ -153,7 +150,6 @@ export function ModelsPage() {
         }}
         isActionPending={isActionPending}
         loadingLabel="Loading models…"
-        pageSize={MODEL_CATALOG_PAGE_SIZE}
         filterLabel="Filter by model status"
         filters={STATUS_FILTERS}
         placeholder="Search by name, file, or algorithm"

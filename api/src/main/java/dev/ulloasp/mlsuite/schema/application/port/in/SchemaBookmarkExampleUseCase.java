@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.schema.application.port.in;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import dev.ulloasp.mlsuite.schema.application.dto.BookmarkExampleCounts;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaBookmarkExampleDto;
@@ -12,6 +13,9 @@ public interface SchemaBookmarkExampleUseCase {
 
     /** Every marked run of the bookmark, served or not, in the order they were marked. */
     List<SchemaBookmarkExampleDto> listExamples(Long userId, Long bookmarkId);
+
+    /** The run as an example of the bookmark; empty when the run is not marked. */
+    Optional<SchemaBookmarkExampleDto> findExample(Long userId, Long bookmarkId, Long runId);
 
     /**
      * Marks one run as an example of the bookmark. Only a run of the snapshot the bookmark pins

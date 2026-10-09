@@ -1,6 +1,7 @@
-import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { appFetch, json } from "@/shared/api/http";
-import type { CreateSchemaReviewRequest, SchemaReviewReviewerDto } from "@/shared/api/openapi.gen";
+import { useInfiniteCatalog } from "@/shared/api/infinite-catalog";
+import type { CatalogSelectionPageDto, CreateSchemaReviewRequest } from "@/shared/api/openapi.gen";
 import { organizationQueryKey } from "@/shared/api/organization-query-key";
 
 export type ReviewCandidate = {
@@ -31,14 +32,6 @@ export const INFERENCE_REVIEW_ASSIGNMENTS_QUERY_KEY = (
   inferenceId: number,
 ) => [...INFERENCE_REVIEW_ASSIGNMENTS_ROOT_QUERY_KEY(organizationId), inferenceId] as const;
 
-export const eligibleReviewersQueryOptions = (organizationId: number | string) =>
-  queryOptions({
-    queryKey: [...REVIEWS_ROOT_QUERY_KEY(organizationId), "eligibleReviewers"],
-    queryFn: ({ signal }) =>
-      appFetch<SchemaReviewReviewerDto[]>("/api/schema-reviews/eligible-reviewers", { signal }),
-    enabled: organizationId !== "none",
-  });
-
 export const groupReviewCandidates = (candidates: ReviewCandidate[]): ReviewCandidateGroup[] => {
   const groups = new Map<string, ReviewCandidateGroup>();
   candidates.forEach((candidate) => {
@@ -58,9 +51,6 @@ export const groupReviewCandidates = (candidates: ReviewCandidate[]): ReviewCand
   return [...groups.values()];
 };
 
-export const useEligibleReviewers = (organizationId: number | string) =>
-  useQuery(eligibleReviewersQueryOptions(organizationId));
-
 export function useCreateReviewMutation(organizationId: number | string) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -76,3 +66,48 @@ export function useCreateReviewMutation(organizationId: number | string) {
       ]),
   });
 }
+
+/** What a selection dialog browses: an explicit set of inferences, their facets, or reviewers. */
+export type SelectionRequest = {
+  kind: "runs" | "reviewers" | "snapshots" | "bookmarks";
+  ids: number[];
+  search: string;
+  size: number;
+  locale?: string;
+  timeZone?: string;
+};
+
+const selectionKey = (organizationId: number | string, scope: "infinite" | "ids") =>
+  [...organizationQueryKey(organizationId), "catalog-selection", scope] as const;
+
+export function useSelectionCatalog(
+  organizationId: number | string,
+  request: SelectionRequest,
+  handlesErrors = false,
+) {
+  return useInfiniteCatalog({
+    queryKey: [...selectionKey(organizationId, "infinite"), request],
+    queryFn: (page, signal) =>
+      appFetch<CatalogSelectionPageDto>("/api/catalog-selection", {
+        ...json("POST", { ...request, page }),
+        signal,
+      }),
+    meta: handlesErrors ? { errorHandledLocally: true } : undefined,
+    enabled: organizationId !== "none",
+  });
+}
+
+/** Every id the search matches on the server, for "Select all" and "Select results". */
+export const selectionIdsQueryOptions = (
+  organizationId: number | string,
+  request: SelectionRequest,
+) =>
+  queryOptions({
+    queryKey: [...selectionKey(organizationId, "ids"), request],
+    staleTime: 0,
+    queryFn: ({ signal }) =>
+      appFetch<string[]>("/api/catalog-selection/ids", {
+        ...json("POST", { ...request, page: 0 }),
+        signal,
+      }),
+  });

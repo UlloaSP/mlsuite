@@ -6,15 +6,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Link } from "react-router";
 import { useCan } from "@/capabilities/workspace-context/workspace-context";
 import { useSetBookmarkExampleMutation } from "@/features/schemas/api/schema-mutations";
-import { useBookmarkExamples } from "@/features/schemas/api/schema-queries";
+import { useBookmarkExampleCatalog } from "@/features/schemas/api/schema-catalog-queries";
+import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { bookmarkInferencesHref } from "@/features/schemas/lib/bookmark-inferences-href";
 import { EXAMPLE_STATUS } from "@/features/schemas/lib/bookmark-example-status";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppDialog } from "@/shared/ui/AppDialog";
-import { AppEmptyState } from "@/shared/ui/AppEmptyState";
-import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { appButtonClass } from "@/shared/ui/button-styles";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
@@ -31,7 +30,7 @@ type Props = {
  * offered it. Runs are marked from their own page; here they can only be reviewed and removed.
  */
 export function BookmarkExamplesDialog({ bookmark, open, onClose }: Props) {
-  const examples = useBookmarkExamples(open ? bookmark.id : undefined);
+  const examples = useBookmarkExampleCatalog(bookmark.id, open);
   const canPublish = useCan("canPublishBookmarks");
   const setExample = useSetBookmarkExampleMutation();
 
@@ -47,36 +46,36 @@ export function BookmarkExamplesDialog({ bookmark, open, onClose }: Props) {
       description="Runs whose inputs visitors can load into the public form. Only runs of the snapshot the bookmark points to are served, and only while it is public."
       error={setExample.error?.message}
     >
-      {examples.isPending ? (
-        <AppLoadingState compact label="Loading examples…" />
-      ) : examples.isError ? (
-        <AppEmptyState
-          compact
-          title="Examples could not be loaded"
-          action={<AppButton onClick={() => void examples.refetch()}>Try again</AppButton>}
-        />
-      ) : examples.data.length === 0 ? (
-        <AppEmptyState
-          compact
-          title="No examples yet"
-          description={
-            canPublish
+      <div className="flex h-96 min-h-0 flex-col">
+        <CatalogListPanel
+          scrollMemoryKey={false}
+          itemCount={examples.data?.items.length ?? 0}
+          hasNext={examples.hasNextPage}
+          isLoading={examples.isLoading}
+          isBusy={examples.isFetching}
+          loadingLabel="Loading examples…"
+          errorMessage={examples.error?.message ?? null}
+          onLoadMore={() => examples.fetchNextPage()}
+          onRetry={() =>
+            void (examples.isFetchNextPageError ? examples.fetchNextPage() : examples.refetch())
+          }
+          emptyState={{
+            title: "No examples yet",
+            description: canPublish
               ? "Open a saved inference of this bookmark and mark it as a public example."
-              : "Members who may publish bookmarks choose the examples."
-          }
-          action={
-            <Link
-              to={bookmarkInferencesHref(bookmark)}
-              className={appButtonClass({ variant: "secondary" })}
-            >
-              Open its inferences
-            </Link>
-          }
-        />
-      ) : (
-        <ul className="divide-y divide-line">
-          {examples.data.map((example) => (
-            <li key={example.runId} className="flex flex-wrap items-center gap-3 py-3">
+              : "Members who may publish bookmarks choose the examples.",
+            action: (
+              <Link
+                to={bookmarkInferencesHref(bookmark)}
+                className={appButtonClass({ variant: "secondary" })}
+              >
+                Open its inferences
+              </Link>
+            ),
+          }}
+        >
+          {examples.data?.items.map((example) => (
+            <div key={example.runId} className="flex flex-wrap items-center gap-3 py-3">
               <div className="min-w-0 flex-1">
                 <Link
                   to={`/inferences/${example.runId}`}
@@ -107,10 +106,10 @@ export function BookmarkExamplesDialog({ bookmark, open, onClose }: Props) {
                   Remove
                 </AppButton>
               ) : null}
-            </li>
+            </div>
           ))}
-        </ul>
-      )}
+        </CatalogListPanel>
+      </div>
     </AppDialog>
   );
 }

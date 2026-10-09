@@ -19,16 +19,12 @@ function CatalogControlsProbe() {
   return (
     <div
       data-filter={controls.filter}
-      data-page={controls.page}
       data-query={controls.query}
       data-sort={controls.sort}
       data-url={location.search}
     >
       <button type="button" onClick={() => controls.setFilter("active")}>
         default filter
-      </button>
-      <button type="button" onClick={() => controls.setPage(0)}>
-        first page
       </button>
       <button type="button" onClick={() => controls.setQuery("next")}>
         search
@@ -45,28 +41,26 @@ const render = async (entry: string) => {
 
 describe("catalog URL controls", () => {
   test("hydrates valid URL state and preserves unrelated params", async () => {
-    const probe = await render("/catalog?q=risk&filter=archived&sort=name&page=3&keep=yes");
+    const probe = await render("/catalog?q=risk&filter=archived&sort=name&keep=yes");
 
     expect(probe.dataset).toMatchObject({
       filter: "archived",
-      page: "2",
       query: "risk",
       sort: "name",
     });
 
     await act(async () => {
-      probe.querySelectorAll("button")[2]?.click();
+      probe.querySelectorAll("button")[1]?.click();
       await flush();
     });
     expect(probe.dataset.url).toContain("q=next");
     expect(probe.dataset.url).toContain("keep=yes");
-    expect(probe.dataset.url).not.toContain("page=");
   });
 
-  test("falls back from invalid filter, sort, and page values", async () => {
-    const probe = await render("/catalog?filter=unknown&sort=bad&page=-4");
+  test("falls back from invalid filter and sort values", async () => {
+    const probe = await render("/catalog?filter=unknown&sort=bad");
 
-    expect(probe.dataset).toMatchObject({ filter: "active", page: "0", sort: "updated" });
+    expect(probe.dataset).toMatchObject({ filter: "active", sort: "updated" });
     expect(probe.dataset.url).not.toContain("filter=");
   });
 });

@@ -105,7 +105,7 @@ describe("organization inference catalog", () => {
     );
 
     expect(page).toContain("<ReviewCreationButton");
-    expect(page).toContain("renderExportAction?.(visibleItems)");
+    expect(page).toContain("renderExportAction?.({ count:");
     expect(page).toContain("<InferenceActionsMenu");
     expect(page).toContain("?tab=reviews&section=reviews");
     expect(page).toContain("<InferencePreviewSheet");
@@ -198,7 +198,7 @@ describe("organization inference catalog", () => {
     expect(dialog.match(/<ReviewSelectionCatalog/g)).toHaveLength(2);
     expect(dialog).toContain('title="Inferences"');
     expect(dialog).toContain('title="Reviewers"');
-    expect(catalog).toContain("<CatalogPaginationFooter");
+    expect(catalog).toContain("<CatalogListPanel");
     expect(catalog).toContain("<AppTextField");
     expect(catalog).toContain("selectedIds");
     expect(dialog).toContain("const schemaId = Number(group.schemaId)");

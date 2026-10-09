@@ -34,4 +34,23 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
             )
             """)
     Page<Organization> findCatalogPage(String search, Pageable pageable);
+
+    /** The organizations a user may switch to: every one for a superadmin, else their active memberships. */
+    @Query("""
+            SELECT o FROM Organization o
+            WHERE (
+                :superadmin = true
+                OR EXISTS (
+                    SELECT m.id FROM OrganizationMembership m
+                    WHERE m.organization = o
+                    AND m.user.id = :userId
+                    AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE
+                )
+            )
+            AND (
+                lower(o.name) LIKE :search ESCAPE '!'
+                OR lower(o.slug) LIKE :search ESCAPE '!'
+            )
+            """)
+    Page<Organization> findAccessiblePage(Long userId, boolean superadmin, String search, Pageable pageable);
 }

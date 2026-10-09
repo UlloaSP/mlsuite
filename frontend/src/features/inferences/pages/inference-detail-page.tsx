@@ -1,11 +1,9 @@
+import { useReviewAssignmentCounts } from "@/features/inferences/api/inference-review-catalog";
 import { RotateCcw } from "lucide-react";
 import { type ReactNode, useEffect } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
-import {
-  useInference,
-  useInferenceReviewAssignments,
-} from "@/features/inferences/api/inference-api";
+import { useInference } from "@/features/inferences/api/inference-api";
 import { InferenceReviewStatusSection } from "@/features/inferences/components/InferenceReviewStatusSection";
 import { appButtonClass } from "@/shared/ui/button-styles";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
@@ -40,11 +38,9 @@ export function InferenceDetailPage({ renderData }: Props) {
   const permissions = workspace?.permissions;
   const reviewRequested = searchParams.get("section") === "reviews";
   const canManageReviews = permissions?.canManageReviews ?? false;
-  // Shares the cache with the Reviews tab's list; only fetched for managers.
-  const assignments = useInferenceReviewAssignments(Number(inferenceId), canManageReviews).data;
-  const reviewCount = assignments
-    ? `${assignments.filter((item) => item.reviewState === "COMPLETED").length}/${assignments.length}`
-    : undefined;
+  // Only fetched for managers.
+  const assignments = useReviewAssignmentCounts(Number(inferenceId), canManageReviews).data;
+  const reviewCount = assignments ? `${assignments.completed}/${assignments.total}` : undefined;
 
   useEffect(() => {
     if (reviewRequested && item) document.getElementById("reviews")?.scrollIntoView();

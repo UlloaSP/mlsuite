@@ -4,10 +4,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { appFetch, json } from "@/shared/api/http";
-import type { SelectOrganizationRequest, WorkspaceContextDto } from "@/shared/api/openapi.gen";
+import type {
+  SelectOrganizationRequest,
+  WorkspaceCurrentContextDto,
+} from "@/shared/api/openapi.gen";
 
-export const selectOrganization = (organizationId: number): Promise<WorkspaceContextDto> =>
-  appFetch<WorkspaceContextDto>(
-    "/api/workspace/context",
+export const selectOrganization = (organizationId: number): Promise<WorkspaceCurrentContextDto> =>
+  appFetch<WorkspaceCurrentContextDto>(
+    "/api/workspace/context/current",
     json("PATCH", { organizationId } satisfies SelectOrganizationRequest),
   );

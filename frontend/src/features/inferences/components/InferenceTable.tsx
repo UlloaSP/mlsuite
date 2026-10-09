@@ -1,12 +1,15 @@
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { defaultRangeExtractor, useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { AppButton } from "@/shared/ui/AppButton";
 import type { InferenceReactTable } from "@/features/inferences/lib/use-inference-table";
 import type { InferenceTableRow } from "@/features/inferences/lib/inference-table-rows";
+import { useLoadMoreNearEnd } from "@/shared/ui/catalog/useLoadMoreNearEnd";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 
 const ROW_HEIGHT = 44;
+const OVERSCAN = 12;
 
 // The name column stays in view while the data scrolls sideways.
 const stickyClass = (columnId: string) =>
@@ -16,31 +19,65 @@ type Props = {
   table: InferenceReactTable;
   onOpen: (row: InferenceTableRow) => void;
   openId?: string;
+  totalItems: number;
+  hasNext: boolean;
+  isFetching: boolean;
+  error: boolean;
+  onLoadMore: () => unknown;
+  onRetry: () => unknown;
 };
 
 /**
  * Every matching inference as one virtualized table: only the rows in view are rendered,
  * so a few thousand inferences scroll like a spreadsheet without pagination.
  */
-export function InferenceTable({ table, onOpen, openId }: Props) {
+export function InferenceTable({
+  table,
+  onOpen,
+  openId,
+  totalItems,
+  hasNext,
+  isFetching,
+  error,
+  onLoadMore,
+  onRetry,
+}: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const rows = table.getRowModel().rows;
+  const [focusedId, setFocusedId] = useState<string>();
+  const focusedIndex = rows.findIndex((row) => row.id === focusedId);
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => ROW_HEIGHT,
     getItemKey: (index) => rows[index]!.id,
-    overscan: 12,
+    overscan: OVERSCAN,
+    rangeExtractor: (range) =>
+      [
+        ...new Set([...defaultRangeExtractor(range), ...(focusedIndex < 0 ? [] : [focusedIndex])]),
+      ].sort((a, b) => a - b),
   });
   const width = table.getTotalSize();
+  useLoadMoreNearEnd({
+    scrollRef,
+    lastVisible: virtualizer.range?.endIndex ?? -1,
+    count: rows.length,
+    margin: OVERSCAN + 12,
+    hasNext,
+    isBusy: isFetching,
+    hasError: error,
+    onLoadMore,
+  });
 
   return (
     <div
       ref={scrollRef}
       data-scroll-memory="inference-table"
+      data-catalog-loading={isFetching || hasNext}
+      aria-busy={isFetching}
       className="app-scroll min-h-0 flex-1 basis-0 overflow-auto rounded-card border border-line bg-surface"
     >
-      <table className="grid text-sm" style={{ width }} aria-rowcount={rows.length + 1}>
+      <table className="grid text-sm" style={{ width }} aria-rowcount={totalItems + 1}>
         <thead className="sticky top-0 z-[2] grid border-b border-line bg-surface-subtle">
           {table.getHeaderGroups().map((group) => (
             <tr key={group.id} className="flex">
@@ -98,6 +135,17 @@ export function InferenceTable({ table, onOpen, openId }: Props) {
                 key={row.id}
                 aria-rowindex={item.index + 2}
                 data-selected={selected || undefined}
+                onFocusCapture={() => setFocusedId(row.id)}
+                onBlurCapture={(event) => {
+                  if (
+                    !event.currentTarget.contains(event.relatedTarget) &&
+                    !(
+                      event.relatedTarget instanceof Element &&
+                      event.relatedTarget.closest('[role="dialog"]')
+                    )
+                  )
+                    setFocusedId(undefined);
+                }}
                 onClick={() => onOpen(row.original)}
                 className={cx(
                   "group absolute flex w-full cursor-pointer border-b border-line",
@@ -126,6 +174,22 @@ export function InferenceTable({ table, onOpen, openId }: Props) {
           })}
         </tbody>
       </table>
+      {error ? (
+        <AppButton className="m-3" variant="secondary" onClick={() => void onRetry()}>
+          Could not load more inferences. Retry
+        </AppButton>
+      ) : null}
+      {hasNext && !error ? (
+        <div className="p-3 text-sm" role="status">
+          {isFetching ? (
+            "Loading inferences…"
+          ) : (
+            <AppButton variant="secondary" onClick={() => void onLoadMore()}>
+              Load more
+            </AppButton>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

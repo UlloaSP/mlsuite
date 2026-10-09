@@ -5,7 +5,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { buildSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
 import { useSaveSchemaReviewFeedbackMutation } from "@/features/reviews/api/review-mutations";
 import { useDeleteInferenceReviewResponseMutation } from "@/features/inferences/api/inference-mutations";
-import { inferenceTableQueryOptions } from "@/features/inferences/api/inference-api";
+import { INFERENCES_QUERY_KEY } from "@/features/inferences/api/inference-api";
 import * as reviewApi from "@/features/reviews/api/review-api";
 import * as http from "@/shared/api/http";
 import { InferenceTable } from "@/features/inferences/components/InferenceTable";
@@ -15,20 +15,12 @@ import {
   type InferenceFilterChoice,
 } from "@/features/inferences/components/InferenceFiltersDialog";
 import {
-  filterInferences,
-  type InferenceFilters,
-} from "@/features/inferences/lib/inference-filter";
-import {
-  columnKind,
-  distinctColumnValues,
   parseConditions,
   serializeConditions,
-  type ConditionOperator,
 } from "@/features/inferences/lib/inference-conditions";
-import {
-  buildInferenceTableRows,
-  inferenceDataColumns,
-  type InferenceTableRow,
+import type {
+  InferenceTableRow,
+  InferenceDataColumn,
 } from "@/features/inferences/lib/inference-table-rows";
 import {
   parseInferenceSort,
@@ -40,7 +32,6 @@ import type {
   PredictionRunCatalogItemDto,
   SchemaVersionDto,
 } from "@/shared/api/openapi.gen";
-import { inferenceAuthor } from "@/features/inferences/lib/inference-table-columns";
 import { click, mount } from "./support/dom";
 
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
@@ -125,350 +116,68 @@ const payload = (overrides: Partial<InferenceTableDto> = {}): InferenceTableDto 
   ...overrides,
 });
 
-const byId = (rows: InferenceTableRow[], id: number) => rows.find((row) => row.item.id === id)!;
-
-describe("inference table rows", () => {
-  const answers = (row: InferenceTableRow) =>
-    row.columns
-      .filter((column) => column.group === "feedback")
-      .map((column) => [column.label, row.values.get(column.id)]);
-
-  test("joins each run with its inputs, outputs and each reviewer's answers", () => {
-    const rows = buildInferenceTableRows(payload());
-    const latest = byId(rows, 2);
-
-    expect(latest.values.get("2:input:age")).toBe(52);
-    expect(latest.values.get("2:output:1:score")).toBe("Yes");
-    expect(latest.feedbackStatus).toBe("COMPLETED");
-    expect(answers(latest)).toEqual([
-      [expect.stringMatching(/^Score · .+ · grace@example.com$/), "Yes"],
-    ]);
-    expect(byId(rows, 1).feedbackStatus).toBe("PENDING");
-    expect(answers(byId(rows, 1))).toEqual([]);
-  });
-
-  test("gives every reviewer their own column", () => {
-    const rows = buildInferenceTableRows(
-      payload({
-        feedback: [
-          answer(2, "Yes"),
-          { ...answer(2, "No"), id: 8, userId: 2, userEmail: "alan@example.com" },
-        ],
-      }),
-    );
-    const reviewers = answers(byId(rows, 2)).map(([label, value]) => [
-      String(label).split(" · ").at(-1),
-      value,
-    ]);
-    expect(reviewers).toEqual([
-      ["grace@example.com", "Yes"],
-      ["alan@example.com", "No"],
-    ]);
-  });
-
-  test("shows Mixed when one reviewer answered a combined report differently per model", () => {
-    const rows = buildInferenceTableRows(
-      payload({
-        results: [result(2), { ...result(2), id: 21, modelId: 1 }, result(1)],
-        feedback: [answer(2, "Yes"), { ...answer(2, "No"), id: 9, resultId: 21 }],
-      }),
-    );
-    expect(answers(byId(rows, 2)).map(([, value]) => value)).toEqual(["Mixed"]);
-  });
-
-  test("unions columns across versions with the newest label and leaves missing fields empty", () => {
-    const rows = buildInferenceTableRows(payload());
-    const columns = inferenceDataColumns(rows);
-
-    expect(columns.map((column) => [column.group, column.label])).toEqual([
-      ["inputs", "Age (years)"],
-      ["inputs", "Income"],
-      ["outputs", "Score"],
-      ["feedback", expect.stringMatching(/^Score · /)],
-    ]);
-    expect(byId(rows, 1).values.has("2:input:income")).toBe(false);
-  });
-
-  test("keeps equally named fields of different schemas in separate columns", () => {
-    const support = summary(3, { schemaId: 4, schemaName: "Support", schemaVersionId: 9 });
-    const rows = buildInferenceTableRows(
-      payload({
-        runs: [
-          { summary: support, inputData: { age: 70 } },
-          { summary: summary(2), inputData: { age: 52 } },
-        ],
-        results: [],
-        feedback: [],
-        versions: [version(9, [AGE]), version(7, [AGE])],
-      }),
-    );
-    const inputs = inferenceDataColumns(rows).filter((column) => column.group === "inputs");
-
-    expect(inputs.map((column) => [column.schemaName, column.id])).toEqual([
-      ["Support", "4:input:age"],
-      ["Risk", "2:input:age"],
-    ]);
-    expect(byId(rows, 2).values.has("4:input:age")).toBe(false);
-  });
-
-  test("keeps optional input columns when every run has an empty value", () => {
-    const rows = buildInferenceTableRows(
-      payload({ runs: [{ summary: summary(2), inputData: {} }] }),
-    );
-    expect(inferenceDataColumns(rows).filter((column) => column.group === "inputs")).toEqual([
-      expect.objectContaining({ id: "2:input:age", label: "Age (years)" }),
-      expect.objectContaining({ id: "2:input:income", label: "Income" }),
-    ]);
-    expect(rows[0]!.values.has("2:input:age")).toBe(false);
-  });
-
-  test("preserves each model's output for a shared report, with stable columns across versions", () => {
-    const latest = version(
-      7,
-      [AGE],
-      [
-        {
-          kind: "classifier",
-          label: "Score",
-          mappedTo: { 1: "score", 2: "score" },
-          labels: ["No", "Yes"],
-        },
-      ],
-    );
-    latest.bindings.push({ ...latest.bindings[0]!, id: 2, modelId: 2 });
-    const rows = buildInferenceTableRows(
-      payload({
-        versions: [latest, version(6, [AGE])],
-        results: [result(2), { ...result(2, 0), id: 21, modelId: 2 }, result(1, 0)],
-      }),
-    );
-    expect(byId(rows, 2).values.get("2:output:1:score")).toBe("Yes");
-    expect(byId(rows, 2).values.get("2:output:2:score")).toBe("No");
-    expect(byId(rows, 1).values.get("2:output:1:score")).toBe("No");
-    expect(
-      inferenceDataColumns(rows)
-        .filter((column) => column.group === "outputs")
-        .map((column) => column.label),
-    ).toEqual(["Score · Model 1", "Score · Model 2"]);
-  });
-
-  test("keeps distinct feedback reports separate even when their titles match", () => {
-    const rows = buildInferenceTableRows(
-      payload({
-        runs: [{ summary: summary(2), inputData: {} }],
-        versions: [
-          version(
-            7,
-            [AGE],
-            [
-              {
-                id: "a",
-                kind: "classifier",
-                label: "Score",
-                mappedTo: { 1: "a" },
-                labels: ["No", "Yes"],
-              },
-              {
-                id: "b",
-                kind: "classifier",
-                label: "Score",
-                mappedTo: { 1: "b" },
-                labels: ["No", "Yes"],
-              },
-            ],
-          ),
-        ],
-        results: [
-          {
-            ...result(2),
-            output: {
-              reports: [
-                { mappedTo: "a", prediction: 1 },
-                { mappedTo: "b", prediction: 0 },
-              ],
-            },
-          },
-        ],
-        feedback: [answer(2, "Yes"), { ...answer(2, "No"), id: 3, order: 1 }],
-      }),
-    );
-    const columns = rows[0]!.columns.filter((column) => column.group === "feedback");
-    expect(new Set(columns.map((column) => column.id)).size).toBe(2);
-    expect(columns.map((column) => rows[0]!.values.get(column.id))).toEqual(["Yes", "No"]);
-  });
-
-  test("keeps feedback tied to its snapshot when report labels change", () => {
-    const report = {
-      id: "score",
-      kind: "classifier",
-      mappedTo: { 1: "score" },
-      labels: ["No", "Yes"],
-    };
-    const rows = buildInferenceTableRows(
-      payload({
-        versions: [
-          version(7, [AGE], [{ ...report, label: "New score" }]),
-          version(6, [AGE], [{ ...report, label: "Old score" }]),
-        ],
-        feedback: [answer(2, "Yes"), answer(1, "No")],
-      }),
-    );
-    const columns = inferenceDataColumns(rows).filter((column) => column.group === "feedback");
-    expect(columns).toHaveLength(2);
-    expect(columns[0]!.label).toMatch(/^New score · /);
-    expect(columns[1]!.label).toMatch(/^Old score · /);
-    expect(byId(rows, 2).values.get(columns[0]!.id)).toBe("Yes");
-    expect(byId(rows, 1).values.get(columns[1]!.id)).toBe("No");
-    expect(byId(rows, 1).values.has(columns[0]!.id)).toBe(false);
-  });
-
-  test("does not merge different reports when their order changes between snapshots", () => {
-    const a = { kind: "classifier", label: "A", mappedTo: { 1: "a" }, labels: ["No", "Yes"] };
-    const b = { kind: "classifier", label: "B", mappedTo: { 1: "b" }, labels: ["No", "Yes"] };
-    const output = {
-      reports: [
-        { mappedTo: "a", prediction: 1 },
-        { mappedTo: "b", prediction: 0 },
-      ],
-    };
-    const rows = buildInferenceTableRows(
-      payload({
-        versions: [version(7, [AGE], [b, a]), version(6, [AGE], [a, b])],
-        results: [
-          { ...result(2), output },
-          { ...result(1), output },
-        ],
-        feedback: [answer(2, "No"), answer(1, "Yes")],
-      }),
-    );
-    const columns = inferenceDataColumns(rows).filter((column) => column.group === "feedback");
-    expect(columns).toHaveLength(2);
-    expect(columns.map((column) => column.label)).toEqual([
-      expect.stringMatching(/^B · /),
-      expect.stringMatching(/^A · /),
-    ]);
-    expect(byId(rows, 2).values.get(columns[0]!.id)).toBe("No");
-    expect(byId(rows, 1).values.get(columns[1]!.id)).toBe("Yes");
-  });
-
-  test("marks feedback unavailable for a malformed or invalid schema, and not configured without reports", () => {
-    const malformed = buildInferenceTableRows(
-      payload({ versions: [version(7, [AGE], [{ kind: "classifier" }]), version(6, [AGE])] }),
-    );
-    const invalid = buildInferenceTableRows(
-      payload({
-        versions: [
-          version(
-            7,
-            [AGE],
-            [
-              {
-                kind: "classifier",
-                label: "Score",
-                mappedTo: { 1: "score" },
-                feedbackQuestionnaire: { steps: [{ fields: [] }] },
-              },
-            ],
-          ),
-          version(6, [AGE]),
-        ],
-      }),
-    );
-    const empty = buildInferenceTableRows(
-      payload({ versions: [version(7, [AGE], []), version(6, [AGE])] }),
-    );
-
-    expect(byId(malformed, 2).feedbackStatus).toBe("ERROR");
-    expect(byId(malformed, 2).values.get("2:input:age")).toBe(52);
-    expect(byId(invalid, 2).feedbackStatus).toBe("ERROR");
-    expect(byId(empty, 2).feedbackStatus).toBe("NOT_REQUIRED");
-  });
-
-  test("searches every shown value and filters by schema, bookmark, status, feedback and conditions", () => {
-    const rows = buildInferenceTableRows(payload());
-    const filters: InferenceFilters = {
-      query: "",
-      schemaId: "all",
-      bookmarkId: "all",
-      status: "all",
-      feedback: "all",
-      origin: "all",
-      conditions: [],
-    };
-    const ids = (overrides: Partial<InferenceFilters>) =>
-      filterInferences(rows, { ...filters, ...overrides }).map((row) => row.item.id);
-    const where = (columnId: string, operator: ConditionOperator, value = "") => ({
-      conditions: [{ columnId, operator, value }],
-    });
-
-    expect(ids({ query: "52" })).toEqual([2]);
-    expect(ids({ feedback: "PENDING" })).toEqual([1]);
-    expect(ids({ schemaId: "3" })).toEqual([]);
-    expect(ids({ bookmarkId: "unbookmarked" })).toEqual([]);
-    expect(ids({ status: "FAILED" })).toEqual([]);
-    expect(ids(where("2:input:age", "gt", "40"))).toEqual([2]);
-    expect(ids(where("2:input:age", "lte", "31"))).toEqual([1]);
-    expect(ids(where("2:output:1:score", "is", "No"))).toEqual([1]);
-    expect(ids(where("2:output:1:score", "contains", "ye"))).toEqual([2]);
-    expect(ids(where("2:input:income", "empty"))).toEqual([1]);
-    expect(ids(where("2:input:income", "notEmpty"))).toEqual([2]);
-    expect(ids(where("2:output:1:score", "gt", "1"))).toEqual([]);
-  });
-
-  test("a run from the public page is a visitor's: so named, so filtered, its feedback theirs", () => {
-    const rows = buildInferenceTableRows(
-      payload({
-        runs: [
-          {
-            summary: summary(3, { origin: "PUBLIC", createdByName: null, createdByEmail: null }),
-            inputData: { age: 70 },
-          },
-          { summary: summary(2), inputData: { age: 52, income: 900 } },
-        ],
-        results: [result(3), result(2)],
-        feedback: [{ ...answer(3, "No"), userId: null, userName: null, userEmail: null }],
-      }),
-    );
-    expect(inferenceAuthor(byId(rows, 3).item)).toBe("Visitor");
-    expect(inferenceAuthor(byId(rows, 2).item)).toBe("Ada Lovelace");
-    expect(byId(rows, 3).searchText).toContain("visitor");
-    expect(byId(rows, 3).columns.find((column) => column.group === "feedback")?.label).toContain(
-      "Visitor",
-    );
-    const ids = (origin: InferenceFilters["origin"]) =>
-      filterInferences(rows, {
-        query: "",
-        schemaId: "all",
-        bookmarkId: "all",
-        status: "all",
-        feedback: "all",
-        origin,
-        conditions: [],
-      }).map((row) => row.item.id);
-    expect(ids("PUBLIC")).toEqual([3]);
-    expect(ids("WORKSPACE")).toEqual([2]);
-    expect(ids("all")).toEqual([3, 2]);
-  });
-
-  test("infers numeric columns and lists the values a column shows", () => {
-    const rows = buildInferenceTableRows(payload());
-    expect(columnKind(rows, "2:input:age")).toBe("number");
-    expect(columnKind(rows, "2:output:1:score")).toBe("text");
-    expect(distinctColumnValues(rows, "2:output:1:score")).toEqual(["No", "Yes"]);
-  });
-
-  test("keeps conditions in the URL and drops malformed ones", () => {
-    const conditions = [{ columnId: "2:input:a.b", operator: "gte" as const, value: "4" }];
-    expect(parseConditions(serializeConditions(conditions))).toEqual(conditions);
-    expect(serializeConditions([])).toBe("");
-    expect(parseConditions('[["x","drop","1"],["y","is"],"z"]')).toEqual([]);
-    expect(parseConditions("{not json")).toEqual([]);
-  });
-
-  test("reads the URL sort, including ids with dots, and falls back to newest first", () => {
-    expect(parseInferenceSort("2:input:a.b.asc")).toEqual([{ id: "2:input:a.b", desc: false }]);
-    expect(parseInferenceSort("garbage")).toEqual([{ id: "createdAt", desc: true }]);
-  });
+const serverColumns: InferenceDataColumn[] = [
+  { id: "2:input:age", group: "inputs", label: "Age (years)", schemaId: 2, schemaName: "Risk" },
+  { id: "2:input:income", group: "inputs", label: "Income", schemaId: 2, schemaName: "Risk" },
+  { id: "2:output:1:score", group: "outputs", label: "Score", schemaId: 2, schemaName: "Risk" },
+  {
+    id: "2:7:feedback:OUTPUT:0:output-feedback-assessment:1",
+    group: "feedback",
+    label: "Assessment",
+    schemaId: 2,
+    schemaName: "Risk",
+  },
+];
+const serverRows: InferenceTableRow[] = [
+  {
+    item: summary(2),
+    feedbackStatus: "COMPLETED",
+    values: new Map<string, unknown>([
+      ["2:input:age", 52],
+      ["2:input:income", 900],
+      ["2:output:1:score", "Yes"],
+    ]),
+  },
+  {
+    item: summary(1),
+    feedbackStatus: "PENDING",
+    values: new Map<string, unknown>([
+      ["2:input:age", 31],
+      ["2:output:1:score", "No"],
+    ]),
+  },
+];
+vi.mock("@/features/inferences/api/inference-catalog", () => ({
+  useInferenceFacetCatalog: (kind: string) => ({
+    data: {
+      items:
+        kind === "schemas"
+          ? [{ value: "2", label: "Risk" }]
+          : kind === "columns"
+            ? serverColumns.map((column) => ({ value: column.id, label: column.label }))
+            : [],
+    },
+  }),
+  useInferenceCatalogMetadata: () => ({
+    data: {
+      columns: serverColumns.map((column) => ({
+        ...column,
+        kind: column.id.endsWith("age") ? "number" : "text",
+        choices: [],
+      })),
+      schemas: [{ value: "2", label: "Risk" }],
+      bookmarks: [],
+    },
+    isSuccess: true,
+    isPlaceholderData: false,
+    isError: false,
+  }),
+}));
+test("conditions and sorting keep stable column identities in URLs", () => {
+  const conditions = [{ columnId: "2:input:a.b", operator: "gt" as const, value: "40" }];
+  expect(parseConditions(serializeConditions(conditions))).toEqual(conditions);
+  expect(parseConditions("bad")).toEqual([]);
+  expect(parseInferenceSort("2:input:a.b.asc")).toEqual([{ id: "2:input:a.b", desc: false }]);
 });
 
 describe("inference table feedback cache", () => {
@@ -478,8 +187,14 @@ describe("inference table feedback cache", () => {
     "refreshes a warmed table after feedback %s",
     async (operation) => {
       const qc = new QueryClient({ defaultOptions: { queries: { staleTime: 300_000 } } });
-      const tableKey = inferenceTableQueryOptions(42).queryKey;
-      const otherTableKey = inferenceTableQueryOptions(43).queryKey;
+      const tableKey = [...INFERENCES_QUERY_KEY(42), "infinite", { query: "risk" }];
+      const otherTableKey = [...INFERENCES_QUERY_KEY(43), "infinite", { query: "risk" }];
+      const derivedKeys = ["metadata", "selection", "facets"].map((kind) => [
+        ...INFERENCES_QUERY_KEY(42),
+        kind,
+        { schemaId: "2" },
+      ]);
+      derivedKeys.forEach((key) => qc.setQueryData(key, {}));
       qc.setQueryData(tableKey, payload());
       qc.setQueryData(otherTableKey, payload());
       const create = vi
@@ -521,6 +236,7 @@ describe("inference table feedback cache", () => {
         }
       });
       expect(qc.getQueryState(tableKey)?.isInvalidated).toBe(true);
+      derivedKeys.forEach((key) => expect(qc.getQueryState(key)?.isInvalidated).toBe(true));
       expect(qc.getQueryState(otherTableKey)?.isInvalidated).toBe(false);
       if (operation === "update")
         expect(update).toHaveBeenCalledWith(
@@ -557,7 +273,7 @@ describe("inference table view", () => {
     const [open, setOpen] = useState<string>();
     const table = useInferenceTable({
       rows,
-      dataColumns: inferenceDataColumns(rows),
+      dataColumns: serverColumns,
       visibilityKey: "3:2",
       scoped: true,
       sort,
@@ -571,6 +287,12 @@ describe("inference table view", () => {
         <output data-open>{open}</output>
         <InferenceTable
           table={table}
+          totalItems={rows.length}
+          hasNext={false}
+          isFetching={false}
+          error={false}
+          onLoadMore={vi.fn()}
+          onRetry={vi.fn()}
           openId={open}
           onOpen={({ item }) => setOpen(String(item.id))}
         />
@@ -581,8 +303,8 @@ describe("inference table view", () => {
   const rowNames = (host: HTMLElement) =>
     [...host.querySelectorAll("tbody tr")].map((row) => row.firstElementChild?.textContent);
 
-  test("groups schema columns, sorts by a data column and opens a row", async () => {
-    const rows = buildInferenceTableRows(payload());
+  test("groups backend columns, requests sorting without reordering loaded pages, and opens a row", async () => {
+    const rows = serverRows;
     const { host } = await mount(<Harness rows={rows} />);
     const headers = [...host.querySelectorAll("thead tr:first-child th")].map(
       (th) => th.textContent,
@@ -591,15 +313,15 @@ describe("inference table view", () => {
     expect(headers).toEqual(expect.arrayContaining(["Inference", "Inputs", "Outputs", "Feedback"]));
     expect(rowNames(host)).toEqual(["Case 2", "Case 1"]);
     await click("Age (years)", host);
-    expect(rowNames(host)).toEqual(["Case 1", "Case 2"]);
+    expect(rowNames(host)).toEqual(["Case 2", "Case 1"]);
     expect(host.querySelector('th[aria-sort="ascending"]')?.textContent).toBe("Age (years)");
     await click(host.querySelector("tbody tr")!);
-    expect(host.querySelector("[data-open]")?.textContent).toBe("1");
+    expect(host.querySelector("[data-open]")?.textContent).toBe("2");
     expect(host.querySelector("tbody tr")?.getAttribute("data-selected")).toBe("true");
   });
 
   test("hides the repeated Schema column when scoped and remembers column choices", async () => {
-    const rows = buildInferenceTableRows(payload());
+    const rows = serverRows;
     const { host, unmount } = await mount(<Harness rows={rows} />);
     const headerText = () => [...host.querySelectorAll("thead th")].map((th) => th.textContent);
 
@@ -633,10 +355,7 @@ describe("inference filters dialog", () => {
   };
 
   async function open(onApply = vi.fn()) {
-    const rows = buildInferenceTableRows(payload());
-    await mount(
-      <InferenceFiltersDialog filters={filters} rows={rows} onApply={onApply} onClose={vi.fn()} />,
-    );
+    await mount(<InferenceFiltersDialog filters={filters} onApply={onApply} onClose={vi.fn()} />);
     return onApply;
   }
 

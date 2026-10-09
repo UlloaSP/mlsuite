@@ -8,11 +8,14 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkExampleRepository;
+import dev.ulloasp.mlsuite.schema.application.dto.BookmarkExampleCounts;
+import dev.ulloasp.mlsuite.schema.application.dto.BookmarkExampleStats;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
@@ -92,9 +95,14 @@ final class BookmarkExampleFixtures {
         when(repository.findByBookmarkIdOrderByCreatedAtAscIdAsc(anyLong())).thenAnswer(call -> rows.stream()
                 .filter(example -> example.getBookmark().getId().equals(call.getArgument(0)))
                 .toList());
-        when(repository.findByBookmarkIdIn(anyCollection())).thenAnswer(call -> rows.stream()
-                .filter(example -> call.<Collection<Long>>getArgument(0).contains(example.getBookmark().getId()))
-                .toList());
+        when(repository.countByBookmarkIds(anyCollection())).thenAnswer(call -> {
+            var counts = new HashMap<Long, BookmarkExampleCounts>();
+            rows.stream().filter(example -> call.<Collection<Long>>getArgument(0).contains(example.getBookmark().getId()))
+                    .forEach(example -> counts.merge(example.getBookmark().getId(),
+                            BookmarkExampleCounts.of(example), BookmarkExampleCounts::plus));
+            return counts.entrySet().stream().map(entry -> new BookmarkExampleStats(
+                    entry.getKey(), entry.getValue().current(), entry.getValue().stale())).toList();
+        });
         when(repository.findByBookmarkIdAndRunId(anyLong(), anyLong())).thenAnswer(call -> rows.stream()
                 .filter(example -> example.getBookmark().getId().equals(call.getArgument(0))
                         && example.getRun().getId().equals(call.getArgument(1)))

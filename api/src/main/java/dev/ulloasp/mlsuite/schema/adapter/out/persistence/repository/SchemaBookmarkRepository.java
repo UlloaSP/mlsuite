@@ -2,15 +2,56 @@ package dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.OffsetDateTime;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 
-public interface SchemaBookmarkRepository extends JpaRepository<SchemaBookmark, Long> {
+public interface SchemaBookmarkRepository
+        extends JpaRepository<SchemaBookmark, Long>, JpaSpecificationExecutor<SchemaBookmark> {
+    interface PredictCatalogRow {
+        Long getId();
+        long getRunCount();
+        OffsetDateTime getLastRunAt();
+        int getLatestVersion();
+    }
+
+    String PREDICT_SCOPE = """
+            FROM SchemaBookmark b WHERE b.schema.organization.id = :organizationId
+            AND b.schema.archivedAt IS NULL
+            AND (:filter = 'all' OR b.version.version <
+                (SELECT MAX(v.version) FROM SchemaVersion v WHERE v.schema = b.schema))
+            AND (lower(b.name) LIKE :search ESCAPE '!'
+                OR lower(b.schema.name) LIKE :search ESCAPE '!'
+                OR lower(coalesce(b.version.name, '')) LIKE :search ESCAPE '!'
+                OR concat('v', str(b.version.version)) LIKE :search ESCAPE '!'
+                OR EXISTS (SELECT 1 FROM SchemaModelBinding binding
+                    WHERE binding.schemaVersion = b.version AND lower(binding.model.name) LIKE :search ESCAPE '!'))
+            """;
+
+    @Query(value = """
+            SELECT b.id AS id,
+                (SELECT COUNT(r) FROM PredictionRun r WHERE r.schemaBookmark = b) AS runCount,
+                (SELECT MAX(r.createdAt) FROM PredictionRun r WHERE r.schemaBookmark = b) AS lastRunAt,
+                (SELECT MAX(v.version) FROM SchemaVersion v WHERE v.schema = b.schema) AS latestVersion
+            """ + PREDICT_SCOPE + """
+            ORDER BY
+                CASE WHEN :mode = 'used' THEN
+                    (SELECT COUNT(r) FROM PredictionRun r WHERE r.schemaBookmark = b) END DESC,
+                CASE WHEN :mode = 'recent' THEN
+                    (SELECT MAX(r.createdAt) FROM PredictionRun r WHERE r.schemaBookmark = b) END DESC NULLS LAST,
+                CASE WHEN :mode NOT IN ('used', 'recent', 'name') THEN lower(b.schema.name) END ASC,
+                CASE WHEN :mode NOT IN ('used', 'recent') THEN lower(b.name) END ASC,
+                b.id ASC
+            """, countQuery = "SELECT COUNT(b) " + PREDICT_SCOPE)
+    Page<PredictCatalogRow> findPredictCatalog(Long organizationId, String search, String filter, String mode,
+            Pageable pageable);
+
     /** The one rule for what anyone may read: a published bookmark whose schema is not archived. */
     String PUBLISHED = """
             b.visibility = dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility.PUBLIC
@@ -31,6 +72,12 @@ public interface SchemaBookmarkRepository extends JpaRepository<SchemaBookmark, 
 
     @Query("SELECT b FROM SchemaBookmark b WHERE b.id = :id AND b.schema.organization.id = :organizationId")
     Optional<SchemaBookmark> findByIdAndOrganizationId(Long id, Long organizationId);
+
+    @Query("""
+            SELECT b FROM SchemaBookmark b
+            WHERE b.id = :id AND b.schema.organization.id = :organizationId AND b.schema.archivedAt IS NULL
+            """)
+    Optional<SchemaBookmark> findActiveByIdAndOrganizationId(Long id, Long organizationId);
 
     @Query("SELECT b FROM SchemaBookmark b WHERE b.publicId = :publicId AND b.schema.organization.id = :organizationId")
     Optional<SchemaBookmark> findByPublicIdAndOrganizationId(String publicId, Long organizationId);

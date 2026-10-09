@@ -6,7 +6,7 @@ import { PredictionRunDetails } from "@/features/schemas/components/PredictionRu
 export function InferencesRoutePage() {
   return (
     <InferencesPage
-      renderExportAction={(items) => <OrganizationInferenceExportButton items={items} />}
+      renderExportAction={(selection) => <OrganizationInferenceExportButton {...selection} />}
       renderPreview={(item) => (
         <PredictionRunDetails runId={String(item.id)} bookmarkName={item.bookmarkName} />
       )}

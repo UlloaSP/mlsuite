@@ -131,10 +131,11 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
     }
 
     private Sort sort(String mode) {
+        Sort.Order byId = Sort.Order.asc("id");
         if ("name".equals(mode)) {
-            return Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.desc("updatedAt"));
+            return Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.desc("updatedAt"), byId);
         }
-        return Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("name").ignoreCase());
+        return Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("name").ignoreCase(), byId);
     }
 
     /** Only the form's own inputs, each a scalar: the form bounds how many values a run carries. */

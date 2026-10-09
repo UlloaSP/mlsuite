@@ -147,9 +147,10 @@ public class AdminUserService {
         return switch (sort == null ? "current" : sort.trim().toLowerCase()) {
             case "name" -> Sort.by(
                     Sort.Order.asc("fullName").ignoreCase(),
-                    Sort.Order.asc("email").ignoreCase());
-            case "newest" -> Sort.by(Sort.Order.desc("createdAt"));
-            case "oldest" -> Sort.by(Sort.Order.asc("createdAt"));
+                    Sort.Order.asc("email").ignoreCase(),
+                    Sort.Order.asc("id"));
+            case "newest" -> Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id"));
+            case "oldest" -> Sort.by(Sort.Order.asc("createdAt"), Sort.Order.asc("id"));
             default -> Sort.by(Sort.Order.asc("id"));
         };
     }

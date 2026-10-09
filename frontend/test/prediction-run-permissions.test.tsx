@@ -10,6 +10,7 @@ const state = vi.hoisted(() => ({
   bookmarkId: 4 as number | null,
 }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
+  useCurrentOrganizationId: () => 3,
   useWorkspaceContext: () => ({
     data: {
       permissions: {
@@ -20,9 +21,6 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   }),
 }));
 vi.mock("@/features/inferences/api/inference-api", () => ({
-  useInferenceReviewAssignments: (_id: number, enabled: boolean) => ({
-    data: enabled ? [{ reviewState: "COMPLETED" }, { reviewState: "IN_PROGRESS" }] : undefined,
-  }),
   useInference: () => ({
     isLoading: false,
     data: {
@@ -81,3 +79,11 @@ test.each([
   expect(container.textContent).toContain(state.canManageReviews ? "Count 1/2" : "Count none");
   expect(container.querySelector("h1")?.textContent).toBe("QA run");
 });
+
+vi.mock("@/features/schemas/api/schema-catalog-queries", () => ({
+  useBookmarkExampleState: () => ({ data: { example: null } }),
+}));
+
+vi.mock("@/features/inferences/api/inference-review-catalog", () => ({
+  useReviewAssignmentCounts: () => ({ data: { total: 2, completed: 1 } }),
+}));

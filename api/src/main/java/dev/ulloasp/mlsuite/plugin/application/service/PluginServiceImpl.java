@@ -6,12 +6,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,6 +23,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
+import dev.ulloasp.mlsuite.util.CatalogPages;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginStatsDto;
 import dev.ulloasp.mlsuite.plugin.application.port.in.PluginCatalogUseCase;
@@ -44,6 +46,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PluginServiceImpl implements PluginCatalogUseCase {
 
+    private static final Logger log = LoggerFactory.getLogger(PluginServiceImpl.class);
     private static final String ROOT_PREFIX = "plugins";
     private final ObjectStorageService objectStorageService;
     private final StorageProperties storageProperties;
@@ -98,46 +101,50 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
     @Override
     @Transactional
     public PageDto<PluginDto> list(Long userId, int page, int size, String type, String search, String sort) {
-        List<PluginDto> allItems = listAll(userId);
-        List<PluginDto> visibleItems = allItems.stream()
-                .filter(item -> matchesType(item, type))
-                .filter(item -> matchesSearch(item, search))
-                .sorted(sortComparator(sort))
-                .toList();
-        int safePage = Math.max(page, 0);
-        int safeSize = PageDto.clampSize(size);
-        int fromIndex = Math.min(safePage * safeSize, visibleItems.size());
-        int toIndex = Math.min(fromIndex + safeSize, visibleItems.size());
-        return new PageDto<>(
-                visibleItems.subList(fromIndex, toIndex),
-                safePage,
-                safeSize,
-                visibleItems.size(),
-                toIndex < visibleItems.size());
+        Organization organization = indexedCatalog(userId);
+        String safeType = "field".equals(type) || "report".equals(type) ? type : "all";
+        Page<PluginMetadata> result = pluginMetadataRepository.findCatalogPage(organization.getId(), safeType,
+                CatalogPages.likeLiteral(search == null ? "" : search.strip()), sort == null ? "updated" : sort,
+                PageDto.request(page, size, Sort.unsorted()));
+        return PageDto.of(result, result.getContent().stream()
+                .flatMap(item -> stored(organization.getId(), item.getId()).stream())
+                .map(PluginCatalogValues::toDto)
+                .toList());
+    }
+
+    /** A row whose object was deleted after the page was read, or never had one, is left out of the page. */
+    private Optional<StoredPlugin> stored(Long organizationId, String id) {
+        Optional<StoredPlugin> plugin = pluginObjects.find(organizationId, id);
+        if (plugin.isEmpty()) {
+            log.warn("Plugin {} of organization {} is listed without a stored object; skipping it", id,
+                    organizationId);
+        }
+        return plugin;
     }
 
     @Override
     @Transactional
     public PluginStatsDto stats(Long userId) {
-        List<PluginDto> allItems = listAll(userId);
+        Organization organization = indexedCatalog(userId);
         return new PluginStatsDto(
-                allItems.stream().filter(item -> "field".equals(item.pluginType())).count(),
-                allItems.stream().filter(item -> "report".equals(item.pluginType())).count());
+                pluginMetadataRepository.countByOrganizationIdAndPluginType(organization.getId(), "field"),
+                pluginMetadataRepository.countByOrganizationIdAndPluginType(organization.getId(), "report"));
     }
 
-    private List<PluginDto> listAll(Long userId) {
+    private Organization indexedCatalog(Long userId) {
         Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.VIEW_PLUGINS);
-        // Catalog backfill and deletion must agree on one visible plugin state.
-        organizations.lockById(organization.getId()).orElseThrow();
-        List<PluginDto> catalog = new ArrayList<>();
-        pluginObjects.listWithIdentity(organization.getId()).forEach(item -> {
-            persistMetadata(organization, item.plugin(), null, null, item);
-            catalog.add(toDto(item.plugin()));
-        });
-        catalog.sort(Comparator
-                .comparing(PluginDto::updatedAt, Comparator.reverseOrder())
-                .thenComparing(PluginDto::fileName, String.CASE_INSENSITIVE_ORDER));
-        return catalog;
+        if (!organization.isPluginCatalogIndexed()) {
+            // Index legacy object-only plugins once, serialized with upload and deletion.
+            organization = organizations.lockById(organization.getId()).orElseThrow();
+            if (!organization.isPluginCatalogIndexed()) {
+                Organization locked = organization;
+                pluginObjects.listWithIdentity(organization.getId()).forEach(item ->
+                        persistMetadata(locked, item.plugin(), null, null, item));
+                organization.setPluginCatalogIndexed(true);
+                organizations.save(organization);
+            }
+        }
+        return organization;
     }
 
     @Override

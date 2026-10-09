@@ -15,7 +15,7 @@ import type {
   PublicBookmarkDto,
   PublicBookmarkSummaryDto,
 } from "@/shared/api/openapi.gen";
-import { changeValue, click, mount } from "./support/dom";
+import { changeValue, click, mount, searchDelay } from "./support/dom";
 
 const session = vi.hoisted(() => ({
   signedIn: false,
@@ -34,6 +34,10 @@ vi.mock("@/capabilities/workspace-context/session", async (original) => ({
   useLogout: () => ({ mutate: vi.fn() }),
 }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
+  useWorkspaceOrganizationCatalog: () => ({
+    data: { items: [], totalItems: 0 },
+    hasNextPage: false,
+  }),
   useWorkspaceContext: (enabled = true) => ({
     data:
       enabled && session.signedIn
@@ -216,6 +220,7 @@ describe("public feed page", () => {
     expect(calledUrls()).toEqual(["/api/public/bookmarks?page=0&search=&size=24&sort=name"]);
 
     await changeValue(host.querySelector<HTMLInputElement>("input")!, "churn");
+    await searchDelay();
     await settle();
     expect(host.querySelector('[data-testid="url"]')?.textContent).toBe("?sort=name&q=churn");
     expect(calledUrls().at(-1)).toBe("/api/public/bookmarks?page=0&search=churn&size=24&sort=name");

@@ -59,14 +59,6 @@ export const renameSchema = ({ id, name }: SchemaNameRequest): Promise<SchemaDto
   });
 };
 
-export const getSchemaVersions = (
-  schemaId: number | string,
-  signal?: AbortSignal,
-): Promise<SchemaVersionDto[]> =>
-  appFetch<SchemaVersionDto[]>(`/api/schemas/${encodeURIComponent(schemaId)}/versions`, {
-    signal,
-  });
-
 export const getSchemaVersion = (
   versionId: number | string,
   signal?: AbortSignal,

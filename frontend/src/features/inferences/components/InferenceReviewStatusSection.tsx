@@ -1,11 +1,10 @@
 import { MessageSquareText } from "lucide-react";
-import { useMemo } from "react";
-import { useInferenceReviewAssignments } from "@/features/inferences/api/inference-api";
+import { useReviewAssignmentCatalog } from "@/features/inferences/api/inference-review-catalog";
 import { useReviewAssignmentActions } from "@/features/inferences/lib/use-review-assignment-actions";
 import { reviewAssignmentHref } from "@/features/inferences/lib/review-assignment-href";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { CatalogToolbar } from "@/shared/ui/catalog/CatalogToolbar";
-import { getCatalogErrorMessage, getCatalogTotalPages } from "@/shared/ui/catalog/catalogPageUtils";
+import { getCatalogErrorMessage } from "@/shared/ui/catalog/catalogPageUtils";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { InferenceReviewTile } from "./InferenceReviewTile";
 import type { SchemaReviewAssignmentStatusDto } from "@/shared/api/openapi.gen";
@@ -18,8 +17,6 @@ type Props = {
 type StateFilter = "all" | "completed" | "in-progress" | "pending";
 type ReviewSort = "requested" | "submitted" | "reviewer";
 
-const EMPTY: SchemaReviewAssignmentStatusDto[] = [];
-const PAGE_SIZE = 9;
 const FILTERS: Array<{ value: StateFilter; label: string }> = [
   { value: "all", label: "All" },
   { value: "completed", label: "Completed" },
@@ -42,10 +39,9 @@ const SORTS: Array<{ value: ReviewSort; label: string }> = [
 
 /**
  * Every reviewer assignment that includes this inference, one tile each, with
- * the catalog's usual search, state filter, sort, and pagination.
+ * the catalog's usual search, state filter, and sort.
  */
 export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Props) {
-  const assignments = useInferenceReviewAssignments(inferenceId);
   const actions = useReviewAssignmentActions(inferenceId, inferenceName);
   const controls = useCatalogControls<StateFilter, ReviewSort>({
     filters: FILTERS.map(({ value }) => value),
@@ -53,13 +49,12 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
     initialSort: "requested",
     sorts: SORTS.map(({ value }) => value),
   });
-  const all = assignments.data ?? EMPTY;
-  const filtered = useMemo(
-    () => sortAssignments(matchAssignments(all, controls.search, controls.filter), controls.sort),
-    [all, controls.filter, controls.search, controls.sort],
-  );
-  const totalPages = getCatalogTotalPages(filtered.length, PAGE_SIZE);
-  const pageItems = filtered.slice(controls.page * PAGE_SIZE, (controls.page + 1) * PAGE_SIZE);
+  const assignments = useReviewAssignmentCatalog(inferenceId, {
+    search: controls.search,
+    filter: controls.filter === "all" ? "all" : STATE_OF[controls.filter],
+    sort: controls.sort,
+  });
+  const pageItems = assignments.data?.items ?? [];
   const hasActiveFilters = Boolean(controls.search) || controls.filter !== "all";
 
   return (
@@ -74,7 +69,7 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
         onSortChange={controls.setSort}
         placeholder="Search reviewer or requester"
         query={controls.query}
-        resultCount={filtered.length}
+        resultCount={assignments.data?.totalItems ?? 0}
         sort={controls.sort}
         sortLabel="Sort reviews"
         sortOptions={SORTS}
@@ -82,15 +77,17 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
       <CatalogListPanel
         layout="grid"
         errorMessage={getCatalogErrorMessage(assignments.error)}
-        hasNext={controls.page + 1 < totalPages}
-        isBusy={assignments.isLoading || actions.pending}
+        hasNext={Boolean(assignments.hasNextPage)}
+        isBusy={assignments.isFetching || actions.pending}
         isLoading={assignments.isLoading}
         itemCount={pageItems.length}
         loadingLabel="Loading reviews…"
-        onRetry={() => void assignments.refetch()}
-        page={controls.page}
-        setPage={controls.setPage}
-        totalPages={totalPages}
+        onRetry={() =>
+          void (assignments.isFetchNextPageError
+            ? assignments.fetchNextPage()
+            : assignments.refetch())
+        }
+        onLoadMore={assignments.fetchNextPage}
         emptyState={{
           icon: <MessageSquareText size={22} />,
           title: hasActiveFilters ? "No matching reviews" : "No reviews yet",
@@ -112,30 +109,4 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
       </CatalogListPanel>
     </section>
   );
-}
-
-function matchAssignments(
-  assignments: SchemaReviewAssignmentStatusDto[],
-  search: string,
-  filter: StateFilter,
-) {
-  const query = search.toLowerCase();
-  return assignments.filter(
-    (assignment) =>
-      (filter === "all" || assignment.reviewState === STATE_OF[filter]) &&
-      [assignment.reviewer, assignment.createdBy]
-        .map((person) => `${person.fullName} ${person.email}`)
-        .join(" ")
-        .toLowerCase()
-        .includes(query),
-  );
-}
-
-function sortAssignments(assignments: SchemaReviewAssignmentStatusDto[], sort: ReviewSort) {
-  return [...assignments].sort((left, right) => {
-    if (sort === "reviewer") return left.reviewer.fullName.localeCompare(right.reviewer.fullName);
-    if (sort === "submitted")
-      return (right.submittedAt ?? "").localeCompare(left.submittedAt ?? "");
-    return right.createdAt.localeCompare(left.createdAt);
-  });
 }

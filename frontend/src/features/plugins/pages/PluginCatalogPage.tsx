@@ -7,7 +7,6 @@ import { Search, Upload } from "lucide-react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 import { useDeletePluginMutation } from "@/features/plugins/api/plugin.mutations";
-import { PLUGIN_CATALOG_PAGE_SIZE } from "@/features/plugins/api/plugin.keys";
 import {
   usePluginCatalogPageQuery,
   usePluginCatalogStatsQuery,
@@ -46,14 +45,12 @@ export function PluginCatalogPage() {
     filters: TYPE_FILTERS.map(({ value }) => value),
     initialFilter: "all",
     initialSort: "updated",
-    resetKey: organizationId,
     sorts: SORT_OPTIONS.map(({ value }) => value),
   });
   const deleteMutation = useDeletePluginMutation();
   const statsQuery = usePluginCatalogStatsQuery(organizationId);
   const pageQuery = usePluginCatalogPageQuery(
     organizationId,
-    controls.page,
     controls.filter,
     controls.search,
     controls.sort,
@@ -71,9 +68,6 @@ export function PluginCatalogPage() {
     if (!confirmed) return;
     try {
       await deleteMutation.mutateAsync(item.id);
-      if (items.length === 1 && controls.page > 0) {
-        controls.setPage((current) => current - 1);
-      }
       toast.success(
         `${item.fileName} (${pluginTypeMeta(item.pluginType).shortLabel}) deleted from catalog.`,
       );
@@ -114,7 +108,6 @@ export function PluginCatalogPage() {
         }}
         isActionPending={deleteMutation.isPending}
         loadingLabel="Loading plugins…"
-        pageSize={PLUGIN_CATALOG_PAGE_SIZE}
         filterLabel="Filter by plugin type"
         filterVariant="segmented"
         filters={filters}

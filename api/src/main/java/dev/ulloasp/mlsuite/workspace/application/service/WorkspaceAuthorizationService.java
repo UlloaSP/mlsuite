@@ -65,15 +65,25 @@ public class WorkspaceAuthorizationService {
 
     public MembershipActionsDto organizationMemberActions(Long actorUserId, Long organizationId, OrganizationMembership target) {
         WorkspacePermissionsDto workspace = workspacePermissions(actorUserId, organizationId);
-        if (!workspace.canViewMembers() || !workspace.canManageMemberRoles()
-                || actorUserId.equals(target.getUser().getId()) || target.isOwner()) {
-            return new MembershipActionsDto(false, false, List.of());
+        MembershipActionsDto flags = organizationMemberActionFlags(actorUserId, workspace, target);
+        if (!flags.canChangeRole()) {
+            return flags;
         }
         var roles = roleDefinitionRepository.findByOrganizationIdAndScopeOrderByLockedDescNameAsc(organizationId, RoleScope.ORGANIZATION)
                 .stream()
                 .filter(role -> !OrganizationRole.OWNER.name().equals(role.getSystemKey()))
                 .map(RoleSummaryDto::from)
                 .toList();
-        return new MembershipActionsDto(true, workspace.canRemoveMembers(), roles);
+        return new MembershipActionsDto(true, flags.canRemove(), roles);
+    }
+
+    /** What the actor may do to the member, without the roles to choose from: a catalog pages those apart. */
+    public MembershipActionsDto organizationMemberActionFlags(Long actorUserId, WorkspacePermissionsDto workspace,
+            OrganizationMembership target) {
+        if (!workspace.canViewMembers() || !workspace.canManageMemberRoles()
+                || actorUserId.equals(target.getUser().getId()) || target.isOwner()) {
+            return new MembershipActionsDto(false, false, List.of());
+        }
+        return new MembershipActionsDto(true, workspace.canRemoveMembers(), List.of());
     }
 }

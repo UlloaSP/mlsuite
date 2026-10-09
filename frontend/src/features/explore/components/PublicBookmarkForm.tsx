@@ -34,7 +34,6 @@ import type {
 } from "@/shared/api/openapi.gen";
 
 type Props = Pick<PublicBookmarkDto, "publicId" | "version" | "formSchema"> & {
-  examples?: readonly PublicBookmarkExampleDto[];
   /** Told of each run the server kept, as it answered. */
   onRun: (run: PublicRunDto) => void;
   /** Drawn under the form once a run was made: what became of it. */
@@ -60,14 +59,7 @@ const hasFields = (schema: PublicBookmarkDto["formSchema"]) =>
  * The server limits how often one caller runs one bookmark. The count it reports is shown under
  * the form, and with no run left the run action is withheld: the values and the last result stay.
  */
-export function PublicBookmarkForm({
-  publicId,
-  version,
-  formSchema,
-  examples = [],
-  onRun,
-  afterRun,
-}: Props) {
+export function PublicBookmarkForm({ publicId, version, formSchema, onRun, afterRun }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onRunRef = useRef(onRun);
   onRunRef.current = onRun;
@@ -169,13 +161,7 @@ export function PublicBookmarkForm({
   }
   return (
     <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1">
-      {examples.length > 0 ? (
-        <PublicBookmarkExampleSelect
-          examples={examples}
-          value={example?.id}
-          onChange={(id) => setExample(examples.find((item) => item.id === id))}
-        />
-      ) : null}
+      <PublicBookmarkExampleSelect publicId={publicId} value={example} onChange={setExample} />
       {failure ? (
         <AppInlineAlert>
           <strong className="font-semibold">{failure.title}.</strong> {failure.detail}

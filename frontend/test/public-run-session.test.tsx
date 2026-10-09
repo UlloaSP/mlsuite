@@ -30,7 +30,7 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
 const PUBLIC_ID = "8f6f3c0e-58a2-4c0b-9d0c-0d5c1f6e2a11";
 const AT = "2026-10-01T10:00:00Z";
 const BOOKMARK_PATH = `/api/public/bookmarks/${PUBLIC_ID}`;
-const RUNS_PATH = `${BOOKMARK_PATH}/runs`;
+const RUNS_PATH = `${BOOKMARK_PATH}/runs/catalog`;
 const RUN_PATH = `${BOOKMARK_PATH}/predictions`;
 const QUESTIONS = {
   steps: [
@@ -86,6 +86,13 @@ const reviewed = run(2, {
   ],
 });
 
+const pageData = (items: PublicRunDto[]) => ({
+  items,
+  page: 0,
+  size: 24,
+  totalItems: items.length,
+  hasNext: false,
+});
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const flush = () => act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
@@ -98,12 +105,19 @@ let fetchMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
   answers = {
     [BOOKMARK_PATH]: [json(bookmark)],
-    [`${BOOKMARK_PATH}/examples`]: [json([])],
+    [`${BOOKMARK_PATH}/examples/catalog`]: [json(pageData([]))],
     [`${BOOKMARK_PATH}/quota`]: [json({ limit: 50, remaining: 50, resetsAt: null })],
-    [RUNS_PATH]: [json([reviewed, run(1)])],
+    [RUNS_PATH]: [json(pageData([reviewed, run(1)]))],
   };
   fetchMock = vi.fn(async (url: string) => {
-    const queue = answers[new URL(url).pathname];
+    const path = new URL(url).pathname;
+    if (/\/runs\/\d+$/.test(path)) {
+      const page = await answers[RUNS_PATH]![0]!.clone().json();
+      return json(
+        page.items.find((item: PublicRunDto) => item.id === Number(path.split("/").at(-1))),
+      );
+    }
+    const queue = answers[path];
     if (!queue) throw new Error(`Unexpected request to ${url}`);
     return (queue.length > 1 ? queue.shift()! : queue[0]).clone();
   });
@@ -129,7 +143,9 @@ async function openPage() {
   return view.host;
 }
 const rail = (host: HTMLElement) => host.querySelector('aside[aria-label="Your runs"]')!;
-const entries = (host: HTMLElement) => [...rail(host).querySelectorAll("li")];
+const entries = (host: HTMLElement) => [
+  ...rail(host).querySelectorAll<HTMLButtonElement>("button[aria-pressed]"),
+];
 /** Reports render inside nested shadow roots, which `textContent` does not cross. */
 const deepText = (node: Node): string =>
   [...(node instanceof Element && node.shadowRoot ? [node.shadowRoot] : []), ...node.childNodes]
@@ -155,7 +171,7 @@ describe("a visitor's runs on a public bookmark", () => {
 
   test("opening a run shows its results, its inputs and the review it can be given", async () => {
     const host = await openPage();
-    await click(entries(host)[1]!.querySelector("button")!);
+    await click(entries(host)[1]!);
     await settle();
 
     expect(formSection(host).textContent).toContain("Run of");
@@ -172,7 +188,7 @@ describe("a visitor's runs on a public bookmark", () => {
 
   test("a reviewed run shows its answers, which can be changed", async () => {
     const host = await openPage();
-    await click(entries(host)[0]!.querySelector("button")!);
+    await click(entries(host)[0]!);
     await settle();
 
     const review = formSection(host).querySelector('section[aria-label="Your review"]')!;
@@ -192,6 +208,7 @@ describe("a visitor's runs on a public bookmark", () => {
       }),
     ];
     const host = await openPage();
+    answers[RUNS_PATH] = [json(pageData([run(3), reviewed, run(1)]))];
     await act(async () =>
       host
         .querySelector("mlf-kit-tabs")!
@@ -201,22 +218,23 @@ describe("a visitor's runs on a public bookmark", () => {
     await settle();
 
     expect(rail(host).textContent).toContain("3 kept");
-    expect(entries(host)[0]?.getAttribute("aria-pressed") ?? "").toBe("");
-    expect(entries(host)[0]?.querySelector("button")?.getAttribute("aria-pressed")).toBe("true");
+    expect(entries(host)[0]?.getAttribute("aria-pressed")).toBe("true");
     const kept = formSection(host).querySelector("[data-kept-run]")!;
     expect(kept.textContent).toContain("This run is kept in your runs");
     await click(buttonByText("Review this run", kept)!);
     await settle();
     expect(formSection(host).textContent).toContain("Run of");
     expect(formSection(host).querySelector('section[aria-label="Review this run"]')).not.toBeNull();
-    // The list was not asked again: the run came with the answer.
-    expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith("/runs"))).toHaveLength(1);
+    // The catalog refreshes its server total after a new run.
+    expect(
+      fetchMock.mock.calls.filter(([url]) => new URL(String(url)).pathname === RUNS_PATH),
+    ).toHaveLength(2);
   });
 
   test("a run of an earlier form keeps its inputs but shows no results here", async () => {
-    answers[RUNS_PATH] = [json([run(4, { version: 1 })])];
+    answers[RUNS_PATH] = [json(pageData([run(4, { version: 1 })]))];
     const host = await openPage();
-    await click(entries(host)[0]!.querySelector("button")!);
+    await click(entries(host)[0]!);
     await settle();
 
     expect(formSection(host).textContent).toContain("earlier version of the form");
