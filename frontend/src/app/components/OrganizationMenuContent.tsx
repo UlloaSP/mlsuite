@@ -32,7 +32,7 @@ export function OrganizationMenuContent({
   context,
   side,
 }: {
-  align: "start" | "end";
+  align: "start" | "center" | "end";
   className: string;
   context: WorkspaceCurrentContextDto;
   side: "top" | "bottom";

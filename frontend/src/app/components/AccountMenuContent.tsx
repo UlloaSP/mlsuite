@@ -24,7 +24,7 @@ export function AccountMenuContent({
   notificationCount,
   side,
 }: {
-  align: "start" | "end";
+  align: "start" | "center" | "end";
   className: string;
   notificationCount: number;
   side: "top" | "bottom";

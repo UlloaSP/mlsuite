@@ -53,12 +53,7 @@ export function SchemaReviewRunDetailPanel({
     );
   return (
     <AppSkeletonScope className="space-y-6" label="Loading inference…" loading={switching}>
-      <div>
-        <p className="text-2xs font-semibold uppercase tracking-eyebrow text-accent">
-          Selected inference
-        </p>
-        <h2 className="mt-1 text-2xl font-semibold text-fg">{detail.data.run.name}</h2>
-      </div>
+      <h2 className="text-2xl font-semibold text-fg">{detail.data.run.name}</h2>
       {switching ? (
         <AppLoadingState label="Loading review form…" rows={1} />
       ) : (

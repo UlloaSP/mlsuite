@@ -309,7 +309,9 @@ describe("inference table view", () => {
       (th) => th.textContent,
     );
 
-    expect(headers).toEqual(expect.arrayContaining(["Inference", "Inputs", "Outputs", "Feedback"]));
+    expect(headers).toEqual(expect.arrayContaining(["Inputs", "Outputs", "Feedback"]));
+    // The summary columns need no title of their own.
+    expect(headers).not.toContain("Inference");
     expect(rowNames(host)).toEqual(["Case 2", "Case 1"]);
     await click("Age (years)", host);
     expect(rowNames(host)).toEqual(["Case 2", "Case 1"]);

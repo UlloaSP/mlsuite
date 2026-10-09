@@ -55,7 +55,7 @@ export function SidebarUserFooter({ side }: { side: SidebarPosition }) {
             </SidebarMenuButton>
           </DropdownMenu.Trigger>
           <AccountMenuContent
-            align={side === "right" ? "end" : "start"}
+            align={collapsed ? (side === "right" ? "end" : "start") : "center"}
             side="top"
             notificationCount={notifications?.totalItems ?? 0}
             className={sidebarMenuContent(collapsed)}

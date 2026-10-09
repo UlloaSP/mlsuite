@@ -23,7 +23,8 @@ export const sidebarMenuChevron = (collapsed: boolean) =>
 export const sidebarMenuContent = (collapsed: boolean) =>
   cx(
     "z-(--z-popover) flex max-h-[var(--radix-dropdown-menu-content-available-height)] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-menu border border-line bg-surface p-2 text-fg shadow-hover",
-    collapsed ? "w-64" : "w-[var(--radix-dropdown-menu-trigger-width)]",
+    // A little wider than its trigger, so the selected entry behind it never shows at its sides.
+    collapsed ? "w-64" : "w-[calc(var(--radix-dropdown-menu-trigger-width)+0.75rem)]",
   );
 
 export const SIDEBAR_MENU_LABEL =

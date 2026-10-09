@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAtom } from "jotai";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   mountPublicRunForm,
   type MountedPublicRunForm,
@@ -38,8 +38,6 @@ import type {
 type Props = Pick<PublicBookmarkDto, "publicId" | "version" | "formSchema"> & {
   /** Told of each run the server kept, as it answered. */
   onRun: (run: PublicRunDto) => void;
-  /** Drawn under the form once a run was made: what became of it. */
-  afterRun?: ReactNode;
 };
 
 const hasFields = (schema: PublicBookmarkDto["formSchema"]) =>
@@ -61,7 +59,7 @@ const hasFields = (schema: PublicBookmarkDto["formSchema"]) =>
  * The server limits how often one caller runs one bookmark. The count it reports is shown under
  * the form, and with no run left the run action is withheld: the values and the last result stay.
  */
-export function PublicBookmarkForm({ publicId, version, formSchema, onRun, afterRun }: Props) {
+export function PublicBookmarkForm({ publicId, version, formSchema, onRun }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onRunRef = useRef(onRun);
   onRunRef.current = onRun;
@@ -193,7 +191,6 @@ export function PublicBookmarkForm({ publicId, version, formSchema, onRun, after
         />
       </div>
       <div className="flex shrink-0 flex-col gap-2">
-        {afterRun}
         {quota && !mountError ? <PublicRunQuota quota={quota} /> : null}
         <p className="text-sm text-fg-muted">
           Runs from this page are kept for this browser, with their results, in Your runs.

@@ -64,7 +64,8 @@ const reportLabels = (report: ReportConfig): string[] =>
       )
     : [];
 
-const normalizeReportPayload = (
+/** A stored report as it is shown: a predicted class index reads as the class's label. */
+export const normalizeReportPayload = (
   report: ReportConfig,
   payload?: JsonRecord,
 ): JsonRecord | undefined => {

@@ -301,7 +301,7 @@ describe("moderation access", () => {
     session.role = "USER";
     const host = await openRoute();
 
-    expect(host.textContent).toContain("HTTP 404");
+    expect(host.textContent).toContain("Route not found");
     expect(host.textContent).not.toContain("Public bookmarks");
     expect(fetchMock).not.toHaveBeenCalled();
   });

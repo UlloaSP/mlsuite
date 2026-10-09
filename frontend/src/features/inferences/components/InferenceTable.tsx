@@ -2,6 +2,7 @@ import { defaultRangeExtractor, useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { useRef, useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
+import { SUMMARY_GROUP_ID } from "@/features/inferences/lib/inference-table-columns";
 import type { InferenceReactTable } from "@/features/inferences/lib/use-inference-table";
 import type { InferenceTableRow } from "@/features/inferences/lib/inference-table-rows";
 import { useLoadMoreNearEnd } from "@/shared/ui/catalog/useLoadMoreNearEnd";
@@ -77,52 +78,71 @@ export function InferenceTable({
     >
       <table className="grid text-sm" style={{ width }} aria-rowcount={totalItems + 1}>
         <thead className="sticky top-0 z-[2] grid border-b border-line bg-surface-subtle">
-          {table.getHeaderGroups().map((group) => (
-            <tr key={group.id} className="flex">
-              {group.headers.map((header) => {
-                const sorted = header.column.getIsSorted();
-                const sortable = !header.isPlaceholder && header.column.getCanSort();
-                const label = header.isPlaceholder ? null : <table.FlexRender header={header} />;
-                return (
-                  <th
-                    key={header.id}
-                    colSpan={header.colSpan}
-                    style={{ width: header.getSize() }}
-                    aria-sort={
-                      sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : undefined
-                    }
-                    className={cx(
-                      "flex h-9 shrink-0 items-center bg-surface-subtle px-3 text-left text-xs font-semibold text-fg-secondary",
-                      header.subHeaders.length > 0 && "border-l border-line first:border-l-0",
-                      stickyClass(header.column.id),
-                    )}
-                  >
-                    {sortable ? (
-                      <button
-                        type="button"
-                        onClick={header.column.getToggleSortingHandler()}
-                        className={cx(
-                          "-mx-1 flex min-w-0 items-center gap-1.5 rounded-control px-1 py-0.5 hover:text-fg",
-                          FOCUS_RING,
-                        )}
-                      >
+          {table
+            .getHeaderGroups()
+            // With no schema columns shown, the row of group titles has nothing to say.
+            .filter((group) =>
+              group.headers.some(
+                (header) => !header.isPlaceholder && header.column.id !== SUMMARY_GROUP_ID,
+              ),
+            )
+            .map((group) => (
+              <tr key={group.id} className="flex">
+                {group.headers.map((header) => {
+                  const sorted = header.column.getIsSorted();
+                  const sortable = !header.isPlaceholder && header.column.getCanSort();
+                  const label =
+                    header.isPlaceholder || header.column.id === SUMMARY_GROUP_ID ? null : (
+                      <table.FlexRender header={header} />
+                    );
+                  return (
+                    <th
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      style={{ width: header.getSize() }}
+                      aria-sort={
+                        sorted === "asc"
+                          ? "ascending"
+                          : sorted === "desc"
+                            ? "descending"
+                            : undefined
+                      }
+                      className={cx(
+                        "flex h-9 shrink-0 items-center bg-surface-subtle px-3 text-left text-xs font-semibold text-fg-secondary",
+                        header.subHeaders.length > 0 && "border-l border-line first:border-l-0",
+                        stickyClass(header.column.id),
+                      )}
+                    >
+                      {sortable ? (
+                        <button
+                          type="button"
+                          onClick={header.column.getToggleSortingHandler()}
+                          className={cx(
+                            "-mx-1 flex min-w-0 items-center gap-1.5 rounded-control px-1 py-0.5 hover:text-fg",
+                            FOCUS_RING,
+                          )}
+                        >
+                          <span className="truncate">{label}</span>
+                          {sorted === "asc" ? (
+                            <ArrowUp size={13} aria-hidden="true" />
+                          ) : sorted === "desc" ? (
+                            <ArrowDown size={13} aria-hidden="true" />
+                          ) : (
+                            <ArrowUpDown
+                              size={13}
+                              aria-hidden="true"
+                              className="text-fg-disabled"
+                            />
+                          )}
+                        </button>
+                      ) : (
                         <span className="truncate">{label}</span>
-                        {sorted === "asc" ? (
-                          <ArrowUp size={13} aria-hidden="true" />
-                        ) : sorted === "desc" ? (
-                          <ArrowDown size={13} aria-hidden="true" />
-                        ) : (
-                          <ArrowUpDown size={13} aria-hidden="true" className="text-fg-disabled" />
-                        )}
-                      </button>
-                    ) : (
-                      <span className="truncate">{label}</span>
-                    )}
-                  </th>
-                );
-              })}
-            </tr>
-          ))}
+                      )}
+                    </th>
+                  );
+                })}
+              </tr>
+            ))}
         </thead>
         <tbody className="relative grid" style={{ height: virtualizer.getTotalSize() }}>
           {virtualizer.getVirtualItems().map((item) => {

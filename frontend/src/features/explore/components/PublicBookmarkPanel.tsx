@@ -4,7 +4,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQueryClient } from "@tanstack/react-query";
-import { ClipboardCheck } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import {
   usePublicRunCatalog,
@@ -94,23 +93,6 @@ export function PublicBookmarkPanel({ bookmark }: Props) {
             version={bookmark.version}
             formSchema={bookmark.formSchema}
             onRun={onRun}
-            afterRun={
-              latest ? (
-                <div
-                  aria-live="polite"
-                  data-kept-run
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line bg-surface-subtle px-4 py-3 text-sm"
-                >
-                  <span className="text-fg-secondary">
-                    This run is kept in your runs, with its results.
-                  </span>
-                  <AppButton size="sm" variant="secondary" onClick={() => setViewingId(latest.id)}>
-                    <ClipboardCheck size={14} />
-                    {reviewed(latest) ? "See your review" : "Review this run"}
-                  </AppButton>
-                </div>
-              ) : null
-            }
           />
         </div>
       </section>

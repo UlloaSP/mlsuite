@@ -41,7 +41,7 @@ export function AuthFormPanel({
               name="email"
               type="email"
               autoComplete="username"
-              placeholder="admin@example.com"
+              placeholder="you@example.com"
             />
             <AuthField
               {...field}

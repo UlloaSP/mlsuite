@@ -4,22 +4,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ArrowLeft, Home, RefreshCw } from "lucide-react";
-import { m as motion } from "motion/react";
 import { useNavigate } from "react-router";
 import { AppButton } from "./AppButton";
-import { MLSuiteMark } from "./MLSuiteMark";
-import { MLSuiteWordmark } from "./MLSuiteWordmark";
 import { AppPage } from "./AppPage";
-
-const errorDateFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "long",
-  day: "numeric",
-  year: "numeric",
-});
-const gridLines = [1, 2, 3, 4, 5, 6, 7].map((value) => ({
-  key: `grid-${value}`,
-  left: `${value * (100 / 8)}%`,
-}));
+import { AppSurface } from "./AppSurface";
 
 const errorContent = {
   "module-load": [
@@ -51,84 +39,43 @@ export function RouteStatusPage({
   onReload = () => window.location.reload(),
 }: RouteStatusPageProps) {
   const navigate = useNavigate();
-  const currentDate = errorDateFormatter.format(Date.now());
   const [heading, description] = errorContent[status];
 
   return (
-    <AppPage className="min-h-dvh bg-page text-fg">
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="relative flex min-h-dvh w-full flex-col overflow-hidden font-sans"
-      >
-        {gridLines.map((line) => (
-          <div
-            key={line.key}
-            className="pointer-events-none absolute bottom-0 top-0 w-px bg-fg/5"
-            style={{ left: line.left }}
-          />
-        ))}
-
-        <header className="relative z-10 shrink-0 px-6 pt-5 sm:px-11">
-          <div className="mb-2.5 flex items-center justify-end font-mono text-2xs uppercase tracking-eyebrow text-fg-muted">
-            <span>{currentDate}</span>
-          </div>
-          <div className="mb-1.5 h-0.5 bg-fg" />
-          <div className="flex items-center justify-center py-2.5">
-            <div className="flex items-center gap-2.5">
-              <MLSuiteMark />
-              <span className="text-3xl leading-none">
-                <MLSuiteWordmark />
-              </span>
-            </div>
-          </div>
-          <div className="h-px bg-fg" />
-          <div className="mt-[3px] h-[3px] bg-fg" />
-        </header>
-
-        <main className="relative z-10 flex flex-1 flex-col justify-between px-6 pb-10 sm:px-11 lg:flex-row lg:items-end lg:justify-start">
-          <section className="border-line pt-6 lg:flex-[0_0_58%] lg:border-r lg:pr-10">
-            <p className="mb-2.5 font-mono text-2xs uppercase tracking-eyebrow text-accent">
-              {status === "module-load"
-                ? "Page loading error"
-                : status === 0
-                  ? "Network error"
-                  : `HTTP ${status}`}
-            </p>
-            <h1 className="m-0 text-[4.4rem] font-semibold leading-[0.93] tracking-[-0.05em] sm:text-[5.6rem] lg:text-[5.25rem] xl:text-[6rem]">
+    // As tall as the window, less the navigation bar when the app shell is still around it.
+    <AppPage className="min-h-[calc(100dvh-var(--app-nav-block,0px))] bg-surface text-fg">
+      <AppSurface className="flex flex-1 items-center justify-center overflow-auto">
+        <div className="flex w-full max-w-md flex-col items-center gap-6 text-center">
+          <span className="rounded-full border border-line bg-surface-muted px-3 py-1 font-mono text-xs text-fg-secondary">
+            {status === "module-load" ? "Load failed" : status === 0 ? "Offline" : status}
+          </span>
+          <div>
+            <h1 className="text-3xl font-semibold leading-[1.05] tracking-[-0.8px] text-fg">
               {heading}
             </h1>
-            <p className="mt-4 max-w-[720px] text-xs leading-7 text-fg-secondary">{description}</p>
-          </section>
-
-          <section className="mt-10 lg:mt-0 lg:flex-1 lg:pl-10">
-            <p className="mb-4 font-mono text-2xs uppercase tracking-eyebrow text-fg-muted">
-              Navigation
-            </p>
-            <div className="flex flex-col gap-[9px]">
-              {status === "module-load" ? (
-                <AppButton className="w-full" onClick={onReload}>
-                  <RefreshCw className="size-4" />
-                  Reload application
-                </AppButton>
-              ) : null}
-              <AppButton className="w-full" onClick={() => navigate(homePath)}>
-                <Home className="size-4" />
-                {homeLabel}
+            <p className="mt-2 text-sm leading-6 text-fg-muted">{description}</p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {status === "module-load" ? (
+              <AppButton onClick={onReload}>
+                <RefreshCw className="size-4" />
+                Reload application
               </AppButton>
-              <AppButton variant="secondary" className="w-full" onClick={() => navigate(-1)}>
-                <ArrowLeft className="size-4" />
-                Go back
-              </AppButton>
-            </div>
-
-            <p className="mt-6 font-mono text-2xs text-fg-muted">
-              Status: {status === "module-load" ? "page load failed" : status || "offline"}
-            </p>
-          </section>
-        </main>
-      </motion.div>
+            ) : null}
+            <AppButton
+              variant={status === "module-load" ? "secondary" : "primary"}
+              onClick={() => navigate(homePath)}
+            >
+              <Home className="size-4" />
+              {homeLabel}
+            </AppButton>
+            <AppButton variant="secondary" onClick={() => navigate(-1)}>
+              <ArrowLeft className="size-4" />
+              Go back
+            </AppButton>
+          </div>
+        </div>
+      </AppSurface>
     </AppPage>
   );
 }

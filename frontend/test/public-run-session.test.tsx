@@ -200,7 +200,7 @@ describe("a visitor's runs on a public bookmark", () => {
     expect(formSection(host).querySelector('section[aria-label="Review this run"]')).not.toBeNull();
   });
 
-  test("a run made from the page joins the list and can be reviewed from under the form", async () => {
+  test("a run made from the page joins the list, where it is opened to be reviewed", async () => {
     answers[RUN_PATH] = [
       json({
         run: run(3, { inputs: { Age: 52 } }),
@@ -219,9 +219,9 @@ describe("a visitor's runs on a public bookmark", () => {
 
     expect(rail(host).textContent).toContain("3 kept");
     expect(entries(host)[0]?.getAttribute("aria-pressed")).toBe("true");
-    const kept = formSection(host).querySelector("[data-kept-run]")!;
-    expect(kept.textContent).toContain("This run is kept in your runs");
-    await click(buttonByText("Review this run", kept)!);
+    // Nothing is added under the form: the run is in Your runs.
+    expect(formSection(host).querySelector("[data-kept-run]")).toBeNull();
+    await click(entries(host)[0]!);
     await settle();
     expect(formSection(host).textContent).toContain("Run of");
     expect(formSection(host).querySelector('section[aria-label="Review this run"]')).not.toBeNull();

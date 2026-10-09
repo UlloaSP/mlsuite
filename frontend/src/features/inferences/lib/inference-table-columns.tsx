@@ -153,6 +153,9 @@ export const dataGroupLabel = (column: InferenceDataColumn, multipleSchemas: boo
     ? `${column.schemaName} · ${GROUP_LABELS[column.group]}`
     : GROUP_LABELS[column.group];
 
+/** The summary columns' group: named for the columns menu, untitled in the table. */
+export const SUMMARY_GROUP_ID = "inference";
+
 /**
  * The summary every inference has, then each schema's inputs, outputs, and feedback,
  * each under its group header, then the row actions.
@@ -180,7 +183,7 @@ export const buildInferenceColumns = (
   });
   if (groupColumns.length === 0) return [...summaryColumns(), actions];
   return [
-    helper.group({ id: "inference", header: "Inference", columns: summaryColumns() }),
+    helper.group({ id: SUMMARY_GROUP_ID, header: "Inference", columns: summaryColumns() }),
     ...groupColumns,
     actions,
   ];
