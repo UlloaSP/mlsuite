@@ -29,9 +29,10 @@ export function ReviewInboxGroup({
       open={open}
       onToggle={onToggle}
     >
-      <div className="flex min-h-48 flex-1 flex-col xl:min-h-0">
+      <div className={`flex flex-1 flex-col ${count === 0 ? "min-h-32" : "min-h-0"}`}>
         <CatalogListPanel
           scrollMemoryKey={false}
+          density="flush"
           itemCount={query.data?.items.length ?? 0}
           hasNext={query.hasNextPage}
           isLoading={query.isLoading}

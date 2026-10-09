@@ -19,6 +19,7 @@ export function useCatalogVirtualizer(
   items: ReactNode[],
   layout: "list" | "grid",
   memoryKey: string | false,
+  gap: number,
 ) {
   const scrollRef = useRef<HTMLElement>(null);
   const [columns, setColumns] = useState(1);
@@ -48,9 +49,9 @@ export function useCatalogVirtualizer(
   const virtualizer = useVirtualizer<HTMLElement, HTMLElement>({
     count: Math.ceil(items.length / columnCount),
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => (layout === "grid" ? 260 : 112),
+    estimateSize: () => (layout === "grid" ? 260 : gap === 0 ? 64 : 112),
     overscan: CATALOG_OVERSCAN,
-    gap: 12,
+    gap,
     initialMeasurementsCache: sizesKey ? measuredSizes.get(sizesKey) : undefined,
     getItemKey: (index) => {
       return catalogItemKey(items[index * columnCount], index * columnCount);

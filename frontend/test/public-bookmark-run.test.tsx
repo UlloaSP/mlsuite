@@ -287,7 +287,61 @@ describe("running a public bookmark", () => {
     expect(alertText(host)).toContain("The run did not reach the server");
   });
 
-  test("a form that needs plugin fields or reports is not mounted", async () => {
+  test("a form made with a plugin field loads it and runs for a visitor", async () => {
+    // Node cannot import blob URLs; data URLs execute the same transpiled module in this test.
+    let moduleSource = "";
+    vi.stubGlobal(
+      "Blob",
+      class {
+        constructor(parts: string[]) {
+          moduleSource = parts.join("");
+        }
+      },
+    );
+    vi.spyOn(URL, "createObjectURL").mockImplementation(
+      () => `data:text/javascript;base64,${Buffer.from(moduleSource).toString("base64")}`,
+    );
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    answers[BOOKMARK_PATH] = [
+      json({
+        ...publicBookmark(),
+        formSchema: {
+          fields: [{ kind: "custom-score", label: "Score", mappedTo: "in0" }],
+          reports: [{ kind: "classifier", label: "Risk", id: "out0", mappedTo: "out0" }],
+        },
+      }),
+    ];
+    answers[`${BOOKMARK_PATH}/plugins`] = [
+      json([
+        {
+          id: "score",
+          fileName: "score.ts",
+          contentType: "text/typescript",
+          sizeBytes: 1,
+          createdAt: AT,
+          updatedAt: AT,
+          source: `export default defineFieldKind({
+  kind: "custom-score",
+  schema: z.object({ kind: z.literal("custom-score"), label: z.string(), mappedTo: z.string().optional() }),
+  value: { default: () => 0, normalize: (value: unknown) => Number(value ?? 0) },
+  render: { widget: "number" },
+});`,
+        },
+      ]),
+    ];
+    answers[RUN_PATH] = [classified(0.2, 0.8)];
+    const host = await openPage();
+    await settle();
+
+    expect(host.textContent).not.toContain("could not be loaded");
+    expect(host.querySelector("mlf-kit-tabs")).not.toBeNull();
+    await run(host);
+    expect(fetchMock.mock.calls.some(([url]) => new URL(String(url)).pathname === RUN_PATH)).toBe(
+      true,
+    );
+  });
+
+  test("a form whose plugin fields or reports do not arrive is not mounted", async () => {
     answers[BOOKMARK_PATH] = [
       json({
         ...publicBookmark(),
@@ -297,9 +351,10 @@ describe("running a public bookmark", () => {
         },
       }),
     ];
+    answers[`${BOOKMARK_PATH}/plugins`] = [failure(500, "Unavailable")];
     const host = await openPage();
 
-    expect(host.textContent).toContain("This form cannot be shown here");
+    expect(host.textContent).toContain("This form could not be loaded");
     expect(host.querySelector("mlf-kit-tabs")).toBeNull();
   });
 });

@@ -136,7 +136,6 @@ export function ModelsPage() {
         accessFallback={<NotFoundError />}
         controls={controls}
         header={{
-          eyebrow: "Models",
           title: "Models",
           breadcrumbs: [{ label: "Models" }],
           description: `Navigate models and inspect generated schema snapshots for ${

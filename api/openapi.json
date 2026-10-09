@@ -9297,6 +9297,39 @@
         ]
       }
     },
+    "/api/public/bookmarks/{publicId}/plugins": {
+      "get": {
+        "operationId": "plugins",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publicId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PluginRuntimeSourceDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-bookmark-controller"
+        ]
+      }
+    },
     "/api/public/bookmarks/{publicId}/predictions": {
       "post": {
         "operationId": "runPrediction",

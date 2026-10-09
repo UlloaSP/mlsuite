@@ -1,6 +1,8 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 
@@ -112,7 +114,11 @@ public class PublicPredictionService implements PublicPredictionUseCase {
         try {
             Map<Long, Map<String, Object>> answers = new LinkedHashMap<>();
             for (ModelCall call : plan.calls()) {
-                answers.put(call.modelId(), predict(plan.publicId(), call));
+                Map<String, Object> answer = predict(plan.publicId(), call);
+                if (plan.reports().stream().anyMatch(route -> route.modelId().equals(call.modelId()) && !route.assessed())) {
+                    answer.put("reports", withExplanation(answer.get("reports"), explain(plan.publicId(), call)));
+                }
+                answers.put(call.modelId(), answer);
             }
             return answers;
         } finally {
@@ -143,6 +149,36 @@ public class PublicPredictionService implements PublicPredictionUseCase {
             log.error("Public bookmark {}: model {} could not be run", publicId, call.modelId(), ex);
             throw failed();
         }
+    }
+
+    /**
+     * A plugin report is the runtime's explanation of the prediction, which a workspace form asks
+     * for from the browser. A visitor's browser asks for nothing: the same run produces it here.
+     * A model the runtime cannot explain leaves that report out and the rest of the run stands.
+     */
+    private List<?> explain(String publicId, ModelCall call) {
+        try {
+            Model model = modelRepository.findById(call.modelId()).orElseThrow();
+            MultipartBodyBuilder parts = new MultipartBodyBuilder();
+            parts.part("model_file", artifactReader.loadVerified(model))
+                    .filename(model.getFileName())
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM);
+            parts.part("data", objectMapper.writeValueAsString(call.input())).contentType(MediaType.APPLICATION_JSON);
+            parts.part("traces", "[]").contentType(MediaType.APPLICATION_JSON);
+            return analyzerClient.post("/explain", parts.build()).get("reports") instanceof List<?> reports
+                    ? reports
+                    : List.of();
+        } catch (JsonProcessingException | RuntimeException ex) {
+            log.warn("Public bookmark {}: model {} could not be explained: {}",
+                    publicId, call.modelId(), ex.getMessage());
+            return List.of();
+        }
+    }
+
+    private static List<Object> withExplanation(Object predicted, List<?> explained) {
+        List<Object> reports = new ArrayList<>(predicted instanceof List<?> items ? items : List.of());
+        reports.addAll(explained);
+        return reports;
     }
 
     private static ResponseStatusException failed() {

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useMemo, type PropsWithChildren } from "react";
 import { Link, useLocation } from "react-router";
-import { EXPLORE_BREADCRUMB_ROOT, EXPLORE_PATH } from "@/app/components/explore-navigation";
+import { EXPLORE_PATH } from "@/app/components/explore-navigation";
 import {
   AccountEntryContext,
   type AccountEntry,
@@ -19,8 +19,6 @@ import { PinnedLocationDisplayContext } from "@/shared/ui/location-display";
 import { MLSuiteMark } from "@/shared/ui/MLSuiteMark";
 import { MLSuiteWordmark } from "@/shared/ui/MLSuiteWordmark";
 import { FrameContent } from "./FrameContent";
-
-const BREADCRUMB_ROOTS = { public: EXPLORE_BREADCRUMB_ROOT };
 
 /**
  * The frame of a public page for a visitor without a session: the brand leading to the
@@ -38,7 +36,7 @@ export function PublicFrame({ children }: PropsWithChildren) {
   );
 
   return (
-    <BreadcrumbProvider roots={BREADCRUMB_ROOTS}>
+    <BreadcrumbProvider>
       <div className="flex h-dvh w-screen flex-col overflow-clip bg-surface text-fg">
         <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line px-4 sm:px-6">
           <Link

@@ -227,3 +227,32 @@ test("a list that cannot grow to its remembered offset settles instead of waitin
   expect(frames.length).toBe(0);
   client.clear();
 });
+
+test("flush rows touch, and grid cards share their row's height", async () => {
+  const panel = (props: object) => (
+    <CatalogListPanel
+      scrollMemoryKey={false}
+      itemCount={90}
+      isBusy={false}
+      isLoading={false}
+      hasNext={false}
+      errorMessage={null}
+      loadingLabel="Loading"
+      emptyState={empty}
+      onLoadMore={vi.fn()}
+      {...props}
+    >
+      {items.map((item) => (
+        <p key={item.id}>{item.name}</p>
+      ))}
+    </CatalogListPanel>
+  );
+  const flush = await mount(panel({ density: "flush" }));
+  expect(flush.host.querySelector<HTMLElement>('[data-index="1"]')?.style.transform).toBe(
+    "translateY(112px)",
+  );
+  await flush.unmount();
+
+  const grid = await mount(panel({ layout: "grid" }));
+  expect(grid.host.querySelector<HTMLElement>('[data-index="0"]')?.style.minHeight).toBe("112px");
+});

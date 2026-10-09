@@ -42,7 +42,6 @@ export function ExplorePage() {
         title: "Explore",
         description: "Bookmarks that organizations have published for anyone to open.",
         breadcrumbs: [{ label: "Explore" }],
-        breadcrumbScope: "public",
       }}
       navigation={<ExploreVisitorIntro />}
       layout="grid"

@@ -72,8 +72,7 @@ export function PublicBookmarkPage() {
     <AppPage>
       <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
-          breadcrumbScope="public"
-          breadcrumbs={[{ label: bookmark.name }]}
+          breadcrumbs={[{ label: "Explore", to: "/explore" }, { label: bookmark.name }]}
           title={bookmark.name}
           description={bookmark.description ?? undefined}
           actions={<WorkspaceBookmarkLink publicId={bookmark.publicId} />}

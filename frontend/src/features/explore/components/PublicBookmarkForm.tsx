@@ -11,7 +11,6 @@ import {
   type MountedPublicRunForm,
 } from "@/capabilities/prediction-runtime/mlform/public-run-mount";
 import { applyPredictionInputsToSchema } from "@/capabilities/prediction-runtime/mlform/schema-inputs";
-import { schemaNeedsPluginCatalog } from "@/capabilities/prediction-runtime/mlform/schema-plugin-requirement";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { MLFORM_SPLIT_CONTAINER_CLASS } from "@/capabilities/prediction-runtime/mlform/split-layout";
 import { useAccountEntry } from "@/capabilities/workspace-context/account-entry";
@@ -23,8 +22,11 @@ import { PublicBookmarkExampleSelect } from "@/features/explore/components/Publi
 import { PublicRunQuota } from "@/features/explore/components/PublicRunQuota";
 import { publicRunFailure, type PublicRunFailure } from "@/features/explore/lib/public-run-failure";
 import { publicRunLimitQuota } from "@/features/explore/lib/public-run-limit";
+import { usePublicPluginCatalog } from "@/features/explore/lib/use-public-plugin-catalog";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
+import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
 import { cx } from "@/shared/ui/cx";
 import type {
@@ -47,9 +49,9 @@ const hasFields = (schema: PublicBookmarkDto["formSchema"]) =>
  * The form of a public bookmark, to fill and run: its inputs and results in two tabs, as wide
  * as the page and as tall as the page lets it be, scrolling inside. A run is one request that
  * the server routes to the bookmark's models and keeps as this browser's; its result shows in
- * the form until the next run, and stays in the page's runs. Plugin fields and reports are code
- * from an organization's private catalog, so a form that uses them says so instead of loading
- * that code for a visitor.
+ * the form until the next run, and stays in the page's runs. A form made with plugin fields or
+ * reports loads them first: only a schema of the owning organization may use a plugin, but
+ * whoever can open the form runs it.
  *
  * A form that can be shown offers the bookmark's curated examples above it. Loading one starts
  * the form again with the example's inputs as the fields' starting values, as a saved run's are
@@ -70,8 +72,9 @@ export function PublicBookmarkForm({ publicId, version, formSchema, onRun, after
   const [running, setRunning] = useState(false);
   const [failure, setFailure] = useState<PublicRunFailure | null>(null);
   const empty = !hasFields(formSchema);
-  const needsPlugins = schemaNeedsPluginCatalog(formSchema);
-  const mountable = !empty && !needsPlugins;
+  const catalog = usePublicPluginCatalog(publicId, formSchema);
+  const { plugins } = catalog;
+  const mountable = !empty && catalog.ready;
   const queryClient = useQueryClient();
   // The frame offers an account only to a visitor without a session, whom the server counts apart.
   const caller = useAccountEntry() ? "visitor" : "member";
@@ -93,6 +96,7 @@ export function PublicBookmarkForm({ publicId, version, formSchema, onRun, after
       const mounted = mountPublicRunForm({
         container: containerRef.current,
         schema,
+        plugins,
         theme: initialTheme,
         run: async (values, signal) => {
           const { queryKey } = publicRunQuotaQueryOptions(publicId, caller);
@@ -130,7 +134,7 @@ export function PublicBookmarkForm({ publicId, version, formSchema, onRun, after
     } catch (error) {
       setMountError(error instanceof Error ? error.message : String(error));
     }
-  }, [caller, initialTheme, mountable, publicId, queryClient, schema, version]);
+  }, [caller, initialTheme, mountable, plugins, publicId, queryClient, schema, version]);
 
   // After every render, because loading an example mounts a new form that must be told too.
   useEffect(() => {
@@ -150,15 +154,21 @@ export function PublicBookmarkForm({ publicId, version, formSchema, onRun, after
       />
     );
   }
-  if (needsPlugins) {
+  if (catalog.failed) {
     return (
       <AppEmptyState
         compact
-        title="This form cannot be shown here"
-        description="It uses plugin fields or reports from its organization's private catalog, which public pages cannot load."
+        title="This form could not be loaded"
+        description="Some of its fields or reports did not arrive."
+        action={
+          <AppButton size="sm" variant="secondary" onClick={catalog.retry}>
+            Retry
+          </AppButton>
+        }
       />
     );
   }
+  if (!catalog.ready) return <AppLoadingState label="Loading form…" rows={3} />;
   return (
     <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1">
       <PublicBookmarkExampleSelect publicId={publicId} value={example} onChange={setExample} />

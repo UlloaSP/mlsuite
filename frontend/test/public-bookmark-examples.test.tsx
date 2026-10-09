@@ -412,12 +412,12 @@ describe("examples on the public page", () => {
     expect(publicRuns).toEqual([{ version: 2, values: { in0: 60, in1: "Non-smoker" } }]);
   });
 
-  test("a form that cannot be shown offers no examples either", async () => {
+  test("a form whose plugins do not arrive offers no examples either", async () => {
     server.publicExamples = [typical];
     publicBookmark.formSchema = { fields: [{ kind: "body-map", label: "Pain" }] };
     const host = await page();
 
-    expect(host.textContent).toContain("This form cannot be shown here");
+    expect(host.textContent).toContain("This form could not be loaded");
     expect(selector(host)).toBeNull();
   });
 

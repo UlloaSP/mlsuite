@@ -293,7 +293,6 @@ describe("inference table view", () => {
           error={false}
           onLoadMore={vi.fn()}
           onRetry={vi.fn()}
-          openId={open}
           onOpen={({ item }) => setOpen(String(item.id))}
         />
       </>
@@ -317,7 +316,6 @@ describe("inference table view", () => {
     expect(host.querySelector('th[aria-sort="ascending"]')?.textContent).toBe("Age (years)");
     await click(host.querySelector("tbody tr")!);
     expect(host.querySelector("[data-open]")?.textContent).toBe("2");
-    expect(host.querySelector("tbody tr")?.getAttribute("data-selected")).toBe("true");
   });
 
   test("hides the repeated Schema column when scoped and remembers column choices", async () => {

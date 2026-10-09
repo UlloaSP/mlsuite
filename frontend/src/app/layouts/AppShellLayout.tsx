@@ -12,7 +12,7 @@ import {
 } from "@/shared/ui/sidebar-preferences";
 import { sidebarCollapsedAtom } from "@/shared/ui/ui-state";
 import { cx } from "@/shared/ui/cx";
-import { AppBreadcrumbRoots } from "@/app/components/AppBreadcrumbRoots";
+import { BreadcrumbProvider } from "@/shared/ui/breadcrumb/BreadcrumbProvider";
 import { AppGlobalSearch } from "@/app/components/AppGlobalSearch";
 import { MobileSidebarTrigger } from "@/app/components/MobileSidebarTrigger";
 import { Sidebar } from "@/app/components/Sidebar";
@@ -41,7 +41,7 @@ export function AppShellFrame({ children }: PropsWithChildren) {
   useRecordSectionLocation(useNavigationItems().activeRoot);
 
   return (
-    <AppBreadcrumbRoots>
+    <BreadcrumbProvider>
       <SidebarProvider open={!collapsed} onOpenChange={(open: boolean) => setCollapsed(!open)}>
         <div
           data-navigation-position={position}
@@ -65,6 +65,6 @@ export function AppShellFrame({ children }: PropsWithChildren) {
           <AppGlobalSearch />
         </div>
       </SidebarProvider>
-    </AppBreadcrumbRoots>
+    </BreadcrumbProvider>
   );
 }

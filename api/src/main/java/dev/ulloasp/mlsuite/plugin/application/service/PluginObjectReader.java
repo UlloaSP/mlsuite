@@ -79,6 +79,26 @@ public class PluginObjectReader {
         return readVerified(organizationId, objectKey, id).map(ReadPlugin::plugin);
     }
 
+    /**
+     * The plugin exactly as its metadata pins it, for callers that only run it: no organization
+     * lock and no repair, so a public page never contends with the catalog's writers.
+     */
+    @Transactional(readOnly = true)
+    public Optional<StoredPlugin> readPinned(PluginMetadata item) {
+        if (deletionQueue.isDeletionRequested(properties.getBucket(), item.getObjectKey())) {
+            return Optional.empty();
+        }
+        String versionId = item.getStorageVersionId() == null || item.getStorageVersionId().isBlank()
+                ? null
+                : item.getStorageVersionId();
+        return storage.loadOptional(properties.getBucket(), item.getObjectKey(), versionId).map(bytes -> {
+            if (item.getSha256() != null) {
+                ArtifactIntegrityVerifier.verify("plugin " + item.getId(), null, item.getSha256(), bytes);
+            }
+            return decode(bytes);
+        });
+    }
+
     private Optional<ReadPlugin> readVerified(Long organizationId, String objectKey, String expectedId) {
         var persisted = metadata.findByObjectKeyAndOrganizationId(objectKey, organizationId);
         String versionId = persisted.map(PluginMetadata::getStorageVersionId)

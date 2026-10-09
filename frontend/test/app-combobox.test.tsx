@@ -32,7 +32,7 @@ test("options open in the top layer, outside a container that would clip or cove
 
   const listbox = document.querySelector('[role="listbox"]')!;
   expect(host.contains(listbox)).toBe(false);
-  expect(options()).toEqual(["AAdmin", "MMember"]);
+  expect(options()).toEqual(["Admin", "Member"]);
 
   await act(async () =>
     document
@@ -57,7 +57,7 @@ test("a local list filters as typed and Enter chooses the first match", async ()
   await changeValue(input(host), "mem");
   await settle();
 
-  expect(options()).toEqual(["MMember"]);
+  expect(options()).toEqual(["Member"]);
   await press(host, "Enter");
   expect(onChange).toHaveBeenLastCalledWith(roles[1]);
 });
@@ -112,7 +112,7 @@ test("a failed remote list is retried from the keyboard", async () => {
   await press(host, "Enter");
   await settle();
   expect(onRetry).toHaveBeenCalledTimes(1);
-  expect(options()).toEqual(["AAdmin", "MMember"]);
+  expect(options()).toEqual(["Admin", "Member"]);
 });
 
 test("clears a picked label when the parent resets the selected value", async () => {
@@ -155,4 +155,50 @@ test("appending remote options preserves pointer scrolling and keyboard navigati
   expect(scrollTo).not.toHaveBeenCalled();
   await press(view.host, "ArrowDown");
   expect(scrollTo).toHaveBeenCalled();
+});
+
+test("only people carry a picture or an initial, and arrows start from the current choice", async () => {
+  const { host } = await mount(
+    <AppCombobox
+      value={2}
+      items={[
+        { id: 1, label: "Ada", avatarUrl: null },
+        { id: 2, label: "Member" },
+      ]}
+      placeholder="Role"
+      onChange={vi.fn()}
+      onSearchChange={vi.fn()}
+    />,
+  );
+  await open(host);
+
+  expect(options()).toEqual(["AAda", "Member"]);
+  expect(input(host).getAttribute("aria-activedescendant")).toBe(
+    document.querySelectorAll('[role="option"]')[1]!.id,
+  );
+});
+
+test("the pointer and the keyboard share one highlighted option", async () => {
+  const { host } = await mount(
+    <AppCombobox
+      value={1}
+      items={roles}
+      placeholder="Role"
+      onChange={vi.fn()}
+      onSearchChange={vi.fn()}
+    />,
+  );
+  await open(host);
+  const option = (index: number) =>
+    document.querySelectorAll<HTMLElement>('[role="option"]')[index]!;
+  const highlighted = () =>
+    [...document.querySelectorAll('[role="option"]')].filter((node) =>
+      node.className.split(" ").includes("bg-surface-muted"),
+    );
+
+  await act(async () => option(1).dispatchEvent(new MouseEvent("mousemove", { bubbles: true })));
+  expect(highlighted()).toEqual([option(1)]);
+  expect(input(host).getAttribute("aria-activedescendant")).toBe(option(1).id);
+  // No separate hover colour remains to sit beside the active option.
+  expect(option(0).className).not.toContain("hover:bg-surface-muted");
 });

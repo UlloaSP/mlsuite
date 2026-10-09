@@ -113,6 +113,10 @@ public abstract class PublicPredictionFixture {
     static final byte[] ONNX_BYTES = "onnx-artifact".getBytes();
     static final Map<String, Object> CLASSIFIER = Map.of("kind", "classifier", "label", "Predicted class",
             "mapping", List.of("low", "high"), "probabilities", List.of(List.of(0.2, 0.8)));
+    /** The classifier's answer as a run keeps it: the instance's own row, its labels and its class. */
+    static final Map<String, Object> KEPT_CLASSIFIER = Map.of("kind", "classifier", "label", "Predicted class",
+            "mapping", List.of("low", "high"), "probabilities", List.of(0.2, 0.8),
+            "labels", List.of("low", "high"), "prediction", "high");
     static final Map<String, Object> REGRESSOR = Map.of("kind", "regressor", "label", "Predicted value",
             "values", List.of(41.5));
     /** The caller of every run made through the service: a network without a session. */

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import dev.ulloasp.mlsuite.plugin.application.dto.PluginRuntimeSourceDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkExampleDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkSummaryDto;
@@ -69,6 +70,12 @@ public class PublicBookmarkController {
     @GetMapping("/{publicId}/examples")
     public ResponseEntity<List<PublicBookmarkExampleDto>> examples(@PathVariable String publicId) {
         return ResponseEntity.ok(publicBookmarks.listPublishedExamples(publicId));
+    }
+
+    /** The plugin code the published form runs with; using a plugin in a schema stays its organization's. */
+    @GetMapping("/{publicId}/plugins")
+    public ResponseEntity<List<PluginRuntimeSourceDto>> plugins(@PathVariable String publicId) {
+        return ResponseEntity.ok(publicBookmarks.listPublishedPlugins(publicId));
     }
 
     /** The caller's remaining runs of the bookmark: theirs alone, unlike every read above. */

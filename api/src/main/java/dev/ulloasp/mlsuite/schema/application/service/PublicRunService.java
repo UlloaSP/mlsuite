@@ -237,6 +237,7 @@ public class PublicRunService implements PublicRunUseCase {
             if (raw == null) continue;
             Map<String, Object> copy = new LinkedHashMap<>();
             raw.forEach((key, value) -> copy.put(String.valueOf(key), value));
+            PublicRunReports.asWorkspaceStores(route.kind(), copy);
             copy.put("id", route.storedId());
             copy.put("kind", route.kind());
             copy.put("mappedTo", route.target());

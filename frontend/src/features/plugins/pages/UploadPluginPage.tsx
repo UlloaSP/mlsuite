@@ -82,7 +82,6 @@ export function UploadPluginPage() {
       <AppSurface className="app-scroll flex flex-1 flex-col gap-6 overflow-auto lg:overflow-hidden">
         <AppPageHeader
           breadcrumbs={[{ label: "Plugins", to: "/plugins" }, { label: "Upload plugins" }]}
-          eyebrow="Workspace extensions"
           title="Upload plugins"
           description="Drop plugin source files. Each file is validated as a field or report plugin before it can be uploaded."
         />

@@ -68,6 +68,7 @@ export function TransferOrganizationOwnerDialog({
               id: member.id,
               label: member.fullName,
               description: member.email,
+              avatarUrl: member.avatarUrl,
             }))}
           />
         </>

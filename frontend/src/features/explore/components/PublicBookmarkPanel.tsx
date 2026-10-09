@@ -69,8 +69,8 @@ export function PublicBookmarkPanel({ bookmark }: Props) {
   }, [bookmark.formSchema, bookmark.version, runs]);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
-      <section aria-label="Form" className="flex min-h-0 min-w-0 flex-1 flex-col lg:min-h-128">
+    <div className="flex flex-none flex-col gap-4 lg:min-h-0 lg:flex-1 lg:flex-row">
+      <section aria-label="Form" className="flex min-w-0 flex-none flex-col lg:min-h-128 lg:flex-1">
         {viewingQuery.error ? (
           <p role="alert">
             {viewingQuery.error.message}{" "}

@@ -95,10 +95,8 @@ export function AdminUsersPage() {
         accessFallback={<NotFoundError />}
         controls={controls}
         header={{
-          eyebrow: "Superadmin",
           title: "Users",
           description: "Search, filter, and maintain platform users.",
-          breadcrumbScope: "platform",
           breadcrumbs: [{ label: "Users" }],
           actions: (
             <AppButton type="button" onClick={() => navigate("/admin/users/create")}>

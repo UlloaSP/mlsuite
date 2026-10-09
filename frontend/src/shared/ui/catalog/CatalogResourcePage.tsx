@@ -5,7 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ReactNode } from "react";
 import type { AppBreadcrumbItem } from "@/shared/ui/AppBreadcrumbs";
-import type { BreadcrumbScope } from "@/shared/ui/breadcrumb/breadcrumb-context";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -17,9 +16,7 @@ import type { CatalogControls } from "./useCatalogControls";
 type CatalogHeader = {
   actions?: ReactNode;
   breadcrumbs?: AppBreadcrumbItem[];
-  breadcrumbScope?: BreadcrumbScope;
   description?: ReactNode;
-  eyebrow?: ReactNode;
   title: ReactNode;
 };
 

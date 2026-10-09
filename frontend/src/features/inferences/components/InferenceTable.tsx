@@ -18,7 +18,6 @@ const stickyClass = (columnId: string) =>
 type Props = {
   table: InferenceReactTable;
   onOpen: (row: InferenceTableRow) => void;
-  openId?: string;
   totalItems: number;
   hasNext: boolean;
   isFetching: boolean;
@@ -34,7 +33,6 @@ type Props = {
 export function InferenceTable({
   table,
   onOpen,
-  openId,
   totalItems,
   hasNext,
   isFetching,
@@ -129,12 +127,10 @@ export function InferenceTable({
         <tbody className="relative grid" style={{ height: virtualizer.getTotalSize() }}>
           {virtualizer.getVirtualItems().map((item) => {
             const row = rows[item.index]!;
-            const selected = row.id === openId;
             return (
               <tr
                 key={row.id}
                 aria-rowindex={item.index + 2}
-                data-selected={selected || undefined}
                 onFocusCapture={() => setFocusedId(row.id)}
                 onBlurCapture={(event) => {
                   if (
@@ -147,10 +143,7 @@ export function InferenceTable({
                     setFocusedId(undefined);
                 }}
                 onClick={() => onOpen(row.original)}
-                className={cx(
-                  "group absolute flex w-full cursor-pointer border-b border-line",
-                  selected ? "bg-surface-selected" : "bg-surface hover:bg-surface-hover",
-                )}
+                className="group absolute flex w-full cursor-pointer border-b border-line bg-surface hover:bg-surface-hover"
                 style={{ height: ROW_HEIGHT, transform: `translateY(${item.start}px)` }}
               >
                 {row.getVisibleCells().map((cell) => (
@@ -160,10 +153,7 @@ export function InferenceTable({
                     className={cx(
                       "flex min-w-0 shrink-0 items-center px-3 text-fg",
                       stickyClass(cell.column.id),
-                      cell.column.id === "name" &&
-                        (selected
-                          ? "bg-surface-selected"
-                          : "bg-surface group-hover:bg-surface-hover"),
+                      cell.column.id === "name" && "bg-surface group-hover:bg-surface-hover",
                     )}
                   >
                     <table.FlexRender cell={cell} />

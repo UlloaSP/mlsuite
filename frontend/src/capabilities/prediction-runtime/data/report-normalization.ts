@@ -45,22 +45,42 @@ const getClassifierPrediction = (output: JsonRecord): string | undefined => {
   return labels[probabilities.indexOf(Math.max(...probabilities))];
 };
 
+/**
+ * A built-in report as a run stores it: a classifier's one row of probabilities, its class
+ * labels and its predicted class; a regressor's values as numbers. Idempotent, so a payload
+ * already in that shape is returned as it is.
+ */
+export const toStoredBuiltinPayload = (
+  kind: unknown,
+  output: JsonRecord,
+): JsonRecord | undefined => {
+  if (kind === "classifier") {
+    const stored = mappingLabels(output.labels);
+    return {
+      ...output,
+      probabilities: probabilitiesOf(output),
+      labels: stored?.length ? stored : mappingLabels(output.mapping),
+      prediction:
+        typeof output.prediction === "string" ? output.prediction : getClassifierPrediction(output),
+    };
+  }
+  if (kind === "regressor") return { ...output, values: toNumericArray(output.values) };
+  return undefined;
+};
+
 export const toAnalyzerReportPayload = (
   report: ReportConfig,
   parsed: unknown,
 ): JsonRecord | undefined => {
   const analyzerReport = getAnalyzerReports(parsed).find((output) => output.kind === report.kind);
-  if (!analyzerReport) return undefined;
-  if (report.kind === "classifier") {
-    return {
-      ...analyzerReport,
-      probabilities: probabilitiesOf(analyzerReport),
-      labels: mappingLabels(analyzerReport.mapping),
-      prediction: getClassifierPrediction(analyzerReport),
-    };
-  }
-  if (report.kind === "regressor") {
-    return { ...analyzerReport, values: toNumericArray(analyzerReport.values) };
-  }
-  return undefined;
+  return analyzerReport && toStoredBuiltinPayload(report.kind, analyzerReport);
 };
+
+/**
+ * What a public run answered for a report. The server made the whole run, a plugin report's
+ * explanation included, so a plugin kind takes the runtime's answer as its payload.
+ */
+export const toPublicReportPayload = (
+  report: ReportConfig,
+  answer: JsonRecord,
+): JsonRecord | undefined => toAnalyzerReportPayload(report, { reports: [answer] }) ?? answer;

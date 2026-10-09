@@ -37,6 +37,7 @@ import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleTemplateR
 import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
+import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginRuntimeSourcesUseCase;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkExampleRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
@@ -83,7 +84,8 @@ class BookmarkPublishingServiceTest {
         service = new SchemaBookmarkServiceImpl(schemas, versions, bookmarks,
                 new WorkspaceAuthorizationService(access, roles), publishability);
         publicService = new PublicBookmarkService(bookmarks, mock(SchemaBookmarkExampleRepository.class),
-                publishability);
+                publishability,
+                mock(ListPluginRuntimeSourcesUseCase.class));
     }
 
     @Test

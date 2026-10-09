@@ -26,6 +26,7 @@ export interface AppComboboxItem<TId extends string | number = number> {
   id: TId;
   label: string;
   description?: string | null;
+  /** A person's picture; `null` shows their initial. Leave unset for options that are not people. */
   avatarUrl?: string | null;
 }
 
@@ -52,6 +53,7 @@ export function AppCombobox<TId extends string | number = number>({
   const listboxId = useId();
   const fieldRef = useRef<HTMLLabelElement>(null);
   const searchTimer = useRef<number | undefined>(undefined);
+  const startAtChoice = useRef(false);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -71,6 +73,7 @@ export function AppCombobox<TId extends string | number = number>({
     [items, normalizedQuery, onSearchChange],
   );
   const expanded = open && !disabled;
+  const dialog = expanded ? fieldRef.current?.closest<HTMLElement>('[role="dialog"]') : undefined;
   // A failed remote request adds one "Retry" option after the loaded ones.
   const optionCount = filtered.length + (remote.error ? 1 : 0);
   const optionId = (index: number) => `${listboxId}-option-${index}`;
@@ -102,7 +105,17 @@ export function AppCombobox<TId extends string | number = number>({
     setQuery(onSearchChange ? "" : (selected?.label ?? ""));
     search("");
     setActiveIndex(0);
+    startAtChoice.current = true;
   };
+  // Arrow keys start from the current choice, as a select does; a remote list has it only
+  // once its first page arrives.
+  useEffect(() => {
+    if (!open || !startAtChoice.current) return;
+    const index = items.findIndex((item) => item.id === value);
+    if (index < 0) return;
+    startAtChoice.current = false;
+    setActiveIndex(index);
+  }, [open, items, value]);
 
   return (
     <Popover.Root
@@ -139,6 +152,7 @@ export function AppCombobox<TId extends string | number = number>({
             }}
             onChange={(event) => {
               setQuery(event.target.value);
+              startAtChoice.current = false;
               search(event.target.value, SEARCH_DEBOUNCE_MS);
               onChange(null);
               setOpen(true);
@@ -171,8 +185,10 @@ export function AppCombobox<TId extends string | number = number>({
           <ChevronDown size={16} className="shrink-0 text-fg-muted" />
         </label>
       </Popover.Anchor>
-      {/* In the top layer, so no scroll container, menu or virtual row clips or covers it. */}
-      <Popover.Portal>
+      {/* In the top layer, so no scroll container, menu or virtual row clips or covers it. Inside a
+          modal dialog that layer is the dialog itself: its scroll lock only lets its own content
+          scroll, by wheel and by touch. */}
+      <Popover.Portal container={dialog}>
         <Popover.Content
           role="presentation"
           align="start"
@@ -194,6 +210,10 @@ export function AppCombobox<TId extends string | number = number>({
             selectedId={selected?.id}
             emptyLabel={emptyLabel}
             onChoose={choose}
+            onActivate={(index) => {
+              startAtChoice.current = false;
+              setActiveIndex(index);
+            }}
             {...remote}
           />
         </Popover.Content>

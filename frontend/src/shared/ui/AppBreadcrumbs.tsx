@@ -6,9 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { ChevronRight } from "lucide-react";
 import { Fragment, type HTMLAttributes, type ReactNode } from "react";
 import { Link } from "react-router";
-import type { BreadcrumbRoot, BreadcrumbTrailItem } from "./breadcrumb/breadcrumb-context";
+import type { BreadcrumbTrailItem } from "./breadcrumb/breadcrumb-context";
 import { BreadcrumbEllipsisMenu } from "./breadcrumb/BreadcrumbEllipsisMenu";
-import { BreadcrumbRootItem } from "./breadcrumb/BreadcrumbRootItem";
 import { CRUMB_LINK_CLASS, CRUMB_PAGE_CLASS } from "./breadcrumb/crumb-styles";
 import { cx } from "./cx";
 import { useMediaQuery } from "./use-media-query";
@@ -36,14 +35,12 @@ function collapse(items: BreadcrumbTrailItem[], max: number): Slot[] {
 
 export function AppBreadcrumbs({
   items,
-  root,
   className,
 }: HTMLAttributes<HTMLElement> & {
-  /** The full trail; when `root` is given, `items[0]` is that root. */
+  /** The trail, from the section's own page down to the current one. */
   items: AppBreadcrumbItem[];
-  root?: BreadcrumbRoot;
 }) {
-  // Phones keep only the root and the current page around the "…" menu.
+  // Phones keep only the first level and the current page around the "…" menu.
   const narrow = useMediaQuery("(max-width: 639px)");
   const slots = collapse(items, narrow ? 3 : 5);
   const last = items.length - 1;
@@ -55,12 +52,10 @@ export function AppBreadcrumbs({
     >
       <ol className="flex min-w-0 flex-wrap items-center gap-2 break-words overflow-visible">
         {slots.map((slot, position) => (
-          <Fragment key={slot.kind === "more" ? "more" : (slot.item.to ?? `item-${slot.index}`)}>
+          <Fragment key={slot.kind === "more" ? "more" : `${slot.index}-${slot.item.to ?? ""}`}>
             <li className="inline-flex min-w-0 items-center gap-2">
               {slot.kind === "more" ? (
                 <BreadcrumbEllipsisMenu items={slot.items} />
-              ) : slot.index === 0 && root ? (
-                <BreadcrumbRootItem current={last === 0} root={root} />
               ) : slot.index === last ? (
                 <span aria-current="page" className={CRUMB_PAGE_CLASS}>
                   {slot.item.label}

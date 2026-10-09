@@ -166,9 +166,10 @@ describe("public feed page", () => {
     expect(size(cardio)).toEqual(["16 inputs", "2 reports"]);
     expect(cardio.querySelector("footer")?.textContent).toContain("Acme Health");
     expect(cardio.querySelector("footer")?.textContent).toContain("Updated");
-    // The publisher is the organization as it is named, personal or not; no description, no line.
+    // The publisher is the organization as it is named, personal or not. Without a description
+    // the card keeps the empty lines, so every card of a row lines up.
     expect(churn.textContent).toContain("Bob Other Personal");
-    expect(churn.querySelector("p")).toBeNull();
+    expect(churn.querySelector("p")?.textContent).toBe("");
     expect(size(churn)).toEqual(["1 input", "1 report"]);
     expect(host.textContent).toContain("2 results");
   });

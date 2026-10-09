@@ -27,6 +27,11 @@ export function SchemaReviewRunRail({
   onSubmitRevision,
 }: Props) {
   const [open, setOpen] = useState({ revision: true, pending: true });
+  // Virtual rows have no intrinsic height, so each open group gets a track as tall as its rows.
+  // When both do not fit, the smaller keeps its rows and the other takes what is left.
+  const track = (shown: boolean, count: number) =>
+    shown && count > 0 ? `minmax(8rem, calc(4rem + ${count} * 4.2rem))` : "auto";
+  const groupRows = `${track(open.revision, revisionCount)} ${track(open.pending, pendingCount)}`;
 
   return (
     <aside className="flex min-h-0 flex-col rounded-card border border-line bg-surface p-5 xl:overflow-hidden">
@@ -51,10 +56,10 @@ export function SchemaReviewRunRail({
           Complete review ({revisionCount})
         </AppButton>
       </div>
-      {/* Beside the review (xl) the tray has a bounded height. Each group grows to its content;
-          when both overflow, the grid shares the free space equally and a group that needs less
-          than half keeps its natural height while the other takes the rest. */}
-      <div className="mt-5 grid content-start gap-5 xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,max-content)_minmax(0,max-content)] xl:overflow-hidden">
+      <div
+        className="app-scroll mt-5 grid content-start gap-5 xl:min-h-0 xl:flex-1 xl:overflow-y-auto"
+        style={{ gridTemplateRows: groupRows }}
+      >
         {(["revision", "pending"] as const).map((tone) => (
           <ReviewInboxGroup
             key={tone}

@@ -105,7 +105,7 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
         assertEquals(List.of(0, 0), connectionsHeld);
 
         assertEquals(List.of("out0", "out1", "out2"), result.run().reports().stream().map(report -> report.key()).toList());
-        assertEquals(List.of(CLASSIFIER, CLASSIFIER, REGRESSOR),
+        assertEquals(List.of(KEPT_CLASSIFIER, KEPT_CLASSIFIER, REGRESSOR),
                 result.run().reports().stream().map(report -> report.payload()).toList());
         String json = objectMapper.writeValueAsString(result);
         for (String secret : List.of("risk-forest", "risk-net", "risk.joblib", "leaked", "modelId")) {
@@ -114,6 +114,39 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
         // The run is kept as the organization's inference, one result per model; PublicRunSessionTest reads it.
         assertEquals(runsBefore + 1, count("PredictionRun"));
         assertEquals(resultsBefore + 2, count("PredictionResult"));
+    }
+
+    @Test
+    void aPluginReportIsExplainedByTheSameRunAndAFailedExplanationLeavesTheRunStanding() throws Exception {
+        inTransaction(() -> {
+            SchemaVersion stored = entityManager.find(SchemaVersion.class, version.getId());
+            Map<String, Object> form = new HashMap<>(stored.getFormSchema());
+            form.put("reports", List.of(
+                    Map.of("kind", "classifier", "label", "Risk", "mappedTo", Map.of("risk-forest", "risk")),
+                    Map.of("kind", "Crystal Tree", "id", "ctree", "label", "Why",
+                            "mappedTo", Map.of("risk-forest", "risk"))));
+            stored.setFormSchema(form);
+        });
+        List<MultiValueMap<String, HttpEntity<?>>> explained = new ArrayList<>();
+        when(analyzer.post(eq("/explain"), any())).thenAnswer(call -> {
+            explained.add(call.getArgument(1));
+            return Map.of("reports", List.of(Map.of("kind", "Crystal Tree", "explanation", "age > 50")));
+        });
+        Map<String, Object> values = Map.of("in0", 52, "in1", 240.5, "in2", 1, "in3", 0);
+
+        PublicPredictionDto result = run(bookmark.getPublicId(), request(values));
+
+        // Only the model that serves the plugin report is explained, with the values it predicted on.
+        assertEquals(1, explained.size());
+        assertEquals("risk.joblib", fileName(explained.get(0)));
+        assertEquals("{\"age\":52,\"chol\":240.5,\"smoker__yes\":1,\"smoker__no\":0}", data(explained.get(0)));
+        assertEquals(List.of(KEPT_CLASSIFIER, Map.of("kind", "Crystal Tree", "explanation", "age > 50")),
+                result.run().reports().stream().map(report -> report.payload()).toList());
+
+        when(analyzer.post(eq("/explain"), any())).thenThrow(new IllegalStateException("not a tree"));
+        PublicPredictionDto unexplained = run(bookmark.getPublicId(), request(values));
+        assertEquals(List.of(KEPT_CLASSIFIER),
+                unexplained.run().reports().stream().map(report -> report.payload()).toList());
     }
 
     @Test

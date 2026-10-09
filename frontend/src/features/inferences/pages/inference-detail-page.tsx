@@ -86,7 +86,7 @@ export function InferenceDetailPage({ renderData }: Props) {
 
   return (
     <AppPage>
-      <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
+      <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto lg:overflow-hidden">
         <AppPageHeader
           title={item.name}
           description={`${item.schemaName} · ${snapshotLabel(item.schemaVersionName, item.schemaVersion)}`}

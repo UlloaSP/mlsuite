@@ -10,9 +10,7 @@ export function NotificationsPage() {
     <AppPage>
       <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
-          breadcrumbScope="account"
           breadcrumbs={[{ label: "Notifications" }]}
-          eyebrow="Account"
           title="Notifications"
           description="Pending invitations and account-level updates."
         />

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { ReviewCreationButton } from "@/capabilities/review-creation/ReviewCreationButton";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
-import { useInference } from "@/features/inferences/api/inference-api";
 import {
   useInferenceCatalogPage,
   useInferenceCatalogMetadata,
@@ -18,7 +17,6 @@ import {
   type InferenceFilterChoice,
 } from "@/features/inferences/components/InferenceFiltersDialog";
 import { InferenceNameCell } from "@/features/inferences/components/InferenceNameCell";
-import { InferencePreviewSheet } from "@/features/inferences/components/InferencePreviewSheet";
 import { InferenceTable } from "@/features/inferences/components/InferenceTable";
 import {
   parseConditions,
@@ -56,7 +54,6 @@ const URL_FILTER_DEFAULTS = {
   origin: "all",
   where: "",
   sort: "createdAt.desc",
-  inference: "",
 };
 const EMPTY_ROWS: InferenceTableRow[] = [];
 
@@ -69,21 +66,18 @@ const validOrigin = (value: string): InferenceFilters["origin"] =>
 
 export function InferencesPage({
   renderExportAction,
-  renderPreview,
 }: {
   renderExportAction?: (selection: {
     count: number;
     loadItems: () => Promise<PredictionRunCatalogItemDto[]>;
   }) => ReactNode;
-  /** An inference's inputs and outputs, owned by the schemas feature. */
-  renderPreview: (item: PredictionRunCatalogItemDto) => ReactNode;
 }) {
   const { data: workspace } = useWorkspaceContext();
   const deleteInference = useDeleteInferenceMutation();
   const navigate = useNavigate();
   const actionDialog = useActionDialog();
   const urlFilters = useUrlFilters(URL_FILTER_DEFAULTS);
-  const { q, schema, bookmark, status, feedback, origin, where, inference } = urlFilters.values;
+  const { q, schema, bookmark, status, feedback, origin, where } = urlFilters.values;
   const sort = normalizeInferenceSort(urlFilters.values.sort);
   const query = useDebouncedValue(q.trim());
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -110,7 +104,6 @@ export function InferencesPage({
   );
   const dataColumns = metadata.data?.columns ?? [];
   const totalItems = data.data?.totalItems ?? 0;
-  const preview = useInference(inference);
   const loadItems = async () => {
     const result = await selection.refetch();
     if (result.error) throw result.error;
@@ -120,10 +113,6 @@ export function InferencesPage({
   const canDelete = workspace?.permissions.canRunPredictions ?? false;
   const canManageReviews = workspace?.permissions.canManageReviews ?? false;
   const showLoading = useStableLoading(data.isLoading || metadata.isLoading);
-  // The clicked row opens at once; a link to a row outside the loaded pages waits for its own.
-  const openItem =
-    preview.data ?? rows.find((row) => String(row.item.id) === inference)?.item ?? undefined;
-  const setOpen = (id: string) => urlFilters.setFilters({ inference: id });
 
   const handleDelete = async (item: PredictionRunCatalogItemDto) => {
     const confirmed = await actionDialog.confirm({
@@ -154,9 +143,7 @@ export function InferencesPage({
     scoped: schema !== "all",
     sort,
     onSortChange: (next) => urlFilters.setFilters({ sort: next }),
-    renderName: ({ item }) => (
-      <InferenceNameCell id={item.id} name={item.name} onOpen={() => setOpen(String(item.id))} />
-    ),
+    renderName: ({ item }) => <InferenceNameCell id={item.id} name={item.name} />,
     renderActions: ({ item }) =>
       canDelete || canManageReviews ? (
         <InferenceActionsMenu
@@ -196,8 +183,7 @@ export function InferencesPage({
   ) : (
     <InferenceTable
       table={table}
-      openId={openItem ? inference : undefined}
-      onOpen={({ item }) => setOpen(String(item.id))}
+      onOpen={({ item }) => void navigate(`/inferences/${item.id}`)}
       totalItems={totalItems}
       hasNext={Boolean(data.hasNextPage)}
       isFetching={data.isFetching}
@@ -212,7 +198,6 @@ export function InferencesPage({
       {actionDialog.dialog}
       <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
-          eyebrow="Organization"
           title="Inferences"
           description="Every inference in the current organization, with each schema's inputs, outputs and reviewer answers as columns."
           actions={
@@ -268,11 +253,6 @@ export function InferencesPage({
           onApply={applyFilters}
           onClose={() => setFiltersOpen(false)}
         />
-      ) : null}
-      {openItem ? (
-        <InferencePreviewSheet item={openItem} onClose={() => setOpen("")}>
-          {renderPreview(openItem)}
-        </InferencePreviewSheet>
       ) : null}
     </AppPage>
   );

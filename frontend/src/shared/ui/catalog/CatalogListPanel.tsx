@@ -3,6 +3,7 @@ import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
+import { cx } from "@/shared/ui/cx";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { catalogItemKey, CATALOG_OVERSCAN, useCatalogVirtualizer } from "./useCatalogVirtualizer";
 import { useLoadMoreNearEnd } from "./useLoadMoreNearEnd";
@@ -23,6 +24,8 @@ export type CatalogListPanelProps = {
   isLoading: boolean;
   itemCount: number;
   layout?: "grid" | "list";
+  /** "flush" rows touch each other and the panel's edges: a list inside a bordered box. */
+  density?: "spaced" | "flush";
   scrollMemoryKey?: string | false;
   loadingLabel: string;
   onRetry?: () => void;
@@ -38,14 +41,17 @@ export function CatalogListPanel({
   isLoading,
   itemCount,
   layout = "list",
+  density = "spaced",
   scrollMemoryKey = "list",
   loadingLabel,
   onRetry,
   onLoadMore,
 }: CatalogListPanelProps) {
   const items = Children.toArray(children);
+  const flush = density === "flush";
+  const gap = flush ? 0 : 12;
   const { columnCount, scrollRef, setFocusedItem, measureItem, virtualizer } =
-    useCatalogVirtualizer(items, layout, scrollMemoryKey);
+    useCatalogVirtualizer(items, layout, scrollMemoryKey, gap);
   const showLoading = useStableLoading(isLoading);
   const rows = virtualizer.getVirtualItems();
   useLoadMoreNearEnd({
@@ -65,7 +71,7 @@ export function CatalogListPanel({
       data-scroll-memory={scrollMemoryKey || undefined}
       data-catalog-loading={isBusy || hasNext}
       aria-busy={isBusy}
-      className="app-scroll min-h-0 flex-1 basis-0 overflow-y-auto py-4"
+      className={cx("app-scroll min-h-0 flex-1 basis-0 overflow-y-auto", !flush && "py-4")}
     >
       {showLoading ? <AppLoadingState label={loadingLabel} layout={layout} /> : null}
       {!showLoading && itemCount === 0 && errorMessage == null ? (
@@ -76,7 +82,11 @@ export function CatalogListPanel({
         />
       ) : null}
       {!showLoading && items.length > 0 ? (
-        <div role="list" className="relative pr-1" style={{ height: virtualizer.getTotalSize() }}>
+        <div
+          role="list"
+          className={cx("relative", !flush && "pr-1")}
+          style={{ height: virtualizer.getTotalSize() }}
+        >
           {rows.flatMap((row) =>
             items
               .slice(row.index * columnCount, (row.index + 1) * columnCount)
@@ -90,11 +100,17 @@ export function CatalogListPanel({
                   role="listitem"
                   data-index={row.index}
                   ref={measureItem}
-                  className="absolute top-0 min-w-0 pr-1"
+                  className={cx(
+                    "absolute top-0 min-w-0",
+                    !flush && "pr-1",
+                    // Cards of one grid row share its height.
+                    layout === "grid" && "flex flex-col [&>*]:flex-1",
+                  )}
                   style={{
                     transform: `translateY(${row.start}px)`,
-                    width: `calc((100% - ${(columnCount - 1) * 12}px) / ${columnCount})`,
-                    left: `calc(${(column * 100) / columnCount}% + ${(column * 12) / columnCount}px)`,
+                    width: `calc((100% - ${(columnCount - 1) * gap}px) / ${columnCount})`,
+                    left: `calc(${(column * 100) / columnCount}% + ${(column * gap) / columnCount}px)`,
+                    minHeight: layout === "grid" ? row.size : undefined,
                   }}
                   onFocusCapture={() =>
                     setFocusedItem(catalogItemKey(item, row.index * columnCount + column))

@@ -49,7 +49,7 @@ export function CreateOrganizationPage({ initialOwner, users, remote }: Props) {
     id: item.id,
     label: item.fullName,
     description: item.email,
-    avatarUrl: item.avatarUrl,
+    avatarUrl: item.avatarUrl ?? null,
   }));
   useEffect(() => {
     if (!ownerInitializedRef.current && initialOwner) {
@@ -90,9 +90,7 @@ export function CreateOrganizationPage({ initialOwner, users, remote }: Props) {
     <AppPage>
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
-          breadcrumbScope="platform"
           className={FORM_MAX_WIDTH}
-          eyebrow="Superadmin"
           title="Create organization"
           description="Create an organization and assign its first owner."
           breadcrumbs={[
@@ -126,7 +124,7 @@ export function CreateOrganizationPage({ initialOwner, users, remote }: Props) {
                       id: owner.id,
                       label: owner.fullName,
                       description: owner.email,
-                      avatarUrl: owner.avatarUrl,
+                      avatarUrl: owner.avatarUrl ?? null,
                     }
                   : undefined
               }

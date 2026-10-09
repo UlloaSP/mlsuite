@@ -68,11 +68,13 @@ export function MembersPage() {
               value={query}
               onChange={(value) => filters.setFilters({ q: value })}
             />
-            <MemberRoleFilter
-              organizationId={id}
-              value={role}
-              onChange={(role) => filters.setFilters({ role })}
-            />
+            <div className="w-full sm:w-56">
+              <MemberRoleFilter
+                organizationId={id}
+                value={role}
+                onChange={(role) => filters.setFilters({ role })}
+              />
+            </div>
           </AppToolbar>
           <CatalogListPanel
             hasNext={Boolean(membersQuery.hasNextPage)}

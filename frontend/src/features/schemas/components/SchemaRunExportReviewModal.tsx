@@ -99,9 +99,10 @@ export function SchemaRunExportReviewModal({
           <p className="mb-3 text-2xs font-semibold uppercase tracking-eyebrow text-fg-muted">
             Reviewers
           </p>
-          <div className="flex h-[48vh] flex-col border-y border-line">
+          <div className="flex h-40 flex-col border-y border-line lg:h-[48vh]">
             <CatalogListPanel
               scrollMemoryKey={false}
+              density="flush"
               itemCount={reviewers.length}
               hasNext={false}
               isBusy={false}
@@ -122,7 +123,7 @@ export function SchemaRunExportReviewModal({
                     type="button"
                     aria-pressed={selected}
                     onClick={() => toggleReviewer(reviewer)}
-                    className="flex w-full items-center gap-3 border-b border-line px-2 py-3 text-left text-sm last:border-b-0 hover:bg-surface-muted"
+                    className="flex w-full items-center gap-3 border-b border-line px-2 py-3 text-left text-sm hover:bg-surface-muted"
                   >
                     <AppCheckMark checked={selected} />
                     <span className="min-w-0 truncate">{reviewer}</span>
@@ -164,6 +165,7 @@ export function SchemaRunExportReviewModal({
           <div className="flex h-[48vh] flex-col border-y border-line">
             <CatalogListPanel
               scrollMemoryKey={false}
+              density="flush"
               itemCount={summaries.length}
               hasNext={false}
               isBusy={false}

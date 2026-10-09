@@ -49,6 +49,7 @@ export function BookmarkExamplesDialog({ bookmark, open, onClose }: Props) {
       <div className="flex h-96 min-h-0 flex-col">
         <CatalogListPanel
           scrollMemoryKey={false}
+          density="flush"
           itemCount={examples.data?.items.length ?? 0}
           hasNext={examples.hasNextPage}
           isLoading={examples.isLoading}
@@ -75,7 +76,10 @@ export function BookmarkExamplesDialog({ bookmark, open, onClose }: Props) {
           }}
         >
           {examples.data?.items.map((example) => (
-            <div key={example.runId} className="flex flex-wrap items-center gap-3 py-3">
+            <div
+              key={example.runId}
+              className="flex flex-wrap items-center gap-3 border-b border-line py-3"
+            >
               <div className="min-w-0 flex-1">
                 <Link
                   to={`/inferences/${example.runId}`}

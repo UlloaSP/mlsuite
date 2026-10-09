@@ -140,7 +140,10 @@ class PublicRunSessionTest extends PublicPredictionFixture {
         assertEquals("Risk", kept.get("id"));
         assertEquals("classifier", kept.get("kind"));
         assertEquals("risk", kept.get("mappedTo"));
-        assertEquals(CLASSIFIER.get("probabilities"), kept.get("probabilities"));
+        // Kept as a workspace run keeps a classifier: this instance's row, its labels, its class.
+        assertEquals(List.of(0.2, 0.8), kept.get("probabilities"));
+        assertEquals(List.of("low", "high"), kept.get("labels"));
+        assertEquals("high", kept.get("prediction"));
         Map<?, ?> meta = (Map<?, ?>) forest.getOutput().get("meta");
         assertEquals(String.valueOf(joblibModel.getId()), meta.get("modelId"));
         assertEquals(forest.getModelInput(), meta.get("backendFieldValues"));
@@ -151,7 +154,8 @@ class PublicRunSessionTest extends PublicPredictionFixture {
 
         // Read back, the run has the public keys and nothing of the above naming.
         assertEquals(List.of("out0", "out1", "out2"), made.reports().stream().map(report -> report.key()).toList());
-        assertEquals(List.of(CLASSIFIER, CLASSIFIER, REGRESSOR), made.reports().stream().map(report -> report.payload()).toList());
+        assertEquals(List.of(KEPT_CLASSIFIER, KEPT_CLASSIFIER, REGRESSOR),
+                made.reports().stream().map(report -> report.payload()).toList());
         assertEquals(Map.of("Age", 52, "Cholesterol", 240.5, "Smoker", "yes"), made.inputs());
     }
 

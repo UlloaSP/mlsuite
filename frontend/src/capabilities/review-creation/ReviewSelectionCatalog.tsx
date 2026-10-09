@@ -100,6 +100,7 @@ export function ReviewSelectionCatalog<TId extends SelectionId>({
       <div className="mt-3 flex h-72 min-h-0 flex-col rounded border border-line">
         <CatalogListPanel
           scrollMemoryKey={false}
+          density="flush"
           itemCount={items.length}
           hasNext={Boolean(catalog.hasNextPage)}
           onLoadMore={catalog.fetchNextPage}

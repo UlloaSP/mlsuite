@@ -58,7 +58,11 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
   const hasActiveFilters = Boolean(controls.search) || controls.filter !== "all";
 
   return (
-    <section id="reviews" aria-label="Reviews" className="flex min-h-0 flex-1 flex-col gap-4">
+    <section
+      id="reviews"
+      aria-label="Reviews"
+      className="flex min-h-0 flex-1 flex-col gap-4 max-lg:min-h-96 max-lg:flex-none"
+    >
       {actions.dialog}
       <CatalogToolbar
         filter={controls.filter}

@@ -3,13 +3,14 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { createMlSuiteRegistry } from "./builtin-registry";
 import { mountForm } from "mlform/kit";
 import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
 import type { ReportConfig, SubmitErrorContext, SubmitRequest, Transport } from "mlform/runtime";
 import { normalizeSchema, validateSchema, type ReportResult } from "mlform/schema";
-import { toAnalyzerReportPayload } from "@/capabilities/prediction-runtime/data/report-normalization";
+import { toPublicReportPayload } from "@/capabilities/prediction-runtime/data/report-normalization";
 import { withResolvedDisplayKeys } from "@/capabilities/prediction-runtime/mlform/display-key";
+import type { PredictionCatalogDefinitions } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
+import { createRunRegistries } from "./runtime-assembly";
 import { withSeriesColumns } from "./series-schema";
 import {
   connectStoredStatusConditions,
@@ -34,10 +35,12 @@ export type PublicRunReport = { key: string; payload: JsonRecord };
 type Options = {
   container: HTMLElement;
   /**
-   * A public form schema: built-in fields and reports whose `mappedTo` is an opaque key.
+   * A public form schema: fields and reports whose `mappedTo` is an opaque key.
    * MLForm serializes each value under its key; the server maps the keys back to models.
    */
   schema: unknown;
+  /** The plugin kinds the schema uses, as the bookmark's page serves them. */
+  plugins?: PredictionCatalogDefinitions;
   theme: PredictionTheme;
   /**
    * Runs the form's values, keyed by input key, and resolves with the reports that have a
@@ -71,7 +74,7 @@ const toReportResult = (
 ): ReportResult => {
   const mappedTo = String(report.mappedTo);
   const answer = answered.find((item) => item.key === mappedTo);
-  const normalized = answer && toAnalyzerReportPayload(report, { reports: [answer.payload] });
+  const normalized = answer && toPublicReportPayload(report, answer.payload);
   if (!normalized) return { backend: BACKEND, mappedTo, status: "skipped", reason: "No result" };
   const { kind: _kind, ...payload } = normalized;
   void _kind;
@@ -87,12 +90,16 @@ const toReportResult = (
 export const mountPublicRunForm = ({
   container,
   schema,
+  plugins,
   theme,
   run,
   onRunningChange,
   onRunError,
 }: Options): MountedPublicRunForm => {
-  const registry = createMlSuiteRegistry();
+  const { registry, descriptorRegistry } = createRunRegistries(
+    plugins?.fieldDefinitions ?? [],
+    plugins?.reportDefinitions ?? [],
+  );
   const result = validateSchema(
     withStoredStatusConditions(withSeriesColumns(withResolvedDisplayKeys(schema))),
     registry,
@@ -127,6 +134,7 @@ export const mountPublicRunForm = ({
   const mounted = mountForm(container, {
     schema: result.data,
     registry,
+    descriptorRegistry,
     primitiveRegistry: createBuiltinPrimitiveRegistry(),
     transport,
     hooks: {

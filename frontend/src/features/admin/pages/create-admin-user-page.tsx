@@ -53,9 +53,7 @@ export function CreateAdminUserPage() {
     <AppPage>
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
-          breadcrumbScope="platform"
           className={FORM_MAX_WIDTH}
-          eyebrow="Superadmin"
           title="Create user"
           description="Create platform access and assign global role."
           breadcrumbs={[{ label: "Users", to: "/admin/users" }, { label: "Create user" }]}

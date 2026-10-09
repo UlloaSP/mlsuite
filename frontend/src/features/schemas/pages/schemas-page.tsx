@@ -113,7 +113,6 @@ export function SchemasPage() {
         accessFallback={<NotFoundError />}
         controls={controls}
         header={{
-          eyebrow: "Schemas",
           title: "Schemas",
           breadcrumbs: [{ label: "Schemas" }],
           description: `Navigate schema snapshots for ${

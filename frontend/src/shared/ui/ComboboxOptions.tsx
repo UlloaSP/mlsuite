@@ -20,6 +20,8 @@ type ComboboxOptionsProps<TId extends string | number> = {
   onLoadMore?: () => unknown;
   onRetry?: () => unknown;
   onChoose: (item: AppComboboxItem<TId>) => void;
+  /** The pointer moved onto an option: it becomes the one highlighted option. */
+  onActivate: (index: number) => void;
 };
 
 /**
@@ -40,9 +42,17 @@ export function ComboboxOptions<TId extends string | number>({
   onLoadMore,
   onRetry,
   onChoose,
+  onActivate,
 }: ComboboxOptionsProps<TId>) {
   const ref = useRef<HTMLDivElement>(null);
   const lastActiveIndex = useRef<number | undefined>(undefined);
+  // An option reached with the pointer is already in view; only the keyboard scrolls to it.
+  const byPointer = useRef(false);
+  const activate = (index: number) => {
+    if (index === activeIndex) return;
+    byPointer.current = true;
+    onActivate(index);
+  };
   const virtualizer = useVirtualizer({
     count: items.length,
     getScrollElement: () => ref.current,
@@ -61,6 +71,10 @@ export function ComboboxOptions<TId extends string | number>({
   useEffect(() => {
     if (lastActiveIndex.current === activeIndex) return;
     lastActiveIndex.current = activeIndex;
+    if (byPointer.current) {
+      byPointer.current = false;
+      return;
+    }
     if (items[activeIndex]) virtualizer.scrollToIndex(activeIndex);
     else if (activeIndex === items.length && ref.current) {
       ref.current.scrollTop = ref.current.scrollHeight;
@@ -102,10 +116,11 @@ export function ComboboxOptions<TId extends string | number>({
                   event.preventDefault();
                   onChoose(item);
                 }}
+                onMouseMove={() => activate(row.index)}
                 style={{ transform: `translateY(${row.start}px)` }}
                 className={cx(
                   "absolute left-0 top-0 flex w-full items-center gap-3 rounded-control px-3 py-2.5 text-left transition",
-                  row.index === activeIndex ? "bg-surface-muted" : "hover:bg-surface-muted",
+                  row.index === activeIndex && "bg-surface-muted",
                 )}
               >
                 {item.avatarUrl ? (
@@ -114,11 +129,12 @@ export function ComboboxOptions<TId extends string | number>({
                     alt=""
                     className="size-9 shrink-0 rounded-control object-cover"
                   />
-                ) : (
+                ) : item.avatarUrl === null ? (
+                  // People without a picture show their initial; other options show no mark.
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-control bg-accent-subtle text-xs font-semibold text-accent-strong">
                     {item.label.slice(0, 1).toUpperCase()}
                   </span>
-                )}
+                ) : null}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold text-fg">{item.label}</span>
                   {item.description ? (
@@ -141,9 +157,10 @@ export function ComboboxOptions<TId extends string | number>({
               event.preventDefault();
               void onRetry?.();
             }}
+            onMouseMove={() => activate(items.length)}
             className={cx(
               "cursor-pointer rounded-control px-3 py-2 text-sm text-fg",
-              activeIndex === items.length ? "bg-surface-muted" : "hover:bg-surface-muted",
+              activeIndex === items.length && "bg-surface-muted",
             )}
           >
             Could not load results. Retry

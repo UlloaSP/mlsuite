@@ -59,18 +59,21 @@ export function PredictBookmarkCard({ bookmark }: { bookmark: PredictBookmarkDto
           `Snapshot ${snapshotLabel(bookmark.versionName, bookmark.version)}.`}
       </p>
 
-      <ul aria-label="Models" className="flex min-h-6 flex-wrap gap-1.5">
+      {/* One line whatever the number of models, so every card of a row lines up. */}
+      <ul aria-label="Models" className="flex h-6 gap-1.5 overflow-hidden">
         {bookmark.models.slice(0, VISIBLE_MODELS).map((model) => (
           <li
             key={model}
-            className="inline-flex max-w-40 items-center gap-1 rounded-full border border-line bg-surface-muted px-2 py-0.5 text-xs text-fg-secondary"
+            className="inline-flex min-w-0 max-w-40 items-center gap-1 rounded-full border border-line bg-surface-muted px-2 py-0.5 text-xs text-fg-secondary"
           >
             <ModelsIcon size={12} className="shrink-0" />
             <span className="truncate">{model}</span>
           </li>
         ))}
         {extraModels > 0 ? (
-          <li className="rounded-full px-1.5 py-0.5 text-xs text-fg-muted">+{extraModels}</li>
+          <li className="shrink-0 rounded-full px-1.5 py-0.5 text-xs text-fg-muted">
+            +{extraModels}
+          </li>
         ) : null}
       </ul>
 

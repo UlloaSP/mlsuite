@@ -91,7 +91,6 @@ export function ReviewsPage() {
     <AppPage>
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto xl:overflow-hidden">
         <AppPageHeader
-          eyebrow="Review"
           title="Review inbox"
           description="Review the inferences assigned to you across every schema."
         />

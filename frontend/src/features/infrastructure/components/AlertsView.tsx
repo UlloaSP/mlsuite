@@ -38,12 +38,10 @@ export function AlertsView({ overview, streamConnected, selectedService }: Props
   return (
     <>
       <AppPageHeader
-        breadcrumbScope="platform"
         breadcrumbs={[
           { label: "Infrastructure", to: "/admin/infrastructure" },
           { label: "Alerts" },
         ]}
-        eyebrow="Operational signals"
         title="Alerts"
         description={`${filtered.length} active alerts across the cluster.`}
         actions={

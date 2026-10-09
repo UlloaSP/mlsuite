@@ -41,7 +41,11 @@ export function PublicRunView({ bookmark, run, onBack }: Props) {
       <div className="app-scroll flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
         {sameForm ? (
           <>
-            <PublicRunReports formSchema={bookmark.formSchema} run={run} />
+            <PublicRunReports
+              publicId={bookmark.publicId}
+              formSchema={bookmark.formSchema}
+              run={run}
+            />
             <PublicRunReview
               publicId={bookmark.publicId}
               formSchema={bookmark.formSchema}

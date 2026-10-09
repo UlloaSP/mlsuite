@@ -2,9 +2,11 @@ package dev.ulloasp.mlsuite.schema.application.service;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.plugin.application.dto.PluginRuntimeSourceDto;
+import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginRuntimeSourcesUseCase;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkExampleRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkDto;
@@ -50,6 +54,7 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
     private final SchemaBookmarkRepository bookmarkRepository;
     private final SchemaBookmarkExampleRepository exampleRepository;
     private final BookmarkPublishability publishability;
+    private final ListPluginRuntimeSourcesUseCase plugins;
 
     @Override
     public PublicBookmarkDto getPublishedBookmark(String publicId) {
@@ -66,6 +71,26 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
                 .filter(example -> example.status() == BookmarkExampleStatus.SERVED)
                 .map(this::publicExample)
                 .toList();
+    }
+
+    @Override
+    public List<PluginRuntimeSourceDto> listPublishedPlugins(String publicId) {
+        SchemaBookmark bookmark = requirePublished(publicId);
+        Set<String> kinds = new HashSet<>();
+        collectKinds(bookmark.getVersion().getFormSchema(), kinds);
+        return plugins.listUsed(bookmark.getSchema().getOrganization().getId(), kinds);
+    }
+
+    /** Every `kind` the schema names, at any depth: built-in kinds simply match no plugin. */
+    private static void collectKinds(Object node, Set<String> kinds) {
+        if (node instanceof Map<?, ?> map) {
+            if (map.get("kind") instanceof String kind) {
+                kinds.add(kind);
+            }
+            map.values().forEach(value -> collectKinds(value, kinds));
+        } else if (node instanceof List<?> list) {
+            list.forEach(value -> collectKinds(value, kinds));
+        }
     }
 
     @Override

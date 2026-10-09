@@ -56,11 +56,9 @@ export function AdminPublicBookmarksPage() {
       accessFallback={<NotFoundError />}
       controls={controls}
       header={{
-        eyebrow: "Superadmin",
         title: "Public bookmarks",
         description:
           "Review what every organization has published and unpublish what should not be public.",
-        breadcrumbScope: "platform",
         breadcrumbs: [{ label: "Public bookmarks" }],
       }}
       isActionPending={unpublish.isPending}

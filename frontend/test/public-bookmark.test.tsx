@@ -283,7 +283,7 @@ describe("public bookmark page", () => {
     expect(host.querySelector("dl")?.textContent).toContain("0 reports");
   });
 
-  test("says so when the form needs plugin fields a public page cannot load", async () => {
+  test("says so when the plugin fields of the form do not arrive", async () => {
     fetchMock.mockResolvedValue(
       json({
         ...publicBookmark,
@@ -292,7 +292,7 @@ describe("public bookmark page", () => {
     );
     const { host } = await page();
     await settle();
-    expect(host.textContent).toContain("This form cannot be shown here");
+    expect(host.textContent).toContain("This form could not be loaded");
     expect(host.querySelector("mlf-kit-tabs")).toBeNull();
   });
 
@@ -373,8 +373,7 @@ describe("public page frame", () => {
                 element={
                   <AppPageHeader
                     title="production"
-                    breadcrumbScope="public"
-                    breadcrumbs={[{ label: "production" }]}
+                    breadcrumbs={[{ label: "Explore", to: "/explore" }, { label: "production" }]}
                   />
                 }
               />

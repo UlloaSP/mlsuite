@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { Virtualizer } from "@tanstack/react-virtual";
 
+// A grid card is stretched to its row with `min-height`; its own height is read without it.
+const naturalHeight = (element: HTMLElement) => {
+  const stretched = element.style.minHeight;
+  if (!stretched) return element.offsetHeight;
+  element.style.minHeight = "0px";
+  const height = element.offsetHeight;
+  element.style.minHeight = stretched;
+  return height;
+};
+
 /** Cards retain one parent across responsive layouts; a row is as tall as its tallest card. */
 export function useCatalogMeasurements(
   virtualizer: Virtualizer<HTMLElement, HTMLElement>,
@@ -13,7 +23,7 @@ export function useCatalogMeasurements(
     const heights = new Map<number, number>();
     for (const element of elements.current) {
       const index = Number(element.dataset.index);
-      heights.set(index, Math.max(heights.get(index) ?? 0, element.offsetHeight));
+      heights.set(index, Math.max(heights.get(index) ?? 0, naturalHeight(element)));
     }
     heights.forEach((height, index) => {
       if (height > 0) virtualizer.resizeItem(index, height);
