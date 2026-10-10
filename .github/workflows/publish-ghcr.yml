@@ -92,27 +92,11 @@ jobs:
           sbom: true
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,scope=${{ matrix.service }},mode=max
-      - name: Reject high or critical image vulnerabilities
-        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+      - name: Scan the exact candidate digest
+        uses: ./.github/actions/scan-image
         with:
-          version: v0.74.0
           image-ref: ${{ steps.image.outputs.name }}@${{ steps.build.outputs.digest }}
-          scanners: vuln
-          format: json
-          output: trivy-results.json
-          exit-code: '1'
-          ignore-unfixed: false
-          severity: HIGH,CRITICAL
-          timeout: 10m
-      - name: Retain scan results even on failure
-        if: always() && steps.build.outcome == 'success'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: vulnerability-report-${{ matrix.service }}
-          path: trivy-results.json
-          retention-days: 30
-          if-no-files-found: error
-          overwrite: true
+          report-name: vulnerability-report-${{ matrix.service }}
       - name: Record a successfully scanned image
         env:
           SERVICE: ${{ matrix.service }}

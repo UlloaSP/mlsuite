@@ -12,9 +12,16 @@ The workflow verifies:
 - frontend locked install, tests, TypeScript, and production build;
 - Maven tests and API packaging;
 - backend and ops-agent locked Python tests;
+- production Docker builds and Trivy scans for frontend, API, backend and ops-agent;
 - Compose resolution and immutable-release contract tests.
 
 CI uses hosted Ubuntu runners, read-only repository permissions, and no deployment secrets. Actions are pinned to full commit SHAs. A skipped, cancelled, or failed dependency does not satisfy the aggregate check.
+
+Image scans run on PRs to either protected branch and pushes to `develop` and `main`.
+They build locally without publishing or registry credentials. The shared
+`scan-image` action blocks HIGH/CRITICAL findings, including unfixed vulnerabilities,
+and scanner failures. JSON reports remain available for 30 days, including failures.
+Publication uses the same policy against each exact candidate digest.
 
 Full frontend formatting and lint are not required until the existing baseline is clean. Do not add a required gate that the repository cannot pass, and do not hide failures with `continue-on-error`.
 
