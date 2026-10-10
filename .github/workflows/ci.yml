@@ -136,6 +136,36 @@ jobs:
           path: ${{ matrix.component }}/test-results.xml
           retention-days: 7
 
+  image-security:
+    name: Image security (${{ matrix.service }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [frontend, api, backend, ops-agent]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build the production image without publishing
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ./${{ matrix.service }}
+          file: ./${{ matrix.service }}/Dockerfile
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: mlsuite-${{ matrix.service }}:security
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,scope=${{ matrix.service }},mode=max
+      - name: Scan the production image
+        uses: ./.github/actions/scan-image
+        with:
+          image-ref: mlsuite-${{ matrix.service }}:security
+          report-name: ci-vulnerability-report-${{ matrix.service }}
+
   configuration:
     name: Configuration
     runs-on: ubuntu-24.04
@@ -178,6 +208,8 @@ jobs:
         run: bash deploy/test-recovery-rto.sh
       - name: Validate release contracts and failure handling
         run: python3 -m unittest discover -s .github/tests -p 'test_release_*.py'
+      - name: Require the image security gate and shared scan policy
+        run: python3 -m unittest discover -s .github/tests -p test_image_security.py
       - name: Validate workflows
         run: |
           curl -fsSL -o "$RUNNER_TEMP/actionlint.tar.gz" \
@@ -189,7 +221,7 @@ jobs:
   required:
     name: CI required
     if: always()
-    needs: [frontend, api, python, configuration, secrets]
+    needs: [frontend, api, python, configuration, secrets, image-security]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
