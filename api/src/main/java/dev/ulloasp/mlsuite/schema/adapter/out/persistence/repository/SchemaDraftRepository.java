@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.Lock;
 import jakarta.persistence.LockModeType;
@@ -11,7 +12,8 @@ import jakarta.persistence.LockModeType;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaDraft;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaDraftStatus;
 
-public interface SchemaDraftRepository extends JpaRepository<SchemaDraft, Long> {
+public interface SchemaDraftRepository
+        extends JpaRepository<SchemaDraft, Long>, JpaSpecificationExecutor<SchemaDraft> {
     void deleteBySchemaId(Long schemaId);
     List<SchemaDraft> findBySchemaIdAndStatusNotOrderByUpdatedAtDesc(
             Long schemaId, SchemaDraftStatus status);

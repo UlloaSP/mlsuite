@@ -173,9 +173,7 @@ export function AdminInfrastructurePage() {
         ) : (
           <>
             <AppPageHeader
-              breadcrumbScope="platform"
               breadcrumbs={[{ label: "Infrastructure" }]}
-              eyebrow="Superadmin"
               title="Infrastructure"
               description="Managed services, live logs, shell access, and aggregate resource use."
             />

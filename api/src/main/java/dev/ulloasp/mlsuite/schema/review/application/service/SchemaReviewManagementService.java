@@ -17,6 +17,7 @@ import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.Sche
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRunRepository;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRunSubmissionRepository;
+import dev.ulloasp.mlsuite.schema.review.application.dto.ReviewAssignmentCountsDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewAssignmentStatusDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewReviewerDto;
 import dev.ulloasp.mlsuite.schema.review.application.port.in.SchemaReviewManagementUseCase;
@@ -44,14 +45,31 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
 
     @Transactional(readOnly = true)
     public List<SchemaReviewAssignmentStatusDto> assignmentStatus(Long userId, Long predictionRunId) {
-        Long organizationId = organizationId(userId);
-        authorization.require(userId, organizationId, PermissionKey.MANAGE_REVIEWS);
-        runs.findByIdAndOrganizationId(predictionRunId, organizationId)
-                .orElseThrow(SchemaReviewUnavailableException::new);
+        requireManagedRun(userId, predictionRunId);
         return reviewRuns.findByRunIdOrderByIdAsc(predictionRunId).stream()
                 .flatMap(reviewRun -> assignees.findByReviewIdOrderByIdAsc(reviewRun.getReview().getId()).stream()
                         .map(assignee -> status(reviewRun, assignee)))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public SchemaReviewAssignmentStatusDto assignment(Long userId, Long predictionRunId, String reviewRunId,
+            Long reviewerId) {
+        requireManagedRun(userId, predictionRunId);
+        SchemaReviewRun reviewRun = reviewRuns.findByRunIdAndPublicId(predictionRunId, reviewRunId)
+                .orElseThrow(SchemaReviewUnavailableException::new);
+        SchemaReviewAssignee assignee = assignees
+                .findByReviewIdAndUserId(reviewRun.getReview().getId(), reviewerId)
+                .orElseThrow(SchemaReviewUnavailableException::new);
+        return status(reviewRun, assignee);
+    }
+
+    @Transactional(readOnly = true)
+    public ReviewAssignmentCountsDto assignmentCounts(Long userId, Long predictionRunId) {
+        requireManagedRun(userId, predictionRunId);
+        return new ReviewAssignmentCountsDto(
+                assignees.countByPredictionRunId(predictionRunId),
+                assignees.countSubmittedByPredictionRunId(predictionRunId));
     }
 
     public void reopen(Long userId, String reviewId, String reviewRunId, Long reviewerId) {
@@ -106,6 +124,13 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
                 submission == null ? null : submission.getSubmittedAt(),
                 review.getCreatedAt(), review.getUpdatedAt(),
                 review.getExpiresAt(), !review.getExpiresAt().isAfter(now()));
+    }
+
+    private void requireManagedRun(Long userId, Long predictionRunId) {
+        Long organizationId = organizationId(userId);
+        authorization.require(userId, organizationId, PermissionKey.MANAGE_REVIEWS);
+        runs.findByIdAndOrganizationId(predictionRunId, organizationId)
+                .orElseThrow(SchemaReviewUnavailableException::new);
     }
 
     private Long organizationId(Long userId) {

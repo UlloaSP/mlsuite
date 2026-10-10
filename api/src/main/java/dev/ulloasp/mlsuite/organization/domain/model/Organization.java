@@ -53,6 +53,9 @@ public class Organization {
     @Column(name = "logo_updated_at", columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime logoUpdatedAt;
 
+    @Column(name = "plugin_catalog_indexed", nullable = false)
+    private boolean pluginCatalogIndexed;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "created_by_user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_organization_creator"))
     private User createdBy;

@@ -1,52 +1,46 @@
 import { Fragment } from "react";
 import { AppSearchField } from "@/shared/ui/AppSearchField";
+import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
 import { useUrlFilters } from "@/shared/lib/use-url-filters";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
-import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
+import {
+  useRoleCatalog,
+  useRoleTemplateCatalog,
+} from "@/features/workspace/api/workspace-catalog-queries";
 import { RoleRow } from "./RoleRow";
-import type {
-  RoleDefinitionDto,
-  RoleTemplateDto,
-  RolesResponseDto,
-} from "@/shared/api/openapi.gen";
+import type { RoleDefinitionDto, RoleTemplateDto } from "@/shared/api/openapi.gen";
 
 export type RolesTab = "roles" | "templates" | "permissions";
 
 export function RolesCatalog({
   organizationId,
   tab,
-  data,
-  loading,
-  error,
-  onRetry,
   canManage,
   onRole,
   onTemplate,
 }: {
   organizationId: number;
   tab: "roles" | "templates";
-  data: RolesResponseDto | undefined;
-  loading: boolean;
-  error: boolean;
-  onRetry: () => void;
   canManage: boolean;
   onRole: (role: RoleDefinitionDto) => void;
   onTemplate: (template: RoleTemplateDto) => void;
 }) {
   const filters = useUrlFilters({ q: "" });
-  const search = filters.values.q;
+  const query = filters.values.q;
+  const search = useDebouncedValue(query.trim());
+  const roles = useRoleCatalog(organizationId, search, tab === "roles");
+  const templates = useRoleTemplateCatalog(organizationId, search, tab === "templates");
+  const request = tab === "roles" ? roles : templates;
   const items =
     tab === "roles"
-      ? (data?.roles ?? []).map((role) => ({
+      ? (roles.data?.items ?? []).map((role) => ({
           key: String(role.id),
-          text: `${role.name} ${role.description}`,
           content: <RoleRow role={role} onOpen={() => onRole(role)} />,
         }))
-      : (data?.templates ?? []).map((template) => ({
+      : (templates.data?.items ?? []).map((template) => ({
           key: String(template.id),
-          text: `${template.name} ${template.description}`,
           content: (
             <CatalogEntry
               title={template.name}
@@ -62,38 +56,33 @@ export function RolesCatalog({
             />
           ),
         }));
-  const filtered = items.filter((item) =>
-    item.text.toLowerCase().includes(search.trim().toLowerCase()),
-  );
-  const pagination = useClientCatalogPage(
-    filtered,
-    `${organizationId}:${tab}:${search}`,
-    loading || !data,
-  );
   return (
     <section className="flex min-h-0 flex-1 flex-col">
       <AppToolbar variant="flat">
         <AppSearchField
           label={`Search ${tab}`}
           placeholder={`Search ${tab}…`}
-          value={search}
+          value={query}
           onChange={(value) => filters.setFilters({ q: value })}
         />
       </AppToolbar>
       <CatalogListPanel
-        {...pagination}
-        itemCount={filtered.length}
-        isLoading={loading}
-        isBusy={loading}
+        hasNext={Boolean(request.hasNextPage)}
+        onLoadMore={request.fetchNextPage}
+        itemCount={items.length}
+        isLoading={request.isLoading}
+        isBusy={request.isFetching}
         loadingLabel={`Loading ${tab}…`}
-        errorMessage={error ? `Could not load ${tab}.` : null}
-        onRetry={onRetry}
+        errorMessage={request.error ? `Could not load ${tab}.` : null}
+        onRetry={() =>
+          void (request.isFetchNextPageError ? request.fetchNextPage() : request.refetch())
+        }
         emptyState={{
           title: search ? `No matching ${tab}` : `No ${tab} yet`,
           description: search ? "Try another search." : "Available entries will appear here.",
         }}
       >
-        {pagination.visibleItems.map((item) => (
+        {items.map((item) => (
           <Fragment key={item.key}>{item.content}</Fragment>
         ))}
       </CatalogListPanel>

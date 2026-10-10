@@ -78,10 +78,25 @@ TanStack Query is the source of truth for remote state.
 Use the narrowest owner for client state:
 
 1. derive it during render;
-2. use URL state for navigable filters, tabs, sorting, and pagination;
+2. use URL state for navigable filters, tabs, and sorting;
 3. use local state for one component or page;
 4. use a local reducer/provider for a complex screen;
 5. use Jotai only across unrelated branches.
+
+Persisted catalogs use backend search, filters, sorting, and page counts. TanStack Query
+accumulates server pages through `useInfiniteCatalog`, and TanStack Virtual renders the loaded
+rows. Whole-result actions request an explicit server selection of identities and snapshots
+independently of the pages the user has scrolled through.
+
+- An infinite key is the resource's tenant root, the literal `"infinite"`, then the search,
+  filter, and sort values. Everything before `"infinite"` names the catalog: new values keep
+  that catalog's previous rows on screen while they load, and existing invalidations of the root
+  still reach it.
+- Typed search reaches the server through `useDebouncedValue`; clearing it applies at once.
+- Every virtual list asks for its next page through `useLoadMoreNearEnd`.
+- An invalidation refetches every loaded page of an active catalog, so mutations invalidate the
+  narrowest key that covers what they changed.
+- A popup opened from a row or a menu renders in the top layer, never inside the scroll container.
 
 ## Routing
 

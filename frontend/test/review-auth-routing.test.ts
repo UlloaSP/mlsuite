@@ -60,7 +60,7 @@ describe("integrated review authentication and routes", () => {
     );
 
     expect(organizationHeader).toMatch(
-      /mutateAsync\(organization\.id\)\.then\(\(\) => \{\s+void navigate\("\/home"\);/,
+      /mutateAsync\(organization\.id\)\.then\(\(\) => \{\s*void navigate\("\/home"\);/,
     );
     expect(organizationHeader).not.toContain('navigate("/workspace")');
     expect(authenticatedHome).toContain("permissions?.canViewWorkspace");

@@ -326,3 +326,33 @@ describe("organization management", () => {
     expect((await renderSettings()).textContent).toContain("Something went wrong");
   });
 });
+
+vi.mock("@/features/workspace/api/workspace-catalog-queries", () => ({
+  useRoleCatalogMetadata: () => {
+    const result = hooks.roles();
+    return {
+      ...result,
+      data: result.data
+        ? {
+            roles: result.data.roles.length,
+            templates: result.data.templates.length,
+            permissionCatalog: result.data.permissionCatalog,
+          }
+        : undefined,
+    };
+  },
+  useRoleCatalog: () => ({ data: { items: hooks.roles().data?.roles ?? [] } }),
+  useRoleTemplateCatalog: () => ({ data: { items: hooks.roles().data?.templates ?? [] } }),
+  usePermissionCatalog: () => ({ data: { items: hooks.roles().data?.permissionCatalog ?? [] } }),
+  useInvitationCatalog: () => ({ data: { items: hooks.invitations().data ?? [] } }),
+  useInvitationCandidateCatalog: () => ({
+    data: { items: hooks.invitationCandidates().data ?? [] },
+  }),
+  useOwnerCandidateCatalog: () => ({
+    data: {
+      items: (hooks.members().data ?? []).filter(
+        (item: { role: { systemKey: string } }) => item.role.systemKey !== "OWNER",
+      ),
+    },
+  }),
+}));

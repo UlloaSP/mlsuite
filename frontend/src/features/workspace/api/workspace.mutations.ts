@@ -25,7 +25,7 @@ import {
 import type {
   OrganizationDto,
   UpdateOrganizationRequest,
-  WorkspaceContextDto,
+  WorkspaceCurrentContextDto,
 } from "@/shared/api/openapi.gen";
 
 export const useAcceptInvitation = () => {
@@ -130,7 +130,7 @@ export const useSelectOrganization = () => {
   return useMutation({
     mutationFn: selectOrganization,
     onSuccess: async (context) => {
-      const previous = qc.getQueryData<WorkspaceContextDto>(WORKSPACE_CONTEXT_QUERY_KEY);
+      const previous = qc.getQueryData<WorkspaceCurrentContextDto>(WORKSPACE_CONTEXT_QUERY_KEY);
       const previousOrganizationId = previous?.currentOrganization.id;
       if (previousOrganizationId !== undefined) {
         await removeOrganizationCache(qc, previousOrganizationId);

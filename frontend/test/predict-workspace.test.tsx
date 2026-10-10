@@ -21,6 +21,7 @@ const state = vi.hoisted(() => ({
 }));
 
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
+  useCurrentOrganizationId: () => 3,
   useWorkspaceContext: () => ({ data: { permissions: { canRunPredictions: state.canRun } } }),
 }));
 vi.mock("@/capabilities/workspace-context/session", () => ({
@@ -207,3 +208,20 @@ test("history is the Inferences catalog filtered to the bookmark", async () => {
   expect(history?.getAttribute("href")).toBe("/inferences?schema=70&bookmark=7");
   expect(container.querySelector('a[href="/schemas/70"]')).not.toBeNull();
 });
+
+vi.mock("@/features/schemas/api/schema-catalog-queries", () => ({
+  usePredictCatalog: (controls: { filter: string }) => ({
+    data: {
+      items: state.bookmarks
+        .filter((item) => controls.filter !== "behind" || item.latestVersion > item.version)
+        .sort((a, b) => a.schemaName.localeCompare(b.schemaName)),
+      totalItems: state.bookmarks.length,
+    },
+    hasNextPage: false,
+    isFetching: false,
+    refetch: vi.fn(),
+  }),
+  useBookmarkStatistics: (id: number | string) => ({
+    data: state.bookmarks.find((item) => item.id === Number(id)),
+  }),
+}));

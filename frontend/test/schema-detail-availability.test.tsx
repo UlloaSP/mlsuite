@@ -65,3 +65,9 @@ test.each([["schema", SchemaDetailPage, "/schemas", "No published snapshots"]] a
   },
   15_000,
 );
+
+vi.mock("@/features/schemas/api/schema-catalog-queries", () => ({
+  useSnapshotCatalog: () => ({ data: { items: [], totalItems: 0 } }),
+  useChangeCatalog: () => ({}),
+  useBookmarkCatalog: () => ({}),
+}));

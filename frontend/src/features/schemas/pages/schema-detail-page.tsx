@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -17,8 +17,8 @@ import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
-import { useSchema, useSchemaVersions } from "@/features/schemas/api/schema-queries";
-import { latestSchemaVersion } from "@/features/schemas/lib/version-selection";
+import { useSchema } from "@/features/schemas/api/schema-queries";
+import { useSnapshotCatalog } from "@/features/schemas/api/schema-catalog-queries";
 import { CreateSchemaChangeDialog } from "@/features/schemas/components/CreateSchemaChangeDialog";
 import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
 import { SchemaSnapshotPreviewPanel } from "@/features/schemas/components/SchemaSnapshotPreviewPanel";
@@ -28,12 +28,13 @@ export function SchemaDetailPage() {
   const { schemaId } = useParams<{ schemaId: string }>();
   const { data: schema, isLoading, isError } = useSchema(schemaId);
   const showLoader = useStableLoading(isLoading);
-  const versionsQuery = useSchemaVersions(schemaId);
+  const versionsQuery = useSnapshotCatalog(schemaId, {
+    search: "",
+    filter: "latest",
+    sort: "version",
+  });
   const [changeBase, setChangeBase] = useState<SchemaVersionDto | null>(null);
-  const latestVersion = useMemo(
-    () => latestSchemaVersion(versionsQuery.data ?? []),
-    [versionsQuery.data],
-  );
+  const latestVersion = versionsQuery.data?.items[0];
 
   if (showLoader || isError || !schema) {
     if (showLoader) return <AppPageLoader label="Loading schema…" />;

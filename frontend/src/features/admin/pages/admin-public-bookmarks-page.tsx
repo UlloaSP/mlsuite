@@ -39,18 +39,14 @@ export function AdminPublicBookmarksPage() {
   });
   const canView = user?.systemRole === "SUPERADMIN";
   const pageQuery = useModeratedBookmarks(
-    { page: controls.page, search: controls.search, size: PAGE_SIZE, sort: controls.sort },
+    { page: 0, search: controls.search, size: PAGE_SIZE, sort: controls.sort },
     canView,
   );
   const unpublish = useUnpublishPublicBookmark();
-  const pageItems = pageQuery.data?.items ?? [];
 
   const remove = async (bookmark: ModeratedBookmarkDto) => {
     // Failures propagate to the confirmation dialog, which stays open and shows them.
     await unpublish.mutateAsync(bookmark.id);
-    if (pageItems.length === 1 && controls.page > 0) {
-      controls.setPage((current) => current - 1);
-    }
     toast.success(`${bookmark.name} is private again.`);
   };
 
@@ -60,16 +56,13 @@ export function AdminPublicBookmarksPage() {
       accessFallback={<NotFoundError />}
       controls={controls}
       header={{
-        eyebrow: "Superadmin",
         title: "Public bookmarks",
         description:
           "Review what every organization has published and unpublish what should not be public.",
-        breadcrumbScope: "platform",
         breadcrumbs: [{ label: "Public bookmarks" }],
       }}
       isActionPending={unpublish.isPending}
       loadingLabel="Loading public bookmarks…"
-      pageSize={PAGE_SIZE}
       filterLabel="Filter public bookmarks"
       filters={FILTERS}
       placeholder="Search by bookmark, schema, or organization"

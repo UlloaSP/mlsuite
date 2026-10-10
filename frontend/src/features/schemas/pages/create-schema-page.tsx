@@ -4,36 +4,41 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useNavigate } from "react-router";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { SchemaCreateSummary } from "@/features/schemas/components/SchemaCreateSummary";
-import { SchemaModelPicker } from "@/features/schemas/components/SchemaModelPicker";
+import {
+  SchemaModelPicker,
+  type SchemaModelCatalog,
+} from "@/features/schemas/components/SchemaModelPicker";
 import { useCreateSchemaWithInitialVersionMutation } from "@/features/schemas/api/schema-mutations";
 import { countVisibleSchemaFields } from "@/features/schemas/lib/one-hot-category";
-import { initialSchemaModels } from "@/features/schemas/lib/schema-model-selection";
 import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
 import { composeSchemaVersion, type SchemaSourceModel } from "@/features/schemas/lib/merge";
 
 type Props = {
+  catalog: SchemaModelCatalog;
+  search: string;
+  onSearchChange: (search: string) => void;
+  initialModels: SchemaSourceModel[];
   isLoading: boolean;
-  models: SchemaSourceModel[];
 };
-
-export function CreateSchemaPage({ isLoading, models }: Props) {
+export function CreateSchemaPage({
+  catalog,
+  search,
+  onSearchChange,
+  initialModels,
+  isLoading,
+}: Props) {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const createSchema = useCreateSchemaWithInitialVersionMutation();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selection, setSelected] = useState<SchemaSourceModel[] | null>(null);
   const [submitError, setSubmitError] = useState<string>();
-  const modelId = searchParams.get("modelId");
-  const selected = useMemo(
-    () => selection ?? initialSchemaModels(models, modelId),
-    [selection, models, modelId],
-  );
+  const selected = selection ?? initialModels;
 
   const composedVersion = useMemo(() => composeSchemaVersion("v1", selected), [selected]);
   const canSubmit = name.trim().length > 0 && selected.length > 0;
@@ -79,8 +84,9 @@ export function CreateSchemaPage({ isLoading, models }: Props) {
         />
         <form className="flex flex-col gap-4 lg:min-h-0 lg:flex-1 lg:flex-row" onSubmit={submit}>
           <SchemaModelPicker
-            isLoading={isLoading}
-            models={models}
+            catalog={catalog}
+            search={search}
+            onSearchChange={onSearchChange}
             value={selected}
             onChange={setSelected}
           />

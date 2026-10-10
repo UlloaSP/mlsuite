@@ -25,7 +25,7 @@ export function ReviewPredictionTrayGroup({
     tone === "revision" ? "bg-success-subtle text-success-fg" : "bg-warning-subtle text-warning-fg";
 
   return (
-    <section className="flex flex-col border-b border-line pb-4 last:border-b-0 xl:min-h-0">
+    <section className="flex flex-col border-b border-line pb-4 last:border-b-0">
       <div className="flex shrink-0 items-center gap-3">
         <span className={`size-2.5 rounded-full ${dotColor}`} />
         <div className="min-w-0 flex-1">
@@ -45,7 +45,7 @@ export function ReviewPredictionTrayGroup({
           <ChevronUp size={14} className={open ? "" : "rotate-180"} />
         </button>
       </div>
-      {open && count > 0 ? <div className="mt-3 overflow-y-auto xl:min-h-0">{children}</div> : null}
+      {open ? <div className="mt-3 flex min-h-0 flex-1 flex-col">{children}</div> : null}
     </section>
   );
 }

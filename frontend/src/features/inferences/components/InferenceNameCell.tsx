@@ -1,27 +1,17 @@
+import { Link } from "react-router";
 import { getPredictionShortId } from "@/capabilities/prediction-runtime/data/model-utils";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 
 /**
- * The row's keyboard target: clicking anywhere on the row opens the preview, and this
- * button gives the same action a focus stop.
+ * The row's keyboard target: clicking anywhere on the row opens the inference, and this
+ * link gives the same destination a focus stop.
  */
-export function InferenceNameCell({
-  id,
-  name,
-  onOpen,
-}: {
-  id: number;
-  name: string;
-  onOpen: () => void;
-}) {
+export function InferenceNameCell({ id, name }: { id: number; name: string }) {
   return (
-    <button
-      type="button"
-      onClick={(event) => {
-        event.stopPropagation();
-        onOpen();
-      }}
+    <Link
+      to={`/inferences/${id}`}
+      onClick={(event) => event.stopPropagation()}
       className={cx(
         "flex min-w-0 items-baseline gap-2 rounded-control text-left hover:underline",
         FOCUS_RING,
@@ -31,6 +21,6 @@ export function InferenceNameCell({
       <span className="shrink-0 font-mono text-2xs text-fg-muted">
         #{getPredictionShortId(String(id))}
       </span>
-    </button>
+    </Link>
   );
 }

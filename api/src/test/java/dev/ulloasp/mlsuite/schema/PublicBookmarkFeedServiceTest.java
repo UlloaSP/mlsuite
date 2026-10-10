@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -22,6 +24,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,6 +32,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.plugin.application.dto.PluginRuntimeSourceDto;
+import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginRuntimeSourcesUseCase;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkSummaryDto;
 import dev.ulloasp.mlsuite.schema.application.service.BookmarkPublishability;
@@ -68,6 +73,8 @@ class PublicBookmarkFeedServiceTest {
     EntityManager entityManager;
     @Autowired
     PublicBookmarkService service;
+    @MockitoBean
+    ListPluginRuntimeSourcesUseCase plugins;
 
     private SchemaBookmark cardio;
     private SchemaBookmark churn;
@@ -119,6 +126,34 @@ class PublicBookmarkFeedServiceTest {
         assertEquals("Globex Retail", page.items().get(0).organizationName());
         // The description is the bookmark's own: one without it shows none, whatever its schema says.
         assertNull(page.items().get(0).description());
+    }
+
+    @Test
+    void aPublishedFormServesThePluginsItsSchemaUsesAndNoOthers() {
+        cardio.getVersion().setFormSchema(Map.of(
+                "fields", List.of(
+                        Map.of("kind", "number", "label", "Age", "mappedTo", "age"),
+                        Map.of("kind", "body-map", "label", "Pain", "mappedTo", "pain"),
+                        Map.of("kind", "series", "label", "Visits",
+                                "columns", List.of(Map.of("kind", "dose-picker", "id", "dose")))),
+                "reports", List.of(Map.of("kind", "risk-gauge", "label", "Risk", "mappedTo", "prediction"))));
+        entityManager.flush();
+        OffsetDateTime at = DAY;
+        List<PluginRuntimeSourceDto> served = List.of(new PluginRuntimeSourceDto(
+                "body-map", "body-map.ts", "text/typescript", 12, at, at, "export default {}"));
+        Long acme = cardio.getSchema().getOrganization().getId();
+        // Every kind the schema names is asked for; the plugin catalog knows which are plugins.
+        when(plugins.listUsed(acme, Set.of("number", "body-map", "series", "dose-picker", "risk-gauge")))
+                .thenReturn(served);
+
+        assertEquals(served, service.listPublishedPlugins(cardio.getPublicId()));
+    }
+
+    @Test
+    void aFormThatIsNotPublicServesNoPlugin() {
+        assertThrows(ResponseStatusException.class, () -> service.listPublishedPlugins(draft.getPublicId()));
+        assertThrows(ResponseStatusException.class, () -> service.listPublishedPlugins(archived.getPublicId()));
+        verifyNoInteractions(plugins);
     }
 
     @Test

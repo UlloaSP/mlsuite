@@ -90,6 +90,13 @@ const server = {
   publicExamples: [] as PublicBookmarkExampleDto[] | "unavailable",
 };
 
+const pageData = (items: unknown[]) => ({
+  items,
+  page: 0,
+  size: 24,
+  totalItems: items.length,
+  hasNext: false,
+});
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
@@ -118,14 +125,19 @@ const respond = (url: unknown, init?: RequestInit): Response => {
     server.examples.push(dto);
     return json(dto);
   }
-  if (path === "/api/schema-bookmarks/70/examples") return json(server.examples);
+  if (path === "/api/schema-bookmarks/70/examples/catalog") return json(pageData(server.examples));
+  const state = /^\/api\/schema-bookmarks\/70\/examples\/(\d+)\/status$/.exec(path);
+  if (state)
+    return json({
+      example: server.examples.find((item) => item.runId === Number(state[1])) ?? null,
+    });
   if (path === "/api/schema-bookmarks/70") return json(server.bookmark);
   if (path === `/api/public/bookmarks/${PUBLIC_ID}`) return json(publicBookmark);
-  if (path === `/api/public/bookmarks/${PUBLIC_ID}/runs`) return json([]);
-  if (path === `/api/public/bookmarks/${PUBLIC_ID}/examples`) {
+  if (path === `/api/public/bookmarks/${PUBLIC_ID}/runs/catalog`) return json(pageData([]));
+  if (path === `/api/public/bookmarks/${PUBLIC_ID}/examples/catalog`) {
     return server.publicExamples === "unavailable"
       ? json({ status: 500, message: "Unavailable", path, timestamp: AT }, 500)
-      : json(server.publicExamples);
+      : json(pageData(server.publicExamples));
   }
   return json({ status: 404, message: "Not found", path, timestamp: AT }, 404);
 };
@@ -257,7 +269,9 @@ describe("a bookmark's examples in the schema repository", () => {
     await row(bookmark({ exampleCount: 1, staleExampleCount: 1 }));
 
     const dialog = await openExamples();
-    const rows = [...(dialog?.querySelectorAll("li") ?? [])].map((item) => item.textContent);
+    const rows = [...(dialog?.querySelectorAll("[data-index]") ?? [])].map(
+      (item) => item.textContent,
+    );
     expect(rows).toEqual([
       "Typical caseRan on Baseline · v2ServedRemove",
       "Old caseRan on First · v1Not served: bookmark movedRemove",
@@ -267,7 +281,7 @@ describe("a bookmark's examples in the schema repository", () => {
     await click(dialog!.querySelector('[aria-label="Remove Old case from the examples"]')!);
     await settle();
     expect(changes()).toEqual(["DELETE /api/schema-bookmarks/70/examples/400"]);
-    expect(dialog?.querySelectorAll("li")).toHaveLength(1);
+    expect(dialog?.querySelectorAll("[data-index]")).toHaveLength(1);
   });
 
   test("a member who may not publish reads the list without a way to change it", async () => {
@@ -329,24 +343,26 @@ describe("examples on the public page", () => {
     return found;
   };
   const values = (host: HTMLElement) => fields(host).map((input) => input.value);
-  const selector = (host: HTMLElement) => host.querySelector<HTMLElement>('[role="combobox"]');
+  const selector = (host: HTMLElement) => host.querySelector<HTMLInputElement>('[role="combobox"]');
   const choose = async (host: HTMLElement, name: string) => {
-    // The select opens from the keyboard in jsdom and lists its options in a portal.
-    await act(async () =>
-      selector(host)?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })),
-    );
-    const option = [...document.body.querySelectorAll<HTMLElement>('[role="option"]')].find(
-      (node) => node.textContent === name,
+    await act(async () => {
+      selector(host)?.focus();
+      selector(host)?.click();
+    });
+    await settle();
+    // Options open in the top layer, outside the page's own subtree.
+    const option = [...document.querySelectorAll<HTMLElement>('[role="option"]')].find((node) =>
+      node.textContent?.includes(name),
     );
     if (!option) throw new Error(`No example named "${name}"`);
-    await click(option);
+    await act(async () => option.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })));
     await settle();
   };
 
   test("a bookmark without examples shows the form and no selector", async () => {
     const host = await page();
 
-    expect(requests).toContain(`GET /api/public/bookmarks/${PUBLIC_ID}/examples`);
+    expect(requests).toContain(`GET /api/public/bookmarks/${PUBLIC_ID}/examples/catalog`);
     expect(values(host)).toEqual(["", ""]);
     expect(selector(host)).toBeNull();
     expect(host.textContent).not.toContain("example");
@@ -356,11 +372,11 @@ describe("examples on the public page", () => {
     server.publicExamples = [typical, elderly];
     const host = await page();
     expect(host.textContent).toContain("Start from an example");
-    expect(selector(host)?.textContent).toContain("Choose an example");
+    expect(selector(host)?.placeholder).toBe("Choose an example");
     expect(values(host)).toEqual(["", ""]);
 
     await choose(host, "Typical case");
-    expect(selector(host)?.textContent).toContain("Typical case");
+    expect(selector(host)?.value).toContain("Typical case");
     expect(values(host)).toEqual(["52", "Non-smoker"]);
 
     const [age] = fields(host);
@@ -368,6 +384,13 @@ describe("examples on the public page", () => {
     await changeValue(age, "60");
     expect(values(host)).toEqual(["60", "Non-smoker"]);
 
+    // Searching changes only the selector draft; it must preserve the visitor's edits.
+    const mountedForm = host.querySelector("mlf-kit-tabs");
+    await act(async () => selector(host)?.click());
+    await changeValue(selector(host)!, "Elder");
+    await settle();
+    expect(host.querySelector("mlf-kit-tabs")).toBe(mountedForm);
+    expect(values(host)).toEqual(["60", "Non-smoker"]);
     // The second example replaces every value, including the ones it does not set.
     await choose(host, "Elderly case");
     expect(values(host)).toEqual(["81", ""]);
@@ -389,16 +412,16 @@ describe("examples on the public page", () => {
     expect(publicRuns).toEqual([{ version: 2, values: { in0: 60, in1: "Non-smoker" } }]);
   });
 
-  test("a form that cannot be shown offers no examples either", async () => {
+  test("a form whose plugins do not arrive offers no examples either", async () => {
     server.publicExamples = [typical];
     publicBookmark.formSchema = { fields: [{ kind: "body-map", label: "Pain" }] };
     const host = await page();
 
-    expect(host.textContent).toContain("This form cannot be shown here");
+    expect(host.textContent).toContain("This form could not be loaded");
     expect(selector(host)).toBeNull();
   });
 
-  test("when the examples cannot be loaded the form is still there, without a selector", async () => {
+  test("when examples fail the form stays usable and offers no selector", async () => {
     server.publicExamples = "unavailable";
     const host = await page();
 

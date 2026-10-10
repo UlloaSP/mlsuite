@@ -26,4 +26,7 @@ public interface SchemaReviewUseCase {
             UpdatePredictionResultFeedbackRequest request);
 
     void submit(Long userId, String publicId, List<String> reviewRunIds);
+
+    /** Submits every run of the reviewer's inbox they have started answering. */
+    void submitInbox(Long userId);
 }

@@ -203,7 +203,6 @@ export function CreateModelPage() {
       <AppSurface className="app-scroll flex flex-1 flex-col gap-6 overflow-auto lg:overflow-hidden">
         <AppPageHeader
           breadcrumbs={[{ label: "Models", to: "/models" }, { label: "Create model" }]}
-          eyebrow="Model studio"
           title="Create model"
           description="Drop model artifacts and dataframes. Files are grouped by name when possible."
         />

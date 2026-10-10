@@ -23,6 +23,52 @@ vi.mock("@/features/workspace/api/role.mutations", () => ({
       ]),
     ),
 }));
+
+vi.mock("@/features/workspace/api/workspace-catalog-queries", () => {
+  const catalog = (resource: "roles" | "templates" | "permissionCatalog", search: string) => {
+    const response = hooks.roles();
+    const source = response.data?.[resource] ?? [];
+    const items =
+      resource === "permissionCatalog"
+        ? source
+            .map((group: { name: string; permissions: Array<{ label: string }> }) => ({
+              ...group,
+              permissions: group.permissions.filter((item) =>
+                item.label.toLowerCase().includes(search.toLowerCase()),
+              ),
+            }))
+            .filter((group: { permissions: unknown[] }) => group.permissions.length)
+        : source.filter((item: { name: string }) =>
+            item.name.toLowerCase().includes(search.toLowerCase()),
+          );
+    return {
+      ...response,
+      data: response.data ? { items, totalItems: items.length } : undefined,
+      error: response.isError ? new Error("Unavailable") : null,
+      isLoading: response.isPending,
+      hasNextPage: false,
+    };
+  };
+  return {
+    useRoleCatalogMetadata: () => {
+      const response = hooks.roles();
+      return {
+        ...response,
+        data: response.data
+          ? {
+              roles: response.data.roles.length,
+              templates: response.data.templates.length,
+              permissionCatalog: response.data.permissionCatalog,
+            }
+          : undefined,
+      };
+    },
+    useRoleCatalog: (_id: number, search: string) => catalog("roles", search),
+    useRoleTemplateCatalog: (_id: number, search: string) => catalog("templates", search),
+    usePermissionCatalog: (_id: number, search: string) => catalog("permissionCatalog", search),
+  };
+});
+
 const data = {
   roles: Array.from({ length: 21 }, (_, i) => ({
     id: i + 1,
@@ -94,26 +140,21 @@ const click = (label: string) => clickIn(label, host);
 test.each([
   ["roles", "Role"],
   ["templates", "Template"],
-])("paginates %s and keeps total tab counts", async (tab, label) => {
+])("virtualizes %s and keeps complete tab counts", async (tab, label) => {
   await render(`?tab=${tab}`);
   expect(tabLabels()).toEqual(["Roles|21", "Templates|21", "All permissions|21"]);
-  expect(hasLabel(`${label} 10`)).toBe(true);
-  expect(hasLabel(`${label} 11`)).toBe(false);
-  await click("Next");
-  expect(hasLabel(`${label} 11`)).toBe(true);
-  await click("Next");
-  expect(hasLabel(`${label} 21`)).toBe(true);
-  await click("Previous");
-  expect(hasLabel(`${label} 11`)).toBe(true);
+  expect(hasLabel(`${label} 1`)).toBe(true);
+  expect(host.querySelector("footer")).toBeNull();
+  expect(host.textContent).not.toContain("Next");
   expect(host.textContent).not.toContain("CATEGORY_PILL");
   expect(host.textContent).not.toContain("Backend permission catalog");
   expect(host.textContent).not.toContain("All Roles");
 });
 test.each(["roles", "templates"])(
-  "searches %s without changing total and clamps page",
+  "searches %s without changing the complete tab count",
   async (tab) => {
     await render(`?tab=${tab}&q=21&page=3`);
-    expect(host.querySelector('button[aria-current="page"]')?.textContent).toBe("1");
+    expect(host.querySelector("footer")).toBeNull();
     expect(tabLabels()).toContain("Roles|21");
     expect(host.textContent).not.toContain(" 20");
   },
@@ -158,19 +199,15 @@ test("read-only users cannot create roles or select a template", async () => {
 
 test("keeps all permissions grouped without pagination", async () => {
   await render("?tab=permissions");
-  expect(host.querySelector('section[aria-label="Permission groups"] h2')?.textContent).toBe(
-    "Organization",
-  );
-  expect(host.querySelectorAll('section[aria-label="Permission groups"] li')).toHaveLength(21);
+  expect(host.querySelector("h2")?.textContent).toBe("Organization");
+  expect(host.querySelectorAll("[data-index] li")).toHaveLength(21);
   expect(host.querySelector("footer")).toBeNull();
   expect(tabLabels()).toContain("All permissions|21");
 });
 test("permission search preserves the group and total", async () => {
   await render("?tab=permissions&q=21");
-  expect(host.querySelectorAll('section[aria-label="Permission groups"] li')).toHaveLength(1);
-  expect(host.querySelector('section[aria-label="Permission groups"] h2')?.textContent).toBe(
-    "Organization",
-  );
+  expect(host.querySelectorAll("[data-index] li")).toHaveLength(1);
+  expect(host.querySelector("h2")?.textContent).toBe("Organization");
   expect(tabLabels()).toContain("All permissions|21");
   expect(host.querySelector("footer")).toBeNull();
 });

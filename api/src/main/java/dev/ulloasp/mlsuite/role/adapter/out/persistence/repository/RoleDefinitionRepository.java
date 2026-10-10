@@ -4,13 +4,15 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 
 @Repository
-public interface RoleDefinitionRepository extends JpaRepository<RoleDefinition, Long> {
+public interface RoleDefinitionRepository
+        extends JpaRepository<RoleDefinition, Long>, JpaSpecificationExecutor<RoleDefinition> {
 
     List<RoleDefinition> findByOrganizationIdAndScopeOrderByLockedDescNameAsc(Long organizationId, RoleScope scope);
 
@@ -21,4 +23,6 @@ public interface RoleDefinitionRepository extends JpaRepository<RoleDefinition, 
     boolean existsByOrganizationIdAndScopeAndSlug(Long organizationId, RoleScope scope, String slug);
 
     List<RoleDefinition> findByOrganizationId(Long organizationId);
+
+    long countByOrganizationIdAndScope(Long organizationId, RoleScope scope);
 }

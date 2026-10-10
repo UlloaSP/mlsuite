@@ -7,7 +7,7 @@ import { useNavigationItems } from "@/app/components/use-navigation-items";
 import { protectedPages } from "@/app/router/protected-routes";
 import { AdminPublicBookmarksPage } from "@/features/admin/pages/admin-public-bookmarks-page";
 import type { ModeratedBookmarkDto } from "@/shared/api/openapi.gen";
-import { changeValue, click, mount } from "./support/dom";
+import { changeValue, click, mount, searchDelay } from "./support/dom";
 
 const session = vi.hoisted(() => ({ role: "SUPERADMIN" }));
 vi.mock("@/capabilities/workspace-context/session", () => ({
@@ -182,12 +182,14 @@ describe("public bookmark moderation page", () => {
     )!;
 
     await changeValue(search, "globex");
+    await searchDelay();
     await settle();
     expect(requests().at(-1)?.searchParams.get("search")).toBe("globex");
     expect(titles(host)).toEqual(["live", "legacy"]);
     expect(host.textContent).toContain("2 results");
 
     await changeValue(search, "nothing like this");
+    await searchDelay();
     await settle();
     expect(rows(host)).toHaveLength(0);
     expect(host.textContent).toContain("No matching public bookmarks");
@@ -299,7 +301,7 @@ describe("moderation access", () => {
     session.role = "USER";
     const host = await openRoute();
 
-    expect(host.textContent).toContain("HTTP 404");
+    expect(host.textContent).toContain("Route not found");
     expect(host.textContent).not.toContain("Public bookmarks");
     expect(fetchMock).not.toHaveBeenCalled();
   });

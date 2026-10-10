@@ -66,9 +66,6 @@ export function OrganizationOverview({
     <AppPage>
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
-          eyebrow="Workspace overview"
-          // Another organization's overview (it comes with a trail) is platform administration.
-          breadcrumbScope={breadcrumbs ? "platform" : "organization"}
           breadcrumbs={breadcrumbs}
           title={organization.name}
           description={

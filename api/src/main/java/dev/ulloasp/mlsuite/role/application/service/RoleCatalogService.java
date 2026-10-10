@@ -27,7 +27,7 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationS
 import lombok.RequiredArgsConstructor;
 
 @Service
-@Transactional(readOnly = true)
+@Transactional
 @RequiredArgsConstructor
 public class RoleCatalogService implements RoleCatalogUseCase {
 
@@ -40,14 +40,19 @@ public class RoleCatalogService implements RoleCatalogUseCase {
 
     @Override
     public RolesResponseDto list(Long userId, Long organizationId) {
-        authorizationService.require(userId, organizationId, PermissionKey.VIEW_MEMBERS, PermissionKey.INVITE_MEMBERS, PermissionKey.MANAGE_MEMBER_ROLES);
-        roleSeedService.ensureOrganizationRoles(organizationRepository.findById(organizationId)
-                .orElseThrow(() -> new OrganizationNotFoundException(organizationId)));
+        requireReadable(userId, organizationId);
         var roles = roleRepository.findByOrganizationIdAndScopeOrderByLockedDescNameAsc(organizationId, RoleScope.ORGANIZATION)
                 .stream()
                 .map(role -> toDto(userId, organizationId, role))
                 .toList();
         return new RolesResponseDto(roles, templates(), catalog(), stats(roles));
+    }
+
+    /** Who may read an organization's roles; reading them first seeds the roles every organization has. */
+    void requireReadable(Long userId, Long organizationId) {
+        authorizationService.require(userId, organizationId, PermissionKey.VIEW_MEMBERS, PermissionKey.INVITE_MEMBERS, PermissionKey.MANAGE_MEMBER_ROLES);
+        roleSeedService.ensureOrganizationRoles(organizationRepository.findById(organizationId)
+                .orElseThrow(() -> new OrganizationNotFoundException(organizationId)));
     }
 
     public List<PermissionGroupDto> catalog() {
@@ -69,7 +74,11 @@ public class RoleCatalogService implements RoleCatalogUseCase {
 
     public RoleDefinitionDto toDto(Long userId, Long orgId, RoleDefinition role) {
         boolean canManage = authorizationService.workspacePermissions(userId, orgId).canManageMemberRoles();
-        long users = membershipRepository.countActiveByRoleDefinitionId(role.getId());
+        return toDto(role, canManage, membershipRepository.countActiveByRoleDefinitionId(role.getId()));
+    }
+
+    /** The same role for a caller whose permission and whose member count the caller already read. */
+    RoleDefinitionDto toDto(RoleDefinition role, boolean canManage, long users) {
         return new RoleDefinitionDto(
                 role.getId(),
                 role.getName(),
@@ -83,7 +92,7 @@ public class RoleCatalogService implements RoleCatalogUseCase {
                 new RoleActionsDto(true, canManage && !role.isLocked(), canManage, canManage, canManage));
     }
 
-    private List<RoleTemplateDto> templates() {
+    List<RoleTemplateDto> templates() {
         return templateRepository.findByScopeOrderByNameAsc(RoleScope.ORGANIZATION).stream()
                 .map(this::template)
                 .toList();

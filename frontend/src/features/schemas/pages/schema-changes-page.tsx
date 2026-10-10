@@ -1,10 +1,14 @@
+import {
+  useChangeCatalog,
+  useSnapshotCatalog,
+} from "@/features/schemas/api/schema-catalog-queries";
 /*
 SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { GitCompareArrows, Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useParams } from "react-router";
 import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -12,24 +16,16 @@ import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import type { SchemaDraftDto } from "@/features/schemas/api/draft-types";
 import { useUpdateSchemaDraftMutation } from "@/features/schemas/api/schema-draft-mutations";
-import {
-  useSchema,
-  useSchemaDrafts,
-  useSchemaVersions,
-} from "@/features/schemas/api/schema-queries";
-import { latestSchemaVersion } from "@/features/schemas/lib/version-selection";
+import { useSchema } from "@/features/schemas/api/schema-queries";
 import { CreateSchemaChangeDialog } from "@/features/schemas/components/CreateSchemaChangeDialog";
 import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
 import { SchemaChangeCatalogItem } from "@/features/schemas/components/SchemaChangeCatalogItem";
 import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
-const EMPTY_DRAFTS: never[] = [];
-const EMPTY_VERSIONS: never[] = [];
 type ChangeFilter = "open" | "draft" | "conflict" | "all";
 type ChangeSort = "updated" | "name" | "base";
 
-const PAGE_SIZE = 10;
 const FILTERS: Array<{ value: ChangeFilter; label: string }> = [
   { value: "open", label: "Open" },
   { value: "draft", label: "Draft" },
@@ -45,9 +41,6 @@ const SORTS: Array<{ value: ChangeSort; label: string }> = [
 export function SchemaChangesPage() {
   const { schemaId } = useParams<{ schemaId: string }>();
   const { data: schema } = useSchema(schemaId);
-  const draftsQuery = useSchemaDrafts(schemaId);
-  const versionsQuery = useSchemaVersions(schemaId);
-  const versions = versionsQuery.data ?? EMPTY_VERSIONS;
   const [changeBase, setChangeBase] = useState<SchemaVersionDto | null>(null);
   const [renameTarget, setRenameTarget] = useState<SchemaDraftDto | null>(null);
   const renameMutation = useUpdateSchemaDraftMutation(renameTarget?.id ?? "");
@@ -55,16 +48,19 @@ export function SchemaChangesPage() {
     filters: FILTERS.map(({ value }) => value),
     initialFilter: "open",
     initialSort: "updated",
-    resetKey: schemaId,
     sorts: SORTS.map(({ value }) => value),
   });
-  const drafts = draftsQuery.data ?? EMPTY_DRAFTS;
-  const latestVersion = useMemo(() => latestSchemaVersion(versions), [versions]);
-  const filtered = useMemo(
-    () => filterChanges(drafts, controls.search, controls.filter, controls.sort),
-    [controls.filter, controls.search, controls.sort, drafts],
-  );
-  const pageItems = filtered.slice(controls.page * PAGE_SIZE, (controls.page + 1) * PAGE_SIZE);
+  const draftsQuery = useChangeCatalog(schemaId, {
+    search: controls.search,
+    filter: controls.filter,
+    sort: controls.sort,
+  });
+  const latestQuery = useSnapshotCatalog(schemaId, {
+    search: "",
+    filter: "latest",
+    sort: "version",
+  });
+  const latestVersion = latestQuery.data?.items[0];
 
   const renameChange = async (name: string) => {
     if (!renameTarget) return;
@@ -107,22 +103,10 @@ export function SchemaChangesPage() {
           ) : null,
         }}
         loadingLabel="Loading changes…"
-        pageSize={PAGE_SIZE}
         filterLabel="Filter changes"
         filters={FILTERS}
         placeholder="Search changes by name, id, or status"
-        query={{
-          data: {
-            hasNext: (controls.page + 1) * PAGE_SIZE < filtered.length,
-            items: pageItems,
-            totalItems: filtered.length,
-          },
-          error: draftsQuery.error,
-          isFetching: draftsQuery.isFetching,
-          // Items show their base snapshot name, so they wait for versions too.
-          isLoading: draftsQuery.isLoading || versionsQuery.isLoading,
-          refetch: draftsQuery.refetch,
-        }}
+        query={draftsQuery}
         sortLabel="Sort changes"
         sortOptions={SORTS}
         emptyIcon={<GitCompareArrows size={22} />}
@@ -130,13 +114,11 @@ export function SchemaChangesPage() {
         filteredEmptyTitle="No matching changes"
         emptyDescription="Create a change from the latest snapshot."
         filteredEmptyDescription="Try another search term or status."
-        renderItem={(draft) =>
+        renderItem={({ draft, baseSnapshotName }) =>
           schemaId ? (
             <SchemaChangeCatalogItem
               key={draft.id}
-              baseSnapshotName={
-                versions.find((version) => version.id === draft.baseVersionId)?.name ?? undefined
-              }
+              baseSnapshotName={baseSnapshotName ?? undefined}
               draft={draft}
               onRename={setRenameTarget}
               schemaId={schemaId}
@@ -171,30 +153,4 @@ export function SchemaChangesPage() {
       />
     </>
   );
-}
-
-function filterChanges(
-  drafts: SchemaDraftDto[],
-  search: string,
-  filter: ChangeFilter,
-  sort: ChangeSort,
-) {
-  const query = search.toLowerCase();
-  return drafts
-    .filter((draft) => {
-      const open = draft.status !== "PUBLISHED";
-      const statusMatch =
-        filter === "all" ||
-        (filter === "open" && open) ||
-        (filter === "draft" && draft.status === "DRAFT") ||
-        (filter === "conflict" && draft.status === "CONFLICT");
-      return (
-        statusMatch && `${draft.name} ${draft.id} ${draft.status}`.toLowerCase().includes(query)
-      );
-    })
-    .sort((left, right) => {
-      if (sort === "name") return left.name.localeCompare(right.name);
-      if (sort === "base") return right.baseVersion - left.baseVersion;
-      return right.updatedAt.localeCompare(left.updatedAt);
-    });
 }

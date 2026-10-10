@@ -87,7 +87,7 @@ describe("organization inference catalog", () => {
     ]);
   });
 
-  test("keeps catalog actions on the page and previews rows beside the table", () => {
+  test("keeps catalog actions on the page and opens a row as its own page", () => {
     const page = readFileSync(
       new URL("../src/features/inferences/pages/inferences-page.tsx", import.meta.url),
       "utf8",
@@ -105,12 +105,12 @@ describe("organization inference catalog", () => {
     );
 
     expect(page).toContain("<ReviewCreationButton");
-    expect(page).toContain("renderExportAction?.(visibleItems)");
+    expect(page).toContain("renderExportAction?.({ count:");
     expect(page).toContain("<InferenceActionsMenu");
     expect(page).toContain("?tab=reviews&section=reviews");
-    expect(page).toContain("<InferencePreviewSheet");
+    expect(page).toContain("navigate(`/inferences/${item.id}`)");
+    expect(page).not.toContain("PreviewSheet");
     expect(routePage).toContain("<OrganizationInferenceExportButton");
-    expect(routePage).toContain("<PredictionRunDetails");
     expect(exportAction).toContain("predictionRunQueryOptions");
     expect(exportAction).toContain("<SchemaRunExportDialog");
   });
@@ -198,7 +198,7 @@ describe("organization inference catalog", () => {
     expect(dialog.match(/<ReviewSelectionCatalog/g)).toHaveLength(2);
     expect(dialog).toContain('title="Inferences"');
     expect(dialog).toContain('title="Reviewers"');
-    expect(catalog).toContain("<CatalogPaginationFooter");
+    expect(catalog).toContain("<CatalogListPanel");
     expect(catalog).toContain("<AppTextField");
     expect(catalog).toContain("selectedIds");
     expect(dialog).toContain("const schemaId = Number(group.schemaId)");

@@ -93,3 +93,15 @@ test("switching review runs keeps the previous shell as a skeleton without its f
   expect(container.querySelector("[data-skeleton]")).toBeNull();
   expect(container.querySelector('form[aria-label="review form"]')).not.toBeNull();
 });
+
+vi.mock("@/features/schemas/api/schema-catalog-queries", () => {
+  const count = (query: ListQuery) => ({
+    ...query,
+    data: query.data ? { totalItems: query.data.length, items: query.data } : undefined,
+  });
+  return {
+    useChangeCatalog: () => count(state.drafts),
+    useBookmarkCatalog: () => count(state.bookmarks),
+    useSnapshotCatalog: () => count(state.versions),
+  };
+});

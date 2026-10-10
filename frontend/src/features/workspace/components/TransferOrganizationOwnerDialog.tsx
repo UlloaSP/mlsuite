@@ -2,27 +2,28 @@ import { useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
-import { AppSelect } from "@/shared/ui/AppSelect";
+import { AppCombobox } from "@/shared/ui/AppCombobox";
+import { catalogRemoteProps } from "@/shared/ui/catalog/catalogRemoteProps";
+import { useOwnerCandidateCatalog } from "@/features/workspace/api/workspace-catalog-queries";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
-import type { OrganizationMembershipRowDto } from "@/shared/api/openapi.gen";
 
 export function TransferOrganizationOwnerDialog({
   disabled,
   error,
-  loading,
-  members,
+  organizationId,
   onCancel,
   onConfirm,
 }: {
   disabled: boolean;
   error: Error | null;
-  loading: boolean;
-  members: OrganizationMembershipRowDto[];
+  organizationId: number;
   onCancel: () => void;
   onConfirm: (membershipId: number) => Promise<void>;
 }) {
   const [selected, setSelected] = useState("");
-  const showLoading = useStableLoading(loading);
+  const [search, setSearch] = useState("");
+  const query = useOwnerCandidateCatalog(organizationId, search);
+  const showLoading = useStableLoading(query.isLoading);
   return (
     <AppDialog
       open
@@ -56,15 +57,18 @@ export function TransferOrganizationOwnerDialog({
               {error.message}
             </p>
           ) : null}
-          <AppSelect
+          <AppCombobox
+            {...catalogRemoteProps(query, setSearch)}
             aria-label="New organization owner"
-            placeholder="Select member"
-            value={selected}
-            onValueChange={setSelected}
-            className="w-full"
-            options={members.map((member) => ({
-              value: String(member.id),
-              label: `${member.fullName} - ${member.email}`,
+            emptyLabel="No other active members"
+            placeholder="Search member"
+            value={selected ? Number(selected) : null}
+            onChange={(item) => setSelected(item ? String(item.id) : "")}
+            items={(query.data?.items ?? []).map((member) => ({
+              id: member.id,
+              label: member.fullName,
+              description: member.email,
+              avatarUrl: member.avatarUrl,
             }))}
           />
         </>

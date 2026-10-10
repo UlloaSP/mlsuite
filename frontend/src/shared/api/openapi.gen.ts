@@ -132,6 +132,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/users/owner-candidates/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ownerCandidateUserCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/users/{id}": {
         parameters: {
             query?: never;
@@ -276,6 +292,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/catalog-selection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["page_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/catalog-selection/ids": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ids"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/invitations/pending": {
         parameters: {
             query?: never;
@@ -284,6 +332,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["listPendingForUser"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/invitations/pending/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pendingInvitationCatalog"];
         put?: never;
         post?: never;
         delete?: never;
@@ -500,6 +564,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/organizations/{organizationId}/invitation-candidates/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["invitationCandidateCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/organizations/{organizationId}/invitations": {
         parameters: {
             query?: never;
@@ -526,6 +606,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["bulkRevokeInvitations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizations/{organizationId}/invitations/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["invitationCatalog"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -596,6 +692,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/organizations/{organizationId}/members/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["memberCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizations/{organizationId}/members/roles/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["memberFilterRoleCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/organizations/{organizationId}/members/{membershipId}": {
         parameters: {
             query?: never;
@@ -610,6 +738,70 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["updateMemberRole"];
+        trace?: never;
+    };
+    "/api/organizations/{organizationId}/members/{membershipId}/roles/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["assignableRoleCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizations/{organizationId}/owner-candidates/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ownerCandidateCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizations/{organizationId}/permissions/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["permissionCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizations/{organizationId}/role-templates/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["roleTemplateCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/organizations/{organizationId}/roles": {
@@ -628,6 +820,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/organizations/{organizationId}/roles/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["roleCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/organizations/{organizationId}/roles/from-template": {
         parameters: {
             query?: never;
@@ -638,6 +846,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["fromTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizations/{organizationId}/roles/metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["roleCatalogMetadata"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -788,6 +1012,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/prediction-runs/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["page"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/prediction-runs/catalog/facets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["inferenceFacetCatalog"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/prediction-runs/catalog/metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["metadata"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/prediction-runs/catalog/selection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["selection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/prediction-runs/last-id": {
         parameters: {
             query?: never;
@@ -868,6 +1156,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/bookmarks/{id}/examples/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["publicExampleCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/bookmarks/{id}/runs/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["publicRunCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/public/bookmarks/{publicId}": {
         parameters: {
             query?: never;
@@ -892,6 +1212,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["examples"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/bookmarks/{publicId}/plugins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["plugins"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1044,6 +1380,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/schema-bookmarks/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["predictBookmarkCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/schema-bookmarks/public/{publicId}": {
         parameters: {
             query?: never;
@@ -1150,6 +1502,54 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["unpublish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schema-bookmarks/{id}/examples/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["bookmarkExampleCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schema-bookmarks/{id}/examples/{runId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["bookmarkExampleStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schema-bookmarks/{id}/statistics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["bookmarkStatistics"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1268,6 +1668,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/schema-reviews/inbox/runs/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["inboxRunCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schema-reviews/inbox/submit-pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["submitInbox"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schema-reviews/inbox/{reviewId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["inboxReview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schema-reviews/inbox/{reviewId}/runs/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["inboxReviewRunCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schema-reviews/inbox/{reviewId}/runs/{runId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["inboxRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/schema-reviews/inferences/{predictionRunId}/assignments": {
         parameters: {
             query?: never;
@@ -1276,6 +1756,54 @@ export interface paths {
             cookie?: never;
         };
         get: operations["assignmentStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schema-reviews/inferences/{runId}/assignments/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["assignmentCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schema-reviews/inferences/{runId}/assignments/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["assignmentCounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schema-reviews/inferences/{runId}/assignments/{reviewRunId}/{reviewerId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["assignment"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1492,6 +2020,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/schemas/{schemaId}/bookmarks/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["schemaBookmarkCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/schemas/{schemaId}/drafts": {
         parameters: {
             query?: never;
@@ -1502,6 +2046,22 @@ export interface paths {
         get: operations["list_2"];
         put?: never;
         post: operations["create_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schemas/{schemaId}/drafts/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["changeCatalog"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1534,6 +2094,22 @@ export interface paths {
         get: operations["list_1"];
         put?: never;
         post: operations["create_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schemas/{schemaId}/versions/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["snapshotCatalog"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1586,6 +2162,38 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["selectOrganization"];
+        trace?: never;
+    };
+    "/api/workspace/context/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["currentContext"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["selectCurrentOrganization"];
+        trace?: never;
+    };
+    "/api/workspace/context/organizations/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["organizationCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
 }
@@ -1648,8 +2256,44 @@ export interface components {
             password: string;
             username?: string | null;
         };
+        BookmarkExampleStateDto: {
+            example: components["schemas"]["SchemaBookmarkExampleDto"] | null;
+        };
         BulkInvitationRequest: {
             invitationIds: number[];
+        };
+        CatalogSelectionItemDto: {
+            detail: string;
+            id: string;
+            title: string;
+        };
+        CatalogSelectionPageDto: {
+            hasNext: boolean;
+            items: components["schemas"]["CatalogSelectionItemDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalAvailable: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        CatalogSelectionRequest: {
+            ids: number[];
+            kind: string;
+            locale: string;
+            /** Format: int32 */
+            page: number;
+            search: string;
+            /** Format: int32 */
+            size: number;
+            timeZone: string;
+        };
+        Condition: {
+            columnId: string;
+            operator: string;
+            value: string;
         };
         ConditionRequest: {
             operator: string;
@@ -1790,6 +2434,60 @@ export interface components {
             };
             traces?: components["schemas"]["TraceRequest"][] | null;
         };
+        InferenceCatalogColumnDto: {
+            choices: string[];
+            /** @enum {string} */
+            group: "inputs" | "outputs" | "feedback";
+            id: string;
+            /** @enum {string} */
+            kind: "number" | "text";
+            label: string;
+            /** Format: int64 */
+            schemaId: number;
+            schemaName: string;
+        };
+        InferenceCatalogMetadataDto: {
+            bookmarks: components["schemas"]["Option"][];
+            columns: components["schemas"]["InferenceCatalogColumnDto"][];
+            schemas: components["schemas"]["Option"][];
+            /** Format: int64 */
+            totalItems: number;
+        };
+        InferenceCatalogRequest: {
+            bookmarkId: string;
+            conditions: components["schemas"]["Condition"][];
+            feedback: string;
+            locale: string;
+            origin: string;
+            /** Format: int32 */
+            page: number;
+            query: string;
+            schemaId: string;
+            /** Format: int32 */
+            size: number;
+            sort: string;
+            status: string;
+        };
+        InferenceCatalogRowDto: {
+            displayValues: {
+                [key: string]: string;
+            };
+            /** @enum {string} */
+            feedbackStatus: "COMPLETED" | "PENDING" | "NOT_REQUIRED" | "ERROR";
+            item: components["schemas"]["PredictionRunCatalogItemDto"];
+            values: {
+                [key: string]: unknown;
+            };
+        };
+        InferenceFacetRequest: {
+            kind: string;
+            /** Format: int32 */
+            page: number;
+            scope: components["schemas"]["InferenceCatalogRequest"];
+            search: string;
+            /** Format: int32 */
+            size: number;
+        };
         InferenceTableDto: {
             feedback: components["schemas"]["PredictionResultFeedbackDto"][];
             results: components["schemas"]["PredictionResultDto"][];
@@ -1808,6 +2506,18 @@ export interface components {
             fullName: string;
             /** Format: int64 */
             id: number;
+        };
+        InvitationCatalogDto: {
+            hasNext: boolean;
+            items: components["schemas"]["InvitationDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalInvitations: number;
+            /** Format: int64 */
+            totalItems: number;
         };
         InvitationDto: {
             /** Format: date-time */
@@ -1836,6 +2546,18 @@ export interface components {
             /** Format: email */
             email: string;
             password: string;
+        };
+        MemberCatalogDto: {
+            hasNext: boolean;
+            items: components["schemas"]["OrganizationMembershipRowDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+            /** Format: int64 */
+            totalMembers: number;
         };
         MembershipActionsDto: {
             assignableRoles: components["schemas"]["RoleSummaryDto"][];
@@ -1886,6 +2608,10 @@ export interface components {
         MoveSchemaBookmarkRequest: {
             /** Format: int64 */
             versionId: number;
+        };
+        Option: {
+            label: string;
+            value: string;
         };
         OrganizationAdminDashboardDto: {
             organization: components["schemas"]["OrganizationDto"];
@@ -1983,6 +2709,46 @@ export interface components {
             /** Format: int64 */
             userId: number;
         };
+        PageDtoAdminUserDto: {
+            hasNext: boolean;
+            items: components["schemas"]["AdminUserDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoInferenceCatalogRowDto: {
+            hasNext: boolean;
+            items: components["schemas"]["InferenceCatalogRowDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoInvitationCandidateDto: {
+            hasNext: boolean;
+            items: components["schemas"]["InvitationCandidateDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoInvitationDto: {
+            hasNext: boolean;
+            items: components["schemas"]["InvitationDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
         PageDtoModelDto: {
             hasNext: boolean;
             items: components["schemas"]["ModelDto"][];
@@ -2003,9 +2769,49 @@ export interface components {
             /** Format: int64 */
             totalItems: number;
         };
+        PageDtoOption: {
+            hasNext: boolean;
+            items: components["schemas"]["Option"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
         PageDtoOrganizationCatalogItemDto: {
             hasNext: boolean;
             items: components["schemas"]["OrganizationCatalogItemDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoOrganizationDto: {
+            hasNext: boolean;
+            items: components["schemas"]["OrganizationDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoOrganizationMembershipRowDto: {
+            hasNext: boolean;
+            items: components["schemas"]["OrganizationMembershipRowDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoPermissionGroupDto: {
+            hasNext: boolean;
+            items: components["schemas"]["PermissionGroupDto"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -2023,6 +2829,26 @@ export interface components {
             /** Format: int64 */
             totalItems: number;
         };
+        PageDtoPredictBookmarkDto: {
+            hasNext: boolean;
+            items: components["schemas"]["PredictBookmarkDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoPublicBookmarkExampleDto: {
+            hasNext: boolean;
+            items: components["schemas"]["PublicBookmarkExampleDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
         PageDtoPublicBookmarkSummaryDto: {
             hasNext: boolean;
             items: components["schemas"]["PublicBookmarkSummaryDto"][];
@@ -2033,9 +2859,109 @@ export interface components {
             /** Format: int64 */
             totalItems: number;
         };
+        PageDtoPublicRunDto: {
+            hasNext: boolean;
+            items: components["schemas"]["PublicRunDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoRoleDefinitionDto: {
+            hasNext: boolean;
+            items: components["schemas"]["RoleDefinitionDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoRoleSummaryDto: {
+            hasNext: boolean;
+            items: components["schemas"]["RoleSummaryDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoRoleTemplateDto: {
+            hasNext: boolean;
+            items: components["schemas"]["RoleTemplateDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoSchemaBookmarkDto: {
+            hasNext: boolean;
+            items: components["schemas"]["SchemaBookmarkDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoSchemaBookmarkExampleDto: {
+            hasNext: boolean;
+            items: components["schemas"]["SchemaBookmarkExampleDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
         PageDtoSchemaCatalogItemDto: {
             hasNext: boolean;
             items: components["schemas"]["SchemaCatalogItemDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoSchemaChangeCatalogItemDto: {
+            hasNext: boolean;
+            items: components["schemas"]["SchemaChangeCatalogItemDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoSchemaReviewAssignmentStatusDto: {
+            hasNext: boolean;
+            items: components["schemas"]["SchemaReviewAssignmentStatusDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoSchemaReviewRunListItemDto: {
+            hasNext: boolean;
+            items: components["schemas"]["SchemaReviewRunListItemDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoSchemaVersionDto: {
+            hasNext: boolean;
+            items: components["schemas"]["SchemaVersionDto"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -2311,12 +3237,62 @@ export interface components {
             /** Format: int64 */
             expectedDraftRevision: number;
         };
+        ReviewAssignmentCountsDto: {
+            /** Format: int64 */
+            completed: number;
+            /** Format: int64 */
+            total: number;
+        };
+        ReviewCatalogSummaryDto: {
+            /** Format: int64 */
+            inProgressRuns: number;
+            publicId: string;
+            schema: components["schemas"]["SchemaDto"];
+            schemaVersion: components["schemas"]["SchemaVersionDto"];
+            /** Format: int64 */
+            submittedRuns: number;
+            /** Format: int64 */
+            totalRuns: number;
+        };
+        ReviewInboxCatalogDto: {
+            hasNext: boolean;
+            items: components["schemas"]["ReviewInboxItemDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int64 */
+            pendingCount: number;
+            /** Format: int64 */
+            revisionCount: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        ReviewInboxItemDto: {
+            publicId: string;
+            reviewId: string;
+            /** @enum {string} */
+            reviewState: "PENDING" | "IN_PROGRESS" | "COMPLETED";
+            run: components["schemas"]["PredictionRunDto"];
+            schemaName: string;
+            /** Format: date-time */
+            stateEnteredAt: string;
+            /** Format: date-time */
+            submittedAt: string | null;
+        };
         RoleActionsDto: {
             canAssign: boolean;
             canDelete: boolean;
             canDuplicate: boolean;
             canEdit: boolean;
             canView: boolean;
+        };
+        RoleCatalogMetadataDto: {
+            permissionCatalog: components["schemas"]["PermissionGroupDto"][];
+            /** Format: int64 */
+            roles: number;
+            /** Format: int64 */
+            templates: number;
         };
         RoleDefinitionDto: {
             actions: components["schemas"]["RoleActionsDto"];
@@ -2425,6 +3401,10 @@ export interface components {
             updatedByAvatarUrl: string | null;
             updatedByEmail: string | null;
             updatedByName: string | null;
+        };
+        SchemaChangeCatalogItemDto: {
+            baseSnapshotName: string | null;
+            draft: components["schemas"]["SchemaDraftDto"];
         };
         SchemaDraftChangeDto: {
             basePresent: boolean;
@@ -2687,6 +3667,14 @@ export interface components {
             permissions: components["schemas"]["WorkspacePermissionsDto"];
             user: components["schemas"]["WorkspaceUserDto"];
         };
+        WorkspaceCurrentContextDto: {
+            currentMembership: components["schemas"]["OrganizationMembershipDto"];
+            currentOrganization: components["schemas"]["OrganizationDto"];
+            /** Format: int64 */
+            membershipCount: number;
+            permissions: components["schemas"]["WorkspacePermissionsDto"];
+            user: components["schemas"]["WorkspaceUserDto"];
+        };
         WorkspacePermissionsDto: {
             canCreateModels: boolean;
             canDeleteModels: boolean;
@@ -2732,7 +3720,12 @@ export type AdminUserDto = components['schemas']['AdminUserDto'];
 export type AdminUserPageDto = components['schemas']['AdminUserPageDto'];
 export type AuditEventDto = components['schemas']['AuditEventDto'];
 export type AuthRequest = components['schemas']['AuthRequest'];
+export type BookmarkExampleStateDto = components['schemas']['BookmarkExampleStateDto'];
 export type BulkInvitationRequest = components['schemas']['BulkInvitationRequest'];
+export type CatalogSelectionItemDto = components['schemas']['CatalogSelectionItemDto'];
+export type CatalogSelectionPageDto = components['schemas']['CatalogSelectionPageDto'];
+export type CatalogSelectionRequest = components['schemas']['CatalogSelectionRequest'];
+export type Condition = components['schemas']['Condition'];
 export type ConditionRequest = components['schemas']['ConditionRequest'];
 export type CreateInvitationRequest = components['schemas']['CreateInvitationRequest'];
 export type CreateModelDto = components['schemas']['CreateModelDto'];
@@ -2754,29 +3747,57 @@ export type Dependency = components['schemas']['Dependency'];
 export type DuplicateRoleRequest = components['schemas']['DuplicateRoleRequest'];
 export type ErrorDto = components['schemas']['ErrorDto'];
 export type ExplainRequest = components['schemas']['ExplainRequest'];
+export type InferenceCatalogColumnDto = components['schemas']['InferenceCatalogColumnDto'];
+export type InferenceCatalogMetadataDto = components['schemas']['InferenceCatalogMetadataDto'];
+export type InferenceCatalogRequest = components['schemas']['InferenceCatalogRequest'];
+export type InferenceCatalogRowDto = components['schemas']['InferenceCatalogRowDto'];
+export type InferenceFacetRequest = components['schemas']['InferenceFacetRequest'];
 export type InferenceTableDto = components['schemas']['InferenceTableDto'];
 export type InferenceTableRunDto = components['schemas']['InferenceTableRunDto'];
 export type InvitationCandidateDto = components['schemas']['InvitationCandidateDto'];
+export type InvitationCatalogDto = components['schemas']['InvitationCatalogDto'];
 export type InvitationDto = components['schemas']['InvitationDto'];
 export type Item = components['schemas']['Item'];
 export type JsonNode = components['schemas']['JsonNode'];
 export type LoginRequest = components['schemas']['LoginRequest'];
+export type MemberCatalogDto = components['schemas']['MemberCatalogDto'];
 export type MembershipActionsDto = components['schemas']['MembershipActionsDto'];
 export type ModelDto = components['schemas']['ModelDto'];
 export type ModeratedBookmarkDto = components['schemas']['ModeratedBookmarkDto'];
 export type MoveSchemaBookmarkRequest = components['schemas']['MoveSchemaBookmarkRequest'];
+export type Option = components['schemas']['Option'];
 export type OrganizationAdminDashboardDto = components['schemas']['OrganizationAdminDashboardDto'];
 export type OrganizationAdminStatsDto = components['schemas']['OrganizationAdminStatsDto'];
 export type OrganizationCatalogItemDto = components['schemas']['OrganizationCatalogItemDto'];
 export type OrganizationDto = components['schemas']['OrganizationDto'];
 export type OrganizationMembershipDto = components['schemas']['OrganizationMembershipDto'];
 export type OrganizationMembershipRowDto = components['schemas']['OrganizationMembershipRowDto'];
+export type PageDtoAdminUserDto = components['schemas']['PageDtoAdminUserDto'];
+export type PageDtoInferenceCatalogRowDto = components['schemas']['PageDtoInferenceCatalogRowDto'];
+export type PageDtoInvitationCandidateDto = components['schemas']['PageDtoInvitationCandidateDto'];
+export type PageDtoInvitationDto = components['schemas']['PageDtoInvitationDto'];
 export type PageDtoModelDto = components['schemas']['PageDtoModelDto'];
 export type PageDtoModeratedBookmarkDto = components['schemas']['PageDtoModeratedBookmarkDto'];
+export type PageDtoOption = components['schemas']['PageDtoOption'];
 export type PageDtoOrganizationCatalogItemDto = components['schemas']['PageDtoOrganizationCatalogItemDto'];
+export type PageDtoOrganizationDto = components['schemas']['PageDtoOrganizationDto'];
+export type PageDtoOrganizationMembershipRowDto = components['schemas']['PageDtoOrganizationMembershipRowDto'];
+export type PageDtoPermissionGroupDto = components['schemas']['PageDtoPermissionGroupDto'];
 export type PageDtoPluginDto = components['schemas']['PageDtoPluginDto'];
+export type PageDtoPredictBookmarkDto = components['schemas']['PageDtoPredictBookmarkDto'];
+export type PageDtoPublicBookmarkExampleDto = components['schemas']['PageDtoPublicBookmarkExampleDto'];
 export type PageDtoPublicBookmarkSummaryDto = components['schemas']['PageDtoPublicBookmarkSummaryDto'];
+export type PageDtoPublicRunDto = components['schemas']['PageDtoPublicRunDto'];
+export type PageDtoRoleDefinitionDto = components['schemas']['PageDtoRoleDefinitionDto'];
+export type PageDtoRoleSummaryDto = components['schemas']['PageDtoRoleSummaryDto'];
+export type PageDtoRoleTemplateDto = components['schemas']['PageDtoRoleTemplateDto'];
+export type PageDtoSchemaBookmarkDto = components['schemas']['PageDtoSchemaBookmarkDto'];
+export type PageDtoSchemaBookmarkExampleDto = components['schemas']['PageDtoSchemaBookmarkExampleDto'];
 export type PageDtoSchemaCatalogItemDto = components['schemas']['PageDtoSchemaCatalogItemDto'];
+export type PageDtoSchemaChangeCatalogItemDto = components['schemas']['PageDtoSchemaChangeCatalogItemDto'];
+export type PageDtoSchemaReviewAssignmentStatusDto = components['schemas']['PageDtoSchemaReviewAssignmentStatusDto'];
+export type PageDtoSchemaReviewRunListItemDto = components['schemas']['PageDtoSchemaReviewRunListItemDto'];
+export type PageDtoSchemaVersionDto = components['schemas']['PageDtoSchemaVersionDto'];
 export type PermissionDto = components['schemas']['PermissionDto'];
 export type PermissionGroupDto = components['schemas']['PermissionGroupDto'];
 export type PluginDto = components['schemas']['PluginDto'];
@@ -2800,7 +3821,12 @@ export type PublicRunFeedbackRequest = components['schemas']['PublicRunFeedbackR
 export type PublicRunLimitDto = components['schemas']['PublicRunLimitDto'];
 export type PublicRunQuotaDto = components['schemas']['PublicRunQuotaDto'];
 export type PublishSchemaDraftRequest = components['schemas']['PublishSchemaDraftRequest'];
+export type ReviewAssignmentCountsDto = components['schemas']['ReviewAssignmentCountsDto'];
+export type ReviewCatalogSummaryDto = components['schemas']['ReviewCatalogSummaryDto'];
+export type ReviewInboxCatalogDto = components['schemas']['ReviewInboxCatalogDto'];
+export type ReviewInboxItemDto = components['schemas']['ReviewInboxItemDto'];
 export type RoleActionsDto = components['schemas']['RoleActionsDto'];
+export type RoleCatalogMetadataDto = components['schemas']['RoleCatalogMetadataDto'];
 export type RoleDefinitionDto = components['schemas']['RoleDefinitionDto'];
 export type RoleStatsDto = components['schemas']['RoleStatsDto'];
 export type RoleSummaryDto = components['schemas']['RoleSummaryDto'];
@@ -2809,6 +3835,7 @@ export type RolesResponseDto = components['schemas']['RolesResponseDto'];
 export type SchemaBookmarkDto = components['schemas']['SchemaBookmarkDto'];
 export type SchemaBookmarkExampleDto = components['schemas']['SchemaBookmarkExampleDto'];
 export type SchemaCatalogItemDto = components['schemas']['SchemaCatalogItemDto'];
+export type SchemaChangeCatalogItemDto = components['schemas']['SchemaChangeCatalogItemDto'];
 export type SchemaDraftChangeDto = components['schemas']['SchemaDraftChangeDto'];
 export type SchemaDraftDiffDto = components['schemas']['SchemaDraftDiffDto'];
 export type SchemaDraftDto = components['schemas']['SchemaDraftDto'];
@@ -2843,6 +3870,7 @@ export type UpdateSchemaBookmarkRequest = components['schemas']['UpdateSchemaBoo
 export type UpdateSchemaDraftRequest = components['schemas']['UpdateSchemaDraftRequest'];
 export type UserDto = components['schemas']['UserDto'];
 export type WorkspaceContextDto = components['schemas']['WorkspaceContextDto'];
+export type WorkspaceCurrentContextDto = components['schemas']['WorkspaceCurrentContextDto'];
 export type WorkspacePermissionsDto = components['schemas']['WorkspacePermissionsDto'];
 export type WorkspaceUserDto = components['schemas']['WorkspaceUserDto'];
 export type $defs = Record<string, never>;
@@ -3052,6 +4080,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminUserDto"];
+                };
+            };
+        };
+    };
+    ownerCandidateUserCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoAdminUserDto"];
                 };
             };
         };
@@ -3325,6 +4379,54 @@ export interface operations {
             };
         };
     };
+    page_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogSelectionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogSelectionPageDto"];
+                };
+            };
+        };
+    };
+    ids: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogSelectionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
+    };
     listPendingForUser: {
         parameters: {
             query?: never;
@@ -3341,6 +4443,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InvitationDto"][];
+                };
+            };
+        };
+    };
+    pendingInvitationCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoInvitationDto"];
                 };
             };
         };
@@ -3785,6 +4913,34 @@ export interface operations {
             };
         };
     };
+    invitationCandidateCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                organizationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoInvitationCandidateDto"];
+                };
+            };
+        };
+    };
     listInvitations: {
         parameters: {
             query?: never;
@@ -3854,6 +5010,34 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    invitationCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                organizationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationCatalogDto"];
+                };
             };
         };
     };
@@ -3974,6 +5158,62 @@ export interface operations {
             };
         };
     };
+    memberCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                organizationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberCatalogDto"];
+                };
+            };
+        };
+    };
+    memberFilterRoleCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                organizationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoRoleSummaryDto"];
+                };
+            };
+        };
+    };
     removeMember: {
         parameters: {
             query?: never;
@@ -4018,6 +5258,119 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrganizationMembershipDto"];
+                };
+            };
+        };
+    };
+    assignableRoleCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                organizationId: number;
+                membershipId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoRoleSummaryDto"];
+                };
+            };
+        };
+    };
+    ownerCandidateCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                organizationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoOrganizationMembershipRowDto"];
+                };
+            };
+        };
+    };
+    permissionCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                organizationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoPermissionGroupDto"];
+                };
+            };
+        };
+    };
+    roleTemplateCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                organizationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoRoleTemplateDto"];
                 };
             };
         };
@@ -4070,6 +5423,34 @@ export interface operations {
             };
         };
     };
+    roleCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                organizationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoRoleDefinitionDto"];
+                };
+            };
+        };
+    };
     fromTemplate: {
         parameters: {
             query?: never;
@@ -4092,6 +5473,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RoleDefinitionDto"];
+                };
+            };
+        };
+    };
+    roleCatalogMetadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleCatalogMetadataDto"];
                 };
             };
         };
@@ -4424,6 +5827,102 @@ export interface operations {
             };
         };
     };
+    page: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InferenceCatalogRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoInferenceCatalogRowDto"];
+                };
+            };
+        };
+    };
+    inferenceFacetCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InferenceFacetRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoOption"];
+                };
+            };
+        };
+    };
+    metadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InferenceCatalogRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InferenceCatalogMetadataDto"];
+                };
+            };
+        };
+    };
+    selection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InferenceCatalogRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PredictionRunCatalogItemDto"][];
+                };
+            };
+        };
+    };
     lastId: {
         parameters: {
             query?: never;
@@ -4553,6 +6052,62 @@ export interface operations {
             };
         };
     };
+    publicExampleCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoPublicBookmarkExampleDto"];
+                };
+            };
+        };
+    };
+    publicRunCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoPublicRunDto"];
+                };
+            };
+        };
+    };
     get_4: {
         parameters: {
             query?: never;
@@ -4593,6 +6148,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicBookmarkExampleDto"][];
+                };
+            };
+        };
+    };
+    plugins: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PluginRuntimeSourceDto"][];
                 };
             };
         };
@@ -4797,6 +6374,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PredictBookmarkDto"][];
+                };
+            };
+        };
+    };
+    predictBookmarkCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoPredictBookmarkDto"];
                 };
             };
         };
@@ -5055,6 +6658,79 @@ export interface operations {
             };
         };
     };
+    bookmarkExampleCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoSchemaBookmarkExampleDto"];
+                };
+            };
+        };
+    };
+    bookmarkExampleStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                runId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkExampleStateDto"];
+                };
+            };
+        };
+    };
+    bookmarkStatistics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PredictBookmarkDto"];
+                };
+            };
+        };
+    };
     get: {
         parameters: {
             query?: never;
@@ -5239,6 +6915,123 @@ export interface operations {
             };
         };
     };
+    inboxRunCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewInboxCatalogDto"];
+                };
+            };
+        };
+    };
+    submitInbox: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    inboxReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reviewId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewCatalogSummaryDto"];
+                };
+            };
+        };
+    };
+    inboxReviewRunCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                reviewId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoSchemaReviewRunListItemDto"];
+                };
+            };
+        };
+    };
+    inboxRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reviewId: string;
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewInboxItemDto"];
+                };
+            };
+        };
+    };
     assignmentStatus: {
         parameters: {
             query?: never;
@@ -5257,6 +7050,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SchemaReviewAssignmentStatusDto"][];
+                };
+            };
+        };
+    };
+    assignmentCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                runId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoSchemaReviewAssignmentStatusDto"];
+                };
+            };
+        };
+    };
+    assignmentCounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewAssignmentCountsDto"];
+                };
+            };
+        };
+    };
+    assignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: number;
+                reviewRunId: string;
+                reviewerId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaReviewAssignmentStatusDto"];
                 };
             };
         };
@@ -5706,6 +7573,34 @@ export interface operations {
             };
         };
     };
+    schemaBookmarkCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                schemaId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoSchemaBookmarkDto"];
+                };
+            };
+        };
+    };
     list_2: {
         parameters: {
             query?: never;
@@ -5750,6 +7645,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SchemaDraftDto"];
+                };
+            };
+        };
+    };
+    changeCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                schemaId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoSchemaChangeCatalogItemDto"];
                 };
             };
         };
@@ -5823,6 +7746,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SchemaVersionDto"];
+                };
+            };
+        };
+    };
+    snapshotCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                schemaId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoSchemaVersionDto"];
                 };
             };
         };
@@ -5909,6 +7860,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkspaceContextDto"];
+                };
+            };
+        };
+    };
+    currentContext: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceCurrentContextDto"];
+                };
+            };
+        };
+    };
+    selectCurrentOrganization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelectOrganizationRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceCurrentContextDto"];
+                };
+            };
+        };
+    };
+    organizationCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoOrganizationDto"];
                 };
             };
         };

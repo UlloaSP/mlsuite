@@ -92,14 +92,19 @@ const stepTargets = (
     feedback: feedbackByKey.get(feedbackKey(result.id, type, order)),
   }));
 
+/** Several models answering one report are told apart by name. */
 const combinedDescription = (
+  version: SchemaVersion,
   members: readonly DisplayTarget[],
   describe: (payload: unknown) => string,
 ): string =>
   members.length === 1
     ? describe(members[0]?.display.payload)
     : members
-        .map(({ result, display }) => `${result.modelId}: ${describe(display.payload)}`)
+        .map(({ result, display }) => {
+          const model = version.bindings.find((binding) => binding.modelId === result.modelId);
+          return `${model?.modelName ?? `Model ${result.modelId}`}: ${describe(display.payload)}`;
+        })
         .join("\n");
 
 export const buildSchemaFeedbackSteps = (
@@ -132,7 +137,7 @@ export const buildSchemaFeedbackSteps = (
           targets: explanationTargets,
           order,
           title: `${first.display.label} review`,
-          description: combinedDescription(members, reportDescription),
+          description: combinedDescription(version, members, reportDescription),
           schema: questionnaire,
           initialValues: agreedFeedbackValues(explanationTargets, questionnaire) ?? {},
         }
@@ -153,7 +158,7 @@ export const buildSchemaFeedbackSteps = (
       targets: outputTargets,
       order,
       title: first.display.label,
-      description: combinedDescription(members, outputDescription),
+      description: combinedDescription(version, members, outputDescription),
       schema: outputSchema,
       initialValues: agreedFeedbackValues(outputTargets, outputSchema) ?? {},
     };

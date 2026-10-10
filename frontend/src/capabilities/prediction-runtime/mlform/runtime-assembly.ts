@@ -37,7 +37,8 @@ export type SchemaRunRuntime = {
   normalizedFields: readonly PredictionPayloadField[];
 };
 
-const createRegistry = (
+/** The built-in kinds plus the plugin kinds a form's schema uses. */
+export const createRunRegistries = (
   fields: readonly CatalogFieldDefinition[],
   reports: readonly CatalogReportDefinition[],
 ) => {
@@ -66,7 +67,7 @@ export const createSchemaRunRuntime = ({
     customReportDefinitions,
   });
   const normalizedFields = formSchema.fields as PredictionPayloadField[];
-  const pack = createRegistry(customFieldDefinitions, customReportDefinitions);
+  const pack = createRunRegistries(customFieldDefinitions, customReportDefinitions);
   return {
     formSchema,
     registry: pack.registry,

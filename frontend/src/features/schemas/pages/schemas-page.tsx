@@ -7,7 +7,6 @@ import { Search, Plus } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { SCHEMA_CATALOG_PAGE_SIZE } from "@/features/schemas/api/schema-keys";
 import {
   useArchiveSchemaMutation,
   useDeleteSchemaMutation,
@@ -50,7 +49,6 @@ export function SchemasPage() {
     filters: STATUS_FILTERS.map(({ value }) => value),
     initialFilter: "active",
     initialSort: "updated",
-    resetKey: organizationId,
     sorts: SORT_OPTIONS.map(({ value }) => value),
   });
   const renameMutation = useRenameSchemaMutation();
@@ -59,7 +57,6 @@ export function SchemasPage() {
   const duplicateMutation = useDuplicateSchemaMutation();
   const pageQuery = useSchemaCatalogPageQuery(
     organizationId,
-    controls.page,
     controls.search,
     controls.sort,
     controls.filter,
@@ -116,7 +113,6 @@ export function SchemasPage() {
         accessFallback={<NotFoundError />}
         controls={controls}
         header={{
-          eyebrow: "Schemas",
           title: "Schemas",
           breadcrumbs: [{ label: "Schemas" }],
           description: `Navigate schema snapshots for ${
@@ -130,7 +126,6 @@ export function SchemasPage() {
         }}
         isActionPending={isActionPending}
         loadingLabel="Loading schemas…"
-        pageSize={SCHEMA_CATALOG_PAGE_SIZE}
         filterLabel="Filter by schema status"
         filters={STATUS_FILTERS}
         placeholder="Search by name or description"

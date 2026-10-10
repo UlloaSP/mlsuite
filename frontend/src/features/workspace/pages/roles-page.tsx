@@ -1,3 +1,4 @@
+import { useRoleCatalogMetadata } from "@/features/workspace/api/workspace-catalog-queries";
 import { PermissionCatalog } from "@/features/workspace/components/PermissionCatalog";
 import { Copy, Plus } from "lucide-react";
 import { useState } from "react";
@@ -12,10 +13,7 @@ import { useUrlFilters } from "@/shared/lib/use-url-filters";
 import { useRoleMutations } from "@/features/workspace/api/role.mutations";
 import { RoleDetailsDialog } from "@/features/workspace/components/RoleDetailsDialog";
 import { RoleForm } from "@/features/workspace/components/RoleForm";
-import {
-  useOrganizationAdminDashboardQuery,
-  useOrganizationRolesQuery,
-} from "@/features/workspace/api/workspace.queries";
+import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/workspace.queries";
 import { organizationRouteErrorStatus } from "@/features/workspace/lib/organization-route-error";
 
 import { RolesCatalog, type RolesTab } from "@/features/workspace/components/RolesCatalog";
@@ -32,7 +30,7 @@ export function RolesPage() {
     permissions?.canInviteMembers ||
     permissions?.canManageMemberRoles,
   );
-  const rolesQuery = useOrganizationRolesQuery(id, canAccessRoles);
+  const rolesQuery = useRoleCatalogMetadata(id, canAccessRoles);
   const data = rolesQuery.data;
   const tabFilter = useUrlFilters({ tab: "roles", q: "" });
   const requestedTab = tabFilter.values.tab;
@@ -96,8 +94,8 @@ export function RolesPage() {
         />
         <AppTabs<RolesTab>
           items={[
-            { label: "Roles", count: data?.roles.length, value: "roles" },
-            { label: "Templates", count: data?.templates.length, value: "templates" },
+            { label: "Roles", count: data?.roles, value: "roles" },
+            { label: "Templates", count: data?.templates, value: "templates" },
             {
               label: "All permissions",
               count: data?.permissionCatalog.reduce(
@@ -111,24 +109,11 @@ export function RolesPage() {
           onChange={setTab}
         />
         {tab === "permissions" ? (
-          <PermissionCatalog
-            groups={data?.permissionCatalog ?? []}
-            loading={dashboard.isPending || rolesQuery.isPending}
-            error={rolesQuery.isError}
-            onRetry={() => {
-              void rolesQuery.refetch();
-            }}
-          />
+          <PermissionCatalog organizationId={id} />
         ) : (
           <RolesCatalog
             organizationId={id}
             tab={tab}
-            data={data}
-            loading={dashboard.isPending || rolesQuery.isPending}
-            error={rolesQuery.isError}
-            onRetry={() => {
-              void rolesQuery.refetch();
-            }}
             canManage={canManage}
             onRole={setSelected}
             onTemplate={setTemplate}

@@ -12,7 +12,7 @@ import {
   useResetAdminUserPassword,
   useUpdateAdminUser,
 } from "@/features/admin/api/admin-user.mutations";
-import { useAdminUsers } from "@/features/admin/api/admin-user.queries";
+import { useAdminUserCatalog } from "@/features/admin/api/admin-user.queries";
 import { SYSTEM_ROLE_OPTIONS, type SystemRole } from "@/features/admin/api/admin-user.types";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -49,8 +49,7 @@ export function AdminUsersPage() {
     initialSort: "current",
     sorts: SORT_OPTIONS.map(({ value }) => value),
   });
-  const pageQuery = useAdminUsers({
-    page: controls.page,
+  const pageQuery = useAdminUserCatalog({
     role: controls.filter,
     search: controls.search,
     size: PAGE_SIZE,
@@ -60,7 +59,6 @@ export function AdminUsersPage() {
   const resetPassword = useResetAdminUserPassword();
   const deleteUser = useDeleteAdminUser();
   const [resetTarget, setResetTarget] = useState<ResetTarget>(null);
-  const pageItems = pageQuery.data?.items ?? [];
   const isActionPending =
     updateUser.isPending || resetPassword.isPending || deleteUser.isPending || pageQuery.isLoading;
 
@@ -75,9 +73,6 @@ export function AdminUsersPage() {
   const remove = async (row: AdminUserDto) => {
     // Failures propagate to the delete dialog, which stays open and shows them.
     await deleteUser.mutateAsync(row.id);
-    if (pageItems.length === 1 && controls.page > 0) {
-      controls.setPage((current) => current - 1);
-    }
     toast.success("User deleted.");
   };
   const submitResetPassword = (nextPassword: string) => {
@@ -100,10 +95,8 @@ export function AdminUsersPage() {
         accessFallback={<NotFoundError />}
         controls={controls}
         header={{
-          eyebrow: "Superadmin",
           title: "Users",
           description: "Search, filter, and maintain platform users.",
-          breadcrumbScope: "platform",
           breadcrumbs: [{ label: "Users" }],
           actions: (
             <AppButton type="button" onClick={() => navigate("/admin/users/create")}>
@@ -114,7 +107,6 @@ export function AdminUsersPage() {
         }}
         isActionPending={isActionPending || pageQuery.isFetching}
         loadingLabel="Loading users…"
-        pageSize={PAGE_SIZE}
         filterLabel="Filter users by role"
         filters={FILTERS}
         placeholder="Search by name or email"

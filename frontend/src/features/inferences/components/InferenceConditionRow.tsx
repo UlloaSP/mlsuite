@@ -1,18 +1,12 @@
 import { X } from "lucide-react";
 import {
-  columnKind,
-  distinctColumnValues,
   needsValue,
   OPERATORS,
   type ConditionOperator,
   type InferenceCondition,
 } from "@/features/inferences/lib/inference-conditions";
-import { dataGroupLabel } from "@/features/inferences/lib/inference-table-columns";
-import type {
-  InferenceDataColumn,
-  InferenceTableRow,
-} from "@/features/inferences/lib/inference-table-rows";
-import { AppCombobox } from "@/shared/ui/AppCombobox";
+import type { InferenceCatalogColumnDto } from "@/shared/api/openapi.gen";
+import { InferenceFacetSelect } from "./InferenceFacetSelect";
 import { AppIconButton } from "@/shared/ui/AppIconButton";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppTextField } from "@/shared/ui/AppTextField";
@@ -23,36 +17,40 @@ const MAX_LISTED_VALUES = 50;
 
 type Props = {
   condition: InferenceCondition;
-  columns: readonly InferenceDataColumn[];
-  /** The rows in the dialog's schema and bookmark scope, for value types and choices. */
-  rows: readonly InferenceTableRow[];
+  columns: readonly InferenceCatalogColumnDto[];
+  schemaId: string;
+  bookmarkId: string;
   onChange: (condition: InferenceCondition) => void;
   onRemove: () => void;
 };
 
 /** Column, operator, and value: the operators follow the column's values (numbers or text). */
-export function InferenceConditionRow({ condition, columns, rows, onChange, onRemove }: Props) {
+export function InferenceConditionRow({
+  condition,
+  columns,
+  schemaId,
+  bookmarkId,
+  onChange,
+  onRemove,
+}: Props) {
   const index = columns.findIndex((column) => column.id === condition.columnId);
-  const kind = condition.columnId ? columnKind(rows, condition.columnId) : "text";
+  const kind = columns[index]?.kind ?? "text";
   const choices =
-    kind === "text" && condition.operator === "is"
-      ? distinctColumnValues(rows, condition.columnId)
-      : [];
+    kind === "text" && condition.operator === "is" ? (columns[index]?.choices ?? []) : [];
 
   return (
     <div className="grid items-center gap-2 sm:grid-cols-[minmax(0,1.5fr)_9rem_minmax(0,1fr)_auto]">
-      <AppCombobox
-        value={index >= 0 ? index : null}
-        placeholder="Choose a column…"
-        items={columns.map((column, position) => ({
-          id: position,
-          label: column.label,
-          description: dataGroupLabel(column, true),
-        }))}
-        onChange={(item) => {
-          const column = item ? columns[item.id] : undefined;
+      <InferenceFacetSelect
+        kind="columns"
+        schemaId={schemaId}
+        bookmarkId={bookmarkId}
+        value={condition.columnId}
+        label="Choose a column…"
+        selectedLabel={columns[index]?.label}
+        onChange={(id) => {
+          const column = columns.find((item) => item.id === id);
           if (!column) return;
-          const operator = OPERATORS[columnKind(rows, column.id)][0]!.value;
+          const operator = OPERATORS[column.kind][0]!.value;
           onChange({ columnId: column.id, operator, value: "" });
         }}
       />

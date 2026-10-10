@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -63,6 +64,13 @@ public interface PredictionResultFeedbackRepository extends JpaRepository<Predic
     List<PredictionResultFeedback> findByResultIdAndUserId(Long resultId, Long userId);
 
     boolean existsByResultRunIdAndUserId(Long runId, Long userId);
+
+    /** Which of the runs the user has answered at least once. */
+    @Query("""
+            SELECT DISTINCT f.result.run.id FROM PredictionResultFeedback f
+            WHERE f.result.run.id IN :runIds AND f.user.id = :userId
+            """)
+    Set<Long> findRunIdsAnsweredBy(Collection<Long> runIds, Long userId);
 
     @Query("""
             SELECT f FROM PredictionResultFeedback f

@@ -33,6 +33,8 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.JsonSchema;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.parameters.QueryParameter;
 import io.swagger.v3.oas.models.servers.Server;
 import jakarta.annotation.Nullable;
 
@@ -102,6 +104,48 @@ class OpenApiContractConventions {
         return openApi -> openApi.getComponents().getSchemas().values().stream()
                 .filter(schema -> schema.getProperties() != null && schema.getTypes() != null)
                 .forEach(schema -> schema.setTypes(new LinkedHashSet<>(List.of("object"))));
+    }
+
+    /**
+     * A record bound from the query string takes one optional parameter per component. springdoc
+     * documents it as a single required object unless the record carries springdoc's own
+     * annotation, which would make this test-only library a runtime dependency; flattening every
+     * parameter object instead would also drop the body of the multipart uploads.
+     */
+    @Bean
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    OpenApiCustomizer queryRecordsAreFlatParameters() {
+        return openApi -> {
+            Map<String, Schema> schemas = openApi.getComponents().getSchemas();
+            Set<String> flattened = new HashSet<>();
+            operations(openApi).filter(operation -> operation.getParameters() != null).forEach(operation -> {
+                List<Parameter> parameters = new ArrayList<>();
+                for (Parameter parameter : operation.getParameters()) {
+                    String record = queryRecord(parameter, schemas);
+                    if (record == null) {
+                        parameters.add(parameter);
+                        continue;
+                    }
+                    flattened.add(record);
+                    Map<String, Schema> components = schemas.get(record).getProperties();
+                    components.forEach((name, schema) -> parameters.add(
+                            new QueryParameter().name(name).required(false).schema(schema)));
+                }
+                operation.setParameters(parameters);
+            });
+            flattened.forEach(schemas::remove);
+        };
+    }
+
+    /** The schema name of a query parameter that is a whole object, or null for any other parameter. */
+    @SuppressWarnings("rawtypes")
+    private static String queryRecord(Parameter parameter, Map<String, Schema> schemas) {
+        Schema schema = parameter.getSchema();
+        if (!"query".equals(parameter.getIn()) || schema == null || schema.get$ref() == null) {
+            return null;
+        }
+        String name = schema.get$ref().substring(REF_PREFIX.length());
+        return schemas.get(name).getProperties() == null ? null : name;
     }
 
     @Bean

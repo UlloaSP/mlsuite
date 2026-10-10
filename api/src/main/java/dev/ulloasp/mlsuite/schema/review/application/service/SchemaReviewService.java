@@ -159,6 +159,17 @@ public class SchemaReviewService implements SchemaReviewUseCase {
         });
     }
 
+    public void submitInbox(Long userId) {
+        Long organizationId = organizationId(userId);
+        authorization.require(userId, organizationId, PermissionKey.REVIEW, PermissionKey.MANAGE_REVIEWS);
+        User user = users.requireById(userId);
+        OffsetDateTime submittedAt = now();
+        reviewRunRepository
+                .findInbox(organizationId, userId, submittedAt, SchemaReviewState.IN_PROGRESS.name())
+                .forEach(reviewRun -> submissionRepository.save(
+                        new SchemaReviewRunSubmission(reviewRun, user, submittedAt)));
+    }
+
     private SchemaReview accessibleReview(Long userId, String publicId) {
         Long organizationId = organizationId(userId);
         authorization.require(userId, organizationId, PermissionKey.REVIEW, PermissionKey.MANAGE_REVIEWS);

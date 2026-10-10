@@ -1,14 +1,7 @@
 import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { getSchemaReviewInbox, getSchemaReviewRunDetail } from "./review-api";
-import { SCHEMA_REVIEW_INBOX_QUERY_KEY, SCHEMA_REVIEW_RUN_QUERY_KEY } from "./review-keys";
-
-export const schemaReviewInboxQueryOptions = (organizationId: number | string) =>
-  queryOptions({
-    queryKey: SCHEMA_REVIEW_INBOX_QUERY_KEY(organizationId),
-    queryFn: ({ signal }) => getSchemaReviewInbox(signal),
-    enabled: organizationId !== "none",
-  });
+import { getSchemaReviewRunDetail } from "./review-api";
+import { SCHEMA_REVIEW_RUN_QUERY_KEY } from "./review-keys";
 
 export const schemaReviewRunQueryOptions = (
   organizationId: number | string,
@@ -22,11 +15,6 @@ export const schemaReviewRunQueryOptions = (
     // Switching inferences keeps the previous one on screen, drawn as a skeleton, until this arrives.
     placeholderData: keepPreviousData,
   });
-
-export const useSchemaReviewInbox = () => {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery(schemaReviewInboxQueryOptions(organizationId));
-};
 
 export const useSchemaReviewRun = (reviewId: string, reviewRunId: string) => {
   const organizationId = useCurrentOrganizationId() ?? "none";

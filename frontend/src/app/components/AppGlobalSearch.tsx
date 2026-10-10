@@ -7,7 +7,7 @@ import { useNavigate } from "react-router";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { searchQueryOptions } from "@/features/search/api/search.queries";
 import { SearchResultGroup } from "@/features/search/components/SearchResultGroup";
-import { useDebouncedValue } from "@/features/search/lib/use-debounced-value";
+import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
 import { globalSearchOpenAtom } from "@/shared/ui/ui-state";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
@@ -35,7 +35,7 @@ export function AppGlobalSearch() {
     query: "",
     activeIndex: 0,
   });
-  const debouncedQuery = useDebouncedValue(query);
+  const debouncedQuery = useDebouncedValue(query, 180);
   const organizationId = useCurrentOrganizationId();
   const { data, isError, isFetching } = useQuery(
     searchQueryOptions(organizationId, debouncedQuery),

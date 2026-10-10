@@ -7,7 +7,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router";
 import {
   isPublicBookmarkMissing,
-  publicBookmarkExamplesQueryOptions,
   publicBookmarkQueryOptions,
 } from "@/features/explore/api/public-bookmark-api";
 import { PublicBookmarkPanel } from "@/features/explore/components/PublicBookmarkPanel";
@@ -40,7 +39,6 @@ export function PublicBookmarkPage() {
   const { publicId = "" } = useParams<{ publicId: string }>();
   const query = useQuery(publicBookmarkQueryOptions(publicId));
   const bookmark = query.data;
-  const examples = useQuery(publicBookmarkExamplesQueryOptions(publicId)).data;
 
   if (query.isPending) return <AppPageLoader label="Loading public bookmark…" />;
 
@@ -74,8 +72,7 @@ export function PublicBookmarkPage() {
     <AppPage>
       <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
-          breadcrumbScope="public"
-          breadcrumbs={[{ label: bookmark.name }]}
+          breadcrumbs={[{ label: "Explore", to: "/explore" }, { label: bookmark.name }]}
           title={bookmark.name}
           description={bookmark.description ?? undefined}
           actions={<WorkspaceBookmarkLink publicId={bookmark.publicId} />}
@@ -103,7 +100,7 @@ export function PublicBookmarkPage() {
           />
         ) : null}
         {/* A floor keeps the form usable on a short screen, where the page scrolls instead. */}
-        <PublicBookmarkPanel bookmark={bookmark} examples={examples} />
+        <PublicBookmarkPanel bookmark={bookmark} />
       </AppSurface>
     </AppPage>
   );

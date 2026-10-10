@@ -7,7 +7,10 @@ import type { ReportConfig } from "mlform/runtime";
 import { isBuiltinReportKind } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
 import { isRecord, type JsonRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { reportTargetForBinding } from "@/capabilities/prediction-runtime/mlform/schema-run-report-mapping";
-import { mappingLabels } from "@/capabilities/prediction-runtime/data/report-normalization";
+import {
+  mappingLabels,
+  toStoredBuiltinPayload,
+} from "@/capabilities/prediction-runtime/data/report-normalization";
 import type { PredictionResultDto, SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type SchemaVersion = Pick<SchemaVersionDto, "formSchema" | "bindings">;
@@ -61,11 +64,14 @@ const reportLabels = (report: ReportConfig): string[] =>
       )
     : [];
 
-const normalizeReportPayload = (
+/** A stored report as it is shown: a predicted class index reads as the class's label. */
+export const normalizeReportPayload = (
   report: ReportConfig,
   payload?: JsonRecord,
 ): JsonRecord | undefined => {
   if (!payload) return undefined;
+  // Visitor runs kept before stored outputs were unified hold the runtime's raw answer.
+  payload = toStoredBuiltinPayload(report.kind, payload) ?? payload;
   const labels = reportLabels(report);
   const payloadOnlyLabels = mappingLabels(payload.labels) ?? [];
   const payloadLabels =

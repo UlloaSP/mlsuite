@@ -105,8 +105,10 @@ beforeEach(() => {
   // remaining runs; these bookmarks have no examples, no runs yet and every run left. Each has
   // its own tests, so those requests are answered here and never counted.
   vi.stubGlobal("fetch", (url: unknown, init?: RequestInit) => {
-    if (String(url).endsWith("/examples")) return Promise.resolve(json([]));
-    if (String(url).endsWith("/runs")) return Promise.resolve(json([]));
+    if (new URL(String(url)).pathname.endsWith("/examples/catalog"))
+      return Promise.resolve(json({ items: [], page: 0, size: 24, totalItems: 0, hasNext: false }));
+    if (new URL(String(url)).pathname.endsWith("/runs/catalog"))
+      return Promise.resolve(json({ items: [], page: 0, size: 24, totalItems: 0, hasNext: false }));
     if (String(url).endsWith("/quota")) {
       return Promise.resolve(json({ limit: 50, remaining: 50, resetsAt: null }));
     }
@@ -281,7 +283,7 @@ describe("public bookmark page", () => {
     expect(host.querySelector("dl")?.textContent).toContain("0 reports");
   });
 
-  test("says so when the form needs plugin fields a public page cannot load", async () => {
+  test("says so when the plugin fields of the form do not arrive", async () => {
     fetchMock.mockResolvedValue(
       json({
         ...publicBookmark,
@@ -290,7 +292,7 @@ describe("public bookmark page", () => {
     );
     const { host } = await page();
     await settle();
-    expect(host.textContent).toContain("This form cannot be shown here");
+    expect(host.textContent).toContain("This form could not be loaded");
     expect(host.querySelector("mlf-kit-tabs")).toBeNull();
   });
 
@@ -371,8 +373,7 @@ describe("public page frame", () => {
                 element={
                   <AppPageHeader
                     title="production"
-                    breadcrumbScope="public"
-                    breadcrumbs={[{ label: "production" }]}
+                    breadcrumbs={[{ label: "Explore", to: "/explore" }, { label: "production" }]}
                   />
                 }
               />

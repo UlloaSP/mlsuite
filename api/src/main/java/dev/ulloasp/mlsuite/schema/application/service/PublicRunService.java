@@ -7,11 +7,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +42,9 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.security.identity.PublicCaller;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.util.CatalogPages;
+import dev.ulloasp.mlsuite.util.CatalogRequest;
+import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.visitor.adapter.out.persistence.repository.VisitorRepository;
 import dev.ulloasp.mlsuite.visitor.domain.model.Visitor;
 import lombok.RequiredArgsConstructor;
@@ -67,6 +74,7 @@ public class PublicRunService implements PublicRunUseCase {
     private final ModelRepository modelRepository;
     private final VisitorRepository visitorRepository;
     private final UserLookupService userLookupService;
+    private final PublicRunCatalogSearch catalogSearch;
 
     /** A run kept, and whether it started a new visitor whose id the browser must be given. */
     public record Recorded(PublicRunDto run, UUID visitorId, boolean issued) {
@@ -110,6 +118,34 @@ public class PublicRunService implements PublicRunUseCase {
         if (caller.visitorId() == null) return List.of();
         List<PredictionRun> runs = runRepository.findByVisitorIdAndSchemaBookmarkIdOrderByCreatedAtDescIdDesc(
                 caller.visitorId(), bookmark.getId(), PageRequest.of(0, SESSION_SIZE));
+        return dtos(runs, caller);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageDto<PublicRunDto> catalog(String publicId, PublicCaller caller, CatalogRequest request) {
+        SchemaBookmark bookmark = publicBookmarks.requirePublic(publicId);
+        if (caller.visitorId() == null) {
+            return new PageDto<>(List.of(), request.page(), request.size(), 0, false);
+        }
+        Specification<PredictionRun> owned = (root, query, builder) -> builder.and(
+                builder.equal(root.get("visitor").get("id"), caller.visitorId()),
+                builder.equal(root.get("schemaBookmark").get("id"), bookmark.getId()));
+        Sort newestFirst = Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id"));
+        if (request.search().isEmpty()) {
+            Page<PredictionRun> page = runRepository.findAll(owned, CatalogPages.pageable(request, newestFirst));
+            return PageDto.of(page, dtos(page.getContent(), caller));
+        }
+        PageDto<Long> page = CatalogPages.page(catalogSearch.matchingIds(caller.visitorId(), bookmark.getId(),
+                request.search()), request);
+        Map<Long, PredictionRun> found = runRepository.findAllById(page.items()).stream()
+                .collect(Collectors.toMap(PredictionRun::getId, Function.identity()));
+        return new PageDto<>(dtos(page.items().stream().map(found::get).filter(Objects::nonNull).toList(), caller),
+                page.page(), page.size(), page.totalItems(),
+                page.hasNext());
+    }
+
+    private List<PublicRunDto> dtos(List<PredictionRun> runs, PublicCaller caller) {
         if (runs.isEmpty()) return List.of();
         List<Long> runIds = runs.stream().map(PredictionRun::getId).toList();
         Map<Long, List<PredictionResult>> results = resultRepository.findByRunIdInOrderByRunIdAscIdAsc(runIds).stream()
@@ -201,6 +237,7 @@ public class PublicRunService implements PublicRunUseCase {
             if (raw == null) continue;
             Map<String, Object> copy = new LinkedHashMap<>();
             raw.forEach((key, value) -> copy.put(String.valueOf(key), value));
+            PublicRunReports.asWorkspaceStores(route.kind(), copy);
             copy.put("id", route.storedId());
             copy.put("kind", route.kind());
             copy.put("mappedTo", route.target());

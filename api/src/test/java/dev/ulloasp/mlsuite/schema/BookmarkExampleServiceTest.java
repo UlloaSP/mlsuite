@@ -29,6 +29,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
+import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginRuntimeSourcesUseCase;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkExampleRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
@@ -84,7 +85,8 @@ class BookmarkExampleServiceTest {
         var publishability = new BookmarkPublishability(mock(SchemaModelBindingRepository.class), 50);
         bookmarkService = new SchemaBookmarkServiceImpl(mock(SchemaRepository.class), versions, bookmarks,
                 authorization, publishability);
-        publicService = new PublicBookmarkService(bookmarks, examples, publishability);
+        publicService = new PublicBookmarkService(bookmarks, examples, publishability,
+                mock(ListPluginRuntimeSourcesUseCase.class));
         bookmark.setPublicId(PUBLIC_ID);
         when(bookmarks.findByIdAndOrganizationId(BOOKMARK_ID, ORG_ID)).thenReturn(Optional.of(bookmark));
         // The public lookup answers only while the bookmark is published, as the query does.

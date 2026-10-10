@@ -12,7 +12,7 @@ import {
   useTransferOrganizationOwnershipMutation,
   useUpdateOrganizationMutation,
 } from "@/features/workspace/api/workspace.mutations";
-import { useOrganizationMembersQuery } from "@/features/workspace/api/workspace.queries";
+import { useOwnerCandidateCatalog } from "@/features/workspace/api/workspace-catalog-queries";
 import { DeleteOrganizationDialog } from "./DeleteOrganizationDialog";
 import { OrganizationLogoSettings } from "./OrganizationLogoSettings";
 import { TransferOrganizationOwnerDialog } from "./TransferOrganizationOwnerDialog";
@@ -34,7 +34,8 @@ export function OrganizationSettingsContent({
 }: OrganizationSettingsContentProps) {
   const navigate = useNavigate();
   const id = organization.id;
-  const members = useOrganizationMembersQuery(id, permissions.canTransferOwnership);
+  // The same first page the transfer dialog opens with.
+  const ownerCandidates = useOwnerCandidateCatalog(id, "", permissions.canTransferOwnership);
   const update = useUpdateOrganizationMutation();
   const transfer = useTransferOrganizationOwnershipMutation();
   const remove = useDeleteOrganizationMutation();
@@ -44,9 +45,6 @@ export function OrganizationSettingsContent({
   const name = draft.name ?? organization.name;
   const slug = draft.slug ?? organization.slug;
   const description = draft.description ?? organization.description ?? "";
-  const ownerCandidates = (members.data ?? []).filter(
-    (member) => member.status === "ACTIVE" && member.role.systemKey !== "OWNER",
-  );
 
   return (
     <>
@@ -135,9 +133,9 @@ export function OrganizationSettingsContent({
               Transfer full control to another active member. Your account will lose owner-only
               permissions as soon as the transfer completes.
             </AppCopy>
-            {transfer.isError || members.isError ? (
+            {transfer.isError || ownerCandidates.isError ? (
               <AppInlineAlert className="mt-3">
-                {errorMessage(transfer.error ?? members.error)}
+                {errorMessage(transfer.error ?? ownerCandidates.error)}
               </AppInlineAlert>
             ) : null}
             {transfer.isSuccess ? (
@@ -149,7 +147,9 @@ export function OrganizationSettingsContent({
               type="button"
               variant="secondary"
               className="mt-4"
-              disabled={members.isLoading || members.isError || ownerCandidates.length === 0}
+              disabled={
+                transfer.isPending || !ownerCandidates.data || ownerCandidates.data.totalItems === 0
+              }
               onClick={() => setTransferOpen(true)}
             >
               Transfer ownership
@@ -183,9 +183,8 @@ export function OrganizationSettingsContent({
       {transferOpen ? (
         <TransferOrganizationOwnerDialog
           disabled={transfer.isPending}
-          error={transfer.error ?? members.error}
-          loading={members.isLoading}
-          members={ownerCandidates}
+          error={transfer.error}
+          organizationId={id}
           onCancel={() => setTransferOpen(false)}
           onConfirm={async (membershipId) => {
             await transfer.mutateAsync({ organizationId: id, nextOwnerMembershipId: membershipId });

@@ -111,8 +111,7 @@ export function SchemaReviewCombinedFeedbackForm({
   if (displayComplete && !editing && !submitting) {
     return (
       <section className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold text-fg">Review questionnaire</h2>
+        <div className="flex items-center justify-end gap-3">
           <AppButton variant="secondary" size="sm" onClick={() => setEditing(true)}>
             Edit
           </AppButton>
@@ -142,9 +141,7 @@ export function SchemaReviewCombinedFeedbackForm({
   }
   return (
     <section className="space-y-4">
-      <h2 className="text-xl font-semibold text-fg">Review questionnaire</h2>
       <ReportQuestionnaireMount
-        title="Schema review"
         schema={combined.schema}
         initialValues={savedValues ?? combined.initialValues}
         editable

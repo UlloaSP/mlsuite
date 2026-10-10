@@ -1,8 +1,10 @@
-import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
+import { SEARCH_DEBOUNCE_MS } from "@/shared/lib/use-debounced-value";
+import { catalogViewport } from "./catalog-viewport";
+import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter } from "react-router";
-import { afterEach } from "vite-plus/test";
+import { afterEach, beforeEach, vi } from "vite-plus/test";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -21,10 +23,17 @@ export type Mounted = {
 };
 
 const mounted = new Set<Mounted>();
+const clients = new Set<QueryClient>();
+beforeEach(() => {
+  if (typeof HTMLElement !== "undefined") catalogViewport();
+});
 
 afterEach(() => {
   for (const view of mounted) act(() => view.root.unmount());
   mounted.clear();
+  for (const client of clients) client.clear();
+  clients.clear();
+  vi.restoreAllMocks();
   document.body.innerHTML = "";
 });
 
@@ -40,11 +49,16 @@ const wrap = (ui: ReactNode, { route, queryClient }: MountOptions): ReactNode =>
 
 /** Renders into a fresh host on the body; the view is unmounted after each test. */
 export async function mount(ui: ReactNode, options: MountOptions = {}): Promise<Mounted> {
+  if (!options.queryClient) {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    clients.add(client);
+    options = { ...options, queryClient: client };
+  }
   const host = document.body.appendChild(document.createElement("div"));
   const root = createRoot(host);
   const view: Mounted = {
     host,
-    root,
+    root: { render: (next) => root.render(wrap(next, options)), unmount: () => root.unmount() },
     rerender: (next) => act(async () => root.render(wrap(next, options))),
     unmount: async () => {
       mounted.delete(view);
@@ -76,3 +90,7 @@ export async function changeValue(input: HTMLInputElement | HTMLTextAreaElement,
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
 }
+
+/** Typed searches reach the server after a short pause; this waits it out. */
+export const searchDelay = () =>
+  act(async () => new Promise((resolve) => setTimeout(resolve, SEARCH_DEBOUNCE_MS + 20)));

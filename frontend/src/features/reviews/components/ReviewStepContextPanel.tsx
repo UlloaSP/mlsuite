@@ -31,14 +31,15 @@ export function ReviewStepContextPanel() {
   }, []);
 
   if (!activeStep) return null;
-  const title = "Current output";
   const content = lines(activeStep.description.replace(/^Prediction (result|report):\s*/i, ""));
   return (
     <aside className="2xl:sticky 2xl:top-0 2xl:w-80 2xl:shrink-0">
       <div className="rounded-card border border-line bg-surface p-4">
-        <p className="text-2xs font-semibold uppercase tracking-eyebrow text-accent">{title}</p>
-        <h3 className="mt-2 text-base font-semibold leading-5 text-fg">{activeStep.title}</h3>
-        <div className="mt-4 space-y-2 text-sm leading-6 text-fg-secondary">
+        {/* The step under it carries the title; this is what the models answered. */}
+        <div
+          aria-label={activeStep.title}
+          className="space-y-2 text-sm leading-6 text-fg-secondary"
+        >
           {content.length > 0 ? (
             content.map((item) => (
               <p key={`${activeStep.id}-${item.key}`} className="break-words">

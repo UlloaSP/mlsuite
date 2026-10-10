@@ -26,7 +26,11 @@ export function RoleRow({ role, onOpen }: { role: RoleDefinitionDto; onOpen: () 
           </>
         ) : null
       }
-      details={<AppBadge>{role.userCount} users</AppBadge>}
+      details={
+        <AppBadge>
+          {role.userCount} {role.userCount === 1 ? "user" : "users"}
+        </AppBadge>
+      }
       onOpen={onOpen}
     />
   );

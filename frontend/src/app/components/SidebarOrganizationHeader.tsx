@@ -59,7 +59,7 @@ export function SidebarOrganizationHeader({ side }: { side: SidebarPosition }) {
             </SidebarMenuButton>
           </DropdownMenu.Trigger>
           <OrganizationMenuContent
-            align={side === "right" ? "end" : "start"}
+            align={collapsed ? (side === "right" ? "end" : "start") : "center"}
             side="bottom"
             context={context}
             className={sidebarMenuContent(collapsed)}

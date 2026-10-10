@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { DropdownMenu } from "radix-ui";
 import { useLocation } from "react-router";
 import { useUser } from "@/capabilities/workspace-context/session";
-import { usePendingInvitations } from "@/features/workspace/api/workspace.queries";
+import { usePendingInvitationCatalog } from "@/features/workspace/api/workspace-catalog-queries";
 import { cx } from "@/shared/ui/cx";
 import { AppTooltip } from "@/shared/ui/AppTooltip";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
@@ -18,7 +18,7 @@ import { sidebarMenuContent } from "@/app/components/sidebar-menu-styles";
 export function NavbarAccountMenu({ menuSide }: { menuSide: "top" | "bottom" }) {
   const location = useLocation();
   const { data: user } = useUser();
-  const { data: notifications = [] } = usePendingInvitations();
+  const { data: notifications } = usePendingInvitationCatalog("");
 
   if (!user) {
     return null;
@@ -40,7 +40,7 @@ export function NavbarAccountMenu({ menuSide }: { menuSide: "top" | "bottom" }) 
         >
           <AccountAvatar
             displayName={displayName}
-            notificationCount={notifications.length}
+            notificationCount={notifications?.totalItems ?? 0}
             user={user}
           />
         </DropdownMenu.Trigger>
@@ -48,7 +48,7 @@ export function NavbarAccountMenu({ menuSide }: { menuSide: "top" | "bottom" }) 
       <AccountMenuContent
         align="end"
         side={menuSide}
-        notificationCount={notifications.length}
+        notificationCount={notifications?.totalItems ?? 0}
         className={sidebarMenuContent(true)}
       />
     </DropdownMenu.Root>

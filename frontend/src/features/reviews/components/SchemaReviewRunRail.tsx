@@ -1,7 +1,6 @@
 import { Send } from "lucide-react";
 import { useState } from "react";
-import { ReviewPredictionTrayGroup } from "@/features/reviews/components/ReviewPredictionTrayGroup";
-import { ReviewTrayRow } from "@/features/reviews/components/ReviewTrayRow";
+import { ReviewInboxGroup } from "./ReviewInboxGroup";
 import { AppButton } from "@/shared/ui/AppButton";
 import type { SchemaReviewRunListItemDto } from "@/shared/api/openapi.gen";
 
@@ -11,27 +10,28 @@ export type ReviewRailItem = SchemaReviewRunListItemDto & {
 };
 
 type Props = {
-  items: ReviewRailItem[];
+  revisionCount: number;
+  pendingCount: number;
   selectedReviewRunId?: string;
   submitting?: boolean;
   onSelect: (item: ReviewRailItem) => void;
-  onSubmitRevision: (items: ReviewRailItem[]) => void;
+  onSubmitRevision: () => void;
 };
 
 export function SchemaReviewRunRail({
-  items,
+  revisionCount,
+  pendingCount,
   selectedReviewRunId,
   submitting = false,
   onSelect,
   onSubmitRevision,
 }: Props) {
   const [open, setOpen] = useState({ revision: true, pending: true });
-  const revision = items.filter((item) => item.reviewState === "IN_PROGRESS");
-  const pending = items.filter((item) => item.reviewState === "PENDING");
-  const groups = [
-    { tone: "revision", title: "Revision", subtitle: "Saved and ready to send", items: revision },
-    { tone: "pending", title: "Pending", subtitle: "Needs feedback", items: pending },
-  ] as const;
+  // Bound each group's viewport so a large inbox stays virtualized in stacked layouts too.
+  // When both do not fit, the smaller keeps its rows and the other takes what is left.
+  const track = (shown: boolean, count: number) =>
+    shown && count > 0 ? `minmax(8rem, min(32rem, calc(4rem + ${count} * 4.2rem)))` : "auto";
+  const groupRows = `${track(open.revision, revisionCount)} ${track(open.pending, pendingCount)}`;
 
   return (
     <aside className="flex min-h-0 flex-col rounded-card border border-line bg-surface p-5 xl:overflow-hidden">
@@ -49,37 +49,27 @@ export function SchemaReviewRunRail({
         </div>
         <AppButton
           className="mt-5 w-full"
-          disabled={revision.length === 0 || submitting}
-          onClick={() => onSubmitRevision(revision)}
+          disabled={revisionCount === 0 || submitting}
+          onClick={onSubmitRevision}
         >
           <Send size={15} />
-          Complete review ({revision.length})
+          Complete review ({revisionCount})
         </AppButton>
       </div>
-      {/* Beside the review (xl) the tray has a bounded height. Each group grows to its content;
-          when both overflow, the grid shares the free space equally and a group that needs less
-          than half keeps its natural height while the other takes the rest. */}
-      <div className="mt-5 grid content-start gap-5 xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,max-content)_minmax(0,max-content)] xl:overflow-hidden">
-        {groups.map((group) => (
-          <ReviewPredictionTrayGroup
-            key={group.tone}
-            title={group.title}
-            subtitle={group.subtitle}
-            count={group.items.length}
-            tone={group.tone}
-            open={open[group.tone]}
-            onToggle={() => setOpen((value) => ({ ...value, [group.tone]: !value[group.tone] }))}
-          >
-            {group.items.map((item) => (
-              <ReviewTrayRow
-                key={item.publicId}
-                item={item}
-                tone={group.tone}
-                active={item.publicId === selectedReviewRunId}
-                onSelect={() => onSelect(item)}
-              />
-            ))}
-          </ReviewPredictionTrayGroup>
+      <div
+        className="app-scroll mt-5 grid content-start gap-5 xl:min-h-0 xl:flex-1 xl:overflow-y-auto"
+        style={{ gridTemplateRows: groupRows }}
+      >
+        {(["revision", "pending"] as const).map((tone) => (
+          <ReviewInboxGroup
+            key={tone}
+            tone={tone}
+            count={tone === "revision" ? revisionCount : pendingCount}
+            open={open[tone]}
+            selectedReviewRunId={selectedReviewRunId}
+            onSelect={onSelect}
+            onToggle={() => setOpen((value) => ({ ...value, [tone]: !value[tone] }))}
+          />
         ))}
       </div>
     </aside>

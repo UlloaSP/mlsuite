@@ -6,12 +6,16 @@ import {
   duplicateRole,
   updateRole,
 } from "./roles.api";
-import { organizationRolesQueryKey } from "./workspace.keys";
+import { organizationQueryKey } from "@/shared/api/organization-query-key";
+import { WORKSPACE_CONTEXT_QUERY_KEY } from "@/capabilities/workspace-context/workspace-context";
 
 export const useRoleMutations = (organizationId: number) => {
   const queryClient = useQueryClient();
   const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: organizationRolesQueryKey(organizationId) });
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: organizationQueryKey(organizationId) }),
+      queryClient.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
+    ]);
   return {
     create: useMutation({
       mutationFn: (payload: Parameters<typeof createRole>[1]) =>

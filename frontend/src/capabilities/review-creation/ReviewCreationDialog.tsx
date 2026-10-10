@@ -2,17 +2,12 @@ import { useReviewRunSelection } from "./useReviewRunSelection";
 import { ClipboardPlus } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import { formatTimestamp } from "@/shared/lib/date-time";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppFieldLabel } from "@/shared/ui/AppFieldLabel";
 import { AppDialog } from "@/shared/ui/AppDialog";
-import { AppSelect } from "@/shared/ui/AppSelect";
+import { ReviewSnapshotSelect } from "./ReviewSnapshotSelect";
 import { AppTextField } from "@/shared/ui/AppTextField";
-import {
-  type ReviewCandidate,
-  useCreateReviewMutation,
-  useEligibleReviewers,
-} from "./review-creation-api";
+import { type ReviewCandidate, useCreateReviewMutation } from "./review-creation-api";
 import { ReviewSelectionCatalog } from "./ReviewSelectionCatalog";
 
 type Props = {
@@ -41,7 +36,6 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
   } = useReviewRunSelection(candidates);
   const [expiresAt, setExpiresAt] = useState(defaultExpiryDate);
   const [selectedReviewerIds, setSelectedReviewerIds] = useState<Set<number>>(new Set());
-  const reviewers = useEligibleReviewers(organizationId);
   const createReview = useCreateReviewMutation(organizationId);
 
   const [error, setError] = useState<string>();
@@ -124,22 +118,24 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
       {groups.length > 1 || bookmarkOptions.length > 0 ? (
         <div className="grid gap-4 border-b border-line px-6 py-4 sm:grid-cols-2">
           <AppFieldLabel label="Schema snapshot">
-            <AppSelect
-              aria-label="Schema snapshot"
-              value={group?.key}
-              onValueChange={selectGroup}
-              className="w-full min-w-0"
-              options={groups.map((item) => ({ value: item.key, label: item.label }))}
+            <ReviewSnapshotSelect
+              organizationId={organizationId}
+              kind="snapshots"
+              ids={candidates.map((item) => item.runId)}
+              value={group?.key ?? ""}
+              label={group?.label}
+              onChange={selectGroup}
             />
           </AppFieldLabel>
           {bookmarkOptions.length > 0 ? (
             <AppFieldLabel label="Bookmark">
-              <AppSelect
-                aria-label="Bookmark"
+              <ReviewSnapshotSelect
+                organizationId={organizationId}
+                kind="bookmarks"
+                ids={(group?.candidates ?? []).map((item) => item.runId)}
                 value={bookmark}
-                onValueChange={selectBookmark}
-                className="w-full min-w-0"
-                options={[{ value: "all", label: "All bookmarks" }, ...bookmarkOptions]}
+                label={bookmarkOptions.find((option) => option.value === bookmark)?.label}
+                onChange={selectBookmark}
               />
             </AppFieldLabel>
           ) : null}
@@ -148,33 +144,26 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
 
       <div className="grid divide-y divide-line lg:grid-cols-2 lg:divide-x lg:divide-y-0">
         <ReviewSelectionCatalog
+          organizationId={organizationId}
           key={`inferences:${group?.key ?? "none"}:${bookmark}`}
           title="Inferences"
           emptyDescription="No inferences are available for this schema snapshot."
-          items={runCandidates.map((candidate) => ({
-            id: candidate.runId,
-            title: candidate.name,
-            detail: formatTimestamp(candidate.createdAt),
-          }))}
+          source={{ kind: "runs", ids: runCandidates.map((candidate) => candidate.runId) }}
+          idFromString={String}
           selectedIds={selectedRunIds}
           onClear={() => setSelectedRunIds(new Set())}
           onSelectAll={(ids) => setSelectedRunIds((current) => new Set([...current, ...ids]))}
           onToggle={toggleRun}
         />
         <ReviewSelectionCatalog
+          organizationId={organizationId}
           title="Reviewers"
           emptyDescription="Assign Review permission to an active organization member first."
-          loading={reviewers.isLoading}
-          error={Boolean(reviewers.error)}
-          items={(reviewers.data ?? []).map((reviewer) => ({
-            id: reviewer.id,
-            title: reviewer.fullName,
-            detail: reviewer.email,
-          }))}
+          source={{ kind: "reviewers" }}
+          idFromString={Number}
           selectedIds={selectedReviewerIds}
           onClear={() => setSelectedReviewerIds(new Set())}
           onSelectAll={(ids) => setSelectedReviewerIds((current) => new Set([...current, ...ids]))}
-          onRetry={() => void reviewers.refetch()}
           onToggle={toggleReviewer}
         />
       </div>

@@ -38,8 +38,8 @@ export function ProfilePage() {
                   {workspace.currentOrganization.name}
                 </p>
                 <p className="mt-1 text-sm text-fg-secondary">
-                  {workspace.memberships.length} organization{" "}
-                  {workspace.memberships.length === 1 ? "membership" : "memberships"}
+                  {workspace.membershipCount} organization{" "}
+                  {workspace.membershipCount === 1 ? "membership" : "memberships"}
                 </p>
               </div>
               <AppBadge tone="accent">{workspace.currentMembership.roleDefinition.name}</AppBadge>

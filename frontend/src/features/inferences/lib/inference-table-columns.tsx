@@ -2,11 +2,9 @@ import {
   columnSizingFeature,
   columnVisibilityFeature,
   createColumnHelper,
-  createSortedRowModel,
   rowSortingFeature,
   tableFeatures,
   type ColumnDef,
-  type Row,
 } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 import { FeedbackStatusBadge } from "@/capabilities/prediction-runtime/feedback/FeedbackStatusBadge";
@@ -30,7 +28,6 @@ export type InferenceTableMeta = {
 
 export const inferenceTableFeatures = tableFeatures({
   rowSortingFeature,
-  sortedRowModel: createSortedRowModel(),
   columnVisibilityFeature,
   columnSizingFeature,
   tableMeta: {} as InferenceTableMeta,
@@ -59,20 +56,6 @@ export const inferenceAuthor = (item: PredictionRunCatalogItemDto): string | und
 /** Columns the table always shows and the columns menu cannot hide. */
 export const FIXED_COLUMN_IDS = ["name", "actions"];
 
-const compareValues = (left: unknown, right: unknown): number => {
-  if (typeof left === "number" && typeof right === "number") return left - right;
-  return formatInferenceCell(left).localeCompare(formatInferenceCell(right), undefined, {
-    numeric: true,
-    sensitivity: "base",
-  });
-};
-
-const sortByValue = (
-  left: Row<Features, InferenceTableRow>,
-  right: Row<Features, InferenceTableRow>,
-  columnId: string,
-) => compareValues(left.getValue(columnId), right.getValue(columnId));
-
 const EMPTY = <span className="text-fg-disabled">—</span>;
 
 const textCell = (value: unknown) => {
@@ -91,21 +74,18 @@ const summaryColumns = (): InferenceColumnDef[] => [
     id: "name",
     header: "Name",
     size: 240,
-    sortFn: sortByValue,
     cell: ({ row, table }) => table.options.meta?.renderName(row.original),
   }),
   helper.accessor((row) => row.item.createdAt, {
     id: "createdAt",
     header: "Created",
     size: 170,
-    sortFn: sortByValue,
     cell: ({ getValue }) => <span className="tabular-nums">{formatTimestamp(getValue())}</span>,
   }),
   helper.accessor((row) => row.item.status, {
     id: "status",
     header: "Status",
     size: 140,
-    sortFn: sortByValue,
     cell: ({ getValue }) => (
       <AppBadge
         tone={
@@ -124,21 +104,18 @@ const summaryColumns = (): InferenceColumnDef[] => [
     id: "feedbackStatus",
     header: "Feedback",
     size: 140,
-    sortFn: sortByValue,
     cell: ({ row }) => <FeedbackStatusBadge status={row.original.feedbackStatus} />,
   }),
   helper.accessor((row) => row.item.schemaName, {
     id: "schema",
     header: "Schema",
     size: 160,
-    sortFn: sortByValue,
     cell: ({ getValue }) => textCell(getValue()),
   }),
   helper.accessor((row) => row.item.schemaVersion, {
     id: "version",
     header: "Version",
     size: 130,
-    sortFn: sortByValue,
     cell: ({ row }) =>
       textCell(snapshotLabel(row.original.item.schemaVersionName, row.original.item.schemaVersion)),
   }),
@@ -146,23 +123,18 @@ const summaryColumns = (): InferenceColumnDef[] => [
     id: "bookmark",
     header: "Bookmark",
     size: 150,
-    sortFn: sortByValue,
-    sortUndefined: "last",
     cell: ({ getValue }) => textCell(getValue()),
   }),
   helper.accessor((row) => inferenceAuthor(row.item), {
     id: "author",
     header: "Author",
     size: 170,
-    sortFn: sortByValue,
-    sortUndefined: "last",
     cell: ({ getValue }) => textCell(getValue()),
   }),
   helper.accessor((row) => ORIGIN_LABELS[row.item.origin], {
     id: "origin",
     header: "Origin",
     size: 130,
-    sortFn: sortByValue,
     cell: ({ getValue }) => textCell(getValue()),
   }),
 ];
@@ -172,9 +144,7 @@ const dataColumn = (column: InferenceDataColumn): InferenceColumnDef =>
     id: column.id,
     header: column.label,
     size: column.group === "inputs" ? 140 : column.group === "outputs" ? 180 : 220,
-    sortFn: sortByValue,
-    sortUndefined: "last",
-    cell: ({ getValue }) => textCell(getValue()),
+    cell: ({ getValue, row }) => textCell(row.original.displayValues?.[column.id] ?? getValue()),
   });
 
 /** "Risk · Inputs" when several schemas share the table, "Inputs" when only one does. */
@@ -182,6 +152,9 @@ export const dataGroupLabel = (column: InferenceDataColumn, multipleSchemas: boo
   multipleSchemas
     ? `${column.schemaName} · ${GROUP_LABELS[column.group]}`
     : GROUP_LABELS[column.group];
+
+/** The summary columns' group: named for the columns menu, untitled in the table. */
+export const SUMMARY_GROUP_ID = "inference";
 
 /**
  * The summary every inference has, then each schema's inputs, outputs, and feedback,
@@ -210,7 +183,7 @@ export const buildInferenceColumns = (
   });
   if (groupColumns.length === 0) return [...summaryColumns(), actions];
   return [
-    helper.group({ id: "inference", header: "Inference", columns: summaryColumns() }),
+    helper.group({ id: SUMMARY_GROUP_ID, header: "Inference", columns: summaryColumns() }),
     ...groupColumns,
     actions,
   ];

@@ -1,29 +1,20 @@
+import { useBookmarkCatalog } from "@/features/schemas/api/schema-catalog-queries";
 /*
 SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Tags } from "lucide-react";
-import { useMemo } from "react";
 import { useParams } from "react-router";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
-import {
-  useSchema,
-  useSchemaBookmarks,
-  useSchemaVersions,
-} from "@/features/schemas/api/schema-queries";
-import { latestSchemaVersion } from "@/features/schemas/lib/version-selection";
+import { useSchema } from "@/features/schemas/api/schema-queries";
 import { SchemaBookmarkCatalogItem } from "@/features/schemas/components/SchemaBookmarkCatalogItem";
 import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
-import type { SchemaBookmarkDto } from "@/shared/api/openapi.gen";
 
-const EMPTY_BOOKMARKS: never[] = [];
-const EMPTY_VERSIONS: never[] = [];
 type BookmarkFilter = "all" | "latest" | "older";
 type BookmarkSort = "updated" | "name" | "version";
 
-const PAGE_SIZE = 10;
 const FILTERS: Array<{ value: BookmarkFilter; label: string }> = [
   { value: "all", label: "All" },
   { value: "latest", label: "Latest" },
@@ -38,24 +29,17 @@ const SORTS: Array<{ value: BookmarkSort; label: string }> = [
 export function SchemaBookmarksPage() {
   const { schemaId } = useParams<{ schemaId: string }>();
   const { data: schema } = useSchema(schemaId);
-  const bookmarksQuery = useSchemaBookmarks(schemaId);
-  const versionsQuery = useSchemaVersions(schemaId);
-  const versions = versionsQuery.data ?? EMPTY_VERSIONS;
   const controls = useCatalogControls<BookmarkFilter, BookmarkSort>({
     filters: FILTERS.map(({ value }) => value),
     initialFilter: "all",
     initialSort: "updated",
-    resetKey: schemaId,
     sorts: SORTS.map(({ value }) => value),
   });
-  const bookmarks = bookmarksQuery.data ?? EMPTY_BOOKMARKS;
-  const latestVersion = useMemo(() => latestSchemaVersion(versions)?.version, [versions]);
-  const filtered = useMemo(
-    () =>
-      filterBookmarks(bookmarks, controls.search, controls.filter, controls.sort, latestVersion),
-    [bookmarks, controls.filter, controls.search, controls.sort, latestVersion],
-  );
-  const pageItems = filtered.slice(controls.page * PAGE_SIZE, (controls.page + 1) * PAGE_SIZE);
+  const bookmarksQuery = useBookmarkCatalog(schemaId, {
+    search: controls.search,
+    filter: controls.filter,
+    sort: controls.sort,
+  });
 
   return (
     <CatalogResourcePage
@@ -72,22 +56,10 @@ export function SchemaBookmarksPage() {
         ],
       }}
       loadingLabel="Loading bookmarks…"
-      pageSize={PAGE_SIZE}
       filterLabel="Filter bookmarks"
       filters={FILTERS}
       placeholder="Search bookmarks by name, id, or version"
-      query={{
-        data: {
-          hasNext: (controls.page + 1) * PAGE_SIZE < filtered.length,
-          items: pageItems,
-          totalItems: filtered.length,
-        },
-        error: bookmarksQuery.error,
-        isFetching: bookmarksQuery.isFetching,
-        // The latest/older filter compares against the newest snapshot.
-        isLoading: bookmarksQuery.isLoading || versionsQuery.isLoading,
-        refetch: bookmarksQuery.refetch,
-      }}
+      query={bookmarksQuery}
       sortLabel="Sort bookmarks"
       sortOptions={SORTS}
       emptyIcon={<Tags size={22} />}
@@ -100,29 +72,4 @@ export function SchemaBookmarksPage() {
       }
     />
   );
-}
-
-function filterBookmarks(
-  bookmarks: SchemaBookmarkDto[],
-  search: string,
-  filter: BookmarkFilter,
-  sort: BookmarkSort,
-  latestVersion?: number,
-) {
-  const query = search.toLowerCase();
-  return bookmarks
-    .filter((bookmark) => {
-      const latest = latestVersion !== undefined && bookmark.version === latestVersion;
-      const filterMatch =
-        filter === "all" || (filter === "latest" && latest) || (filter === "older" && !latest);
-      return (
-        filterMatch &&
-        `${bookmark.name} ${bookmark.id} v${bookmark.version}`.toLowerCase().includes(query)
-      );
-    })
-    .sort((left, right) => {
-      if (sort === "name") return left.name.localeCompare(right.name);
-      if (sort === "version") return right.version - left.version;
-      return right.updatedAt.localeCompare(left.updatedAt);
-    });
 }

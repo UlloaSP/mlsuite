@@ -1,153 +1,93 @@
 // @vitest-environment jsdom
-import { useLocation, useSearchParams } from "react-router";
-import { beforeEach, expect, test, vi } from "vite-plus/test";
+import { act, useState } from "react";
+import { QueryClient } from "@tanstack/react-query";
+import { beforeEach, afterEach, expect, test, vi } from "vite-plus/test";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
-import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
-import { buttonByText, click, mount, type Mounted } from "./support/dom";
-
-let host: HTMLDivElement;
-let view: Mounted | undefined;
-const retry = vi.fn();
-let count = 21;
-let loading = false;
-let error: string | null = null;
-let resetKey = "org-1";
-
-function CatalogHarness() {
-  const [params, setParams] = useSearchParams();
-  const query = params.get("q") ?? "";
-  const items = Array.from({ length: count }, (_, index) => index + 1).filter((id) =>
-    String(id).includes(query),
-  );
-  const pagination = useClientCatalogPage(items, `${resetKey}:${query}`, loading);
+import { useInfiniteCatalog } from "@/shared/api/infinite-catalog";
+import { catalogViewport } from "./support/catalog-viewport";
+import { click, mount } from "./support/dom";
+beforeEach(catalogViewport);
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
+const flush = () =>
+  act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+const server = vi.fn(async (page: number) => ({
+  items: Array.from({ length: 24 }, (_, index) => page * 24 + index + 1),
+  page,
+  size: 24,
+  totalItems: 72,
+  hasNext: page < 2,
+}));
+function Harness() {
+  const [filter, setFilter] = useState("all");
+  const query = useInfiniteCatalog({
+    queryKey: ["org", 1, "catalog", "infinite", filter],
+    queryFn: server,
+    retry: false,
+  });
   return (
-    <>
-      <button onClick={() => setParams({ q: "21", page: "3" })}>Filter</button>
-      <output>{useLocation().search}</output>
+    <div>
+      <button onClick={() => setFilter("other")}>Filter</button>
       <CatalogListPanel
-        {...pagination}
-        itemCount={items.length}
-        isLoading={loading}
-        isBusy={loading}
+        itemCount={query.data?.items.length ?? 0}
+        hasNext={query.hasNextPage}
+        isLoading={query.isLoading}
+        isBusy={query.isFetching}
         loadingLabel="Loading"
-        errorMessage={error}
-        onRetry={retry}
-        emptyState={{ title: "No matching inferences", description: "Change filters" }}
+        errorMessage={query.error?.message ?? null}
+        onLoadMore={() => query.fetchNextPage()}
+        onRetry={() => void (query.isFetchNextPageError ? query.fetchNextPage() : query.refetch())}
+        emptyState={{ title: "Empty", description: "No matches" }}
       >
-        {pagination.visibleItems.map((id) => (
+        {query.data?.items.map((id) => (
           <article key={id}>Inference {id}</article>
         ))}
       </CatalogListPanel>
-    </>
+    </div>
   );
 }
-
-// Later calls re-render the same router, which keeps its current location.
-async function render(url = "/inferences") {
-  if (view) await view.rerender(<CatalogHarness />);
-  else {
-    view = await mount(<CatalogHarness />, { route: url });
-    host = view.host;
-  }
-}
-beforeEach(() => {
-  view = undefined;
-  count = 21;
-  loading = false;
-  error = null;
-  resetKey = "org-1";
-  retry.mockClear();
-});
-
-test("paginates ten actual items, advances, returns, and disables page boundaries", async () => {
-  await render();
-  expect(host.querySelectorAll("article")).toHaveLength(10);
-  expect(host.querySelector("article")?.textContent).toBe("Inference 1");
-  await click("Next", host);
-  expect(host.querySelector("article")?.textContent).toBe("Inference 11");
-  expect(host.querySelector("output")?.textContent).toBe("?page=2");
-  await click("Next", host);
-  expect(host.querySelectorAll("article")).toHaveLength(1);
-  expect(buttonByText("Next", host)?.disabled).toBe(true);
-  await click("Previous", host);
-  expect(host.querySelector("article")?.textContent).toBe("Inference 11");
-});
-
-test("repeated navigation keeps only the current page gaps without stale ellipses", async () => {
-  count = 100;
-  await render();
-  for (let round = 0; round < 2; round++) {
-    for (const direction of ["Next", "Previous"]) {
-      for (let step = 0; step < 9; step++) {
-        await click(direction, host);
-        const footer = host.querySelector("footer")!;
-        const gaps = [...footer.querySelectorAll("span")].filter(
-          (node) => node.textContent === "...",
-        );
-        expect(gaps.length).toBeLessThanOrEqual(2);
-        const pages = [...footer.querySelectorAll("button")]
-          .map((node) => node.textContent)
-          .filter((text) => /^\d+$/.test(text ?? ""));
-        expect(new Set(pages).size).toBe(pages.length);
-        expect(footer.querySelectorAll('[aria-current="page"]')).toHaveLength(1);
-      }
-      expect(
-        [...host.querySelectorAll("footer span")].filter((node) => node.textContent === "..."),
-      ).toHaveLength(1);
-    }
-  }
-});
-
-test("loads URL pages and resets when filters or organization change", async () => {
-  await render("/inferences?page=3");
-  expect(host.querySelector("article")?.textContent).toBe("Inference 21");
+test("fetches backend pages, virtualizes rows, and resets the query for a filter", async () => {
+  server.mockClear();
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const { host } = await mount(<Harness />, { queryClient: qc });
+  await flush();
+  expect(server.mock.calls.map(([page]) => page)).toEqual([0]);
+  expect(host.querySelectorAll("article").length).toBeGreaterThan(0);
+  expect(host.querySelectorAll("article").length).toBeLessThan(24);
+  expect(host.querySelector("footer")).toBeNull();
+  await click("Load more", host);
+  await flush();
+  expect(server.mock.calls.map(([page]) => page)).toEqual([0, 1]);
+  expect(
+    qc.getQueryData<{ pages: unknown[] }>(["org", 1, "catalog", "infinite", "all"])?.pages,
+  ).toHaveLength(2);
   await click("Filter", host);
-  expect(host.querySelector("output")?.textContent).toBe("?q=21");
-  expect(host.querySelector("article")?.textContent).toBe("Inference 21");
-  resetKey = "org-2";
-  await render();
-  expect(host.querySelector('[aria-current="page"]')?.textContent).toBe("1");
+  await flush();
+  expect(server.mock.calls.at(-1)?.[0]).toBe(0);
+  qc.clear();
 });
-
-test.each(["-4", "garbage", "1.2", "999"])(
-  "handles invalid or out-of-range page %s",
-  async (page) => {
-    await render(`/inferences?page=${page}`);
-    expect(host.querySelectorAll("article").length).toBeGreaterThan(0);
-    expect(host.querySelector('[aria-current="page"]')?.textContent).toBe(
-      page === "999" ? "3" : "1",
-    );
-  },
-);
-
-test("clamps to a surviving page after deletion", async () => {
-  await render("/inferences?page=3");
-  count = 20;
-  await render();
-  expect(host.querySelector("output")?.textContent).toBe("?page=2");
-  expect(host.querySelector("article")?.textContent).toBe("Inference 11");
-});
-
-test("preserves requested page while loading then renders it", async () => {
-  count = 0;
-  loading = true;
-  await render("/inferences?page=3");
-  expect(host.textContent).toContain("Loading");
-  expect(host.querySelector("output")?.textContent).toBe("?page=3");
-  count = 21;
-  loading = false;
-  await render();
-  expect(host.querySelector("article")?.textContent).toBe("Inference 21");
-});
-
-test("shows empty and request failure states with retry", async () => {
-  count = 0;
-  await render();
-  expect(host.textContent).toContain("No matching inferences");
-  error = "Could not load inferences.";
-  await render();
-  expect(host.textContent).not.toContain("No matching inferences");
-  expect(host.textContent).toContain(error);
+test("keeps loaded rows after a next-page failure and retries that page", async () => {
+  server.mockClear();
+  server.mockImplementationOnce(async () => ({
+    items: [1],
+    page: 0,
+    size: 24,
+    totalItems: 2,
+    hasNext: true,
+  }));
+  server.mockRejectedValueOnce(new Error("Next page failed"));
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const { host } = await mount(<Harness />, { queryClient: qc });
+  await flush();
+  await flush();
+  expect(host.textContent).toContain("Inference 1");
+  expect(host.textContent).toContain("Next page failed");
   await click("Retry", host);
-  expect(retry).toHaveBeenCalledOnce();
+  await flush();
+  expect(server.mock.calls.map(([page]) => page)).toEqual([0, 1, 1]);
+  qc.clear();
 });

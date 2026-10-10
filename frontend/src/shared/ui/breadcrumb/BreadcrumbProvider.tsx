@@ -3,29 +3,20 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useState, type ComponentProps, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   BreadcrumbPublishContext,
-  BreadcrumbRootsContext,
   BreadcrumbTrailContext,
-  type PublishedTrail,
+  type BreadcrumbTrailItem,
 } from "./breadcrumb-context";
 
-/** App shell owner of breadcrumb roots and of the trail pages publish. */
-export function BreadcrumbProvider({
-  children,
-  roots,
-}: {
-  children: ReactNode;
-  roots: ComponentProps<typeof BreadcrumbRootsContext.Provider>["value"];
-}) {
-  const [trail, setTrail] = useState<PublishedTrail | null>(null);
+/** App shell owner of the trail the page on screen publishes. */
+export function BreadcrumbProvider({ children }: { children: ReactNode }) {
+  const [trail, setTrail] = useState<BreadcrumbTrailItem[] | null>(null);
 
   return (
-    <BreadcrumbRootsContext.Provider value={roots}>
-      <BreadcrumbPublishContext.Provider value={setTrail}>
-        <BreadcrumbTrailContext.Provider value={trail}>{children}</BreadcrumbTrailContext.Provider>
-      </BreadcrumbPublishContext.Provider>
-    </BreadcrumbRootsContext.Provider>
+    <BreadcrumbPublishContext.Provider value={setTrail}>
+      <BreadcrumbTrailContext.Provider value={trail}>{children}</BreadcrumbTrailContext.Provider>
+    </BreadcrumbPublishContext.Provider>
   );
 }

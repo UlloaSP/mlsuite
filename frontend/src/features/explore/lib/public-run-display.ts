@@ -6,9 +6,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { ReportConfig } from "mlform/runtime";
 import {
   mappingLabels,
-  toAnalyzerReportPayload,
+  toPublicReportPayload,
 } from "@/capabilities/prediction-runtime/data/report-normalization";
-import type { SchemaDisplayReport } from "@/capabilities/prediction-runtime/data/report-display";
+import {
+  normalizeReportPayload,
+  type SchemaDisplayReport,
+} from "@/capabilities/prediction-runtime/data/report-display";
 import { isRecord, type JsonRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import type { PublicBookmarkDto, PublicRunDto } from "@/shared/api/openapi.gen";
 
@@ -41,7 +44,7 @@ export const publicRunDisplayReports = (
     const answer = run.reports.find((report) => report.key === key);
     if (!answer || !isRecord(answer.payload)) return [];
     const payload = answer.payload;
-    const normalized = toAnalyzerReportPayload(config, { reports: [payload] });
+    const normalized = normalizeReportPayload(config, toPublicReportPayload(config, payload));
     if (!normalized) return [];
     const kind = typeof config.kind === "string" ? config.kind : "report";
     const labels = mappingLabels((config as JsonRecord).labels) ?? mappingLabels(payload.mapping);

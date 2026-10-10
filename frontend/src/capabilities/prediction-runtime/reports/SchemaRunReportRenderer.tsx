@@ -117,22 +117,21 @@ export function SchemaRunReportRenderer({
     result: lastResult,
   });
 
-  return (
+  // The report's presenter draws its own card and title.
+  return descriptor ? (
+    <SchemaPrimitiveReport
+      descriptor={descriptor}
+      registry={registry}
+      reportId={report.id}
+      kind={report.kind}
+      label={report.label}
+      payload={report.payload}
+      lastResult={lastResult}
+      config={normalizedConfig}
+    />
+  ) : (
     <AppPanel>
-      {descriptor ? (
-        <SchemaPrimitiveReport
-          descriptor={descriptor}
-          registry={registry}
-          reportId={report.id}
-          kind={report.kind}
-          label={report.label}
-          payload={report.payload}
-          lastResult={lastResult}
-          config={normalizedConfig}
-        />
-      ) : (
-        <AppCopy>No renderable report content returned.</AppCopy>
-      )}
+      <AppCopy>No renderable report content returned.</AppCopy>
     </AppPanel>
   );
 }

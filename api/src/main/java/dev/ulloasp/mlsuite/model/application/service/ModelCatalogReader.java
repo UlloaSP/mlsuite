@@ -47,13 +47,14 @@ final class ModelCatalogReader {
     }
 
     private Sort sort(String mode) {
+        Sort.Order byId = Sort.Order.asc("id");
         if ("name".equals(mode)) {
-            return Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.desc("updatedAt"));
+            return Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.desc("updatedAt"), byId);
         }
         if ("algorithm".equals(mode)) {
-            return Sort.by(Sort.Order.asc("type").ignoreCase(), Sort.Order.asc("specificType").ignoreCase());
+            return Sort.by(Sort.Order.asc("type").ignoreCase(), Sort.Order.asc("specificType").ignoreCase(), byId);
         }
-        return Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("name").ignoreCase());
+        return Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("name").ignoreCase(), byId);
     }
 
 }

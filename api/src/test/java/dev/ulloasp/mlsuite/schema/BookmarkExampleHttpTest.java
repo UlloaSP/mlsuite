@@ -38,6 +38,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
+import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginRuntimeSourcesUseCase;
 import dev.ulloasp.mlsuite.schema.adapter.in.web.PublicBookmarkController;
 import dev.ulloasp.mlsuite.schema.adapter.in.web.SchemaBookmarkController;
 import dev.ulloasp.mlsuite.schema.adapter.in.web.SchemaBookmarkExampleController;
@@ -79,7 +80,7 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationS
         PublicBookmarkService.class, BookmarkPublishability.class, WorkspaceAuthorizationService.class })
 @MockitoBean(types = { PredictBookmarkCatalogUseCase.class, PublicPredictionUseCase.class, PublicRunUseCase.class, RestTemplate.class,
         UserDetailsService.class, SchemaRepository.class, SchemaModelBindingRepository.class,
-        RoleDefinitionRepository.class })
+        RoleDefinitionRepository.class, ListPluginRuntimeSourcesUseCase.class })
 class BookmarkExampleHttpTest {
 
     private static final long USER_ID = 7L;
