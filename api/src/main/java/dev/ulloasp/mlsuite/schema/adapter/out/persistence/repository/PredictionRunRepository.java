@@ -3,14 +3,17 @@ package dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 
-public interface PredictionRunRepository extends JpaRepository<PredictionRun, Long> {
+public interface PredictionRunRepository
+        extends JpaRepository<PredictionRun, Long>, JpaSpecificationExecutor<PredictionRun> {
 
     interface BookmarkRunStats {
         Long getBookmarkId();
@@ -27,6 +30,15 @@ public interface PredictionRunRepository extends JpaRepository<PredictionRun, Lo
             GROUP BY r.schemaBookmark.id
             """)
     List<BookmarkRunStats> findBookmarkRunStats(Long organizationId);
+
+    /** The same for one bookmark; empty while it has no runs. */
+    @Query("""
+            SELECT r.schemaBookmark.id AS bookmarkId, COUNT(r) AS runCount, MAX(r.createdAt) AS lastRunAt
+            FROM PredictionRun r
+            WHERE r.schemaBookmark.id = :bookmarkId
+            GROUP BY r.schemaBookmark.id
+            """)
+    Optional<BookmarkRunStats> findRunStatsByBookmarkId(Long bookmarkId);
 
     @Query("""
             SELECT COUNT(r) FROM PredictionRun r
@@ -69,6 +81,10 @@ public interface PredictionRunRepository extends JpaRepository<PredictionRun, Lo
     List<PredictionRun> searchByOrganizationId(Long organizationId, String search, Pageable pageable);
 
     boolean existsBySchemaVersionIdAndName(Long schemaVersionId, String name);
+
+    /** A visitor's runs of one bookmark, newest first: their session on its public page. */
+    List<PredictionRun> findByVisitorIdAndSchemaBookmarkIdOrderByCreatedAtDescIdDesc(
+            UUID visitorId, Long schemaBookmarkId, Pageable pageable);
 
     @Query("SELECT COUNT(r) > 0 FROM PredictionRun r WHERE r.schemaVersion.schema.id = :schemaId")
     boolean existsBySchemaId(Long schemaId);

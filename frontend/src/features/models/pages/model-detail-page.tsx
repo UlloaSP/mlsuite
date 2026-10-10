@@ -58,7 +58,6 @@ export function ModelDetailPage() {
           <>
             <AppPageHeader
               breadcrumbs={[{ label: "Models", to: "/models" }, { label: model.name }]}
-              eyebrow="Model detail"
               title={model.name}
               description={`${getModelAlgorithmLabel(model)} · Created ${formatTimestamp(model.createdAt)}`}
               actions={

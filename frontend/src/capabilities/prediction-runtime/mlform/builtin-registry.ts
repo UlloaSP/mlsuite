@@ -3,11 +3,40 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { createMlRegistryPack } from "mlform/builtins";
+import { createBuiltinMlRegistry } from "mlform/builtins";
 import type { FieldConfig, FieldDefinition, ReportConfig, ReportDefinition } from "mlform/runtime";
+import { isRecord } from "./shared";
 
-/** Stable registry supplied by MLForm's built-in pack. */
-const builtinRegistry = createMlRegistryPack().registry;
+export const createMlSuiteRegistry = () => {
+  const registry = createBuiltinMlRegistry();
+  const series = registry.getField("series")!;
+  registry.unregisterField("series").registerField({
+    ...series,
+    serializeValue(value, config) {
+      const rows = series.serializeValue?.(value, config);
+      if (!Array.isArray(rows) || !Array.isArray(config.columns)) return rows;
+      // Converted pair schemas keep the date-only payload expected by their trained models.
+      const dates = config.columns
+        .filter(isRecord)
+        .filter((column) => column.kind === "date" && column.dateSerialization === "date-only");
+      if (!dates.length) return rows;
+      return rows.map((row) => {
+        if (!isRecord(row)) return row;
+        const serialized = { ...row };
+        for (const column of dates) {
+          if (typeof column.id !== "string") continue;
+          const date = serialized[column.id];
+          if (typeof date === "string") serialized[column.id] = date.slice(0, 10);
+        }
+        return serialized;
+      });
+    },
+  });
+  return registry;
+};
+
+/** Stable registry supplied by MLForm's built-ins. */
+const builtinRegistry = createMlSuiteRegistry();
 
 export const getBuiltinRegistry = () => builtinRegistry;
 

@@ -31,9 +31,9 @@ class FlywayMigrationTest {
     void appliesCompleteHistoryToEmptyPostgresAndIsRepeatable() throws Exception {
         Flyway flyway = flyway("fresh", null);
 
-        assertEquals(10, flyway.migrate().migrationsExecuted);
+        assertEquals(13, flyway.migrate().migrationsExecuted);
         assertEquals(0, flyway.migrate().migrationsExecuted);
-        assertEquals("10", flyway.info().current().getVersion().toString());
+        assertEquals("13", flyway.info().current().getVersion().toString());
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
@@ -112,7 +112,7 @@ class FlywayMigrationTest {
                 .baselineOnMigrate(true)
                 .baselineVersion(MigrationVersion.fromVersion("1"))
                 .load();
-        assertEquals(9, upgraded.migrate().migrationsExecuted);
+        assertEquals(12, upgraded.migrate().migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
@@ -171,9 +171,9 @@ class FlywayMigrationTest {
             statement.execute("SET search_path TO upgrade_path");
             statement.execute("""
                     INSERT INTO prediction_run
-                        (schema_version_id, schema_bookmark_id, name, input_data_json, status, created_at, updated_at)
-                    VALUES (1, 1, 'first', '{}', 'SUCCESS', now(), now()),
-                           (1, NULL, 'second', '{}', 'SUCCESS', now(), now())
+                        (schema_version_id, schema_bookmark_id, name, input_data_json, status, origin, created_at, updated_at)
+                    VALUES (1, 1, 'first', '{}', 'SUCCESS', 'WORKSPACE', now(), now()),
+                           (1, NULL, 'second', '{}', 'SUCCESS', 'WORKSPACE', now(), now())
                     """);
             statement.execute("""
                     INSERT INTO schema_bookmark_example (schema_bookmark_id, prediction_run_id, public_id, created_at)

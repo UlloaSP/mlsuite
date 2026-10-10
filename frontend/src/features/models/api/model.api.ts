@@ -15,9 +15,6 @@ import type {
 } from "./model.types";
 import type { CreateModelDto, ModelDto, PageDtoModelDto } from "@/shared/api/openapi.gen";
 
-export const getModels = (signal?: AbortSignal): Promise<ModelDto[]> =>
-  appFetch<ModelDto[]>("/api/models/all", { signal });
-
 export const getModel = (modelId: number | string, signal?: AbortSignal): Promise<ModelDto> =>
   appFetch<ModelDto>(`/api/models/${encodeURIComponent(modelId)}`, { signal });
 

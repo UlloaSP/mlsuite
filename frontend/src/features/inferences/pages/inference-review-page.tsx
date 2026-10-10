@@ -1,10 +1,8 @@
 import { RotateCcw, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, useParams } from "react-router";
-import {
-  useInference,
-  useInferenceReviewAssignments,
-} from "@/features/inferences/api/inference-api";
+import { useInference } from "@/features/inferences/api/inference-api";
+import { useReviewAssignment } from "@/features/inferences/api/inference-review-catalog";
 import { ReviewAssignmentFacts } from "@/features/inferences/components/ReviewAssignmentFacts";
 import { ReviewStateBadges } from "@/features/inferences/components/ReviewStateBadges";
 import {
@@ -38,10 +36,8 @@ export function InferenceReviewPage({ renderAnswers }: Props) {
     reviewerId: string;
   }>();
   const inference = useInference(inferenceId).data;
-  const assignments = useInferenceReviewAssignments(Number(inferenceId));
-  const assignment = assignments.data?.find(
-    (item) => item.reviewRunId === reviewRunId && String(item.reviewer.id) === reviewerId,
-  );
+  const assignments = useReviewAssignment(Number(inferenceId), reviewRunId, reviewerId);
+  const assignment = assignments.data;
   const actions = useReviewAssignmentActions(
     Number(inferenceId),
     inference?.name ?? "this inference",

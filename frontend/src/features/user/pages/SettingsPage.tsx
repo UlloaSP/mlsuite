@@ -50,9 +50,7 @@ export function SettingsPage() {
       {/* Header and tabs stay put; only the active section scrolls. */}
       <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-clip pb-0">
         <AppPageHeader
-          breadcrumbScope="account"
           className={FORM_MAX_WIDTH}
-          eyebrow="Personal settings"
           title="Settings"
           description="Customize appearance, typography, shortcuts, and navigation on this browser."
           breadcrumbs={[{ label: "Settings" }]}

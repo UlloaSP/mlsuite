@@ -85,7 +85,7 @@ export function AppSelect({
         id={id}
         title={title}
       >
-        <span className="grid min-w-0">
+        <span className="grid min-w-0 text-left">
           <span className="col-start-1 row-start-1 min-w-0 truncate">
             <Select.Value placeholder={placeholder} />
           </span>

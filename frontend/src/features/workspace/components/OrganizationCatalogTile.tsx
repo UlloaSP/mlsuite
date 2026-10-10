@@ -7,7 +7,6 @@ import { CalendarDays, Pencil, Share2, Trash2 } from "lucide-react";
 import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { useState } from "react";
-import { useOrganizationMembersQuery } from "@/features/workspace/api/workspace.queries";
 import { modifierName } from "@/shared/lib/relative-time";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
 import { OrganizationMark } from "@/shared/ui/OrganizationMark";
@@ -43,7 +42,6 @@ export function OrganizationCatalogTile({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [editingField, setEditingField] = useState<keyof OrganizationPatch | null>(null);
-  const membersQuery = useOrganizationMembersQuery(item.id, transferOpen);
   const modifier = modifierName(item.updatedByName, item.updatedByEmail);
 
   return (
@@ -166,9 +164,8 @@ export function OrganizationCatalogTile({
       {transferOpen ? (
         <TransferOrganizationOwnerDialog
           disabled={disabled}
-          members={membersQuery.data ?? []}
-          loading={membersQuery.isLoading}
-          error={membersQuery.error}
+          organizationId={item.id}
+          error={null}
           onCancel={() => setTransferOpen(false)}
           onConfirm={async (membershipId) => {
             await onTransferOwner(membershipId);

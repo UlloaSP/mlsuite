@@ -1,6 +1,6 @@
 import { UserMinus } from "lucide-react";
 import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
-import { AppSelect } from "@/shared/ui/AppSelect";
+import { MemberRoleSelect } from "./MemberRoleSelect";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { RoleBadge } from "./RoleBadge";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
@@ -21,10 +21,12 @@ type MemberTableRow = {
 
 export function MemberTable({
   rows,
+  organizationId,
   onRoleChange,
   onRemove,
 }: {
   rows: MemberTableRow[];
+  organizationId: number;
   onRoleChange: (membershipId: number, roleDefinitionId: number) => void;
   onRemove: (membershipId: number) => void;
 }) {
@@ -47,15 +49,12 @@ export function MemberTable({
           description={row.email}
           details={
             row.actions.canChangeRole && row.role.id ? (
-              <AppSelect
-                aria-label={`Role for ${row.fullName}`}
-                value={String(row.role.id)}
-                onValueChange={(roleId) => onRoleChange(row.id, Number(roleId))}
-                className="min-w-40"
-                options={row.actions.assignableRoles.map((role) => ({
-                  value: String(role.id ?? ""),
-                  label: role.name,
-                }))}
+              <MemberRoleSelect
+                organizationId={organizationId}
+                memberId={row.id}
+                name={row.fullName}
+                role={row.role}
+                onChange={(roleId) => onRoleChange(row.id, roleId)}
               />
             ) : (
               <span>Read only</span>

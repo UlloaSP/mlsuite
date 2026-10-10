@@ -8,7 +8,7 @@ import {
   resetPassword,
   updateUser,
 } from "@/features/admin/api/admin-user.api";
-import { adminUsersQueryOptions } from "@/features/admin/api/admin-user.queries";
+import { adminUserCatalogOptions } from "@/features/admin/api/admin-user.queries";
 import type { AdminUserDto, AdminUserPageDto } from "@/shared/api/openapi.gen";
 
 const user: AdminUserDto = {
@@ -36,14 +36,16 @@ describe("admin users API", () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(page));
     vi.stubGlobal("fetch", fetchMock);
 
-    const options = adminUsersQueryOptions();
+    const options = adminUserCatalogOptions();
     await expect(
-      new QueryClient({ defaultOptions: { queries: { retry: false } } }).fetchQuery(options),
-    ).resolves.toEqual(page);
+      new QueryClient({ defaultOptions: { queries: { retry: false } } }).fetchInfiniteQuery(
+        options,
+      ),
+    ).resolves.toEqual({ pages: [{ ...page, page: 0, size: 24 }], pageParams: [0] });
 
-    expect(options.queryKey).toEqual(["adminUsers", 0, "", "name", "all"]);
+    expect(options.queryKey).toEqual(["adminUsers", "infinite", "", "name", "all", 24]);
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost/api/admin/users?page=0&role=all&search=&size=100&sort=name",
+      "http://localhost/api/admin/users?page=0&role=all&search=&size=24&sort=name",
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
   });

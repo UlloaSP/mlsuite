@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { CSSProperties, FormEvent } from "react";
 import { useAtom } from "jotai";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useRef } from "react";
 import { Link, useSearchParams } from "react-router";
 import { EXPLORE_PATH } from "@/app/components/explore-navigation";
@@ -93,8 +93,17 @@ export function AuthLandingPage() {
       <AuthHorizon />
       {/* Nothing public needs an account, so the screen never traps a visitor. */}
       <Link to={cameFromPublicPage ? destination : EXPLORE_PATH} className="auth-exit">
-        <ArrowLeft aria-hidden="true" size={14} />
-        {cameFromPublicPage ? "Back without signing in" : "Explore without signing in"}
+        {cameFromPublicPage ? (
+          <>
+            <ArrowLeft aria-hidden="true" size={14} />
+            Back without signing in
+          </>
+        ) : (
+          <>
+            Explore without signing in
+            <ArrowRight aria-hidden="true" size={14} />
+          </>
+        )}
       </Link>
 
       <div ref={passRef} className="auth-pass" data-phase={access.phase}>

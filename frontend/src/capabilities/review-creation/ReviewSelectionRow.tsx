@@ -12,7 +12,7 @@ export function ReviewSelectionRow({ selected, title, detail, onClick }: Props) 
       type="button"
       aria-pressed={selected}
       onClick={onClick}
-      className={`grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b border-line px-4 py-3 text-left transition last:border-b-0 ${selected ? "bg-accent-subtle" : "hover:bg-surface-muted"}`}
+      className={`grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b border-line px-4 py-3 text-left transition ${selected ? "bg-accent-subtle" : "hover:bg-surface-muted"}`}
     >
       <AppCheckMark checked={selected} />
       <span className="min-w-0">

@@ -57,10 +57,7 @@ describe("schema run report regressions", () => {
     const result = await executeFormPipeline({ form });
 
     expect(result.submitResult.reports).toHaveLength(2);
-    const payloads = result.submitResult.reports as Array<{
-      backend?: unknown;
-      mappedTo?: unknown;
-    }>;
+    const payloads = result.submitResult.reports;
     expect(payloads.map(({ backend, mappedTo }) => [backend, mappedTo])).toEqual([
       ["model-1", "classifier9"],
       ["model-2", "classifier9"],

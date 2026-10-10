@@ -1,10 +1,11 @@
+import type { RemoteComboboxProps } from "@/shared/ui/AppCombobox";
 /*
 SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Hash } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -29,11 +30,12 @@ type OrganizationOwnerCandidate = {
 };
 
 type Props = {
-  currentUserId?: number;
+  initialOwner?: OrganizationOwnerCandidate;
   users: OrganizationOwnerCandidate[];
+  remote: RemoteComboboxProps<number>;
 };
 
-export function CreateOrganizationPage({ currentUserId, users }: Props) {
+export function CreateOrganizationPage({ initialOwner, users, remote }: Props) {
   const navigate = useNavigate();
   const createOrganization = useCreateOrganizationMutation();
   const [name, setName] = useState("");
@@ -43,29 +45,18 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
   const [submitError, setSubmitError] = useState<string>();
   const ownerInitializedRef = useRef(false);
   const slugEditedRef = useRef(false);
-  const ownerItems = useMemo(
-    () =>
-      users.flatMap((item) =>
-        item.enabled
-          ? [
-              {
-                id: item.id,
-                label: item.fullName,
-                description: item.email,
-                avatarUrl: item.avatarUrl,
-              },
-            ]
-          : [],
-      ),
-    [users],
-  );
-
+  const ownerItems = users.map((item) => ({
+    id: item.id,
+    label: item.fullName,
+    description: item.email,
+    avatarUrl: item.avatarUrl ?? null,
+  }));
   useEffect(() => {
-    if (!ownerInitializedRef.current && currentUserId && users.length) {
-      setOwner(users.find((item) => item.id === currentUserId) ?? null);
+    if (!ownerInitializedRef.current && initialOwner) {
+      setOwner(initialOwner);
       ownerInitializedRef.current = true;
     }
-  }, [currentUserId, users]);
+  }, [initialOwner]);
 
   async function submit() {
     setSubmitError(undefined);
@@ -99,9 +90,7 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
     <AppPage>
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
-          breadcrumbScope="platform"
           className={FORM_MAX_WIDTH}
-          eyebrow="Superadmin"
           title="Create organization"
           description="Create an organization and assign its first owner."
           breadcrumbs={[
@@ -128,6 +117,17 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
           </AppFieldLabel>
           <AppFieldLabel label="Owner">
             <AppCombobox
+              {...remote}
+              selectedItem={
+                owner
+                  ? {
+                      id: owner.id,
+                      label: owner.fullName,
+                      description: owner.email,
+                      avatarUrl: owner.avatarUrl ?? null,
+                    }
+                  : undefined
+              }
               value={owner?.id ?? null}
               items={ownerItems}
               placeholder="Search owner"

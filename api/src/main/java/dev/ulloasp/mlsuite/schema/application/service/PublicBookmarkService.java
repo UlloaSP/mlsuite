@@ -2,9 +2,11 @@ package dev.ulloasp.mlsuite.schema.application.service;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.plugin.application.dto.PluginRuntimeSourceDto;
+import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginRuntimeSourcesUseCase;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkExampleRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkDto;
@@ -50,6 +54,7 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
     private final SchemaBookmarkRepository bookmarkRepository;
     private final SchemaBookmarkExampleRepository exampleRepository;
     private final BookmarkPublishability publishability;
+    private final ListPluginRuntimeSourcesUseCase plugins;
 
     @Override
     public PublicBookmarkDto getPublishedBookmark(String publicId) {
@@ -69,6 +74,26 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
     }
 
     @Override
+    public List<PluginRuntimeSourceDto> listPublishedPlugins(String publicId) {
+        SchemaBookmark bookmark = requirePublished(publicId);
+        Set<String> kinds = new HashSet<>();
+        collectKinds(bookmark.getVersion().getFormSchema(), kinds);
+        return plugins.listUsed(bookmark.getSchema().getOrganization().getId(), kinds);
+    }
+
+    /** Every `kind` the schema names, at any depth: built-in kinds simply match no plugin. */
+    private static void collectKinds(Object node, Set<String> kinds) {
+        if (node instanceof Map<?, ?> map) {
+            if (map.get("kind") instanceof String kind) {
+                kinds.add(kind);
+            }
+            map.values().forEach(value -> collectKinds(value, kinds));
+        } else if (node instanceof List<?> list) {
+            list.forEach(value -> collectKinds(value, kinds));
+        }
+    }
+
+    @Override
     public PageDto<PublicBookmarkSummaryDto> getPublishedBookmarkPage(int page, int size, String search, String sort) {
         Page<SchemaBookmark> bookmarks = bookmarkRepository.findPublishedPage(
                 search == null ? "" : search.strip(),
@@ -84,13 +109,19 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
     }
 
     /** Answers 404 unless the bookmark is public now, as every public read of it does. */
-    public void requirePublic(String publicId) {
-        requirePublished(publicId);
+    public SchemaBookmark requirePublic(String publicId) {
+        return requirePublished(publicId);
+    }
+
+    /** A stored run's form, with its keys: the snapshot the run was made on, not the bookmark's now. */
+    public PublicForm formOf(SchemaVersion version) {
+        return PublicForm.of(version.getFormSchema(), publishability.models(version));
     }
 
     /** Checks a public run against the bookmark as it is now and routes its values to each model. */
     public PublicPredictionPlan planPrediction(String publicId, PublicPredictionRequest request) {
-        SchemaVersion version = requirePublished(publicId).getVersion();
+        SchemaBookmark bookmark = requirePublished(publicId);
+        SchemaVersion version = bookmark.getVersion();
         if (version.getVersion() != request.version()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "This bookmark changed after the page was loaded. Reload the page and run it again.");
@@ -103,11 +134,12 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
         }
         PublicForm form = PublicForm.of(version.getFormSchema(), models);
         requireFormValues(form, request.values());
-        return new PublicPredictionPlan(publicId,
+        return new PublicPredictionPlan(publicId, bookmark.getId(), version.getId(),
                 models.stream()
                         .map(model -> new ModelCall(model.id(), form.modelInput(model, request.values())))
                         .toList(),
-                form.reportRoutes());
+                form.reportRoutes(),
+                form.storedInputs(request.values()));
     }
 
     private PublicBookmarkExampleDto publicExample(SchemaBookmarkExample example) {
@@ -124,10 +156,11 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
     }
 
     private Sort sort(String mode) {
+        Sort.Order byId = Sort.Order.asc("id");
         if ("name".equals(mode)) {
-            return Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.desc("updatedAt"));
+            return Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.desc("updatedAt"), byId);
         }
-        return Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("name").ignoreCase());
+        return Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("name").ignoreCase(), byId);
     }
 
     /** Only the form's own inputs, each a scalar: the form bounds how many values a run carries. */

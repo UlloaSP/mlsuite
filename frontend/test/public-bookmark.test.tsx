@@ -101,11 +101,14 @@ beforeEach(() => {
   Object.assign(session, { signedIn: false, canPublish: false });
   toasts.error.mockClear();
   fetchMock = vi.fn<Fetch>();
-  // The page also asks for the bookmark's examples and for the caller's remaining runs; these
-  // bookmarks have no examples and every run left. Both have their own tests, so those requests
-  // are answered here and never counted.
+  // The page also asks for the bookmark's examples, the browser's earlier runs and the caller's
+  // remaining runs; these bookmarks have no examples, no runs yet and every run left. Each has
+  // its own tests, so those requests are answered here and never counted.
   vi.stubGlobal("fetch", (url: unknown, init?: RequestInit) => {
-    if (String(url).endsWith("/examples")) return Promise.resolve(json([]));
+    if (new URL(String(url)).pathname.endsWith("/examples/catalog"))
+      return Promise.resolve(json({ items: [], page: 0, size: 24, totalItems: 0, hasNext: false }));
+    if (new URL(String(url)).pathname.endsWith("/runs/catalog"))
+      return Promise.resolve(json({ items: [], page: 0, size: 24, totalItems: 0, hasNext: false }));
     if (String(url).endsWith("/quota")) {
       return Promise.resolve(json({ limit: 50, remaining: 50, resetsAt: null }));
     }
@@ -254,19 +257,21 @@ describe("public bookmark page", () => {
     ]);
   });
 
-  test("lays the form out as inputs beside results, with its run action", async () => {
+  test("lays the form out as the workspace's: inputs and results in tabs, with its run action", async () => {
     fetchMock.mockResolvedValue(json(publicBookmark));
     const { host } = await page();
     await settle();
 
-    expect(host.querySelector("mlf-kit-tabs")).toBeNull();
-    const form = host.querySelector("mlf-form")!.shadowRoot!;
-    expect(form.querySelector(".root.split")).not.toBeNull();
-    const inputs = form.querySelector('[part="form-pane"]')!;
-    expect(inputs.querySelector("h2")?.textContent).toBe("Inputs");
-    expect(inputs.querySelectorAll("mlf-field-frame")).toHaveLength(2);
-    expect(inputs.querySelectorAll("mlf-submit-button")).toHaveLength(1);
-    expect(form.querySelector('[part="report-pane"] h2')?.textContent).toBe("Results");
+    const form = host.querySelector("mlf-kit-tabs")!.shadowRoot!;
+    const tabs = [...form.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent?.trim());
+    expect(tabs).toEqual(["Inputs", "Results"]);
+    expect(form.querySelectorAll("#panel-inputs mlf-field-frame")).toHaveLength(2);
+    expect(form.querySelectorAll(".btn-submit")).toHaveLength(1);
+    expect(form.querySelector(".btn-submit")?.textContent?.trim()).toBe("Run");
+    // Beside the form, the runs this browser made: none yet.
+    expect(host.querySelector('aside[aria-label="Your runs"]')?.textContent).toContain(
+      "Each run you make here is kept for this browser",
+    );
   });
 
   test("a form without reports and with one input says so in the singular", async () => {
@@ -278,7 +283,7 @@ describe("public bookmark page", () => {
     expect(host.querySelector("dl")?.textContent).toContain("0 reports");
   });
 
-  test("says so when the form needs plugin fields a public page cannot load", async () => {
+  test("says so when the plugin fields of the form do not arrive", async () => {
     fetchMock.mockResolvedValue(
       json({
         ...publicBookmark,
@@ -287,8 +292,8 @@ describe("public bookmark page", () => {
     );
     const { host } = await page();
     await settle();
-    expect(host.textContent).toContain("This form cannot be shown here");
-    expect(host.querySelector("mlf-form")).toBeNull();
+    expect(host.textContent).toContain("This form could not be loaded");
+    expect(host.querySelector("mlf-kit-tabs")).toBeNull();
   });
 
   test("a private or unknown link is not found, without a retry", async () => {
@@ -368,8 +373,7 @@ describe("public page frame", () => {
                 element={
                   <AppPageHeader
                     title="production"
-                    breadcrumbScope="public"
-                    breadcrumbs={[{ label: "production" }]}
+                    breadcrumbs={[{ label: "Explore", to: "/explore" }, { label: "production" }]}
                   />
                 }
               />

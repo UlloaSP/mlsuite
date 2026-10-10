@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -46,6 +47,12 @@ public class SchemaBookmarkExampleService implements SchemaBookmarkExampleUseCas
     }
 
     @Override
+    public Optional<SchemaBookmarkExampleDto> findExample(Long userId, Long bookmarkId, Long runId) {
+        requireBookmark(bookmarkId, organizationId(userId, PermissionKey.VIEW_MODELS));
+        return exampleRepository.findByBookmarkIdAndRunId(bookmarkId, runId).map(SchemaBookmarkExampleDto::from);
+    }
+
+    @Override
     public SchemaBookmarkExampleDto markExample(Long userId, Long bookmarkId, Long runId) {
         Long organizationId = organizationId(userId, PermissionKey.PUBLISH_BOOKMARKS);
         SchemaBookmark bookmark = requireBookmark(bookmarkId, organizationId);
@@ -73,8 +80,8 @@ public class SchemaBookmarkExampleService implements SchemaBookmarkExampleUseCas
     public Map<Long, BookmarkExampleCounts> countExamples(Collection<Long> bookmarkIds) {
         Map<Long, BookmarkExampleCounts> counts = new HashMap<>();
         if (bookmarkIds.isEmpty()) return counts;
-        exampleRepository.findByBookmarkIdIn(bookmarkIds).forEach(example -> counts.merge(
-                example.getBookmark().getId(), BookmarkExampleCounts.of(example), BookmarkExampleCounts::plus));
+        exampleRepository.countByBookmarkIds(bookmarkIds).forEach(stats -> counts.put(
+                stats.bookmarkId(), new BookmarkExampleCounts(stats.current(), stats.stale())));
         return counts;
     }
 

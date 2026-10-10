@@ -35,9 +35,7 @@ export function OrganizationSettingsPage() {
     <AppPage>
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
-          breadcrumbScope={isCurrent ? "organization" : "platform"}
           className={FORM_MAX_WIDTH}
-          eyebrow="Organization settings"
           title={organization.name}
           description="Manage this organization's identity, ownership, and lifecycle."
           breadcrumbs={

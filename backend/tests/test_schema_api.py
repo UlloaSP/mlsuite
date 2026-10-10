@@ -46,3 +46,22 @@ def test_build_schema_rejects_empty_onehot_separator() -> None:
     )
     assert response.status_code == 400
     assert response.json()["detail"] == "One-hot separator cannot be empty."
+
+
+def test_build_schema_emits_mlform_series_columns() -> None:
+    frame = pd.DataFrame({"age": [(1, 2), (3, 4)], "income": [20000, 45000]})
+    response = client.post(
+        "/build_schema",
+        files={
+            "model_file": serialize_joblib(make_classifier(), "model.joblib"),
+            "df_file": serialize_joblib(frame, "data.joblib"),
+        },
+    )
+    assert response.status_code == 200
+    field = response.json()["fields"][0]
+    assert field["kind"] == "series"
+    assert field["mappedTo"] == "age"
+    assert "field1" not in field and "field2" not in field
+    assert [column["id"] for column in field["columns"]] == ["field1", "field2"]
+    assert [column["kind"] for column in field["columns"]] == ["number", "number"]
+    assert all("mappedTo" not in column for column in field["columns"])

@@ -5,21 +5,18 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ReactNode } from "react";
 import type { AppBreadcrumbItem } from "@/shared/ui/AppBreadcrumbs";
-import type { BreadcrumbScope } from "@/shared/ui/breadcrumb/breadcrumb-context";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { CatalogListPanel } from "./CatalogListPanel";
 import { CatalogToolbar, type CatalogOption } from "./CatalogToolbar";
-import { getCatalogErrorMessage, getCatalogTotalPages } from "./catalogPageUtils";
+import { getCatalogErrorMessage } from "./catalogPageUtils";
 import type { CatalogControls } from "./useCatalogControls";
 
 type CatalogHeader = {
   actions?: ReactNode;
   breadcrumbs?: AppBreadcrumbItem[];
-  breadcrumbScope?: BreadcrumbScope;
   description?: ReactNode;
-  eyebrow?: ReactNode;
   title: ReactNode;
 };
 
@@ -35,6 +32,8 @@ type CatalogQuery<TItem> = {
   isFetching: boolean;
   isLoading: boolean;
   refetch: () => unknown;
+  fetchNextPage: () => unknown;
+  isFetchNextPageError: boolean;
 };
 
 type CatalogEmptyCopy = {
@@ -59,7 +58,6 @@ type CatalogResourcePageProps<TItem, TFilter extends string, TSort extends strin
   layout?: "grid" | "list";
   loadingLabel: string;
   navigation?: ReactNode;
-  pageSize: number;
   placeholder: string;
   query: CatalogQuery<TItem>;
   renderItem: (item: TItem, index: number) => ReactNode;
@@ -87,7 +85,6 @@ export function CatalogResourcePage<TItem, TFilter extends string, TSort extends
   layout,
   loadingLabel,
   navigation,
-  pageSize,
   placeholder,
   query,
   renderItem,
@@ -126,6 +123,7 @@ export function CatalogResourcePage<TItem, TFilter extends string, TSort extends
             {toolbarChildren}
           </CatalogToolbar>
           <CatalogListPanel
+            key={`${controls.search}:${controls.filter}:${controls.sort}`}
             errorMessage={getCatalogErrorMessage(query.error)}
             hasNext={Boolean(query.data?.hasNext)}
             isBusy={isBusy}
@@ -133,11 +131,9 @@ export function CatalogResourcePage<TItem, TFilter extends string, TSort extends
             itemCount={items.length}
             layout={layout}
             loadingLabel={loadingLabel}
-            page={controls.page}
-            setPage={controls.setPage}
-            totalPages={getCatalogTotalPages(totalItems, pageSize)}
+            onLoadMore={query.fetchNextPage}
             onRetry={() => {
-              void query.refetch();
+              void (query.isFetchNextPageError ? query.fetchNextPage() : query.refetch());
             }}
             emptyState={{
               action: hasActiveFilters ? undefined : emptyAction,
@@ -147,9 +143,9 @@ export function CatalogResourcePage<TItem, TFilter extends string, TSort extends
             }}
           >
             {items.map(renderItem)}
-            {children}
           </CatalogListPanel>
         </section>
+        {children}
       </AppSurface>
     </AppPage>
   );

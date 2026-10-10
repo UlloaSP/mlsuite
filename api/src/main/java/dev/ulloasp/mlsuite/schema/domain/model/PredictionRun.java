@@ -20,6 +20,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import dev.ulloasp.mlsuite.visitor.domain.model.Visitor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -45,6 +46,7 @@ public class PredictionRun {
         this.name = name;
         this.inputData = inputData;
         this.status = status;
+        this.origin = PredictionRunOrigin.WORKSPACE;
     }
 
     @Id
@@ -69,6 +71,15 @@ public class PredictionRun {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 32)
     private PredictionRunStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "origin", nullable = false, length = 16, updatable = false)
+    private PredictionRunOrigin origin;
+
+    /** Who made a public run without an account; a workspace run, or a member's public run, has none. */
+    @ManyToOne
+    @JoinColumn(name = "visitor_id", updatable = false, foreignKey = @ForeignKey(name = "fk_prediction_run_visitor"))
+    private Visitor visitor;
 
     // Identity snapshot: existing runs remain unattributed; later profile edits do not rewrite history.
     @Column(name = "created_by_name", updatable = false)

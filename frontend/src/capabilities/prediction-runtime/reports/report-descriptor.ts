@@ -11,7 +11,4 @@ export const describeSchemaCustomReport = (
   customReport: CatalogReportDefinition,
   config: ReportConfig,
   context: ReportDescriptorContext,
-) =>
-  customReport.definition.presenter.describe(config as never, context) ??
-  customReport.definition.describe?.(config as never, context) ??
-  null;
+) => customReport.definition.presenter.describe(config as never, context) ?? null;

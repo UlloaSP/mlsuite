@@ -66,6 +66,16 @@ export function useUnsavedSessionRuns(userId: number | undefined, bookmarkId: st
   return entries?.filter((entry) => entry.state !== "saved").length ?? 0;
 }
 
+/**
+ * The unsaved runs of every session, and a way to drop them all: what a member is asked about
+ * before an action of their own (signing out) loads a new document and loses them.
+ */
+export function useUnsavedInferences() {
+  const count = useAtomValue(unsavedCountAtom);
+  const setSessions = useSetAtom(inferenceSessionsAtom);
+  return { count, discard: () => setSessions({}) };
+}
+
 /** Lets the browser warn before a reload or closed tab loses unsaved inferences. */
 export function useWarnOnUnsavedInferences() {
   const unsaved = useAtomValue(unsavedCountAtom);

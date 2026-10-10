@@ -7,10 +7,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router";
 import {
   isPublicBookmarkMissing,
-  publicBookmarkExamplesQueryOptions,
   publicBookmarkQueryOptions,
 } from "@/features/explore/api/public-bookmark-api";
-import { PublicBookmarkForm } from "@/features/explore/components/PublicBookmarkForm";
+import { PublicBookmarkPanel } from "@/features/explore/components/PublicBookmarkPanel";
 import { PublicationNote } from "@/features/explore/components/PublicationNote";
 import { PublicFormSize } from "@/features/explore/components/PublicFormSize";
 import { WorkspaceBookmarkLink } from "@/features/explore/components/WorkspaceBookmarkLink";
@@ -32,14 +31,14 @@ const FACT = "inline-flex items-center gap-1.5";
  * its form is read and run through the public API, and the frame around it is chosen by the
  * router. Members of the organization that owns it also get the way into their workspace.
  *
- * It is laid out like the workspace's own run page: on wide screens the page keeps the height
- * of its frame and the form's panes scroll inside it; on narrow ones the page scrolls.
+ * It is laid out like the workspace's own run page: the form beside the runs this browser
+ * made; on wide screens the page keeps the height of its frame and the form scrolls inside
+ * it, on narrow ones the page scrolls.
  */
 export function PublicBookmarkPage() {
   const { publicId = "" } = useParams<{ publicId: string }>();
   const query = useQuery(publicBookmarkQueryOptions(publicId));
   const bookmark = query.data;
-  const examples = useQuery(publicBookmarkExamplesQueryOptions(publicId)).data;
 
   if (query.isPending) return <AppPageLoader label="Loading public bookmark…" />;
 
@@ -73,8 +72,7 @@ export function PublicBookmarkPage() {
     <AppPage>
       <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
-          breadcrumbScope="public"
-          breadcrumbs={[{ label: bookmark.name }]}
+          breadcrumbs={[{ label: "Explore", to: "/explore" }, { label: bookmark.name }]}
           title={bookmark.name}
           description={bookmark.description ?? undefined}
           actions={<WorkspaceBookmarkLink publicId={bookmark.publicId} />}
@@ -102,16 +100,7 @@ export function PublicBookmarkPage() {
           />
         ) : null}
         {/* A floor keeps the form usable on a short screen, where the page scrolls instead. */}
-        <section aria-label="Form" className="flex flex-col lg:min-h-128 lg:flex-1">
-          {/* A republished or moved bookmark is a new form, not an update of the mounted one. */}
-          <PublicBookmarkForm
-            key={`${bookmark.publicId}:${bookmark.version}`}
-            publicId={bookmark.publicId}
-            version={bookmark.version}
-            formSchema={bookmark.formSchema}
-            examples={examples}
-          />
-        </section>
+        <PublicBookmarkPanel bookmark={bookmark} />
       </AppSurface>
     </AppPage>
   );

@@ -10,7 +10,10 @@ import {
   getVisibleSchemaInputs,
   mergeSchemaRunInputs,
 } from "@/capabilities/prediction-runtime/data/input-display";
-import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
+import {
+  getSchemaResultReports,
+  normalizeReportPayload,
+} from "@/capabilities/prediction-runtime/data/report-display";
 import { applyPredictionInputsToSchema } from "@/capabilities/prediction-runtime/mlform/schema-inputs";
 import { validateMlformSchema } from "@/capabilities/prediction-runtime/mlform/schema-validation";
 
@@ -31,6 +34,15 @@ const schema = {
 };
 
 describe("schema run display", () => {
+  test.each([
+    { prediction: 1, expected: "High" },
+    { prediction: 0, probabilities: [0.2, 0.8], expected: "Low" },
+  ])("preserves the stored classifier prediction $prediction", ({ expected, ...payload }) => {
+    expect(
+      normalizeReportPayload({ kind: "classifier", labels: ["Low", "High"] }, payload),
+    ).toMatchObject({ prediction: expected, labels: ["Low", "High"] });
+  });
+
   test("reads visible inputs from displayKey data only", () => {
     expect(getVisibleSchemaInputs(schema, { bloodGroup: "B", age: 52 })).toEqual([
       { key: "bloodGroup", label: "Blood Group", value: "B" },

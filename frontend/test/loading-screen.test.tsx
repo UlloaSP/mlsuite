@@ -106,9 +106,7 @@ describe("loading skeletons", () => {
         itemCount={0}
         layout="grid"
         loadingLabel="Loading models…"
-        page={0}
-        setPage={() => undefined}
-        totalPages={1}
+        onLoadMore={() => undefined}
       >
         {null}
       </CatalogListPanel>,

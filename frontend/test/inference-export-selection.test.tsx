@@ -1,8 +1,33 @@
 // @vitest-environment jsdom
-import { afterEach, expect, test, vi } from "vite-plus/test";
+import { beforeEach, afterEach, expect, test, vi } from "vite-plus/test";
 import { InferenceExportSelectionDialog } from "@/features/schemas/components/InferenceExportSelectionDialog";
 import type { InferenceExportCandidate } from "@/features/schemas/components/OrganizationInferenceExportButton";
+import { act } from "react";
 import { buttonByText, click, mount } from "./support/dom";
+vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
+  useCurrentOrganizationId: () => 3,
+}));
+beforeEach(() =>
+  vi.stubGlobal("fetch", async (_url: string, init: RequestInit) => {
+    const body = JSON.parse(String(init.body));
+    const chosen = items.filter((item) => body.ids.includes(item.id));
+    return new Response(
+      JSON.stringify({
+        items: chosen.map((item) => ({
+          id: String(item.id),
+          title: item.name,
+          detail: item.createdAt,
+        })),
+        page: 0,
+        size: 24,
+        totalItems: chosen.length,
+        totalAvailable: chosen.length,
+        hasNext: false,
+      }),
+      { headers: { "content-type": "application/json" } },
+    );
+  }),
+);
 const proceed = vi.fn();
 const retry = vi.fn();
 const close = vi.fn();
@@ -20,6 +45,7 @@ const items: InferenceExportCandidate[] = Array.from({ length: 15 }, (_, i) => (
 }));
 afterEach(() => {
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
 });
 async function render(busy = false, error = false, data = items) {
   await mount(
@@ -32,15 +58,16 @@ async function render(busy = false, error = false, data = items) {
       onRetry={retry}
     />,
   );
+  for (let i = 0; i < 6; i++)
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
 }
-test("opens selection dialog with snapshot/bookmark and paginates before preparing", async () => {
+test("keeps all snapshot candidates selected independently of virtual rows", async () => {
   await render();
   expect(document.querySelector('[role="dialog"]')).not.toBeNull();
   expect(document.body.querySelector('[aria-label="Bookmark"]')).not.toBeNull();
   expect(document.body.textContent).toContain("14 of 14 selected");
   expect(proceed).not.toHaveBeenCalled();
-  await click("Next");
-  expect(document.body.textContent).toContain("Run 7");
+  expect(document.body.querySelector("footer")).toBeNull();
   await click("Continue");
   expect(proceed).toHaveBeenCalledWith({
     versionId: "7",

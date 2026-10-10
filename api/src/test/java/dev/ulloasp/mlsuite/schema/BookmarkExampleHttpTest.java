@@ -38,6 +38,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
+import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginRuntimeSourcesUseCase;
 import dev.ulloasp.mlsuite.schema.adapter.in.web.PublicBookmarkController;
 import dev.ulloasp.mlsuite.schema.adapter.in.web.SchemaBookmarkController;
 import dev.ulloasp.mlsuite.schema.adapter.in.web.SchemaBookmarkExampleController;
@@ -49,6 +50,7 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepos
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictBookmarkCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicPredictionUseCase;
+import dev.ulloasp.mlsuite.schema.application.port.in.PublicRunUseCase;
 import dev.ulloasp.mlsuite.schema.application.service.BookmarkPublishability;
 import dev.ulloasp.mlsuite.schema.application.service.PublicBookmarkService;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaBookmarkExampleService;
@@ -76,9 +78,9 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationS
                 "cors.allow-origins=http://localhost:5173" })
 @Import({ SecurityConfig.class, SchemaBookmarkServiceImpl.class, SchemaBookmarkExampleService.class,
         PublicBookmarkService.class, BookmarkPublishability.class, WorkspaceAuthorizationService.class })
-@MockitoBean(types = { PredictBookmarkCatalogUseCase.class, PublicPredictionUseCase.class, RestTemplate.class,
+@MockitoBean(types = { PredictBookmarkCatalogUseCase.class, PublicPredictionUseCase.class, PublicRunUseCase.class, RestTemplate.class,
         UserDetailsService.class, SchemaRepository.class, SchemaModelBindingRepository.class,
-        RoleDefinitionRepository.class })
+        RoleDefinitionRepository.class, ListPluginRuntimeSourcesUseCase.class })
 class BookmarkExampleHttpTest {
 
     private static final long USER_ID = 7L;

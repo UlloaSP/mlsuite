@@ -7,6 +7,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,14 +33,18 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
+import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
+import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionRequest;
 import dev.ulloasp.mlsuite.schema.application.service.PublicBookmarkService;
@@ -57,9 +62,9 @@ import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.EntityManager;
 
 /**
- * The whole application for the public prediction tests: the real web configuration, security
- * chain and migrated PostgreSQL schema, with one published bookmark stored as rows before each
- * test. Only the runtime is a stand-in.
+ * The whole application for the public prediction tests and for the catalog tests of every
+ * feature: the real web configuration, security chain and migrated PostgreSQL schema, with one
+ * published bookmark stored as rows before each test. Only the runtime is a stand-in.
  */
 @SpringBootTest(properties = {
         "spring.profiles.active=test",
@@ -78,13 +83,20 @@ import jakarta.persistence.EntityManager;
 })
 @AutoConfigureMockMvc
 @Testcontainers(disabledWithoutDocker = true)
-abstract class PublicPredictionFixture {
+public abstract class PublicPredictionFixture {
 
-    @Container
+    /**
+     * One database for every test class on this fixture: the Spring context is cached across
+     * them, so the container must outlive each class rather than be started and stopped per class.
+     */
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:18.6")
             .withDatabaseName("mlsuite")
             .withUsername("mlsuite")
             .withPassword("mlsuite");
+
+    static {
+        POSTGRES.start();
+    }
 
     @DynamicPropertySource
     static void databaseProperties(DynamicPropertyRegistry registry) {
@@ -101,26 +113,31 @@ abstract class PublicPredictionFixture {
     static final byte[] ONNX_BYTES = "onnx-artifact".getBytes();
     static final Map<String, Object> CLASSIFIER = Map.of("kind", "classifier", "label", "Predicted class",
             "mapping", List.of("low", "high"), "probabilities", List.of(List.of(0.2, 0.8)));
+    /** The classifier's answer as a run keeps it: the instance's own row, its labels and its class. */
+    static final Map<String, Object> KEPT_CLASSIFIER = Map.of("kind", "classifier", "label", "Predicted class",
+            "mapping", List.of("low", "high"), "probabilities", List.of(0.2, 0.8),
+            "labels", List.of("low", "high"), "prediction", "high");
     static final Map<String, Object> REGRESSOR = Map.of("kind", "regressor", "label", "Predicted value",
             "values", List.of(41.5));
     /** The caller of every run made through the service: a network without a session. */
-    static final PublicCaller VISITOR = new PublicCaller(false, "address:visitor");
+    static final PublicCaller VISITOR = PublicCaller.anonymous("address:visitor", null);
 
-    @Autowired EntityManager entityManager;
+    @Autowired protected EntityManager entityManager;
     @Autowired PlatformTransactionManager transactionManager;
     @Autowired DataSource dataSource;
-    @Autowired ObjectMapper objectMapper;
-    @Autowired MockMvc mockMvc;
+    @Autowired protected ObjectMapper objectMapper;
+    @Autowired protected MockMvc mockMvc;
     @MockitoBean AnalyzerClient analyzer;
     @Autowired PublicBookmarkService publicBookmarks;
     @Autowired PublicPredictionService service;
 
-    Organization organization;
-    Schema schema;
-    SchemaVersion version;
-    SchemaBookmark bookmark;
+    protected User owner;
+    protected Organization organization;
+    protected Schema schema;
+    protected SchemaVersion version;
+    protected SchemaBookmark bookmark;
     Model joblibModel;
-    Model onnxModel;
+    protected Model onnxModel;
 
     /** One published bookmark over two models: every field and report routes by model name or id. */
     @BeforeEach
@@ -128,7 +145,7 @@ abstract class PublicPredictionFixture {
         reset(analyzer);
         int n = SEQUENCE.incrementAndGet();
         inTransaction(() -> {
-            User owner = new User("owner" + n, "owner" + n + "@example.test", "unused", "Owner", SystemRole.USER);
+            owner = new User("owner" + n, "owner" + n + "@example.test", "unused", "Owner", SystemRole.USER);
             entityManager.persist(owner);
             organization = new Organization("acme-" + n, "Acme Health", null, owner);
             entityManager.persist(organization);
@@ -179,7 +196,7 @@ abstract class PublicPredictionFixture {
     }
 
     PublicPredictionDto run(String publicId, PublicPredictionRequest request) {
-        return service.run(publicId, request, VISITOR);
+        return service.run(publicId, request, VISITOR).result();
     }
 
     ResponseStatusException refused(String publicId, PublicPredictionRequest request) {
@@ -194,15 +211,35 @@ abstract class PublicPredictionFixture {
     }
 
     /** The same request with a logged-in session, as the login endpoint leaves it for the filter chain. */
-    static MockHttpServletRequestBuilder signedIn(MockHttpServletRequestBuilder request, long userId) {
-        var principal = new AuthenticatedUserPrincipal(userId, "member@example.test", "hash", SystemRole.USER, true);
+    protected static MockHttpServletRequestBuilder signedIn(MockHttpServletRequestBuilder request, long userId) {
+        return signedIn(request, userId, SystemRole.USER);
+    }
+
+    protected static MockHttpServletRequestBuilder signedIn(MockHttpServletRequestBuilder request, long userId,
+            SystemRole role) {
+        var principal = new AuthenticatedUserPrincipal(userId, "member@example.test", "hash", role, true);
         var authentication = UsernamePasswordAuthenticationToken.authenticated(
                 principal, null, principal.getAuthorities());
         return request.sessionAttr(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
                 new SecurityContextImpl(authentication));
     }
 
-    void inTransaction(Runnable work) {
+    /**
+     * Makes the owner an active member holding the organization's owner role, with every
+     * permission, and the organization the one they work in.
+     */
+    protected RoleDefinition authorizeOwner() {
+        RoleDefinition role = new RoleDefinition(organization, RoleScope.ORGANIZATION, "Owner", "owner", "OWNER");
+        role.setPermissions(EnumSet.allOf(PermissionKey.class));
+        inTransaction(() -> {
+            entityManager.persist(role);
+            entityManager.persist(new OrganizationMembership(organization, owner, role, MembershipStatus.ACTIVE));
+            entityManager.find(User.class, owner.getId()).setCurrentOrganization(organization);
+        });
+        return role;
+    }
+
+    protected void inTransaction(Runnable work) {
         new TransactionTemplate(transactionManager).executeWithoutResult(status -> work.run());
     }
 

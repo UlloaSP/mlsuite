@@ -1,24 +1,21 @@
-import { useMemo } from "react";
 import { useParams } from "react-router";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
-import { AppSelect } from "@/shared/ui/AppSelect";
+import { MemberRoleFilter } from "@/features/workspace/components/MemberRoleFilter";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
 import { AppSearchField } from "@/shared/ui/AppSearchField";
+import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
 import { useUrlFilters } from "@/shared/lib/use-url-filters";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
-import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
+import { useMemberCatalog } from "@/features/workspace/api/workspace-catalog-queries";
 import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
 import {
   useRemoveOrganizationMemberMutation,
   useUpdateOrganizationMemberRoleMutation,
 } from "@/features/workspace/api/member.mutations";
 import { MemberTable } from "@/features/workspace/components/MemberTable";
-import {
-  useOrganizationAdminDashboardQuery,
-  useOrganizationMembersQuery,
-} from "@/features/workspace/api/workspace.queries";
+import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/workspace.queries";
 import { organizationRouteErrorStatus } from "@/features/workspace/lib/organization-route-error";
 
 export function MembersPage() {
@@ -27,42 +24,16 @@ export function MembersPage() {
   const dashboard = useOrganizationAdminDashboardQuery(id);
   const filters = useUrlFilters({ q: "", role: "ALL" });
   const { q: query, role } = filters.values;
-  const membersQuery = useOrganizationMembersQuery(
+  const search = useDebouncedValue(query.trim());
+  const membersQuery = useMemberCatalog(
     id,
+    { search, filter: role },
     Boolean(dashboard.data?.permissions.canViewMembers),
   );
-  const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
+  const members = membersQuery.data?.items ?? [];
   const removeMember = useRemoveOrganizationMemberMutation(id);
   const updateMemberRole = useUpdateOrganizationMemberRoleMutation(id);
-  const roles = useMemo(
-    () =>
-      Array.from(
-        new Map(
-          members.map(({ role }) => [
-            String(role.id ?? role.name),
-            { value: String(role.id ?? role.name), label: role.name },
-          ]),
-        ).values(),
-      ).sort((a, b) => a.label.localeCompare(b.label)),
-    [members],
-  );
-  const filtered = useMemo(
-    () =>
-      members.filter((member) => {
-        const text = `${member.fullName} ${member.email}`.toLowerCase();
-        return (
-          text.includes(query.trim().toLowerCase()) &&
-          (role === "ALL" || String(member.role.id ?? member.role.name) === role)
-        );
-      }),
-    [members, query, role],
-  );
-  const loading = dashboard.isPending || membersQuery.isPending;
-  const pagination = useClientCatalogPage(
-    filtered,
-    `${id}:${query}:${role}`,
-    !membersQuery.isSuccess,
-  );
+  const loading = dashboard.isPending || membersQuery.isLoading;
 
   if (!Number.isFinite(id)) return <RouteStatusPage status={404} />;
   if (dashboard.isError)
@@ -87,8 +58,8 @@ export function MembersPage() {
               count={
                 membersQuery.isSuccess
                   ? {
-                      shown: filtered.length,
-                      total: members.length,
+                      shown: membersQuery.data?.totalItems ?? 0,
+                      total: membersQuery.data?.totalMembers ?? 0,
                       filtered: filters.isFiltered,
                       noun: "members",
                     }
@@ -97,23 +68,26 @@ export function MembersPage() {
               value={query}
               onChange={(value) => filters.setFilters({ q: value })}
             />
-            <AppSelect
-              aria-label="Filter by role"
-              className="min-w-44"
-              value={role}
-              onValueChange={(value) => filters.setFilters({ role: value })}
-              options={[{ value: "ALL", label: "All roles" }, ...roles]}
-            />
+            <div className="w-full sm:w-56">
+              <MemberRoleFilter
+                organizationId={id}
+                value={role}
+                onChange={(role) => filters.setFilters({ role })}
+              />
+            </div>
           </AppToolbar>
           <CatalogListPanel
-            {...pagination}
-            itemCount={filtered.length}
+            hasNext={Boolean(membersQuery.hasNextPage)}
+            onLoadMore={membersQuery.fetchNextPage}
+            itemCount={members.length}
             isLoading={loading}
             isBusy={loading || membersQuery.isFetching}
             loadingLabel="Loading members…"
             errorMessage={membersQuery.isError ? "Could not load members." : null}
             onRetry={() => {
-              void membersQuery.refetch();
+              void (membersQuery.isFetchNextPageError
+                ? membersQuery.fetchNextPage()
+                : membersQuery.refetch());
             }}
             emptyState={{
               title: filters.isFiltered ? "No matching members" : "No members yet",
@@ -122,17 +96,17 @@ export function MembersPage() {
                 : "Organization members will appear here.",
             }}
           >
-            {pagination.visibleItems.length > 0 ? (
+            {members.map((member) => (
               <MemberTable
-                rows={pagination.visibleItems}
-                onRoleChange={(membershipId, roleDefinitionId) => {
-                  updateMemberRole.mutate({ membershipId, roleDefinitionId });
-                }}
-                onRemove={(membershipId) => {
-                  removeMember.mutate(membershipId);
-                }}
+                organizationId={id}
+                key={member.id}
+                rows={[member]}
+                onRoleChange={(membershipId, roleDefinitionId) =>
+                  updateMemberRole.mutate({ membershipId, roleDefinitionId })
+                }
+                onRemove={(membershipId) => removeMember.mutate(membershipId)}
               />
-            ) : null}
+            ))}
           </CatalogListPanel>
         </section>
       </AppSurface>

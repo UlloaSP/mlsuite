@@ -1,3 +1,4 @@
+import { useBookmarkExampleState } from "@/features/schemas/api/schema-catalog-queries";
 /*
 SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
@@ -6,7 +7,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { toast } from "sonner";
 import { useCan } from "@/capabilities/workspace-context/workspace-context";
 import { useSetBookmarkExampleMutation } from "@/features/schemas/api/schema-mutations";
-import { useBookmarkExamples, useSchemaBookmark } from "@/features/schemas/api/schema-queries";
+import { useSchemaBookmark } from "@/features/schemas/api/schema-queries";
 import { EXAMPLE_STATUS } from "@/features/schemas/lib/bookmark-example-status";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -21,13 +22,13 @@ import type { PredictionRunDto } from "@/shared/api/openapi.gen";
 export function RunPublicExampleControl({ run }: { run: PredictionRunDto }) {
   const bookmarkId = run.schemaBookmarkId ?? undefined;
   const { data: bookmark } = useSchemaBookmark(bookmarkId);
-  const { data: examples } = useBookmarkExamples(bookmarkId);
+  const { data: state } = useBookmarkExampleState(bookmarkId, run.id);
   const canPublish = useCan("canPublishBookmarks");
   const setExample = useSetBookmarkExampleMutation();
   const { confirm, dialog } = useActionDialog();
-  if (!bookmark || !examples) return null;
+  if (!bookmark || !state) return null;
 
-  const example = examples.find((item) => item.runId === run.id);
+  const example = state.example;
   const status = example ? EXAMPLE_STATUS[example.status] : null;
   const onPinnedSnapshot = run.schemaVersionId === bookmark.versionId;
   // A member who cannot publish sees the state of an example, and nothing for other runs.

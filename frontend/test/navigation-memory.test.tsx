@@ -40,11 +40,9 @@ async function render(node: React.ReactNode, route = "/") {
   container = view.host;
 }
 
-const roots = { organization: { label: "Acme", to: "/workspace" } };
-
 test("the rail draws one line per breadcrumb level and names a level on focus", async () => {
   await render(
-    <BreadcrumbProvider roots={roots}>
+    <BreadcrumbProvider>
       <LocationRail side="left" />
       <AppPageHeader
         title="Page"
@@ -58,18 +56,17 @@ test("the rail draws one line per breadcrumb level and names a level on focus", 
   );
   const lines = [...container.querySelectorAll<HTMLElement>("nav[data-location-rail] li > *")];
   expect(lines.map((line) => line.getAttribute("aria-label"))).toEqual([
-    "Acme",
     "Schemas",
     "Risk schema",
     "Bookmarks",
   ]);
-  expect(lines[0].getAttribute("href")).toBe("/workspace");
-  expect(lines[3].getAttribute("aria-current")).toBe("page");
+  expect(lines[0].getAttribute("href")).toBe("/schemas");
+  expect(lines[2].getAttribute("aria-current")).toBe("page");
 
-  await act(async () => lines[2].focus());
+  await act(async () => lines[1].focus());
   const card = document.body.querySelector("[data-radix-popper-content-wrapper]");
   expect(card?.textContent).toContain("Risk schema");
-  expect(card?.textContent).toContain("Acme › Schemas");
+  expect(card?.textContent).toContain("Schemas");
 });
 
 /** What the shell does: the bottom bar only for the bottom display. */
@@ -79,8 +76,11 @@ function ShellBottom() {
 
 test("each location display draws the trail in one place only", async () => {
   const page = (
-    <BreadcrumbProvider roots={roots}>
-      <AppPageHeader title="Models" />
+    <BreadcrumbProvider>
+      <AppPageHeader
+        title="Risk model"
+        breadcrumbs={[{ label: "Models", to: "/models" }, { label: "Risk model" }]}
+      />
       <ShellBottom />
     </BreadcrumbProvider>
   );
@@ -108,7 +108,7 @@ test("each location display draws the trail in one place only", async () => {
 
   await renderWith("breadcrumb-bottom");
   expect(crumbs()).toHaveLength(1);
-  expect(container.querySelector("footer")?.textContent).toBe("AcmeModels");
+  expect(container.querySelector("footer")?.textContent).toBe("ModelsRisk model");
 });
 
 function TabProbe() {

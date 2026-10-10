@@ -2,7 +2,7 @@ import { useSearchParams } from "react-router";
 
 /**
  * Navigable list filters kept in the URL. Defaults and empty values stay out of the URL,
- * changes replace the history entry, and every change drops `page` so the list restarts.
+ * and changes replace the history entry.
  */
 export function useUrlFilters<K extends string>(defaults: Record<K, string>) {
   const [params, setParams] = useSearchParams();
@@ -19,7 +19,6 @@ export function useUrlFilters<K extends string>(defaults: Record<K, string>) {
           if (value === "" || value === defaults[key]) next.delete(key);
           else next.set(key, value);
         }
-        next.delete("page");
         return next;
       },
       { replace: true },

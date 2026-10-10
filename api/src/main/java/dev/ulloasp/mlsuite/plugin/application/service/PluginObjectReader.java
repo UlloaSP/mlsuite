@@ -2,6 +2,7 @@ package dev.ulloasp.mlsuite.plugin.application.service;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,39 +55,62 @@ public class PluginObjectReader {
         return storage.list(PluginStoragePaths.organizationItemsPrefix("plugins", organizationId)).stream()
                 .filter(item -> item.objectKey().endsWith(".json"))
                 .filter(item -> !deletionQueue.isDeletionRequested(properties.getBucket(), item.objectKey()))
-                .map(item -> readVerified(
-                        organizationId,
-                        item.objectKey(),
-                        objectId(organizationId, item.objectKey()),
-                        false))
+                .map(item -> readVerified(organizationId, item.objectKey(), objectId(organizationId, item.objectKey()))
+                        .orElseThrow(() -> new IllegalStateException("Could not load plugin object.")))
                 .toList();
     }
 
     @Transactional
     public StoredPlugin load(Long organizationId, String id) {
+        return find(organizationId, id).orElseThrow(() -> new PluginNotFoundException(id));
+    }
+
+    /**
+     * Empty when the plugin is queued for deletion or its object is gone. A caller that goes on after
+     * a missing plugin needs this instead of {@link #load}, whose exception dooms the transaction.
+     */
+    @Transactional
+    public Optional<StoredPlugin> find(Long organizationId, String id) {
         organizations.lockById(organizationId).orElseThrow();
         String objectKey = PluginStoragePaths.organizationItemObjectKey("plugins", organizationId, id);
         if (deletionQueue.isDeletionRequested(properties.getBucket(), objectKey)) {
-            throw new PluginNotFoundException(id);
+            return Optional.empty();
         }
-        return readVerified(organizationId, objectKey, id, true).plugin();
+        return readVerified(organizationId, objectKey, id).map(ReadPlugin::plugin);
     }
 
-    private ReadPlugin readVerified(
-            Long organizationId,
-            String objectKey,
-            String expectedId,
-            boolean missingAsNotFound) {
+    /**
+     * The plugin exactly as its metadata pins it, for callers that only run it: no organization
+     * lock and no repair, so a public page never contends with the catalog's writers.
+     */
+    @Transactional(readOnly = true)
+    public Optional<StoredPlugin> readPinned(PluginMetadata item) {
+        if (deletionQueue.isDeletionRequested(properties.getBucket(), item.getObjectKey())) {
+            return Optional.empty();
+        }
+        String versionId = item.getStorageVersionId() == null || item.getStorageVersionId().isBlank()
+                ? null
+                : item.getStorageVersionId();
+        return storage.loadOptional(properties.getBucket(), item.getObjectKey(), versionId).map(bytes -> {
+            if (item.getSha256() != null) {
+                ArtifactIntegrityVerifier.verify("plugin " + item.getId(), null, item.getSha256(), bytes);
+            }
+            return decode(bytes);
+        });
+    }
+
+    private Optional<ReadPlugin> readVerified(Long organizationId, String objectKey, String expectedId) {
         var persisted = metadata.findByObjectKeyAndOrganizationId(objectKey, organizationId);
         String versionId = persisted.map(PluginMetadata::getStorageVersionId)
                 .filter(value -> !value.isBlank())
                 .orElseGet(() -> storage.inspectOptional(properties.getBucket(), objectKey, null)
                         .map(item -> item.versionId())
                         .orElse(null));
-        byte[] bytes = storage.loadOptional(properties.getBucket(), objectKey, versionId)
-                .orElseThrow(() -> missingAsNotFound
-                        ? new PluginNotFoundException(expectedId)
-                        : new IllegalStateException("Could not load plugin object."));
+        Optional<byte[]> stored = storage.loadOptional(properties.getBucket(), objectKey, versionId);
+        if (stored.isEmpty()) {
+            return Optional.empty();
+        }
+        byte[] bytes = stored.get();
         persisted.filter(item -> !expectedId.equals(item.getId()))
                 .ifPresent(item -> {
                     throw new ArtifactIntegrityException(
@@ -102,7 +126,7 @@ public class PluginObjectReader {
         }
         String exactVersionId = ensureVersioned(objectKey, plugin, bytes, versionId);
         persisted.ifPresent(item -> repairIdentity(item, bytes, exactVersionId));
-        return new ReadPlugin(plugin, bytes.length, ArtifactHash.sha256(bytes), exactVersionId);
+        return Optional.of(new ReadPlugin(plugin, bytes.length, ArtifactHash.sha256(bytes), exactVersionId));
     }
 
     private String objectId(Long organizationId, String objectKey) {

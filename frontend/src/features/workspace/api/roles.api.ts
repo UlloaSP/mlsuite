@@ -9,7 +9,6 @@ import type {
   CreateRoleRequest,
   DuplicateRoleRequest,
   RoleDefinitionDto,
-  RolesResponseDto,
   UpdateRoleRequest,
 } from "@/shared/api/openapi.gen";
 
@@ -48,9 +47,6 @@ export const duplicateRole = (
     `/api/organizations/${organizationId}/roles/${roleId}/duplicate`,
     json("POST", { name } satisfies DuplicateRoleRequest),
   );
-
-export const getRoles = (organizationId: number, signal?: AbortSignal): Promise<RolesResponseDto> =>
-  appFetch<RolesResponseDto>(`/api/organizations/${organizationId}/roles`, { signal });
 
 export const updateRole = (
   organizationId: number,

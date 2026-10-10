@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { createMlRegistryPack } from "mlform/builtins";
-import { registerDefinedFieldKind, registerDefinedReportKind } from "mlform/kit";
+import { createMlSuiteRegistry } from "./builtin-registry";
+import { createBuiltinDescriptorRegistry } from "mlform/view";
 import type { PrimitiveDescriptorRegistry } from "mlform/primitives";
 import type { FormSchema, Registry, Transport } from "mlform/runtime";
 import type {
@@ -37,16 +37,20 @@ export type SchemaRunRuntime = {
   normalizedFields: readonly PredictionPayloadField[];
 };
 
-const createRegistry = (
+/** The built-in kinds plus the plugin kinds a form's schema uses. */
+export const createRunRegistries = (
   fields: readonly CatalogFieldDefinition[],
   reports: readonly CatalogReportDefinition[],
 ) => {
-  const pack = createMlRegistryPack();
+  const pack = {
+    registry: createMlSuiteRegistry(),
+    descriptorRegistry: createBuiltinDescriptorRegistry(),
+  };
   fields.forEach((definition) =>
-    registerDefinedFieldKind(pack.registry, pack.descriptorRegistry, definition.definition),
+    definition.definition.register(pack.registry, pack.descriptorRegistry),
   );
   reports.forEach((definition) =>
-    registerDefinedReportKind(pack.registry, pack.descriptorRegistry, definition.definition),
+    definition.definition.register(pack.registry, pack.descriptorRegistry),
   );
   return pack;
 };
@@ -63,7 +67,7 @@ export const createSchemaRunRuntime = ({
     customReportDefinitions,
   });
   const normalizedFields = formSchema.fields as PredictionPayloadField[];
-  const pack = createRegistry(customFieldDefinitions, customReportDefinitions);
+  const pack = createRunRegistries(customFieldDefinitions, customReportDefinitions);
   return {
     formSchema,
     registry: pack.registry,

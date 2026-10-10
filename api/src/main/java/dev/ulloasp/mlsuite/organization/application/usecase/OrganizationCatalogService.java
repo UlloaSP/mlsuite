@@ -72,8 +72,9 @@ public class OrganizationCatalogService {
     }
 
     private Sort sort(String mode) {
-        if ("name".equals(mode)) return Sort.by(Sort.Order.asc("name").ignoreCase());
-        if ("created".equals(mode)) return Sort.by(Sort.Order.desc("createdAt"));
-        return Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("name").ignoreCase());
+        Sort.Order byId = Sort.Order.asc("id");
+        if ("name".equals(mode)) return Sort.by(Sort.Order.asc("name").ignoreCase(), byId);
+        if ("created".equals(mode)) return Sort.by(Sort.Order.desc("createdAt"), byId);
+        return Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("name").ignoreCase(), byId);
     }
 }

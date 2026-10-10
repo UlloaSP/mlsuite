@@ -16,11 +16,12 @@ vi.mock("@/app/layouts/AppShellLayout", () => ({
 const PUBLIC_ID = "8f6f3c0e-58a2-4c0b-9d0c-0d5c1f6e2a11";
 const AT = "2026-10-01T10:00:00Z";
 const ME_PATH = "/api/users/me";
-const CONTEXT_PATH = "/api/workspace/context";
+const CONTEXT_PATH = "/api/workspace/context/current";
 const BOOKMARK_PATH = `/api/public/bookmarks/${PUBLIC_ID}`;
-const EXAMPLES_PATH = `${BOOKMARK_PATH}/examples`;
+const EXAMPLES_PATH = `${BOOKMARK_PATH}/examples/catalog`;
 const QUOTA_PATH = `${BOOKMARK_PATH}/quota`;
 const RUN_PATH = `${BOOKMARK_PATH}/predictions`;
+const RUNS_PATH = `${BOOKMARK_PATH}/runs/catalog`;
 const WORKSPACE_PATH = `/api/schema-bookmarks/public/${PUBLIC_ID}`;
 
 const publicBookmark = (
@@ -64,14 +65,23 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const failure = (status: number, message: string) =>
   json({ status, message, path: RUN_PATH, timestamp: AT }, status);
+let runIds = 0;
+/** The server's answer to a run: the run it kept, and the count left. */
 const classified = (low: number, high: number) =>
   json({
-    reports: [
-      {
-        key: "out0",
-        payload: { kind: "classifier", mapping: ["low", "high"], probabilities: [[low, high]] },
-      },
-    ],
+    run: {
+      id: (runIds += 1),
+      version: 2,
+      createdAt: AT,
+      inputs: { Age: 52 },
+      reports: [
+        {
+          key: "out0",
+          payload: { kind: "classifier", mapping: ["low", "high"], probabilities: [[low, high]] },
+        },
+      ],
+      feedback: [],
+    },
     quota: { limit: 50, remaining: 49, resetsAt: AT },
   });
 const flush = () => act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
@@ -93,7 +103,9 @@ beforeEach(() => {
   answers = {
     [ME_PATH]: [json({ status: 401, message: "Unauthorized", path: ME_PATH, timestamp: AT }, 401)],
     [BOOKMARK_PATH]: [json(publicBookmark())],
-    [EXAMPLES_PATH]: [json([])],
+    [EXAMPLES_PATH]: [json({ items: [], page: 0, size: 24, totalItems: 0, hasNext: false })],
+    // No earlier runs: the session has its own tests.
+    [RUNS_PATH]: [json({ items: [], page: 0, size: 24, totalItems: 0, hasNext: false })],
     // Plenty of runs left: the quota has its own tests.
     [QUOTA_PATH]: [json({ limit: 50, remaining: 50, resetsAt: null })],
   };
@@ -124,12 +136,10 @@ async function openPage() {
   return view.host;
 }
 
-/** MLForm lays the form out as two panes (Inputs, Results) in one element. */
-const formRoot = (host: HTMLElement) => host.querySelector("mlf-form")!.shadowRoot!;
+/** MLForm lays the form out as two tabs (Inputs, Results) in one element. */
+const formRoot = (host: HTMLElement) => host.querySelector("mlf-kit-tabs")!.shadowRoot!;
 async function run(host: HTMLElement) {
-  await act(async () =>
-    formRoot(host).querySelector("mlf-submit-button")!.shadowRoot!.querySelector("button")!.click(),
-  );
+  await act(async () => formRoot(host).querySelector<HTMLButtonElement>(".btn-submit")!.click());
   await settle();
 }
 /** Reports render inside nested shadow roots, which `textContent` does not cross. */
@@ -150,10 +160,10 @@ const requestedPaths = () => fetchMock.mock.calls.map(([url]) => new URL(String(
 const alertText = (host: HTMLElement) => host.querySelector('[role="alert"]')?.textContent ?? null;
 
 describe("running a public bookmark", () => {
-  test("a visitor runs the form in one public request and sees the result, which is not saved", async () => {
+  test("a visitor runs the form in one public request and sees the result, which the server kept", async () => {
     answers[RUN_PATH] = [classified(0.2, 0.8)];
     const host = await openPage();
-    expect(host.textContent).toContain("Runs from this page are not saved");
+    expect(host.textContent).toContain("Runs from this page are kept for this browser");
     expect(formRoot(host).querySelectorAll("mlf-field-frame")).toHaveLength(1);
 
     await run(host);
@@ -165,8 +175,17 @@ describe("running a public bookmark", () => {
     expect(formRoot(host).querySelectorAll("mlf-report-frame")).toHaveLength(1);
     expect(reportText(host)).toContain("high 80.0 %");
     expect(alertText(host)).toBeNull();
-    // After the frame's session probe, only public reads and the run: no model, no saved run.
-    expect(requestedPaths()).toEqual([ME_PATH, BOOKMARK_PATH, EXAMPLES_PATH, QUOTA_PATH, RUN_PATH]);
+    // After the frame's session probe, only public reads and the run: nothing names a model.
+    expect(requestedPaths()).toEqual([
+      ME_PATH,
+      BOOKMARK_PATH,
+      EXAMPLES_PATH,
+      QUOTA_PATH,
+      RUNS_PATH,
+      RUN_PATH,
+      RUNS_PATH,
+      `${BOOKMARK_PATH}/runs/1`,
+    ]);
   });
 
   test("the form is busy while the run is in flight", async () => {
@@ -268,7 +287,69 @@ describe("running a public bookmark", () => {
     expect(alertText(host)).toContain("The run did not reach the server");
   });
 
-  test("a form that needs plugin fields or reports is not mounted", async () => {
+  test("a form made with a plugin field loads it and runs for a visitor", async () => {
+    // Node cannot import blob URLs; data URLs execute the same transpiled module in this test.
+    let moduleSource = "";
+    vi.stubGlobal(
+      "Blob",
+      class {
+        constructor(parts: string[]) {
+          moduleSource = parts.join("");
+        }
+      },
+    );
+    vi.spyOn(URL, "createObjectURL").mockImplementation(
+      () => `data:text/javascript;base64,${Buffer.from(moduleSource).toString("base64")}`,
+    );
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    answers[BOOKMARK_PATH] = [
+      json({
+        ...publicBookmark(),
+        formSchema: {
+          fields: [{ kind: "custom-score", label: "Score", mappedTo: "in0" }],
+          reports: [{ kind: "classifier", label: "Risk", id: "out0", mappedTo: "out0" }],
+        },
+      }),
+    ];
+    answers[`${BOOKMARK_PATH}/plugins`] = [
+      json([
+        {
+          id: "score",
+          fileName: "score.ts",
+          contentType: "text/typescript",
+          sizeBytes: 1,
+          createdAt: AT,
+          updatedAt: AT,
+          // Loading a module can outlast a few event-loop turns on a cold CI worker.
+          source: `await new Promise(resolve => setTimeout(resolve, 500));
+export default defineFieldKind({
+  kind: "custom-score",
+  schema: z.object({ kind: z.literal("custom-score"), label: z.string(), mappedTo: z.string().optional() }),
+  value: { default: () => 0, normalize: (value: unknown) => Number(value ?? 0) },
+  render: { widget: "number" },
+});`,
+        },
+      ]),
+    ];
+    answers[RUN_PATH] = [classified(0.2, 0.8)];
+    const host = await openPage();
+    await vi.waitFor(
+      async () => {
+        await flush();
+        expect(host.querySelector("mlf-kit-tabs")).not.toBeNull();
+      },
+      { timeout: 5000 },
+    );
+
+    expect(host.textContent).not.toContain("could not be loaded");
+    expect(host.querySelector("mlf-kit-tabs")).not.toBeNull();
+    await run(host);
+    expect(fetchMock.mock.calls.some(([url]) => new URL(String(url)).pathname === RUN_PATH)).toBe(
+      true,
+    );
+  });
+
+  test("a form whose plugin fields or reports do not arrive is not mounted", async () => {
     answers[BOOKMARK_PATH] = [
       json({
         ...publicBookmark(),
@@ -278,10 +359,11 @@ describe("running a public bookmark", () => {
         },
       }),
     ];
+    answers[`${BOOKMARK_PATH}/plugins`] = [failure(500, "Unavailable")];
     const host = await openPage();
 
-    expect(host.textContent).toContain("This form cannot be shown here");
-    expect(host.querySelector("mlf-form")).toBeNull();
+    expect(host.textContent).toContain("This form could not be loaded");
+    expect(host.querySelector("mlf-kit-tabs")).toBeNull();
   });
 });
 
@@ -296,10 +378,16 @@ describe("the way from a public page into its workspace", () => {
     await settle();
 
     expect(host.querySelector('[data-frame="app-shell"]')).toBeNull();
-    expect(host.querySelector("mlf-form")).not.toBeNull();
+    expect(host.querySelector("mlf-kit-tabs")).not.toBeNull();
     expect(link(host)).toBeUndefined();
     // The failed session probe is not repeated by the page, and no workspace is asked.
-    expect(requestedPaths()).toEqual([ME_PATH, BOOKMARK_PATH, EXAMPLES_PATH, QUOTA_PATH]);
+    expect(requestedPaths()).toEqual([
+      ME_PATH,
+      BOOKMARK_PATH,
+      EXAMPLES_PATH,
+      QUOTA_PATH,
+      RUNS_PATH,
+    ]);
   });
 
   test("a member of the owning organization can open the bookmark where runs are saved", async () => {

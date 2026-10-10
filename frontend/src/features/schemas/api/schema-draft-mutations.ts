@@ -8,6 +8,7 @@ import {
 } from "./schema-draft-api";
 import type { SchemaDraftDto, UpdateSchemaDraftRequest } from "./draft-types";
 import {
+  SCHEMA_BOOKMARKS_QUERY_KEY,
   SCHEMA_DRAFTS_QUERY_KEY,
   SCHEMA_DRAFT_DIFF_QUERY_KEY,
   SCHEMA_DRAFT_QUERY_KEY,
@@ -67,6 +68,8 @@ export function usePublishSchemaDraftMutation(draftId: number | string, schemaId
       qc.setQueryData(SCHEMA_DRAFT_QUERY_KEY(organizationId, draftId), result.draft);
       void qc.invalidateQueries({ queryKey: SCHEMA_DRAFTS_QUERY_KEY(organizationId, schemaId) });
       void qc.invalidateQueries({ queryKey: SCHEMA_VERSIONS_QUERY_KEY(organizationId, schemaId) });
+      // A new snapshot changes which bookmarks point at the latest one.
+      void qc.invalidateQueries({ queryKey: SCHEMA_BOOKMARKS_QUERY_KEY(organizationId, schemaId) });
     },
   });
 }

@@ -20,8 +20,6 @@ export function InvitationAcceptPage() {
       <AppSurface className="flex flex-1 items-center justify-center overflow-auto">
         <AppPanel className="w-full max-w-2xl">
           <AppPageHeader
-            breadcrumbScope="account"
-            eyebrow="Invitation"
             title="Join workspace"
             description="Accept this invitation to enter the shared MLsuite workspace, or decline it and keep your current setup untouched."
           />

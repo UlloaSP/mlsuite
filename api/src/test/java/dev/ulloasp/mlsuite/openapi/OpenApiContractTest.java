@@ -29,33 +29,44 @@ import com.fasterxml.jackson.core.util.Separators;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import dev.ulloasp.mlsuite.admin.AdminOwnerCatalogService;
 import dev.ulloasp.mlsuite.admin.AdminUserService;
 import dev.ulloasp.mlsuite.admin.infrastructure.InfrastructureService;
 import dev.ulloasp.mlsuite.admin.moderation.PublicBookmarkModerationService;
 import dev.ulloasp.mlsuite.audit.application.port.in.AuditLogUseCase;
 import dev.ulloasp.mlsuite.invitation.application.port.in.InvitationManagementUseCase;
+import dev.ulloasp.mlsuite.invitation.application.usecase.InvitationCatalogService;
 import dev.ulloasp.mlsuite.model.application.port.in.AnalyzerUseCase;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCreationUseCase;
 import dev.ulloasp.mlsuite.organization.application.port.in.OrganizationManagementUseCase;
+import dev.ulloasp.mlsuite.organization.application.usecase.MemberCatalogService;
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationCatalogService;
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationLogoService;
 import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginRuntimeSourcesUseCase;
 import dev.ulloasp.mlsuite.plugin.application.port.in.PluginCatalogUseCase;
 import dev.ulloasp.mlsuite.role.application.port.in.RoleCatalogUseCase;
+import dev.ulloasp.mlsuite.role.application.port.in.RoleListCatalogUseCase;
 import dev.ulloasp.mlsuite.role.application.port.in.RoleManagementUseCase;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
+import dev.ulloasp.mlsuite.schema.application.port.in.BookmarkListCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictBookmarkCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionResultFeedbackUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionRunUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicPredictionUseCase;
+import dev.ulloasp.mlsuite.schema.application.port.in.PublicRunUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkExampleUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaCreationUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaDraftUseCase;
+import dev.ulloasp.mlsuite.schema.application.port.in.SchemaRepositoryCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaVersionUseCase;
+import dev.ulloasp.mlsuite.schema.catalog.CatalogSelectionService;
+import dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogService;
+import dev.ulloasp.mlsuite.schema.catalog.InferenceFacetCatalogService;
+import dev.ulloasp.mlsuite.schema.review.application.port.in.SchemaReviewCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.review.application.port.in.SchemaReviewManagementUseCase;
 import dev.ulloasp.mlsuite.schema.review.application.port.in.SchemaReviewUseCase;
 import dev.ulloasp.mlsuite.search.application.port.in.SearchWorkspaceUseCase;
@@ -82,17 +93,21 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
         SpringDocWebMvcConfiguration.class })
 @Import(OpenApiContractConventions.class)
 @MockitoBean(types = {
-        AdminUserService.class, AnalyzerUseCase.class, AuditLogUseCase.class, AuthService.class,
-        AuthenticationManager.class, GetCurrentUserProfileUseCase.class, InfrastructureService.class,
-        InvitationManagementUseCase.class, ListPluginRuntimeSourcesUseCase.class, ModelCatalogUseCase.class,
+        AdminOwnerCatalogService.class, AdminUserService.class, AnalyzerUseCase.class, AuditLogUseCase.class,
+        AuthService.class, AuthenticationManager.class, BookmarkListCatalogUseCase.class,
+        CatalogSelectionService.class, GetCurrentUserProfileUseCase.class, InferenceCatalogService.class,
+        InferenceFacetCatalogService.class,
+        InfrastructureService.class, InvitationCatalogService.class, InvitationManagementUseCase.class,
+        ListPluginRuntimeSourcesUseCase.class, MemberCatalogService.class, ModelCatalogUseCase.class,
         ModelCreationUseCase.class, OrganizationCatalogService.class, OrganizationLogoService.class,
         OrganizationManagementUseCase.class,
         PluginCatalogUseCase.class, PredictBookmarkCatalogUseCase.class, PredictionResultFeedbackUseCase.class,
         PredictionResultRepository.class, PredictionRunUseCase.class, PublicBookmarkModerationService.class,
-        PublicBookmarkUseCase.class, PublicPredictionUseCase.class, RoleCatalogUseCase.class,
-        RoleManagementUseCase.class, SchemaBookmarkExampleUseCase.class, SchemaBookmarkUseCase.class,
-        SchemaCatalogUseCase.class,
-        SchemaCreationUseCase.class, SchemaDraftUseCase.class, SchemaReviewManagementUseCase.class,
+        PublicBookmarkUseCase.class, PublicPredictionUseCase.class, PublicRunUseCase.class, RoleCatalogUseCase.class,
+        RoleListCatalogUseCase.class, RoleManagementUseCase.class, SchemaBookmarkExampleUseCase.class,
+        SchemaBookmarkUseCase.class, SchemaCatalogUseCase.class,
+        SchemaCreationUseCase.class, SchemaDraftUseCase.class, SchemaRepositoryCatalogUseCase.class,
+        SchemaReviewCatalogUseCase.class, SchemaReviewManagementUseCase.class,
         SchemaReviewUseCase.class, SchemaVersionUseCase.class, SearchWorkspaceUseCase.class,
         RestTemplate.class, StartupReadinessService.class, WorkspaceContextUseCase.class })
 class OpenApiContractTest {

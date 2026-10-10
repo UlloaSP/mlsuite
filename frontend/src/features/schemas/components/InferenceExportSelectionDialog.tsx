@@ -1,11 +1,11 @@
+import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { useMemo } from "react";
 import { useReviewRunSelection } from "@/capabilities/review-creation/useReviewRunSelection";
 import { ReviewSelectionCatalog } from "@/capabilities/review-creation/ReviewSelectionCatalog";
-import { formatTimestamp } from "@/shared/lib/date-time";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppFieldLabel } from "@/shared/ui/AppFieldLabel";
 import { AppDialog } from "@/shared/ui/AppDialog";
-import { AppSelect } from "@/shared/ui/AppSelect";
+import { ReviewSnapshotSelect } from "@/capabilities/review-creation/ReviewSnapshotSelect";
 import type { InferenceExportCandidate } from "./OrganizationInferenceExportButton";
 import { toggledInSet } from "./schema-run-export-selection";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
@@ -27,6 +27,7 @@ export function InferenceExportSelectionDialog({
   onContinue: (selection: ExportRunSelection) => void;
   onRetry: () => void;
 }) {
+  const organizationId = useCurrentOrganizationId() ?? "none";
   const candidates = useMemo(
     () =>
       items.map((item) => ({
@@ -84,39 +85,39 @@ export function InferenceExportSelectionDialog({
       <fieldset disabled={busy}>
         <div className="grid shrink-0 gap-4 border-b border-line px-6 py-4 sm:grid-cols-2">
           <AppFieldLabel label="Schema snapshot">
-            <AppSelect
-              aria-label="Schema snapshot"
-              value={selection.group?.key}
-              onValueChange={selection.selectGroup}
+            <ReviewSnapshotSelect
+              organizationId={organizationId}
+              kind="snapshots"
+              ids={candidates.map((item) => item.runId)}
+              value={selection.group?.key ?? ""}
+              label={selection.group?.label}
               disabled={busy}
-              className="w-full min-w-0"
-              options={selection.groups.map((group) => ({
-                value: group.key,
-                label: group.label,
-              }))}
+              onChange={selection.selectGroup}
             />
           </AppFieldLabel>
           <AppFieldLabel label="Bookmark">
-            <AppSelect
-              aria-label="Bookmark"
+            <ReviewSnapshotSelect
+              organizationId={organizationId}
+              kind="bookmarks"
+              ids={(selection.group?.candidates ?? []).map((item) => item.runId)}
               value={selection.bookmark}
-              onValueChange={selection.selectBookmark}
+              label={
+                selection.bookmarkOptions.find((option) => option.value === selection.bookmark)
+                  ?.label
+              }
               disabled={busy}
-              className="w-full min-w-0"
-              options={[{ value: "all", label: "All bookmarks" }, ...selection.bookmarkOptions]}
+              onChange={selection.selectBookmark}
             />
           </AppFieldLabel>
         </div>
         <div>
           <ReviewSelectionCatalog
+            organizationId={organizationId}
             key={`${selection.group?.key}:${selection.bookmark}`}
             title="Inferences"
             emptyDescription="No inferences are available for this selection."
-            items={selection.runCandidates.map((item) => ({
-              id: item.runId,
-              title: item.name,
-              detail: formatTimestamp(item.createdAt),
-            }))}
+            source={{ kind: "runs", ids: selection.runCandidates.map((item) => item.runId) }}
+            idFromString={String}
             selectedIds={selection.selectedRunIds}
             onClear={() => selection.setSelectedRunIds(new Set())}
             onSelectAll={(ids) => selection.setSelectedRunIds(new Set(ids))}

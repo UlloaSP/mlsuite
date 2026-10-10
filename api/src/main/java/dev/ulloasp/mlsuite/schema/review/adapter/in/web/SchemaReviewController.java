@@ -86,6 +86,12 @@ public class SchemaReviewController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/inbox/submit-pending")
+    public ResponseEntity<Void> submitInbox(CurrentUser user) {
+        service.submitInbox(user.userId());
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/{reviewId}/runs/{reviewRunId}/reviewers/{reviewerId}/reopen")
     public ResponseEntity<Void> reopen(CurrentUser user,
             @PathVariable String reviewId, @PathVariable String reviewRunId,

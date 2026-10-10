@@ -16,7 +16,7 @@ export function ReviewTrayRow({ item, tone, active, onSelect }: ReviewTrayRowPro
       type="button"
       onClick={onSelect}
       className={cx(
-        "relative w-full border-b border-line px-3 py-3 text-left transition last:border-b-0",
+        "relative w-full border-b border-line px-3 py-3 text-left transition",
         !active && "bg-surface hover:bg-surface-muted",
         active && (tone === "revision" ? "bg-success-subtle" : "bg-warning-subtle"),
       )}

@@ -11,7 +11,6 @@ import {
   type MountedPublicRunForm,
 } from "@/capabilities/prediction-runtime/mlform/public-run-mount";
 import { applyPredictionInputsToSchema } from "@/capabilities/prediction-runtime/mlform/schema-inputs";
-import { schemaNeedsPluginCatalog } from "@/capabilities/prediction-runtime/mlform/schema-plugin-requirement";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { MLFORM_SPLIT_CONTAINER_CLASS } from "@/capabilities/prediction-runtime/mlform/split-layout";
 import { useAccountEntry } from "@/capabilities/workspace-context/account-entry";
@@ -23,25 +22,34 @@ import { PublicBookmarkExampleSelect } from "@/features/explore/components/Publi
 import { PublicRunQuota } from "@/features/explore/components/PublicRunQuota";
 import { publicRunFailure, type PublicRunFailure } from "@/features/explore/lib/public-run-failure";
 import { publicRunLimitQuota } from "@/features/explore/lib/public-run-limit";
+import { usePublicPluginCatalog } from "@/features/explore/lib/use-public-plugin-catalog";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
+import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
 import { cx } from "@/shared/ui/cx";
-import type { PublicBookmarkDto, PublicBookmarkExampleDto } from "@/shared/api/openapi.gen";
+import type {
+  PublicBookmarkDto,
+  PublicBookmarkExampleDto,
+  PublicRunDto,
+} from "@/shared/api/openapi.gen";
 
 type Props = Pick<PublicBookmarkDto, "publicId" | "version" | "formSchema"> & {
-  examples?: readonly PublicBookmarkExampleDto[];
+  /** Told of each run the server kept, as it answered. */
+  onRun: (run: PublicRunDto) => void;
 };
 
 const hasFields = (schema: PublicBookmarkDto["formSchema"]) =>
   Array.isArray(schema.fields) && schema.fields.length > 0;
 
 /**
- * The form of a public bookmark, to fill and run: inputs beside results, as wide as the page
- * and as tall as the page lets it be, each pane scrolling inside. A run is one request that the
- * server routes to the bookmark's models; its result lives in this form until the next run or
- * until the page is left. Plugin fields and reports are code from an organization's private catalog, so a form
- * that uses them says so instead of loading that code for a visitor.
+ * The form of a public bookmark, to fill and run: its inputs and results in two tabs, as wide
+ * as the page and as tall as the page lets it be, scrolling inside. A run is one request that
+ * the server routes to the bookmark's models and keeps as this browser's; its result shows in
+ * the form until the next run, and stays in the page's runs. A form made with plugin fields or
+ * reports loads them first: only a schema of the owning organization may use a plugin, but
+ * whoever can open the form runs it.
  *
  * A form that can be shown offers the bookmark's curated examples above it. Loading one starts
  * the form again with the example's inputs as the fields' starting values, as a saved run's are
@@ -51,8 +59,10 @@ const hasFields = (schema: PublicBookmarkDto["formSchema"]) =>
  * The server limits how often one caller runs one bookmark. The count it reports is shown under
  * the form, and with no run left the run action is withheld: the values and the last result stay.
  */
-export function PublicBookmarkForm({ publicId, version, formSchema, examples = [] }: Props) {
+export function PublicBookmarkForm({ publicId, version, formSchema, onRun }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const onRunRef = useRef(onRun);
+  onRunRef.current = onRun;
   const mountedRef = useRef<MountedPublicRunForm | null>(null);
   const [theme] = useAtom(themeWithHtmlAtom);
   const [initialTheme] = useState(theme);
@@ -60,8 +70,9 @@ export function PublicBookmarkForm({ publicId, version, formSchema, examples = [
   const [running, setRunning] = useState(false);
   const [failure, setFailure] = useState<PublicRunFailure | null>(null);
   const empty = !hasFields(formSchema);
-  const needsPlugins = schemaNeedsPluginCatalog(formSchema);
-  const mountable = !empty && !needsPlugins;
+  const catalog = usePublicPluginCatalog(publicId, formSchema);
+  const { plugins } = catalog;
+  const mountable = !empty && catalog.ready;
   const queryClient = useQueryClient();
   // The frame offers an account only to a visitor without a session, whom the server counts apart.
   const caller = useAccountEntry() ? "visitor" : "member";
@@ -83,6 +94,7 @@ export function PublicBookmarkForm({ publicId, version, formSchema, examples = [
       const mounted = mountPublicRunForm({
         container: containerRef.current,
         schema,
+        plugins,
         theme: initialTheme,
         run: async (values, signal) => {
           const { queryKey } = publicRunQuotaQueryOptions(publicId, caller);
@@ -90,7 +102,8 @@ export function PublicBookmarkForm({ publicId, version, formSchema, examples = [
           try {
             const result = await runPublicBookmark(publicId, { version, values }, signal);
             queryClient.setQueryData(queryKey, result.quota);
-            return result.reports.map((report) => ({
+            onRunRef.current(result.run);
+            return result.run.reports.map((report) => ({
               key: report.key,
               payload: isRecord(report.payload) ? report.payload : {},
             }));
@@ -119,7 +132,7 @@ export function PublicBookmarkForm({ publicId, version, formSchema, examples = [
     } catch (error) {
       setMountError(error instanceof Error ? error.message : String(error));
     }
-  }, [caller, initialTheme, mountable, publicId, queryClient, schema, version]);
+  }, [caller, initialTheme, mountable, plugins, publicId, queryClient, schema, version]);
 
   // After every render, because loading an example mounts a new form that must be told too.
   useEffect(() => {
@@ -139,24 +152,24 @@ export function PublicBookmarkForm({ publicId, version, formSchema, examples = [
       />
     );
   }
-  if (needsPlugins) {
+  if (catalog.failed) {
     return (
       <AppEmptyState
         compact
-        title="This form cannot be shown here"
-        description="It uses plugin fields or reports from its organization's private catalog, which public pages cannot load."
+        title="This form could not be loaded"
+        description="Some of its fields or reports did not arrive."
+        action={
+          <AppButton size="sm" variant="secondary" onClick={catalog.retry}>
+            Retry
+          </AppButton>
+        }
       />
     );
   }
+  if (!catalog.ready) return <AppLoadingState label="Loading form…" rows={3} />;
   return (
     <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1">
-      {examples.length > 0 ? (
-        <PublicBookmarkExampleSelect
-          examples={examples}
-          value={example?.id}
-          onChange={(id) => setExample(examples.find((item) => item.id === id))}
-        />
-      ) : null}
+      <PublicBookmarkExampleSelect publicId={publicId} value={example} onChange={setExample} />
       {failure ? (
         <AppInlineAlert>
           <strong className="font-semibold">{failure.title}.</strong> {failure.detail}
@@ -180,7 +193,7 @@ export function PublicBookmarkForm({ publicId, version, formSchema, examples = [
       <div className="flex shrink-0 flex-col gap-2">
         {quota && !mountError ? <PublicRunQuota quota={quota} /> : null}
         <p className="text-sm text-fg-muted">
-          Runs from this page are not saved: a result stays here until you run again or leave.
+          Runs from this page are kept for this browser, with their results, in Your runs.
         </p>
       </div>
     </div>

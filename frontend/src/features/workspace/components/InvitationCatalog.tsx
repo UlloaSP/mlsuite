@@ -1,12 +1,12 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppSearchField } from "@/shared/ui/AppSearchField";
+import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
 import { useUrlFilters } from "@/shared/lib/use-url-filters";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
-import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
-import { useOrganizationInvitationsQuery } from "@/features/workspace/api/workspace.queries";
+import { useInvitationCatalog } from "@/features/workspace/api/workspace-catalog-queries";
 import {
   useBulkRevokeInvitationsMutation,
   useResendInvitationMutation,
@@ -26,28 +26,14 @@ export function InvitationCatalog({
   const filters = useUrlFilters({ q: "", status: "ALL" });
   const { q: query, status } = filters.values;
   const [selected, setSelected] = useState<number[]>([]);
-  const request = useOrganizationInvitationsQuery(organizationId);
-  const invitations = useMemo(() => request.data ?? [], [request.data]);
-  const filtered = useMemo(
-    () =>
-      invitations.filter(
-        (invite) =>
-          invite.email.toLowerCase().includes(query.trim().toLowerCase()) &&
-          (status === "ALL" || invite.status === status),
-      ),
-    [invitations, query, status],
-  );
-  const pagination = useClientCatalogPage(
-    filtered,
-    `${organizationId}:${query}:${status}`,
-    !request.isSuccess,
-  );
+  const request = useInvitationCatalog(organizationId, {
+    search: useDebouncedValue(query.trim()),
+    filter: status.toLowerCase() === "all" ? "all" : status,
+  });
+  const invitations = request.data?.items ?? [];
   const bulkRevoke = useBulkRevokeInvitationsMutation(organizationId);
   const resend = useResendInvitationMutation(organizationId);
   const revoke = useRevokeInvitationMutation(organizationId);
-  const selectedVisible = selected.filter((id) =>
-    pagination.visibleItems.some((invite) => invite.id === id),
-  );
   const setFilter = (changes: { q?: string; status?: string }) => {
     setSelected([]);
     filters.setFilters(changes);
@@ -62,10 +48,10 @@ export function InvitationCatalog({
           count={
             request.isSuccess
               ? {
-                  shown: filtered.length,
-                  total: invitations.length,
+                  shown: request.data.totalItems,
+                  total: request.data.totalInvitations,
                   filtered: filters.isFiltered,
-                  noun: invitations.length === 1 ? "invitation" : "invitations",
+                  noun: request.data.totalInvitations === 1 ? "invitation" : "invitations",
                 }
               : undefined
           }
@@ -83,29 +69,26 @@ export function InvitationCatalog({
               value === "ALL" ? "All statuses" : value.charAt(0) + value.slice(1).toLowerCase(),
           }))}
         />
-        {canManage && selectedVisible.length > 0 ? (
+        {canManage && selected.length > 0 ? (
           <AppButton
             variant="danger"
             disabled={bulkRevoke.isPending}
-            onClick={() => void bulkRevoke.mutateAsync(selectedVisible).then(() => setSelected([]))}
+            onClick={() => void bulkRevoke.mutateAsync(selected).then(() => setSelected([]))}
           >
-            Bulk revoke ({selectedVisible.length})
+            Bulk revoke ({selected.length})
           </AppButton>
         ) : null}
       </AppToolbar>
       <CatalogListPanel
-        {...pagination}
-        setPage={(value) => {
-          setSelected([]);
-          pagination.setPage(value);
-        }}
-        itemCount={filtered.length}
+        hasNext={Boolean(request.hasNextPage)}
+        onLoadMore={request.fetchNextPage}
+        itemCount={invitations.length}
         isLoading={request.isPending}
         isBusy={request.isFetching}
         loadingLabel="Loading invitations…"
         errorMessage={request.isError ? "Could not load invitations." : null}
         onRetry={() => {
-          void request.refetch();
+          void (request.isFetchNextPageError ? request.fetchNextPage() : request.refetch());
         }}
         emptyState={{
           title: filters.isFiltered ? "No matching invitations" : "No invitations yet",
@@ -114,12 +97,12 @@ export function InvitationCatalog({
             : "Invitations will appear here once created.",
         }}
       >
-        {pagination.visibleItems.map((invite) => (
+        {invitations.map((invite) => (
           <InvitationCard
             key={invite.id}
             invite={invite}
             canManage={canManage}
-            selected={selectedVisible.includes(invite.id)}
+            selected={selected.includes(invite.id)}
             onSelect={(checked) =>
               setSelected((current) =>
                 checked ? [...current, invite.id] : current.filter((id) => id !== invite.id),

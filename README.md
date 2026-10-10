@@ -26,7 +26,7 @@ If MLSuite goes in the wrong direction, the full stack is here for you to inspec
 - Collect reviews, corrections, questionnaires, and explanation feedback.
 - Extend reports and fields through plugins.
 - Export inputs, outputs, and feedback for downstream work.
-- Publish a schema bookmark to a public page at `/explore/<id>` where anyone, signed in or not, can fill its form and run it, with saved runs you mark as examples to fill it, and list every published bookmark in the public feed at `/explore`. Public runs are not saved.
+- Publish a schema bookmark to a public page at `/explore/<id>` where anyone, signed in or not, can fill its form and run it, with saved runs you mark as examples to fill it, and list every published bookmark in the public feed at `/explore`. Every public run is kept as one of the organization's inferences, marked as made on the public page, and the browser that made it finds it again under **Your runs**, where the visitor can review its results without an account.
 - Give an organization a logo, shown beside its name in the workspace and on its public pages, and give a public bookmark a publication note (the paper it was published in, a DOI, terms of use). Links shared to a public page unfurl with the bookmark's name, text and the publisher's logo.
 - Manage organizations, teams, roles, invitations, and workspace permissions.
 - Let superadmins review every public bookmark on the instance and unpublish any of them.
@@ -285,7 +285,17 @@ artifact a bookmark may bind and still be public: publishing, moving a public bo
 to another snapshot, and each public run are refused above it, because every run ships
 the artifact to the runtime. `PUBLIC_PREDICTION_MAX_CONCURRENT` (default `2`) is how
 many public runs may execute at once; further ones receive `503 Service Unavailable`
-until a slot frees. Public runs store nothing.
+until a slot frees.
+
+A public run is stored like a workspace run, with its inputs, each model's result and any
+feedback, and is listed in the organization's Inferences with the origin "Public page"; it
+is never expired or deleted on its own. The browser that made it is named by a visitor id
+the API issues in the `mlsuite_visitor` cookie on the first run (HttpOnly, SameSite=Lax,
+sent only to `/api/public`, kept a year, marked Secure behind HTTPS): with it the page lists
+that browser's runs of the bookmark and lets the visitor review each one, whose answers are
+stored as that visitor's. A signed-in account running the public page keeps the browser's
+session and adds its name to the run. The quota below is still counted by network, not by
+cookie, so clearing cookies gives no more runs.
 
 A public page is drawn by the browser, so link-unfurling crawlers (social networks, chat
 apps) are sent by the `frontend` nginx to `/api/public/bookmarks/<id>/preview`, a page
@@ -406,7 +416,7 @@ flowchart LR
     ML --> API
 ```
 
-The browser sends authenticated requests to Spring; only `/api/public/**` answers without a session, and it serves nothing but bookmarks a member with the publish permission made public: their form, the form inputs of the runs that member marked as their examples, and a run of their models that is routed by Spring and never stored. Spring enforces workspace permissions, stores durable state, and delegates artifact analysis or prediction to Python. Results return through Spring so model, schema, input, output, and feedback identities remain traceable.
+The browser sends authenticated requests to Spring; only `/api/public/**` answers without a session, and it serves nothing but bookmarks a member with the publish permission made public: their form, the form inputs of the runs that member marked as their examples, and a run of their models that is routed by Spring and stored as the organization's inference under the visitor who made it. Spring enforces workspace permissions, stores durable state, and delegates artifact analysis or prediction to Python. Results return through Spring so model, schema, input, output, and feedback identities remain traceable.
 
 ## License
 

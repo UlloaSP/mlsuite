@@ -68,6 +68,9 @@ export const parseInferenceSort = (value: string): SortingState => {
 const formatSort = ([first]: SortingState) =>
   first ? `${first.id}.${first.desc ? "desc" : "asc"}` : "";
 
+/** The sort the table shows is the sort the server is asked for, also for a hand-edited URL. */
+export const normalizeInferenceSort = (value: string) => formatSort(parseInferenceSort(value));
+
 type Options = {
   rows: InferenceTableRow[];
   dataColumns: readonly InferenceDataColumn[];
@@ -100,6 +103,7 @@ export function useInferenceTable({
     columns,
     data: rows,
     getRowId: (row) => String(row.item.id),
+    manualSorting: true,
     enableSortingRemoval: false,
     sortDescFirst: false,
     state: { sorting, columnVisibility },

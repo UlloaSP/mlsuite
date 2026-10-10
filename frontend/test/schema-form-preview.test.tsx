@@ -86,10 +86,12 @@ describe("schema form preview", () => {
       ],
     } as never);
 
-    expect(response.reports).toMatchObject([
-      { backend: "DecisionTree Best Model", mappedTo: "prediction", status: "ready" },
-      { backend: "default", mappedTo: "prediction", status: "ready" },
-    ]);
+    expect(response).toMatchObject({
+      reports: [
+        { backend: "DecisionTree Best Model", mappedTo: "prediction", status: "ready" },
+        { backend: "default", mappedTo: "prediction", status: "ready" },
+      ],
+    });
   });
 
   test("renders one local report preview per mappedTo entry", async () => {

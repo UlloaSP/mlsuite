@@ -7,6 +7,7 @@ import { Tooltip } from "radix-ui";
 import { Fragment, type ReactNode } from "react";
 import { Link } from "react-router";
 import {
+  isTrail,
   useBreadcrumbTrail,
   type BreadcrumbTrailItem,
 } from "@/shared/ui/breadcrumb/breadcrumb-context";
@@ -33,9 +34,9 @@ function ancestry(levels: BreadcrumbTrailItem[], depth: number): ReactNode {
  * Hovering or focusing a line names that level; clicking opens it.
  */
 export function LocationRail({ side }: { side: "left" | "right" }) {
-  const levels = useBreadcrumbTrail()?.items ?? [];
+  const levels = useBreadcrumbTrail();
+  if (!isTrail(levels)) return null;
   const last = levels.length - 1;
-  if (levels.length === 0) return null;
 
   return (
     <nav

@@ -21,12 +21,6 @@ export const createSchemaDraft = (
     json("POST", req),
   );
 
-export const getSchemaDrafts = (
-  schemaId: number | string,
-  signal?: AbortSignal,
-): Promise<SchemaDraftDto[]> =>
-  appFetch<SchemaDraftDto[]>(`/api/schemas/${encodeURIComponent(schemaId)}/drafts`, { signal });
-
 export const getSchemaDraft = (
   draftId: number | string,
   signal?: AbortSignal,

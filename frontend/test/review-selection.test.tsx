@@ -1,138 +1,75 @@
 // @vitest-environment jsdom
 import { act, useState } from "react";
-import { beforeEach, expect, test, vi } from "vite-plus/test";
+import { QueryClient } from "@tanstack/react-query";
+import { beforeEach, afterEach, expect, test, vi } from "vite-plus/test";
 import { ReviewSelectionCatalog } from "@/capabilities/review-creation/ReviewSelectionCatalog";
-import { buttonByText, changeValue, click as clickIn, mount, type Mounted } from "./support/dom";
-
-let view: Mounted | undefined;
-let host: HTMLDivElement;
-let count = 13;
-let loading = false;
-let error = false;
-let title = "Reviewers";
-const retry = vi.fn();
-
+import * as http from "@/shared/api/http";
+import { changeValue, click, mount } from "./support/dom";
+import { catalogViewport } from "./support/catalog-viewport";
+vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
+  useCurrentOrganizationId: () => 42,
+}));
+const all = Array.from({ length: 83 }, (_, i) => ({
+  id: String(i + 1),
+  title: `Person ${i + 1}`,
+  detail: i % 2 ? "Other" : "Matching",
+}));
+beforeEach(catalogViewport);
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 function Harness() {
-  const [selectedIds, setSelectedIds] = useState(new Set<number>());
+  const [selected, setSelected] = useState(new Set<number>());
   return (
     <ReviewSelectionCatalog
-      title={title}
-      emptyDescription="No available entries."
-      items={Array.from({ length: count }, (_, index) => ({
-        id: index + 1,
-        title: `Person ${index + 1}`,
-        detail: index % 2 === 0 ? "Matching" : "Other",
-      }))}
-      loading={loading}
-      error={error}
-      selectedIds={selectedIds}
-      onClear={() => setSelectedIds(new Set())}
-      onSelectAll={(ids) => setSelectedIds(new Set(ids))}
-      onToggle={(id) =>
-        setSelectedIds((previous) => {
-          const next = new Set(previous);
-          if (next.has(id)) next.delete(id);
-          else next.add(id);
-          return next;
-        })
-      }
-      onRetry={retry}
+      organizationId={42}
+      title="Reviewers"
+      emptyDescription="No entries"
+      source={{ kind: "reviewers" }}
+      idFromString={Number}
+      selectedIds={selected}
+      onClear={() => setSelected(new Set())}
+      onSelectAll={(ids) => setSelected(new Set(ids))}
+      onToggle={(id) => setSelected((current) => new Set([...current, id]))}
     />
   );
 }
-
-async function render() {
-  if (view) await view.rerender(<Harness />);
-  else {
-    view = await mount(<Harness />);
-    host = view.host;
-  }
-}
-function button(label: string) {
-  const result = buttonByText(label, host);
-  expect(result).toBeDefined();
-  return result!;
-}
-const click = (label: string) => clickIn(button(label));
-const search = (value: string) => changeValue(host.querySelector("input")!, value);
-beforeEach(() => {
-  view = undefined;
-  count = 13;
-  loading = false;
-  error = false;
-  title = "Reviewers";
-  retry.mockClear();
-});
-
-test.each(["Reviewers", "Inferences"])(
-  "%s selects all pages, clears, and shows pagination",
-  async (catalogTitle) => {
-    title = catalogTitle;
-    await render();
-    expect(button("Clear").disabled).toBe(true);
-    expect(button("Previous").disabled).toBe(true);
-    expect(host.textContent).not.toContain("Person 7");
-    await click("Next");
-    expect(host.textContent).toContain("Person 7");
-    await click("Select all");
-    expect(host.textContent).toContain("13 of 13 selected");
-    expect(button("Select all").disabled).toBe(true);
-    await click("Next");
-    expect(host.textContent).toContain("Person 13");
-    expect(button("Next").disabled).toBe(true);
-    await click("Clear");
-    expect(host.textContent).toContain("0 of 13 selected");
-    expect(button("Clear").disabled).toBe(true);
-  },
-);
-
-test("filtered bulk selection spans pages and preserves selections outside search", async () => {
-  await render();
+const flush = () =>
+  act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+test("selects all matching identities beyond loaded pages and preserves selections outside the search", async () => {
+  const request = vi.spyOn(http, "appFetch").mockImplementation(async (url, init) => {
+    const body = JSON.parse(String(init?.body));
+    const matching = all.filter((item) => `${item.title} ${item.detail}`.includes(body.search));
+    if (String(url).endsWith("/ids")) return matching.map((item) => item.id);
+    const start = body.page * 24;
+    return {
+      items: matching.slice(start, start + 24),
+      page: body.page,
+      size: 24,
+      totalItems: matching.length,
+      totalAvailable: all.length,
+      hasNext: start + 24 < matching.length,
+    };
+  });
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const { host } = await mount(<Harness />, { queryClient: qc });
+  await flush();
+  expect(host.textContent).not.toContain("Person 83");
+  expect(host.querySelector("footer")).toBeNull();
   const person = [...host.querySelectorAll("button")].find((item) =>
     item.textContent?.includes("Person 2"),
   )!;
-  await act(async () => person.click());
-  await click("Next");
-  await search("Matching");
-  expect(button("Previous").disabled).toBe(true);
-  expect(host.textContent).toContain("Person 1");
-  await click("Select results");
-  expect(host.textContent).toContain("8 of 13 selected");
-  expect(button("Select results").disabled).toBe(true);
-  await click("Next");
-  expect(host.textContent).toContain("Person 13");
-  await click("Clear");
-  expect(host.textContent).toContain("0 of 13 selected");
-});
-
-test("single-page and empty catalogs retain footer and disabled empty actions", async () => {
-  count = 2;
-  await render();
-  expect(button("Previous").disabled).toBe(true);
-  expect(button("Next").disabled).toBe(true);
-  expect(button("1").getAttribute("aria-current")).toBe("page");
-  await search("missing");
-  expect(host.textContent).toContain("No reviewers match your search.");
-  expect(button("Select results").disabled).toBe(true);
-  await search("");
-  count = 0;
-  await render();
-  expect(host.textContent).toContain("No available entries.");
-  expect(button("Select all").disabled).toBe(true);
-});
-
-test("loading and failure disable selection and pagination, with retry on failure", async () => {
-  loading = true;
-  await render();
-  expect(host.textContent).toContain("Loading reviewers");
-  expect(button("Select all").disabled).toBe(true);
-  expect(button("Next").disabled).toBe(true);
-  loading = false;
-  error = true;
-  await render();
-  expect(host.textContent).toContain("Could not load reviewers.");
-  expect(button("Select all").disabled).toBe(true);
-  expect(button("Next").disabled).toBe(true);
-  await click("Try again");
-  expect(retry).toHaveBeenCalledOnce();
+  await click(person);
+  await changeValue(host.querySelector("input")!, "Matching");
+  await flush();
+  await click("Select results", host);
+  await flush();
+  expect(host.textContent).toContain("43 of");
+  expect(request.mock.calls.some(([url]) => String(url).endsWith("/ids"))).toBe(true);
+  await click("Clear", host);
+  expect(host.textContent).toContain("0 of");
+  qc.clear();
 });

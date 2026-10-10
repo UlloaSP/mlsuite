@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { mountForm } from "mlform/kit";
+import { connectStoredStatusConditions } from "./stored-status-conditions";
 import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
 import type { AfterSubmitContext, SubmitErrorContext } from "mlform/runtime";
 import { normalizeSchema, type ReportContext } from "mlform/schema";
@@ -82,12 +83,12 @@ export const mountSchemaRunForm = ({
     onRunningChange?.(false);
     onSubmit?.(isRecord(next.raw.inputData) ? next.raw.inputData : {}, next.raw, false);
   };
-  const handleSubmitted = ({ result }: AfterSubmitContext) => {
+  const handleSubmitted = async ({ result }: AfterSubmitContext) => {
     submitted = {
       raw: isRecord(result.raw) ? result.raw : { raw: result.raw },
       contexts: (result.reportContexts ?? {}) as Record<string, ReportContext>,
     };
-    if (mounted && normalized.reports.length > 0) showRunResults(mounted.host);
+    if (mounted && normalized.reports.length > 0) await showRunResults(mounted.host);
     completeWhenSettled();
   };
   mounted = mountForm(container, {
@@ -120,6 +121,7 @@ export const mountSchemaRunForm = ({
     designSystem: getPredictionDesignSystem(theme),
   });
   const form = mounted;
+  connectStoredStatusConditions(form.form);
   hideRunTabTitles(form.host);
   const unsubscribe = form.form.subscribe(completeWhenSettled);
   return {

@@ -3,15 +3,19 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { keepPreviousData, queryOptions } from "@tanstack/react-query";
+import { getCatalogDefinitions } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
+import type { PluginRuntimeSourceDto } from "@/shared/api/openapi.gen";
+import { queryOptions } from "@tanstack/react-query";
 import { appFetch, isHttpError, json } from "@/shared/api/http";
 import { organizationQueryKey } from "@/shared/api/organization-query-key";
+import { useInfiniteCatalog } from "@/shared/api/infinite-catalog";
 import type {
   PageDtoPublicBookmarkSummaryDto,
   PublicBookmarkDto,
-  PublicBookmarkExampleDto,
   PublicPredictionDto,
   PublicPredictionRequest,
+  PublicRunDto,
+  PublicRunFeedbackRequest,
   PublicRunQuotaDto,
   SchemaBookmarkDto,
 } from "@/shared/api/openapi.gen";
@@ -41,25 +45,14 @@ const publicBookmarkPath = (publicId: string) =>
 const getPublicBookmark = (publicId: string, signal?: AbortSignal): Promise<PublicBookmarkDto> =>
   appFetch<PublicBookmarkDto>(publicBookmarkPath(publicId), { signal });
 
-const getPublicBookmarkExamples = (
-  publicId: string,
-  signal?: AbortSignal,
-): Promise<PublicBookmarkExampleDto[]> =>
-  appFetch<PublicBookmarkExampleDto[]>(`${publicBookmarkPath(publicId)}/examples`, { signal });
-
 /** A bookmark that is private, unknown, or whose schema was archived answers 404. */
 export const isPublicBookmarkMissing = (error: unknown) =>
   isHttpError(error) && error.status === 404;
 
-/**
- * One page of the public feed. Any organization may publish or unpublish at any time, so
- * no mutation of this client keeps it fresh: every visit asks again, behind the page it had.
- */
-export const publicBookmarkPageQueryOptions = (page: number, search: string, sort: string) =>
-  queryOptions({
-    queryKey: ["public", "bookmarks", page, PUBLIC_BOOKMARK_PAGE_SIZE, search, sort] as const,
-    queryFn: ({ signal }) => getPublicBookmarkPage(page, search, sort, signal),
-    placeholderData: keepPreviousData,
+export const usePublicBookmarkCatalog = (search: string, sort: string) =>
+  useInfiniteCatalog({
+    queryKey: ["public", "bookmarks", "infinite", search, sort],
+    queryFn: (page, signal) => getPublicBookmarkPage(page, search, sort, signal),
     staleTime: 0,
     meta: { errorHandledLocally: true },
   });
@@ -78,15 +71,21 @@ export const publicBookmarkQueryOptions = (publicId: string) =>
   });
 
 /**
- * The curated examples a public bookmark serves. They only help fill the form, so a failed
- * request is not an error state: the page simply offers no examples.
+ * The plugin fields and reports a published form is made of, compiled once per bookmark. Using
+ * a plugin in a schema is its organization's alone; running a form that has one is anyone's.
  */
-export const publicBookmarkExamplesQueryOptions = (publicId: string) =>
+export const publicPluginCatalogQueryOptions = (publicId: string) =>
   queryOptions({
-    queryKey: ["public", "bookmark", publicId, "examples"] as const,
-    queryFn: ({ signal }) => getPublicBookmarkExamples(publicId, signal),
-    enabled: publicId !== "",
-    retry: (failures, error) => !isPublicBookmarkMissing(error) && failures < 1,
+    queryKey: ["public", "bookmark", publicId, "plugins"] as const,
+    queryFn: async ({ signal }) =>
+      getCatalogDefinitions(
+        `public:${publicId}`,
+        await appFetch<PluginRuntimeSourceDto[]>(`${publicBookmarkPath(publicId)}/plugins`, {
+          signal,
+        }),
+      ),
+    staleTime: 5 * 60_000,
+    retry: false,
     meta: { errorHandledLocally: true },
   });
 
@@ -105,9 +104,19 @@ export const publicRunQuotaQueryOptions = (publicId: string, caller: "visitor" |
     meta: { errorHandledLocally: true },
   });
 
+/** The caller's answers about one of their runs, replacing those given before; the run comes back. */
+export const savePublicRunFeedback = (
+  publicId: string,
+  runId: number,
+  request: PublicRunFeedbackRequest,
+): Promise<PublicRunDto> =>
+  appFetch<PublicRunDto>(`${publicBookmarkPath(publicId)}/runs/${runId}/feedback`, {
+    ...json("PUT", request),
+  });
+
 /**
- * Runs the bookmark once. The server routes the values to its models and stores nothing, so
- * the result exists only in this response; it is not a query and is never cached.
+ * Runs the bookmark once. The server routes the values to its models, keeps the run as this
+ * browser's, and answers with it; it is not a query and is never cached.
  */
 export const runPublicBookmark = (
   publicId: string,

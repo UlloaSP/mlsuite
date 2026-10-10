@@ -1,0 +1,215 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
+.route-status {
+  --route-status-error: #ff6b7a;
+  position: relative;
+  /* As tall as the window, less the navigation bar when the app shell is still around it. */
+  min-height: calc(100dvh - var(--app-nav-block, 0px));
+  background: var(--color-page);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+}
+
+.route-status-glow {
+  position: absolute;
+  left: -200px;
+  top: 50%;
+  width: 1000px;
+  height: 1000px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklch, var(--color-accent) 18%, transparent),
+    transparent
+  );
+  pointer-events: none;
+}
+
+.route-status-brand {
+  position: absolute;
+  top: 40px;
+  left: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* The app shell already carries the brand next to this page. */
+[data-navigation-position] .route-status-brand {
+  display: none;
+}
+
+.route-status-body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  align-content: center;
+  justify-content: center;
+  gap: clamp(48px, 8vw, 110px);
+  min-width: 0;
+  padding: 96px clamp(24px, 5vw, 48px);
+  overflow: auto;
+}
+
+.route-status-ring {
+  position: relative;
+  flex-shrink: 0;
+  width: min(360px, 100%);
+  aspect-ratio: 1;
+}
+
+.route-status-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.route-status-ring-track {
+  stroke: color-mix(in oklch, var(--color-fg) 8%, transparent);
+}
+
+.route-status-ring-arc {
+  stroke: var(--color-accent);
+  opacity: 0.15;
+}
+
+.route-status-ring-arc[data-reached] {
+  animation: route-status-reach 0.3s ease calc(var(--arc-index) * 0.12s) both;
+}
+
+.route-status-ring-arc[data-failed] {
+  stroke: var(--route-status-error);
+  opacity: 0;
+  animation: route-status-fail 0.3s ease 0.95s both;
+}
+
+.route-status-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.route-status-ring-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  /* The tracking trails the last letter: pull it back so the word stays centred. */
+  margin-right: -0.3em;
+  color: var(--route-status-error);
+  animation: route-status-fail 0.3s ease 0.95s both;
+}
+
+.route-status-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 440px;
+  max-width: 100%;
+}
+
+.route-status-headline {
+  font-size: clamp(52px, 13vw, 76px);
+  line-height: 0.9;
+  letter-spacing: -0.055em;
+}
+
+.route-status-description {
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--color-fg-muted);
+  text-wrap: pretty;
+}
+
+.route-status-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.route-status-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 48px;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-fg-muted);
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.route-status-action:hover {
+  color: var(--color-fg);
+}
+
+.route-status-action[data-primary] {
+  height: 52px;
+  background: var(--color-fg);
+  color: var(--color-page);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.route-status-action[data-primary]:hover {
+  background: color-mix(in oklch, var(--color-fg) 88%, var(--color-page));
+}
+
+.route-status-action:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.route-status-countdown {
+  font-size: 14px;
+  color: var(--color-fg-muted);
+}
+
+.route-status-countdown strong {
+  color: var(--color-fg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes route-status-reach {
+  from {
+    opacity: 0.15;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes route-status-fail {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-status-ring-arc[data-reached],
+  .route-status-ring-arc[data-failed],
+  .route-status-ring-label {
+    animation: none;
+    opacity: 1;
+  }
+}

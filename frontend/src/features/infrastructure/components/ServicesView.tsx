@@ -65,12 +65,10 @@ export function ServicesView({
   return (
     <>
       <AppPageHeader
-        breadcrumbScope="platform"
         breadcrumbs={[
           { label: "Infrastructure", to: "/admin/infrastructure" },
           { label: "Services" },
         ]}
-        eyebrow="Service control"
         title="Managed services"
         description={`${filtered.length} of ${services.length} services · click a row for details, logs, and shell.`}
         actions={

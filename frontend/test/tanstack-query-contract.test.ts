@@ -1,7 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { appFetch, HttpError } from "@/shared/api/http";
-import { eligibleReviewersQueryOptions } from "@/capabilities/review-creation/review-creation-api";
 import { searchQueryOptions } from "@/features/search/api/search.queries";
 import { predictionRunsFeedbackQueryOptions } from "@/features/schemas/api/schema-queries";
 import { pluginRuntimeSourcesQueryOptions } from "@/capabilities/prediction-runtime/plugins/plugin-runtime-sources";
@@ -27,12 +26,6 @@ afterEach(() => {
 describe("TanStack Query resource contracts", () => {
   test("scopes tenant resources and every query variable", () => {
     expect(searchQueryOptions(7, "risk").queryKey).toEqual(["org", 7, "search", "risk"]);
-    expect(eligibleReviewersQueryOptions(7).queryKey).toEqual([
-      "org",
-      7,
-      "schemaReviews",
-      "eligibleReviewers",
-    ]);
   });
 
   test("batches run feedback with one normalized tenant query", async () => {

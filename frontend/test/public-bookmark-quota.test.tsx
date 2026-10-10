@@ -18,10 +18,11 @@ const PUBLIC_ID = "8f6f3c0e-58a2-4c0b-9d0c-0d5c1f6e2a11";
 const AT = "2026-10-01T10:00:00Z";
 const RESETS_AT = "2026-10-07T14:32:00Z";
 const ME_PATH = "/api/users/me";
-const CONTEXT_PATH = "/api/workspace/context";
+const CONTEXT_PATH = "/api/workspace/context/current";
 const BOOKMARK_PATH = `/api/public/bookmarks/${PUBLIC_ID}`;
-const EXAMPLES_PATH = `${BOOKMARK_PATH}/examples`;
+const EXAMPLES_PATH = `${BOOKMARK_PATH}/examples/catalog`;
 const QUOTA_PATH = `${BOOKMARK_PATH}/quota`;
+const RUNS_PATH = `${BOOKMARK_PATH}/runs/catalog`;
 const RUN_PATH = `${BOOKMARK_PATH}/predictions`;
 const WORKSPACE_PATH = `/api/schema-bookmarks/public/${PUBLIC_ID}`;
 const PAGE = `/explore/${PUBLIC_ID}`;
@@ -50,18 +51,26 @@ const left = (remaining: number, limit = 3): PublicRunQuotaDto => ({
   remaining,
   resetsAt: remaining === limit ? null : RESETS_AT,
 });
+let runIds = 0;
 const ran = (quota: PublicRunQuotaDto, high = 0.8) =>
   json({
-    reports: [
-      {
-        key: "out0",
-        payload: {
-          kind: "classifier",
-          mapping: ["low", "high"],
-          probabilities: [[1 - high, high]],
+    run: {
+      id: (runIds += 1),
+      version: 2,
+      createdAt: AT,
+      inputs: { Age: 52 },
+      feedback: [],
+      reports: [
+        {
+          key: "out0",
+          payload: {
+            kind: "classifier",
+            mapping: ["low", "high"],
+            probabilities: [[1 - high, high]],
+          },
         },
-      },
-    ],
+      ],
+    },
     quota,
   });
 const refused = (code: string, limit: number) =>
@@ -99,7 +108,8 @@ beforeEach(() => {
   answers = {
     [ME_PATH]: [json({ status: 401, message: "Unauthorized", path: ME_PATH, timestamp: AT }, 401)],
     [BOOKMARK_PATH]: [json(bookmark)],
-    [EXAMPLES_PATH]: [json([])],
+    [EXAMPLES_PATH]: [json({ items: [], page: 0, size: 24, totalItems: 0, hasNext: false })],
+    [RUNS_PATH]: [json({ items: [], page: 0, size: 24, totalItems: 0, hasNext: false })],
     [QUOTA_PATH]: [json(left(3))],
   };
   fetchMock = vi.fn(async (url: string) => {
@@ -128,12 +138,10 @@ async function openPage() {
 }
 
 /** MLForm lays the form out as two panes (Inputs, Results) in one element. */
-const form = (host: HTMLElement) => host.querySelector("mlf-form")!;
+const form = (host: HTMLElement) => host.querySelector("mlf-kit-tabs")!;
 const formRoot = (host: HTMLElement) => form(host).shadowRoot!;
 async function run(host: HTMLElement) {
-  await act(async () =>
-    formRoot(host).querySelector("mlf-submit-button")!.shadowRoot!.querySelector("button")!.click(),
-  );
+  await act(async () => formRoot(host).querySelector<HTMLButtonElement>(".btn-submit")!.click());
   await settle();
 }
 /** Reports render inside nested shadow roots, which `textContent` does not cross. */

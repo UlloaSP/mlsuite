@@ -96,18 +96,3 @@ export const PREDICTION_RUNS_FEEDBACK_QUERY_KEY = (
   organizationId: number | string,
   runIds: readonly string[],
 ) => [...PREDICTION_FEEDBACK_QUERY_KEY(organizationId), "runs", { runIds }] as const;
-
-export const schemaCatalogPageQueryKey = (
-  organizationId: number | string | undefined,
-  page: number,
-  search: string,
-  sort: string,
-  status: string,
-) => [
-  ...SCHEMA_CATALOG_PAGE_QUERY_KEY(organizationId ?? "none"),
-  page,
-  SCHEMA_CATALOG_PAGE_SIZE,
-  search,
-  sort,
-  status,
-];
