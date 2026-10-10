@@ -113,7 +113,8 @@ class WorkspaceCatalogTest extends PublicPredictionFixture {
                 owner);
         entityManager.persist(created);
         if (membership != null) {
-            RoleDefinition role = new RoleDefinition(created, RoleScope.ORGANIZATION, "Member", "member", null);
+            // This custom role must not occupy a system slug when another context seeds this database.
+            RoleDefinition role = new RoleDefinition(created, RoleScope.ORGANIZATION, "Member", "workspace-member", null);
             role.setPermissions(EnumSet.of(PermissionKey.VIEW_WORKSPACE));
             entityManager.persist(role);
             entityManager.persist(new OrganizationMembership(created, owner, role, membership));

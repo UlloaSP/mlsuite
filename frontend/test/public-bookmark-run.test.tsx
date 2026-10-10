@@ -320,7 +320,9 @@ describe("running a public bookmark", () => {
           sizeBytes: 1,
           createdAt: AT,
           updatedAt: AT,
-          source: `export default defineFieldKind({
+          // Loading a module can outlast a few event-loop turns on a cold CI worker.
+          source: `await new Promise(resolve => setTimeout(resolve, 500));
+export default defineFieldKind({
   kind: "custom-score",
   schema: z.object({ kind: z.literal("custom-score"), label: z.string(), mappedTo: z.string().optional() }),
   value: { default: () => 0, normalize: (value: unknown) => Number(value ?? 0) },
@@ -331,7 +333,13 @@ describe("running a public bookmark", () => {
     ];
     answers[RUN_PATH] = [classified(0.2, 0.8)];
     const host = await openPage();
-    await settle();
+    await vi.waitFor(
+      async () => {
+        await flush();
+        expect(host.querySelector("mlf-kit-tabs")).not.toBeNull();
+      },
+      { timeout: 5000 },
+    );
 
     expect(host.textContent).not.toContain("could not be loaded");
     expect(host.querySelector("mlf-kit-tabs")).not.toBeNull();
