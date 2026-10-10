@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { act } from "react";
 import { expect, test, vi } from "vite-plus/test";
 import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
 import { classifyRouteError } from "@/app/router/route-error";
@@ -44,3 +45,34 @@ test.each([0, 403, 404, 500] as const)(
     );
   },
 );
+
+test("a page that could not load reloads itself every five seconds, and no other status does", async () => {
+  vi.useFakeTimers();
+  try {
+    const reload = vi.fn();
+    // One tick at a time: each second is scheduled by the render of the one before it.
+    const seconds = async (count: number) => {
+      for (let tick = 0; tick < count; tick += 1) {
+        await act(async () => vi.advanceTimersByTimeAsync(1000));
+      }
+    };
+    const view = await mount(<RouteStatusPage status="module-load" onReload={reload} />, {
+      route: "/",
+    });
+    expect(view.host.textContent).toContain("reloads automatically in 5 seconds");
+    await seconds(4);
+    expect(view.host.textContent).toContain("reloads automatically in 1 second.");
+    expect(reload).not.toHaveBeenCalled();
+    await seconds(1);
+    expect(reload).toHaveBeenCalledOnce();
+    await seconds(5);
+    expect(reload).toHaveBeenCalledTimes(2);
+
+    await view.rerender(<RouteStatusPage status={404} onReload={reload} />);
+    expect(view.host.textContent).not.toContain("reloads automatically");
+    await seconds(10);
+    expect(reload).toHaveBeenCalledTimes(2);
+  } finally {
+    vi.useRealTimers();
+  }
+});

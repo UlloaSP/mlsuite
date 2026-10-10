@@ -3,27 +3,42 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { ArrowLeft, Home, RefreshCw } from "lucide-react";
+import { ArrowLeft, Home, RotateCw } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { AppButton } from "./AppButton";
 import { AppPage } from "./AppPage";
-import { AppSurface } from "./AppSurface";
+import { MLSuiteMark } from "./MLSuiteMark";
+import { MLSuiteWordmark } from "./MLSuiteWordmark";
+import { RouteStatusRing } from "./RouteStatusRing";
+import "./route-status-page.css";
 
+/** Ring label, headline (light line, heavy line) and description for each status. */
 const errorContent = {
   "module-load": [
-    "Page could not load",
+    "EXITED",
+    "Page could",
+    "not load.",
     "Reload the application to download the current page files.",
   ],
-  0: ["Network unavailable", "Check your connection and try this route again."],
-  403: ["Access denied", "Your account does not have permission to open this route."],
-  404: ["Route not found", "The requested page may have moved, been deleted, or never existed."],
+  0: ["OFFLINE", "Network", "unavailable.", "Check your connection and try this route again."],
+  403: ["403", "Access", "denied.", "Your account does not have permission to open this route."],
+  404: [
+    "404",
+    "Route",
+    "not found.",
+    "The requested page may have moved, been deleted, or never existed.",
+  ],
   500: [
-    "Something went wrong",
+    "ERROR",
+    "Something",
+    "went wrong.",
     "An unexpected route error occurred. Try again or return to the workspace.",
   ],
 } as const;
 
 export type RouteStatus = keyof typeof errorContent;
+
+export const ROUTE_RELOAD_SECONDS = 5;
 
 type RouteStatusPageProps = {
   status?: RouteStatus;
@@ -32,52 +47,88 @@ type RouteStatusPageProps = {
   onReload?: () => void;
 };
 
+const reloadApplication = () => window.location.reload();
+
 export function RouteStatusPage({
   status = 404,
   homePath = "/workspace",
   homeLabel = "Go to workspace",
-  onReload = () => window.location.reload(),
+  onReload = reloadApplication,
 }: RouteStatusPageProps) {
   const navigate = useNavigate();
-  const [heading, description] = errorContent[status];
+  const [label, light, heavy, description] = errorContent[status];
+  // Only a page whose files failed to download is cured by loading the application again.
+  const reloads = status === "module-load";
+  const seconds = useReloadCountdown(reloads, onReload);
 
   return (
-    // As tall as the window, less the navigation bar when the app shell is still around it.
-    <AppPage className="min-h-[calc(100dvh-var(--app-nav-block,0px))] bg-surface text-fg">
-      <AppSurface className="flex flex-1 items-center justify-center overflow-auto">
-        <div className="flex w-full max-w-md flex-col items-center gap-6 text-center">
-          <span className="rounded-full border border-line bg-surface-muted px-3 py-1 font-mono text-xs text-fg-secondary">
-            {status === "module-load" ? "Load failed" : status === 0 ? "Offline" : status}
-          </span>
-          <div>
-            <h1 className="text-3xl font-semibold leading-[1.05] tracking-[-0.8px] text-fg">
-              {heading}
-            </h1>
-            <p className="mt-2 text-sm leading-6 text-fg-muted">{description}</p>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {status === "module-load" ? (
-              <AppButton onClick={onReload}>
-                <RefreshCw className="size-4" />
+    <AppPage className="route-status">
+      <div className="route-status-glow" />
+      <div className="route-status-brand">
+        <MLSuiteMark size={22} />
+        <MLSuiteWordmark />
+      </div>
+      <div className="route-status-body">
+        <RouteStatusRing label={label} />
+        <div className="route-status-copy">
+          <h1 className="route-status-headline">
+            <span className="font-extralight">{light} </span>
+            <br />
+            <span className="font-extrabold">{heavy}</span>
+          </h1>
+          <p className="route-status-description">{description}</p>
+          <div className="route-status-actions">
+            {reloads ? (
+              <button type="button" className="route-status-action" data-primary onClick={onReload}>
+                <RotateCw className="size-[17px]" />
                 Reload application
-              </AppButton>
-            ) : null}
-            <AppButton
-              variant={status === "module-load" ? "secondary" : "primary"}
-              onClick={() => navigate(homePath)}
-            >
-              <Home className="size-4" />
-              {homeLabel}
-            </AppButton>
-            <AppButton variant="secondary" onClick={() => navigate(-1)}>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="route-status-action"
+                data-primary
+                onClick={() => navigate(homePath)}
+              >
+                <Home className="size-[17px]" />
+                {homeLabel}
+              </button>
+            )}
+            <button type="button" className="route-status-action" onClick={() => navigate(-1)}>
               <ArrowLeft className="size-4" />
               Go back
-            </AppButton>
+            </button>
           </div>
+          {reloads ? (
+            <p className="route-status-countdown">
+              This page reloads automatically in <strong>{seconds}</strong>{" "}
+              {seconds === 1 ? "second" : "seconds"}.
+            </p>
+          ) : null}
         </div>
-      </AppSurface>
+      </div>
     </AppPage>
   );
+}
+
+/** Counts down once a second and reloads at zero, then starts over if the page is still here. */
+function useReloadCountdown(active: boolean, onReload: () => void) {
+  const [seconds, setSeconds] = useState(ROUTE_RELOAD_SECONDS);
+
+  useEffect(() => {
+    if (!active) return;
+    const timeout = window.setTimeout(() => {
+      if (seconds > 1) {
+        setSeconds(seconds - 1);
+        return;
+      }
+      onReload();
+      setSeconds(ROUTE_RELOAD_SECONDS);
+    }, 1000);
+    return () => window.clearTimeout(timeout);
+  }, [active, seconds, onReload]);
+
+  return seconds;
 }
 
 export { RouteStatusPage as NotFoundError };
