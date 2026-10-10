@@ -16,6 +16,7 @@ import {
 } from "@/features/explore/lib/public-feedback-steps";
 import { PublicBookmarkPage } from "@/features/explore/pages/public-bookmark-page";
 import type { PublicBookmarkDto, PublicRunDto } from "@/shared/api/openapi.gen";
+import { LOADING_REVEAL_DELAY_MS } from "@/shared/ui/useStableLoading";
 
 vi.mock("@/capabilities/workspace-context/session", async (original) => ({
   ...(await original<typeof import("@/capabilities/workspace-context/session")>()),
@@ -101,7 +102,7 @@ const settle = async () => {
 };
 
 let answers: Record<string, Response[]>;
-let fetchMock: ReturnType<typeof vi.fn>;
+let fetchMock: ReturnType<typeof vi.fn<(url: string) => Promise<Response>>>;
 beforeEach(() => {
   answers = {
     [BOOKMARK_PATH]: [json(bookmark)],
@@ -139,7 +140,15 @@ async function openPage() {
       queryClient: new QueryClient({ defaultOptions: { queries: { retry: false } } }),
     },
   );
-  await settle();
+  const page = await answers[RUNS_PATH]![0]!.clone().json();
+  await vi.waitFor(
+    async () => {
+      await flush();
+      expect(entries(view.host)).toHaveLength(page.items.length);
+      expect(view.host.querySelector("mlf-kit-tabs")).not.toBeNull();
+    },
+    { timeout: 5000 },
+  );
   return view.host;
 }
 const rail = (host: HTMLElement) => host.querySelector('aside[aria-label="Your runs"]')!;
@@ -157,6 +166,21 @@ const deepText = (node: Node): string =>
 const formSection = (host: HTMLElement) => host.querySelector('section[aria-label="Form"]')!;
 
 describe("a visitor's runs on a public bookmark", () => {
+  test("a slow catalog still renders its kept runs after the loading indicator", async () => {
+    const respond = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation(async (url: string) => {
+      if (new URL(url).pathname === RUNS_PATH)
+        await new Promise((resolve) => setTimeout(resolve, LOADING_REVEAL_DELAY_MS + 40));
+      return respond(url);
+    });
+    const host = await openPage();
+    await vi.waitFor(async () => {
+      await flush();
+      expect(rail(host).textContent).toContain("2 kept");
+    });
+    expect(entries(host)).toHaveLength(2);
+  });
+
   test("the runs the server kept for this browser are listed newest first, the reviewed one marked", async () => {
     const host = await openPage();
 

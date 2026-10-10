@@ -8,7 +8,9 @@ not a semantic version increment or a production deployment.
 
 1. A push to `main`, or a manual run on `main`, validates the source reference.
 2. An existing complete immutable release is verified and reused without rebuilding.
-3. Otherwise CI must pass, including secret scanning, before building candidates.
+3. Otherwise CI must pass, including secret scanning and production-image Trivy
+   scans, before building candidates. The same image gate already runs on PRs and
+   pushes to `develop`, so vulnerable images block promotion before reaching `main`.
 4. Four Linux AMD64 images are built with SBOM and provenance attestations. Each
    candidate tag includes the commit, run ID and attempt; no moving tag is written.
 5. Trivy 0.74.0 scans the exact digests. HIGH/CRITICAL vulnerabilities, including
