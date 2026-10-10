@@ -61,7 +61,9 @@ export const toStoredBuiltinPayload = (
       probabilities: probabilitiesOf(output),
       labels: stored?.length ? stored : mappingLabels(output.mapping),
       prediction:
-        typeof output.prediction === "string" ? output.prediction : getClassifierPrediction(output),
+        typeof output.prediction === "string" || typeof output.prediction === "number"
+          ? output.prediction
+          : getClassifierPrediction(output),
     };
   }
   if (kind === "regressor") return { ...output, values: toNumericArray(output.values) };
