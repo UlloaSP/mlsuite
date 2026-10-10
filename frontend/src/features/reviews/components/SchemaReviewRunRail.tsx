@@ -27,10 +27,10 @@ export function SchemaReviewRunRail({
   onSubmitRevision,
 }: Props) {
   const [open, setOpen] = useState({ revision: true, pending: true });
-  // Virtual rows have no intrinsic height, so each open group gets a track as tall as its rows.
+  // Bound each group's viewport so a large inbox stays virtualized in stacked layouts too.
   // When both do not fit, the smaller keeps its rows and the other takes what is left.
   const track = (shown: boolean, count: number) =>
-    shown && count > 0 ? `minmax(8rem, calc(4rem + ${count} * 4.2rem))` : "auto";
+    shown && count > 0 ? `minmax(8rem, min(32rem, calc(4rem + ${count} * 4.2rem)))` : "auto";
   const groupRows = `${track(open.revision, revisionCount)} ${track(open.pending, pendingCount)}`;
 
   return (
