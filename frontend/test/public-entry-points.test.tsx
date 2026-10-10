@@ -1,11 +1,16 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { getDefaultStore } from "jotai";
 import { act, type PropsWithChildren } from "react";
 import { createMemoryRouter, Route, RouterProvider, Routes, useLocation } from "react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { AuthLandingPage } from "@/app/pages/AuthLandingPage";
 import { routes } from "@/app/router/routes";
 import { safeReturnTo } from "@/capabilities/workspace-context/session";
+import {
+  inferenceSessionsAtom,
+  type SessionEntry,
+} from "@/features/schemas/lib/inference-session-store";
 import type { PublicBookmarkDto, PublicBookmarkSummaryDto } from "@/shared/api/openapi.gen";
 import { click, mount } from "./support/dom";
 
@@ -425,6 +430,35 @@ describe("leaving the session", () => {
     expect(documents.opened).toEqual([]);
     expect(url()).toBe("/settings");
     expect(host.querySelector('[data-frame="app-shell"]')).not.toBeNull();
+  });
+
+  test("unsaved inferences are asked about in the app before signing out, never by the browser", async () => {
+    const store = getDefaultStore();
+    const run = { key: "run-1", state: "ready" } as SessionEntry;
+    store.set(inferenceSessionsAtom, { "1:bookmark": [run] });
+    try {
+      Object.assign(api, { signedIn: true });
+      shell.accountMenu = true;
+      await open("/settings");
+
+      await signOut();
+      expect(document.body.textContent).toContain("1 unsaved inference is lost");
+      expect(api.posts).toEqual([]);
+      await click("Cancel");
+      await settle();
+      expect(api.posts).toEqual([]);
+      expect(store.get(inferenceSessionsAtom)).toEqual({ "1:bookmark": [run] });
+
+      await signOut();
+      await click("Discard and sign out");
+      await settle();
+      // Nothing unsaved is left for the browser to warn about when the new document loads.
+      expect(store.get(inferenceSessionsAtom)).toEqual({});
+      expect(api.posts.map((post) => post.path)).toEqual(["/api/logout"]);
+      expect(documents.opened).toEqual(["/explore"]);
+    } finally {
+      store.set(inferenceSessionsAtom, {});
+    }
   });
 
   test("a session that ends on its own still asks to sign in and come back", async () => {
