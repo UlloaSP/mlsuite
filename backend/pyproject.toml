@@ -10,20 +10,17 @@ requires-python = ">=3.14"
 dependencies = [
     "fastapi>=0.120.3",
     "uvicorn[standard]>=0.38.0",
-    "joblib>=1.5.2",
     "pandas>=3.0.3,<4.0.0",
-    "scikit-learn>=1.7.2",
-    "mlschema==0.2.1",
+    # A bundle's skops state loads only with the scikit-learn version that wrote it.
+    "scikit-learn==1.9.1",
+    "mlbundle[sklearn,xgboost,catboost,onnx]==0.1.0a3",
     "python-multipart>=0.0.31",
     "crystal-tree",
     "xclingo==2.0b12",
-    "xgboost>=3.2.0",
-    "onnxruntime>=1.30.0",
-    "onnx>=1.23.0",
 ]
 
 [project.optional-dependencies]
-dev = ["httpx>=0.28.1", "pytest>=8.4.1"]
+dev = ["httpx>=0.28.1", "pytest>=8.4.1", "mlbundle[schema]==0.1.0a3"]
 
 [tool.uv.sources]
 # The explanation adapter uses crystal-tree 0.2 APIs; migrate it before updating this rev.

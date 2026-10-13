@@ -5,10 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 export type Bundle = {
   id: number;
-  modelFile: File | null;
-  dfFile: File | null;
+  modelFile: File;
   name: string;
-  oneHotSeparator: string;
   saved: boolean;
   saving: boolean;
 };

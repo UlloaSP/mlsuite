@@ -38,7 +38,6 @@ import dev.ulloasp.mlsuite.invitation.application.port.in.InvitationManagementUs
 import dev.ulloasp.mlsuite.invitation.application.usecase.InvitationCatalogService;
 import dev.ulloasp.mlsuite.model.application.port.in.AnalyzerUseCase;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
-import dev.ulloasp.mlsuite.model.application.port.in.ModelCreationUseCase;
 import dev.ulloasp.mlsuite.organization.application.port.in.OrganizationManagementUseCase;
 import dev.ulloasp.mlsuite.organization.application.usecase.MemberCatalogService;
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationCatalogService;
@@ -99,7 +98,7 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
         InferenceFacetCatalogService.class,
         InfrastructureService.class, InvitationCatalogService.class, InvitationManagementUseCase.class,
         ListPluginRuntimeSourcesUseCase.class, MemberCatalogService.class, ModelCatalogUseCase.class,
-        ModelCreationUseCase.class, OrganizationCatalogService.class, OrganizationLogoService.class,
+        OrganizationCatalogService.class, OrganizationLogoService.class,
         OrganizationManagementUseCase.class,
         PluginCatalogUseCase.class, PredictBookmarkCatalogUseCase.class, PredictionResultFeedbackUseCase.class,
         PredictionResultRepository.class, PredictionRunUseCase.class, PublicBookmarkModerationService.class,

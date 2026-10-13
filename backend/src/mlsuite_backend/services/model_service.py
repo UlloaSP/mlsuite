@@ -1,12 +1,34 @@
+import mlbundle
 from fastapi import UploadFile
 
-from ..model_adapters import load_runtime_model_from_upload
+from ..bundles import load_bundle
 
 
-async def read_metadata(upload: UploadFile) -> dict[str, str]:
-    runtime = await load_runtime_model_from_upload(upload)
+def _feature_importances(bundle: mlbundle.LoadedBundle) -> list[dict[str, object]] | None:
+    """Pair each importance with its feature; a model without readable structure has none."""
+    structure = bundle.structure
+    importances = None if structure is None else structure["feature_importances"]
+    if importances is None:
+        return None
+    # A pipeline's importances are those of its final estimator, over the transformed features.
+    names = structure.get("pipeline", {}).get("features", {}).get("names") or bundle.feature_names
+    return [
+        {"feature": name, "importance": importance}
+        for name, importance in zip(names, importances)
+        if isinstance(importance, (int, float))
+    ]
+
+
+async def read_metadata(upload: UploadFile) -> dict[str, object]:
+    bundle = await load_bundle(upload)
     return {
         "fileName": upload.filename or "",
-        "type": runtime.kind,
-        "specificType": runtime.specific_type,
+        "type": bundle.kind.value,
+        "specificType": bundle.class_name,
+        "library": bundle.library.value,
+        "features": list(bundle.feature_names),
+        "featureSource": bundle.feature_origin.value,
+        "schema": bundle.schema,
+        "manifest": bundle.manifest.model_dump(mode="json", by_alias=True),
+        "featureImportances": _feature_importances(bundle),
     }

@@ -53,9 +53,10 @@ final class PublicRunReports {
     }
 
     /**
-     * The runtime answers a classifier with one row of probabilities per instance and its class
-     * mapping; a workspace run stores that row alone, the class labels and the predicted class,
-     * and a regressor's values as numbers. Every reader of a stored run expects that shape.
+     * The runtime answers a classifier with one row of probabilities, its class mapping and the
+     * class the model itself decides; a workspace run stores that row, the class labels and the
+     * predicted class, and a regressor's values as numbers. Every reader of a stored run expects
+     * that shape. A model that decides no class is read as its most probable one.
      */
     static void asWorkspaceStores(String kind, Map<String, Object> report) {
         if ("classifier".equals(kind)) {
@@ -64,15 +65,28 @@ final class PublicRunReports {
             List<String> labels = labels(report.get("mapping"));
             report.put("probabilities", probabilities);
             report.put("labels", labels);
-            if (!probabilities.isEmpty()) {
+            if (!(report.get("prediction") instanceof String) && !probabilities.isEmpty()) {
                 int best = probabilities.indexOf(Collections.max(probabilities));
                 if (best < labels.size()) report.put("prediction", labels.get(best));
-            } else if (report.get("label") instanceof String label) {
-                report.put("prediction", label);
             }
         } else if ("regressor".equals(kind)) {
             report.put("values", numbers(report.get("values")));
         }
+    }
+
+    /**
+     * The runtime's report for a stored report: the first of its kind. A prediction names the
+     * model output it answers, and then answers only the report mapped to that output.
+     */
+    static Map<?, ?> answerTo(ReportRoute route, List<Object> answered) {
+        for (Object item : answered) {
+            if (item instanceof Map<?, ?> report && route.kind().equals(report.get("kind"))
+                    && (!(report.get("output") instanceof Number output)
+                            || route.target().equals(String.valueOf(output.longValue())))) {
+                return report;
+            }
+        }
+        return null;
     }
 
     private static List<Double> numbers(Object value) {

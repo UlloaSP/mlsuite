@@ -921,6 +921,22 @@
         ],
         "type": "object"
       },
+      "FeatureImportanceDto": {
+        "properties": {
+          "feature": {
+            "type": "string"
+          },
+          "importance": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "feature",
+          "importance"
+        ],
+        "type": "object"
+      },
       "InferenceCatalogColumnDto": {
         "properties": {
           "choices": {
@@ -1392,6 +1408,43 @@
           "assignableRoles",
           "canChangeRole",
           "canRemove"
+        ],
+        "type": "object"
+      },
+      "ModelDetailsDto": {
+        "properties": {
+          "featureImportances": {
+            "items": {
+              "$ref": "#/components/schemas/FeatureImportanceDto"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "manifest": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "sha256": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sizeBytes": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "featureImportances",
+          "manifest",
+          "sha256",
+          "sizeBytes"
         ],
         "type": "object"
       },
@@ -6003,56 +6056,6 @@
         ]
       }
     },
-    "/api/analyzer/artifacts/match": {
-      "post": {
-        "operationId": "matchArtifacts",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "dataframes": {
-                    "items": {
-                      "format": "binary",
-                      "type": "string"
-                    },
-                    "type": "array"
-                  },
-                  "models": {
-                    "items": {
-                      "format": "binary",
-                      "type": "string"
-                    },
-                    "type": "array"
-                  }
-                },
-                "required": [
-                  "dataframes",
-                  "models"
-                ],
-                "type": "object"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": { },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "analyzer-controller"
-        ]
-      }
-    },
     "/api/analyzer/explanations": {
       "post": {
         "operationId": "explain",
@@ -6121,60 +6124,6 @@
                 },
                 "required": [
                   "data"
-                ],
-                "type": "object"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": { },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "analyzer-controller"
-        ]
-      }
-    },
-    "/api/analyzer/schema": {
-      "post": {
-        "operationId": "generateSchema",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "oneHotSeparator",
-            "required": false,
-            "schema": {
-              "default": "__",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "dataframe": {
-                    "format": "binary",
-                    "type": "string"
-                  },
-                  "model": {
-                    "format": "binary",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "model"
                 ],
                 "type": "object"
               }
@@ -6540,15 +6489,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "in": "query",
-            "name": "oneHotSeparator",
-            "required": false,
-            "schema": {
-              "default": "__",
-              "type": "string"
-            }
           }
         ],
         "requestBody": {
@@ -6556,10 +6496,6 @@
             "application/json": {
               "schema": {
                 "properties": {
-                  "dataframeFile": {
-                    "format": "binary",
-                    "type": "string"
-                  },
                   "modelFile": {
                     "format": "binary",
                     "type": "string"
@@ -6750,6 +6686,37 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ModelDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "model-controller"
+        ]
+      }
+    },
+    "/api/models/{modelId}/details": {
+      "get": {
+        "operationId": "getModelDetails",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "modelId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelDetailsDto"
                 }
               }
             },

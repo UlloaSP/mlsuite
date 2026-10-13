@@ -14,4 +14,6 @@ export const modelKeys = {
   // Route params are strings and DTO ids numbers; the key holds a string so both match.
   detail: (organizationId: number | string, modelId: number | string) =>
     [...modelKeys.all(organizationId), "detail", String(modelId)] as const,
+  bundle: (organizationId: number | string, modelId: number | string) =>
+    [...modelKeys.detail(organizationId, modelId), "bundle"] as const,
 };

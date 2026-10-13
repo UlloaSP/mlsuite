@@ -1,24 +1,14 @@
 package dev.ulloasp.mlsuite.model.application.port.in;
 
 import java.util.Map;
-import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
 import dev.ulloasp.mlsuite.model.application.dto.ExplainRequest;
-import jakarta.annotation.Nullable;
 
 public interface AnalyzerUseCase {
 
-    Map<String, Object> generateInputSchema(
-            Long userId,
-            MultipartFile model,
-            @Nullable MultipartFile dataframe,
-            String oneHotSeparator);
-
     Map<String, Object> inspectArtifact(Long userId, MultipartFile artifact);
-
-    Map<String, Object> matchArtifacts(Long userId, List<MultipartFile> models, List<MultipartFile> dataframes);
 
     Map<String, Object> predict(Long userId, Long modelId, Map<String, Object> data);
 

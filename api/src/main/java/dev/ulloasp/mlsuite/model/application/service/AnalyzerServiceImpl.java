@@ -5,7 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 package dev.ulloasp.mlsuite.model.application.service;
 
-import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.MediaType;
@@ -27,7 +26,6 @@ import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
-import jakarta.annotation.Nullable;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -44,36 +42,11 @@ public class AnalyzerServiceImpl implements AnalyzerUseCase {
     private final ObjectMapper objectMapper;
 
     @Override
-    public Map<String, Object> generateInputSchema(
-            Long userId,
-            MultipartFile model,
-            @Nullable MultipartFile dataframe,
-            String oneHotSeparator) {
-        userLookupService.requireById(userId);
-        LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("model_file", model.getResource());
-        body.add("onehot_separator", oneHotSeparator);
-        if (dataframe != null) {
-            body.add("df_file", dataframe.getResource());
-        }
-        return analyzerClient.post("/build_schema", body);
-    }
-
-    @Override
     public Map<String, Object> inspectArtifact(Long userId, MultipartFile artifact) {
         userLookupService.requireById(userId);
         LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("artifact_file", artifact.getResource());
-        return analyzerClient.post("/inspect_artifact", body);
-    }
-
-    @Override
-    public Map<String, Object> matchArtifacts(Long userId, List<MultipartFile> models, List<MultipartFile> dataframes) {
-        userLookupService.requireById(userId);
-        LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        models.forEach(model -> body.add("model_files", model.getResource()));
-        dataframes.forEach(dataframe -> body.add("dataframe_files", dataframe.getResource()));
-        return analyzerClient.post("/match_artifacts", body);
+        body.add("model_file", artifact.getResource());
+        return analyzerClient.post("/metadata", body);
     }
 
     @Override

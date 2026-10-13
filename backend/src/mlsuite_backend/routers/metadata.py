@@ -6,5 +6,5 @@ router = APIRouter()
 
 
 @router.post("/metadata")
-async def metadata(model_file: UploadFile = File(...)) -> dict[str, str]:
+async def metadata(model_file: UploadFile = File(...)) -> dict[str, object]:
     return await read_metadata(model_file)

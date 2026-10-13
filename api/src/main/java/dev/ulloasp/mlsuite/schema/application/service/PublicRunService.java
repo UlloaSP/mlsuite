@@ -227,13 +227,9 @@ public class PublicRunService implements PublicRunUseCase {
     private static Map<String, Object> storedOutput(ModelCall call, Map<String, Object> answer, List<ReportRoute> routes) {
         Map<String, Object> output = new LinkedHashMap<>(answer);
         List<Object> reports = new ArrayList<>(answer.get("reports") instanceof List<?> items ? items : List.of());
-        Map<String, Map<?, ?>> byKind = reports.stream()
-                .filter(item -> item instanceof Map<?, ?> report && report.get("kind") instanceof String)
-                .map(item -> (Map<?, ?>) item)
-                .collect(Collectors.toMap(report -> (String) report.get("kind"), Function.identity(), (first, later) -> first,
-                        LinkedHashMap::new));
+        List<Object> answered = List.copyOf(reports);
         for (ReportRoute route : routes) {
-            Map<?, ?> raw = route.modelId().equals(call.modelId()) ? byKind.get(route.kind()) : null;
+            Map<?, ?> raw = route.modelId().equals(call.modelId()) ? PublicRunReports.answerTo(route, answered) : null;
             if (raw == null) continue;
             Map<String, Object> copy = new LinkedHashMap<>();
             raw.forEach((key, value) -> copy.put(String.valueOf(key), value));

@@ -26,14 +26,13 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
 vi.mock("@/features/models/api/model.mutations", () => ({
   useCreateModelMutation: () => ({ mutateAsync: mocks.create }),
   useInspectArtifactMutation: () => ({ mutateAsync: mocks.inspect }),
-  useMatchArtifactsMutation: () => ({ mutateAsync: vi.fn() }),
 }));
 
 let view: Mounted;
 let container: HTMLDivElement;
 beforeEach(async () => {
   vi.clearAllMocks();
-  mocks.inspect.mockResolvedValue({ kind: "model" });
+  mocks.inspect.mockResolvedValue({ type: "classifier" });
   mocks.create.mockResolvedValue({});
   view = await mount(<CreateModelPage />, { route: "/" });
   container = view.host;
@@ -54,23 +53,27 @@ const blankFirstName = () =>
   changeValue(container.querySelector<HTMLInputElement>('input[aria-label^="Rename"]')!, "");
 
 test("saves all valid models and returns to catalog", async () => {
-  await upload("first.joblib", "second.joblib");
+  await upload("first.mlbundle", "second.mlbundle");
   await saveAll();
   expect(mocks.create).toHaveBeenCalledTimes(2);
   expect(mocks.navigate).toHaveBeenCalledWith("/models");
 });
-test("inspects and saves an ONNX model", async () => {
-  await upload("risk.onnx");
-  expect(mocks.inspect).toHaveBeenCalledWith(expect.objectContaining({ name: "risk.onnx" }));
+test("inspects a bundle before listing it and saves it under its name", async () => {
+  await upload("risk.mlbundle");
+  expect(mocks.inspect).toHaveBeenCalledWith(expect.objectContaining({ name: "risk.mlbundle" }));
   await saveAll();
-  expect(mocks.create).toHaveBeenCalledWith(
-    expect.objectContaining({
-      modelFile: expect.objectContaining({ name: "risk.onnx" }),
-    }),
-  );
+  expect(mocks.create).toHaveBeenCalledWith({
+    name: "Risk",
+    modelFile: expect.objectContaining({ name: "risk.mlbundle" }),
+  });
+});
+test("does not list a bundle the runtime rejects", async () => {
+  mocks.inspect.mockRejectedValueOnce(new Error("Cannot load bundle"));
+  await upload("broken.mlbundle");
+  expect(container.textContent).toContain("No bundles yet");
 });
 test("retains a nameless bundle after saving the valid bundle", async () => {
-  await upload("first.joblib", "second.joblib");
+  await upload("first.mlbundle", "second.mlbundle");
   await blankFirstName();
   await saveAll();
   expect(mocks.create).toHaveBeenCalledTimes(1);
@@ -78,7 +81,7 @@ test("retains a nameless bundle after saving the valid bundle", async () => {
   expect(container.querySelector<HTMLInputElement>('input[aria-label^="Rename"]')?.value).toBe("");
 });
 test("retains other incomplete bundles after an individual save", async () => {
-  await upload("first.joblib", "second.joblib");
+  await upload("first.mlbundle", "second.mlbundle");
   await blankFirstName();
   const save = [...container.querySelectorAll("button")].find(
     (button) => button.textContent === "Save" && !button.disabled,
@@ -87,28 +90,21 @@ test("retains other incomplete bundles after an individual save", async () => {
   expect(mocks.create).toHaveBeenCalledTimes(1);
   expect(mocks.navigate).not.toHaveBeenCalled();
 });
-test("never saves a bundle whose one-hot separator is empty", async () => {
-  await upload("first.joblib");
-  const input = container.querySelector<HTMLInputElement>(
-    'input[aria-label^="One-hot separator"]',
-  )!;
-  await changeValue(input, "");
-  await saveAll();
-  expect(mocks.create).not.toHaveBeenCalled();
-  expect(mocks.navigate).not.toHaveBeenCalled();
-});
 test("stays on upload page when persistence fails", async () => {
-  await upload("first.joblib");
+  await upload("first.mlbundle");
   mocks.create.mockRejectedValueOnce(new Error("Save failed"));
   await saveAll();
   expect(mocks.navigate).not.toHaveBeenCalled();
 });
-test("reports unsupported extensions without inspecting or creating bundles", async () => {
-  await upload("unsupported.csv");
-  expect(mocks.inspect).not.toHaveBeenCalled();
-  expect(mocks.error).toHaveBeenCalledWith(expect.stringContaining("unsupported.csv"));
-  expect(container.textContent).toContain("No bundles yet");
-});
+test.each(["model.joblib", "model.onnx", "data.csv"])(
+  "reports %s as unsupported without inspecting it",
+  async (name) => {
+    await upload(name);
+    expect(mocks.inspect).not.toHaveBeenCalled();
+    expect(mocks.error).toHaveBeenCalledWith(expect.stringContaining(name));
+    expect(container.textContent).toContain("No bundles yet");
+  },
+);
 test.each([false, true])("only offers archive for active models, archived=%s", async (archived) => {
   await view.rerender(
     <ModelActionsMenu archived={archived} canEdit canDelete modelName="QA" onAction={vi.fn()} />,

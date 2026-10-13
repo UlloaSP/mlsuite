@@ -4,105 +4,34 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, it } from "vite-plus/test";
-import { applyInspectedBundleFiles } from "@/features/models/lib/bundle-planner";
 import { saveModelBundlesSequentially } from "@/features/models/lib/bundle-save";
-import { ALL_EXTS, DF_EXTS, isModelFile } from "@/features/models/lib/bundle-utils";
+import { appendBundleFiles, isBundleFile } from "@/features/models/lib/bundle-utils";
 
 const file = (name: string) => new File(["x"], name);
 
 describe("model bundle file handling", () => {
-  it("accepts joblib dataframes for explicit dataframe upload controls", () => {
-    expect(DF_EXTS).toContain(".joblib");
-    expect(ALL_EXTS.filter((ext) => ext === ".joblib")).toHaveLength(1);
+  it("accepts only .mlbundle files", () => {
+    expect(isBundleFile("risk-model.mlbundle")).toBe(true);
+    expect(isBundleFile("RISK-MODEL.MLBUNDLE")).toBe(true);
+    expect(isBundleFile("risk-model.joblib")).toBe(false);
+    expect(isBundleFile("risk-model.onnx")).toBe(false);
   });
 
-  it("routes joblib artifacts to backend inspection", () => {
-    expect(isModelFile("risk-model.joblib")).toBe(true);
-    expect(isModelFile("risk-model.pkl")).toBe(false);
+  it("lists each file as an unsaved bundle named after it", () => {
+    const bundles = appendBundleFiles([], [file("risk_model.mlbundle"), file("churn.mlbundle")], 1);
+
+    expect(bundles.map((bundle) => bundle.id)).toEqual([1, 2]);
+    expect(bundles.map((bundle) => bundle.name)).toEqual(["Risk Model", "Churn"]);
+    expect(bundles.every((bundle) => !bundle.saved && !bundle.saving)).toBe(true);
   });
 
-  it("accepts ONNX only as a model artifact", () => {
-    expect(ALL_EXTS).toContain(".onnx");
-    expect(isModelFile("risk-model.onnx")).toBe(true);
-    expect(DF_EXTS).not.toContain(".onnx");
-  });
+  it("does not list the same file name twice", () => {
+    const first = appendBundleFiles([], [file("risk.mlbundle")], 1);
+    const bundles = appendBundleFiles(first, [file("risk.mlbundle"), file("churn.mlbundle")], 2);
 
-  it("creates a pending bundle when a dataframe arrives before its model", () => {
-    const result = applyInspectedBundleFiles(
-      [],
-      [{ file: file("risk.joblib"), kind: "dataframe" }],
-      1,
-    );
-
-    expect(result.bundles).toHaveLength(1);
-    expect(result.bundles[0].modelFile).toBeNull();
-    expect(result.bundles[0].dfFile?.name).toBe("risk.joblib");
-  });
-
-  it("fills a pending dataframe bundle when the matching model arrives later", () => {
-    const pending = applyInspectedBundleFiles(
-      [],
-      [{ file: file("risk.joblib"), kind: "dataframe" }],
-      1,
-    );
-    const result = applyInspectedBundleFiles(
-      pending.bundles,
-      [{ file: file("risk.joblib"), kind: "model" }],
-      pending.nextId,
-    );
-
-    expect(result.bundles).toHaveLength(1);
-    expect(result.bundles[0].modelFile?.name).toBe("risk.joblib");
-    expect(result.bundles[0].dfFile?.name).toBe("risk.joblib");
-  });
-
-  it("assigns one matched dataframe to multiple models", () => {
-    const modelA = file("classifier.joblib");
-    const modelB = file("regressor.joblib");
-    const dataframe = file("shared.joblib");
-    const result = applyInspectedBundleFiles(
-      [],
-      [
-        { file: modelA, kind: "model" },
-        { file: modelB, kind: "model" },
-        { file: dataframe, kind: "dataframe" },
-      ],
-      1,
-      {
-        matchModels: [modelA, modelB],
-        matchDataframes: [dataframe],
-        match: {
-          dataframes: [{ index: 0, fileName: "shared.joblib", columns: [], rows: 2 }],
-          models: [
-            {
-              index: 0,
-              fileName: "classifier.joblib",
-              type: "classifier",
-              specificType: "LogisticRegression",
-              library: "sklearn",
-              features: ["age"],
-              matches: [],
-              autoDataframeIndex: 0,
-            },
-            {
-              index: 1,
-              fileName: "regressor.joblib",
-              type: "regressor",
-              specificType: "LinearRegression",
-              library: "sklearn",
-              features: ["area"],
-              matches: [],
-              autoDataframeIndex: 0,
-            },
-          ],
-        },
-      },
-    );
-
-    expect(result.bundles).toHaveLength(2);
-    expect(result.bundles.map((bundle) => bundle.dfFile?.name)).toEqual([
-      "shared.joblib",
-      "shared.joblib",
+    expect(bundles.map((bundle) => bundle.modelFile.name)).toEqual([
+      "risk.mlbundle",
+      "churn.mlbundle",
     ]);
   });
 

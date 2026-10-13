@@ -1,6 +1,5 @@
 import { describe, expect, test } from "vite-plus/test";
 import { composeSchemaVersion } from "@/features/schemas/lib/merge";
-import { countVisibleSchemaFields } from "@/features/schemas/lib/one-hot-category";
 import type { ModelDto } from "@/shared/api/openapi.gen";
 
 const withMappedTo = (items: unknown[]): unknown[] =>
@@ -25,7 +24,7 @@ const model = (fields: unknown[], reports: unknown[] = [], id = 1): ModelDto => 
   name: `model-${id}`,
   type: "classifier",
   specificType: "LogisticRegression",
-  fileName: "model.joblib",
+  fileName: "model.mlbundle",
   inputSchema: { fields: withMappedTo(fields), reports: withMappedTo(reports) },
   createdAt: "2026-06-02T00:00:00Z",
   updatedAt: "2026-06-02T00:00:00Z",
@@ -39,25 +38,16 @@ const model = (fields: unknown[], reports: unknown[] = [], id = 1): ModelDto => 
 });
 
 describe("composeSchemaVersion one-hot mapping", () => {
-  test("converts safe one-hot groups into native onehot categories", () => {
+  test("leaves one-hot grouping to the model schema", () => {
     const result = composeSchemaVersion("v1", [
       model([
         { kind: "number", id: "blood_group__A", label: "blood_group__A" },
         { kind: "number", id: "blood_group__B", label: "blood_group__B" },
-        { kind: "number", id: "age", label: "age" },
       ]),
     ]);
 
     const fields = result.formSchema.fields as Array<Record<string, unknown>>;
-    expect(fields.find((field) => field.kind === "onehot-category")).toMatchObject({
-      label: "Blood Group",
-      options: [
-        { value: "A", mappedTo: { "model-1": "blood_group__A" } },
-        { value: "B", mappedTo: { "model-1": "blood_group__B" } },
-      ],
-    });
-    expect(fields.filter((field) => field.hidden === true)).toHaveLength(0);
-    expect(countVisibleSchemaFields(result.formSchema)).toBe(2);
+    expect(fields.map((field) => field.kind)).toEqual(["number", "number"]);
   });
 
   test("accepts analyzer one-hot categories without parent mappedTo", () => {
@@ -90,52 +80,6 @@ describe("composeSchemaVersion one-hot mapping", () => {
       ],
     });
     expect(fields[0]).not.toHaveProperty("mappedTo");
-  });
-
-  test("keeps plus and minus one-hot categories as unique mapped targets", () => {
-    const result = composeSchemaVersion("v1", [
-      model([
-        { kind: "number", id: "rec_blood_group__A+", label: "rec_blood_group__A+" },
-        { kind: "number", id: "rec_blood_group__A-", label: "rec_blood_group__A-" },
-        { kind: "number", id: "rec_blood_group__B+", label: "rec_blood_group__B+" },
-      ]),
-    ]);
-
-    const fields = result.formSchema.fields as Array<Record<string, unknown>>;
-    const master = fields.find((field) => field.kind === "onehot-category");
-    const mappedTargets = (master?.options as Array<Record<string, unknown>> | undefined)?.map(
-      (option) => option.mappedTo,
-    );
-    expect(master).toMatchObject({ kind: "onehot-category" });
-    expect(mappedTargets).toEqual([
-      { "model-1": "rec_blood_group__A+" },
-      { "model-1": "rec_blood_group__A-" },
-      { "model-1": "rec_blood_group__B+" },
-    ]);
-  });
-
-  test("does not convert singleton encoded fields", () => {
-    const result = composeSchemaVersion("v1", [
-      model([{ kind: "number", id: "blood_group__A", label: "blood_group__A" }]),
-    ]);
-
-    const fields = result.formSchema.fields as Array<Record<string, unknown>>;
-    expect(fields.some((field) => field.kind === "onehot-category")).toBe(false);
-    expect(countVisibleSchemaFields(result.formSchema)).toBe(1);
-  });
-
-  test("does not convert groups when base field already exists", () => {
-    const result = composeSchemaVersion("v1", [
-      model([
-        { kind: "category", id: "blood_group", label: "blood_group" },
-        { kind: "number", id: "blood_group__A", label: "blood_group__A" },
-        { kind: "number", id: "blood_group__B", label: "blood_group__B" },
-      ]),
-    ]);
-
-    const fields = result.formSchema.fields as Array<Record<string, unknown>>;
-    expect(fields.some((field) => field.kind === "onehot-category")).toBe(false);
-    expect(countVisibleSchemaFields(result.formSchema)).toBe(3);
   });
 
   test("keeps model reports on the schema", () => {

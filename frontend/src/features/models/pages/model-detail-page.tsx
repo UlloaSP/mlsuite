@@ -16,9 +16,9 @@ import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
-import { ModelSummaryTab } from "@/features/models/components/ModelSummaryTab";
-import { useModel } from "@/features/models/api/model.queries";
-import { getModelAlgorithmLabel } from "@/capabilities/prediction-runtime/data/model-utils";
+import { ModelDetailTabs } from "@/features/models/components/ModelDetailTabs";
+import { useModel, useModelDetails } from "@/features/models/api/model.queries";
+import { readModelManifest } from "@/features/models/lib/model-manifest";
 import { formatTimestamp } from "@/shared/lib/date-time";
 
 export function ModelDetailPage() {
@@ -27,7 +27,8 @@ export function ModelDetailPage() {
   const { data: user, error } = useUser();
   const { data: workspace } = useWorkspaceContext();
   const modelQuery = useModel(modelId);
-  const showLoader = useStableLoading(modelQuery.isLoading);
+  const detailsQuery = useModelDetails(modelId);
+  const showLoader = useStableLoading(modelQuery.isLoading || detailsQuery.isLoading);
   const model = modelQuery.data;
   const missing = modelQuery.error instanceof HttpError && modelQuery.error.status === 404;
 
@@ -36,6 +37,8 @@ export function ModelDetailPage() {
   }
   if (showLoader) return <AppPageLoader label="Loading model…" />;
   const canEditModels = workspace?.permissions.canEditModels ?? false;
+  // A pipeline is named by the estimator that predicts, which only its bundle states.
+  const algorithm = readModelManifest(detailsQuery.data?.manifest).steps.at(-1)?.algorithm;
 
   return (
     <AppPage>
@@ -59,7 +62,7 @@ export function ModelDetailPage() {
             <AppPageHeader
               breadcrumbs={[{ label: "Models", to: "/models" }, { label: model.name }]}
               title={model.name}
-              description={`${getModelAlgorithmLabel(model)} · Created ${formatTimestamp(model.createdAt)}`}
+              description={`${algorithm ?? model.specificType} · Created ${formatTimestamp(model.createdAt)}`}
               actions={
                 canEditModels ? (
                   <AppButton
@@ -72,10 +75,7 @@ export function ModelDetailPage() {
               }
             />
 
-            <ModelSummaryTab
-              model={model}
-              onCreateSchema={() => navigate(`/schemas/create?modelId=${model.id}`)}
-            />
+            <ModelDetailTabs model={model} details={detailsQuery.data} />
           </>
         )}
       </AppSurface>

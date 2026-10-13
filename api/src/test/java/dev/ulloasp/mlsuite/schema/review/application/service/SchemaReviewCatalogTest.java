@@ -252,7 +252,7 @@ class SchemaReviewCatalogTest extends PublicPredictionFixture {
     private SchemaReviewRun reviewRun(SchemaReview review, SchemaVersion snapshot, String name) {
         PredictionRun run = new PredictionRun(snapshot, name, Map.of(), PredictionRunStatus.SUCCESS);
         entityManager.persist(run);
-        entityManager.persist(new PredictionResult(run, onnxModel, Map.of(), Map.of(), PredictionResultStatus.SUCCESS,
+        entityManager.persist(new PredictionResult(run, netModel, Map.of(), Map.of(), PredictionResultStatus.SUCCESS,
                 null, null));
         SchemaReviewRun reviewRun = new SchemaReviewRun(review, run);
         entityManager.persist(reviewRun);
