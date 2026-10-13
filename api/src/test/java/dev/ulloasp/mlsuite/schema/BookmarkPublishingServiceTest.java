@@ -195,7 +195,7 @@ class BookmarkPublishingServiceTest {
     void modelsUpToTheSizeCeilingCanBePublishedWhateverTheirFormat() {
         SchemaBookmark bookmark = stored(bookmark());
         memberWith(PermissionKey.PUBLISH_BOOKMARKS);
-        bound(VERSION_ID, new BoundModel(11L, "forest.joblib", 12L), new BoundModel(12L, "net.onnx", CEILING_MB * MB));
+        bound(VERSION_ID, new BoundModel(11L, "forest.mlbundle", 12L), new BoundModel(12L, "net.mlbundle", CEILING_MB * MB));
 
         service.publishBookmark(USER_ID, BOOKMARK_ID);
 

@@ -46,7 +46,7 @@ class SchemaRepositoryCatalogTest extends PublicPredictionFixture {
         ownerRole = authorizeOwner();
         inTransaction(() -> {
             first = snapshot(1, null, List.of(FIELD, HIDDEN));
-            entityManager.persist(new SchemaModelBinding(snapshot(2, "alpha", List.of()), onnxModel, Map.of()));
+            entityManager.persist(new SchemaModelBinding(snapshot(2, "alpha", List.of()), netModel, Map.of()));
             snapshot(4, "Zulu", List.of(FIELD, FIELD, FIELD, FIELD, FIELD));
             IntStream.rangeClosed(5, 34).forEach(number -> latest = snapshot(number, "Bulk %02d".formatted(number),
                     List.of(FIELD)));

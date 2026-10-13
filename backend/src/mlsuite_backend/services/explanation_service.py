@@ -1,27 +1,32 @@
+import mlbundle
+import pandas as pd
 from fastapi import UploadFile
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
-from ..model_adapters import load_runtime_model_from_upload
+from ..bundles import load_bundle
 from ..utils.crystal_tree import (
     build_tree_path_explanation,
     explain_with_feature_name_aliases,
     parse_trace_definitions,
 )
-from ..utils.dataframe import build_prediction_dataframe, parse_record_json
 from ..utils.errors import bad_request, internal_runtime_error
+from ..utils.records import parse_record_json
 
 
 async def explain(model_upload: UploadFile, data: str, traces: str) -> dict[str, list[dict[str, str]]]:
-    runtime = await load_runtime_model_from_upload(model_upload)
-    model = runtime.model
+    bundle = await load_bundle(model_upload)
+    model = bundle.native_model
     if not isinstance(model, (DecisionTreeClassifier, DecisionTreeRegressor)):
         message = f"crystal-tree requires a DecisionTree estimator, got {model.__class__.__name__}"
         raise bad_request(message)
 
     record = parse_record_json(data, "Invalid data JSON")
     trace_definitions = parse_trace_definitions(traces)
-    frame = build_prediction_dataframe(runtime.feature_metadata(), record)
-    feature_names = list(frame.columns)
+    feature_names = list(bundle.feature_names)
+    try:
+        frame = pd.DataFrame([bundle.row_from_record(record)], columns=feature_names)
+    except mlbundle.PredictionInputError as exc:
+        raise bad_request(str(exc)) from exc
 
     try:
         generated_trees = explain_with_feature_name_aliases(

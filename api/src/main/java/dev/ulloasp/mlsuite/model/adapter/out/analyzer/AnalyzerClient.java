@@ -1,7 +1,7 @@
 package dev.ulloasp.mlsuite.model.adapter.out.analyzer;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -36,9 +36,12 @@ public class AnalyzerClient {
             if (response == null) {
                 return Map.of();
             }
-            return response.entrySet().stream()
-                    .filter(entry -> entry.getKey() instanceof String)
-                    .collect(Collectors.toMap(entry -> (String) entry.getKey(), Map.Entry::getValue));
+            // The analyzer answers JSON, where a key may hold null: a model without importances.
+            Map<String, Object> answer = new LinkedHashMap<>();
+            response.forEach((key, value) -> {
+                if (key instanceof String name) answer.put(name, value);
+            });
+            return answer;
         } catch (RestClientResponseException ex) {
             throw AnalyzerServiceException.fromRestClient(ex);
         } catch (ResourceAccessException ex) {

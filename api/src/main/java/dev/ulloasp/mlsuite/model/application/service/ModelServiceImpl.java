@@ -7,6 +7,7 @@ package dev.ulloasp.mlsuite.model.application.service;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -101,6 +102,11 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         Map<String, Object> response = analyzerClient.post("/metadata", body);
         String type = response.get("type") != null ? response.get("type").toString() : null;
         String specificType = response.get("specificType") != null ? response.get("specificType").toString() : null;
+        Map<String, Object> inputSchema = jsonObject(response, "schema");
+        Map<String, Object> manifest = jsonObject(response, "manifest");
+        List<Map<String, Object>> importances = response.get("featureImportances") instanceof List<?> items
+                ? items.stream().filter(Map.class::isInstance).map(item -> jsonObject((Map<?, ?>) item)).toList()
+                : null;
         String fileName = response.get("fileName") != null
                 ? response.get("fileName").toString()
                 : reusableModelFile.getOriginalFilename();
@@ -119,6 +125,9 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         model.setType(type);
         model.setSpecificType(specificType);
         model.setFileName(fileName);
+        model.setInputSchema(inputSchema);
+        model.setBundleManifest(manifest);
+        model.setFeatureImportances(importances);
         model.setModelFile(artifactBytes);
         model.setModelSizeBytes((long) artifactBytes.length);
         model.setArtifactState(ModelArtifactState.INLINE_ONLY);
@@ -236,7 +245,23 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         copy.setModelSizeBytes((long) bytes.length);
         copy.setArtifactState(ModelArtifactState.INLINE_ONLY);
         copy.setInputSchema(source.getInputSchema());
+        copy.setBundleManifest(source.getBundleManifest());
+        copy.setFeatureImportances(source.getFeatureImportances());
         return copy;
+    }
+
+    /** A JSON object the analyzer must answer with; its absence is the analyzer's fault, not the caller's. */
+    private static Map<String, Object> jsonObject(Map<String, Object> response, String key) {
+        if (!(response.get(key) instanceof Map<?, ?> value)) {
+            throw new IllegalStateException("Analyzer answered without the model " + key);
+        }
+        return jsonObject(value);
+    }
+
+    private static Map<String, Object> jsonObject(Map<?, ?> value) {
+        Map<String, Object> object = new LinkedHashMap<>();
+        value.forEach((key, item) -> object.put(String.valueOf(key), item));
+        return object;
     }
 
     private void deleteStoredObject(Model model, RuntimeException original) {

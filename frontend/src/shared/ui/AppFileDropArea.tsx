@@ -22,7 +22,7 @@ export function AppFileDropArea({
   accept: string;
   children: ReactNode;
   inputLabel: string;
-  /** Accessible name of the area, e.g. "Drop model or dataframe files". */
+  /** Accessible name of the area, e.g. "Drop bundle files". */
   label: string;
   onFiles: (files: File[]) => void | Promise<void>;
 }) {

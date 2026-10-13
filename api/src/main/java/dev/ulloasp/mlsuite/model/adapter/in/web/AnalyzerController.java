@@ -6,7 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 package dev.ulloasp.mlsuite.model.adapter.in.web;
 
 import java.util.Map;
-import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,7 +17,6 @@ import org.springframework.web.multipart.MultipartFile;
 import dev.ulloasp.mlsuite.model.application.dto.ExplainRequest;
 import dev.ulloasp.mlsuite.model.application.port.in.AnalyzerUseCase;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
-import jakarta.annotation.Nullable;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,20 +29,6 @@ public class AnalyzerController {
 
     private final AnalyzerUseCase analyzerUseCase;
 
-    @PostMapping("/schema")
-    public ResponseEntity<Map<String, Object>> generateSchema(
-            CurrentUser user,
-            @RequestPart("model") MultipartFile model,
-            @Nullable @RequestPart(value = "dataframe", required = false) MultipartFile dataframe,
-            @RequestParam(defaultValue = "__") String oneHotSeparator) {
-        Map<String, Object> schema = analyzerUseCase.generateInputSchema(
-                user.userId(),
-                model,
-                dataframe,
-                oneHotSeparator);
-        return ResponseEntity.ok(schema);
-    }
-
     @PostMapping("/artifacts/inspect")
     public ResponseEntity<Map<String, Object>> inspectArtifact(
             CurrentUser user,
@@ -53,18 +37,6 @@ public class AnalyzerController {
                 user.userId(),
                 artifact);
         return ResponseEntity.ok(inspection);
-    }
-
-    @PostMapping("/artifacts/match")
-    public ResponseEntity<Map<String, Object>> matchArtifacts(
-            CurrentUser user,
-            @RequestPart("models") List<MultipartFile> models,
-            @RequestPart("dataframes") List<MultipartFile> dataframes) {
-        Map<String, Object> matches = analyzerUseCase.matchArtifacts(
-                user.userId(),
-                models,
-                dataframes);
-        return ResponseEntity.ok(matches);
     }
 
     @PostMapping("/predictions")

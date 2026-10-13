@@ -6,17 +6,26 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { appFetch } from "@/shared/api/http";
 import type {
   ArtifactInspectionDto,
-  ArtifactMatchDto,
   CreateModelRequest,
-  MatchArtifactsRequest,
   ModelNameRequest,
   ModelPageRequest,
   ModelVersionRequest,
 } from "./model.types";
-import type { CreateModelDto, ModelDto, PageDtoModelDto } from "@/shared/api/openapi.gen";
+import type {
+  CreateModelDto,
+  ModelDetailsDto,
+  ModelDto,
+  PageDtoModelDto,
+} from "@/shared/api/openapi.gen";
 
 export const getModel = (modelId: number | string, signal?: AbortSignal): Promise<ModelDto> =>
   appFetch<ModelDto>(`/api/models/${encodeURIComponent(modelId)}`, { signal });
+
+export const getModelDetails = (
+  modelId: number | string,
+  signal?: AbortSignal,
+): Promise<ModelDetailsDto> =>
+  appFetch<ModelDetailsDto>(`/api/models/${encodeURIComponent(modelId)}/details`, { signal });
 
 export const getModelPage = (
   { page, search = "", size, sort = "updated", status = "active" }: ModelPageRequest,
@@ -32,17 +41,10 @@ export const getModelPage = (
   return appFetch<PageDtoModelDto>(`/api/models?${params.toString()}`, { signal });
 };
 
-export const createModel = ({
-  name,
-  modelFile,
-  dataframeFile,
-  oneHotSeparator = "__",
-}: CreateModelRequest): Promise<CreateModelDto> => {
+export const createModel = ({ name, modelFile }: CreateModelRequest): Promise<CreateModelDto> => {
   const formData = new FormData();
   formData.append("name", name);
   formData.append("modelFile", modelFile);
-  formData.append("oneHotSeparator", oneHotSeparator);
-  if (dataframeFile) formData.append("dataframeFile", dataframeFile);
   return appFetch<CreateModelDto>("/api/models", { method: "POST", body: formData });
 };
 
@@ -75,19 +77,6 @@ export const inspectArtifact = (artifact: File): Promise<ArtifactInspectionDto> 
   const formData = new FormData();
   formData.append("artifact", artifact);
   return appFetch<ArtifactInspectionDto>("/api/analyzer/artifacts/inspect", {
-    method: "POST",
-    body: formData,
-  });
-};
-
-export const matchArtifacts = ({
-  models,
-  dataframes,
-}: MatchArtifactsRequest): Promise<ArtifactMatchDto> => {
-  const formData = new FormData();
-  models.forEach((model) => formData.append("models", model));
-  dataframes.forEach((dataframe) => formData.append("dataframes", dataframe));
-  return appFetch<ArtifactMatchDto>("/api/analyzer/artifacts/match", {
     method: "POST",
     body: formData,
   });

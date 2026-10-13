@@ -3,12 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Check, Plus, Save } from "lucide-react";
-import type { DragEvent } from "react";
+import { Check, Save } from "lucide-react";
 import { cx } from "@/shared/ui/cx";
 import type { Bundle } from "@/features/models/lib/bundle-types";
 import { isBundleSaveable } from "@/features/models/lib/bundle-save";
-import { MODEL_EXT_LABEL } from "@/features/models/lib/bundle-utils";
 import { BundleFilePill } from "./BundleFilePill";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppSpinner } from "@/shared/ui/AppSpinner";
@@ -18,31 +16,9 @@ type Props = {
   onSave: () => void;
   onRemove: () => void;
   onRename: (value: string) => void;
-  onOneHotSeparatorChange: (value: string) => void;
-  onAttachModel: () => void;
-  onAttachDf: () => void;
-  onDropModel: (file: File) => void;
-  onDropDf: (file: File) => void;
 };
 
-function dropFile(event: DragEvent<HTMLButtonElement>, handler: (file: File) => void) {
-  event.preventDefault();
-  event.stopPropagation();
-  const file = event.dataTransfer.files[0];
-  if (file) handler(file);
-}
-
-export function BundleCard({
-  bundle,
-  onSave,
-  onRemove,
-  onRename,
-  onOneHotSeparatorChange,
-  onAttachModel,
-  onAttachDf,
-  onDropModel,
-  onDropDf,
-}: Props) {
+export function BundleCard({ bundle, onSave, onRemove, onRename }: Props) {
   return (
     <div
       className={cx(
@@ -53,51 +29,9 @@ export function BundleCard({
       )}
     >
       <div className="flex items-stretch">
-        {/* ── Files section ──────────────────────────────────────── */}
-        <div className="flex min-w-0 flex-1 flex-col gap-2 border-r border-line px-4 py-3.5">
-          {bundle.modelFile ? (
-            <BundleFilePill
-              name={bundle.modelFile.name}
-              size={bundle.modelFile.size}
-              kind="model"
-              badge="artifact"
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={onAttachModel}
-              onDragOver={(event) => event.preventDefault()}
-              onDrop={(event) => dropFile(event, onDropModel)}
-              className="flex cursor-pointer items-center gap-2.5 rounded-control border border-dashed border-accent bg-accent-subtle px-3 py-2 text-xs font-semibold text-accent transition-all duration-150 hover:bg-surface-subtle"
-            >
-              <Plus size={12} />
-              Select model{" "}
-              <span className="cursor-pointer font-mono text-3xs opacity-70">
-                ({MODEL_EXT_LABEL})
-              </span>
-            </button>
-          )}
-
-          {bundle.dfFile ? (
-            <BundleFilePill
-              name={bundle.dfFile.name}
-              size={bundle.dfFile.size}
-              kind="df"
-              badge="dataframe"
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={onAttachDf}
-              onDragOver={(event) => event.preventDefault()}
-              onDrop={(event) => dropFile(event, onDropDf)}
-              className="flex cursor-pointer items-center gap-2.5 rounded-control border border-dashed border-line bg-surface-subtle px-3 py-2 text-xs text-fg-muted transition-all duration-150 hover:border-accent-border hover:bg-accent-subtle hover:text-accent"
-            >
-              <Plus size={12} />
-              Attach dataframe{" "}
-              <span className="cursor-pointer font-mono text-3xs opacity-60">(optional)</span>
-            </button>
-          )}
+        {/* ── File section ───────────────────────────────────────── */}
+        <div className="flex min-w-0 flex-1 flex-col justify-center border-r border-line px-4 py-3.5">
+          <BundleFilePill name={bundle.modelFile.name} size={bundle.modelFile.size} />
         </div>
 
         {/* ── Meta section ───────────────────────────────────────── */}
@@ -116,25 +50,6 @@ export function BundleCard({
               bundle.saved && "cursor-not-allowed opacity-70",
             )}
           />
-
-          <label className="flex flex-col gap-1">
-            <span className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-muted">
-              One-hot separator
-            </span>
-            <input
-              aria-label={`One-hot separator for ${bundle.name}`}
-              type="text"
-              value={bundle.oneHotSeparator}
-              onChange={(e) => onOneHotSeparatorChange(e.target.value)}
-              disabled={bundle.saved}
-              className={cx(
-                "w-full rounded-control border border-line bg-surface-subtle",
-                "px-3 py-2 font-mono text-xs text-fg outline-none",
-                "transition-all duration-150 focus:border-accent focus:bg-surface",
-                bundle.saved && "cursor-not-allowed opacity-70",
-              )}
-            />
-          </label>
 
           <div className="flex items-center justify-between gap-2">
             {bundle.saved ? (

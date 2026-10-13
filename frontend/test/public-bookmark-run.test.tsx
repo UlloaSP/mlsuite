@@ -260,7 +260,7 @@ describe("running a public bookmark", () => {
       "The models are busy",
       "Try again in a moment.",
     ],
-    [502, "Traceback: /srv/models/risk.joblib", "The run failed", "Try again later."],
+    [502, "Traceback: /srv/models/risk.mlbundle", "The run failed", "Try again later."],
     [500, "Unexpected error", "The run failed", "Try again later."],
   ])("a run answered %i is explained where it happened", async (status, message, title, detail) => {
     answers[RUN_PATH] = [failure(status, message), classified(0.2, 0.8)];

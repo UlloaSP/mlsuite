@@ -10,7 +10,7 @@ import { useFileDrop } from "./use-file-drop";
 type Props = {
   /** File input `accept`; a hint only, so callers still validate what arrives. */
   accept: string;
-  /** One mono line per accepted file family, e.g. "models: .joblib, .pkl". */
+  /** One mono line per accepted file family, e.g. "models: .mlbundle". */
   hints: string[];
   inputLabel: string;
   onFiles: (files: File[]) => void | Promise<void>;

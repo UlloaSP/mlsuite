@@ -70,7 +70,7 @@ class ModelArtifactStorageTest {
         Model model = model();
         byte[] bytes = "model".getBytes();
         String sha256 = ArtifactHash.sha256(bytes);
-        String key = "organizations/41/models/7/artifacts/" + sha256 + "/model.joblib";
+        String key = "organizations/41/models/7/artifacts/" + sha256 + "/model.mlbundle";
         when(storage.inspectOptional("bucket", key, null)).thenReturn(Optional.of(
                 new StoredObjectMetadata("bucket", key, bytes.length, "etag", "v1", sha256)));
         when(storage.verify("bucket", key, "v1")).thenReturn(new StoredObjectVerification(bytes.length, sha256));
@@ -90,7 +90,7 @@ class ModelArtifactStorageTest {
         Model model = model();
         byte[] bytes = "model".getBytes();
         String sha256 = ArtifactHash.sha256(bytes);
-        String key = "organizations/41/models/7/artifacts/" + sha256 + "/model.joblib";
+        String key = "organizations/41/models/7/artifacts/" + sha256 + "/model.mlbundle";
         when(storage.inspectOptional("bucket", key, null)).thenReturn(Optional.of(
                 new StoredObjectMetadata("bucket", key, bytes.length, "etag", "v1", sha256)));
         when(storage.verify("bucket", key, "v1"))
@@ -118,7 +118,7 @@ class ModelArtifactStorageTest {
         properties.setBucket("bucket");
         ModelArtifactWriter writer = new ModelArtifactWriter(storage, properties);
         byte[] bytes = "model".getBytes();
-        String key = "organizations/41/models/7/artifacts/" + ArtifactHash.sha256(bytes) + "/model.joblib";
+        String key = "organizations/41/models/7/artifacts/" + ArtifactHash.sha256(bytes) + "/model.mlbundle";
         when(storage.inspectOptional("bucket", key, null)).thenReturn(Optional.of(
                 new StoredObjectMetadata("bucket", key, bytes.length, "etag", null, ArtifactHash.sha256(bytes))));
 
@@ -170,7 +170,7 @@ class ModelArtifactStorageTest {
         Model model = new Model();
         model.setId(7L);
         model.setOrganization(organization);
-        model.setFileName("model.joblib");
+        model.setFileName("model.mlbundle");
         model.setModelFile("model".getBytes());
         return model;
     }

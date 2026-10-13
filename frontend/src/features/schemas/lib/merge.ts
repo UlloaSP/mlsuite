@@ -4,7 +4,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { getString, isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
-import { applyOneHotCategories } from "@/features/schemas/lib/one-hot-category";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
 import type { CreateSchemaVersionRequest, ModelDto } from "@/shared/api/openapi.gen";
 
@@ -172,10 +171,7 @@ export const composeSchemaVersion = (
   addInputMappedTargets(models, fields.byKey);
   return {
     name,
-    formSchema: applyOneHotCategories({
-      fields: fields.canonical,
-      reports: buildBindingReports(models),
-    }),
+    formSchema: { fields: fields.canonical, reports: buildBindingReports(models) },
     bindings: models.map((model) => ({
       modelId: model.id,
       modelName: model.name,

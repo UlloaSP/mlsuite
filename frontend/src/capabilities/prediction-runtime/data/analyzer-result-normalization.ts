@@ -45,7 +45,7 @@ export const normalizeAnalyzerPredictionResult = ({
       reportTargetForBinding(report, { modelId, modelName }) ??
       targetKey(mappedTarget(report.mappedTo, { modelId, modelName }));
     if (!target || normalizedReports.some((item) => String(item.mappedTo) === target)) return;
-    const analyzerPayload = toAnalyzerReportPayload(report, parsed);
+    const analyzerPayload = toAnalyzerReportPayload(report, parsed, target);
     if (analyzerPayload === undefined) return;
     normalizedReports.push({
       ...analyzerPayload,

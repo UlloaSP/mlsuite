@@ -193,7 +193,7 @@ class InferenceCatalogIntegrationTest extends PublicPredictionFixture {
                     "reports", List.of(Map.of("kind", "regressor", "label", "Score",
                             "mappedTo", Map.of("risk-net", "score")))));
             entityManager.persist(otherVersion);
-            entityManager.persist(new SchemaModelBinding(otherVersion, onnxModel, Map.of()));
+            entityManager.persist(new SchemaModelBinding(otherVersion, netModel, Map.of()));
             other[0] = otherSchema.getId();
             other[1] = otherVersion.getId();
             for (int i = 0; i < 3; i++) {
@@ -204,7 +204,7 @@ class InferenceCatalogIntegrationTest extends PublicPredictionFixture {
             var reviewed = new PredictionRun(null, otherVersion, "shared-reviewed", Map.of("Weight", 70),
                     PredictionRunStatus.SUCCESS);
             entityManager.persist(reviewed);
-            var result = new PredictionResult(reviewed, onnxModel, Map.of(), output, PredictionResultStatus.SUCCESS,
+            var result = new PredictionResult(reviewed, netModel, Map.of(), output, PredictionResultStatus.SUCCESS,
                     null, null);
             entityManager.persist(result);
             entityManager.persist(new PredictionResultFeedback(result, owner, PredictionResultFeedbackType.OUTPUT, 0,
@@ -212,7 +212,7 @@ class InferenceCatalogIntegrationTest extends PublicPredictionFixture {
             var pending = new PredictionRun(null, otherVersion, "shared-pending", Map.of("Weight", 80),
                     PredictionRunStatus.SUCCESS);
             entityManager.persist(pending);
-            entityManager.persist(new PredictionResult(pending, onnxModel, Map.of(), output,
+            entityManager.persist(new PredictionResult(pending, netModel, Map.of(), output,
                     PredictionResultStatus.SUCCESS, null, null));
             var visitorRun = new PredictionRun(null, otherVersion, "shared-public", Map.of("Weight", 90),
                     PredictionRunStatus.SUCCESS);
@@ -249,7 +249,7 @@ class InferenceCatalogIntegrationTest extends PublicPredictionFixture {
         var reviewed = catalog.page(owner.getId(), everything("shared-reviewed", "all", "all", "all", "all"))
                 .items().getFirst();
         String answer = appetite + ":" + other[1] + ":feedback:OUTPUT:0:output-feedback-assessment:" + owner.getId();
-        assertEquals(Map.of(appetite + ":input:Weight", 70, appetite + ":output:" + onnxModel.getId() + ":score", 41.5,
+        assertEquals(Map.of(appetite + ":input:Weight", 70, appetite + ":output:" + netModel.getId() + ":score", 41.5,
                 answer, "40"), reviewed.values());
         assertEquals(InferenceFeedbackStatus.COMPLETED, reviewed.feedbackStatus());
 

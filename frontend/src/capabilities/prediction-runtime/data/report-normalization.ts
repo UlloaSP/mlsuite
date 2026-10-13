@@ -37,11 +37,10 @@ const probabilitiesOf = (output: JsonRecord): number[] =>
       )
     : [];
 
-const getClassifierPrediction = (output: JsonRecord): string | undefined => {
+/** The runtime names the class the model decides; a model that decides none is read as its most probable one. */
+const mostProbableClass = (output: JsonRecord): string | undefined => {
   const labels = mappingLabels(output.mapping) ?? [];
   const probabilities = probabilitiesOf(output);
-  if (probabilities.length === 0)
-    return typeof output.label === "string" ? output.label : undefined;
   return labels[probabilities.indexOf(Math.max(...probabilities))];
 };
 
@@ -63,18 +62,25 @@ export const toStoredBuiltinPayload = (
       prediction:
         typeof output.prediction === "string" || typeof output.prediction === "number"
           ? output.prediction
-          : getClassifierPrediction(output),
+          : mostProbableClass(output),
     };
   }
   if (kind === "regressor") return { ...output, values: toNumericArray(output.values) };
   return undefined;
 };
 
+/**
+ * The runtime answers one report per model output and names the output's position on each;
+ * a schema report reads the answer of its kind for the output it maps to.
+ */
 export const toAnalyzerReportPayload = (
   report: ReportConfig,
   parsed: unknown,
+  target: string,
 ): JsonRecord | undefined => {
-  const analyzerReport = getAnalyzerReports(parsed).find((output) => output.kind === report.kind);
+  const analyzerReport = getAnalyzerReports(parsed).find(
+    (output) => output.kind === report.kind && String(output.output) === target,
+  );
   return analyzerReport && toStoredBuiltinPayload(report.kind, analyzerReport);
 };
 
@@ -85,4 +91,4 @@ export const toAnalyzerReportPayload = (
 export const toPublicReportPayload = (
   report: ReportConfig,
   answer: JsonRecord,
-): JsonRecord | undefined => toAnalyzerReportPayload(report, { reports: [answer] }) ?? answer;
+): JsonRecord | undefined => toStoredBuiltinPayload(report.kind, answer) ?? answer;

@@ -2,6 +2,7 @@ package dev.ulloasp.mlsuite.model;
 
 import static org.mockito.Mockito.lenient;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -11,6 +12,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -213,10 +215,13 @@ class ModelServiceTest {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
         when(restTemplate.postForObject(anyString(), any(), eq(Map.class)))
-                .thenReturn(Map.of("type", "clf", "specificType", "rf", "fileName", "model.pkl"));
+                .thenReturn(Map.of("type", "clf", "specificType", "rf", "fileName", "model.mlbundle",
+                        "schema", Map.of("fields", List.of(), "reports", List.of()),
+                        "manifest", Map.of("writer_version", "0.1.0a3"),
+                        "featureImportances", List.of(Map.of("feature", "age", "importance", 62.5))));
         when(modelFile.getBytes()).thenReturn("x".getBytes());
         when(modelFile.getName()).thenReturn("modelFile");
-        when(modelFile.getOriginalFilename()).thenReturn("model.pkl");
+        when(modelFile.getOriginalFilename()).thenReturn("model.mlbundle");
         when(modelFile.getContentType()).thenReturn("application/octet-stream");
         when(modelRepository.save(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(modelRepository.saveAndFlush(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -224,8 +229,33 @@ class ModelServiceTest {
         Model result = service.createModel(3L, "demo", modelFile);
 
         assertEquals("demo", result.getName());
+        assertEquals(Map.of("fields", List.of(), "reports", List.of()), result.getInputSchema());
+        assertEquals(Map.of("writer_version", "0.1.0a3"), result.getBundleManifest());
+        assertEquals(List.of(Map.of("feature", "age", "importance", 62.5)), result.getFeatureImportances());
         verify(modelRepository).save(any(Model.class));
         verify(artifactWriter).storeAndAttach(any(Model.class), any(byte[].class), eq("application/octet-stream"));
+    }
+
+    @Test
+    void createModel_StoresAModelWhoseBundleHasNoImportances() throws Exception {
+        Map<String, Object> answer = new HashMap<>(Map.of("type", "clf", "specificType", "Pipeline",
+                "fileName", "model.mlbundle", "schema", Map.of("fields", List.of(), "reports", List.of()),
+                "manifest", Map.of("writer_version", "0.1.0a3")));
+        answer.put("featureImportances", null);
+        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
+        when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
+        when(restTemplate.postForObject(anyString(), any(), eq(Map.class))).thenReturn(answer);
+        when(modelFile.getBytes()).thenReturn("x".getBytes());
+        when(modelFile.getName()).thenReturn("modelFile");
+        when(modelFile.getOriginalFilename()).thenReturn("model.mlbundle");
+        when(modelFile.getContentType()).thenReturn("application/octet-stream");
+        when(modelRepository.save(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(modelRepository.saveAndFlush(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Model result = service.createModel(3L, "demo", modelFile);
+
+        assertNull(result.getFeatureImportances());
+        assertEquals(Map.of("writer_version", "0.1.0a3"), result.getBundleManifest());
     }
 
     @Test
@@ -234,10 +264,13 @@ class ModelServiceTest {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
         when(restTemplate.postForObject(anyString(), any(), eq(Map.class)))
-                .thenReturn(Map.of("type", "clf", "specificType", "rf", "fileName", "model.pkl"));
+                .thenReturn(Map.of("type", "clf", "specificType", "rf", "fileName", "model.mlbundle",
+                        "schema", Map.of("fields", List.of(), "reports", List.of()),
+                        "manifest", Map.of("writer_version", "0.1.0a3"),
+                        "featureImportances", List.of(Map.of("feature", "age", "importance", 62.5))));
         when(modelFile.getBytes()).thenReturn("x".getBytes());
         when(modelFile.getName()).thenReturn("modelFile");
-        when(modelFile.getOriginalFilename()).thenReturn("model.pkl");
+        when(modelFile.getOriginalFilename()).thenReturn("model.mlbundle");
         when(modelFile.getContentType()).thenReturn("application/octet-stream");
         when(modelRepository.saveAndFlush(any(Model.class))).thenThrow(failure);
 

@@ -128,7 +128,7 @@ class PublicRunSessionTest extends PublicPredictionFixture {
         List<PredictionResult> results = entityManager
                 .createQuery("select r from PredictionResult r where r.run.id = :id order by r.id", PredictionResult.class)
                 .setParameter("id", run.getId()).getResultList();
-        assertEquals(List.of(joblibModel.getId(), onnxModel.getId()),
+        assertEquals(List.of(forestModel.getId(), netModel.getId()),
                 results.stream().map(result -> result.getModel().getId()).toList());
         PredictionResult forest = results.get(0);
         assertEquals(Map.of("age", 52, "chol", 240.5, "smoker__yes", 1, "smoker__no", 0), forest.getModelInput());
@@ -145,7 +145,7 @@ class PublicRunSessionTest extends PublicPredictionFixture {
         assertEquals(List.of("low", "high"), kept.get("labels"));
         assertEquals("high", kept.get("prediction"));
         Map<?, ?> meta = (Map<?, ?>) forest.getOutput().get("meta");
-        assertEquals(String.valueOf(joblibModel.getId()), meta.get("modelId"));
+        assertEquals(String.valueOf(forestModel.getId()), meta.get("modelId"));
         assertEquals(forest.getModelInput(), meta.get("backendFieldValues"));
         // The positional model answers both reports; its copies route by position-free feature names.
         List<?> netReports = (List<?>) results.get(1).getOutput().get("reports");
@@ -191,8 +191,8 @@ class PublicRunSessionTest extends PublicPredictionFixture {
         assertNull(kept.get(0).getUser());
         assertEquals(UUID.fromString(visitor.getValue()), kept.get(0).getVisitor().getId());
         assertEquals(0, kept.get(0).getOrder());
-        assertEquals(joblibModel.getId(), kept.get(0).getResult().getModel().getId());
-        assertEquals(onnxModel.getId(), kept.get(1).getResult().getModel().getId());
+        assertEquals(forestModel.getId(), kept.get(0).getResult().getModel().getId());
+        assertEquals(netModel.getId(), kept.get(1).getResult().getModel().getId());
         assertNull(PredictionResultFeedbackDto.from(kept.get(0)).userId());
 
         // What is not asked is refused: an unknown report, an explanation no questionnaire asks, a bare value.

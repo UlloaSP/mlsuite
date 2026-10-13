@@ -109,8 +109,8 @@ public abstract class PublicPredictionFixture {
 
     private static final AtomicInteger SEQUENCE = new AtomicInteger();
     static final long MB = 1024L * 1024L;
-    static final byte[] JOBLIB_BYTES = "joblib-artifact".getBytes();
-    static final byte[] ONNX_BYTES = "onnx-artifact".getBytes();
+    static final byte[] FOREST_BYTES = "forest-artifact".getBytes();
+    static final byte[] NET_BYTES = "net-artifact".getBytes();
     static final Map<String, Object> CLASSIFIER = Map.of("kind", "classifier", "label", "Predicted class",
             "mapping", List.of("low", "high"), "probabilities", List.of(List.of(0.2, 0.8)));
     /** The classifier's answer as a run keeps it: the instance's own row, its labels and its class. */
@@ -136,8 +136,8 @@ public abstract class PublicPredictionFixture {
     protected Schema schema;
     protected SchemaVersion version;
     protected SchemaBookmark bookmark;
-    Model joblibModel;
-    protected Model onnxModel;
+    Model forestModel;
+    protected Model netModel;
 
     /** One published bookmark over two models: every field and report routes by model name or id. */
     @BeforeEach
@@ -149,8 +149,8 @@ public abstract class PublicPredictionFixture {
             entityManager.persist(owner);
             organization = new Organization("acme-" + n, "Acme Health", null, owner);
             entityManager.persist(organization);
-            joblibModel = model(owner, "risk-forest", "risk.joblib", JOBLIB_BYTES);
-            onnxModel = model(owner, "risk-net", "risk.onnx", ONNX_BYTES);
+            forestModel = model(owner, "risk-forest", "forest.mlbundle", FOREST_BYTES);
+            netModel = model(owner, "risk-net", "net.mlbundle", NET_BYTES);
             schema = new Schema(organization, "Cardio risk", null);
             entityManager.persist(schema);
             version = new SchemaVersion(schema, 3, "Baseline", Map.of(
@@ -158,7 +158,7 @@ public abstract class PublicPredictionFixture {
                             Map.of("kind", "number", "label", "Age",
                                     "mappedTo", Map.of("risk-forest", "age", "risk-net", 1)),
                             Map.of("kind", "number", "label", "Cholesterol",
-                                    "mappedTo", Map.of("risk-forest", "chol", String.valueOf(onnxModel.getId()), 0)),
+                                    "mappedTo", Map.of("risk-forest", "chol", String.valueOf(netModel.getId()), 0)),
                             Map.of("kind", "onehot-category", "label", "Smoker", "options", List.of(
                                     Map.of("label", "Yes", "value", "yes",
                                             "mappedTo", Map.of("risk-forest", "smoker__yes")),
@@ -171,15 +171,15 @@ public abstract class PublicPredictionFixture {
                             Map.of("kind", "regressor", "label", "Score",
                                     "mappedTo", Map.of("risk-net", "score")))));
             entityManager.persist(version);
-            entityManager.persist(new SchemaModelBinding(version, joblibModel, Map.of()));
-            entityManager.persist(new SchemaModelBinding(version, onnxModel, Map.of()));
+            entityManager.persist(new SchemaModelBinding(version, forestModel, Map.of()));
+            entityManager.persist(new SchemaModelBinding(version, netModel, Map.of()));
             bookmark = new SchemaBookmark(schema, version, "production");
             bookmark.setVisibility(BookmarkVisibility.PUBLIC);
             bookmark.setPublicId("public-" + n);
             entityManager.persist(bookmark);
         });
         when(analyzer.post(eq("/predict"), any())).thenAnswer(call -> Map.of("reports",
-                fileName(call.getArgument(1)).endsWith(".onnx") ? List.of(CLASSIFIER, REGRESSOR) : List.of(CLASSIFIER)));
+                fileName(call.getArgument(1)).startsWith("net") ? List.of(CLASSIFIER, REGRESSOR) : List.of(CLASSIFIER)));
     }
 
     private Model model(User owner, String name, String fileName, byte[] bytes) {

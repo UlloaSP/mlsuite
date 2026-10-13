@@ -3,27 +3,35 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-const JOBLIB_EXT = ".joblib";
-const ONNX_EXT = ".onnx";
-export const MODEL_EXTS = [JOBLIB_EXT, ONNX_EXT];
-export const DF_EXTS = [JOBLIB_EXT];
-export const ALL_EXTS = [...new Set([...MODEL_EXTS, ...DF_EXTS])];
-export const MODEL_EXT_LABEL = ".joblib or .onnx";
-export const DF_EXT_LABEL = ".joblib";
+import type { Bundle } from "./bundle-types";
 
-function getExt(name: string): string {
-  const dot = name.lastIndexOf(".");
-  return dot === -1 ? "" : name.slice(dot).toLowerCase();
-}
+export const BUNDLE_EXT = ".mlbundle";
 
 export function getStem(name: string): string {
   return name.replace(/\.[^.]+$/, "");
 }
 
-export function isModelFile(name: string): boolean {
-  return MODEL_EXTS.includes(getExt(name));
+export function isBundleFile(name: string): boolean {
+  return name.toLowerCase().endsWith(BUNDLE_EXT);
 }
 
 export function slugToTitle(stem: string): string {
   return stem.replace(/[_-]/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+}
+
+/** Lists each new file as an unsaved bundle; a file already listed by name is not added twice. */
+export function appendBundleFiles(previous: Bundle[], files: File[], firstId: number): Bundle[] {
+  const next = [...previous];
+  let nextId = firstId;
+  for (const modelFile of files) {
+    if (next.some((bundle) => bundle.modelFile.name === modelFile.name)) continue;
+    next.push({
+      id: nextId++,
+      modelFile,
+      name: slugToTitle(getStem(modelFile.name)),
+      saved: false,
+      saving: false,
+    });
+  }
+  return next;
 }

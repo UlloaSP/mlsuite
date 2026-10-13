@@ -77,7 +77,7 @@ class OrganizationDeletionServiceTest {
         entityManager.persist(org);
         var model = new Model();
         model.setName("QA model");
-        model.setFileName("qa.joblib");
+        model.setFileName("qa.mlbundle");
         model.setType("classifier");
         model.setSpecificType("DecisionTreeClassifier");
         model.setUser(owner);

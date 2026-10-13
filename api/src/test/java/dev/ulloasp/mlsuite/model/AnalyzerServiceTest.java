@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.lenient;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -87,100 +88,54 @@ class AnalyzerServiceTest {
     void inspectArtifact_ForwardsUploadToAnalyzer() {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
-        when(restTemplate.postForObject(eq("http://py-analyzer:8000/inspect_artifact"), any(), eq(Map.class)))
-                .thenReturn(Map.of("kind", "dataframe"));
+        when(restTemplate.postForObject(eq("http://py-analyzer:8000/metadata"), any(), eq(Map.class)))
+                .thenReturn(Map.of("type", "classifier"));
 
         Map<String, Object> result = service.inspectArtifact(3L, artifactFile);
 
-        assertEquals("dataframe", result.get("kind"));
-        verify(restTemplate).postForObject(eq("http://py-analyzer:8000/inspect_artifact"), any(), eq(Map.class));
+        assertEquals("classifier", result.get("type"));
+        verify(restTemplate).postForObject(eq("http://py-analyzer:8000/metadata"), any(), eq(Map.class));
+    }
+
+    @Test
+    void inspectArtifact_KeepsAKeyTheAnalyzerAnswersWithNull() {
+        Map<String, Object> answer = new HashMap<>(Map.of("type", "classifier"));
+        answer.put("featureImportances", null);
+        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
+        when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
+        when(restTemplate.postForObject(eq("http://py-analyzer:8000/metadata"), any(), eq(Map.class)))
+                .thenReturn(answer);
+
+        Map<String, Object> result = service.inspectArtifact(3L, artifactFile);
+
+        assertEquals(answer, result);
     }
 
     @Test
     void inspectArtifact_PropagatesAnalyzerValidationError() {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
-        when(restTemplate.postForObject(eq("http://py-analyzer:8000/inspect_artifact"), any(), eq(Map.class)))
-                .thenThrow(restError(400, "{\"detail\":\"File must be .joblib\"}"));
+        when(restTemplate.postForObject(eq("http://py-analyzer:8000/metadata"), any(), eq(Map.class)))
+                .thenThrow(restError(400, "{\"detail\":\"File must be .mlbundle\"}"));
 
         AnalyzerServiceException ex = assertThrows(
                 AnalyzerServiceException.class,
                 () -> service.inspectArtifact(3L, artifactFile));
 
         assertEquals(400, ex.getStatus());
-        assertEquals("File must be .joblib", ex.getDetail());
+        assertEquals("File must be .mlbundle", ex.getDetail());
     }
 
     @Test
     void inspectArtifact_PropagatesAnalyzerNetworkError() {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
-        when(restTemplate.postForObject(eq("http://py-analyzer:8000/inspect_artifact"), any(), eq(Map.class)))
+        when(restTemplate.postForObject(eq("http://py-analyzer:8000/metadata"), any(), eq(Map.class)))
                 .thenThrow(new ResourceAccessException("down"));
 
         AnalyzerServiceException ex = assertThrows(
                 AnalyzerServiceException.class,
                 () -> service.inspectArtifact(3L, artifactFile));
-
-        assertEquals(0, ex.getStatus());
-        assertEquals("Analyzer service unreachable", ex.getDetail());
-    }
-
-    @Test
-    void matchArtifacts_ForwardsUploadsToAnalyzer() {
-        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
-        when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
-        when(restTemplate.postForObject(eq("http://py-analyzer:8000/match_artifacts"), any(), eq(Map.class)))
-                .thenReturn(Map.of("models", List.of()));
-
-        Map<String, Object> result = service.matchArtifacts(3L, List.of(artifactFile), List.of(artifactFile));
-
-        assertEquals(List.of(), result.get("models"));
-        verify(restTemplate).postForObject(eq("http://py-analyzer:8000/match_artifacts"), any(), eq(Map.class));
-    }
-
-    @Test
-    void generateInputSchema_ForwardsOneHotSeparator() {
-        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
-        when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
-        when(restTemplate.postForObject(eq("http://py-analyzer:8000/build_schema"), any(), eq(Map.class)))
-                .thenReturn(Map.of("fields", List.of()));
-
-        service.generateInputSchema(3L, artifactFile, null, "_");
-
-        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
-        verify(restTemplate).postForObject(eq("http://py-analyzer:8000/build_schema"), captor.capture(), eq(Map.class));
-        HttpEntity<?> entity = (HttpEntity<?>) captor.getValue();
-        @SuppressWarnings("unchecked")
-        MultiValueMap<String, Object> body = (MultiValueMap<String, Object>) entity.getBody();
-        assertEquals("_", body.getFirst("onehot_separator"));
-    }
-
-    @Test
-    void matchArtifacts_PropagatesAnalyzerValidationError() {
-        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
-        when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
-        when(restTemplate.postForObject(eq("http://py-analyzer:8000/match_artifacts"), any(), eq(Map.class)))
-                .thenThrow(restError(400, "{\"detail\":\"Dataframe files must contain pandas DataFrame objects.\"}"));
-
-        AnalyzerServiceException ex = assertThrows(
-                AnalyzerServiceException.class,
-                () -> service.matchArtifacts(3L, List.of(artifactFile), List.of(artifactFile)));
-
-        assertEquals(400, ex.getStatus());
-        assertEquals("Dataframe files must contain pandas DataFrame objects.", ex.getDetail());
-    }
-
-    @Test
-    void matchArtifacts_PropagatesAnalyzerNetworkError() {
-        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
-        when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
-        when(restTemplate.postForObject(eq("http://py-analyzer:8000/match_artifacts"), any(), eq(Map.class)))
-                .thenThrow(new ResourceAccessException("down"));
-
-        AnalyzerServiceException ex = assertThrows(
-                AnalyzerServiceException.class,
-                () -> service.matchArtifacts(3L, List.of(artifactFile), List.of(artifactFile)));
 
         assertEquals(0, ex.getStatus());
         assertEquals("Analyzer service unreachable", ex.getDetail());
@@ -203,9 +158,9 @@ class AnalyzerServiceTest {
     }
 
     @Test
-    void predictAndExplain_ForwardStoredOnnxFilename() {
+    void predictAndExplain_ForwardStoredFilename() {
         Model model = model(user());
-        model.setFileName("risk.onnx");
+        model.setFileName("risk.mlbundle");
         when(modelRepository.findByIdAndOrganizationId(11L, 5L)).thenReturn(Optional.of(model));
         when(objectStorageService.load("bucket", "key", null)).thenReturn(new byte[] { 1, 2, 3 });
         when(restTemplate.postForObject(any(String.class), any(), eq(Map.class))).thenReturn(Map.of());
@@ -219,7 +174,7 @@ class AnalyzerServiceTest {
             HttpEntity<?> entity = (HttpEntity<?>) request;
             @SuppressWarnings("unchecked")
             MultiValueMap<String, HttpEntity<?>> body = (MultiValueMap<String, HttpEntity<?>>) entity.getBody();
-            assertEquals("risk.onnx", body.getFirst("model_file").getHeaders().getContentDisposition().getFilename());
+            assertEquals("risk.mlbundle", body.getFirst("model_file").getHeaders().getContentDisposition().getFilename());
         }
     }
 
@@ -277,7 +232,7 @@ class AnalyzerServiceTest {
         model.setUser(user);
         model.setStorageBucket("bucket");
         model.setStorageObjectKey("key");
-        model.setFileName("model.joblib");
+        model.setFileName("model.mlbundle");
         return model;
     }
 

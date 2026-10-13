@@ -5,6 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 package dev.ulloasp.mlsuite.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -18,8 +20,12 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestControllerAdvice
 public class FallBackExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(FallBackExceptionHandler.class);
+
     @ExceptionHandler(Throwable.class) // absolutely everything
     public ResponseEntity<ErrorDto> handleFallback(Throwable ex, HttpServletRequest req) {
+        // The caller is told nothing of the cause, so the log is the only place it is kept.
+        log.error("Unexpected error on {} {}", req.getMethod(), req.getRequestURI(), ex);
         var status = HttpStatus.INTERNAL_SERVER_ERROR;
         var dto = ErrorDto.of(status.value(), "Unexpected error", req.getRequestURI());
         return ResponseEntity.status(status).body(dto);
