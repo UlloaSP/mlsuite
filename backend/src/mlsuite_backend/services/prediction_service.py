@@ -1,40 +1,39 @@
 import time
 
-from fastapi import HTTPException, UploadFile
+import mlbundle
+from fastapi import UploadFile
 
-from ..model_adapters import load_runtime_model_from_upload
-from ..utils.dataframe import build_prediction_dataframe, parse_record_json
-from ..utils.errors import internal_runtime_error
+from ..bundles import load_bundle
+from ..utils.errors import bad_request, internal_runtime_error
+from ..utils.records import parse_record_json
 
 
 async def predict(model_upload: UploadFile, data: str) -> dict[str, object]:
-    runtime = await load_runtime_model_from_upload(model_upload)
+    bundle = await load_bundle(model_upload)
     record = parse_record_json(data, "Invalid JSON")
-    frame = build_prediction_dataframe(runtime.feature_metadata(), record)
 
     try:
         started = time.perf_counter()
-        output = runtime.predict(frame)
+        predictions = bundle.predict_record(record)
         execution_time = time.perf_counter() - started
-    except HTTPException:
-        raise
+    except mlbundle.PredictionInputError as exc:
+        raise bad_request(str(exc)) from exc
     except Exception as exc:
         raise internal_runtime_error(f"Error during inference: {exc}") from exc
 
-    if runtime.kind == "classifier":
+    # One answer per model output, named by the position the schema's report maps to.
+    reports = []
+    for prediction in predictions:
         report = {
-            "kind": "classifier",
+            "kind": prediction.kind.value,
+            "output": prediction.output,
             "execution_time": execution_time,
-            "label": "Predicted class",
-            "mapping": runtime.class_labels(),
-            "probabilities": output,
-            "showClassProbabilities": True,
         }
-    else:
-        report = {
-            "kind": "regressor",
-            "execution_time": execution_time,
-            "label": "Predicted value",
-            "values": output,
-        }
-    return {"reports": [report]}
+        if prediction.labels is None:
+            report["values"] = [prediction.value]
+        else:
+            report["mapping"] = prediction.labels
+            report["probabilities"] = prediction.probabilities
+            report["prediction"] = prediction.predicted_label
+        reports.append(report)
+    return {"reports": reports}

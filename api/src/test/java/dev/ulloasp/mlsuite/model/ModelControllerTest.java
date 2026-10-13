@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,13 +14,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 
 import dev.ulloasp.mlsuite.model.adapter.in.web.ModelController;
 import dev.ulloasp.mlsuite.model.application.dto.CreateModelDto;
+import dev.ulloasp.mlsuite.model.application.dto.FeatureImportanceDto;
+import dev.ulloasp.mlsuite.model.application.dto.ModelDetailsDto;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
-import dev.ulloasp.mlsuite.model.application.service.ModelCreationService;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
@@ -31,8 +34,6 @@ class ModelControllerTest {
     @Mock
     private ModelCatalogUseCase modelCatalogUseCase;
 
-    @Mock
-    private ModelCreationService modelCreationService;
     private CurrentUser user;
 
     private ModelController controller;
@@ -40,25 +41,45 @@ class ModelControllerTest {
     @BeforeEach
     void setUp() {
         controller = new ModelController(
-                modelCatalogUseCase,
-                modelCreationService);
+                modelCatalogUseCase);
         user = new CurrentUser(4L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER);
     }
 
     @Test
     void createModel_DelegatesCreationToService() {
-        MockMultipartFile modelFile = new MockMultipartFile("model", "model.pkl", "application/octet-stream", "x".getBytes());
-        MockMultipartFile dataframeFile = new MockMultipartFile("dataframe", "data.joblib", "application/octet-stream", "y".getBytes());
+        MockMultipartFile modelFile = new MockMultipartFile("model", "model.mlbundle", "application/octet-stream", "x".getBytes());
         Model model = new Model();
         model.setId(11L);
         model.setName("demo");
         model.setVersion(0L);
-        CreateModelDto dto = CreateModelDto.toDto(model);
-        when(modelCreationService.create(4L, "demo", modelFile, dataframeFile, "_")).thenReturn(dto);
+        when(modelCatalogUseCase.createModel(4L, "demo", modelFile)).thenReturn(model);
 
-        assertEquals(HttpStatus.CREATED, controller.createModel(user, "demo", modelFile, dataframeFile, "_").getStatusCode());
+        ResponseEntity<CreateModelDto> response = controller.createModel(user, "demo", modelFile);
 
-        verify(modelCreationService).create(4L, "demo", modelFile, dataframeFile, "_");
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(11L, response.getBody().model().id());
+    }
+
+    @Test
+    void getModelDetails_ReturnsWhatTheBundleSaysAboutTheModel() {
+        Model model = new Model();
+        model.setBundleManifest(Map.of("writer_version", "0.1.0a3"));
+        model.setFeatureImportances(List.of(Map.of("feature", "age", "importance", 62.5)));
+        model.setModelSizeBytes(2048L);
+        model.setArtifactSha256("abc");
+        when(modelCatalogUseCase.getModel(4L, 11L)).thenReturn(model);
+
+        ModelDetailsDto details = controller.getModelDetails(user, 11L).getBody();
+
+        assertEquals(new ModelDetailsDto(Map.of("writer_version", "0.1.0a3"),
+                List.of(new FeatureImportanceDto("age", 62.5)), 2048L, "abc"), details);
+    }
+
+    @Test
+    void getModelDetails_HasNoImportancesForAModelWithoutStructure() {
+        when(modelCatalogUseCase.getModel(4L, 11L)).thenReturn(new Model());
+
+        assertEquals(new ModelDetailsDto(Map.of(), null, null, null), controller.getModelDetails(user, 11L).getBody());
     }
 
     @Test

@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useInfiniteCatalog } from "@/shared/api/infinite-catalog";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { getModel, getModelPage } from "./model.api";
+import { getModel, getModelDetails, getModelPage } from "./model.api";
 import { MODEL_CATALOG_PAGE_SIZE, modelKeys } from "./model.keys";
 
 export const modelQueryOptions = (organizationId: number | string, modelId: number | string) =>
@@ -19,6 +19,17 @@ export const modelQueryOptions = (organizationId: number | string, modelId: numb
 export const useModel = (modelId?: number | string) => {
   const organizationId = useCurrentOrganizationId() ?? "none";
   return useQuery(modelQueryOptions(organizationId, modelId ?? ""));
+};
+
+/** What the model's bundle says about it; it never changes once the model exists. */
+export const useModelDetails = (modelId?: number | string) => {
+  const organizationId = useCurrentOrganizationId() ?? "none";
+  return useQuery({
+    queryKey: modelKeys.bundle(organizationId, modelId ?? ""),
+    queryFn: ({ signal }) => getModelDetails(modelId ?? "", signal),
+    enabled: organizationId !== "none" && Boolean(modelId),
+    staleTime: Number.POSITIVE_INFINITY,
+  });
 };
 
 export const useModelCatalogPageQuery = (

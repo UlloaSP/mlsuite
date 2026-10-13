@@ -7,7 +7,7 @@ import { useSearchParamState } from "@/shared/lib/use-search-param-state";
 import { AppSegmentedControl } from "@/shared/ui/AppSegmentedControl";
 import { cx } from "@/shared/ui/cx";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
-import { countVisibleSchemaFields } from "@/features/schemas/lib/one-hot-category";
+import { countVisibleSchemaFields } from "@/features/schemas/lib/visible-fields";
 import { SchemaCodeViewer } from "./SchemaCodeViewer";
 import { SchemaFormPreview } from "./SchemaFormPreview";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";

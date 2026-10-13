@@ -3,14 +3,11 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { cx } from "@/shared/ui/cx";
 import { formatBytes } from "@/shared/lib/format-bytes";
 
 type Props = {
   name: string;
   size: number;
-  kind: "model" | "df";
-  badge: string;
 };
 
 const ModelIcon = () => (
@@ -29,34 +26,11 @@ const ModelIcon = () => (
   </svg>
 );
 
-const DfIcon = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="3" y="3" width="18" height="18" rx="2" />
-    <path d="M3 9h18M3 15h18M9 3v18" />
-  </svg>
-);
-
-export function BundleFilePill({ name, size, kind, badge }: Props) {
-  const isModel = kind === "model";
-
+export function BundleFilePill({ name, size }: Props) {
   return (
     <div className="flex items-center gap-2.5 rounded-control border border-line bg-surface-subtle px-3 py-2">
-      <div
-        className={cx(
-          "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md",
-          isModel ? "bg-accent-subtle text-accent" : "bg-info-subtle text-info-fg",
-        )}
-      >
-        {isModel ? <ModelIcon /> : <DfIcon />}
+      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-accent-subtle text-accent">
+        <ModelIcon />
       </div>
 
       <div className="min-w-0 flex-1">
@@ -64,13 +38,8 @@ export function BundleFilePill({ name, size, kind, badge }: Props) {
         <p className="mt-px font-mono text-3xs text-fg-muted">{formatBytes(size)}</p>
       </div>
 
-      <span
-        className={cx(
-          "flex-shrink-0 rounded-full px-2 py-0.5 font-mono text-3xs font-medium",
-          isModel ? "bg-accent-subtle text-accent" : "bg-info-subtle text-info-fg",
-        )}
-      >
-        {badge}
+      <span className="flex-shrink-0 rounded-full bg-accent-subtle px-2 py-0.5 font-mono text-3xs font-medium text-accent">
+        artifact
       </span>
     </div>
   );

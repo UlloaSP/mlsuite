@@ -74,7 +74,7 @@ class SchemaDeletionServiceTest {
     @Test
     void deletesSchemaWithDraftBookmarkAndBindingButKeepsModel() {
         var model = new Model();
-        model.setName("QA model"); model.setFileName("qa.joblib");
+        model.setName("QA model"); model.setFileName("qa.mlbundle");
         model.setType("classifier"); model.setSpecificType("DecisionTreeClassifier");
         model.setUser(owner); model.setOrganization(org); model.setModelFile(new byte[0]);
         entityManager.persist(model);

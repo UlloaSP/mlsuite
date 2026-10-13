@@ -20,8 +20,8 @@ class ArtifactOrphanReconciliationServiceTest {
     void deletesOnlyTheExactVersionOfOldUnreferencedManagedObjects() {
         ObjectStorageService storage = mock(ObjectStorageService.class);
         ModelRepository models = mock(ModelRepository.class);
-        String orphan = "organizations/41/models/7/artifacts/hash/model.joblib";
-        String referenced = "organizations/41/models/8/artifacts/hash/model.joblib";
+        String orphan = "organizations/41/models/7/artifacts/hash/model.mlbundle";
+        String referenced = "organizations/41/models/8/artifacts/hash/model.mlbundle";
         OffsetDateTime old = OffsetDateTime.now(ZoneOffset.UTC).minusDays(2);
         when(storage.list("organizations/")).thenReturn(List.of(
                 new StoredObjectItem("bucket", orphan, 5, "etag", old),

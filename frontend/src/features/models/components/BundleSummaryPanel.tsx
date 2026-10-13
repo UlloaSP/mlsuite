@@ -10,7 +10,6 @@ import { AppSpinner } from "@/shared/ui/AppSpinner";
 
 type Props = {
   total: number;
-  withDf: number;
   saved: number;
   unsavedReady: number;
   anySaving: boolean;
@@ -20,7 +19,6 @@ type Props = {
 
 export function BundleSummaryPanel({
   total,
-  withDf,
   saved,
   unsavedReady,
   anySaving,
@@ -31,13 +29,6 @@ export function BundleSummaryPanel({
 
   const bundleVal = total ? String(total) : "—";
   const bundleCls = total ? "font-semibold text-fg" : "font-normal text-fg-muted";
-
-  const dfVal = total ? `${withDf} / ${total}` : "—";
-  const dfCls = !total
-    ? "font-normal text-fg-muted"
-    : withDf === total
-      ? "font-semibold text-success-fg"
-      : "font-semibold text-warning-fg";
 
   const savedVal = total ? `${saved} / ${total}` : "—";
   const savedCls = !total
@@ -62,7 +53,6 @@ export function BundleSummaryPanel({
       {/* Stats */}
       <div className="flex-shrink-0 px-5 py-3.5">
         <AppSummaryRow first label="Bundles" value={bundleVal} valueClass={bundleCls} />
-        <AppSummaryRow label="With dataframe" value={dfVal} valueClass={dfCls} />
         <AppSummaryRow label="Saved" value={savedVal} valueClass={savedCls} />
       </div>
 

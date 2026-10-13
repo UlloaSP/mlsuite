@@ -23,7 +23,6 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
 vi.mock("@/capabilities/workspace-context/session", () => ({
   useUser: () => ({ data: { id: 1 }, error: null }),
 }));
-vi.mock("@/features/models/components/ModelSummaryTab", () => ({ ModelSummaryTab: () => null }));
 
 const httpError = (status: number) =>
   new HttpError({ status, message: "failed", path: "/api", timestamp: "2026-09-28T00:00:00Z" });
@@ -33,13 +32,18 @@ const pages = {
     Page: ModelDetailPage,
     path: "/models/:modelId",
     url: "/models/12",
-    request: "/api/models/12",
+    // The model and what its bundle says about it.
+    requests: ["/api/models/12", "/api/models/12/details"],
     record: {
       id: 12,
       name: "Churn model",
-      type: "sklearn",
+      type: "classifier",
       specificType: "RandomForest",
+      fileName: "churn.mlbundle",
+      inputSchema: { fields: [], reports: [] },
       createdAt: "2026-09-28T00:00:00Z",
+      updatedAt: "2026-09-28T00:00:00Z",
+      updatedByName: "Owner",
     },
     missing: "Model not found",
     failed: "Model unavailable",
@@ -48,7 +52,7 @@ const pages = {
     Page: () => <InferenceDetailPage renderData={() => null} />,
     path: "/inferences/:inferenceId",
     url: "/inferences/31",
-    request: "/api/prediction-runs/31/summary",
+    requests: ["/api/prediction-runs/31/summary"],
     record: {
       id: 31,
       name: "Churn check",
@@ -93,7 +97,7 @@ test.each(Object.entries(pages))("%s detail requests only its own record", async
   fetchState.appFetch.mockResolvedValue(page.record);
   const { host } = await renderPage(page);
 
-  expect(fetchState.appFetch.mock.calls.map(([path]) => path)).toEqual([page.request]);
+  expect(fetchState.appFetch.mock.calls.map(([path]) => path).sort()).toEqual(page.requests);
   expect(host.querySelector("h1")?.textContent).toBe(page.record.name);
 });
 

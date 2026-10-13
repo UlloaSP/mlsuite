@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { AppFileDropZone } from "@/shared/ui/AppFileDropZone";
-import { ALL_EXTS, DF_EXT_LABEL, MODEL_EXT_LABEL } from "@/features/models/lib/bundle-utils";
+import { BUNDLE_EXT } from "@/features/models/lib/bundle-utils";
 
 type Props = {
   onFiles: (files: File[]) => void | Promise<void>;
@@ -13,8 +13,8 @@ type Props = {
 export function BundleDropZone({ onFiles }: Props) {
   return (
     <AppFileDropZone
-      accept={ALL_EXTS.join(",")}
-      hints={[`models: ${MODEL_EXT_LABEL}`, `dataframes: ${DF_EXT_LABEL}`]}
+      accept={BUNDLE_EXT}
+      hints={[`models: ${BUNDLE_EXT}`]}
       inputLabel="Upload bundle files"
       onFiles={onFiles}
     />

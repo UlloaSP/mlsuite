@@ -70,7 +70,7 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
                         Map.of("kind", "regressor", "label", "Score", "id", "out2", "mappedTo", "out2"))),
                 view.formSchema());
         String json = objectMapper.writeValueAsString(view);
-        for (String secret : List.of("risk-forest", "risk-net", "smoker__", "chol", "joblib", "onnx")) {
+        for (String secret : List.of("risk-forest", "risk-net", "smoker__", "chol", "mlbundle")) {
             assertFalse(json.contains(secret), secret);
         }
     }
@@ -94,11 +94,11 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
                 request(Map.of("in0", 52, "in1", 240.5, "in2", 1, "in3", 0)));
 
         assertEquals(2, calls.size());
-        assertEquals("risk.joblib", fileName(calls.get(0)));
-        assertArrayEquals(JOBLIB_BYTES, (byte[]) calls.get(0).getFirst("model_file").getBody());
+        assertEquals("forest.mlbundle", fileName(calls.get(0)));
+        assertArrayEquals(FOREST_BYTES, (byte[]) calls.get(0).getFirst("model_file").getBody());
         assertEquals("{\"age\":52,\"chol\":240.5,\"smoker__yes\":1,\"smoker__no\":0}", data(calls.get(0)));
-        assertEquals("risk.onnx", fileName(calls.get(1)));
-        assertArrayEquals(ONNX_BYTES, (byte[]) calls.get(1).getFirst("model_file").getBody());
+        assertEquals("net.mlbundle", fileName(calls.get(1)));
+        assertArrayEquals(NET_BYTES, (byte[]) calls.get(1).getFirst("model_file").getBody());
         // The positional model reads by position: 0 before 1, whatever the order of the fields.
         assertEquals("{\"0\":240.5,\"1\":52}", data(calls.get(1)));
         assertEquals(List.of(false, false), transactionOpen);
@@ -108,7 +108,7 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
         assertEquals(List.of(KEPT_CLASSIFIER, KEPT_CLASSIFIER, REGRESSOR),
                 result.run().reports().stream().map(report -> report.payload()).toList());
         String json = objectMapper.writeValueAsString(result);
-        for (String secret : List.of("risk-forest", "risk-net", "risk.joblib", "leaked", "modelId")) {
+        for (String secret : List.of("risk-forest", "risk-net", "forest.mlbundle", "leaked", "modelId")) {
             assertFalse(json.contains(secret), secret);
         }
         // The run is kept as the organization's inference, one result per model; PublicRunSessionTest reads it.
@@ -138,7 +138,7 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
 
         // Only the model that serves the plugin report is explained, with the values it predicted on.
         assertEquals(1, explained.size());
-        assertEquals("risk.joblib", fileName(explained.get(0)));
+        assertEquals("forest.mlbundle", fileName(explained.get(0)));
         assertEquals("{\"age\":52,\"chol\":240.5,\"smoker__yes\":1,\"smoker__no\":0}", data(explained.get(0)));
         assertEquals(List.of(KEPT_CLASSIFIER, Map.of("kind", "Crystal Tree", "explanation", "age > 50")),
                 result.run().reports().stream().map(report -> report.payload()).toList());
@@ -257,7 +257,7 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
 
     @Test
     void aBookmarkWhoseModelOutgrewTheCeilingIsRefusedWithoutNamingIt() {
-        inTransaction(() -> entityManager.find(Model.class, onnxModel.getId()).setModelSizeBytes(MB + 1));
+        inTransaction(() -> entityManager.find(Model.class, netModel.getId()).setModelSizeBytes(MB + 1));
 
         ResponseStatusException error = refused(bookmark.getPublicId(), request(Map.of("in0", 52)));
 
@@ -289,7 +289,7 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
     void whatTheRuntimeSaysStaysOnTheServer() {
         when(analyzer.post(eq("/predict"), any()))
                 .thenThrow(new AnalyzerServiceException(400, "Missing features: {'age'}"))
-                .thenThrow(new AnalyzerServiceException(500, "Error during inference: /srv/models/risk.joblib"))
+                .thenThrow(new AnalyzerServiceException(500, "Error during inference: /srv/models/forest.mlbundle"))
                 .thenThrow(new AnalyzerServiceException(0, "Analyzer service unreachable"))
                 .thenThrow(new IllegalStateException("SHA-256 mismatch for model 7"));
 
@@ -308,7 +308,7 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
 
     @Test
     void anArtifactThatFailsVerificationIsNeverSentToTheRuntime() {
-        inTransaction(() -> entityManager.find(Model.class, joblibModel.getId()).setArtifactSha256("0".repeat(64)));
+        inTransaction(() -> entityManager.find(Model.class, forestModel.getId()).setArtifactSha256("0".repeat(64)));
 
         assertEquals(502, refused(bookmark.getPublicId(), request(Map.of("in0", 52))).getStatusCode().value());
         verifyNoInteractions(analyzer);

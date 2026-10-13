@@ -14,7 +14,7 @@ import {
   type SchemaModelCatalog,
 } from "@/features/schemas/components/SchemaModelPicker";
 import { useCreateSchemaWithInitialVersionMutation } from "@/features/schemas/api/schema-mutations";
-import { countVisibleSchemaFields } from "@/features/schemas/lib/one-hot-category";
+import { countVisibleSchemaFields } from "@/features/schemas/lib/visible-fields";
 import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
 import { composeSchemaVersion, type SchemaSourceModel } from "@/features/schemas/lib/merge";
 

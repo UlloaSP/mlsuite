@@ -34,7 +34,7 @@ If MLSuite goes in the wrong direction, the full stack is here for you to inspec
 
 ### Model artifacts
 
-Upload `.joblib` estimators or self-contained `.onnx` models for tabular classification and regression. ONNX models need numeric, two-dimensional inputs with a fixed feature count. Classifiers must expose class labels and probabilities; regressors must return one value per row. Optional pandas DataFrames for schema generation remain `.joblib` files. Crystal Tree explanations apply to supported decision-tree estimators only.
+Upload `.mlbundle` files exported with [mlbundle](https://github.com/UlloaSP/mlbundle) 0.1.0a2 or later for tabular classification and regression. A bundle carries a scikit-learn, XGBoost, CatBoost, or ONNX model in its native pickle-free format together with its manifest and its schema, and MLSuite uses that schema as it comes: export with `training_data=` to infer the fields from the training frame, otherwise every feature is a number field. MLSuite accepts no other artifact format, no separate DataFrame, and no bundle written by an earlier mlbundle version. Fields map to the model's own feature names; a model without them takes its features by position, so its fields map to `0`, `1`, …. One-hot columns are grouped with the separator the bundle was exported with. Every model output has its own report, mapped to the output's position. A scikit-learn bundle loads only with the scikit-learn version that exported it, which is the version pinned in `backend/pyproject.toml`. Crystal Tree explanations apply to supported decision-tree estimators only.
 
 ## Installation
 

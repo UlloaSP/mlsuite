@@ -16,12 +16,12 @@ describe("artifact inspection service", () => {
 
   it("posts artifact file to analyzer inspection endpoint", async () => {
     const { inspectArtifact } = await import("@/features/models/api/model.api");
-    const file = new File(["x"], "artifact.joblib");
-    (appFetch as Mock).mockResolvedValue({ kind: "dataframe", fileName: "artifact.joblib" });
+    const file = new File(["x"], "artifact.mlbundle");
+    (appFetch as Mock).mockResolvedValue({ type: "classifier", fileName: "artifact.mlbundle" });
 
     const result = await inspectArtifact(file);
 
-    expect(result.kind).toBe("dataframe");
+    expect(result.type).toBe("classifier");
     expect(appFetch).toHaveBeenCalledWith("/api/analyzer/artifacts/inspect", {
       method: "POST",
       body: expect.any(FormData),
@@ -33,36 +33,16 @@ describe("artifact inspection service", () => {
     const error = new Error("bad artifact");
     (appFetch as Mock).mockRejectedValue(error);
 
-    await expect(inspectArtifact(new File(["x"], "artifact.joblib"))).rejects.toBe(error);
+    await expect(inspectArtifact(new File(["x"], "artifact.mlbundle"))).rejects.toBe(error);
   });
 
-  it("posts model and dataframe files to artifact match endpoint", async () => {
-    const { matchArtifacts } = await import("@/features/models/api/model.api");
-    (appFetch as Mock).mockResolvedValue({ models: [], dataframes: [] });
-
-    await matchArtifacts({
-      models: [new File(["x"], "model.joblib")],
-      dataframes: [new File(["x"], "data.joblib")],
-    });
-
-    expect(appFetch).toHaveBeenCalledWith("/api/analyzer/artifacts/match", {
-      method: "POST",
-      body: expect.any(FormData),
-    });
-  });
-
-  it("posts one-hot separator when creating a model", async () => {
+  it("posts only the name and the bundle when creating a model", async () => {
     const { createModel } = await import("@/features/models/api/model.api");
     (appFetch as Mock).mockResolvedValue({ model: { id: 1, name: "demo" } });
 
-    await createModel({
-      name: "demo",
-      modelFile: new File(["x"], "model.joblib"),
-      dataframeFile: new File(["x"], "data.joblib"),
-      oneHotSeparator: "_",
-    });
+    await createModel({ name: "demo", modelFile: new File(["x"], "model.mlbundle") });
 
     const body = (appFetch as Mock).mock.calls[0][1].body as FormData;
-    expect(body.get("oneHotSeparator")).toBe("_");
+    expect([...body.keys()]).toEqual(["name", "modelFile"]);
   });
 });

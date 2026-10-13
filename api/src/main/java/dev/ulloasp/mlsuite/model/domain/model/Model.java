@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 package dev.ulloasp.mlsuite.model.domain.model;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -128,6 +129,14 @@ public class Model {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "input_schema", nullable = false)
     private Map<String, Object> inputSchema = Map.of();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "bundle_manifest", nullable = false)
+    private Map<String, Object> bundleManifest = Map.of();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "feature_importances")
+    private List<Map<String, Object>> featureImportances;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")

@@ -196,22 +196,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/analyzer/artifacts/match": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["matchArtifacts"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/analyzer/explanations": {
         parameters: {
             query?: never;
@@ -238,22 +222,6 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["predict"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/analyzer/schema": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["generateSchema"];
         delete?: never;
         options?: never;
         head?: never;
@@ -446,6 +414,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["archive_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/models/{modelId}/details": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getModelDetails"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2434,6 +2418,11 @@ export interface components {
             };
             traces?: components["schemas"]["TraceRequest"][] | null;
         };
+        FeatureImportanceDto: {
+            feature: string;
+            /** Format: double */
+            importance: number;
+        };
         InferenceCatalogColumnDto: {
             choices: string[];
             /** @enum {string} */
@@ -2563,6 +2552,15 @@ export interface components {
             assignableRoles: components["schemas"]["RoleSummaryDto"][];
             canChangeRole: boolean;
             canRemove: boolean;
+        };
+        ModelDetailsDto: {
+            featureImportances: components["schemas"]["FeatureImportanceDto"][] | null;
+            manifest: {
+                [key: string]: unknown;
+            };
+            sha256: string | null;
+            /** Format: int64 */
+            sizeBytes: number | null;
         };
         ModelDto: {
             /** Format: date-time */
@@ -3747,6 +3745,7 @@ export type Dependency = components['schemas']['Dependency'];
 export type DuplicateRoleRequest = components['schemas']['DuplicateRoleRequest'];
 export type ErrorDto = components['schemas']['ErrorDto'];
 export type ExplainRequest = components['schemas']['ExplainRequest'];
+export type FeatureImportanceDto = components['schemas']['FeatureImportanceDto'];
 export type InferenceCatalogColumnDto = components['schemas']['InferenceCatalogColumnDto'];
 export type InferenceCatalogMetadataDto = components['schemas']['InferenceCatalogMetadataDto'];
 export type InferenceCatalogRequest = components['schemas']['InferenceCatalogRequest'];
@@ -3762,6 +3761,7 @@ export type JsonNode = components['schemas']['JsonNode'];
 export type LoginRequest = components['schemas']['LoginRequest'];
 export type MemberCatalogDto = components['schemas']['MemberCatalogDto'];
 export type MembershipActionsDto = components['schemas']['MembershipActionsDto'];
+export type ModelDetailsDto = components['schemas']['ModelDetailsDto'];
 export type ModelDto = components['schemas']['ModelDto'];
 export type ModeratedBookmarkDto = components['schemas']['ModeratedBookmarkDto'];
 export type MoveSchemaBookmarkRequest = components['schemas']['MoveSchemaBookmarkRequest'];
@@ -4209,35 +4209,6 @@ export interface operations {
             };
         };
     };
-    matchArtifacts: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": {
-                    dataframes: string[];
-                    models: string[];
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-    };
     explain: {
         parameters: {
             query: {
@@ -4281,39 +4252,6 @@ export interface operations {
                     data: {
                         [key: string]: unknown;
                     };
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-    };
-    generateSchema: {
-        parameters: {
-            query?: {
-                oneHotSeparator?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": {
-                    /** Format: binary */
-                    dataframe?: string;
-                    /** Format: binary */
-                    model: string;
                 };
             };
         };
@@ -4545,7 +4483,6 @@ export interface operations {
         parameters: {
             query: {
                 name: string;
-                oneHotSeparator?: string;
             };
             header?: never;
             path?: never;
@@ -4554,8 +4491,6 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** Format: binary */
-                    dataframeFile?: string;
                     /** Format: binary */
                     modelFile: string;
                 };
@@ -4682,6 +4617,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelDto"];
+                };
+            };
+        };
+    };
+    getModelDetails: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                modelId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelDetailsDto"];
                 };
             };
         };

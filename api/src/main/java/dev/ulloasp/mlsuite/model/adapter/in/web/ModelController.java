@@ -14,13 +14,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import dev.ulloasp.mlsuite.model.application.dto.CreateModelDto;
+import dev.ulloasp.mlsuite.model.application.dto.ModelDetailsDto;
 import dev.ulloasp.mlsuite.model.application.dto.ModelDto;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
-import dev.ulloasp.mlsuite.model.application.port.in.ModelCreationUseCase;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
-import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,22 +34,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class ModelController {
 
     private final ModelCatalogUseCase modelCatalogUseCase;
-    private final ModelCreationUseCase modelCreationUseCase;
 
     @PostMapping
     public ResponseEntity<CreateModelDto> createModel(
             CurrentUser user,
             @RequestParam String name,
-            @RequestParam MultipartFile modelFile,
-            @RequestParam @Nullable MultipartFile dataframeFile,
-            @RequestParam(defaultValue = "__") String oneHotSeparator) {
+            @RequestParam MultipartFile modelFile) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(modelCreationUseCase.create(
-                        user.userId(),
-                        name,
-                        modelFile,
-                        dataframeFile,
-                        oneHotSeparator));
+                .body(CreateModelDto.toDto(modelCatalogUseCase.createModel(user.userId(), name, modelFile)));
     }
 
     @GetMapping
@@ -79,6 +70,13 @@ public class ModelController {
     @GetMapping("/{modelId}")
     public ResponseEntity<ModelDto> getModel(CurrentUser user, @PathVariable Long modelId) {
         return ResponseEntity.ok(ModelDto.toDto(modelCatalogUseCase.getModel(
+                user.userId(),
+                modelId)));
+    }
+
+    @GetMapping("/{modelId}/details")
+    public ResponseEntity<ModelDetailsDto> getModelDetails(CurrentUser user, @PathVariable Long modelId) {
+        return ResponseEntity.ok(ModelDetailsDto.toDto(modelCatalogUseCase.getModel(
                 user.userId(),
                 modelId)));
     }

@@ -16,28 +16,15 @@ import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import { emitErrorFromUnknown } from "@/shared/api/error-notifications";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
-import {
-  applyInspectedBundleFiles,
-  type InspectedBundleFile,
-} from "@/features/models/lib/bundle-planner";
 import type { Bundle } from "@/features/models/lib/bundle-types";
 import { isBundleSaveable, saveModelBundlesSequentially } from "@/features/models/lib/bundle-save";
-import {
-  ALL_EXTS,
-  DF_EXTS,
-  MODEL_EXTS,
-  MODEL_EXT_LABEL,
-  getStem,
-  isModelFile,
-  slugToTitle,
-} from "@/features/models/lib/bundle-utils";
+import { BUNDLE_EXT, appendBundleFiles, isBundleFile } from "@/features/models/lib/bundle-utils";
 import { BundleCard } from "@/features/models/components/BundleCard";
 import { BundleDropZone } from "@/features/models/components/BundleDropZone";
 import { BundleSummaryPanel } from "@/features/models/components/BundleSummaryPanel";
 import {
   useCreateModelMutation,
   useInspectArtifactMutation,
-  useMatchArtifactsMutation,
 } from "@/features/models/api/model.mutations";
 
 export function CreateModelPage() {
@@ -45,7 +32,6 @@ export function CreateModelPage() {
   const nextIdRef = useRef(1);
   const mutation = useCreateModelMutation();
   const inspectArtifact = useInspectArtifactMutation();
-  const matchArtifacts = useMatchArtifactsMutation();
   const navigate = useNavigate();
   const { data: user, error } = useUser();
   const { data: workspace } = useWorkspaceContext();
@@ -56,117 +42,44 @@ export function CreateModelPage() {
     async (files: File[]) => {
       const inspected = await Promise.all(
         files.map(async (file) => {
-          if (isModelFile(file.name)) {
-            try {
-              const inspection = await inspectArtifact.mutateAsync(file);
-              return { file, kind: inspection.kind };
-            } catch (error) {
-              emitErrorFromUnknown(error);
-            }
+          if (!isBundleFile(file.name)) {
+            toast.error(
+              `Unsupported file: ${file.name}. Choose a ${BUNDLE_EXT} file exported with mlbundle.`,
+            );
             return null;
           }
-          toast.error(
-            `Unsupported file: ${file.name}. Choose a model (${MODEL_EXT_LABEL}) or a .joblib dataframe.`,
-          );
-          return null;
+          try {
+            await inspectArtifact.mutateAsync(file);
+            return file;
+          } catch (error) {
+            emitErrorFromUnknown(error);
+            return null;
+          }
         }),
       );
-
-      const accepted = inspected.filter((item): item is InspectedBundleFile => item !== null);
-      const incomingModels: File[] = [];
-      const incomingDataframes: File[] = [];
-      for (const item of accepted) {
-        (item.kind === "model" ? incomingModels : incomingDataframes).push(item.file);
-      }
-      const existingModels: File[] = [];
-      const existingDataframes: File[] = [];
-      for (const bundle of bundles) {
-        if (bundle.modelFile) existingModels.push(bundle.modelFile);
-        if (bundle.dfFile) existingDataframes.push(bundle.dfFile);
-      }
-      const matchModels = [...existingModels, ...incomingModels];
-      const matchDataframes = [...existingDataframes, ...incomingDataframes];
-      const match =
-        matchModels.length && matchDataframes.length
-          ? await matchArtifacts
-              .mutateAsync({ models: matchModels, dataframes: matchDataframes })
-              .catch((error) => {
-                emitErrorFromUnknown(error);
-                return undefined;
-              })
-          : undefined;
-
+      const accepted = inspected.filter((file): file is File => file !== null);
       const firstId = nextIdRef.current;
       nextIdRef.current += accepted.length;
-      setBundles(
-        (prev) =>
-          applyInspectedBundleFiles(prev, accepted, firstId, {
-            match,
-            matchModels,
-            matchDataframes,
-          }).bundles,
-      );
+      setBundles((prev) => appendBundleFiles(prev, accepted, firstId));
     },
-    [bundles, inspectArtifact.mutateAsync, matchArtifacts.mutateAsync],
+    [inspectArtifact.mutateAsync],
   );
 
   // ── Bundle actions ───────────────────────────────────────────────────────
 
   const removeBundle = (id: number) => setBundles((prev) => prev.filter((b) => b.id !== id));
 
-  const patchBundle = (
-    id: number,
-    changes: Partial<Bundle> | ((bundle: Bundle) => Partial<Bundle>),
-  ) =>
-    setBundles((prev) =>
-      prev.map((b) =>
-        b.id === id ? { ...b, ...(typeof changes === "function" ? changes(b) : changes) } : b,
-      ),
-    );
-
-  const attachFileToBundle = async (bundleId: number, file: File, kind: "model" | "dataframe") => {
-    try {
-      const inspection = await inspectArtifact.mutateAsync(file);
-      if (inspection.kind !== kind) return;
-    } catch (error) {
-      emitErrorFromUnknown(error);
-      return;
-    }
-    patchBundle(bundleId, (b) =>
-      kind === "model"
-        ? {
-            modelFile: file,
-            name: b.name.trim() ? b.name : slugToTitle(getStem(file.name)),
-            saved: false,
-          }
-        : { dfFile: file, saved: false },
-    );
-  };
-
-  const pickFile = (bundleId: number, kind: "model" | "dataframe") => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = (kind === "model" ? MODEL_EXTS : DF_EXTS).join(",");
-    input.onchange = () => {
-      const file = input.files?.[0];
-      if (file) void attachFileToBundle(bundleId, file, kind);
-    };
-    input.click();
-  };
+  const patchBundle = (id: number, changes: Partial<Bundle>) =>
+    setBundles((prev) => prev.map((b) => (b.id === id ? { ...b, ...changes } : b)));
 
   const saveBundle = async (id: number, options: { navigateWhenComplete?: boolean } = {}) => {
     const bundle = bundles.find((b) => b.id === id);
-    if (!bundle?.modelFile || !isBundleSaveable(bundle)) return false;
+    if (!bundle || !isBundleSaveable(bundle)) return false;
     const hasOtherUnsaved = bundles.some((b) => b.id !== id && !b.saved);
 
     patchBundle(id, { saving: true });
     try {
-      await mutation.mutateAsync({
-        name: bundle.name.trim(),
-        modelFile: bundle.modelFile,
-        dataframeFile: bundle.dfFile ?? undefined,
-        oneHotSeparator: bundle.oneHotSeparator,
-      });
+      await mutation.mutateAsync({ name: bundle.name.trim(), modelFile: bundle.modelFile });
       patchBundle(id, { saved: true, saving: false });
       if (options.navigateWhenComplete !== false && !hasOtherUnsaved) {
         void navigate("/models");
@@ -190,7 +103,6 @@ export function CreateModelPage() {
   // ── Derived stats ────────────────────────────────────────────────────────
 
   const total = bundles.length;
-  const withDf = bundles.filter((b) => b.dfFile).length;
   const saved = bundles.filter((b) => b.saved).length;
   const unsavedReady = bundles.filter(isBundleSaveable).length;
   const anySaving = bundles.some((b) => b.saving);
@@ -204,7 +116,7 @@ export function CreateModelPage() {
         <AppPageHeader
           breadcrumbs={[{ label: "Models", to: "/models" }, { label: "Create model" }]}
           title="Create model"
-          description="Drop model artifacts and dataframes. Files are grouped by name when possible."
+          description="Drop .mlbundle files exported with mlbundle. Each one carries its model and schema."
         />
 
         {/* ── Two-column layout ────────────────────────────────────── */}
@@ -219,16 +131,16 @@ export function CreateModelPage() {
             <div className="app-scroll mt-4 flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto border-t border-line px-4 pb-4 pt-3">
               {bundles.length === 0 ? (
                 <AppFileDropArea
-                  accept={ALL_EXTS.join(",")}
+                  accept={BUNDLE_EXT}
                   inputLabel="Upload bundle files from the empty list"
-                  label="Drop model or dataframe files"
+                  label="Drop bundle files"
                   onFiles={handleFiles}
                 >
                   <AppEmptyState
                     compact
                     icon={<SECTION_ICONS.models size={18} />}
                     title="No bundles yet"
-                    description="Drop files here or click to browse. Dataframes can wait for a model."
+                    description="Drop files here or click to browse."
                   />
                 </AppFileDropArea>
               ) : (
@@ -239,13 +151,6 @@ export function CreateModelPage() {
                     onSave={() => saveBundle(bundle.id)}
                     onRemove={() => removeBundle(bundle.id)}
                     onRename={(name) => patchBundle(bundle.id, { name })}
-                    onOneHotSeparatorChange={(oneHotSeparator) =>
-                      patchBundle(bundle.id, { oneHotSeparator, saved: false })
-                    }
-                    onAttachModel={() => pickFile(bundle.id, "model")}
-                    onAttachDf={() => pickFile(bundle.id, "dataframe")}
-                    onDropModel={(file) => void attachFileToBundle(bundle.id, file, "model")}
-                    onDropDf={(file) => void attachFileToBundle(bundle.id, file, "dataframe")}
                   />
                 ))
               )}
@@ -255,7 +160,6 @@ export function CreateModelPage() {
           {/* Right: summary panel */}
           <BundleSummaryPanel
             total={total}
-            withDf={withDf}
             saved={saved}
             unsavedReady={unsavedReady}
             anySaving={anySaving}
