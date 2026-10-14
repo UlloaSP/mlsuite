@@ -16,15 +16,15 @@ dependencies = [
     "mlbundle[sklearn,xgboost,catboost,onnx]==0.1.0a3",
     "python-multipart>=0.0.31",
     "crystal-tree",
-    "xclingo==2.0b12",
+    "dafact==0.5",
+    "xclingo==2.0b24",
 ]
 
 [project.optional-dependencies]
 dev = ["httpx>=0.28.1", "pytest>=8.4.1", "mlbundle[schema]==0.1.0a3"]
 
 [tool.uv.sources]
-# The explanation adapter uses crystal-tree 0.2 APIs; migrate it before updating this rev.
-crystal-tree = { git = "https://github.com/bramucas/crystal-tree.git", rev = "ec92d54163246dca94bb8076866ce4734885b128" }
+crystal-tree = { git = "https://github.com/bramucas/crystal-tree.git", rev = "0d4b5078040fbf05cbe602f82d6e93f221050d4d" }
 
 [tool.setuptools]
 package-dir = {"" = "src"}

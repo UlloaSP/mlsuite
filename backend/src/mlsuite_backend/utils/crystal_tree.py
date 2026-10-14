@@ -1,11 +1,12 @@
-import json
-import math
+from decimal import Decimal
 from typing import Any
 
-from crystal_tree import Condition, CrystalTree, Trace
-from crystal_tree.crystal_tree import CrystalTreeContext, Dafacter
-from sklearn.tree import DecisionTreeClassifier
+import pandas as pd
+from crystal_tree.crystal_tree import CrystalTreeContext
+from crystal_tree.adapters import ScikitLearnAdapter
+from dafact import Dafacter
 from pydantic import BaseModel, TypeAdapter, ValidationError
+from sklearn.tree import DecisionTreeClassifier
 from xclingo import XclingoControl
 
 from .errors import bad_request
@@ -49,32 +50,6 @@ def build_tree_path_explanation(
     return "\n".join(lines)
 
 
-def build_feature_value_alias_program(feature_names: list[str]) -> str:
-    return "\n".join(
-        f"value(I,{json.dumps(str(name))},V) :- value(I,{index},V)."
-        for index, name in enumerate(feature_names)
-    )
-
-
-def build_threshold_compatibility_program(model: object, factor: int) -> str:
-    multiplier = 10**factor
-    thresholds = []
-    for threshold in model.tree_.threshold:
-        if threshold == -2 or math.isinf(threshold) or math.isnan(threshold):
-            continue
-        thresholds.append(int(threshold * multiplier))
-    return "\n".join(f"thres({threshold})." for threshold in sorted(set(thresholds)))
-
-
-def render_traces(traces: list[Trace]) -> str:
-    return "\n".join(trace.to_xclingo_code() for trace in traces)
-
-
-def get_logic_feature_count(model: object) -> int:
-    used_features = [int(index) for index in model.tree_.feature if index >= 0]
-    return max(used_features) + 1 if used_features else 0
-
-
 class TraceConditionDefinition(BaseModel):
     operator: str
     value: Any = None
@@ -90,73 +65,49 @@ class TraceDefinition(BaseModel):
 _TRACE_LIST = TypeAdapter(list[TraceDefinition])
 
 
-def parse_trace_definitions(payload: str) -> list[Trace]:
+def require_no_traces(payload: str) -> None:
     try:
         definitions = _TRACE_LIST.validate_json(payload)
     except ValidationError as exc:
         raise bad_request(f"Invalid traces JSON: {exc}") from exc
+    # crystal-tree 0.3 still writes traces in the syntax xclingo 2.0b24 no longer parses.
+    if definitions:
+        raise bad_request("Custom traces are not supported by crystal-tree 0.3")
+
+
+def decimal_places(frame: pd.DataFrame) -> int:
+    """The scale that keeps every instance value exact once crystal-tree encodes it as an integer."""
+    exponents = (Decimal(str(float(value))).normalize().as_tuple().exponent for value in frame.to_numpy().ravel())
+    return max((-int(exponent) for exponent in exponents), default=0)
+
+
+def explain_tree(model: object, frame: pd.DataFrame) -> list[str]:
+    # CrystalTree.explain in crystal-tree 0.3 renders thresholds with a fixed factor of 1,
+    # so its public building blocks are composed here instead.
+    factor = decimal_places(frame)
+    control = XclingoControl(["1"], n_explanations="0")
+    control.add("base", [], Dafacter(frame, factor=factor).as_program_string())
+    control.add(
+        "base",
+        [],
+        ScikitLearnAdapter(model).get_logic_program(
+            factor, prediction_traces="", feature_traces="", feature_names=list(frame.columns)
+        ),
+    )
+    control.ground([("base", [])])
     return [
-        Trace(
-            item.text,
-            item.feature,
-            conditions=[Condition(condition.operator, condition.value) for condition in item.conditions],
-            target_class=item.targetClass,
-        )
-        for item in definitions
+        render(explanation)
+        for x_model in control.solve()
+        for graph_model in x_model.explain_model(controlContext=CrystalTreeContext(factor=factor))
+        for symbol in graph_model.show_trace
+        if (explanation := graph_model.explain(symbol)) is not None
     ]
 
 
-def explain_with_feature_name_aliases(
-    model: object,
-    instance_df: object,
-    feature_names: list[str],
-    trace_definitions: list[Trace],
-) -> list[object]:
-    crystal_tree = CrystalTree(model)
-    logic_feature_count = get_logic_feature_count(model)
-    if logic_feature_count == 0:
-        return []
-    logic_feature_names = feature_names[:logic_feature_count]
-    logic_instance_df = instance_df.iloc[:, :logic_feature_count]
-    for trace in trace_definitions:
-        crystal_tree.add_trace(trace)
-    factor = crystal_tree.factor
-    if factor is None:
-        factor = crystal_tree.max_decimal_places(logic_instance_df)
-    crystal_tree.set_logic_tree(feature_names=logic_feature_names, factor=factor)
-    control = XclingoControl(n_solutions=1, n_explanations=1)
-    control.add(
-        "base",
-        [],
-        Dafacter(
-            logic_instance_df, logic_feature_names, factor=factor
-        ).as_program_string(),
-    )
-    control.add("base", [], build_feature_value_alias_program(logic_feature_names))
-    control.add(
-        "base", [], build_threshold_compatibility_program(crystal_tree._dt, factor)
-    )
-    control.add("base", [], crystal_tree._logic_tree.get_paths())
-    control.add("base", [], crystal_tree._logic_tree.extra)
-    prediction_traces = (
-        crystal_tree.prediction_traces or crystal_tree._logic_tree.prediction_traces
-    )
-    feature_traces = (
-        crystal_tree.feature_traces or crystal_tree._logic_tree.feature_traces
-    )
-    control.add(
-        "base",
-        [],
-        render_traces(prediction_traces)
-        if isinstance(prediction_traces, list)
-        else prediction_traces,
-    )
-    control.add(
-        "base",
-        [],
-        render_traces(feature_traces)
-        if isinstance(feature_traces, list)
-        else feature_traces,
-    )
-    control.ground([("base", [])], explainer_context=CrystalTreeContext(factor))
-    return list(next(control.explain()))
+def render(explanation: Any) -> str:
+    """xclingo 2.0b24 keeps the quotes of each label, which the explanation text does not show."""
+    lines = ["  *"]
+    for node, level in explanation.preorder_iterator(only_labelled=True):
+        text = ";".join(sorted(label.strip('"') for label in node.labels))
+        lines.append(f"{'  |' * level}__{text}")
+    return "\n".join(lines) + "\n"
