@@ -15,6 +15,7 @@ from tests.helpers import (
     make_onnx_classifier,
     make_positional_regressor,
     make_regressor,
+    make_decimal_tree,
     make_tree,
     make_tree_with_unused_tail_feature,
     make_xgboost_classifier,
@@ -283,9 +284,22 @@ def test_explain_success() -> None:
         files={"model_file": serialize_bundle(make_tree())},
         data={"data": json.dumps({"age": 40, "income": 55_000}), "traces": "[]"},
     )
-    payload = response.json()
     assert response.status_code == 200
-    assert payload["reports"][0]["explanation"]
+    assert response.json()["reports"][0]["explanation"] == (
+        "  *\n  |__Predicted class 0 for instance 0 (100 probability)\n  |  |__income <= 57500.0\n"
+    )
+
+
+def test_explain_keeps_decimal_inputs_exact() -> None:
+    response = client.post(
+        "/explain",
+        files={"model_file": serialize_bundle(make_decimal_tree())},
+        data={"data": json.dumps({"ratio": 0.19}), "traces": "[]"},
+    )
+    assert response.status_code == 200
+    explanation = response.json()["reports"][0]["explanation"]
+    assert "Predicted class 0" in explanation
+    assert "ratio <= 0.19" in explanation
 
 
 def test_explain_success_when_tree_does_not_use_tail_features() -> None:
@@ -299,7 +313,7 @@ def test_explain_success_when_tree_does_not_use_tail_features() -> None:
     )
     payload = response.json()
     assert response.status_code == 200
-    assert payload["reports"][0]["explanation"]
+    assert "income <= 57500.0" in payload["reports"][0]["explanation"]
 
 
 def test_explain_rejects_non_tree_model() -> None:
@@ -335,6 +349,19 @@ def test_explain_rejects_invalid_trace_shape() -> None:
     assert response.json()["detail"].startswith("Invalid traces JSON:")
 
 
+def test_explain_rejects_custom_traces() -> None:
+    response = client.post(
+        "/explain",
+        files={"model_file": serialize_bundle(make_tree())},
+        data={
+            "data": json.dumps({"age": 40, "income": 55_000}),
+            "traces": json.dumps([{"text": "Predicted %_class", "feature": "prediction"}]),
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Custom traces are not supported by crystal-tree 0.3"
+
+
 def test_explain_rejects_missing_features() -> None:
     response = client.post(
         "/explain",
@@ -350,7 +377,7 @@ def test_explain_falls_back_when_crystal_tree_returns_none(monkeypatch) -> None:
 
     monkeypatch.setattr(
         explanation_service,
-        "explain_with_feature_name_aliases",
+        "explain_tree",
         lambda *_args, **_kwargs: [],
     )
     response = client.post(
