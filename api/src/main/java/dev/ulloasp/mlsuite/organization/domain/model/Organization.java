@@ -56,6 +56,10 @@ public class Organization {
     @Column(name = "plugin_catalog_indexed", nullable = false)
     private boolean pluginCatalogIndexed;
 
+    /** The calls its API clients may make in a calendar month; null follows the instance default. */
+    @Column(name = "api_monthly_call_limit")
+    private Integer apiMonthlyCallLimit;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "created_by_user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_organization_creator"))
     private User createdBy;

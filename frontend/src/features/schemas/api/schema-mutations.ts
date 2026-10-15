@@ -9,17 +9,14 @@ import {
   renameSchema,
 } from "./schema-api";
 import {
-  createBookmarkApiKey,
   createSchemaBookmark,
   markBookmarkExample,
   publishSchemaBookmark,
-  revokeBookmarkApiKey,
   unmarkBookmarkExample,
   unpublishSchemaBookmark,
   updateSchemaBookmark,
 } from "./schema-bookmark-api";
 import {
-  BOOKMARK_API_KEYS_QUERY_KEY,
   ORGANIZATION_BOOKMARKS_QUERY_KEY,
   SCHEMA_BOOKMARKS_QUERY_KEY,
   SCHEMA_BOOKMARK_EXAMPLES_QUERY_KEY,
@@ -27,7 +24,6 @@ import {
   SCHEMA_CATALOG_PAGE_QUERY_KEY,
 } from "./schema-keys";
 import type {
-  CreateBookmarkApiKeyRequest,
   CreateSchemaBookmarkRequest,
   SchemaBookmarkDto,
   UpdateSchemaBookmarkRequest,
@@ -178,34 +174,6 @@ export function useSetBookmarkExampleMutation() {
           queryKey: SCHEMA_BOOKMARKS_QUERY_KEY(organizationId, bookmark.schemaId),
         }),
       ]),
-  });
-}
-
-/**
- * Issues an API key for a bookmark. The result holds the key's one-time secret, so it is kept
- * out of the mutation cache; the dialog that asked shows it from the resolved value.
- */
-export function useCreateBookmarkApiKeyMutation(bookmarkId: number | string) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const qc = useQueryClient();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    gcTime: 0,
-    mutationFn: (req: CreateBookmarkApiKeyRequest) => createBookmarkApiKey(bookmarkId, req),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: BOOKMARK_API_KEYS_QUERY_KEY(organizationId, bookmarkId) }),
-  });
-}
-
-/** Revoking deletes the key; it stops working at once. */
-export function useRevokeBookmarkApiKeyMutation(bookmarkId: number | string) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const qc = useQueryClient();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: (keyId: number) => revokeBookmarkApiKey(bookmarkId, keyId),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: BOOKMARK_API_KEYS_QUERY_KEY(organizationId, bookmarkId) }),
   });
 }
 

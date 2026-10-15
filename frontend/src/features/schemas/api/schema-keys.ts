@@ -59,24 +59,6 @@ export const SCHEMA_BOOKMARK_EXAMPLES_QUERY_KEY = (
     "schemaBookmarkExamples",
     { bookmarkId: String(bookmarkId) },
   ] as const;
-export const BOOKMARK_API_KEYS_QUERY_KEY = (
-  organizationId: number | string,
-  bookmarkId: number | string,
-) =>
-  [
-    ...organizationQueryKey(organizationId),
-    "bookmarkApiKeys",
-    { bookmarkId: String(bookmarkId) },
-  ] as const;
-export const SCHEMA_BOUND_MODEL_QUERY_KEY = (
-  organizationId: number | string,
-  modelId: number | string,
-) =>
-  [
-    ...organizationQueryKey(organizationId),
-    "schemaBoundModel",
-    { modelId: String(modelId) },
-  ] as const;
 export const SCHEMA_DRAFTS_QUERY_KEY = (
   organizationId: number | string,
   schemaId: number | string,

@@ -283,9 +283,10 @@ Public bookmarks run on the same runtime as every workspace, for visitors who ha
 account. `PUBLIC_PREDICTION_MAX_MODEL_SIZE_MB` (default `50`) is the largest model
 artifact a bookmark may bind and still be public: publishing, moving a public bookmark
 to another snapshot, and each public run are refused above it, because every run ships
-the artifact to the runtime. `PUBLIC_PREDICTION_MAX_CONCURRENT` (default `2`) is how
-many public and API key runs may execute at once together; further ones receive
-`503 Service Unavailable` until a slot frees.
+the artifact to the runtime. The same limit applies to runs of API clients.
+`PUBLIC_PREDICTION_MAX_CONCURRENT` (default `2`) is how many public runs may execute at
+once; further ones receive `503 Service Unavailable` until a slot frees. API clients have
+a share of their own, so neither can take the other's.
 
 A public run is stored like a workspace run, with its inputs, each model's result and any
 feedback, and is listed in the organization's Inferences with the origin "Public page"; it
@@ -332,40 +333,63 @@ real_ip_recursive on;
 The proxy must set or append to `X-Forwarded-For` itself. Do not list a network that
 visitors can connect from, or they could choose their own address again.
 
-An outside organization can run a public bookmark's model from its own software with an
-API key. A member with the publish permission issues one key per consumer on the bookmark,
-named after it: `POST /api/schema-bookmarks/<id>/api-keys` with `{"name": "Lab2Pressure"}`
-(unique on the bookmark, at most 80 characters). That answer is the only one that carries
-the secret (`mls_...`); hand it over privately. `GET` on the same path lists the keys,
-`DELETE .../api-keys/<key id>` revokes one. Keys never expire. A key works only while its
-bookmark is public and its snapshot binds exactly one model; unpublishing keeps the keys.
-The consumer sends one record under the model's own signature feature names:
+Outside software runs an organization's bookmarks through the client API, as one of the
+organization's **API clients**. Members with the `MANAGE_API_ACCESS` permission manage them in
+the app's **API** section (members with `VIEW_API_ACCESS` read it): they create a client named
+after the software, issue it keys (`mls_...`, shown once, stored only as their SHA-256, never
+expiring, revoked by deletion; a client may hold several so a key can be replaced without
+stopping the software) and give it bookmarks. A client runs exactly the bookmarks it was given,
+public or not, while their schema is active and their snapshot binds exactly one model under
+the size limit above. Every change is kept in the organization's audit log.
 
 ```http
-POST /api/public/model-predictions
+POST /api/v1/bookmarks/<bookmark id>/predictions
 X-MLSuite-Key: mls_...
 Content-Type: application/json
 
 {"features": {"age": 52, "sex__male": 1, "sex__female": 0}}
 ```
 
-and gets back only the model's outputs, in output order: a classifier's class with its
-probabilities by the class labels in the model's bundle, or a regressor's value.
+The bookmark id is the opaque id the API section shows (the same one its public page uses,
+assigned when the bookmark is first published or given to a client). The record goes under
+the model's own signature feature names; each value is a number, a boolean, a text of at most
+256 characters, or null, and only the runtime checks the record against the model. The answer
+says what ran and gives the model's outputs in output order:
 
 ```json
-{"outputs": [{"prediction": "high", "probabilities": {"low": 0.2, "high": 0.8}}, {"value": 41.5}]}
+{"requestId": "3f0c6a8e-…", "bookmark": {"id": "…", "name": "production"},
+ "snapshot": {"version": 3, "name": "Baseline"}, "model": {"name": "risk-forest", "sha256": "…"},
+ "outputs": [{"prediction": "high", "probabilities": {"low": 0.2, "high": 0.8}}, {"value": 41.5}]}
 ```
 
-The full run is kept as the organization's inference, with the origin "API" and the key's
-name as its author. Each value must be a number, a boolean, a text of at most 256
-characters, or null; beyond that only the runtime checks the record against the model, so
-coherent one-hot groups and sensible ranges are the consumer's responsibility. Errors:
-`400` a malformed body or value, `401` a missing or unknown key, `404` the bookmark is not
-public, `409` its snapshot binds other than one model, its model exceeds the size limit, or
-it moved during the run, `422` the model refused the record (the message gives the
-runtime's reason), `502` the run failed, `503` no runtime slot is free. Key runs have no
-quota. The endpoint accepts any origin without credentials, but a key embedded in browser
-JavaScript is readable by anyone who loads the page: call it from the consumer's backend.
+Every refusal is an RFC 9457 problem (`application/problem+json`) with a stable `code`:
+`invalid_body` and `invalid_features` (400), `invalid_key` (401), `client_suspended` (403),
+`bookmark_not_found` (404, also for a bookmark the client was not given),
+`bookmark_not_runnable` and `bookmark_changed` (409), `features_rejected` (422, with the
+runtime's reason), `rate_limited` and `quota_exceeded` (429), `internal_error` (500),
+`runtime_failed` (502) and `runtime_busy` (503). 429 and 503 carry `Retry-After`. The endpoint
+accepts any origin without credentials and exposes `X-Request-Id` and `Retry-After`; a key in
+browser JavaScript is readable by anyone who loads the page, so call it from a backend.
+
+Each call made with a valid key is logged in `api_request` under the `requestId` it was
+answered with (also sent as `X-Request-Id`): client, key prefix, bookmark, status, problem
+code, duration and the inference it made, never the features or outputs, which stay in the
+run. The run is kept as the organization's inference with the origin "API" and the client's
+name as its author. The log is the metering: the API section shows each organization its
+usage, request log and endpoint docs, and superadmins see every organization's traffic under
+**API traffic**, where they suspend a client (with a reason its organization reads) or set an
+organization's monthly limit, both audited. `API_ACCESS_REQUESTS_PER_MINUTE` (default `60`) is
+how many calls one client may make in a clock minute; `API_ACCESS_MONTHLY_CALLS` (default
+`10000`) how many succeeded calls an organization's clients may make together in a calendar
+month (UTC) unless a superadmin set its own limit; `API_ACCESS_MAX_CONCURRENT` (default `2`)
+how many client runs may execute at once; `API_ACCESS_REQUEST_RETENTION_DAYS` (default `90`,
+at least `31`) how long calls are kept. The limits are counted from the log, so they hold
+across restarts and API instances; calls still running are not counted until they end.
+
+The client API replaced the bookmark API keys of `POST /api/public/model-predictions`, which
+no longer exists. Upgrading turns each key into a client key that keeps its secret: the keys
+an organization issued under one consumer name become one client that may run each of their
+bookmarks, now whether or not they are public. Consumers must move to the new path and body.
 
 Persistence is abstracted by capability, not by a generic database wrapper.
 Spring Data repository interfaces isolate aggregate persistence, while

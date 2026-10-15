@@ -63,6 +63,11 @@ export const protectedPages: RouteObject[] = [
         (m) => m.AdminPublicBookmarksPage,
       ),
     ),
+    page("admin/api-traffic", () =>
+      import("@/features/api-access/pages/admin-api-traffic-page").then(
+        (m) => m.AdminApiTrafficPage,
+      ),
+    ),
     page("admin/infrastructure", () =>
       import("@/features/infrastructure/pages/admin-infrastructure-page").then(
         (m) => m.AdminInfrastructurePage,
@@ -112,6 +117,23 @@ export const protectedPages: RouteObject[] = [
       import("@/features/schemas/pages/bookmark-workspace-page").then(
         (m) => m.BookmarkWorkspacePage,
       ),
+    ),
+  ]),
+  workspace("canViewApiAccess", [
+    page("api-access", () =>
+      import("@/features/api-access/pages/api-overview-page").then((m) => m.ApiOverviewPage),
+    ),
+    page("api-access/clients", () =>
+      import("@/features/api-access/pages/api-clients-page").then((m) => m.ApiClientsPage),
+    ),
+    page("api-access/clients/:clientId", () =>
+      import("@/features/api-access/pages/api-client-page").then((m) => m.ApiClientPage),
+    ),
+    page("api-access/requests", () =>
+      import("@/features/api-access/pages/api-requests-page").then((m) => m.ApiRequestsPage),
+    ),
+    page("api-access/docs", () =>
+      import("@/features/api-access/pages/api-docs-page").then((m) => m.ApiDocsPage),
     ),
   ]),
   workspace("canCreateModels", [

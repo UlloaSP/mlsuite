@@ -18,7 +18,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class OpenInViewConfig {
 
     private static final String PUBLIC_PREDICTIONS = "/api/public/bookmarks/*/predictions";
-    private static final String CONSUMER_PREDICTIONS = "/api/public/model-predictions";
+    private static final String CLIENT_PREDICTIONS = "/api/v1/bookmarks/*/predictions";
 
     @Bean
     OpenEntityManagerInViewInterceptor openEntityManagerInViewInterceptor() {
@@ -31,7 +31,7 @@ public class OpenInViewConfig {
             @Override
             public void addInterceptors(InterceptorRegistry registry) {
                 registry.addWebRequestInterceptor(interceptor)
-                        .excludePathPatterns(PUBLIC_PREDICTIONS, CONSUMER_PREDICTIONS);
+                        .excludePathPatterns(PUBLIC_PREDICTIONS, CLIENT_PREDICTIONS);
             }
         };
     }

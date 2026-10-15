@@ -71,7 +71,7 @@ class DomainExceptionHandlerTest {
     @Test
     void handleUnreadableBody_ReturnsBadRequestWithoutTheParsersWords() {
         DomainExceptionHandler handler = new DomainExceptionHandler();
-        when(request.getRequestURI()).thenReturn("/api/public/model-predictions");
+        when(request.getRequestURI()).thenReturn("/api/schema-bookmarks/7");
 
         ResponseEntity<ErrorDto> response = handler.handleUnreadableBody(
                 new HttpMessageNotReadableException("JSON parse error: Unexpected end-of-input in field name",

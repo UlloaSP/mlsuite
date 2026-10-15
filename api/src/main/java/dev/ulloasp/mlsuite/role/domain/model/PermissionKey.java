@@ -23,5 +23,7 @@ public enum PermissionKey {
     MANAGE_REVIEWS,
     VIEW_PLUGINS,
     MANAGE_PLUGINS,
-    VIEW_AUDIT_LOG
+    VIEW_AUDIT_LOG,
+    VIEW_API_ACCESS,
+    MANAGE_API_ACCESS
 }

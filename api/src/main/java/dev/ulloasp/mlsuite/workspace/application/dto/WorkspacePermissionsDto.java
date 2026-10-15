@@ -26,7 +26,9 @@ public record WorkspacePermissionsDto(
         boolean canReview,
         boolean canManageReviews,
         boolean canViewPlugins,
-        boolean canManagePlugins) {
+        boolean canManagePlugins,
+        boolean canViewApiAccess,
+        boolean canManageApiAccess) {
 
     public static WorkspacePermissionsDto from(Set<PermissionKey> granted) {
         return new WorkspacePermissionsDto(
@@ -51,6 +53,8 @@ public record WorkspacePermissionsDto(
                 granted.contains(PermissionKey.REVIEW),
                 granted.contains(PermissionKey.MANAGE_REVIEWS),
                 granted.contains(PermissionKey.VIEW_PLUGINS),
-                granted.contains(PermissionKey.MANAGE_PLUGINS));
+                granted.contains(PermissionKey.MANAGE_PLUGINS),
+                granted.contains(PermissionKey.VIEW_API_ACCESS) || granted.contains(PermissionKey.MANAGE_API_ACCESS),
+                granted.contains(PermissionKey.MANAGE_API_ACCESS));
     }
 }

@@ -5,8 +5,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import {
   AlertTriangle,
+  BookOpen,
+  Building2,
+  Cable,
   LayoutGrid,
   List,
+  ScrollText,
   Server,
   SquareTerminal,
   type LucideIcon,
@@ -38,6 +42,19 @@ export const INFRA_CHILDREN: NavigationChild[] = [
   { to: "/admin/infrastructure?tab=logs", icon: List, label: "Logs" },
   { to: "/admin/infrastructure?tab=terminal", icon: SquareTerminal, label: "Terminal" },
   { to: "/admin/infrastructure?tab=alerts", icon: AlertTriangle, label: "Alerts" },
+];
+
+export const API_ACCESS_CHILDREN: NavigationChild[] = [
+  { to: "/api-access", icon: LayoutGrid, label: "Overview", exact: true },
+  { to: "/api-access/clients", icon: Cable, label: "Clients" },
+  { to: "/api-access/requests", icon: ScrollText, label: "Requests" },
+  { to: "/api-access/docs", icon: BookOpen, label: "Docs" },
+];
+
+export const API_TRAFFIC_CHILDREN: NavigationChild[] = [
+  { to: "/admin/api-traffic", icon: LayoutGrid, label: "Overview", exact: true },
+  { to: "/admin/api-traffic?tab=clients", icon: Cable, label: "Clients" },
+  { to: "/admin/api-traffic?tab=organizations", icon: Building2, label: "Organizations" },
 ];
 
 function splitHref(to: string) {

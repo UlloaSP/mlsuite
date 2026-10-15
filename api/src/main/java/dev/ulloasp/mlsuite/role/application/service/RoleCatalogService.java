@@ -63,6 +63,7 @@ public class RoleCatalogService implements RoleCatalogUseCase {
                 group("Models", "VIEW_MODELS", "CREATE_MODELS", "EDIT_MODELS", "DELETE_MODELS", "RUN_PREDICTIONS", "EXPORT_PREDICTIONS", "PUBLISH_BOOKMARKS"),
                 group("Reviews", "REVIEW", "MANAGE_REVIEWS"),
                 group("Plugins", "VIEW_PLUGINS", "MANAGE_PLUGINS"),
+                group("API", "VIEW_API_ACCESS", "MANAGE_API_ACCESS"),
                 group("Audit", "VIEW_AUDIT_LOG"));
     }
 
