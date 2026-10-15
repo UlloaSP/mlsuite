@@ -1,10 +1,6 @@
 import { appFetch, json } from "@/shared/api/http";
 import type {
-  BookmarkApiKeyDto,
-  CreateBookmarkApiKeyRequest,
   CreateSchemaBookmarkRequest,
-  IssuedBookmarkApiKeyDto,
-  ModelDto,
   SchemaBookmarkDto,
   SchemaBookmarkExampleDto,
   UpdateSchemaBookmarkRequest,
@@ -68,31 +64,3 @@ export const unmarkBookmarkExample = (
   appFetch<void>(`${bookmarkExamplesPath(bookmarkId)}/${encodeURIComponent(runId)}`, {
     method: "DELETE",
   });
-
-const bookmarkApiKeysPath = (bookmarkId: number | string) =>
-  `/api/schema-bookmarks/${encodeURIComponent(bookmarkId)}/api-keys`;
-
-export const getBookmarkApiKeys = (
-  bookmarkId: number | string,
-  signal?: AbortSignal,
-): Promise<BookmarkApiKeyDto[]> =>
-  appFetch<BookmarkApiKeyDto[]>(bookmarkApiKeysPath(bookmarkId), { signal });
-
-/** The only response that carries the key's secret; the API never shows it again. */
-export const createBookmarkApiKey = (
-  bookmarkId: number | string,
-  req: CreateBookmarkApiKeyRequest,
-): Promise<IssuedBookmarkApiKeyDto> =>
-  appFetch<IssuedBookmarkApiKeyDto>(bookmarkApiKeysPath(bookmarkId), json("POST", req));
-
-export const revokeBookmarkApiKey = (
-  bookmarkId: number | string,
-  keyId: number | string,
-): Promise<void> =>
-  appFetch<void>(`${bookmarkApiKeysPath(bookmarkId)}/${encodeURIComponent(keyId)}`, {
-    method: "DELETE",
-  });
-
-/** The model a snapshot binds, read for its signature when documenting the bookmark's API. */
-export const getBoundModel = (modelId: number | string, signal?: AbortSignal): Promise<ModelDto> =>
-  appFetch<ModelDto>(`/api/models/${encodeURIComponent(modelId)}`, { signal });

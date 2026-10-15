@@ -177,7 +177,7 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
     }
 
     /** A scalar a model feature can take: null, a flag, a short text, or a finite number. */
-    static boolean isFormValue(Object value) {
+    public static boolean isFormValue(Object value) {
         if (value == null || value instanceof Boolean) return true;
         if (value instanceof String text) return text.length() <= MAX_TEXT_LENGTH;
         if (value instanceof BigInteger || value instanceof BigDecimal) return false;

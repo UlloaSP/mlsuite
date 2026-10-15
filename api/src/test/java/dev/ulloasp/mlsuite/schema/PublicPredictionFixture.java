@@ -108,10 +108,10 @@ public abstract class PublicPredictionFixture {
     }
 
     private static final AtomicInteger SEQUENCE = new AtomicInteger();
-    static final long MB = 1024L * 1024L;
-    static final byte[] FOREST_BYTES = "forest-artifact".getBytes();
+    protected static final long MB = 1024L * 1024L;
+    protected static final byte[] FOREST_BYTES = "forest-artifact".getBytes();
     static final byte[] NET_BYTES = "net-artifact".getBytes();
-    static final Map<String, Object> CLASSIFIER = Map.of("kind", "classifier", "label", "Predicted class",
+    protected static final Map<String, Object> CLASSIFIER = Map.of("kind", "classifier", "label", "Predicted class",
             "mapping", List.of("low", "high"), "probabilities", List.of(List.of(0.2, 0.8)));
     /** The classifier's answer as a run keeps it: the instance's own row, its labels and its class. */
     static final Map<String, Object> KEPT_CLASSIFIER = Map.of("kind", "classifier", "label", "Predicted class",
@@ -124,10 +124,10 @@ public abstract class PublicPredictionFixture {
 
     @Autowired protected EntityManager entityManager;
     @Autowired PlatformTransactionManager transactionManager;
-    @Autowired DataSource dataSource;
+    @Autowired protected DataSource dataSource;
     @Autowired protected ObjectMapper objectMapper;
     @Autowired protected MockMvc mockMvc;
-    @MockitoBean AnalyzerClient analyzer;
+    @MockitoBean protected AnalyzerClient analyzer;
     @Autowired PublicBookmarkService publicBookmarks;
     @Autowired PublicPredictionService service;
 
@@ -136,7 +136,7 @@ public abstract class PublicPredictionFixture {
     protected Schema schema;
     protected SchemaVersion version;
     protected SchemaBookmark bookmark;
-    Model forestModel;
+    protected Model forestModel;
     protected Model netModel;
 
     /** One published bookmark over two models: every field and report routes by model name or id. */
@@ -191,11 +191,11 @@ public abstract class PublicPredictionFixture {
         return model;
     }
 
-    PublicPredictionRequest request(Map<String, Object> values) {
+    protected PublicPredictionRequest request(Map<String, Object> values) {
         return new PublicPredictionRequest(version.getVersion(), values);
     }
 
-    PublicPredictionDto run(String publicId, PublicPredictionRequest request) {
+    protected PublicPredictionDto run(String publicId, PublicPredictionRequest request) {
         return service.run(publicId, request, VISITOR).result();
     }
 
@@ -247,11 +247,11 @@ public abstract class PublicPredictionFixture {
         return entityManager.createQuery("select count(x) from " + entity + " x", Long.class).getSingleResult();
     }
 
-    static String fileName(MultiValueMap<String, HttpEntity<?>> parts) {
+    protected static String fileName(MultiValueMap<String, HttpEntity<?>> parts) {
         return parts.getFirst("model_file").getHeaders().getContentDisposition().getFilename();
     }
 
-    static String data(MultiValueMap<String, HttpEntity<?>> parts) {
+    protected static String data(MultiValueMap<String, HttpEntity<?>> parts) {
         return (String) parts.getFirst("data").getBody();
     }
 }
