@@ -141,6 +141,8 @@ export const buildSchemaRunExport = (
     "run_id",
     "run_status",
     "created_at",
+    "origin",
+    "created_by",
     "model_count",
     ...inputLabels,
     ...outputHeaders,
@@ -193,6 +195,8 @@ export const buildSchemaRunExport = (
       run.id,
       run.status,
       formatTimestamp(run.createdAt),
+      run.origin,
+      run.createdByName || run.createdByEmail || "",
       String(run.results.length),
       ...inputLabels.map((label) => toCell(inputs.get(label))),
       ...outputHeaders.map(

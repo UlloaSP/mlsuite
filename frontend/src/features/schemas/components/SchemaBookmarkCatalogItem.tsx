@@ -7,6 +7,7 @@ import {
   ExternalLink,
   GitCommitHorizontal,
   Globe,
+  KeyRound,
   Link2,
   ListChecks,
   Lock,
@@ -28,6 +29,7 @@ import { useActionDialog } from "@/shared/ui/use-action-dialog";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
 import { useSetBookmarkVisibilityMutation } from "@/features/schemas/api/schema-mutations";
 import { BookmarkEditDialog } from "@/features/schemas/components/BookmarkEditDialog";
+import { BookmarkApiKeysDialog } from "@/features/schemas/components/BookmarkApiKeysDialog";
 import { BookmarkExamplesDialog } from "@/features/schemas/components/BookmarkExamplesDialog";
 import { bookmarkExampleSummary } from "@/features/schemas/lib/bookmark-example-status";
 import { publicBookmarkHref } from "@/features/schemas/lib/public-bookmark-href";
@@ -48,6 +50,7 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
   const { confirm, dialog } = useActionDialog();
   const [examplesOpen, setExamplesOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [keysOpen, setKeysOpen] = useState(false);
   const examples = bookmarkExampleSummary(bookmark);
   const publicPath =
     bookmark.visibility === "PUBLIC" && bookmark.publicId
@@ -128,6 +131,12 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
       : []),
     ...(canPublish
       ? [
+          {
+            key: "api-keys",
+            label: "API keys",
+            icon: KeyRound,
+            onSelect: () => setKeysOpen(true),
+          },
           publicPath
             ? {
                 key: "unpublish",
@@ -189,6 +198,13 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
       />
       {dialog}
       <BookmarkEditDialog bookmark={bookmark} open={editOpen} onClose={() => setEditOpen(false)} />
+      {canPublish ? (
+        <BookmarkApiKeysDialog
+          bookmark={bookmark}
+          open={keysOpen}
+          onClose={() => setKeysOpen(false)}
+        />
+      ) : null}
       <BookmarkExamplesDialog
         bookmark={bookmark}
         open={examplesOpen}

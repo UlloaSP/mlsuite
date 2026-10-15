@@ -4,6 +4,7 @@ import static dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogFixtures.AGE;
 import static dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogFixtures.TEXT;
 import static dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogFixtures.ages;
 import static dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogFixtures.data;
+import static dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogFixtures.found;
 import static dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogFixtures.object;
 import static dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogFixtures.rows;
 import static dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogFixtures.table;
@@ -184,6 +185,20 @@ class InferenceCatalogTest {
         InferenceCatalogService names = serving(
                 table(ages(1, 2, 3, 4, 5), "case 10", "Case 9", "Newark", "New York", "a b"));
         assertEquals(List.of(5L, 2L, 1L, 4L, 3L), ids(names.selection(MEMBER, request(0, "", "name.asc"))));
+    }
+
+    @Test
+    void labelsEachOriginAndKnowsAnApiRunByItsKeysName() throws Exception {
+        ObjectNode data = ages(1, 2, 3);
+        object(data, "/runs/1/summary").put("origin", "PUBLIC").putNull("createdByName").putNull("createdByEmail");
+        object(data, "/runs/2/summary").put("origin", "API").put("createdByName", "Lab2Pressure").putNull("createdByEmail");
+        InferenceCatalogService service = serving(table(data));
+
+        // "API" < "Public page" < "Workspace", and "Ada Lovelace" < "Lab2Pressure" < "Visitor".
+        assertEquals(List.of(3L, 2L, 1L), ids(service.selection(MEMBER, request(0, "", "origin.asc"))));
+        assertEquals(List.of(1L, 3L, 2L), ids(service.selection(MEMBER, request(0, "", "author.asc"))));
+        assertEquals(List.of(3L), rows(data).stream().filter(row -> found(row, "api"))
+                .map(row -> row.dto().item().id()).toList());
     }
 
     /** A service over a reader that holds exactly the given table and refuses the outsider. */

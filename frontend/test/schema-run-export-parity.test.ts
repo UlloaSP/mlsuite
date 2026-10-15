@@ -93,4 +93,37 @@ describe("schema run export parity", () => {
     expect(exported.content).not.toContain('"{""explanation"":""tree path""}"');
     expect(exported.content).toContain("5");
   });
+
+  test("exports who made each run and through which door", () => {
+    const viaKey = predictionRun({
+      ...run,
+      id: 2,
+      origin: "API",
+      createdByName: "Lab2Pressure",
+      createdByEmail: null,
+    });
+    const visitor = predictionRun({ ...run, id: 3, origin: "PUBLIC" });
+    const member = predictionRun({ ...run, id: 4, createdByName: null, createdByEmail: "a@b.c" });
+
+    const lines = buildSchemaRunExport([viaKey, visitor, member], version, [], ";")
+      .content.replace("﻿", "")
+      .split("\n")
+      .map((line) => line.split(";"));
+
+    const [header] = lines;
+    expect(header.slice(0, 7)).toEqual([
+      "inference_name",
+      "run_id",
+      "run_status",
+      "created_at",
+      "origin",
+      "created_by",
+      "model_count",
+    ]);
+    expect(lines.slice(1).map((cells) => cells.slice(4, 6))).toEqual([
+      ["API", "Lab2Pressure"],
+      ["PUBLIC", ""],
+      ["WORKSPACE", "a@b.c"],
+    ]);
+  });
 });

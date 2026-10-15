@@ -4,24 +4,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Semaphore;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
-import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
-import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicRunOutcome;
@@ -29,7 +17,7 @@ import dev.ulloasp.mlsuite.schema.application.dto.PublicRunQuotaDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicPredictionUseCase;
 import dev.ulloasp.mlsuite.schema.application.service.PublicPredictionPlan.ModelCall;
 import dev.ulloasp.mlsuite.security.identity.PublicCaller;
-import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Runs a published bookmark for anyone and keeps the run as the visitor's. The visitor names
@@ -41,38 +29,14 @@ import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
  * the runtime said.
  */
 @Service
+@RequiredArgsConstructor
 public class PublicPredictionService implements PublicPredictionUseCase {
-
-    private static final Logger log = LoggerFactory.getLogger(PublicPredictionService.class);
 
     private final PublicBookmarkService publicBookmarks;
     private final PublicRunService runs;
     private final PublicPredictionQuota quota;
-    private final ModelRepository modelRepository;
-    private final ModelArtifactContentReader artifactReader;
-    private final AnalyzerClient analyzerClient;
-    private final ObjectMapper objectMapper;
-    /** The runtime is one process shared by every workspace; public runs may take only this much of it. */
-    private final Semaphore runtimeSlots;
-
-    public PublicPredictionService(
-            PublicBookmarkService publicBookmarks,
-            PublicRunService runs,
-            PublicPredictionQuota quota,
-            ModelRepository modelRepository,
-            ModelArtifactContentReader artifactReader,
-            AnalyzerClient analyzerClient,
-            ObjectMapper objectMapper,
-            @Value("${mlsuite.public-prediction.max-concurrent}") int maxConcurrent) {
-        this.publicBookmarks = publicBookmarks;
-        this.runs = runs;
-        this.quota = quota;
-        this.modelRepository = modelRepository;
-        this.artifactReader = artifactReader;
-        this.analyzerClient = analyzerClient;
-        this.objectMapper = objectMapper;
-        this.runtimeSlots = new Semaphore(maxConcurrent);
-    }
+    private final PublicRuntimeSlots slots;
+    private final PublicModelRuntime runtime;
 
     /**
      * A run is counted only after the bookmark and its values were accepted, so a missing
@@ -107,71 +71,28 @@ public class PublicPredictionService implements PublicPredictionUseCase {
 
     private Map<Long, Map<String, Object>> perform(PublicPredictionPlan plan) {
         // Admission follows the cheap checks and precedes the first artifact read.
-        if (!runtimeSlots.tryAcquire()) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
-                    "Too many public runs are in progress. Try again in a moment.");
-        }
-        try {
+        return slots.run(() -> {
+            String caller = "Public bookmark " + plan.publicId();
             Map<Long, Map<String, Object>> answers = new LinkedHashMap<>();
             for (ModelCall call : plan.calls()) {
-                Map<String, Object> answer = predict(plan.publicId(), call);
+                Map<String, Object> answer = predict(caller, call);
+                // A visitor's browser asks for no explanation, as a workspace form does: the same run produces it.
                 if (plan.reports().stream().anyMatch(route -> route.modelId().equals(call.modelId()) && !route.assessed())) {
-                    answer.put("reports", withExplanation(answer.get("reports"), explain(plan.publicId(), call)));
+                    answer.put("reports", withExplanation(answer.get("reports"),
+                            runtime.explain(caller, call.modelId(), call.input())));
                 }
                 answers.put(call.modelId(), answer);
             }
             return answers;
-        } finally {
-            runtimeSlots.release();
-        }
+        });
     }
 
-    private Map<String, Object> predict(String publicId, ModelCall call) {
+    private Map<String, Object> predict(String caller, ModelCall call) {
         try {
-            Model model = modelRepository.findById(call.modelId()).orElseThrow();
-            MultipartBodyBuilder parts = new MultipartBodyBuilder();
-            parts.part("model_file", artifactReader.loadVerified(model))
-                    .filename(model.getFileName())
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM);
-            parts.part("data", objectMapper.writeValueAsString(call.input())).contentType(MediaType.APPLICATION_JSON);
-            Map<String, Object> answer = new LinkedHashMap<>();
-            analyzerClient.post("/predict", parts.build()).forEach((key, value) -> answer.put(String.valueOf(key), value));
-            return answer;
-        } catch (AnalyzerServiceException ex) {
-            log.warn("Public bookmark {}: the runtime answered {} for model {}: {}",
-                    publicId, ex.getStatus(), call.modelId(), ex.getDetail());
-            if (ex.getStatus() >= 400 && ex.getStatus() < 500) {
-                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                        "The models could not use these values. Check the inputs and try again.");
-            }
-            throw failed();
-        } catch (JsonProcessingException | RuntimeException ex) {
-            log.error("Public bookmark {}: model {} could not be run", publicId, call.modelId(), ex);
-            throw failed();
-        }
-    }
-
-    /**
-     * A plugin report is the runtime's explanation of the prediction, which a workspace form asks
-     * for from the browser. A visitor's browser asks for nothing: the same run produces it here.
-     * A model the runtime cannot explain leaves that report out and the rest of the run stands.
-     */
-    private List<?> explain(String publicId, ModelCall call) {
-        try {
-            Model model = modelRepository.findById(call.modelId()).orElseThrow();
-            MultipartBodyBuilder parts = new MultipartBodyBuilder();
-            parts.part("model_file", artifactReader.loadVerified(model))
-                    .filename(model.getFileName())
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM);
-            parts.part("data", objectMapper.writeValueAsString(call.input())).contentType(MediaType.APPLICATION_JSON);
-            parts.part("traces", "[]").contentType(MediaType.APPLICATION_JSON);
-            return analyzerClient.post("/explain", parts.build()).get("reports") instanceof List<?> reports
-                    ? reports
-                    : List.of();
-        } catch (JsonProcessingException | RuntimeException ex) {
-            log.warn("Public bookmark {}: model {} could not be explained: {}",
-                    publicId, call.modelId(), ex.getMessage());
-            return List.of();
+            return runtime.predict(caller, call.modelId(), call.input());
+        } catch (AnalyzerServiceException refused) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "The models could not use these values. Check the inputs and try again.");
         }
     }
 
@@ -179,10 +100,5 @@ public class PublicPredictionService implements PublicPredictionUseCase {
         List<Object> reports = new ArrayList<>(predicted instanceof List<?> items ? items : List.of());
         reports.addAll(explained);
         return reports;
-    }
-
-    private static ResponseStatusException failed() {
-        return new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-                "The prediction could not be completed. Try again later.");
     }
 }

@@ -16,7 +16,8 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
 
 /**
- * A stored public run read back under the public form's keys. Each report route names the
+ * The reports of a run made outside the workspace, stored as a workspace run stores them and
+ * read back under the public form's keys. Each report route names the
  * model and the stored report; the result of that model holds, among its reports, the copy the
  * run stored for that report, and that copy minus the workspace's own naming is the payload
  * the runtime gave. A report no model answered has no copy and is left out.
@@ -50,6 +51,37 @@ final class PublicRunReports {
                     .ifPresent(route -> answers.add(new PublicRunFeedbackDto(route.key(), item.getType(), item.getValue())));
         }
         return answers;
+    }
+
+    /**
+     * A model's answer as a workspace run stores it: the runtime's reply, its reports followed
+     * by one copy per stored report the model serves (named and routed as the workspace names
+     * and routes them), and the meta a workspace run records. {@code input} is the record the
+     * model received.
+     */
+    static Map<String, Object> storedOutput(Long modelId, Map<String, Object> input, Map<String, Object> answer,
+            List<ReportRoute> routes) {
+        Map<String, Object> output = new LinkedHashMap<>(answer);
+        List<Object> reports = new ArrayList<>(answer.get("reports") instanceof List<?> items ? items : List.of());
+        List<Object> answered = List.copyOf(reports);
+        for (ReportRoute route : routes) {
+            Map<?, ?> raw = route.modelId().equals(modelId) ? answerTo(route, answered) : null;
+            if (raw == null) continue;
+            Map<String, Object> copy = new LinkedHashMap<>();
+            raw.forEach((key, value) -> copy.put(String.valueOf(key), value));
+            asWorkspaceStores(route.kind(), copy);
+            copy.put("id", route.storedId());
+            copy.put("kind", route.kind());
+            copy.put("mappedTo", route.target());
+            reports.add(copy);
+        }
+        output.put("reports", reports);
+        Map<String, Object> meta = new LinkedHashMap<>();
+        if (answer.get("meta") instanceof Map<?, ?> given) given.forEach((key, value) -> meta.put(String.valueOf(key), value));
+        meta.put("modelId", String.valueOf(modelId));
+        meta.put("backendFieldValues", input);
+        output.put("meta", meta);
+        return output;
     }
 
     /**

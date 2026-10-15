@@ -284,8 +284,8 @@ account. `PUBLIC_PREDICTION_MAX_MODEL_SIZE_MB` (default `50`) is the largest mod
 artifact a bookmark may bind and still be public: publishing, moving a public bookmark
 to another snapshot, and each public run are refused above it, because every run ships
 the artifact to the runtime. `PUBLIC_PREDICTION_MAX_CONCURRENT` (default `2`) is how
-many public runs may execute at once; further ones receive `503 Service Unavailable`
-until a slot frees.
+many public and API key runs may execute at once together; further ones receive
+`503 Service Unavailable` until a slot frees.
 
 A public run is stored like a workspace run, with its inputs, each model's result and any
 feedback, and is listed in the organization's Inferences with the origin "Public page"; it
@@ -331,6 +331,41 @@ real_ip_recursive on;
 
 The proxy must set or append to `X-Forwarded-For` itself. Do not list a network that
 visitors can connect from, or they could choose their own address again.
+
+An outside organization can run a public bookmark's model from its own software with an
+API key. A member with the publish permission issues one key per consumer on the bookmark,
+named after it: `POST /api/schema-bookmarks/<id>/api-keys` with `{"name": "Lab2Pressure"}`
+(unique on the bookmark, at most 80 characters). That answer is the only one that carries
+the secret (`mls_...`); hand it over privately. `GET` on the same path lists the keys,
+`DELETE .../api-keys/<key id>` revokes one. Keys never expire. A key works only while its
+bookmark is public and its snapshot binds exactly one model; unpublishing keeps the keys.
+The consumer sends one record under the model's own signature feature names:
+
+```http
+POST /api/public/model-predictions
+X-MLSuite-Key: mls_...
+Content-Type: application/json
+
+{"features": {"age": 52, "sex__male": 1, "sex__female": 0}}
+```
+
+and gets back only the model's outputs, in output order: a classifier's class with its
+probabilities by the class labels in the model's bundle, or a regressor's value.
+
+```json
+{"outputs": [{"prediction": "high", "probabilities": {"low": 0.2, "high": 0.8}}, {"value": 41.5}]}
+```
+
+The full run is kept as the organization's inference, with the origin "API" and the key's
+name as its author. Each value must be a number, a boolean, a text of at most 256
+characters, or null; beyond that only the runtime checks the record against the model, so
+coherent one-hot groups and sensible ranges are the consumer's responsibility. Errors:
+`400` a malformed body or value, `401` a missing or unknown key, `404` the bookmark is not
+public, `409` its snapshot binds other than one model, its model exceeds the size limit, or
+it moved during the run, `422` the model refused the record (the message gives the
+runtime's reason), `502` the run failed, `503` no runtime slot is free. Key runs have no
+quota. The endpoint accepts any origin without credentials, but a key embedded in browser
+JavaScript is readable by anyone who loads the page: call it from the consumer's backend.
 
 Persistence is abstracted by capability, not by a generic database wrapper.
 Spring Data repository interfaces isolate aggregate persistence, while
@@ -416,7 +451,7 @@ flowchart LR
     ML --> API
 ```
 
-The browser sends authenticated requests to Spring; only `/api/public/**` answers without a session, and it serves nothing but bookmarks a member with the publish permission made public: their form, the form inputs of the runs that member marked as their examples, and a run of their models that is routed by Spring and stored as the organization's inference under the visitor who made it. Spring enforces workspace permissions, stores durable state, and delegates artifact analysis or prediction to Python. Results return through Spring so model, schema, input, output, and feedback identities remain traceable.
+The browser sends authenticated requests to Spring; only `/api/public/**` answers without a session, and it serves nothing but bookmarks a member with the publish permission made public: their form, the form inputs of the runs that member marked as their examples, and a run of their models that is routed by Spring and stored as the organization's inference under the visitor who made it, or under the API key a consumer's software called with. Spring enforces workspace permissions, stores durable state, and delegates artifact analysis or prediction to Python. Results return through Spring so model, schema, input, output, and feedback identities remain traceable.
 
 ## License
 
