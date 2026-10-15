@@ -62,7 +62,7 @@ const validStatus = (value: string): InferenceFilters["status"] =>
 const validFeedback = (value: string): InferenceFilters["feedback"] =>
   value === "COMPLETED" || value === "PENDING" || value === "NOT_REQUIRED" ? value : "all";
 const validOrigin = (value: string): InferenceFilters["origin"] =>
-  value === "WORKSPACE" || value === "PUBLIC" ? value : "all";
+  value === "WORKSPACE" || value === "PUBLIC" || value === "API" ? value : "all";
 
 export function InferencesPage({
   renderExportAction,

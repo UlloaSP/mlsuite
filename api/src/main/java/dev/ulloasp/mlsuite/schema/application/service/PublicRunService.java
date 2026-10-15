@@ -3,7 +3,6 @@ package dev.ulloasp.mlsuite.schema.application.service;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -103,7 +102,8 @@ public class PublicRunService implements PublicRunUseCase {
         run = runRepository.save(run);
         List<PredictionResult> results = new ArrayList<>();
         for (ModelCall call : plan.calls()) {
-            Map<String, Object> output = storedOutput(call, answers.getOrDefault(call.modelId(), Map.of()), plan.reports());
+            Map<String, Object> output = PublicRunReports.storedOutput(call.modelId(), call.input(),
+                    answers.getOrDefault(call.modelId(), Map.of()), plan.reports());
             results.add(resultRepository.save(new PredictionResult(run, modelRepository.findById(call.modelId()).orElseThrow(),
                     call.input(), output, PredictionResultStatus.SUCCESS, null, null)));
         }
@@ -217,35 +217,6 @@ public class PublicRunService implements PublicRunUseCase {
                 PublicExampleInputs.of(run.getSchemaVersion().getFormSchema(), run.getInputData()),
                 PublicRunReports.of(form.reportRoutes(), results),
                 PublicRunReports.feedback(form.reportRoutes(), feedback));
-    }
-
-    /**
-     * A model's answer as a workspace run stores it: the runtime's reply, its reports followed
-     * by one copy per stored report the model serves (named and routed as the workspace names
-     * and routes them), and the meta a workspace run records.
-     */
-    private static Map<String, Object> storedOutput(ModelCall call, Map<String, Object> answer, List<ReportRoute> routes) {
-        Map<String, Object> output = new LinkedHashMap<>(answer);
-        List<Object> reports = new ArrayList<>(answer.get("reports") instanceof List<?> items ? items : List.of());
-        List<Object> answered = List.copyOf(reports);
-        for (ReportRoute route : routes) {
-            Map<?, ?> raw = route.modelId().equals(call.modelId()) ? PublicRunReports.answerTo(route, answered) : null;
-            if (raw == null) continue;
-            Map<String, Object> copy = new LinkedHashMap<>();
-            raw.forEach((key, value) -> copy.put(String.valueOf(key), value));
-            PublicRunReports.asWorkspaceStores(route.kind(), copy);
-            copy.put("id", route.storedId());
-            copy.put("kind", route.kind());
-            copy.put("mappedTo", route.target());
-            reports.add(copy);
-        }
-        output.put("reports", reports);
-        Map<String, Object> meta = new LinkedHashMap<>();
-        if (answer.get("meta") instanceof Map<?, ?> given) given.forEach((key, value) -> meta.put(String.valueOf(key), value));
-        meta.put("modelId", String.valueOf(call.modelId()));
-        meta.put("backendFieldValues", call.input());
-        output.put("meta", meta);
-        return output;
     }
 
     private static String runName(OffsetDateTime now) {

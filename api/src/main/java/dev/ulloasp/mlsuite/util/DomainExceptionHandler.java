@@ -15,6 +15,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -119,6 +120,14 @@ public class DomainExceptionHandler {
     })
     public ResponseEntity<ErrorDto> handleBadRequest(RuntimeException ex, HttpServletRequest req) {
         return respond(HttpStatus.BAD_REQUEST, ex, req);
+    }
+
+    /** A body the endpoint cannot read is the caller's mistake; the parser's own words stay out of the answer. */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorDto> handleUnreadableBody(HttpMessageNotReadableException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorDto.of(HttpStatus.BAD_REQUEST.value(), "The request body is not valid JSON for this endpoint.",
+                        req.getRequestURI()));
     }
 
     // ---- Analyzer (dynamic status) ----

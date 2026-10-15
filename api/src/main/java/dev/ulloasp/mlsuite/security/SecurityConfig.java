@@ -101,6 +101,16 @@ public class SecurityConfig {
                 config.addAllowedMethod("DELETE");
                 config.addAllowedMethod("PATCH");
 
+                // Outside software calls with an API key, never with cookies, from any origin. The
+                // source answers with the first pattern that matches, so this one goes before /**.
+                CorsConfiguration consumers = new CorsConfiguration();
+                consumers.setAllowCredentials(false);
+                consumers.addAllowedOrigin("*");
+                consumers.addAllowedMethod("POST");
+                consumers.addAllowedMethod("OPTIONS");
+                consumers.addAllowedHeader("Content-Type");
+                consumers.addAllowedHeader("X-MLSuite-Key");
+                source.registerCorsConfiguration("/api/public/model-predictions", consumers);
                 source.registerCorsConfiguration("/**", config);
 
                 return source;

@@ -73,6 +73,11 @@ def make_tree() -> DecisionTreeClassifier:
     return DecisionTreeClassifier(random_state=0, max_depth=3).fit(features, labels)
 
 
+def make_decimal_tree() -> DecisionTreeClassifier:
+    features = pd.DataFrame({"ratio": [0.11, 0.12, 0.27, 0.29]})
+    return DecisionTreeClassifier(random_state=0).fit(features, [0, 0, 1, 1])
+
+
 def make_tree_with_unused_tail_feature() -> DecisionTreeClassifier:
     features = pd.DataFrame(
         {

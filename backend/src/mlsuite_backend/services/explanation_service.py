@@ -6,8 +6,8 @@ from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from ..bundles import load_bundle
 from ..utils.crystal_tree import (
     build_tree_path_explanation,
-    explain_with_feature_name_aliases,
-    parse_trace_definitions,
+    explain_tree,
+    require_no_traces,
 )
 from ..utils.errors import bad_request, internal_runtime_error
 from ..utils.records import parse_record_json
@@ -21,7 +21,7 @@ async def explain(model_upload: UploadFile, data: str, traces: str) -> dict[str,
         raise bad_request(message)
 
     record = parse_record_json(data, "Invalid data JSON")
-    trace_definitions = parse_trace_definitions(traces)
+    require_no_traces(traces)
     feature_names = list(bundle.feature_names)
     try:
         frame = pd.DataFrame([bundle.row_from_record(record)], columns=feature_names)
@@ -29,17 +29,10 @@ async def explain(model_upload: UploadFile, data: str, traces: str) -> dict[str,
         raise bad_request(str(exc)) from exc
 
     try:
-        generated_trees = explain_with_feature_name_aliases(
-            model,
-            frame,
-            feature_names,
-            trace_definitions,
-        )
+        trees = explain_tree(model, frame)
     except Exception as exc:  # pragma: no cover - third-party runtime failure path
         raise internal_runtime_error(f"crystal-tree explain error: {exc}") from exc
 
-    trees = [item.ascii_tree() for item in generated_trees if item is not None]
-    trees = [tree for tree in trees if tree.strip()]
     if not trees:
         trees = [build_tree_path_explanation(model, frame, feature_names)]
     return {

@@ -145,8 +145,8 @@ describe("bookmark visibility in the schema repository", () => {
     expect(host.textContent).toContain("Private");
 
     const items = await openActions();
-    expect(labels(items)).toEqual(["Public examples", "Publish"]);
-    await click(items![1]);
+    expect(labels(items)).toEqual(["Public examples", "API keys", "Publish"]);
+    await click(items![2]);
     expect(document.body.textContent).toContain("Anyone will find it in Explore");
     expect(fetchMock).not.toHaveBeenCalled();
     await click("Publish");
@@ -190,6 +190,7 @@ describe("bookmark visibility in the schema repository", () => {
       "Copy public link",
       "Open public page",
       "Public examples",
+      "API keys",
       "Unpublish",
     ]);
     await click(items![0]);
@@ -197,7 +198,7 @@ describe("bookmark visibility in the schema repository", () => {
     expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/explore/${PUBLIC_ID}`);
 
     items = await openActions();
-    await click(items![3]);
+    await click(items![4]);
     await settle();
     expect(calledPaths()).toEqual(["/api/schema-bookmarks/70/unpublish"]);
     expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: "POST" });
