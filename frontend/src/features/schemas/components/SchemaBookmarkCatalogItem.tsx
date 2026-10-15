@@ -7,7 +7,6 @@ import {
   ExternalLink,
   GitCommitHorizontal,
   Globe,
-  KeyRound,
   Link2,
   ListChecks,
   Lock,
@@ -16,7 +15,7 @@ import {
   Tag,
 } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { isHttpError } from "@/shared/api/http";
 import { useCan } from "@/capabilities/workspace-context/workspace-context";
@@ -26,10 +25,10 @@ import { appButtonClass } from "@/shared/ui/button-styles";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
 import { useActionDialog } from "@/shared/ui/use-action-dialog";
+import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
 import { useSetBookmarkVisibilityMutation } from "@/features/schemas/api/schema-mutations";
 import { BookmarkEditDialog } from "@/features/schemas/components/BookmarkEditDialog";
-import { BookmarkApiKeysDialog } from "@/features/schemas/components/BookmarkApiKeysDialog";
 import { BookmarkExamplesDialog } from "@/features/schemas/components/BookmarkExamplesDialog";
 import { bookmarkExampleSummary } from "@/features/schemas/lib/bookmark-example-status";
 import { publicBookmarkHref } from "@/features/schemas/lib/public-bookmark-href";
@@ -46,11 +45,12 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
   // Saving, moving and editing a bookmark share one permission in the API.
   const canEdit = useCan("canCreateModels");
   const canPublish = useCan("canPublishBookmarks");
+  const canViewApiAccess = useCan("canViewApiAccess");
+  const navigate = useNavigate();
   const visibility = useSetBookmarkVisibilityMutation();
   const { confirm, dialog } = useActionDialog();
   const [examplesOpen, setExamplesOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [keysOpen, setKeysOpen] = useState(false);
   const examples = bookmarkExampleSummary(bookmark);
   const publicPath =
     bookmark.visibility === "PUBLIC" && bookmark.publicId
@@ -129,14 +129,19 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
           },
         ]
       : []),
-    ...(canPublish
+    ...(canViewApiAccess
       ? [
           {
-            key: "api-keys",
-            label: "API keys",
-            icon: KeyRound,
-            onSelect: () => setKeysOpen(true),
+            key: "api-access",
+            label: "API access",
+            icon: SECTION_ICONS.api,
+            // Clients run bookmarks through the API section, which documents this one's endpoint.
+            onSelect: () => void navigate(`/api-access/docs?bookmark=${bookmark.id}`),
           },
+        ]
+      : []),
+    ...(canPublish
+      ? [
           publicPath
             ? {
                 key: "unpublish",
@@ -198,13 +203,6 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
       />
       {dialog}
       <BookmarkEditDialog bookmark={bookmark} open={editOpen} onClose={() => setEditOpen(false)} />
-      {canPublish ? (
-        <BookmarkApiKeysDialog
-          bookmark={bookmark}
-          open={keysOpen}
-          onClose={() => setKeysOpen(false)}
-        />
-      ) : null}
       <BookmarkExamplesDialog
         bookmark={bookmark}
         open={examplesOpen}

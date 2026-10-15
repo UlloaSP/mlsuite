@@ -101,6 +101,8 @@ const permissions = (patch: Partial<WorkspacePermissionsDto> = {}): WorkspacePer
   canManageReviews: false,
   canViewPlugins: false,
   canManagePlugins: false,
+  canViewApiAccess: false,
+  canManageApiAccess: false,
   ...patch,
 });
 

@@ -1,6 +1,126 @@
 {
   "components": {
     "schemas": {
+      "AdminApiClientDto": {
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "keyCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "lastUsedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "organizationId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "organizationLogoUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "organizationName": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "SUSPENDED"
+            ],
+            "type": "string"
+          },
+          "suspendedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "suspensionReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "weekCalls": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "weekErrors": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "keyCount",
+          "lastUsedAt",
+          "name",
+          "organizationId",
+          "organizationLogoUrl",
+          "organizationName",
+          "status",
+          "suspendedAt",
+          "suspensionReason",
+          "weekCalls",
+          "weekErrors"
+        ],
+        "type": "object"
+      },
+      "AdminApiOrganizationDto": {
+        "properties": {
+          "clientCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "customLimit": {
+            "type": "boolean"
+          },
+          "logoUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "monthCalls": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "monthlyLimit": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "organizationId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "clientCount",
+          "customLimit",
+          "logoUrl",
+          "monthCalls",
+          "monthlyLimit",
+          "name",
+          "organizationId"
+        ],
+        "type": "object"
+      },
       "AdminCreateUserRequest": {
         "properties": {
           "email": {
@@ -163,6 +283,610 @@
         ],
         "type": "object"
       },
+      "ApiAccessBookmarkDto": {
+        "properties": {
+          "apiId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "clientNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "modelId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "modelName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "refusal": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "schemaId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "schemaName": {
+            "type": "string"
+          },
+          "version": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "versionName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "visibility": {
+            "enum": [
+              "PRIVATE",
+              "PUBLIC"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "apiId",
+          "clientNames",
+          "id",
+          "modelId",
+          "modelName",
+          "name",
+          "refusal",
+          "schemaId",
+          "schemaName",
+          "version",
+          "versionName",
+          "visibility"
+        ],
+        "type": "object"
+      },
+      "ApiCallLimitRequest": {
+        "properties": {
+          "monthlyCalls": {
+            "format": "int32",
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "ApiClientCalls": {
+        "properties": {
+          "calls": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "clientId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "clientName": {
+            "type": "string"
+          },
+          "errors": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "organizationId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "organizationName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "calls",
+          "clientId",
+          "clientName",
+          "errors",
+          "organizationId",
+          "organizationName"
+        ],
+        "type": "object"
+      },
+      "ApiClientDto": {
+        "properties": {
+          "bookmarks": {
+            "items": {
+              "$ref": "#/components/schemas/ApiAccessBookmarkDto"
+            },
+            "type": "array"
+          },
+          "client": {
+            "$ref": "#/components/schemas/ApiClientSummaryDto"
+          },
+          "keys": {
+            "items": {
+              "$ref": "#/components/schemas/ApiClientKeyDto"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "bookmarks",
+          "client",
+          "keys"
+        ],
+        "type": "object"
+      },
+      "ApiClientKeyDto": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdByName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "lastUsedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "createdByName",
+          "id",
+          "lastUsedAt",
+          "name",
+          "prefix"
+        ],
+        "type": "object"
+      },
+      "ApiClientSummaryDto": {
+        "properties": {
+          "bookmarkCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdByName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "keyCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "lastUsedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "SUSPENDED"
+            ],
+            "type": "string"
+          },
+          "suspendedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "suspensionReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bookmarkCount",
+          "createdAt",
+          "createdByName",
+          "description",
+          "id",
+          "keyCount",
+          "lastUsedAt",
+          "name",
+          "status",
+          "suspendedAt",
+          "suspensionReason",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "ApiPredictionBookmark": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object"
+      },
+      "ApiPredictionDto": {
+        "properties": {
+          "bookmark": {
+            "$ref": "#/components/schemas/ApiPredictionBookmark"
+          },
+          "model": {
+            "$ref": "#/components/schemas/ApiPredictionModel"
+          },
+          "outputs": {
+            "items": {
+              "$ref": "#/components/schemas/ApiPredictionOutput"
+            },
+            "type": "array"
+          },
+          "requestId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/ApiPredictionSnapshot"
+          }
+        },
+        "required": [
+          "bookmark",
+          "model",
+          "outputs",
+          "requestId",
+          "snapshot"
+        ],
+        "type": "object"
+      },
+      "ApiPredictionModel": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "sha256"
+        ],
+        "type": "object"
+      },
+      "ApiPredictionOutput": {
+        "properties": {
+          "prediction": {
+            "type": "string"
+          },
+          "probabilities": {
+            "additionalProperties": {
+              "format": "double",
+              "type": "number"
+            },
+            "type": "object"
+          },
+          "value": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "ApiPredictionRequest": {
+        "properties": {
+          "features": {
+            "additionalProperties": { },
+            "type": "object"
+          }
+        },
+        "required": [
+          "features"
+        ],
+        "type": "object"
+      },
+      "ApiPredictionSnapshot": {
+        "properties": {
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "version"
+        ],
+        "type": "object"
+      },
+      "ApiRequestDto": {
+        "properties": {
+          "bookmarkId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "bookmarkName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "clientId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "clientName": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "durationMs": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "errorCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "keyPrefix": {
+            "type": "string"
+          },
+          "predictionRunId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "requestId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bookmarkId",
+          "bookmarkName",
+          "clientId",
+          "clientName",
+          "createdAt",
+          "durationMs",
+          "errorCode",
+          "keyPrefix",
+          "predictionRunId",
+          "requestId",
+          "status"
+        ],
+        "type": "object"
+      },
+      "ApiUsageDto": {
+        "properties": {
+          "activeClients": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "activeOrganizations": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "calls": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "failed": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "month": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ApiUsageMonth"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "p95DurationMs": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "period": {
+            "type": "string"
+          },
+          "recentFailures": {
+            "items": {
+              "$ref": "#/components/schemas/ApiRequestDto"
+            },
+            "type": "array"
+          },
+          "rejected": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "retentionDays": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "runtimeBusy": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/ApiUsagePoint"
+            },
+            "type": "array"
+          },
+          "since": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "topClients": {
+            "items": {
+              "$ref": "#/components/schemas/ApiClientCalls"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "activeClients",
+          "activeOrganizations",
+          "calls",
+          "failed",
+          "month",
+          "p95DurationMs",
+          "period",
+          "recentFailures",
+          "rejected",
+          "retentionDays",
+          "runtimeBusy",
+          "series",
+          "since",
+          "topClients"
+        ],
+        "type": "object"
+      },
+      "ApiUsageMonth": {
+        "properties": {
+          "calls": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "limit": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "resetsAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "calls",
+          "limit",
+          "resetsAt"
+        ],
+        "type": "object"
+      },
+      "ApiUsagePoint": {
+        "properties": {
+          "failed": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "rejected": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "start": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "succeeded": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "failed",
+          "rejected",
+          "start",
+          "succeeded"
+        ],
+        "type": "object"
+      },
       "AuditEventDto": {
         "properties": {
           "action": {
@@ -242,46 +966,6 @@
         "required": [
           "email",
           "password"
-        ],
-        "type": "object"
-      },
-      "BookmarkApiKeyDto": {
-        "properties": {
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "createdByName": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "id": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "lastUsedAt": {
-            "format": "date-time",
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "name": {
-            "type": "string"
-          },
-          "prefix": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "createdAt",
-          "createdByName",
-          "id",
-          "lastUsedAt",
-          "name",
-          "prefix"
         ],
         "type": "object"
       },
@@ -453,55 +1137,26 @@
         ],
         "type": "object"
       },
-      "ConsumerOutput": {
-        "properties": {
-          "prediction": {
-            "type": "string"
-          },
-          "probabilities": {
-            "additionalProperties": {
-              "format": "double",
-              "type": "number"
-            },
-            "type": "object"
-          },
-          "value": {
-            "format": "double",
-            "type": "number"
-          }
-        },
-        "type": "object"
-      },
-      "ConsumerPredictionDto": {
-        "properties": {
-          "outputs": {
-            "items": {
-              "$ref": "#/components/schemas/ConsumerOutput"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "outputs"
-        ],
-        "type": "object"
-      },
-      "ConsumerPredictionRequest": {
-        "properties": {
-          "features": {
-            "additionalProperties": { },
-            "type": "object"
-          }
-        },
-        "required": [
-          "features"
-        ],
-        "type": "object"
-      },
-      "CreateBookmarkApiKeyRequest": {
+      "CreateApiClientKeyRequest": {
         "properties": {
           "name": {
-            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "CreateApiClientRequest": {
+        "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
             "type": "string"
           }
         },
@@ -1405,10 +2060,10 @@
         ],
         "type": "object"
       },
-      "IssuedBookmarkApiKeyDto": {
+      "IssuedApiClientKeyDto": {
         "properties": {
           "key": {
-            "$ref": "#/components/schemas/BookmarkApiKeyDto"
+            "$ref": "#/components/schemas/ApiClientKeyDto"
           },
           "secret": {
             "type": "string"
@@ -2068,6 +2723,72 @@
         ],
         "type": "object"
       },
+      "PageDtoAdminApiClientDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminApiClientDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoAdminApiOrganizationDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminApiOrganizationDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
       "PageDtoAdminUserDto": {
         "properties": {
           "hasNext": {
@@ -2076,6 +2797,72 @@
           "items": {
             "items": {
               "$ref": "#/components/schemas/AdminUserDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoApiClientSummaryDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ApiClientSummaryDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoApiRequestDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ApiRequestDto"
             },
             "type": "array"
           },
@@ -2958,7 +3745,9 @@
               "MANAGE_REVIEWS",
               "VIEW_PLUGINS",
               "MANAGE_PLUGINS",
-              "VIEW_AUDIT_LOG"
+              "VIEW_AUDIT_LOG",
+              "VIEW_API_ACCESS",
+              "MANAGE_API_ACCESS"
             ],
             "type": "string"
           },
@@ -4217,7 +5006,9 @@
                 "MANAGE_REVIEWS",
                 "VIEW_PLUGINS",
                 "MANAGE_PLUGINS",
-                "VIEW_AUDIT_LOG"
+                "VIEW_AUDIT_LOG",
+                "VIEW_API_ACCESS",
+                "MANAGE_API_ACCESS"
               ],
               "type": "string"
             },
@@ -5164,6 +5955,17 @@
         ],
         "type": "object"
       },
+      "SuspendApiClientRequest": {
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "type": "object"
+      },
       "TerminalSessionRequest": {
         "properties": {
           "cols": {
@@ -5244,6 +6046,23 @@
         },
         "required": [
           "nextOwnerMembershipId"
+        ],
+        "type": "object"
+      },
+      "UpdateApiClientRequest": {
+        "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
         ],
         "type": "object"
       },
@@ -5529,6 +6348,9 @@
           "canInviteMembers": {
             "type": "boolean"
           },
+          "canManageApiAccess": {
+            "type": "boolean"
+          },
           "canManageInvitations": {
             "type": "boolean"
           },
@@ -5554,6 +6376,9 @@
             "type": "boolean"
           },
           "canTransferOwnership": {
+            "type": "boolean"
+          },
+          "canViewApiAccess": {
             "type": "boolean"
           },
           "canViewInvitations": {
@@ -5583,6 +6408,7 @@
           "canEditOrganization",
           "canExportPredictions",
           "canInviteMembers",
+          "canManageApiAccess",
           "canManageInvitations",
           "canManageMemberRoles",
           "canManagePlugins",
@@ -5592,6 +6418,7 @@
           "canReview",
           "canRunPredictions",
           "canTransferOwnership",
+          "canViewApiAccess",
           "canViewInvitations",
           "canViewMembers",
           "canViewModels",
@@ -5636,6 +6463,278 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/admin/api-traffic/clients": {
+      "get": {
+        "operationId": "listApiTrafficClients",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoAdminApiClientDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "admin-api-traffic-controller"
+        ]
+      }
+    },
+    "/api/admin/api-traffic/clients/{clientId}/reinstate": {
+      "post": {
+        "operationId": "reinstateApiClient",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminApiClientDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "admin-api-traffic-controller"
+        ]
+      }
+    },
+    "/api/admin/api-traffic/clients/{clientId}/suspend": {
+      "post": {
+        "operationId": "suspendApiClient",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspendApiClientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminApiClientDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "admin-api-traffic-controller"
+        ]
+      }
+    },
+    "/api/admin/api-traffic/organizations": {
+      "get": {
+        "operationId": "listApiTrafficOrganizations",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoAdminApiOrganizationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "admin-api-traffic-controller"
+        ]
+      }
+    },
+    "/api/admin/api-traffic/organizations/{organizationId}/call-limit": {
+      "put": {
+        "operationId": "setApiCallLimit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiCallLimitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminApiOrganizationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "admin-api-traffic-controller"
+        ]
+      }
+    },
+    "/api/admin/api-traffic/usage": {
+      "get": {
+        "operationId": "getApiTrafficUsage",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "default": "day",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiUsageDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "admin-api-traffic-controller"
+        ]
+      }
+    },
     "/api/admin/infrastructure/overview": {
       "get": {
         "operationId": "overview",
@@ -6259,6 +7358,478 @@
         },
         "tags": [
           "analyzer-controller"
+        ]
+      }
+    },
+    "/api/api-access/bookmarks": {
+      "get": {
+        "operationId": "listApiAccessBookmarks",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ApiAccessBookmarkDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "api-access-controller"
+        ]
+      }
+    },
+    "/api/api-access/requests": {
+      "get": {
+        "operationId": "listApiRequests",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "clientId",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoApiRequestDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "api-access-controller"
+        ]
+      }
+    },
+    "/api/api-access/usage": {
+      "get": {
+        "operationId": "getApiUsage",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "default": "day",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "clientId",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiUsageDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "api-access-controller"
+        ]
+      }
+    },
+    "/api/api-clients": {
+      "get": {
+        "operationId": "listApiClients",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoApiClientSummaryDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "api-client-controller"
+        ]
+      },
+      "post": {
+        "operationId": "createApiClient",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApiClientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiClientDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "api-client-controller"
+        ]
+      }
+    },
+    "/api/api-clients/{clientId}": {
+      "delete": {
+        "operationId": "deleteApiClient",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "api-client-controller"
+        ]
+      },
+      "get": {
+        "operationId": "getApiClient",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiClientDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "api-client-controller"
+        ]
+      },
+      "patch": {
+        "operationId": "updateApiClient",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateApiClientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiClientDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "api-client-controller"
+        ]
+      }
+    },
+    "/api/api-clients/{clientId}/bookmarks/{bookmarkId}": {
+      "delete": {
+        "operationId": "revokeApiClientBookmark",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiClientDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "api-client-controller"
+        ]
+      },
+      "put": {
+        "operationId": "grantApiClientBookmark",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiClientDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "api-client-controller"
+        ]
+      }
+    },
+    "/api/api-clients/{clientId}/keys": {
+      "post": {
+        "operationId": "issueApiClientKey",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApiClientKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssuedApiClientKeyDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "api-client-controller"
+        ]
+      }
+    },
+    "/api/api-clients/{clientId}/keys/{keyId}": {
+      "delete": {
+        "operationId": "revokeApiClientKey",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "keyId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "api-client-controller"
         ]
       }
     },
@@ -9632,46 +11203,6 @@
         ]
       }
     },
-    "/api/public/model-predictions": {
-      "post": {
-        "operationId": "predictWithApiKey",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "X-MLSuite-Key",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ConsumerPredictionRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ConsumerPredictionDto"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "consumer-prediction-controller"
-        ]
-      }
-    },
     "/api/public/organizations/{organizationId}/logo": {
       "get": {
         "operationId": "read",
@@ -9947,112 +11478,6 @@
         },
         "tags": [
           "schema-bookmark-controller"
-        ]
-      }
-    },
-    "/api/schema-bookmarks/{bookmarkId}/api-keys": {
-      "get": {
-        "operationId": "listApiKeys",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "bookmarkId",
-            "required": true,
-            "schema": {
-              "format": "int64",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/BookmarkApiKeyDto"
-                  },
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "bookmark-api-key-controller"
-        ]
-      },
-      "post": {
-        "operationId": "createApiKey",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "bookmarkId",
-            "required": true,
-            "schema": {
-              "format": "int64",
-              "type": "integer"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateBookmarkApiKeyRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IssuedBookmarkApiKeyDto"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "bookmark-api-key-controller"
-        ]
-      }
-    },
-    "/api/schema-bookmarks/{bookmarkId}/api-keys/{keyId}": {
-      "delete": {
-        "operationId": "revokeApiKey",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "bookmarkId",
-            "required": true,
-            "schema": {
-              "format": "int64",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "path",
-            "name": "keyId",
-            "required": true,
-            "schema": {
-              "format": "int64",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "bookmark-api-key-controller"
         ]
       }
     },
@@ -12249,6 +13674,54 @@
         },
         "tags": [
           "user-controller"
+        ]
+      }
+    },
+    "/api/v1/bookmarks/{bookmarkId}/predictions": {
+      "post": {
+        "operationId": "predictBookmark",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-MLSuite-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiPredictionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiPredictionDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "api-prediction-controller"
         ]
       }
     },

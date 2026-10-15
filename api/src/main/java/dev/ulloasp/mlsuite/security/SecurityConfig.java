@@ -52,6 +52,7 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/readiness").permitAll()
                                                 .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
                                                 .requestMatchers("/api/public/**").permitAll()
+                                                .requestMatchers("/api/v1/**").permitAll()
                                                 .requestMatchers("/", "/assets/**").permitAll()
                                                 .anyRequest().authenticated())
                                 .exceptionHandling(e -> e.authenticationEntryPoint(
@@ -101,16 +102,18 @@ public class SecurityConfig {
                 config.addAllowedMethod("DELETE");
                 config.addAllowedMethod("PATCH");
 
-                // Outside software calls with an API key, never with cookies, from any origin. The
-                // source answers with the first pattern that matches, so this one goes before /**.
-                CorsConfiguration consumers = new CorsConfiguration();
-                consumers.setAllowCredentials(false);
-                consumers.addAllowedOrigin("*");
-                consumers.addAllowedMethod("POST");
-                consumers.addAllowedMethod("OPTIONS");
-                consumers.addAllowedHeader("Content-Type");
-                consumers.addAllowedHeader("X-MLSuite-Key");
-                source.registerCorsConfiguration("/api/public/model-predictions", consumers);
+                // API clients call with a key, never with cookies, from any origin. The source
+                // answers with the first pattern that matches, so this one goes before /**.
+                CorsConfiguration clients = new CorsConfiguration();
+                clients.setAllowCredentials(false);
+                clients.addAllowedOrigin("*");
+                clients.addAllowedMethod("POST");
+                clients.addAllowedMethod("OPTIONS");
+                clients.addAllowedHeader("Content-Type");
+                clients.addAllowedHeader("X-MLSuite-Key");
+                clients.addExposedHeader("X-Request-Id");
+                clients.addExposedHeader("Retry-After");
+                source.registerCorsConfiguration("/api/v1/**", clients);
                 source.registerCorsConfiguration("/**", config);
 
                 return source;

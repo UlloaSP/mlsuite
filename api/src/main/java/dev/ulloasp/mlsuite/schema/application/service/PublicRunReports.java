@@ -22,7 +22,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
  * run stored for that report, and that copy minus the workspace's own naming is the payload
  * the runtime gave. A report no model answered has no copy and is left out.
  */
-final class PublicRunReports {
+public final class PublicRunReports {
 
     private static final Set<String> STORED_NAMING = Set.of("id", "mappedTo");
 
@@ -59,7 +59,7 @@ final class PublicRunReports {
      * and routes them), and the meta a workspace run records. {@code input} is the record the
      * model received.
      */
-    static Map<String, Object> storedOutput(Long modelId, Map<String, Object> input, Map<String, Object> answer,
+    public static Map<String, Object> storedOutput(Long modelId, Map<String, Object> input, Map<String, Object> answer,
             List<ReportRoute> routes) {
         Map<String, Object> output = new LinkedHashMap<>(answer);
         List<Object> reports = new ArrayList<>(answer.get("reports") instanceof List<?> items ? items : List.of());
@@ -90,7 +90,7 @@ final class PublicRunReports {
      * predicted class, and a regressor's values as numbers. Every reader of a stored run expects
      * that shape. A model that decides no class is read as its most probable one.
      */
-    static void asWorkspaceStores(String kind, Map<String, Object> report) {
+    public static void asWorkspaceStores(String kind, Map<String, Object> report) {
         if ("classifier".equals(kind)) {
             List<Double> probabilities = numbers(report.get("probabilities") instanceof List<?> rows
                     && !rows.isEmpty() && rows.get(0) instanceof List<?> first ? first : report.get("probabilities"));

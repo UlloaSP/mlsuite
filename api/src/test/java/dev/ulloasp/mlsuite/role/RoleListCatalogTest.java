@@ -99,7 +99,7 @@ class RoleListCatalogTest extends PublicPredictionFixture {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.roles").value(ROLES))
                 .andExpect(jsonPath("$.templates").value(5))
-                .andExpect(jsonPath("$.permissionCatalog.length()").value(7));
+                .andExpect(jsonPath("$.permissionCatalog.length()").value(8));
     }
 
     @Test
@@ -140,7 +140,7 @@ class RoleListCatalogTest extends PublicPredictionFixture {
         String permissions = organizationPath + "/permissions/catalog";
         mockMvc.perform(asOwner(get(permissions)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalItems").value(7))
+                .andExpect(jsonPath("$.totalItems").value(8))
                 .andExpect(jsonPath("$.items[0].name").value("Organization"));
         mockMvc.perform(asOwner(get(permissions).param("search", "transfer")))
                 .andExpect(jsonPath("$.totalItems").value(1))

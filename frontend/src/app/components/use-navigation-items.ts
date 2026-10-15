@@ -11,6 +11,8 @@ import { EXPLORE_NAVIGATION_ITEM } from "./explore-navigation";
 import { getActiveSchemaPath, getSchemaNavigationChildren } from "./schema-sidebar-navigation";
 import { useSectionMemory } from "./section-memory";
 import {
+  API_ACCESS_CHILDREN,
+  API_TRAFFIC_CHILDREN,
   INFRA_CHILDREN,
   type NavigationGroup,
   type NavigationItem,
@@ -67,6 +69,14 @@ export function useNavigationItems() {
       label: "Inferences",
     },
     {
+      visible: Boolean(permissions?.canViewApiAccess),
+      root: "/api-access",
+      to: "/api-access",
+      icon: SECTION_ICONS.api,
+      label: "API",
+      children: API_ACCESS_CHILDREN,
+    },
+    {
       visible: Boolean(permissions?.canViewPlugins),
       root: "/plugins",
       to: "/plugins",
@@ -106,6 +116,13 @@ export function useNavigationItems() {
           to: "/admin/public-bookmarks",
           icon: SECTION_ICONS.moderation,
           label: "Moderation",
+        },
+        {
+          root: "/admin/api-traffic",
+          to: "/admin/api-traffic",
+          icon: SECTION_ICONS.apiTraffic,
+          label: "API traffic",
+          children: API_TRAFFIC_CHILDREN,
         },
         {
           root: "/admin/infrastructure",

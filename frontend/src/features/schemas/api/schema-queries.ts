@@ -2,7 +2,7 @@ import { useCurrentOrganizationId } from "@/capabilities/workspace-context/works
 import { useInfiniteCatalog } from "@/shared/api/infinite-catalog";
 import { queryOptions, useQueries, useQuery, type QueryKey } from "@tanstack/react-query";
 import { getSchema, getSchemaPage, getSchemaVersion } from "./schema-api";
-import { getBookmarkApiKeys, getBoundModel, getSchemaBookmark } from "./schema-bookmark-api";
+import { getSchemaBookmark } from "./schema-bookmark-api";
 import { getSchemaDraft, getSchemaDraftDiff } from "./schema-draft-api";
 import {
   getPredictionResultFeedback,
@@ -10,12 +10,10 @@ import {
   getPredictionRun,
 } from "./schema-prediction-api";
 import {
-  BOOKMARK_API_KEYS_QUERY_KEY,
   PREDICTION_RESULT_FEEDBACK_QUERY_KEY,
   PREDICTION_RUNS_FEEDBACK_QUERY_KEY,
   PREDICTION_RUN_QUERY_KEY,
   SCHEMA_BOOKMARK_QUERY_KEY,
-  SCHEMA_BOUND_MODEL_QUERY_KEY,
   SCHEMA_CATALOG_PAGE_SIZE,
   SCHEMA_CATALOG_PAGE_QUERY_KEY,
   SCHEMA_DRAFT_DIFF_QUERY_KEY,
@@ -48,8 +46,6 @@ function byIdQuery<T>(
 const schemaQuery = byIdQuery(SCHEMA_QUERY_KEY, getSchema);
 const schemaVersionQuery = byIdQuery(SCHEMA_VERSION_QUERY_KEY, getSchemaVersion);
 const schemaBookmarkQuery = byIdQuery(SCHEMA_BOOKMARK_QUERY_KEY, getSchemaBookmark);
-const bookmarkApiKeysQuery = byIdQuery(BOOKMARK_API_KEYS_QUERY_KEY, getBookmarkApiKeys);
-const boundModelQuery = byIdQuery(SCHEMA_BOUND_MODEL_QUERY_KEY, getBoundModel);
 const schemaDraftQuery = byIdQuery(SCHEMA_DRAFT_QUERY_KEY, getSchemaDraft);
 const schemaDraftDiffQuery = byIdQuery(SCHEMA_DRAFT_DIFF_QUERY_KEY, getSchemaDraftDiff);
 const predictionRunQuery = byIdQuery(PREDICTION_RUN_QUERY_KEY, getPredictionRun);
@@ -65,8 +61,6 @@ export const predictionResultFeedbackQueryOptions = predictionResultFeedbackQuer
 export const useSchema = schemaQuery.useById;
 export const useSchemaVersion = schemaVersionQuery.useById;
 export const useSchemaBookmark = schemaBookmarkQuery.useById;
-export const useBookmarkApiKeys = bookmarkApiKeysQuery.useById;
-export const useBoundModel = boundModelQuery.useById;
 export const useSchemaDraft = schemaDraftQuery.useById;
 export const useSchemaDraftDiff = schemaDraftDiffQuery.useById;
 export const usePredictionRun = predictionRunQuery.useById;

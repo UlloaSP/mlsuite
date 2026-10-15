@@ -52,6 +52,11 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
     description:
       "Every prediction run, with its inputs, outputs, reports, feedback status, and the model and schema that produced it.",
   },
+  "nav:API": {
+    title: "API",
+    description:
+      "Let outside software run your bookmarks: create clients, issue their keys, give them bookmarks, and follow every call they make.",
+  },
   "nav:Plugins": {
     title: "Plugins",
     description:
@@ -70,6 +75,11 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
     title: "Moderation",
     description:
       "See every bookmark published on this MLsuite instance, open its public page, and unpublish what should not be public.",
+  },
+  "nav:API traffic": {
+    title: "API traffic",
+    description:
+      "See how much every organization's API clients call and fail, suspend a client, and set each organization's monthly limit.",
   },
   "nav:Infra": {
     title: "Infrastructure",

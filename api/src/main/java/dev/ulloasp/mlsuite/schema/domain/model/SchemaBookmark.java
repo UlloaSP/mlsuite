@@ -68,7 +68,10 @@ public class SchemaBookmark {
     @Column(name = "visibility", nullable = false, length = 16)
     private BookmarkVisibility visibility = BookmarkVisibility.PRIVATE;
 
-    /** Opaque id of the public page; assigned on the first publish and never reassigned. */
+    /**
+     * Opaque id of the bookmark outside the workspace, on its public page and in the client API;
+     * assigned the first time it is published or given to an API client, and never reassigned.
+     */
     @Column(name = "public_id", unique = true, length = 36)
     private String publicId;
 

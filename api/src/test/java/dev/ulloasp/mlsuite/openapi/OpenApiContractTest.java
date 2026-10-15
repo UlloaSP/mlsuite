@@ -33,6 +33,11 @@ import dev.ulloasp.mlsuite.admin.AdminOwnerCatalogService;
 import dev.ulloasp.mlsuite.admin.AdminUserService;
 import dev.ulloasp.mlsuite.admin.infrastructure.InfrastructureService;
 import dev.ulloasp.mlsuite.admin.moderation.PublicBookmarkModerationService;
+import dev.ulloasp.mlsuite.apiaccess.application.port.in.ApiClientAccessUseCase;
+import dev.ulloasp.mlsuite.apiaccess.application.port.in.ApiClientUseCase;
+import dev.ulloasp.mlsuite.apiaccess.application.port.in.ApiPredictionUseCase;
+import dev.ulloasp.mlsuite.apiaccess.application.port.in.ApiTrafficUseCase;
+import dev.ulloasp.mlsuite.apiaccess.application.port.in.ApiUsageUseCase;
 import dev.ulloasp.mlsuite.audit.application.port.in.AuditLogUseCase;
 import dev.ulloasp.mlsuite.invitation.application.port.in.InvitationManagementUseCase;
 import dev.ulloasp.mlsuite.invitation.application.usecase.InvitationCatalogService;
@@ -48,9 +53,7 @@ import dev.ulloasp.mlsuite.role.application.port.in.RoleCatalogUseCase;
 import dev.ulloasp.mlsuite.role.application.port.in.RoleListCatalogUseCase;
 import dev.ulloasp.mlsuite.role.application.port.in.RoleManagementUseCase;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
-import dev.ulloasp.mlsuite.schema.application.port.in.BookmarkApiKeyUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.BookmarkListCatalogUseCase;
-import dev.ulloasp.mlsuite.schema.application.port.in.ConsumerPredictionUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictBookmarkCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionResultFeedbackUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionRunUseCase;
@@ -94,9 +97,10 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
         SpringDocWebMvcConfiguration.class })
 @Import(OpenApiContractConventions.class)
 @MockitoBean(types = {
-        AdminOwnerCatalogService.class, AdminUserService.class, AnalyzerUseCase.class, AuditLogUseCase.class,
-        AuthService.class, AuthenticationManager.class, BookmarkApiKeyUseCase.class, BookmarkListCatalogUseCase.class,
-        CatalogSelectionService.class, ConsumerPredictionUseCase.class, GetCurrentUserProfileUseCase.class,
+        AdminOwnerCatalogService.class, AdminUserService.class, AnalyzerUseCase.class, ApiClientAccessUseCase.class,
+        ApiClientUseCase.class, ApiPredictionUseCase.class, ApiTrafficUseCase.class, ApiUsageUseCase.class,
+        AuditLogUseCase.class, AuthService.class, AuthenticationManager.class, BookmarkListCatalogUseCase.class,
+        CatalogSelectionService.class, GetCurrentUserProfileUseCase.class,
         InferenceCatalogService.class,
         InferenceFacetCatalogService.class,
         InfrastructureService.class, InvitationCatalogService.class, InvitationManagementUseCase.class,

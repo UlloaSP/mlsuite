@@ -24,6 +24,10 @@ public interface ModelRepository extends JpaRepository<Model, Long> {
 
     List<Model> findByOrganizationId(Long organizationId);
 
+    /** The artifact's SHA-256 alone, without reading the artifact; empty while none is recorded. */
+    @Query("SELECT m.artifactSha256 FROM Model m WHERE m.id = :id")
+    Optional<String> findArtifactSha256(Long id);
+
     List<Model> findByOrganizationIdAndArchivedAtIsNull(Long organizationId);
 
     @Query("""

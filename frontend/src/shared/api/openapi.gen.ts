@@ -4,6 +4,102 @@
  */
 
 export interface paths {
+    "/api/admin/api-traffic/clients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listApiTrafficClients"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/api-traffic/clients/{clientId}/reinstate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reinstateApiClient"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/api-traffic/clients/{clientId}/suspend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["suspendApiClient"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/api-traffic/organizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listApiTrafficOrganizations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/api-traffic/organizations/{organizationId}/call-limit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setApiCallLimit"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/api-traffic/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getApiTrafficUsage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/infrastructure/overview": {
         parameters: {
             query?: never;
@@ -223,6 +319,134 @@ export interface paths {
         put?: never;
         post: operations["predict"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/api-access/bookmarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listApiAccessBookmarks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/api-access/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listApiRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/api-access/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getApiUsage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/api-clients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listApiClients"];
+        put?: never;
+        post: operations["createApiClient"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/api-clients/{clientId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getApiClient"];
+        put?: never;
+        post?: never;
+        delete: operations["deleteApiClient"];
+        options?: never;
+        head?: never;
+        patch: operations["updateApiClient"];
+        trace?: never;
+    };
+    "/api/api-clients/{clientId}/bookmarks/{bookmarkId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["grantApiClientBookmark"];
+        post?: never;
+        delete: operations["revokeApiClientBookmark"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/api-clients/{clientId}/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["issueApiClientKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/api-clients/{clientId}/keys/{keyId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["revokeApiClientKey"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1316,22 +1540,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/public/model-predictions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["predictWithApiKey"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/public/organizations/{organizationId}/logo": {
         parameters: {
             query?: never;
@@ -1426,38 +1634,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["update_1"];
-        trace?: never;
-    };
-    "/api/schema-bookmarks/{bookmarkId}/api-keys": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listApiKeys"];
-        put?: never;
-        post: operations["createApiKey"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/schema-bookmarks/{bookmarkId}/api-keys/{keyId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["revokeApiKey"];
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/api/schema-bookmarks/{bookmarkId}/examples": {
@@ -2180,6 +2356,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/bookmarks/{bookmarkId}/predictions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["predictBookmark"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/workspace/context": {
         parameters: {
             query?: never;
@@ -2232,6 +2424,41 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AdminApiClientDto: {
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            keyCount: number;
+            /** Format: date-time */
+            lastUsedAt: string | null;
+            name: string;
+            /** Format: int64 */
+            organizationId: number;
+            organizationLogoUrl: string | null;
+            organizationName: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "SUSPENDED";
+            /** Format: date-time */
+            suspendedAt: string | null;
+            suspensionReason: string | null;
+            /** Format: int64 */
+            weekCalls: number;
+            /** Format: int64 */
+            weekErrors: number;
+        };
+        AdminApiOrganizationDto: {
+            /** Format: int64 */
+            clientCount: number;
+            customLimit: boolean;
+            logoUrl: string | null;
+            /** Format: int64 */
+            monthCalls: number;
+            /** Format: int32 */
+            monthlyLimit: number;
+            name: string;
+            /** Format: int64 */
+            organizationId: number;
+        };
         AdminCreateUserRequest: {
             /** Format: email */
             email: string;
@@ -2269,6 +2496,176 @@ export interface components {
             /** Format: int64 */
             totalItems: number;
         };
+        ApiAccessBookmarkDto: {
+            apiId: string | null;
+            clientNames: string[];
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            modelId: number | null;
+            modelName: string | null;
+            name: string;
+            refusal: string | null;
+            /** Format: int64 */
+            schemaId: number;
+            schemaName: string;
+            /** Format: int32 */
+            version: number;
+            versionName: string | null;
+            /** @enum {string} */
+            visibility: "PRIVATE" | "PUBLIC";
+        };
+        ApiCallLimitRequest: {
+            /** Format: int32 */
+            monthlyCalls?: number | null;
+        };
+        ApiClientCalls: {
+            /** Format: int64 */
+            calls: number;
+            /** Format: int64 */
+            clientId: number;
+            clientName: string;
+            /** Format: int64 */
+            errors: number;
+            /** Format: int64 */
+            organizationId: number;
+            organizationName: string | null;
+        };
+        ApiClientDto: {
+            bookmarks: components["schemas"]["ApiAccessBookmarkDto"][];
+            client: components["schemas"]["ApiClientSummaryDto"];
+            keys: components["schemas"]["ApiClientKeyDto"][];
+        };
+        ApiClientKeyDto: {
+            /** Format: date-time */
+            createdAt: string;
+            createdByName: string | null;
+            /** Format: int64 */
+            id: number;
+            /** Format: date-time */
+            lastUsedAt: string | null;
+            name: string;
+            prefix: string;
+        };
+        ApiClientSummaryDto: {
+            /** Format: int64 */
+            bookmarkCount: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdByName: string | null;
+            description: string | null;
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            keyCount: number;
+            /** Format: date-time */
+            lastUsedAt: string | null;
+            name: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "SUSPENDED";
+            /** Format: date-time */
+            suspendedAt: string | null;
+            suspensionReason: string | null;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ApiPredictionBookmark: {
+            id: string;
+            name: string;
+        };
+        ApiPredictionDto: {
+            bookmark: components["schemas"]["ApiPredictionBookmark"];
+            model: components["schemas"]["ApiPredictionModel"];
+            outputs: components["schemas"]["ApiPredictionOutput"][];
+            /** Format: uuid */
+            requestId: string;
+            snapshot: components["schemas"]["ApiPredictionSnapshot"];
+        };
+        ApiPredictionModel: {
+            name: string;
+            sha256: string | null;
+        };
+        ApiPredictionOutput: {
+            prediction?: string;
+            probabilities?: {
+                [key: string]: number;
+            };
+            /** Format: double */
+            value?: number;
+        };
+        ApiPredictionRequest: {
+            features: {
+                [key: string]: unknown;
+            };
+        };
+        ApiPredictionSnapshot: {
+            name: string | null;
+            /** Format: int32 */
+            version: number;
+        };
+        ApiRequestDto: {
+            /** Format: int64 */
+            bookmarkId: number | null;
+            bookmarkName: string | null;
+            /** Format: int64 */
+            clientId: number | null;
+            clientName: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: int32 */
+            durationMs: number;
+            errorCode: string | null;
+            keyPrefix: string;
+            /** Format: int64 */
+            predictionRunId: number | null;
+            /** Format: uuid */
+            requestId: string;
+            /** Format: int32 */
+            status: number;
+        };
+        ApiUsageDto: {
+            /** Format: int64 */
+            activeClients: number;
+            /** Format: int64 */
+            activeOrganizations: number;
+            /** Format: int64 */
+            calls: number;
+            /** Format: int64 */
+            failed: number;
+            month: components["schemas"]["ApiUsageMonth"] | null;
+            /** Format: double */
+            p95DurationMs: number | null;
+            period: string;
+            recentFailures: components["schemas"]["ApiRequestDto"][];
+            /** Format: int64 */
+            rejected: number;
+            /** Format: int32 */
+            retentionDays: number;
+            /** Format: int64 */
+            runtimeBusy: number;
+            series: components["schemas"]["ApiUsagePoint"][];
+            /** Format: date-time */
+            since: string;
+            topClients: components["schemas"]["ApiClientCalls"][];
+        };
+        ApiUsageMonth: {
+            /** Format: int64 */
+            calls: number;
+            /** Format: int32 */
+            limit: number;
+            /** Format: date-time */
+            resetsAt: string;
+        };
+        ApiUsagePoint: {
+            /** Format: int64 */
+            failed: number;
+            /** Format: int64 */
+            rejected: number;
+            /** Format: date-time */
+            start: string;
+            /** Format: int64 */
+            succeeded: number;
+        };
         AuditEventDto: {
             action: string;
             actorEmail: string;
@@ -2287,17 +2684,6 @@ export interface components {
             fullName?: string | null;
             password: string;
             username?: string | null;
-        };
-        BookmarkApiKeyDto: {
-            /** Format: date-time */
-            createdAt: string;
-            createdByName: string | null;
-            /** Format: int64 */
-            id: number;
-            /** Format: date-time */
-            lastUsedAt: string | null;
-            name: string;
-            prefix: string;
         };
         BookmarkExampleStateDto: {
             example: components["schemas"]["SchemaBookmarkExampleDto"] | null;
@@ -2342,23 +2728,11 @@ export interface components {
             operator: string;
             value: string;
         };
-        ConsumerOutput: {
-            prediction?: string;
-            probabilities?: {
-                [key: string]: number;
-            };
-            /** Format: double */
-            value?: number;
+        CreateApiClientKeyRequest: {
+            name: string;
         };
-        ConsumerPredictionDto: {
-            outputs: components["schemas"]["ConsumerOutput"][];
-        };
-        ConsumerPredictionRequest: {
-            features: {
-                [key: string]: unknown;
-            };
-        };
-        CreateBookmarkApiKeyRequest: {
+        CreateApiClientRequest: {
+            description?: string | null;
             name: string;
         };
         CreateInvitationRequest: {
@@ -2602,8 +2976,8 @@ export interface components {
             status: "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED";
             token: string | null;
         };
-        IssuedBookmarkApiKeyDto: {
-            key: components["schemas"]["BookmarkApiKeyDto"];
+        IssuedApiClientKeyDto: {
+            key: components["schemas"]["ApiClientKeyDto"];
             secret: string;
         };
         Item: {
@@ -2789,9 +3163,49 @@ export interface components {
             /** Format: int64 */
             userId: number;
         };
+        PageDtoAdminApiClientDto: {
+            hasNext: boolean;
+            items: components["schemas"]["AdminApiClientDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoAdminApiOrganizationDto: {
+            hasNext: boolean;
+            items: components["schemas"]["AdminApiOrganizationDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
         PageDtoAdminUserDto: {
             hasNext: boolean;
             items: components["schemas"]["AdminUserDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoApiClientSummaryDto: {
+            hasNext: boolean;
+            items: components["schemas"]["ApiClientSummaryDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoApiRequestDto: {
+            hasNext: boolean;
+            items: components["schemas"]["ApiRequestDto"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -3053,7 +3467,7 @@ export interface components {
             dangerous: boolean;
             description: string;
             /** @enum {string} */
-            key: "VIEW_WORKSPACE" | "VIEW_ORGANIZATION" | "EDIT_ORGANIZATION" | "DELETE_ORGANIZATION" | "TRANSFER_OWNERSHIP" | "VIEW_MEMBERS" | "INVITE_MEMBERS" | "MANAGE_MEMBER_ROLES" | "REMOVE_MEMBERS" | "VIEW_INVITATIONS" | "MANAGE_INVITATIONS" | "VIEW_MODELS" | "CREATE_MODELS" | "EDIT_MODELS" | "DELETE_MODELS" | "RUN_PREDICTIONS" | "EXPORT_PREDICTIONS" | "PUBLISH_BOOKMARKS" | "REVIEW" | "MANAGE_REVIEWS" | "VIEW_PLUGINS" | "MANAGE_PLUGINS" | "VIEW_AUDIT_LOG";
+            key: "VIEW_WORKSPACE" | "VIEW_ORGANIZATION" | "EDIT_ORGANIZATION" | "DELETE_ORGANIZATION" | "TRANSFER_OWNERSHIP" | "VIEW_MEMBERS" | "INVITE_MEMBERS" | "MANAGE_MEMBER_ROLES" | "REMOVE_MEMBERS" | "VIEW_INVITATIONS" | "MANAGE_INVITATIONS" | "VIEW_MODELS" | "CREATE_MODELS" | "EDIT_MODELS" | "DELETE_MODELS" | "RUN_PREDICTIONS" | "EXPORT_PREDICTIONS" | "PUBLISH_BOOKMARKS" | "REVIEW" | "MANAGE_REVIEWS" | "VIEW_PLUGINS" | "MANAGE_PLUGINS" | "VIEW_AUDIT_LOG" | "VIEW_API_ACCESS" | "MANAGE_API_ACCESS";
             label: string;
         };
         PermissionGroupDto: {
@@ -3413,7 +3827,7 @@ export interface components {
             /** Format: int64 */
             id: number;
             name: string;
-            permissionKeys: ("VIEW_WORKSPACE" | "VIEW_ORGANIZATION" | "EDIT_ORGANIZATION" | "DELETE_ORGANIZATION" | "TRANSFER_OWNERSHIP" | "VIEW_MEMBERS" | "INVITE_MEMBERS" | "MANAGE_MEMBER_ROLES" | "REMOVE_MEMBERS" | "VIEW_INVITATIONS" | "MANAGE_INVITATIONS" | "VIEW_MODELS" | "CREATE_MODELS" | "EDIT_MODELS" | "DELETE_MODELS" | "RUN_PREDICTIONS" | "EXPORT_PREDICTIONS" | "PUBLISH_BOOKMARKS" | "REVIEW" | "MANAGE_REVIEWS" | "VIEW_PLUGINS" | "MANAGE_PLUGINS" | "VIEW_AUDIT_LOG")[];
+            permissionKeys: ("VIEW_WORKSPACE" | "VIEW_ORGANIZATION" | "EDIT_ORGANIZATION" | "DELETE_ORGANIZATION" | "TRANSFER_OWNERSHIP" | "VIEW_MEMBERS" | "INVITE_MEMBERS" | "MANAGE_MEMBER_ROLES" | "REMOVE_MEMBERS" | "VIEW_INVITATIONS" | "MANAGE_INVITATIONS" | "VIEW_MODELS" | "CREATE_MODELS" | "EDIT_MODELS" | "DELETE_MODELS" | "RUN_PREDICTIONS" | "EXPORT_PREDICTIONS" | "PUBLISH_BOOKMARKS" | "REVIEW" | "MANAGE_REVIEWS" | "VIEW_PLUGINS" | "MANAGE_PLUGINS" | "VIEW_AUDIT_LOG" | "VIEW_API_ACCESS" | "MANAGE_API_ACCESS")[];
             /** @enum {string} */
             scope: "SYSTEM" | "ORGANIZATION";
         };
@@ -3671,6 +4085,9 @@ export interface components {
         SubmitSchemaReviewRunsRequest: {
             reviewRunIds: string[];
         };
+        SuspendApiClientRequest: {
+            reason: string;
+        };
         TerminalSessionRequest: {
             /** Format: int32 */
             cols: number;
@@ -3691,6 +4108,10 @@ export interface components {
         TransferOrganizationOwnershipRequest: {
             /** Format: int64 */
             nextOwnerMembershipId: number;
+        };
+        UpdateApiClientRequest: {
+            description?: string | null;
+            name: string;
         };
         UpdateOrganizationMembershipRoleRequest: {
             /** Format: int64 */
@@ -3763,6 +4184,7 @@ export interface components {
             canEditOrganization: boolean;
             canExportPredictions: boolean;
             canInviteMembers: boolean;
+            canManageApiAccess: boolean;
             canManageInvitations: boolean;
             canManageMemberRoles: boolean;
             canManagePlugins: boolean;
@@ -3772,6 +4194,7 @@ export interface components {
             canReview: boolean;
             canRunPredictions: boolean;
             canTransferOwnership: boolean;
+            canViewApiAccess: boolean;
             canViewInvitations: boolean;
             canViewMembers: boolean;
             canViewModels: boolean;
@@ -3793,14 +4216,31 @@ export interface components {
     headers: never;
     pathItems: never;
 }
+export type AdminApiClientDto = components['schemas']['AdminApiClientDto'];
+export type AdminApiOrganizationDto = components['schemas']['AdminApiOrganizationDto'];
 export type AdminCreateUserRequest = components['schemas']['AdminCreateUserRequest'];
 export type AdminPasswordRequest = components['schemas']['AdminPasswordRequest'];
 export type AdminUpdateUserRequest = components['schemas']['AdminUpdateUserRequest'];
 export type AdminUserDto = components['schemas']['AdminUserDto'];
 export type AdminUserPageDto = components['schemas']['AdminUserPageDto'];
+export type ApiAccessBookmarkDto = components['schemas']['ApiAccessBookmarkDto'];
+export type ApiCallLimitRequest = components['schemas']['ApiCallLimitRequest'];
+export type ApiClientCalls = components['schemas']['ApiClientCalls'];
+export type ApiClientDto = components['schemas']['ApiClientDto'];
+export type ApiClientKeyDto = components['schemas']['ApiClientKeyDto'];
+export type ApiClientSummaryDto = components['schemas']['ApiClientSummaryDto'];
+export type ApiPredictionBookmark = components['schemas']['ApiPredictionBookmark'];
+export type ApiPredictionDto = components['schemas']['ApiPredictionDto'];
+export type ApiPredictionModel = components['schemas']['ApiPredictionModel'];
+export type ApiPredictionOutput = components['schemas']['ApiPredictionOutput'];
+export type ApiPredictionRequest = components['schemas']['ApiPredictionRequest'];
+export type ApiPredictionSnapshot = components['schemas']['ApiPredictionSnapshot'];
+export type ApiRequestDto = components['schemas']['ApiRequestDto'];
+export type ApiUsageDto = components['schemas']['ApiUsageDto'];
+export type ApiUsageMonth = components['schemas']['ApiUsageMonth'];
+export type ApiUsagePoint = components['schemas']['ApiUsagePoint'];
 export type AuditEventDto = components['schemas']['AuditEventDto'];
 export type AuthRequest = components['schemas']['AuthRequest'];
-export type BookmarkApiKeyDto = components['schemas']['BookmarkApiKeyDto'];
 export type BookmarkExampleStateDto = components['schemas']['BookmarkExampleStateDto'];
 export type BulkInvitationRequest = components['schemas']['BulkInvitationRequest'];
 export type CatalogSelectionItemDto = components['schemas']['CatalogSelectionItemDto'];
@@ -3808,10 +4248,8 @@ export type CatalogSelectionPageDto = components['schemas']['CatalogSelectionPag
 export type CatalogSelectionRequest = components['schemas']['CatalogSelectionRequest'];
 export type Condition = components['schemas']['Condition'];
 export type ConditionRequest = components['schemas']['ConditionRequest'];
-export type ConsumerOutput = components['schemas']['ConsumerOutput'];
-export type ConsumerPredictionDto = components['schemas']['ConsumerPredictionDto'];
-export type ConsumerPredictionRequest = components['schemas']['ConsumerPredictionRequest'];
-export type CreateBookmarkApiKeyRequest = components['schemas']['CreateBookmarkApiKeyRequest'];
+export type CreateApiClientKeyRequest = components['schemas']['CreateApiClientKeyRequest'];
+export type CreateApiClientRequest = components['schemas']['CreateApiClientRequest'];
 export type CreateInvitationRequest = components['schemas']['CreateInvitationRequest'];
 export type CreateModelDto = components['schemas']['CreateModelDto'];
 export type CreateOrganizationRequest = components['schemas']['CreateOrganizationRequest'];
@@ -3843,7 +4281,7 @@ export type InferenceTableRunDto = components['schemas']['InferenceTableRunDto']
 export type InvitationCandidateDto = components['schemas']['InvitationCandidateDto'];
 export type InvitationCatalogDto = components['schemas']['InvitationCatalogDto'];
 export type InvitationDto = components['schemas']['InvitationDto'];
-export type IssuedBookmarkApiKeyDto = components['schemas']['IssuedBookmarkApiKeyDto'];
+export type IssuedApiClientKeyDto = components['schemas']['IssuedApiClientKeyDto'];
 export type Item = components['schemas']['Item'];
 export type JsonNode = components['schemas']['JsonNode'];
 export type LoginRequest = components['schemas']['LoginRequest'];
@@ -3860,7 +4298,11 @@ export type OrganizationCatalogItemDto = components['schemas']['OrganizationCata
 export type OrganizationDto = components['schemas']['OrganizationDto'];
 export type OrganizationMembershipDto = components['schemas']['OrganizationMembershipDto'];
 export type OrganizationMembershipRowDto = components['schemas']['OrganizationMembershipRowDto'];
+export type PageDtoAdminApiClientDto = components['schemas']['PageDtoAdminApiClientDto'];
+export type PageDtoAdminApiOrganizationDto = components['schemas']['PageDtoAdminApiOrganizationDto'];
 export type PageDtoAdminUserDto = components['schemas']['PageDtoAdminUserDto'];
+export type PageDtoApiClientSummaryDto = components['schemas']['PageDtoApiClientSummaryDto'];
+export type PageDtoApiRequestDto = components['schemas']['PageDtoApiRequestDto'];
 export type PageDtoInferenceCatalogRowDto = components['schemas']['PageDtoInferenceCatalogRowDto'];
 export type PageDtoInvitationCandidateDto = components['schemas']['PageDtoInvitationCandidateDto'];
 export type PageDtoInvitationDto = components['schemas']['PageDtoInvitationDto'];
@@ -3946,10 +4388,12 @@ export type SelectOrganizationRequest = components['schemas']['SelectOrganizatio
 export type ServiceActionRequest = components['schemas']['ServiceActionRequest'];
 export type StartupReadinessDto = components['schemas']['StartupReadinessDto'];
 export type SubmitSchemaReviewRunsRequest = components['schemas']['SubmitSchemaReviewRunsRequest'];
+export type SuspendApiClientRequest = components['schemas']['SuspendApiClientRequest'];
 export type TerminalSessionRequest = components['schemas']['TerminalSessionRequest'];
 export type TerminalSessionResponse = components['schemas']['TerminalSessionResponse'];
 export type TraceRequest = components['schemas']['TraceRequest'];
 export type TransferOrganizationOwnershipRequest = components['schemas']['TransferOrganizationOwnershipRequest'];
+export type UpdateApiClientRequest = components['schemas']['UpdateApiClientRequest'];
 export type UpdateOrganizationMembershipRoleRequest = components['schemas']['UpdateOrganizationMembershipRoleRequest'];
 export type UpdateOrganizationRequest = components['schemas']['UpdateOrganizationRequest'];
 export type UpdatePredictionResultFeedbackRequest = components['schemas']['UpdatePredictionResultFeedbackRequest'];
@@ -3963,6 +4407,154 @@ export type WorkspacePermissionsDto = components['schemas']['WorkspacePermission
 export type WorkspaceUserDto = components['schemas']['WorkspaceUserDto'];
 export type $defs = Record<string, never>;
 export interface operations {
+    listApiTrafficClients: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoAdminApiClientDto"];
+                };
+            };
+        };
+    };
+    reinstateApiClient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clientId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminApiClientDto"];
+                };
+            };
+        };
+    };
+    suspendApiClient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clientId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SuspendApiClientRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminApiClientDto"];
+                };
+            };
+        };
+    };
+    listApiTrafficOrganizations: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoAdminApiOrganizationDto"];
+                };
+            };
+        };
+    };
+    setApiCallLimit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiCallLimitRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminApiOrganizationDto"];
+                };
+            };
+        };
+    };
+    getApiTrafficUsage: {
+        parameters: {
+            query?: {
+                period?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiUsageDto"];
+                };
+            };
+        };
+    };
     overview: {
         parameters: {
             query?: never;
@@ -4354,6 +4946,287 @@ export interface operations {
                         [key: string]: unknown;
                     };
                 };
+            };
+        };
+    };
+    listApiAccessBookmarks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiAccessBookmarkDto"][];
+                };
+            };
+        };
+    };
+    listApiRequests: {
+        parameters: {
+            query?: {
+                clientId?: number;
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoApiRequestDto"];
+                };
+            };
+        };
+    };
+    getApiUsage: {
+        parameters: {
+            query?: {
+                period?: string;
+                clientId?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiUsageDto"];
+                };
+            };
+        };
+    };
+    listApiClients: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoApiClientSummaryDto"];
+                };
+            };
+        };
+    };
+    createApiClient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateApiClientRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiClientDto"];
+                };
+            };
+        };
+    };
+    getApiClient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clientId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiClientDto"];
+                };
+            };
+        };
+    };
+    deleteApiClient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clientId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateApiClient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clientId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateApiClientRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiClientDto"];
+                };
+            };
+        };
+    };
+    grantApiClientBookmark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clientId: number;
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiClientDto"];
+                };
+            };
+        };
+    };
+    revokeApiClientBookmark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clientId: number;
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiClientDto"];
+                };
+            };
+        };
+    };
+    issueApiClientKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clientId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateApiClientKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuedApiClientKeyDto"];
+                };
+            };
+        };
+    };
+    revokeApiClientKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clientId: number;
+                keyId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -6361,32 +7234,6 @@ export interface operations {
             };
         };
     };
-    predictWithApiKey: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-MLSuite-Key"?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConsumerPredictionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ConsumerPredictionDto"];
-                };
-            };
-        };
-    };
     read: {
         parameters: {
             query?: never;
@@ -6568,75 +7415,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SchemaBookmarkDto"];
                 };
-            };
-        };
-    };
-    listApiKeys: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bookmarkId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BookmarkApiKeyDto"][];
-                };
-            };
-        };
-    };
-    createApiKey: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bookmarkId: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateBookmarkApiKeyRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IssuedBookmarkApiKeyDto"];
-                };
-            };
-        };
-    };
-    revokeApiKey: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bookmarkId: number;
-                keyId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
@@ -7956,6 +8734,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserDto"];
+                };
+            };
+        };
+    };
+    predictBookmark: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-MLSuite-Key"?: string;
+            };
+            path: {
+                bookmarkId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiPredictionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiPredictionDto"];
                 };
             };
         };
