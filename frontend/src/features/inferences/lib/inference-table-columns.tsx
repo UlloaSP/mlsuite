@@ -47,9 +47,13 @@ export const GROUP_LABELS: Record<InferenceColumnGroup, string> = {
 export const ORIGIN_LABELS: Record<PredictionRunCatalogItemDto["origin"], string> = {
   WORKSPACE: "Workspace",
   PUBLIC: "Public page",
+  API: "API",
 };
 
-/** Who made the run: a member by name, or a visitor of the public page, who has none. */
+/**
+ * Who made the run: a member by name, an API run by its key's name, or a visitor of the public
+ * page, who has none.
+ */
 export const inferenceAuthor = (item: PredictionRunCatalogItemDto): string | undefined =>
   item.createdByName || item.createdByEmail || (item.origin === "PUBLIC" ? "Visitor" : undefined);
 

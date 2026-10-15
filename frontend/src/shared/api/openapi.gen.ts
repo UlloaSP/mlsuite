@@ -1316,6 +1316,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/model-predictions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["predictWithApiKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/public/organizations/{organizationId}/logo": {
         parameters: {
             query?: never;
@@ -1410,6 +1426,38 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["update_1"];
+        trace?: never;
+    };
+    "/api/schema-bookmarks/{bookmarkId}/api-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listApiKeys"];
+        put?: never;
+        post: operations["createApiKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schema-bookmarks/{bookmarkId}/api-keys/{keyId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["revokeApiKey"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/schema-bookmarks/{bookmarkId}/examples": {
@@ -2240,6 +2288,17 @@ export interface components {
             password: string;
             username?: string | null;
         };
+        BookmarkApiKeyDto: {
+            /** Format: date-time */
+            createdAt: string;
+            createdByName: string | null;
+            /** Format: int64 */
+            id: number;
+            /** Format: date-time */
+            lastUsedAt: string | null;
+            name: string;
+            prefix: string;
+        };
         BookmarkExampleStateDto: {
             example: components["schemas"]["SchemaBookmarkExampleDto"] | null;
         };
@@ -2282,6 +2341,25 @@ export interface components {
         ConditionRequest: {
             operator: string;
             value: string;
+        };
+        ConsumerOutput: {
+            prediction?: string;
+            probabilities?: {
+                [key: string]: number;
+            };
+            /** Format: double */
+            value?: number;
+        };
+        ConsumerPredictionDto: {
+            outputs: components["schemas"]["ConsumerOutput"][];
+        };
+        ConsumerPredictionRequest: {
+            features: {
+                [key: string]: unknown;
+            };
+        };
+        CreateBookmarkApiKeyRequest: {
+            name: string;
         };
         CreateInvitationRequest: {
             /** Format: email */
@@ -2523,6 +2601,10 @@ export interface components {
             /** @enum {string} */
             status: "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED";
             token: string | null;
+        };
+        IssuedBookmarkApiKeyDto: {
+            key: components["schemas"]["BookmarkApiKeyDto"];
+            secret: string;
         };
         Item: {
             reportKey: string;
@@ -3093,7 +3175,7 @@ export interface components {
             id: number;
             name: string;
             /** @enum {string} */
-            origin: "WORKSPACE" | "PUBLIC";
+            origin: "WORKSPACE" | "PUBLIC" | "API";
             /** Format: int64 */
             schemaId: number;
             schemaName: string;
@@ -3119,7 +3201,7 @@ export interface components {
             };
             name: string;
             /** @enum {string} */
-            origin: "WORKSPACE" | "PUBLIC";
+            origin: "WORKSPACE" | "PUBLIC" | "API";
             results: components["schemas"]["PredictionResultDto"][];
             /** Format: int64 */
             schemaBookmarkId: number | null;
@@ -3718,6 +3800,7 @@ export type AdminUserDto = components['schemas']['AdminUserDto'];
 export type AdminUserPageDto = components['schemas']['AdminUserPageDto'];
 export type AuditEventDto = components['schemas']['AuditEventDto'];
 export type AuthRequest = components['schemas']['AuthRequest'];
+export type BookmarkApiKeyDto = components['schemas']['BookmarkApiKeyDto'];
 export type BookmarkExampleStateDto = components['schemas']['BookmarkExampleStateDto'];
 export type BulkInvitationRequest = components['schemas']['BulkInvitationRequest'];
 export type CatalogSelectionItemDto = components['schemas']['CatalogSelectionItemDto'];
@@ -3725,6 +3808,10 @@ export type CatalogSelectionPageDto = components['schemas']['CatalogSelectionPag
 export type CatalogSelectionRequest = components['schemas']['CatalogSelectionRequest'];
 export type Condition = components['schemas']['Condition'];
 export type ConditionRequest = components['schemas']['ConditionRequest'];
+export type ConsumerOutput = components['schemas']['ConsumerOutput'];
+export type ConsumerPredictionDto = components['schemas']['ConsumerPredictionDto'];
+export type ConsumerPredictionRequest = components['schemas']['ConsumerPredictionRequest'];
+export type CreateBookmarkApiKeyRequest = components['schemas']['CreateBookmarkApiKeyRequest'];
 export type CreateInvitationRequest = components['schemas']['CreateInvitationRequest'];
 export type CreateModelDto = components['schemas']['CreateModelDto'];
 export type CreateOrganizationRequest = components['schemas']['CreateOrganizationRequest'];
@@ -3756,6 +3843,7 @@ export type InferenceTableRunDto = components['schemas']['InferenceTableRunDto']
 export type InvitationCandidateDto = components['schemas']['InvitationCandidateDto'];
 export type InvitationCatalogDto = components['schemas']['InvitationCatalogDto'];
 export type InvitationDto = components['schemas']['InvitationDto'];
+export type IssuedBookmarkApiKeyDto = components['schemas']['IssuedBookmarkApiKeyDto'];
 export type Item = components['schemas']['Item'];
 export type JsonNode = components['schemas']['JsonNode'];
 export type LoginRequest = components['schemas']['LoginRequest'];
@@ -6273,6 +6361,32 @@ export interface operations {
             };
         };
     };
+    predictWithApiKey: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-MLSuite-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsumerPredictionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsumerPredictionDto"];
+                };
+            };
+        };
+    };
     read: {
         parameters: {
             query?: never;
@@ -6454,6 +6568,75 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SchemaBookmarkDto"];
                 };
+            };
+        };
+    };
+    listApiKeys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkApiKeyDto"][];
+                };
+            };
+        };
+    };
+    createApiKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBookmarkApiKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuedBookmarkApiKeyDto"];
+                };
+            };
+        };
+    };
+    revokeApiKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+                keyId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -112,7 +112,11 @@ describe("a bookmark's name and description in its schema", () => {
 
     const items = await openActions("production");
 
-    expect(items.map((item) => item.textContent)).toEqual(["Public examples", "Publish"]);
+    expect(items.map((item) => item.textContent)).toEqual([
+      "Public examples",
+      "API keys",
+      "Publish",
+    ]);
   });
 
   test("editing sends the new name and description and closes on success", async () => {

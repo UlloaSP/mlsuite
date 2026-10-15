@@ -245,6 +245,46 @@
         ],
         "type": "object"
       },
+      "BookmarkApiKeyDto": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdByName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "lastUsedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "createdByName",
+          "id",
+          "lastUsedAt",
+          "name",
+          "prefix"
+        ],
+        "type": "object"
+      },
       "BookmarkExampleStateDto": {
         "properties": {
           "example": {
@@ -410,6 +450,63 @@
         "required": [
           "operator",
           "value"
+        ],
+        "type": "object"
+      },
+      "ConsumerOutput": {
+        "properties": {
+          "prediction": {
+            "type": "string"
+          },
+          "probabilities": {
+            "additionalProperties": {
+              "format": "double",
+              "type": "number"
+            },
+            "type": "object"
+          },
+          "value": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "ConsumerPredictionDto": {
+        "properties": {
+          "outputs": {
+            "items": {
+              "$ref": "#/components/schemas/ConsumerOutput"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "outputs"
+        ],
+        "type": "object"
+      },
+      "ConsumerPredictionRequest": {
+        "properties": {
+          "features": {
+            "additionalProperties": { },
+            "type": "object"
+          }
+        },
+        "required": [
+          "features"
+        ],
+        "type": "object"
+      },
+      "CreateBookmarkApiKeyRequest": {
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
         ],
         "type": "object"
       },
@@ -1305,6 +1402,21 @@
           "roleDefinition",
           "status",
           "token"
+        ],
+        "type": "object"
+      },
+      "IssuedBookmarkApiKeyDto": {
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/BookmarkApiKeyDto"
+          },
+          "secret": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "secret"
         ],
         "type": "object"
       },
@@ -3261,7 +3373,8 @@
           "origin": {
             "enum": [
               "WORKSPACE",
-              "PUBLIC"
+              "PUBLIC",
+              "API"
             ],
             "type": "string"
           },
@@ -3350,7 +3463,8 @@
           "origin": {
             "enum": [
               "WORKSPACE",
-              "PUBLIC"
+              "PUBLIC",
+              "API"
             ],
             "type": "string"
           },
@@ -9518,6 +9632,46 @@
         ]
       }
     },
+    "/api/public/model-predictions": {
+      "post": {
+        "operationId": "predictWithApiKey",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-MLSuite-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsumerPredictionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsumerPredictionDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "consumer-prediction-controller"
+        ]
+      }
+    },
     "/api/public/organizations/{organizationId}/logo": {
       "get": {
         "operationId": "read",
@@ -9793,6 +9947,112 @@
         },
         "tags": [
           "schema-bookmark-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks/{bookmarkId}/api-keys": {
+      "get": {
+        "operationId": "listApiKeys",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BookmarkApiKeyDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "bookmark-api-key-controller"
+        ]
+      },
+      "post": {
+        "operationId": "createApiKey",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookmarkApiKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssuedBookmarkApiKeyDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "bookmark-api-key-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks/{bookmarkId}/api-keys/{keyId}": {
+      "delete": {
+        "operationId": "revokeApiKey",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "keyId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "bookmark-api-key-controller"
         ]
       }
     },

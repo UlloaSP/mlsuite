@@ -48,7 +48,9 @@ import dev.ulloasp.mlsuite.role.application.port.in.RoleCatalogUseCase;
 import dev.ulloasp.mlsuite.role.application.port.in.RoleListCatalogUseCase;
 import dev.ulloasp.mlsuite.role.application.port.in.RoleManagementUseCase;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
+import dev.ulloasp.mlsuite.schema.application.port.in.BookmarkApiKeyUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.BookmarkListCatalogUseCase;
+import dev.ulloasp.mlsuite.schema.application.port.in.ConsumerPredictionUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictBookmarkCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionResultFeedbackUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionRunUseCase;
@@ -93,8 +95,9 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
 @Import(OpenApiContractConventions.class)
 @MockitoBean(types = {
         AdminOwnerCatalogService.class, AdminUserService.class, AnalyzerUseCase.class, AuditLogUseCase.class,
-        AuthService.class, AuthenticationManager.class, BookmarkListCatalogUseCase.class,
-        CatalogSelectionService.class, GetCurrentUserProfileUseCase.class, InferenceCatalogService.class,
+        AuthService.class, AuthenticationManager.class, BookmarkApiKeyUseCase.class, BookmarkListCatalogUseCase.class,
+        CatalogSelectionService.class, ConsumerPredictionUseCase.class, GetCurrentUserProfileUseCase.class,
+        InferenceCatalogService.class,
         InferenceFacetCatalogService.class,
         InfrastructureService.class, InvitationCatalogService.class, InvitationManagementUseCase.class,
         ListPluginRuntimeSourcesUseCase.class, MemberCatalogService.class, ModelCatalogUseCase.class,

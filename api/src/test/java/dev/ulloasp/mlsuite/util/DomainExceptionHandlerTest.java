@@ -12,6 +12,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -64,5 +66,21 @@ class DomainExceptionHandlerTest {
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("Request conflicts with the current persisted state.", response.getBody().message());
+    }
+
+    @Test
+    void handleUnreadableBody_ReturnsBadRequestWithoutTheParsersWords() {
+        DomainExceptionHandler handler = new DomainExceptionHandler();
+        when(request.getRequestURI()).thenReturn("/api/public/model-predictions");
+
+        ResponseEntity<ErrorDto> response = handler.handleUnreadableBody(
+                new HttpMessageNotReadableException("JSON parse error: Unexpected end-of-input in field name",
+                        new MockHttpInputMessage(new byte[0])),
+                request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(400, response.getBody().status());
+        assertEquals("The request body is not valid JSON for this endpoint.", response.getBody().message());
     }
 }

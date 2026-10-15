@@ -165,6 +165,7 @@ export function InferenceFiltersDialog({ filters, onApply, onClose }: Props) {
               { value: "all", label: "All origins" },
               { value: "WORKSPACE", label: "Workspace" },
               { value: "PUBLIC", label: "Public page" },
+              { value: "API", label: "API" },
             ]}
           />
         </AppFieldLabel>

@@ -85,6 +85,9 @@ public interface SchemaBookmarkRepository
     @Query("SELECT b FROM SchemaBookmark b WHERE b.publicId = :publicId AND " + PUBLISHED)
     Optional<SchemaBookmark> findPublishedByPublicId(String publicId);
 
+    @Query("SELECT b FROM SchemaBookmark b WHERE b.id = :id AND " + PUBLISHED)
+    Optional<SchemaBookmark> findPublishedById(Long id);
+
     /** One page of what anyone may read, for the public feed, searched by what a card shows. */
     @Query("SELECT b FROM SchemaBookmark b WHERE " + PUBLISHED + """
             AND (

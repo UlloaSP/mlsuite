@@ -106,7 +106,11 @@ final class InferenceCatalogOrder {
             case "version" -> new Key(true, item.schemaVersion(), null);
             case "bookmark" -> text(item.bookmarkName());
             case "author" -> text(author(item));
-            case "origin" -> text(item.origin() == PredictionRunOrigin.PUBLIC ? "Public page" : "Workspace");
+            case "origin" -> text(switch (item.origin()) {
+                case WORKSPACE -> "Workspace";
+                case PUBLIC -> "Public page";
+                case API -> "API";
+            });
             default -> row.dto().values().get(column) instanceof Number number
                     ? new Key(true, number.doubleValue(), null)
                     : text(row.dto().displayValues().get(column));
@@ -117,7 +121,10 @@ final class InferenceCatalogOrder {
         return value == null ? null : new Key(false, 0, text.cellKey(text.format(value)));
     }
 
-    /** Who made the run: a member by name or address, or a visitor of the public page, who has none. */
+    /**
+     * Who made the run: a member by name or address, an API key by its name, or a visitor of the
+     * public page, who has none.
+     */
     private static String author(PredictionRunCatalogItemDto item) {
         if (item.createdByName() != null && !item.createdByName().isEmpty()) {
             return item.createdByName();

@@ -14,6 +14,7 @@ import {
   InferenceFiltersDialog,
   type InferenceFilterChoice,
 } from "@/features/inferences/components/InferenceFiltersDialog";
+import { ORIGIN_LABELS, inferenceAuthor } from "@/features/inferences/lib/inference-table-columns";
 import {
   parseConditions,
   serializeConditions,
@@ -388,3 +389,48 @@ describe("inference filters dialog", () => {
     });
   });
 });
+
+describe("inference origins", () => {
+  test("an API run is labelled API and credited to the key's consumer, never a visitor", () => {
+    const viaKey = summary(3, {
+      origin: "API",
+      createdByName: "Lab2Pressure",
+      createdByEmail: null,
+    });
+    const visitor = summary(4, { origin: "PUBLIC", createdByName: null, createdByEmail: null });
+
+    expect(ORIGIN_LABELS.API).toBe("API");
+    expect(inferenceAuthor(viaKey)).toBe("Lab2Pressure");
+    expect(inferenceAuthor({ ...viaKey, createdByName: null })).toBeUndefined();
+    expect(inferenceAuthor(visitor)).toBe("Visitor");
+  });
+
+  test("the filters dialog offers the API origin and applies it", async () => {
+    const onApply = vi.fn();
+    await mount(
+      <InferenceFiltersDialog
+        filters={{ ...filtersFor("API") }}
+        onApply={onApply}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const origin = [...document.querySelectorAll('[role="combobox"]')].find((node) =>
+      node.textContent?.startsWith("API"),
+    );
+    expect(origin).toBeDefined();
+    await click("Apply filters");
+    expect(onApply).toHaveBeenCalledWith(expect.objectContaining({ origin: "API" }));
+  });
+});
+
+function filtersFor(origin: InferenceFilterChoice["origin"]): InferenceFilterChoice {
+  return {
+    schemaId: "all",
+    bookmarkId: "all",
+    status: "all",
+    feedback: "all",
+    origin,
+    conditions: [],
+  };
+}

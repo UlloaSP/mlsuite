@@ -30,7 +30,6 @@ import dev.ulloasp.mlsuite.schema.application.dto.SchemaVersionDto;
 import dev.ulloasp.mlsuite.schema.catalog.InferenceFeedbackValues.Feedback;
 import dev.ulloasp.mlsuite.schema.catalog.InferenceReportValues.Produced;
 import dev.ulloasp.mlsuite.schema.catalog.InferenceReportValues.Report;
-import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunOrigin;
 
 /**
  * Joins a table payload into one row per inference, in the payload's order: its summary, and each
@@ -189,7 +188,11 @@ final class InferenceRowProjector {
                     Objects.toString(item.bookmarkName(), ""),
                     Objects.toString(item.createdByName(), ""),
                     Objects.toString(item.createdByEmail(), ""),
-                    item.origin() == PredictionRunOrigin.PUBLIC ? "visitor public page" : "workspace",
+                    switch (item.origin()) {
+                        case WORKSPACE -> "workspace";
+                        case PUBLIC -> "visitor public page";
+                        case API -> "api";
+                    },
                     String.valueOf(item.id())));
             shown.addAll(displayValues.values());
             return new Row(new InferenceCatalogRowDto(item, status, values, displayValues), columns,
