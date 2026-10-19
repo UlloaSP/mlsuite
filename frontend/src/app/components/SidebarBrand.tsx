@@ -19,9 +19,9 @@ const logo = (
     alt=""
     aria-hidden="true"
     className="h-auto w-10 shrink-0"
-    height="635"
+    height="512"
     src="/mlsuite.png"
-    width="1181"
+    width="960"
   />
 );
 
