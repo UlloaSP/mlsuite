@@ -82,6 +82,42 @@ class InferenceProjectionTest {
     }
 
     @Test
+    void showsTheValueARegressorOfASecondModelPredicted() throws Exception {
+        String bodyMass = "2:output:2:0";
+        ObjectNode data = data(0);
+        object(data, "/runs/1/summary").put("schemaVersionId", 7).put("schemaVersion", 7);
+        ObjectNode binding = data.at("/versions/0/bindings/0").deepCopy();
+        array(data, "/versions/0/bindings").add(binding.put("id", 2).put("modelId", 2));
+        array(data, "/versions/0/formSchema/reports").add(JSON.readTree(
+                "{\"kind\":\"regressor\",\"label\":\"Body mass\",\"mappedTo\":{\"2\":\"0\"}}"));
+        // Stored as a workspace run stores it: the runtime's answer, then the form's report, named by MLForm.
+        for (String[] run : new String[][] { { "2", "21", "[3531.39]" }, { "1", "11", "[]" } }) {
+            array(data, "/results").add(JSON.readTree("""
+                    {"id":%s,"runId":%s,"modelId":2,"modelInput":{},"status":"SUCCESS","errorMessage":null,
+                     "errorJson":null,"createdAt":"2026-07-20T08:00:00Z","output":{"reports":[
+                       {"kind":"regressor","output":0,"values":%s},
+                       {"id":"body-mass","kind":"regressor","output":0,"mappedTo":"0","values":%s}]}}
+                    """.formatted(run[1], run[0], run[2], run[2])));
+        }
+
+        List<Row> rows = rows(data);
+        assertEquals(3531.39, rows.get(0).dto().values().get(bodyMass));
+        assertEquals("3,531.39", rows.get(0).dto().displayValues().get(bodyMass));
+        assertEquals("Yes", rows.get(0).dto().values().get(SCORE));
+        // A regressor that stored no value keeps its column and leaves the cell empty.
+        assertFalse(rows.get(1).dto().values().containsKey(bodyMass));
+        assertTrue(rows.get(1).columns().stream().anyMatch(column -> column.id().equals(bodyMass)));
+
+        InferenceCatalogMetadata metadata = new InferenceCatalogMetadata(InferenceCatalogFixtures.TEXT);
+        rows.forEach(metadata::accept);
+        InferenceCatalogColumnDto column = metadata.finish().stream()
+                .filter(item -> item.id().equals(bodyMass)).findFirst().orElseThrow();
+        assertEquals("Body mass", column.label());
+        assertEquals(InferenceValueKind.number, column.kind());
+        assertEquals(List.of("3,531.39"), column.choices());
+    }
+
+    @Test
     void keepsJsonStringifyTextForUnstructuredCustomReports() throws Exception {
         Row row = rows(customReport(JSON.readTree("{\"score\":7.0,\"samples\":[1,2.0]}"))).getFirst();
         assertEquals("{\n  \"score\": 7,\n  \"samples\": [\n    1,\n    2\n  ]\n}", row.dto().values().get(SCORE));

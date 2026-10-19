@@ -3,6 +3,7 @@ import { act } from "react";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 import { ReviewWithoutQuestionnaire } from "@/features/reviews/components/ReviewWithoutQuestionnaire";
 import { ReviewOutputsSection } from "@/features/reviews/components/ReviewOutputsSection";
+import { ReviewInputsSection } from "@/features/reviews/components/ReviewInputsSection";
 import { mount } from "./support/dom";
 import { binding, predictionResult, schemaVersion } from "./support/api-fixtures";
 
@@ -98,4 +99,15 @@ test("reports loading, errors with retry, and no outputs without raw JSON fallba
   state.status = "ready";
   await view.rerender(<ReviewOutputsSection version={version} results={[]} />);
   expect(container.textContent).toContain("No outputs returned");
+});
+test("review inputs show structured, numeric and yes/no values as the run detail does", async () => {
+  const { host } = await mount(
+    <ReviewInputsSection
+      inputs={{ Site: { island: "Dream" }, "Body mass": 3531.5, Tagged: true }}
+    />,
+  );
+  expect(host.textContent).toContain('{"island":"Dream"}');
+  expect(host.textContent).toContain((3531.5).toLocaleString());
+  expect(host.textContent).toContain("Yes");
+  expect(host.textContent).not.toContain("[object Object]");
 });
