@@ -5,7 +5,7 @@ contact_links:
     about: Propose and discuss product changes before opening implementation work.
   - name: Questions and support
     url: https://github.com/UlloaSP/mlsuite/discussions/categories/q-a
-    about: Ask for help using, configuring, or understanding MLSuite.
+    about: Ask for help using, configuring, or understanding MLsuite.
   - name: Security vulnerability
     url: https://github.com/UlloaSP/mlsuite/security/advisories/new
     about: Report vulnerabilities privately. Do not disclose them in a public issue.

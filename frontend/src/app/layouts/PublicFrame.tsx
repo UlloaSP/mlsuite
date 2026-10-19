@@ -41,7 +41,7 @@ export function PublicFrame({ children }: PropsWithChildren) {
         <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line px-4 sm:px-6">
           <Link
             to={EXPLORE_PATH}
-            aria-label="MLSuite"
+            aria-label="MLsuite"
             className={cx("flex shrink-0 items-center gap-2 rounded-control text-xl", FOCUS_RING)}
           >
             <MLSuiteMark />

@@ -1,4 +1,4 @@
-"""Validate one complete MLSuite build and write its digest-pinned release assets."""
+"""Validate one complete MLsuite build and write its digest-pinned release assets."""
 
 import argparse
 import hashlib

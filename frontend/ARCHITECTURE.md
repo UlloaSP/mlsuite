@@ -8,7 +8,7 @@ This is the durable contract for ownership, dependency direction, state, routing
 - Business workflows should be discoverable by feature name.
 - Shared mechanisms should expose narrow interfaces.
 - Remote state should have one cache and one invalidation owner.
-- Heavy runtimes should remain behind MLSuite-owned boundaries.
+- Heavy runtimes should remain behind MLsuite-owned boundaries.
 - Deleting a module should remove complexity rather than spread it into callers.
 
 ## Source tree
@@ -109,9 +109,9 @@ independently of the pages the user has scrolled through.
 
 ## MLForm and plugins
 
-MLForm is a capability, not the MLSuite plugin catalog.
+MLForm is a capability, not the MLsuite plugin catalog.
 
-- Features depend on an MLSuite-owned capability interface.
+- Features depend on an MLsuite-owned capability interface.
 - MLForm built-in kinds and catalog plugins remain distinct.
 - Plugin catalog data is tenant-scoped remote state.
 - Schema bindings and output mappings remain the execution source of truth.
