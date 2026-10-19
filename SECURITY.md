@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-MLSuite is pre-1.0 software. Security fixes target the current `main` branch and the newest immutable build release. Older builds do not receive backports.
+MLsuite is pre-1.0 software. Security fixes target the current `main` branch and the newest immutable build release. Older builds do not receive backports.
 
 ## Reporting a vulnerability
 
@@ -20,4 +20,4 @@ Remove unrelated credentials, personal data, and private model inputs. You shoul
 
 ## Model artifact boundary
 
-MLSuite accepts model artifacts only as `.mlbundle` files and never loads Pickle or Joblib. Bundles are validated and loaded by mlbundle, a pre-alpha library whose security design has had no independent review, and native model parsers and inference run unsandboxed in the runtime. MLSuite therefore still treats model uploaders as trusted authors; arbitrary untrusted model execution is not a supported security boundary. Reports about authorization bypasses, unintended upload access, sandbox escapes, or execution beyond the documented trust model are still in scope.
+MLsuite accepts model artifacts only as `.mlbundle` files and never loads Pickle or Joblib. Bundles are validated and loaded by mlbundle, a pre-alpha library whose security design has had no independent review, and native model parsers and inference run unsandboxed in the runtime. MLsuite therefore still treats model uploaders as trusted authors; arbitrary untrusted model execution is not a supported security boundary. Reports about authorization bypasses, unintended upload access, sandbox escapes, or execution beyond the documented trust model are still in scope.

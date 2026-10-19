@@ -1,6 +1,6 @@
 # Code of Conduct
 
-MLSuite should be a productive and welcoming place to collaborate.
+MLsuite should be a productive and welcoming place to collaborate.
 
 ## Expected behavior
 
@@ -20,4 +20,4 @@ Maintainers may edit or remove contributions and may temporarily or permanently 
 
 Report conduct concerns privately to the maintainer using the contact information on the [maintainer's GitHub profile](https://github.com/UlloaSP). Do not open a public issue about another person's conduct. Reports will be handled as confidentially as practical.
 
-This policy applies to repository activity, Discussions, issues, pull requests, and other spaces where someone represents MLSuite.
+This policy applies to repository activity, Discussions, issues, pull requests, and other spaces where someone represents MLsuite.

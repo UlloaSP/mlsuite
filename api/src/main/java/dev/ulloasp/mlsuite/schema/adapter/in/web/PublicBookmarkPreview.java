@@ -35,7 +35,7 @@ final class PublicBookmarkPreview {
                 <title>%1$s</title>
                 <meta name="description" content="%2$s">
                 <meta property="og:type" content="website">
-                <meta property="og:site_name" content="MLSuite">
+                <meta property="og:site_name" content="MLsuite">
                 <meta property="og:title" content="%1$s">
                 <meta property="og:description" content="%2$s">
                 <meta property="og:url" content="%3$s">
@@ -65,7 +65,7 @@ final class PublicBookmarkPreview {
     private static String description(PublicBookmarkDto bookmark) {
         String text = bookmark.description() != null ? bookmark.description()
                 : bookmark.publicationNote() != null ? bookmark.publicationNote()
-                : "Run " + bookmark.name() + " by " + bookmark.organizationName() + " on MLSuite.";
+                : "Run " + bookmark.name() + " by " + bookmark.organizationName() + " on MLsuite.";
         String oneLine = text.replaceAll("\\s+", " ").strip();
         return oneLine.length() <= DESCRIPTION_MAX_LENGTH
                 ? oneLine

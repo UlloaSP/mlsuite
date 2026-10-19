@@ -1,1 +1,1 @@
-"""MLSuite operations agent."""
+"""MLsuite operations agent."""
