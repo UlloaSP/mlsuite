@@ -47,7 +47,7 @@ def test_metadata_describes_model() -> None:
         "reports",
     }
     manifest = payload.pop("manifest")
-    assert manifest["writer_version"] == "0.1.0a3"
+    assert manifest["writer_version"] == mlbundle.__version__
     assert manifest["model"]["estimator_class"] == "XGBClassifier"
     assert manifest["references"]["schema"] == "schema.json"
     importances = payload.pop("featureImportances")
