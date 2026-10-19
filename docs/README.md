@@ -27,4 +27,5 @@ synthetic data, in light and dark, and are stored as WebP at 1536 px wide. The M
 `src/assets/mlsuite.png` is the eshkra product mark.
 
 The site deploys to Cloudflare Workers Static Assets as the `mlsuite-docs` worker; `wrangler.jsonc`
-owns the worker name, custom domain and asset routing.
+owns the worker name, custom domain and asset routing. CI deploys the tested build from `main`;
+see the root `README.md`.

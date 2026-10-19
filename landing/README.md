@@ -41,4 +41,5 @@ replace the `<name>-light.png` and `<name>-dark.png` pair.
 ## Deployment
 
 `wrangler.jsonc` deploys `dist/` as static assets to the `mlsuite.eshkra.dev` custom domain on
-Cloudflare Workers, as the other eshkra landings do.
+Cloudflare Workers. CI runs `vp run check:deploy` (`wrangler deploy --dry-run`, never uploads)
+and deploys the tested build from `main`; see the root `README.md`.

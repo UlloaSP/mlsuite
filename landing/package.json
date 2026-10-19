@@ -8,6 +8,7 @@
     "build": "astro check && astro build",
     "typecheck": "astro check",
     "check:format": "prettier --check .",
+    "check:deploy": "vp exec wrangler deploy --dry-run --config wrangler.jsonc",
     "format": "prettier --write .",
     "preview": "astro preview --host 127.0.0.1 --port 4350"
   },
@@ -19,7 +20,8 @@
     "@astrojs/check": "0.9.10",
     "prettier": "3.9.10",
     "prettier-plugin-astro": "1.1.1",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "wrangler": "4.151.1"
   },
   "engines": {
     "node": "^22.18.0 || ^24.11.0 || >=26.0.0"

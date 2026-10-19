@@ -1,0 +1,47 @@
+name: Check and build websites
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  site:
+    name: Website (${{ matrix.site }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - site: landing
+            check: check:format
+          - site: docs
+            check: test
+    defaults:
+      run:
+        working-directory: ${{ matrix.site }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          version: 1.3.0
+          node-version: '26'
+          working-directory: ${{ matrix.site }}
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - run: vp run ${{ matrix.check }}
+      - run: vp run build
+      - name: Validate the Cloudflare deployment without uploading
+        run: vp run check:deploy
+      # Only tested builds become deployable artifacts. Deployment never rebuilds them.
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.site }}-build
+          path: ${{ matrix.site }}/dist/
+          if-no-files-found: error
+          retention-days: 7
