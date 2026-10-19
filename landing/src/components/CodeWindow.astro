@@ -1,0 +1,20 @@
+---
+import { Code } from "astro:components";
+
+interface Props {
+  title: string;
+  code: string;
+  lang: "http" | "json" | "bash";
+  note?: string;
+}
+const { title, code, lang, note } = Astro.props;
+const themes = { light: "github-light-default", dark: "github-dark-default" } as const;
+---
+
+<div class="window code-window">
+  <div class="window-bar mono">
+    <span class="window-title">{title}</span>
+    {note && <span class="window-note">{note}</span>}
+  </div>
+  <Code code={code} lang={lang} themes={themes} defaultColor="light" class="code" />
+</div>

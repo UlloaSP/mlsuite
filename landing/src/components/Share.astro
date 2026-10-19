@@ -1,0 +1,84 @@
+---
+import CodeWindow from "./CodeWindow.astro";
+import ShotWindow from "./ShotWindow.astro";
+import { request, response } from "../data/api-call";
+
+const publicFacts = [
+  "Anyone can open a published bookmark at /explore/<id> and run it, signed in or not.",
+  "Each run is kept as one of the organization's inferences, marked as made on the public page.",
+  "The browser that ran it finds it again under Your runs and can review it without an account.",
+  "A publication note carries the paper, DOI or terms of use. The schema and its models stay private.",
+];
+const apiFacts = [
+  "Keys start with mls_, are shown once and stored only as their SHA-256. Deleting a key revokes it.",
+  "A client runs only the bookmarks it was given, public or not.",
+  "Every call is logged with its request id, status and duration, never its features or outputs.",
+  "Refusals are RFC 9457 problems with a stable code, such as features_rejected or rate_limited.",
+];
+---
+
+<section class="section feature" id="share" aria-labelledby="share-title">
+  <div class="wrap">
+    <header class="section-head">
+      <h2 id="share-title">Share the model, not the workspace.</h2>
+      <p>
+        Publish a bookmark as a public page, or give it to outside software as an API client. Both
+        run the same snapshot and land in the same Inferences.
+      </p>
+    </header>
+
+    <div class="share-block">
+      <div class="plate public-plate">
+        <ShotWindow
+          name="public"
+          path="/explore/…"
+          title="A public bookmark page"
+          alt="The public page of the penguin-survey bookmark, seen without an account: published by Penguin Lab (demo), 5 inputs and 2 reports, a note citing the Palmer penguins dataset with its DOI, the results of a run (Chinstrap at 100%, body mass 3531 g), the run listed under Your runs, and 49 of 50 runs left in 24 hours."
+          sizes="(max-width: 64rem) 92vw, 44rem"
+        />
+      </div>
+      <div class="share-copy">
+        <h3>Public pages</h3>
+        <ul class="facts">
+          {publicFacts.map((fact) => (
+            <li>{fact}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+
+    <div class="share-block reverse">
+      <figure class="api-figure">
+        <div class="plate api-plate">
+          <CodeWindow title="request" code={request} lang="http" />
+          <CodeWindow title="200 OK" code={response} lang="json" />
+        </div>
+        <figcaption>
+          A real call to the demo client on the live instance, reformatted, with ids shortened. Its
+          key has since been revoked.
+        </figcaption>
+      </figure>
+      <div class="share-copy">
+        <h3>API clients</h3>
+        <p>
+          The answer names the bookmark, the snapshot and the SHA-256 of the model that ran: the
+          same hash the model's provenance shows.
+        </p>
+        <ul class="facts">
+          {apiFacts.map((fact) => (
+            <li>{fact}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+    <div class="plate requests-plate">
+      <ShotWindow
+        name="requests"
+        path="/api-access/requests"
+        title="The request log"
+        alt="The Requests log of the API section: six calls from the Field notebook client to the species-api bookmark, five answered 200 with a link to their inference and one refused with 422 features_rejected, each with its key prefix, duration and request id."
+        sizes="(max-width: 76rem) 94vw, 56rem"
+      />
+    </div>
+  </div>
+</section>

@@ -27,6 +27,7 @@ public record WorkspacePermissionsDto(
         boolean canManageReviews,
         boolean canViewPlugins,
         boolean canManagePlugins,
+        boolean canViewAuditLog,
         boolean canViewApiAccess,
         boolean canManageApiAccess) {
 
@@ -54,6 +55,7 @@ public record WorkspacePermissionsDto(
                 granted.contains(PermissionKey.MANAGE_REVIEWS),
                 granted.contains(PermissionKey.VIEW_PLUGINS),
                 granted.contains(PermissionKey.MANAGE_PLUGINS),
+                granted.contains(PermissionKey.VIEW_AUDIT_LOG),
                 granted.contains(PermissionKey.VIEW_API_ACCESS) || granted.contains(PermissionKey.MANAGE_API_ACCESS),
                 granted.contains(PermissionKey.MANAGE_API_ACCESS));
     }

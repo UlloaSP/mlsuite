@@ -112,7 +112,7 @@ cleanup_restore() {
 }
 trap cleanup_restore EXIT INT TERM
 
-banner "MLSuite production cutover"
+banner "MLsuite production cutover"
 
 stage "Preflight"
 [[ -f "$ENV_FILE" ]] || { warn "$ENV_FILE does not exist; copy .env.example and fill it first"; exit 1; }

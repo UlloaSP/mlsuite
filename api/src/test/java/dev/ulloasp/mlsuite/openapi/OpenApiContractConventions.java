@@ -58,7 +58,7 @@ class OpenApiContractConventions {
     @Bean
     OpenAPI mlsuiteOpenApi() {
         return new OpenAPI()
-                .info(new Info().title("MLSuite API").version("contract"))
+                .info(new Info().title("MLsuite API").version("contract"))
                 .servers(List.of(new Server().url("/")));
     }
 

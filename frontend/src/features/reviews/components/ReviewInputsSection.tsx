@@ -1,3 +1,5 @@
+import { formatDisplayValue } from "@/capabilities/prediction-runtime/data/input-display";
+
 type ReviewInputsSectionProps = {
   inputs: Record<string, unknown>;
 };
@@ -12,7 +14,7 @@ export function ReviewInputsSection({ inputs }: ReviewInputsSectionProps) {
         >
           <p className="min-w-0 break-words text-sm font-semibold text-fg">{key}</p>
           <p className="min-w-0 break-words font-mono text-sm text-fg md:text-right">
-            {typeof value === "number" ? value.toLocaleString() : String(value)}
+            {formatDisplayValue(value)}
           </p>
         </div>
       ))}

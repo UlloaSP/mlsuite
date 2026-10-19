@@ -1,5 +1,5 @@
 name: Bug report
-description: Report reproducible behavior that is broken in MLSuite.
+description: Report reproducible behavior that is broken in MLsuite.
 title: "[Bug]: "
 labels:
   - bug

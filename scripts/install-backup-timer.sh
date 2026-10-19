@@ -45,4 +45,4 @@ systemctl daemon-reload
 systemctl enable --now mlsuite-backup.timer
 systemctl is-enabled --quiet mlsuite-backup.timer
 systemctl is-active --quiet mlsuite-backup.timer
-echo "Installed daily MLSuite backup timer for $service_user."
+echo "Installed daily MLsuite backup timer for $service_user."

@@ -1,0 +1,43 @@
+---
+import { Image } from "astro:assets";
+import { capture } from "../lib/captures";
+
+interface Props {
+  /** Capture name without the `-light`/`-dark` suffix. */
+  name: string;
+  alt: string;
+  caption?: string;
+}
+const { name, alt, caption } = Astro.props;
+const light = capture(name, "light");
+const dark = capture(name, "dark");
+// Captures are stored at 2x the width they were taken at; the column is at most 768px wide.
+const widths = [768, 1536].filter((width) => width <= light.width);
+const sizes = "(max-width: 50rem) 92vw, 768px";
+---
+
+<figure class="capture not-content">
+  <div class="capture-frame">
+    <Image
+      class="dark:sl-hidden"
+      src={light}
+      alt={alt}
+      widths={widths}
+      sizes={sizes}
+      format="webp"
+      quality={86}
+      loading="lazy"
+    />
+    <Image
+      class="light:sl-hidden"
+      src={dark}
+      alt={alt}
+      widths={widths}
+      sizes={sizes}
+      format="webp"
+      quality={86}
+      loading="lazy"
+    />
+  </div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>

@@ -1,0 +1,7 @@
+{
+  "plugins": ["prettier-plugin-astro"],
+  "printWidth": 100,
+  "tabWidth": 2,
+  "endOfLine": "lf",
+  "trailingComma": "all"
+}

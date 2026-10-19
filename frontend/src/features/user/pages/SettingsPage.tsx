@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 
 THESIS: Personalization should feel immediate and legible, never like administration.
-OWN-WORLD: MLSuite surfaces, warm type, semantic tokens, and precise visual previews.
+OWN-WORLD: MLsuite surfaces, warm type, semantic tokens, and precise visual previews.
 STORY: Choose a color system, tune contrast, place navigation, continue working.
 FIRST VIEWPORT: Standard header followed by color-scheme previews and the preset gallery.
 FORM: One calm settings document; route-owned, responsive, and free of duplicate navigation.

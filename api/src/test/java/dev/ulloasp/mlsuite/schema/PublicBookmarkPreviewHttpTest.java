@@ -87,7 +87,7 @@ class PublicBookmarkPreviewHttpTest {
         when(publicBookmarks.getPublishedBookmark(PUBLIC_ID)).thenReturn(bookmark(null, null, null));
         mockMvc.perform(get("/api/public/bookmarks/{publicId}/preview", PUBLIC_ID))
                 .andExpect(content().string(containsString(
-                        "<meta property=\"og:description\" content=\"Run production by Acme &amp; Co on MLSuite.\">")));
+                        "<meta property=\"og:description\" content=\"Run production by Acme &amp; Co on MLsuite.\">")));
 
         when(publicBookmarks.getPublishedBookmark(PUBLIC_ID)).thenReturn(bookmark("word ".repeat(100), null, null));
         mockMvc.perform(get("/api/public/bookmarks/{publicId}/preview", PUBLIC_ID))

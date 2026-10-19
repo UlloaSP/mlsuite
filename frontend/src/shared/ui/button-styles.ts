@@ -10,7 +10,7 @@ import { FOCUS_RING } from "./focus-ring";
 const VARIANTS = {
   // Every variant carries a border so primary and secondary buttons are the same size.
   primary:
-    "border border-transparent bg-accent text-on-accent hover:bg-accent-hover active:bg-accent-strong",
+    "border border-transparent bg-action text-on-action hover:bg-action-hover active:bg-action-strong",
   secondary:
     "border border-line bg-surface text-fg hover:border-line-strong hover:bg-surface-hover",
   ghost:

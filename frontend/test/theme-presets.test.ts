@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vite-plus/test";
-import { THEME_PRESETS } from "@/shared/ui/theme-catalog";
+import { DEFAULT_THEME_ID, THEME_PRESETS } from "@/shared/ui/theme-catalog";
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 const css = [
@@ -33,6 +33,10 @@ const contrast = (a: string, b: string) => {
 describe("built-in theme presets", () => {
   it("are all known to the boot script", () => {
     for (const { value } of THEME_PRESETS) expect(bootScript).toContain(`"${value}",`);
+  });
+
+  it("default to the same theme before and after the app loads", () => {
+    expect(bootScript).toContain(`const defaultTheme = "${DEFAULT_THEME_ID}";`);
   });
 
   it("define a light and a dark palette with readable body text", () => {

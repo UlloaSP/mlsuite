@@ -1,4 +1,27 @@
 :root,
+html[data-theme-preset="eshkra"] {
+  --theme-page-bg: #ffffff;
+  --theme-page-bg-accent: rgba(232, 89, 12, 0.06);
+  --theme-surface-primary: #ffffff;
+  --theme-surface-secondary: #f7f7f9;
+  --theme-surface-muted: #f0f0f4;
+  --theme-surface-inverse: #19191c;
+  --theme-text-primary: #0b0b10;
+  --theme-text-secondary: #474756;
+  --theme-text-muted: #666675;
+  --theme-text-inverse: #ffffff;
+  --theme-border-soft: #e7e7ee;
+  --theme-border-strong: #d2d2dc;
+  /* Ember ink: flat ember (#e8590c) falls short of 4.5:1 for small text and on-accent labels. */
+  --theme-accent-primary: #c2410c;
+  --theme-accent-primary-strong: #9a3412;
+  --theme-accent-quiet: rgba(232, 89, 12, 0.1);
+  --theme-shadow-card:
+    rgba(0, 0, 0, 0.02) 0 0 0 1px, rgba(0, 0, 0, 0.04) 0 2px 6px, rgba(0, 0, 0, 0.1) 0 4px 8px;
+  --theme-shadow-hover: rgba(0, 0, 0, 0.08) 0 4px 12px;
+  --theme-sidebar-bg: rgba(255, 255, 255, 0.94);
+}
+
 html[data-theme-preset="mlsuite"] {
   --theme-page-bg: #f7f7fb;
   --theme-page-bg-accent: rgba(79, 70, 229, 0.09);
@@ -15,9 +38,6 @@ html[data-theme-preset="mlsuite"] {
   --theme-accent-primary: #4f46e5;
   --theme-accent-primary-strong: #3730a3;
   --theme-accent-quiet: #eeecff;
-  --theme-shadow-card:
-    rgba(0, 0, 0, 0.02) 0 0 0 1px, rgba(0, 0, 0, 0.04) 0 2px 6px, rgba(0, 0, 0, 0.1) 0 4px 8px;
-  --theme-shadow-hover: rgba(0, 0, 0, 0.08) 0 4px 12px;
   --theme-sidebar-bg: rgba(255, 255, 255, 0.92);
 }
 
@@ -117,6 +137,27 @@ html[data-theme-preset="iris"] {
 }
 
 html.dark,
+html.dark[data-theme-preset="eshkra"] {
+  --theme-page-bg: #0a0a0d;
+  --theme-page-bg-accent: rgba(255, 138, 61, 0.08);
+  --theme-surface-primary: #131318;
+  --theme-surface-secondary: #111116;
+  --theme-surface-muted: #1d1d24;
+  --theme-surface-inverse: #f4f4f6;
+  --theme-text-primary: #f4f4f6;
+  --theme-text-secondary: #b6b6c2;
+  --theme-text-muted: #8e8e9b;
+  --theme-text-inverse: #0b0b10;
+  --theme-border-soft: #24242c;
+  --theme-border-strong: #34343e;
+  --theme-accent-primary: #ff8a3d;
+  --theme-accent-primary-strong: #ff9a55;
+  --theme-accent-quiet: rgba(255, 138, 61, 0.12);
+  --theme-shadow-card: rgba(0, 0, 0, 0.16) 0 0 0 1px, rgba(0, 0, 0, 0.22) 0 12px 28px;
+  --theme-shadow-hover: rgba(0, 0, 0, 0.24) 0 18px 36px;
+  --theme-sidebar-bg: rgba(19, 19, 24, 0.94);
+}
+
 html.dark[data-theme-preset="mlsuite"] {
   --theme-page-bg: #0b0d14;
   --theme-page-bg-accent: rgba(169, 164, 255, 0.14);
@@ -133,8 +174,6 @@ html.dark[data-theme-preset="mlsuite"] {
   --theme-accent-primary: #a9a4ff;
   --theme-accent-primary-strong: #c7c3ff;
   --theme-accent-quiet: rgba(169, 164, 255, 0.18);
-  --theme-shadow-card: rgba(0, 0, 0, 0.16) 0 0 0 1px, rgba(0, 0, 0, 0.22) 0 12px 28px;
-  --theme-shadow-hover: rgba(0, 0, 0, 0.24) 0 18px 36px;
   --theme-sidebar-bg: rgba(19, 22, 32, 0.94);
 }
 
@@ -221,4 +260,19 @@ html.dark[data-theme-preset="iris"] {
   --theme-accent-primary-strong: #cab7ff;
   --theme-accent-quiet: rgba(182, 156, 255, 0.19);
   --theme-sidebar-bg: rgba(30, 24, 40, 0.94);
+}
+
+/*
+eshkra fills its primary action with ink, never ember. Only this preset sets the
+action inputs, outside the :root blocks above, so every other theme keeps
+filling actions with its accent.
+*/
+html[data-theme-preset="eshkra"] {
+  --theme-action: #0b0b10;
+  --theme-action-strong: #2e2e38;
+}
+
+html.dark[data-theme-preset="eshkra"] {
+  --theme-action: #f4f4f6;
+  --theme-action-strong: #d2d2dc;
 }

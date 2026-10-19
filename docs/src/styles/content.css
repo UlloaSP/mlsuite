@@ -1,0 +1,134 @@
+/* Reading surface: landing typography at documentation density. */
+code,
+pre,
+kbd {
+  font-feature-settings: "calt" 0;
+}
+
+.content-panel {
+  border-top-color: var(--msu-border);
+}
+
+h1#_top {
+  font-weight: 700;
+  font-stretch: 104%;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.sl-markdown-content :is(h2, h3, h4) {
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--msu-text);
+}
+
+.sl-markdown-content h2 {
+  margin-top: 2.75rem;
+  padding-top: 0.25rem;
+}
+
+.sl-markdown-content :is(p, li) {
+  text-wrap: pretty;
+}
+
+.sl-markdown-content a:not(:where(.not-content *)) {
+  color: var(--msu-ember-ink);
+  text-decoration-color: color-mix(in oklab, var(--msu-ember-ink) 40%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+.sl-markdown-content a:not(:where(.not-content *)):hover {
+  text-decoration-color: currentColor;
+}
+
+.sl-markdown-content :not(pre) > code {
+  padding: 0.1em 0.35em;
+  border: 1px solid var(--msu-border);
+  border-radius: 6px;
+  background: var(--msu-subtle);
+  font-size: 0.86em;
+  overflow-wrap: anywhere;
+}
+
+/* Tables: hairline rows, readable cells, horizontal scroll instead of squashed columns. */
+.sl-markdown-content table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.sl-markdown-content :is(th, td) {
+  padding: 0.6rem 0.9rem 0.6rem 0;
+  border-bottom: 1px solid var(--msu-border);
+  vertical-align: top;
+}
+
+.sl-markdown-content th {
+  border-bottom-color: var(--msu-border-strong);
+  color: var(--msu-text);
+  font-weight: 600;
+  text-align: start;
+}
+
+.sl-markdown-content td code {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+
+/* Asides keep Starlight semantics with brand surfaces. */
+.starlight-aside {
+  border-radius: 10px;
+  border-inline-start-width: 3px;
+}
+
+.starlight-aside--note,
+.starlight-aside--tip {
+  --sl-color-asides-text-accent: var(--msu-ember-ink);
+  --sl-color-asides-border: var(--msu-ember);
+  background: var(--msu-ember-soft);
+}
+
+/* Steps: ember counters like the landing's numbered start section. */
+.sl-steps > li::before {
+  background: var(--msu-subtle);
+  color: var(--msu-ember-ink);
+  box-shadow: inset 0 0 0 1px var(--msu-border-strong);
+}
+
+/* Starlight tabs share the landing's segmented look. */
+starlight-tabs [role="tablist"] {
+  border-bottom-color: var(--msu-border);
+}
+
+starlight-tabs [role="tab"][aria-selected="true"] {
+  border-color: var(--msu-ember);
+  color: var(--msu-text);
+}
+
+/* Cards and link cards. */
+.sl-markdown-content .sl-link-card,
+.sl-markdown-content .card {
+  border-color: var(--msu-border);
+  border-radius: 12px;
+  background: var(--msu-bg);
+  box-shadow: none;
+}
+
+.sl-markdown-content .sl-link-card:hover {
+  border-color: var(--msu-border-strong);
+  background: var(--msu-subtle);
+}
+
+.expressive-code .frame {
+  box-shadow: none;
+}
+
+.sl-markdown-content caption {
+  padding-bottom: 0.5rem;
+  color: var(--msu-text-3);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-align: start;
+}

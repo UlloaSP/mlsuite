@@ -4,10 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +30,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginMetadata;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
@@ -81,7 +86,7 @@ class SearchWorkspaceServiceTest {
         Model model = model(organization);
         Schema schema = schema(organization);
         PredictionRun run = run(schema);
-        when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization);
+        grant(organization, EnumSet.allOf(PermissionKey.class));
         when(membershipRepository.searchActiveByUserId(eq(7L), eq("ac"), any(Pageable.class)))
                 .thenReturn(List.of(membership(organization)));
         when(modelRepository.searchByOrganizationId(eq(41L), eq("ac"), any(Pageable.class))).thenReturn(List.of(model));
@@ -176,6 +181,49 @@ class SearchWorkspaceServiceTest {
         assertEquals("audit-tool.zip", response.groups().getFirst().results().getFirst().title());
     }
 
+    @Test
+    void search_OmitsPluginsWithoutViewPluginsInsteadOfFailing() {
+        Organization organization = organization();
+        Model model = model(organization);
+        grant(organization, EnumSet.of(PermissionKey.VIEW_MODELS));
+        when(membershipRepository.searchActiveByUserId(eq(7L), eq("acme"), any(Pageable.class))).thenReturn(List.of());
+        when(modelRepository.searchByOrganizationId(eq(41L), eq("acme"), any(Pageable.class))).thenReturn(List.of(model));
+        when(schemaRepository.searchByOrganizationId(eq(41L), eq("acme"), any(Pageable.class))).thenReturn(List.of());
+        when(schemaVersionRepository.searchByOrganizationId(eq(41L), eq("acme"), any(Pageable.class))).thenReturn(List.of());
+        when(schemaBookmarkRepository.searchByOrganizationId(eq(41L), eq("acme"), any(Pageable.class))).thenReturn(List.of());
+        when(predictionRunRepository.searchByOrganizationId(eq(41L), eq("acme"), any(Pageable.class))).thenReturn(List.of());
+
+        SearchResponseDto response = service.search(7L, "acme");
+
+        assertEquals(List.of("Models"), response.groups().stream().map(group -> group.label()).toList());
+        verify(pluginMetadataRepository, never()).searchByOrganizationId(any(), any(), any());
+    }
+
+    @Test
+    void search_OmitsModelBackedGroupsWithoutViewModels() {
+        Organization organization = organization();
+        PluginMetadata plugin = plugin(organization, "acme-tool.zip", "Report");
+        grant(organization, EnumSet.of(PermissionKey.VIEW_PLUGINS));
+        when(membershipRepository.searchActiveByUserId(eq(7L), eq("acme"), any(Pageable.class))).thenReturn(List.of());
+        when(pluginMetadataRepository.searchByOrganizationId(eq(41L), eq("acme"), any(Pageable.class)))
+                .thenReturn(List.of(plugin));
+
+        SearchResponseDto response = service.search(7L, "acme");
+
+        assertEquals(List.of("Plugins"), response.groups().stream().map(group -> group.label()).toList());
+        verify(modelRepository, never()).searchByOrganizationId(any(), any(), any());
+        verify(schemaRepository, never()).searchByOrganizationId(any(), any(), any());
+        verify(schemaVersionRepository, never()).searchByOrganizationId(any(), any(), any());
+        verify(schemaBookmarkRepository, never()).searchByOrganizationId(any(), any(), any());
+        verify(predictionRunRepository, never()).searchByOrganizationId(any(), any(), any());
+    }
+
+    private void grant(Organization organization, Set<PermissionKey> permissions) {
+        when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization);
+        when(workspaceAuthorizationService.effectiveOrganizationPermissions(7L, organization.getId()))
+                .thenReturn(permissions);
+    }
+
     private void stubSearches(
             String prefilter,
             Organization organization,
@@ -184,7 +232,7 @@ class SearchWorkspaceServiceTest {
             List<Schema> schemas,
             List<PredictionRun> runs,
             List<PluginMetadata> plugins) {
-        when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization);
+        grant(organization, EnumSet.allOf(PermissionKey.class));
         when(membershipRepository.searchActiveByUserId(eq(7L), eq(prefilter), any(Pageable.class)))
                 .thenReturn(memberships);
         when(modelRepository.searchByOrganizationId(eq(41L), eq(prefilter), any(Pageable.class))).thenReturn(models);

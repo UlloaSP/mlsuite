@@ -1,0 +1,36 @@
+---
+// The workflow in four steps, each linking to the section that shows it.
+const steps = [
+  {
+    href: "#models",
+    title: "Upload a bundle",
+    text: "A .mlbundle carries the model, its manifest and its input schema.",
+  },
+  {
+    href: "#schemas",
+    title: "Shape the schema",
+    text: "Combine models into one form, edit it as a reviewed change, publish a snapshot.",
+  },
+  {
+    href: "#inferences",
+    title: "Run and keep",
+    text: "Run one record or a whole file. Saved runs stay tied to their snapshot.",
+  },
+  {
+    href: "#review",
+    title: "Review and export",
+    text: "Members answer for each result. Answers become columns you export.",
+  },
+];
+---
+
+<section class="loop" aria-label="How MLsuite works">
+  <ol class="loop-steps wrap">
+    {steps.map(({ href, title, text }) => (
+      <li>
+        <a href={href}>{title}</a>
+        <span>{text}</span>
+      </li>
+    ))}
+  </ol>
+</section>

@@ -85,8 +85,8 @@ requires-dist = [
     { name = "dafact", specifier = "==0.5" },
     { name = "fastapi", specifier = ">=0.120.3" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28.1" },
-    { name = "mlbundle", extras = ["schema"], marker = "extra == 'dev'", specifier = "==0.1.0a3" },
-    { name = "mlbundle", extras = ["sklearn", "xgboost", "catboost", "onnx"], specifier = "==0.1.0a3" },
+    { name = "mlbundle", extras = ["schema"], marker = "extra == 'dev'", specifier = "==0.2.1" },
+    { name = "mlbundle", extras = ["sklearn", "xgboost", "catboost", "onnx"], specifier = "==0.2.1" },
     { name = "pandas", specifier = ">=3.0.3,<4.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4.1" },
     { name = "python-multipart", specifier = ">=0.0.31" },
@@ -785,14 +785,14 @@ wheels = [
 
 [[package]]
 name = "mlbundle"
-version = "0.1.0a3"
+version = "0.2.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f4/00/22c47905efb19cccb8972a301b8233b40e7515c510b38e6926b5226665a4/mlbundle-0.1.0a3.tar.gz", hash = "sha256:237651c34dbe9ab638532224e532e064125ef0e8ce68ad877fb758b969f72361", size = 119133, upload-time = "2026-10-13T15:04:50.527Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/77/09/e7fb7199aa3ba410fd673bd1ff297f6994239347287d84249996c693267d/mlbundle-0.2.1.tar.gz", hash = "sha256:ac512406f71c61d6c0175079526283e4d81b813f7de5e394505bd2c2af5f3fda", size = 109554, upload-time = "2026-10-19T13:38:10.328Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1f/07/b9105c2cf387323b7c8f13e2d2337e8d846818f0822d005e8929a8e42cc9/mlbundle-0.1.0a3-py3-none-any.whl", hash = "sha256:d53dec9fba4fed2648f26ecf48d8d5efa1417427b9b2a6ca7301af1dd3dbcbad", size = 153105, upload-time = "2026-10-13T15:04:49.096Z" },
+    { url = "https://files.pythonhosted.org/packages/ec/87/8f37b4678f6f95f31a8302e0da87bb2a79cde16c21a5bab1ca5ab278038f/mlbundle-0.2.1-py3-none-any.whl", hash = "sha256:20761f5673adb77a3f07370197ad0708e2914e1e61c7d247a8f47107eb3b40af", size = 149264, upload-time = "2026-10-19T13:38:08.815Z" },
 ]
 
 [package.optional-dependencies]
@@ -817,15 +817,15 @@ xgboost = [
 
 [[package]]
 name = "mlschema"
-version = "0.2.1"
+version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pandas" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a2/97/b3295985c4250525069b86bf0eee31c211b3d35cebee5b995f64a35dcb58/mlschema-0.2.1.tar.gz", hash = "sha256:59f819d677fa662f9c620938a6bef7fd093a11dad5872e507e5035da723cdb9e", size = 56763, upload-time = "2026-06-18T11:21:12.225Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c3/70/6d5c5e76dd5aff506364acf1e52b76cf93c72f3720a5767e1d96d50ad4e0/mlschema-0.3.0.tar.gz", hash = "sha256:6f201a71ec926f7891e149368f5ddd537652086cedcb2ae0e6cd68bee83800cc", size = 755411, upload-time = "2026-10-19T10:44:58.591Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/56/4a/c4b8f535f3ea8cb60af7ab65f30c8dd2a7363768465a63fcccee72cc265f/mlschema-0.2.1-py3-none-any.whl", hash = "sha256:26ae50b7861d7bd907c5117498d384d003d8e2925dcaa14335add3d0bd7101ba", size = 36852, upload-time = "2026-06-18T11:21:11.292Z" },
+    { url = "https://files.pythonhosted.org/packages/da/e4/4230a97e095738c461dece0c2b2829e29291130892588bddd32d0b6cdf05/mlschema-0.3.0-py3-none-any.whl", hash = "sha256:49982ff201781a60b8e63951de6feac03fca1ce4b4c1b9e5a1b6a8895085438d", size = 37017, upload-time = "2026-10-19T10:44:57.276Z" },
 ]
 
 [[package]]

@@ -887,16 +887,29 @@
         ],
         "type": "object"
       },
+      "AuditActorDto": {
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object"
+      },
       "AuditEventDto": {
         "properties": {
           "action": {
             "type": "string"
           },
-          "actorEmail": {
-            "type": "string"
-          },
-          "actorName": {
-            "type": "string"
+          "actor": {
+            "$ref": "#/components/schemas/AuditActorDto"
           },
           "createdAt": {
             "format": "date-time",
@@ -924,8 +937,7 @@
         },
         "required": [
           "action",
-          "actorEmail",
-          "actorName",
+          "actor",
           "createdAt",
           "id",
           "metadata",
@@ -2863,6 +2875,39 @@
           "items": {
             "items": {
               "$ref": "#/components/schemas/ApiRequestDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoAuditEventDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuditEventDto"
             },
             "type": "array"
           },
@@ -6381,6 +6426,9 @@
           "canViewApiAccess": {
             "type": "boolean"
           },
+          "canViewAuditLog": {
+            "type": "boolean"
+          },
           "canViewInvitations": {
             "type": "boolean"
           },
@@ -6419,6 +6467,7 @@
           "canRunPredictions",
           "canTransferOwnership",
           "canViewApiAccess",
+          "canViewAuditLog",
           "canViewInvitations",
           "canViewMembers",
           "canViewModels",
@@ -6458,7 +6507,7 @@
     }
   },
   "info": {
-    "title": "MLSuite API",
+    "title": "MLsuite API",
     "version": "contract"
   },
   "openapi": "3.1.0",
@@ -6883,7 +6932,7 @@
     },
     "/api/admin/public-bookmarks": {
       "get": {
-        "operationId": "list_11",
+        "operationId": "list_10",
         "parameters": [
           {
             "in": "query",
@@ -8686,9 +8735,9 @@
         ]
       }
     },
-    "/api/organizations/{organizationId}/audit-events": {
+    "/api/organizations/{organizationId}/audit-events/catalog": {
       "get": {
-        "operationId": "list_10",
+        "operationId": "auditEventCatalog",
         "parameters": [
           {
             "in": "path",
@@ -8698,6 +8747,48 @@
               "format": "int64",
               "type": "integer"
             }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -8705,10 +8796,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/AuditEventDto"
-                  },
-                  "type": "array"
+                  "$ref": "#/components/schemas/PageDtoAuditEventDto"
                 }
               }
             },

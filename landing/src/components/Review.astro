@@ -1,0 +1,49 @@
+---
+import ShotWindow from "./ShotWindow.astro";
+
+const steps = [
+  {
+    title: "Assign",
+    text: "Pick a snapshot's inferences and the members who review them, with an expiry date.",
+  },
+  {
+    title: "Answer",
+    text: "Each report asks for the correct class or value, or its own questionnaire when the schema defines one.",
+  },
+  {
+    title: "Send",
+    text: "Saved answers wait in the reviewer's tray until the review is completed, then appear in Inferences and the export.",
+  },
+];
+---
+
+<section class="section feature" id="review" aria-labelledby="review-title">
+  <div class="wrap split">
+    <div>
+      <header class="section-head">
+        <h2 id="review-title">Feedback closes the loop.</h2>
+        <p>
+          A prediction is not the end. Ask the people who know the domain to check results, record
+          what was right, and turn their answers into evaluation and retraining data.
+        </p>
+      </header>
+      <ol class="steps">
+        {steps.map(({ title, text }) => (
+          <li>
+            <strong>{title}</strong>
+            <span>{text}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+    <div class="plate review-plate">
+      <ShotWindow
+        name="review"
+        path="/review/…"
+        title="The review inbox"
+        alt="The review inbox: a run predicted Gentoo at 100% with a body mass of 5,534.876, a first step asking for the Species assessment, and the review tray with five runs saved for revision and three pending, above a Complete review (5) button."
+        sizes="(max-width: 64rem) 92vw, 36rem"
+      />
+    </div>
+  </div>
+</section>

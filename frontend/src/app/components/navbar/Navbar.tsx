@@ -84,8 +84,8 @@ export function Navbar({ position }: { position: "top" | "bottom" }) {
           aria-hidden="true"
           className="h-auto w-8"
           src="/mlsuite.png"
-          width="1181"
-          height="635"
+          width="960"
+          height="512"
         />
         <NavbarLabel compact={compact} from="xl">
           <span aria-hidden="true">

@@ -79,13 +79,13 @@
 }
 
 .driver-popover.mlsuite-user-guide .driver-popover-next-btn {
-  border-color: var(--color-accent);
-  background: var(--color-accent);
-  color: var(--color-on-accent);
+  border-color: var(--color-action);
+  background: var(--color-action);
+  color: var(--color-on-action);
 }
 
 .driver-popover.mlsuite-user-guide .driver-popover-next-btn:hover {
-  background: var(--color-accent-hover);
+  background: var(--color-action-hover);
 }
 
 /* driver.js paints the arrow with one opaque border side per placement. */

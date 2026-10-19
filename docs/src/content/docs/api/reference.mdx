@@ -1,0 +1,113 @@
+---
+title: Client API reference
+description: "POST /api/v1/bookmarks/{id}/predictions: authentication, request and response bodies, error codes, limits and CORS."
+---
+
+import Capture from "../../../components/Capture.astro";
+
+The client API runs one record through a bookmark's model and returns its outputs. It is the only
+endpoint for outside software; a client first needs a key and the bookmark, see
+[Clients and keys](/api/clients/).
+
+## Request
+
+```http
+POST /api/v1/bookmarks/<bookmark id>/predictions
+X-MLSuite-Key: mls_...
+Content-Type: application/json
+
+{"features": {"age": 45, "income": 58000, "has_guarantor": false,
+  "employment__salaried": 1, "employment__self_employed": 0, "employment__unemployed": 0}}
+```
+
+- **Bookmark id**: the opaque id the client's Bookmarks tab shows, the same one a public page uses.
+- **`X-MLSuite-Key`**: one of the client's keys.
+- **`features`**: one record under the model's own feature names, not the form's labels. Each value
+  is a number, a boolean, a text of at most 256 characters, or `null`. Send every feature, even
+  when null; extra keys are ignored. A one-hot group takes `1` for the chosen option and `0` for
+  the others. The runtime reads a text value only when it holds a decimal number or `true`/`false`
+  in at most 64 characters, so send category labels and dates as the model's own encoded features.
+
+Only the model validates the record. A record it cannot use is refused with `422
+features_rejected` and the runtime's reason.
+
+```sh title="curl"
+curl -sS https://mlsuite.irlab.org/api/v1/bookmarks/$BOOKMARK_ID/predictions \
+  -H "X-MLSuite-Key: $MLSUITE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"features": {"age": 45, "income": 58000, "has_guarantor": false, "employment__salaried": 1, "employment__self_employed": 0, "employment__unemployed": 0}}'
+```
+
+## Response
+
+`200 OK` says what ran and gives the model's outputs in output order. The same `requestId` comes
+back in the `X-Request-Id` header and names the call in the [request log](/api/usage/#requests).
+
+```json
+{
+  "requestId": "797a8a97-65af-4c9b-8289-31023eeffaa9",
+  "bookmark": { "id": "5c3e23d0-40c7-432f-8bb0-188f2c51faab", "name": "loan-approval" },
+  "snapshot": { "version": 2, "name": "Readable labels and review questions" },
+  "model": { "name": "Demo Loan Tree", "sha256": "42f76acf5d20…" },
+  "outputs": [{ "prediction": "approve", "probabilities": { "approve": 1.0, "decline": 0.0 } }]
+}
+```
+
+A classifier output is `{"prediction", "probabilities"}`, a regressor output `{"value"}`. The run is
+stored as one of the organization's inferences with the origin **API** and the client's name as
+its author.
+
+## Errors
+
+Every refusal is an [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem
+(`application/problem+json`) with a stable `code`, and a `requestId` once the call was logged:
+
+```json
+{
+  "title": "Features rejected by the model",
+  "status": 422,
+  "detail": "The model could not use these features: Missing features: \"has_guarantor\", …",
+  "instance": "/api/v1/bookmarks/5c3e23d0-40c7-432f-8bb0-188f2c51faab/predictions",
+  "code": "features_rejected",
+  "requestId": "a3cebfe4-d2f5-4c73-aed8-b6c119bc6e2a"
+}
+```
+
+| Status | `code` | When |
+| --- | --- | --- |
+| 400 | `invalid_body` | The body is not JSON, or has no `features` object. |
+| 400 | `invalid_features` | A value is not a number, boolean, short text or null. |
+| 401 | `invalid_key` | The key is missing, wrong or revoked. |
+| 403 | `client_suspended` | A superadmin suspended the client. |
+| 404 | `bookmark_not_found` | No such bookmark, or the client was not given it. |
+| 409 | `bookmark_not_runnable` | The snapshot binds more than one model, or the model is too large. |
+| 409 | `bookmark_changed` | The bookmark moved while the call ran; send it again. |
+| 422 | `features_rejected` | The model could not use the record. |
+| 429 | `rate_limited` | The client's calls per minute are used up. |
+| 429 | `quota_exceeded` | The organization's monthly calls are used up. |
+| 500 | `internal_error` | The call could not be completed. |
+| 502 | `runtime_failed` | The runtime failed to predict. |
+| 503 | `runtime_busy` | Every runtime slot for API clients is in use. |
+
+`429` and `503` carry `Retry-After` in seconds: to the next minute, to the next UTC month, or 5.
+
+## Limits and CORS
+
+The defaults are 60 calls a minute per client, 10,000 succeeded calls a month per organization and
+2 concurrent API runs on the instance; see [Usage and requests](/api/usage/#limits).
+
+The endpoint accepts any origin without credentials and exposes `X-Request-Id` and `Retry-After`.
+That does not make browser use safe: a key in browser JavaScript is readable by anyone who loads
+the page. Call the API from a backend.
+
+## Documentation in the app
+
+<Capture
+  name="api-docs"
+  alt="The API Docs page for the loan-approval bookmark: endpoint, authentication and the request rules, with Copy cURL and Copy as Markdown buttons."
+/>
+
+**API › Docs** documents each bookmark given to a client from its model's signature: the endpoint,
+authentication, a table of features with their types and whether null is allowed, the response
+outputs, limits, errors and a cURL example. **Copy cURL** and **Copy as Markdown** hand it to the
+people who write the client software.

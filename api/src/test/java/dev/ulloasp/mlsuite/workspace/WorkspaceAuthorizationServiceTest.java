@@ -55,6 +55,7 @@ class WorkspaceAuthorizationServiceTest {
         assertTrue(permissions.canManageInvitations());
         assertTrue(permissions.canExportPredictions());
         assertTrue(permissions.canManagePlugins());
+        assertTrue(permissions.canViewAuditLog());
     }
 
     @Test
@@ -68,6 +69,7 @@ class WorkspaceAuthorizationServiceTest {
         assertFalse(permissions.canExportPredictions());
         assertFalse(permissions.canViewMembers());
         assertFalse(permissions.canManagePlugins());
+        assertFalse(permissions.canViewAuditLog());
     }
 
     @Test

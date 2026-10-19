@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
+import java.util.EnumSet;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +20,7 @@ import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelReposit
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
@@ -79,6 +81,7 @@ class SearchWorkspaceSchemaArtifactsTest {
                 PredictionRunStatus.SUCCESS);
         unbookmarked.setId(72L);
         when(access.requireCurrentOrganization(7L)).thenReturn(organization);
+        when(authorization.effectiveOrganizationPermissions(7L, 41L)).thenReturn(EnumSet.of(PermissionKey.VIEW_MODELS));
         when(runs.searchByOrganizationId(eq(41L), eq("release"), any(Pageable.class)))
                 .thenReturn(List.of(bookmarked, unbookmarked));
 
@@ -102,6 +105,7 @@ class SearchWorkspaceSchemaArtifactsTest {
         bookmark.setId(61L);
         bookmark.setUpdatedAt(OffsetDateTime.parse("2026-07-27T11:00:00Z"));
         when(access.requireCurrentOrganization(7L)).thenReturn(organization);
+        when(authorization.effectiveOrganizationPermissions(7L, 41L)).thenReturn(EnumSet.of(PermissionKey.VIEW_MODELS));
         when(versions.searchByOrganizationId(eq(41L), eq("release"), any(Pageable.class)))
                 .thenReturn(List.of(version));
         when(bookmarks.searchByOrganizationId(eq(41L), eq("release"), any(Pageable.class)))

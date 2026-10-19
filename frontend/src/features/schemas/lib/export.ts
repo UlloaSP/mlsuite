@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { isBuiltinReportKind } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
 import { csvEscape, toCell } from "@/capabilities/prediction-runtime/data/export-csv";
+import { builtinPrediction } from "@/capabilities/prediction-runtime/data/report-normalization";
 import { getOutputFeedbackFieldIds } from "@/capabilities/prediction-runtime/feedback/output-feedback-questionnaire";
 import { getQuestionnaireFieldIds } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
 import type { QuestionnaireSchema } from "@/capabilities/prediction-runtime/feedback/questionnaire-schema";
@@ -52,7 +53,7 @@ const reportColumnId = (report: SchemaDisplayReport): string => report.id;
 
 const predictionValue = (report: SchemaDisplayReport): unknown => {
   const payload = feedbackRecord(report.payload);
-  const rawPrediction = payload.prediction ?? payload.value;
+  const rawPrediction = builtinPrediction(payload);
   if (typeof rawPrediction === "number") return report.labels?.[rawPrediction] ?? rawPrediction;
   if (typeof rawPrediction === "string" && /^\d+$/.test(rawPrediction)) {
     const index = Number(rawPrediction);

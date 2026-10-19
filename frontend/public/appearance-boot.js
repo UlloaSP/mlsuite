@@ -11,7 +11,10 @@
     typography: "ui/typography",
   };
   const modes = ["dark", "light", "system"];
+  // Mirrors DEFAULT_THEME_ID in src/shared/ui/theme-catalog.ts; test/theme-presets.test.ts keeps them in sync.
+  const defaultTheme = "eshkra";
   const presets = [
+    "eshkra",
     "mlsuite",
     "airbnb",
     "grove",
@@ -160,7 +163,7 @@
     const customThemes = Array.isArray(customValue) ? customValue.filter(isCustomTheme) : [];
     const storedSelection = read(KEYS.selection);
     const legacyPreset = read(KEYS.legacyPreset);
-    const migrated = isThemeId(legacyPreset, customThemes) ? legacyPreset : "mlsuite";
+    const migrated = isThemeId(legacyPreset, customThemes) ? legacyPreset : defaultTheme;
     const selection =
       storedSelection &&
       isThemeId(storedSelection.light, customThemes) &&
@@ -218,7 +221,7 @@
     const resolved = resolveMode(safe.mode);
     const themeId = isThemeId(safe.selection[resolved], safe.customThemes)
       ? safe.selection[resolved]
-      : "mlsuite";
+      : defaultTheme;
     const root = document.documentElement;
     root.classList.toggle("dark", resolved === "dark");
     root.dataset.themePreset = themeId;

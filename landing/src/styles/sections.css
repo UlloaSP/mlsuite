@@ -1,0 +1,268 @@
+/* The workflow strip under the hero: four steps linking to their sections. */
+.loop {
+  border-block: 1px solid var(--border);
+  background: var(--bg-subtle);
+}
+.loop-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin-block: 0;
+  padding-block: 1.75rem;
+  list-style: none;
+  counter-reset: step;
+}
+.loop-steps li {
+  display: grid;
+  align-content: start;
+  gap: 0.25rem;
+  counter-increment: step;
+}
+.loop-steps a {
+  font-weight: 650;
+  text-decoration: none;
+}
+.loop-steps a::before {
+  content: counter(step, decimal-leading-zero) " ";
+  color: var(--ember-ink);
+  font-family: var(--brand-font-mono);
+  font-size: 0.8125rem;
+}
+.loop-steps a:hover {
+  color: var(--ember-ink);
+}
+.loop-steps span {
+  color: var(--text-2);
+  font-size: 0.9375rem;
+}
+
+/* Feature sections: a head, the product on a plate, then what to notice. */
+.feature + .feature {
+  border-top: 1px solid var(--border);
+}
+.feature .plate {
+  margin-top: 2.5rem;
+}
+.pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.75rem, 2vw, 1.5rem);
+  align-items: start;
+}
+.models-plate {
+  --gx: 92%;
+  --gy: 8%;
+}
+.schemas-plate {
+  --gx: 6%;
+  --gy: 96%;
+}
+.inferences-plate {
+  --gx: 96%;
+  --gy: 96%;
+}
+.review-plate {
+  --gx: 8%;
+  --gy: 10%;
+}
+.points {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.5rem, 4vw, 3rem);
+  margin: 2.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.points li {
+  padding-top: 1.25rem;
+  border-top: 2px solid var(--ember);
+}
+.points h3,
+.ledger-grid h3 {
+  font-size: 1.125rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.points p,
+.ledger-grid p {
+  margin-top: 0.5rem;
+  color: var(--text-2);
+}
+
+/* Copy beside one capture. */
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: center;
+}
+.split .plate {
+  margin-top: 0;
+}
+.steps {
+  display: grid;
+  gap: 1.25rem;
+  margin: 2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.steps li {
+  display: grid;
+  gap: 0.125rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--border-strong);
+}
+.steps li:last-child {
+  border-left-color: var(--ember);
+}
+.steps strong {
+  font-weight: 650;
+}
+.steps span {
+  color: var(--text-2);
+}
+
+/* The family: what each library does here. */
+.family {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.5rem, 4vw, 3rem);
+  margin: 2.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.family li {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-strong);
+}
+.family a {
+  font-size: 1.75rem;
+  line-height: 1.2;
+  text-decoration: none;
+}
+.family a:hover {
+  color: var(--ember-ink);
+}
+.family p {
+  margin-top: 0.75rem;
+  color: var(--text-2);
+}
+
+/* The topology: three services in a row, the stores under the API. */
+.topology {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 2.5rem;
+}
+.services {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.node {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 0.125rem;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.node small {
+  color: var(--text-3);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.node strong {
+  font-size: 1.0625rem;
+  font-weight: 650;
+}
+.node span {
+  color: var(--text-2);
+  font-size: 0.9375rem;
+}
+.node.hub {
+  border-color: var(--ember);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--ember) 14%, transparent);
+}
+/* Each service talks to the next one through the API, in both directions. */
+.services .node + .node::before {
+  content: "⇄";
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: 2rem;
+  translate: 0 -50%;
+  color: var(--ember-ink);
+  text-align: center;
+}
+.stores {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  width: calc((100% - 4rem) / 3);
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+.node.store {
+  background: var(--bg-subtle);
+}
+.ledger-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  margin: 3rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.ledger-grid li {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-strong);
+}
+
+@media (max-width: 64rem) {
+  .loop-steps,
+  .ledger-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pair,
+  .split,
+  .points,
+  .family {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .split .plate {
+    margin-top: 2.5rem;
+  }
+}
+@media (max-width: 48rem) {
+  .services {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .services .node + .node::before {
+    top: auto;
+    right: auto;
+    bottom: 100%;
+    left: 50%;
+    width: auto;
+    height: 2rem;
+    translate: -50% 0;
+    line-height: 2rem;
+    rotate: 90deg;
+  }
+  .stores {
+    width: 100%;
+  }
+}
+@media (max-width: 30rem) {
+  .loop-steps,
+  .ledger-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

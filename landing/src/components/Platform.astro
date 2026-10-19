@@ -1,0 +1,77 @@
+---
+// The deployed topology from the README and docker-compose.yml.
+const services = [
+  { role: "client", name: "React + MLform", text: "Draws forms, results and reviews." },
+  {
+    role: "api",
+    name: "Spring Boot",
+    text: "Sign-in, workspace permissions, persistence and every business rule.",
+  },
+  {
+    role: "runtime",
+    name: "Python",
+    text: "Loads bundles, checks records and runs predictions and explanations.",
+  },
+];
+const stores = [
+  { role: "state", name: "PostgreSQL" },
+  { role: "artifacts", name: "MinIO" },
+];
+const ledger = [
+  {
+    title: "Organizations",
+    text: "Members, roles, invitations and permissions. A new account starts with its own personal organization.",
+  },
+  {
+    title: "Plugins",
+    text: "Upload TypeScript plugins that add MLform fields and reports to a workspace's schemas.",
+  },
+  {
+    title: "Explanations",
+    text: "Supported decision-tree models can be explained with Crystal Tree.",
+  },
+  {
+    title: "Administration",
+    text: "Superadmins moderate public bookmarks, watch API traffic and set each organization's monthly limit.",
+  },
+];
+---
+
+<section class="section feature" id="platform" aria-labelledby="platform-title">
+  <div class="wrap">
+    <header class="section-head">
+      <h2 id="platform-title">Three runtimes, one product.</h2>
+      <p>
+        Results return through the API, so the model, schema, inputs, outputs and feedback of a run
+        stay traceable from end to end.
+      </p>
+    </header>
+    <div class="topology" aria-label="How a prediction travels">
+      <ol class="services">
+        {services.map(({ role, name, text }) => (
+          <li class:list={["node", { hub: role === "api" }]}>
+            <small class="mono">{role}</small>
+            <strong>{name}</strong>
+            <span>{text}</span>
+          </li>
+        ))}
+      </ol>
+      <ul class="stores">
+        {stores.map(({ role, name }) => (
+          <li class="node store">
+            <small class="mono">{role}</small>
+            <strong>{name}</strong>
+          </li>
+        ))}
+      </ul>
+    </div>
+    <ul class="ledger-grid">
+      {ledger.map(({ title, text }) => (
+        <li>
+          <h3>{title}</h3>
+          <p>{text}</p>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>

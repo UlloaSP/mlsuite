@@ -10,7 +10,7 @@ import {
 import { createOutputFeedbackQuestionnaire } from "@/capabilities/prediction-runtime/feedback/output-feedback-questionnaire";
 import { normalizeFeedbackValues } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
 import type { QuestionnaireSchema } from "@/capabilities/prediction-runtime/feedback/questionnaire-schema";
-import { getFormattedReportContent } from "@/capabilities/prediction-runtime/feedback/report-feedback-utils";
+import { describeReportResult } from "@/capabilities/prediction-runtime/feedback/result-summary";
 import { isBuiltinReportKind } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import {
@@ -32,28 +32,6 @@ export type PublicFeedbackStep = CombinedFeedbackStep<FeedbackType, never> & {
   type: FeedbackType;
   /** The answers kept on the server, by field, or undefined before the first review. */
   saved?: Record<string, unknown>;
-};
-
-const formatProbability = (value: unknown): string | null =>
-  typeof value === "number" ? `${(value * 100).toFixed(2)}%` : null;
-
-/** What the run predicted, as the workspace's review describes it to a reviewer. */
-const outputDescription = (payload: unknown): string => {
-  const record = isRecord(payload) ? payload : {};
-  const probabilities = Array.isArray(record.probabilities) ? record.probabilities : [];
-  const labels = Array.isArray(record.labels) ? record.labels : [];
-  const prediction =
-    record.prediction ?? record.value ?? labels[probabilities.indexOf(Math.max(...probabilities))];
-  const index = labels.findIndex((label) => String(label) === String(prediction));
-  const probability = formatProbability(index >= 0 ? probabilities[index] : undefined);
-  return probability
-    ? `Prediction result: ${String(prediction)} · ${probability}`
-    : `Prediction result: ${String(prediction)}`;
-};
-
-const reportDescription = (payload: unknown): string => {
-  const content = getFormattedReportContent(payload).join("\n\n");
-  return content ? `Prediction report:\n${content}` : "Prediction report";
 };
 
 const savedAnswers = (
@@ -87,7 +65,7 @@ const stepsOf = (
       reportKey: key,
       order: report.order,
       title: report.label,
-      description: outputDescription(report.payload),
+      description: describeReportResult(report.kind, report.payload),
       schema,
       initialValues: saved ?? {},
       saved,
@@ -108,7 +86,7 @@ const stepsOf = (
       reportKey: key,
       order: report.order,
       title: `${report.label} review`,
-      description: reportDescription(report.payload),
+      description: describeReportResult(report.kind, report.payload),
       schema,
       initialValues: saved ?? {},
       saved,
