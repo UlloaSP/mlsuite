@@ -24,7 +24,7 @@ final class ModelCatalogReader {
     }
 
     public Optional<Model> findModel(Long userId, Long modelId) {
-        return modelRepository.findByIdAndOrganizationIdAndArchivedAtIsNull(modelId, requireModelView(userId));
+        return modelRepository.findByIdAndOrganizationId(modelId, requireModelView(userId));
     }
 
     private Long requireModelView(Long userId) {
