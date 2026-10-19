@@ -1,5 +1,5 @@
 [Unit]
-Description=MLSuite coordinated local backup
+Description=MLsuite coordinated local backup
 Requires=docker.service
 After=docker.service
 

@@ -26,7 +26,7 @@ export function AuthAccessOverlay({
   return (
     <div className="auth-overlay" data-open={open} style={style} aria-hidden={!open}>
       <div className="auth-overlay-content" role="status">
-        <img alt="" className="h-[72px] w-auto" height="635" src="/mlsuite.png" width="1181" />
+        <img alt="" className="h-[72px] w-auto" height="512" src="/mlsuite.png" width="960" />
         <p className="text-center text-[min(84px,10vw)] leading-[0.92] tracking-[-0.05em]">
           {mode === "login" ? (
             <>

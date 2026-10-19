@@ -1,6 +1,6 @@
-# Contributing to MLSuite
+# Contributing to MLsuite
 
-MLSuite is early software. Small, focused fixes are easiest to review. Discuss large features and contract changes before investing in implementation.
+MLsuite is early software. Small, focused fixes are easiest to review. Discuss large features and contract changes before investing in implementation.
 
 ## Where to start
 

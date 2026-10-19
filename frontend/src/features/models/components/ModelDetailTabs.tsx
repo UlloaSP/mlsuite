@@ -80,7 +80,7 @@ export function ModelDetailTabs({ model, details }: Props) {
         <AppEmptyState
           compact
           title="No bundle details"
-          description="This model was stored before MLSuite kept what its bundle says about it. Upload its .mlbundle again to see it here."
+          description="This model was stored before MLsuite kept what its bundle says about it. Upload its .mlbundle again to see it here."
         />
       ) : (
         <AppTabs
