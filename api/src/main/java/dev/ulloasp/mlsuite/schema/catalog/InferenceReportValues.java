@@ -70,11 +70,15 @@ final class InferenceReportValues {
         return new Produced(result, reports);
     }
 
-    /** A built-in report's predicted label, or a custom report's text. */
+    /** A built-in report's predicted label or a regressor's value, or a custom report's text. */
     static Object value(Report report) {
-        return builtin(report.kind())
-                ? first(report.payload().get("prediction"), report.payload().get("value"))
-                : String.join(" · ", InferenceReportText.content(report.payload()));
+        if (!builtin(report.kind())) {
+            return String.join(" · ", InferenceReportText.content(report.payload()));
+        }
+        // A run stores a regressor's prediction as its list of values, one per predicted row.
+        List<?> values = list(report.payload().get("values"));
+        return first(report.payload().get("prediction"), report.payload().get("value"),
+                values.isEmpty() ? null : values.get(0));
     }
 
     /** The class labels a report's configuration lists. */
