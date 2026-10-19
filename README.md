@@ -64,7 +64,6 @@ Open `.env` and provide independent values for every blank secret, especially:
 - `DB_PASS`
 - `STORAGE_SECRET_KEY`
 - `OPS_AGENT_SHARED_SECRET`
-- `REVIEW_LINK_SECRET`
 - `MLSUITE_SUPERADMIN_PASSWORD`
 
 Keep `.env` private. Commit only sanitized defaults to `.env.example`.
