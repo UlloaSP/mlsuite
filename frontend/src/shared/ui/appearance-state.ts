@@ -6,7 +6,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { atom, type WritableAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import { validatedStorage } from "@/shared/lib/validated-storage";
-import { isCustomTheme, isThemeId, type CustomTheme, type ThemeId } from "./theme-catalog";
+import {
+  DEFAULT_THEME_ID,
+  isCustomTheme,
+  isThemeId,
+  type CustomTheme,
+  type ThemeId,
+} from "./theme-catalog";
 
 export type ThemeMode = "system" | "light" | "dark";
 export type ResolvedTheme = "light" | "dark";
@@ -25,7 +31,7 @@ export const nextThemeMode = (mode: ThemeMode): ThemeMode =>
 export const CONTRAST_LEVELS = [100, 105, 110, 115, 120, 125] as const;
 
 const THEME_MODES: readonly ThemeMode[] = ["system", "light", "dark"];
-const DEFAULT_SELECTION: ThemeSelection = { light: "mlsuite", dark: "mlsuite" };
+const DEFAULT_SELECTION: ThemeSelection = { light: DEFAULT_THEME_ID, dark: DEFAULT_THEME_ID };
 
 declare global {
   interface Window {

@@ -68,16 +68,16 @@ describe("theme persistence", () => {
     const store = createStore();
 
     expect(store.get(themeModeAtom)).toBe("dark");
-    expect(store.get(themeSelectionAtom)).toEqual({ light: "mlsuite", dark: "mlsuite" });
+    expect(store.get(themeSelectionAtom)).toEqual({ light: "eshkra", dark: "eshkra" });
     expect(store.get(contrastAtom)).toBe(100);
     expect(localStorage.getItem("ui/color-scheme")).toBe(JSON.stringify("dark"));
     expect(localStorage.getItem("ui/contrast")).toBe(JSON.stringify(100));
     expect(root.classList.contains("dark")).toBe(true);
     expect(themeData()).toEqual({
       contrast: "100",
-      themeDark: "mlsuite",
-      themeLight: "mlsuite",
-      themePreset: "mlsuite",
+      themeDark: "eshkra",
+      themeLight: "eshkra",
+      themePreset: "eshkra",
     });
   });
 
@@ -115,6 +115,15 @@ describe("theme persistence", () => {
     unsubscribe();
   });
 
+  it("keeps a stored theme selection instead of the default", async () => {
+    localStorage.setItem("ui/theme-selection", JSON.stringify({ light: "mlsuite", dark: "ocean" }));
+    await bootWithSystemTheme(false);
+    const { themeSelectionAtom } = await import("@/shared/ui/appearance-state");
+
+    expect(createStore().get(themeSelectionAtom)).toEqual({ light: "mlsuite", dark: "ocean" });
+    expect(root.dataset.themePreset).toBe("mlsuite");
+  });
+
   it("ignores stored values that are no longer valid", async () => {
     localStorage.setItem("ui/color-scheme", JSON.stringify("sepia"));
     localStorage.setItem("ui/theme-selection", JSON.stringify({ light: "custom-gone", dark: 1 }));
@@ -122,7 +131,7 @@ describe("theme persistence", () => {
     const store = createStore();
 
     expect(store.get(themeModeAtom)).toBe("system");
-    expect(store.get(themeSelectionAtom)).toEqual({ light: "mlsuite", dark: "mlsuite" });
+    expect(store.get(themeSelectionAtom)).toEqual({ light: "eshkra", dark: "eshkra" });
   });
 
   it("applies contrast levels to text, borders, page, and surfaces", () => {
