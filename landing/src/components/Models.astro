@@ -1,0 +1,55 @@
+---
+import ShotWindow from "./ShotWindow.astro";
+
+const points = [
+  {
+    title: "Four libraries, no pickle",
+    text: "scikit-learn, XGBoost, CatBoost and ONNX models in their native formats, for tabular classification and regression.",
+  },
+  {
+    title: "The schema comes with it",
+    text: "Fields inferred from the training data by MLschema arrive with the bundle. Without it, every feature becomes a number field.",
+  },
+  {
+    title: "Identity you can check",
+    text: "The stored file's SHA-256, the bundle id, the hash of every member and the training environment it declares.",
+  },
+];
+---
+
+<section class="section feature" id="models" aria-labelledby="models-title">
+  <div class="wrap">
+    <header class="section-head">
+      <h2 id="models-title">Start from a bundle.</h2>
+      <p>
+        Drop in <code class="mono">.mlbundle</code> files exported with MLbundle. MLsuite reads the
+        algorithm, its classes and parameters, and the feature importance from the model itself. It
+        accepts no other artifact format.
+      </p>
+    </header>
+    <div class="plate pair models-plate">
+      <ShotWindow
+        name="model"
+        path="/models/…"
+        title="A model's overview"
+        alt="The Penguin Species model page: a scikit-learn DecisionTreeClassifier with 5 inputs and 1 output of 3 classes (Adelie, Chinstrap, Gentoo), fields inferred from the training data, written by mlbundle 0.1.0a3, and feature importance led by flipper length (0.524) and bill length (0.352)."
+        sizes="(max-width: 64rem) 92vw, 36rem"
+      />
+      <ShotWindow
+        name="provenance"
+        path="/models/…?tab=provenance"
+        title="A model's provenance"
+        alt="The Provenance tab of the same model: the stored file penguin-species.mlbundle with its SHA-256, the bundle id, format 1, the hash of each member such as model.skops and schema.json, and the declared training environment: CPython 3.14.7, scikit-learn 1.9.1, mlbundle 0.1.0a3, mlschema 0.2.1."
+        sizes="(max-width: 64rem) 92vw, 36rem"
+      />
+    </div>
+    <ul class="points">
+      {points.map(({ title, text }) => (
+        <li>
+          <h3>{title}</h3>
+          <p>{text}</p>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>

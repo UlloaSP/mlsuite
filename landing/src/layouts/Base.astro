@@ -1,0 +1,146 @@
+---
+import { Image, getImage } from "astro:assets";
+import mark from "../assets/mlsuite.png";
+import Icon from "../components/Icon.astro";
+import Wordmark from "../components/Wordmark.astro";
+import { description as defaultDescription, links } from "../data/site";
+import "../styles/typography.css";
+import "../styles/base.css";
+import "../styles/chrome.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+  noindex?: boolean;
+}
+const {
+  title = "MLsuite · From trained model to reviewed prediction",
+  description = defaultDescription,
+  noindex = false,
+} = Astro.props;
+// The mark is wide; favicons sit it on a square transparent canvas instead of cropping it.
+const favicon = await getImage({ src: mark, width: 48, height: 48, fit: "contain", format: "png" });
+const touchIcon = await getImage({
+  src: mark,
+  width: 180,
+  height: 180,
+  fit: "contain",
+  format: "png",
+});
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "MLsuite",
+  description,
+  url: links.home,
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "Docker",
+  codeRepository: links.github,
+  license: "https://opensource.org/license/mit",
+  author: { "@type": "Person", name: "Pablo Ulloa Santín", url: "https://github.com/UlloaSP" },
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0a0d" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/png" href={favicon.src} />
+    <link rel="apple-touch-icon" href={touchIcon.src} />
+    <link rel="canonical" href={canonical} />
+    <link rel="sitemap" href="/sitemap.xml" />
+    {noindex && <meta name="robots" content="noindex" />}
+    <title>{title}</title>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MLsuite" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary" />
+    <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+  </head>
+  <body>
+    <a class="skip" href="#main">
+      Skip to content
+    </a>
+    <header class="nav">
+      <div class="nav-inner wrap">
+        <a class="mlsuite-brand" href="/" aria-label="MLsuite home">
+          <Image src={mark} alt="" height={26} densities={[1, 2]} loading="eager" />
+          <Wordmark name="mlsuite" />
+        </a>
+        <a class="parent-brand" href={links.eshkra}>
+          by eshkra
+        </a>
+        <nav class="nav-links" aria-label="Main navigation">
+          <a class="nav-section" href="/#models">
+            Models
+          </a>
+          <a class="nav-section" href="/#schemas">
+            Schemas
+          </a>
+          <a class="nav-section" href="/#review">
+            Review
+          </a>
+          <a class="nav-section" href="/#share">
+            Share
+          </a>
+          <a href={links.docs}>Docs</a>
+          <a class="nav-github" href={links.github}>
+            <Icon name="github" size={18} />
+            <span>GitHub</span>
+          </a>
+        </nav>
+        <div class="nav-actions">
+          <a class="button small" href={links.app}>
+            Open MLsuite <Icon name="arrow-up-right" size={14} />
+          </a>
+        </div>
+      </div>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="footer">
+      <div class="footer-inner wrap">
+        <div class="footer-brand">
+          <a class="mlsuite-brand" href="/" aria-label="MLsuite home">
+            <Image src={mark} alt="" height={42} densities={[1, 2]} />
+            <Wordmark name="mlsuite" />
+          </a>
+          <p>
+            Part of <a href={links.eshkra}>eshkra</a>.<br />
+            Open-source tools for models people can use.
+          </p>
+        </div>
+        <nav aria-label="Use">
+          <h2>Use</h2>
+          <a href={links.app}>Live instance</a>
+          <a href={links.register}>Create an account</a>
+          <a href={links.docs}>Documentation</a>
+          <a href={links.readme}>Self-hosting</a>
+        </nav>
+        <nav aria-label="Project">
+          <h2>Project</h2>
+          <a href={links.github}>GitHub</a>
+          <a href={links.issues}>Issues</a>
+          <a href={links.discussions}>Discussions</a>
+          <a href={links.security}>Security</a>
+          <a href={links.license}>MIT license</a>
+        </nav>
+      </div>
+      <div class="footer-bottom wrap">
+        <span>© {new Date().getFullYear()} eshkra</span>
+        <a href={links.eshkra}>
+          Explore the family <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -34,6 +34,9 @@ final class InferenceFeedbackSteps {
     private static final String ASSESSMENT_FIELD_ID = "output-feedback-assessment";
     private static final Pattern NOT_ID_TEXT = Pattern.compile("[^a-z0-9]+");
     private static final Pattern EDGE_DASH = Pattern.compile("^-|-$");
+    /** MLForm's runtime id. A step id prefixes the ids of its unnamed fields, so it follows the rule too. */
+    private static final Pattern RUNTIME_ID = Pattern.compile("(?!__proto__$|constructor$|prototype$)\\S+",
+            Pattern.UNICODE_CHARACTER_CLASS);
 
     record Field(String id, String label, boolean required, List<Map<?, ?>> options) {
     }
@@ -161,14 +164,19 @@ final class InferenceFeedbackSteps {
         }
         for (Map<?, ?> step : steps) {
             List<Map<?, ?>> fields = records(step.get("fields"));
-            if (!(step.get("id") instanceof String)
+            if (!runtimeId(step.get("id"))
                     || !(step.get("title") instanceof String)
                     || fields.isEmpty()
                     || fields.size() != list(step.get("fields")).size()
-                    || fields.stream().anyMatch(field -> !(field.get("kind") instanceof String))) {
+                    || fields.stream().anyMatch(field -> !(field.get("kind") instanceof String)
+                            || (field.get("id") != null && !runtimeId(field.get("id"))))) {
                 return false;
             }
         }
         return true;
+    }
+
+    private static boolean runtimeId(Object id) {
+        return id instanceof String text && RUNTIME_ID.matcher(text).matches();
     }
 }

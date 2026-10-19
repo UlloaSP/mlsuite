@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 export type BuiltInThemeId =
+  | "eshkra"
   | "mlsuite"
   | "airbnb"
   | "grove"
@@ -36,7 +37,15 @@ export type CustomTheme = {
   dark: ThemePalette;
 };
 
+/** Applies to light and dark until the user picks a theme; appearance-boot.js mirrors it. */
+export const DEFAULT_THEME_ID = "eshkra" satisfies BuiltInThemeId;
+
 export const THEME_PRESETS = [
+  {
+    value: "eshkra",
+    label: "eshkra",
+    preview: { light: ["#ffffff", "#e8590c"], dark: ["#0a0a0d", "#ff8a3d"] },
+  },
   {
     value: "mlsuite",
     label: "MLsuite",
@@ -110,20 +119,20 @@ export const THEME_PRESETS = [
 
 export const DEFAULT_CUSTOM_PALETTES = {
   light: {
-    background: "#f7f7fb",
+    background: "#ffffff",
     surface: "#ffffff",
-    muted: "#eeedf8",
-    text: "#161827",
-    textMuted: "#626579",
-    accent: "#4f46e5",
+    muted: "#f0f0f4",
+    text: "#0b0b10",
+    textMuted: "#474756",
+    accent: "#c2410c",
   },
   dark: {
-    background: "#0b0d14",
-    surface: "#131620",
-    muted: "#232838",
-    text: "#f5f5f5",
-    textMuted: "#c2c5d4",
-    accent: "#a9a4ff",
+    background: "#0a0a0d",
+    surface: "#131318",
+    muted: "#1d1d24",
+    text: "#f4f4f6",
+    textMuted: "#b6b6c2",
+    accent: "#ff8a3d",
   },
 } as const satisfies { light: ThemePalette; dark: ThemePalette };
 

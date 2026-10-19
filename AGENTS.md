@@ -1,10 +1,10 @@
-# MLSuite
+# MLsuite
 
-MLSuite is an open-source platform for turning trained machine-learning models into reproducible, reviewable applications. It manages model artifacts, generates typed input experiences from schemas, runs predictions, records feedback, and exports the resulting data.
+MLsuite is an open-source platform for turning trained machine-learning models into reproducible, reviewable applications. It manages model artifacts, generates typed input experiences from schemas, runs predictions, records feedback, and exports the resulting data.
 
 The product spans a React client, a Spring Boot API, and a Python ML runtime. Treat them as one system.
 
-## What makes MLSuite special?
+## What makes MLsuite special?
 
 ### 1. Reproducibility end to end
 
@@ -86,7 +86,7 @@ The most common defect is a change that works in one path and disagrees everywhe
 - Read `frontend/ARCHITECTURE.md` before moving modules or changing dependency direction, ownership, state, or routing.
 - Read `DESIGN.md` before requested visual changes.
 - Keep one React component per file and organize by feature first.
-- MLForm engine built-ins and MLSuite catalog plugins are different concepts.
+- MLForm engine built-ins and MLsuite catalog plugins are different concepts.
 - Search, filters, sorting, badges, empty states, and copy operate on fetched data, not invented categories.
 - Keep `frontend/test/frontend-architecture.test.ts` passing without adding exceptions.
 

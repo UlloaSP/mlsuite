@@ -183,6 +183,8 @@ jobs:
           tags: mlsuite-${{ matrix.service }}:security
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,scope=${{ matrix.service }},mode=max
+          # Re-run the runtime stage so its package upgrades never come from a stale cache.
+          no-cache-filters: runtime
       - name: Scan the production image
         uses: ./.github/actions/scan-image
         with:
