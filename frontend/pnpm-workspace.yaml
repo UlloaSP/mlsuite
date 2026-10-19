@@ -1,7 +1,11 @@
 #minimumReleaseAge: 100080
 minimumReleaseAgeExclude:
-  - mlform@0.1.25
+  - mlform@0.2.0
   - monaco-editor@0.56.0
+
+# monaco-editor pins dompurify exactly (0.56.0 -> 3.4.8, 0.57.0 -> 3.4.15), both vulnerable.
+overrides:
+  dompurify: ^3.4.16
 
 #  - react-doctor@0.8.1
 #trustPolicy: no-downgrade

@@ -140,8 +140,8 @@ describe("schema plugin transport", () => {
       { instance: { age: 42, rec: 1 } },
       { instance: { years: 42, don: 2 } },
     ]);
-    expect(result.reportFetchResults["crystal-1"]).toEqual({ explanation: "tree-1" });
-    expect(result.reportFetchResults["crystal-2"]).toBeUndefined();
+    expect(result.reportFetchResults["crystal_1"]).toEqual({ explanation: "tree-1" });
+    expect(result.reportFetchResults["crystal_2"]).toBeUndefined();
   });
 
   test("skips mapped custom report when its model result failed before context exists", async () => {

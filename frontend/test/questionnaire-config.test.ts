@@ -30,6 +30,9 @@ test.each([
   { steps: [{ id: "review", title: "Review", fields: [] }] },
   { steps: [{ id: "review", title: "Review", fields: null }] },
   { steps: [{ id: "review", title: "Review", fields: [null] }] },
+  { steps: [{ id: "first review", title: "Review", fields: [{ kind: "text" }] }] },
+  { steps: [{ id: "review", title: "Review", fields: [{ id: "my note", kind: "text" }] }] },
+  { steps: [{ id: "review", title: "Review", fields: [{ id: "constructor", kind: "text" }] }] },
 ])("rejects malformed questionnaire %j in product schema validation", (config) => {
   expect(questionnaireConfigError(schema(config))).toContain("invalid feedback questionnaire");
   const result = validateMlformSchema(schema(config));
