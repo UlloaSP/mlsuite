@@ -45,8 +45,8 @@ importers:
         specifier: ^1.47.0
         version: 1.47.0(react@19.3.0)
       mlform:
-        specifier: 0.1.25
-        version: 0.1.25
+        specifier: 0.2.0
+        version: 0.2.0
       monaco-editor:
         specifier: ^0.56.0
         version: 0.56.0
@@ -2348,8 +2348,8 @@ packages:
     resolution: {integrity: sha512-7o1wEA2RyMP7Iu7GNba9vc0RWWGACJOCZBJX2GJWip0ikV+wcOsgVuY9uE8CPiyQhkGFSlhuSkZPavN7u1c2Fw==}
     engines: {node: '>=10'}
 
-  mlform@0.1.25:
-    resolution: {integrity: sha512-T41lC9Nz6/MWocCeaiAsZWydVpE1oHgB/mRWEPbru2c2snXrditC5gGA+F/SEYv1daewLv/zxwvYtLW4Fe+BUg==}
+  mlform@0.2.0:
+    resolution: {integrity: sha512-rq5bGSs7s/Zdaouzp0/lBc8905Fy1vQg5i+C2KpRawq1v+TjeRFNfGX1XY1/8RBrny8/bYLbsy2G+bemYWTQUQ==}
     engines: {node: '>=20.19.0'}
 
   monaco-editor@0.56.0:
@@ -4819,7 +4819,7 @@ snapshots:
     dependencies:
       brace-expansion: 2.1.7
 
-  mlform@0.1.25:
+  mlform@0.2.0:
     dependencies:
       lit: 3.3.3
       zod: 4.6.5
