@@ -1,0 +1,79 @@
+---
+title: Plugins
+description: "Add custom field and report kinds to an organization's forms with TypeScript plugins: the catalog, the file format, uploading and deleting."
+---
+
+import Capture from "../../components/Capture.astro";
+
+The form engine, [MLform](https://docs.mlform.eshkra.dev/), ships twelve field kinds and the
+`classifier` and `regressor` reports, always available. A **plugin** adds a field kind or a report
+kind of your own to one organization. Once uploaded, the kind can be used in that organization's
+schemas, and its forms draw it in Predict, reviews and public pages.
+
+## The catalog
+
+<Capture
+  name="plugins"
+  alt="The Plugins catalog listing one report plugin, demo-summary."
+/>
+
+**Plugins** (needs **View plugins**) lists the organization's plugins. Filter **All**, **Fields**
+or **Reports**, search by file or kind, and sort by **Latest updated** or **Name**. Each entry shows
+its kind, whether it is a Field or Report plugin (or **Invalid**), who uploaded it and when. A new
+organization has no plugins.
+
+## Write a plugin
+
+A plugin is one TypeScript (`.ts`) file whose default export defines one kind. `z`
+([Zod](https://zod.dev/)), `defineFieldKind` and `defineReportKind` are provided; do not import
+them. The `schema` validates the kind's options in the schema JSON.
+
+```ts title="demo-summary.ts"
+export default defineReportKind({
+  kind: "demo-summary",
+  schema: z.object({
+    kind: z.literal("demo-summary"),
+    label: z.string().optional(),
+    mappedTo: z.string().optional(),
+  }),
+  render: { content: ({ payload }) => ({ type: "text", value: String(payload) }) },
+});
+```
+
+A field plugin uses `defineFieldKind` with `kind`, `schema`, a `value` (its default and how to
+normalize input) and `render`. The MLform guides to
+[custom fields](https://docs.mlform.eshkra.dev/extend/custom-fields/) and
+[custom reports](https://docs.mlform.eshkra.dev/extend/custom-reports/) describe the definitions.
+
+## Upload
+
+1. Choose **Upload plugins** (needs **Manage plugins**).
+2. Drop one or more `.ts` files. Each is compiled and checked in your browser and marked
+   **Ready** or **Invalid** with the reason, for example a missing default export or an empty
+   `kind`.
+3. Choose **Upload all**.
+
+The kind is live for the organization at once: there is no activation step and no separate
+configuration, since each use is configured in the schema JSON. Two plugins with the same kind
+break the catalog; delete one.
+
+To use the kind, write it in a [schema change](/schemas/changes/); the editor completes and
+validates plugin kinds like built-in ones. Reports from plugins get only the
+[questionnaire](/feedback/questionnaires/) step in reviews.
+
+## Explanations
+
+The runtime can explain a prediction of a scikit-learn `DecisionTreeClassifier` or
+`DecisionTreeRegressor` as the decision path it followed (Crystal Tree). No built-in report shows
+it: a report plugin requests it and draws it. On public pages the explanation is added when the
+model supports it and left out otherwise. Other estimators cannot be explained.
+
+## Delete
+
+**Delete** in a plugin's menu removes it. Schemas that use its kind can no longer draw those fields
+or reports. To update a plugin, delete it and upload the new file.
+
+:::caution
+Plugin code runs in the browser of everyone who opens a form that uses it, including visitors of
+public pages. Give **Manage plugins** only to people you trust.
+:::
