@@ -69,6 +69,12 @@ export const toStoredBuiltinPayload = (
   return undefined;
 };
 
+/** What a stored built-in report predicted: a classifier's class, or a regressor's value. */
+export const builtinPrediction = (payload: JsonRecord): unknown =>
+  payload.prediction ??
+  payload.value ??
+  (Array.isArray(payload.values) ? payload.values[0] : undefined);
+
 /**
  * The runtime answers one report per model output and names the output's position on each;
  * a schema report reads the answer of its kind for the output it maps to.

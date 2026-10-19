@@ -8,7 +8,7 @@ import { createOutputFeedbackQuestionnaire } from "@/capabilities/prediction-run
 import { agreedFeedbackValues } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
 import type { QuestionnaireSchema } from "@/capabilities/prediction-runtime/feedback/questionnaire-schema";
 import { isBuiltinReportKind } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
-import { getFormattedReportContent } from "@/capabilities/prediction-runtime/feedback/report-feedback-utils";
+import { describeReportResult } from "@/capabilities/prediction-runtime/feedback/result-summary";
 import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import type {
@@ -49,29 +49,6 @@ const fakeTarget = (order: number, value: unknown) =>
     value,
   }) as any;
 
-const displayRecord = (value: unknown): Record<string, unknown> => (isRecord(value) ? value : {});
-
-const formatProbability = (value: unknown): string | null =>
-  typeof value === "number" ? `${(value * 100).toFixed(2)}%` : null;
-
-const outputDescription = (payload: unknown): string => {
-  const record = displayRecord(payload);
-  const probabilities = Array.isArray(record.probabilities) ? record.probabilities : [];
-  const labels = Array.isArray(record.labels) ? record.labels : [];
-  const inferredIndex = probabilities.indexOf(Math.max(...probabilities));
-  const prediction = record.prediction ?? record.value ?? labels[inferredIndex] ?? payload;
-  const index = labels.findIndex((label) => String(label) === String(prediction));
-  const probability = formatProbability(index >= 0 ? probabilities[index] : undefined);
-  return probability
-    ? `Prediction result: ${String(prediction)} · ${probability}`
-    : `Prediction result: ${String(prediction)}`;
-};
-
-const reportDescription = (payload: unknown): string => {
-  const content = getFormattedReportContent(payload).join("\n\n");
-  return content ? `Prediction report:\n${content}` : "Prediction report";
-};
-
 const feedbackKey = (resultId: number, type: PredictionResultFeedbackType, order: number): string =>
   `${resultId}:${type}:${order}`;
 
@@ -93,19 +70,15 @@ const stepTargets = (
   }));
 
 /** Several models answering one report are told apart by name. */
-const combinedDescription = (
-  version: SchemaVersion,
-  members: readonly DisplayTarget[],
-  describe: (payload: unknown) => string,
-): string =>
-  members.length === 1
-    ? describe(members[0]?.display.payload)
-    : members
-        .map(({ result, display }) => {
-          const model = version.bindings.find((binding) => binding.modelId === result.modelId);
-          return `${model?.modelName ?? `Model ${result.modelId}`}: ${describe(display.payload)}`;
-        })
-        .join("\n");
+const combinedDescription = (version: SchemaVersion, members: readonly DisplayTarget[]): string =>
+  members
+    .map(({ result, display }) => {
+      const answer = describeReportResult(display.kind, display.payload);
+      if (members.length === 1) return answer;
+      const model = version.bindings.find((binding) => binding.modelId === result.modelId);
+      return `${model?.modelName ?? `Model ${result.modelId}`}: ${answer}`;
+    })
+    .join("\n");
 
 export const buildSchemaFeedbackSteps = (
   version: SchemaVersion,
@@ -137,7 +110,7 @@ export const buildSchemaFeedbackSteps = (
           targets: explanationTargets,
           order,
           title: `${first.display.label} review`,
-          description: combinedDescription(version, members, reportDescription),
+          description: combinedDescription(version, members),
           schema: questionnaire,
           initialValues: agreedFeedbackValues(explanationTargets, questionnaire) ?? {},
         }
@@ -158,7 +131,7 @@ export const buildSchemaFeedbackSteps = (
       targets: outputTargets,
       order,
       title: first.display.label,
-      description: combinedDescription(version, members, outputDescription),
+      description: combinedDescription(version, members),
       schema: outputSchema,
       initialValues: agreedFeedbackValues(outputTargets, outputSchema) ?? {},
     };

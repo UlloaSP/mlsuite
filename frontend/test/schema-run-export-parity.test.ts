@@ -94,6 +94,34 @@ describe("schema run export parity", () => {
     expect(exported.content).toContain("5");
   });
 
+  test("exports a regressor's predicted value", () => {
+    const regression = schemaVersion({
+      bindings: [binding(1)],
+      formSchema: {
+        fields: [],
+        reports: [
+          { id: "body_mass", label: "Body mass", kind: "regressor", mappedTo: { "model-1": "0" } },
+        ],
+      },
+    });
+    const predictedCell = (values: number[]): string | undefined => {
+      const stored = predictionRun({
+        results: [
+          predictionResult({
+            output: { reports: [{ kind: "regressor", output: 0, mappedTo: "0", values }] },
+          }),
+        ],
+      });
+      const [header, row] = buildSchemaRunExport([stored], regression, [], ";")
+        .content.replace("﻿", "")
+        .split("\n")
+        .map((line) => line.split(";"));
+      return row[header.indexOf("output.body_mass.predicted")];
+    };
+
+    expect(predictedCell([3531.39])).toBe("3531.39");
+  });
+
   test("exports who made each run and through which door", () => {
     const viaKey = predictionRun({
       ...run,
