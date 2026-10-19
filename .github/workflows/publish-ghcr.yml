@@ -92,6 +92,8 @@ jobs:
           sbom: true
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,scope=${{ matrix.service }},mode=max
+          # Re-run the runtime stage so its package upgrades never come from a stale cache.
+          no-cache-filters: runtime
       - name: Scan the exact candidate digest
         uses: ./.github/actions/scan-image
         with:

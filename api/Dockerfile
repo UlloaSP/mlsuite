@@ -7,8 +7,8 @@ COPY ./src ./src
 RUN mvn -q -Dmaven.test.skip=true package
 
 # Runtime stage
-FROM eclipse-temurin:25-jre-alpine@sha256:2ca9adf44f5c29d28ecd26cf92d75cc0c66b7f32bfd839a4439e363a8b428af8
-RUN apk upgrade --no-cache libexpat
+FROM eclipse-temurin:25-jre-alpine@sha256:2ca9adf44f5c29d28ecd26cf92d75cc0c66b7f32bfd839a4439e363a8b428af8 AS runtime
+RUN apk upgrade --no-cache
 
 WORKDIR /app
 COPY --from=build /workspace/target/*.jar /app/app.jar
