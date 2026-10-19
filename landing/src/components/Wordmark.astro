@@ -1,0 +1,12 @@
+---
+// The eshkra lockup for every visible product name: "ML" wide and heavy, the rest light.
+interface Props {
+  name: "mlbundle" | "mlschema" | "mlform" | "mlsuite";
+}
+const { name } = Astro.props;
+---
+
+<span class="wordmark">
+  <span class="ml">ML</span>
+  <span class="rest">{name.slice(2)}</span>
+</span>

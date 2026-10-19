@@ -1,0 +1,55 @@
+---
+import ShotWindow from "./ShotWindow.astro";
+
+const points = [
+  {
+    title: "One form, several models",
+    text: "A schema combines the inputs and reports of the models you pick. Each field maps to every model that reads it.",
+  },
+  {
+    title: "Changes, then snapshots",
+    text: "Edit labels, units, ranges and help as a change, review it as a diff, then publish a numbered snapshot.",
+  },
+  {
+    title: "Bookmarks point to one snapshot",
+    text: "Predict, public pages and API clients run a bookmark, so they always run the exact snapshot it names.",
+  },
+];
+---
+
+<section class="section feature" id="schemas" aria-labelledby="schemas-title">
+  <div class="wrap">
+    <header class="section-head">
+      <h2 id="schemas-title">The schema is the contract.</h2>
+      <p>
+        One versioned schema draws the form with MLform, maps each value to the model's own feature
+        names and names every column of the results. Changing it is a reviewed step, never a silent
+        edit.
+      </p>
+    </header>
+    <div class="plate pair schemas-plate">
+      <ShotWindow
+        name="schema-diff"
+        path="/schemas/…/conflicts"
+        title="Reviewing a schema change"
+        alt="Review changes for the change Readable labels and units, based on v1: a side-by-side diff of the schema JSON where bill_length_mm becomes Bill length with a unit of mm, a range of 30 to 60 and a description, with 13 lines removed and 28 added, and a Publish snapshot button."
+        sizes="(max-width: 64rem) 92vw, 36rem"
+      />
+      <ShotWindow
+        name="form"
+        path="/predict/…"
+        title="The form it draws"
+        alt="The form drawn from snapshot v2: Bill length 46.4 mm, Bill depth 18.6 mm, Flipper length 190 mm, Island Dream and Sex Female, each confirmed as valid, above a Run schema button."
+        sizes="(max-width: 64rem) 92vw, 36rem"
+      />
+    </div>
+    <ul class="points">
+      {points.map(({ title, text }) => (
+        <li>
+          <h3>{title}</h3>
+          <p>{text}</p>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>

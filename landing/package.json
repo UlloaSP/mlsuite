@@ -1,0 +1,28 @@
+{
+  "name": "mlsuite-landing",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --host 127.0.0.1 --port 4350",
+    "build": "astro check && astro build",
+    "typecheck": "astro check",
+    "check:format": "prettier --check .",
+    "format": "prettier --write .",
+    "preview": "astro preview --host 127.0.0.1 --port 4350"
+  },
+  "dependencies": {
+    "astro": "7.3.2",
+    "sharp": "0.35.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "prettier": "3.9.10",
+    "prettier-plugin-astro": "1.1.1",
+    "typescript": "6.0.3"
+  },
+  "engines": {
+    "node": "^22.18.0 || ^24.11.0 || >=26.0.0"
+  },
+  "packageManager": "pnpm@12.14.0"
+}

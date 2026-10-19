@@ -1,0 +1,26 @@
+---
+import ThemeImage from "./ThemeImage.astro";
+import { capture } from "../data/captures";
+
+interface Props {
+  name: string;
+  title: string;
+  alt: string;
+  sizes?: string;
+  eager?: boolean;
+}
+const { name, title, alt, sizes, eager } = Astro.props;
+const light = capture(name, "light");
+const dark = capture(name, "dark");
+---
+
+<button
+  class="shot"
+  type="button"
+  data-zoom
+  data-title={title}
+  data-width={light.width / 2}
+  aria-label={`Enlarge: ${title}`}
+>
+  <ThemeImage light={light} dark={dark} alt={alt} sizes={sizes} eager={eager} />
+</button>

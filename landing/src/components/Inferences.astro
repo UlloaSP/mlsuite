@@ -1,0 +1,47 @@
+---
+import ShotWindow from "./ShotWindow.astro";
+
+const points = [
+  {
+    title: "One record or a whole file",
+    text: "Fill the form, or upload a CSV or XLSX file to run every row. Runs wait in a session until you save them.",
+  },
+  {
+    title: "Kept with what made them",
+    text: "A saved run keeps its inputs, each model's output, the bookmark, the snapshot and where it came from.",
+  },
+  {
+    title: "Every column, one table",
+    text: "Search, filter on any input, output or answer, sort, and export what you see to CSV.",
+  },
+];
+---
+
+<section class="section feature" id="inferences" aria-labelledby="inferences-title">
+  <div class="wrap">
+    <header class="section-head">
+      <h2 id="inferences-title">Every run, kept.</h2>
+      <p>
+        Inferences lists every run in the organization, from the workspace, a public page or an API
+        client. Each schema's inputs, outputs and reviewer answers become columns.
+      </p>
+    </header>
+    <div class="plate inferences-plate">
+      <ShotWindow
+        name="inferences"
+        path="/inferences"
+        title="Inferences"
+        alt="The Inferences table with eight runs of the penguin survey: the feedback state (five completed, three pending), the inputs bill length, bill depth, flipper length, island and sex, the Species output, and the reviewer's answers for species and body mass as feedback columns. Export to CSV and Create review sit above it."
+        sizes="(max-width: 76rem) 94vw, 70rem"
+      />
+    </div>
+    <ul class="points">
+      {points.map(({ title, text }) => (
+        <li>
+          <h3>{title}</h3>
+          <p>{text}</p>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
