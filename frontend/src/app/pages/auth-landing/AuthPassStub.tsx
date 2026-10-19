@@ -23,9 +23,9 @@ export function AuthPassStub({ mode }: { mode: AuthMode }) {
           alt=""
           aria-hidden="true"
           className="h-[26px] w-auto"
-          height="635"
+          height="512"
           src="/mlsuite.png"
-          width="1181"
+          width="960"
         />
         <div className="auth-mono flex flex-col items-end gap-1 text-3xs tracking-[0.25em]">
           <span>ACCESS PASS</span>
