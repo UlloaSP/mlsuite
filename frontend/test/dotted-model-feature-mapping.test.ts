@@ -107,7 +107,7 @@ test("keeps dotted model feature names literal in prediction and explanation pay
     registry: runtime.registry,
     transport: runtime.transport,
   });
-  form.setValues({ "rec-vhc": "1.0" });
+  form.setValues({ rec_vhc: "1.0" });
 
   await executeFormPipeline({ form });
 

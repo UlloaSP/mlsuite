@@ -32,7 +32,7 @@ export function StartupRing({ states }: { states: StartupServiceState[] }) {
           />
         );
       })}
-      <img alt="" className="startup-ring-mark" height="635" src="/mlsuite.png" width="1181" />
+      <img alt="" className="startup-ring-mark" height="512" src="/mlsuite.png" width="960" />
     </div>
   );
 }
