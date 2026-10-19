@@ -22,6 +22,8 @@ const ACTIONS: Array<{
 type ModelActionsMenuProps = {
   archived: boolean;
   canDelete: boolean;
+  /** Duplicating creates a model, so it follows the create-models permission. */
+  canDuplicate: boolean;
   canEdit: boolean;
   modelName: string;
   onAction: (action: ModelAction) => void;
@@ -30,19 +32,26 @@ type ModelActionsMenuProps = {
 export function ModelActionsMenu({
   archived,
   canDelete,
+  canDuplicate,
   canEdit,
   modelName,
   onAction,
 }: ModelActionsMenuProps) {
-  const actions = ACTIONS.filter(
-    ({ value }) => !(archived && value === "archive") && (value === "delete" ? canDelete : canEdit),
-  ).map<AppMenuAction>(({ value, label, icon }) => ({
-    key: value,
-    label,
-    icon,
-    onSelect: () => onAction(value),
-    tone: value === "delete" ? "danger" : undefined,
-  }));
+  const permitted: Record<ModelAction, boolean> = {
+    archive: canEdit && !archived,
+    delete: canDelete,
+    duplicate: canDuplicate,
+    edit: canEdit,
+  };
+  const actions = ACTIONS.filter(({ value }) => permitted[value]).map<AppMenuAction>(
+    ({ value, label, icon }) => ({
+      key: value,
+      label,
+      icon,
+      onSelect: () => onAction(value),
+      tone: value === "delete" ? "danger" : undefined,
+    }),
+  );
 
   return <AppActionsMenu label={`Open actions for ${modelName}`} actions={actions} />;
 }
