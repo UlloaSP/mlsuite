@@ -10,6 +10,7 @@ The workflow verifies:
 
 - committed-secret history with the repository scanner;
 - frontend locked install, tests, TypeScript, and production build;
+- documentation site locked install, link tests, Astro check and build, and a Wrangler dry run (it never uploads);
 - Maven tests and API packaging;
 - backend and ops-agent locked Python tests;
 - production Docker builds and Trivy scans for frontend, API, backend and ops-agent;

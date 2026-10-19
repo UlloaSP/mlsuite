@@ -1,0 +1,60 @@
+---
+import { Image } from "astro:assets";
+import mark from "../assets/mlsuite.png";
+import Icon from "./Icon.astro";
+import ShotWindow from "./ShotWindow.astro";
+import { links } from "../data/site";
+---
+
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero-inner wrap">
+    <Image
+      src={mark}
+      alt=""
+      height={64}
+      densities={[1, 2]}
+      loading="eager"
+      fetchpriority="high"
+      class="hero-mark"
+    />
+    <h1 id="hero-title">
+      From trained model <span class="accent">to reviewed prediction.</span>
+    </h1>
+    <p class="lede">
+      Upload a model bundle, run predictions through a form generated from its schema, ask people to
+      review the results and export everything for evaluation or retraining. Every result keeps the
+      exact model and schema that produced it.
+    </p>
+    <div class="hero-actions">
+      <a class="button" href={links.app}>
+        Open MLsuite <Icon name="arrow-up-right" size={14} />
+      </a>
+      <a class="button ghost" href={links.docs}>
+        Read the docs
+      </a>
+      <a class="button ghost" href={links.github}>
+        <Icon name="github" size={16} /> GitHub
+      </a>
+    </div>
+    <p class="hero-note">
+      Open source under the MIT license. Use the <a href={links.app}>live instance</a> or self-host
+      it with Docker Compose.
+    </p>
+  </div>
+  <figure class="stage wrap">
+    <div class="plate">
+      <ShotWindow
+        name="predict"
+        path="/predict/…"
+        title="Predict: a bookmark's form and its results"
+        alt="The Predict page of MLsuite for the penguin-survey bookmark, schema Penguin field survey v2. The Results tab shows the Species report at 100% Gentoo and the Body mass report at 5332 g; the session panel lists the unsaved run with a Save button."
+        sizes="(max-width: 76rem) 94vw, 70rem"
+        eager
+      />
+    </div>
+    <figcaption>
+      The live instance at mlsuite.irlab.org. The models are demos trained on the public Palmer
+      penguins dataset.
+    </figcaption>
+  </figure>
+</section>

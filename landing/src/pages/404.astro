@@ -1,0 +1,40 @@
+---
+import Base from "../layouts/Base.astro";
+import { links } from "../data/site";
+---
+
+<Base title="Page not found · MLsuite" noindex>
+  <section class="section wrap missing">
+    <p class="mono">404</p>
+    <h1 class="section-title">This page isn't here.</h1>
+    <p class="section-copy">Head back to MLsuite, or open the live instance.</p>
+    <div>
+      <a class="button" href="/">
+        Back to MLsuite
+      </a>
+      <a class="text-link" href={links.app}>
+        Open MLsuite <span aria-hidden="true">↗</span>
+      </a>
+    </div>
+  </section>
+</Base>
+<style>
+  .missing {
+    min-height: 65vh;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  .missing > .mono {
+    color: var(--ember-ink);
+    margin-bottom: 1.25rem;
+  }
+  .missing > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: center;
+    margin-top: 2rem;
+  }
+</style>

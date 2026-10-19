@@ -1,0 +1,170 @@
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklab, var(--bg) 88%, transparent);
+  backdrop-filter: blur(14px);
+}
+.nav-inner {
+  display: flex;
+  align-items: center;
+  height: 4rem;
+  gap: 1.1rem;
+}
+.nav .wordmark {
+  font-size: 1.6rem;
+}
+.nav .mlsuite-brand {
+  flex-shrink: 0;
+}
+.nav .mlsuite-brand img {
+  width: auto;
+  height: 1.6rem;
+}
+.parent-brand {
+  color: var(--text-3);
+  font-size: 0.8125rem;
+  padding-left: 1rem;
+  border-left: 1px solid var(--border-strong);
+  text-decoration: none;
+}
+.parent-brand:hover {
+  color: var(--ember-ink);
+}
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-left: 1rem;
+}
+.nav-links a {
+  color: var(--text-2);
+  font-size: 0.9375rem;
+  text-decoration: none;
+}
+.nav-links a:hover {
+  color: var(--text);
+}
+.nav-github {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+}
+.footer {
+  background: var(--bg-subtle);
+  border-top: 1px solid var(--border);
+}
+.footer-inner {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 3rem;
+  padding-block: 4rem;
+}
+.footer-brand .wordmark {
+  font-size: 2.75rem;
+}
+.footer-brand .mlsuite-brand {
+  gap: 1rem;
+}
+.footer-brand .mlsuite-brand img {
+  width: auto;
+  height: 2.6rem;
+}
+.footer-brand p {
+  color: var(--text-2);
+  font-size: 0.9rem;
+  margin-top: 1.2rem;
+}
+.footer nav {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+.footer nav h2 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.footer nav a {
+  text-decoration: none;
+  color: var(--text-2);
+  font-size: 0.875rem;
+}
+.footer a:hover {
+  color: var(--ember-ink);
+}
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 1.5rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-3);
+  font-size: 0.8125rem;
+}
+.footer-bottom a {
+  text-decoration: none;
+}
+@media (max-width: 64rem) {
+  .nav-section {
+    display: none;
+  }
+}
+@media (max-width: 767px) {
+  .parent-brand {
+    display: none;
+  }
+  .nav-links {
+    margin-left: auto;
+  }
+  .nav-actions {
+    margin-left: 0;
+  }
+  .footer-inner {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+  .footer-brand {
+    grid-column: 1 / -1;
+    margin-bottom: 1rem;
+  }
+}
+/* Phones keep the brand, Docs, GitHub and the playground; GitHub keeps its label for screen readers. */
+@media (max-width: 30rem) {
+  .nav-inner {
+    gap: 0.75rem;
+  }
+  .nav-links {
+    gap: 0.875rem;
+  }
+  .nav-github span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .nav .wordmark {
+    font-size: 1.35rem;
+  }
+  .nav .button.small {
+    padding-inline: 0.8rem;
+  }
+  .nav .button.small .icon {
+    display: none;
+  }
+}
+@media (max-width: 22.5rem) {
+  .nav .mlsuite-brand .wordmark {
+    display: none;
+  }
+}

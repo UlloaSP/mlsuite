@@ -1,0 +1,19 @@
+---
+import { getImage } from "astro:assets";
+import mark from "../assets/mlsuite.png";
+import monaLicense from "../fonts/mona-sans-LICENSE.txt?url";
+import monoLicense from "../fonts/jetbrains-mono-LICENSE.txt?url";
+
+const favicon = await getImage({ src: mark, width: 64, format: "png" });
+const { head } = Astro.locals.starlightRoute;
+const tags = head.filter(
+  ({ tag, attrs }) => !(tag === "link" && String(attrs?.rel ?? "").split(/\s+/).includes("icon")),
+);
+---
+
+{tags.map(({ tag: Tag, attrs, content }) => <Tag {...attrs} set:html={content} />)}
+<link rel="icon" type="image/png" href={favicon.src} />
+<link rel="license" href={monaLicense} />
+<link rel="license" href={monoLicense} />
+<meta property="og:image" content={new URL(mark.src, Astro.site)} />
+<meta property="og:image:alt" content="MLsuite product mark" />

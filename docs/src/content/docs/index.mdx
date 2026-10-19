@@ -1,0 +1,85 @@
+---
+title: MLsuite documentation
+description: The MLsuite manual. Upload a trained model, give it a form, run predictions, collect reviews and export everything for evaluation or retraining.
+tableOfContents: false
+hero:
+  title: From trained model to reviewed prediction.
+  tagline: MLsuite turns a trained model into a form people can use. Upload an .mlbundle, shape its inputs and reports into a versioned schema, run single or bulk predictions, ask colleagues to review the results and export inputs, outputs and answers as one CSV.
+  actions:
+    - text: Quick start
+      link: /start/quick-start/
+      variant: primary
+    - text: Open MLsuite
+      link: https://mlsuite.irlab.org/
+      variant: secondary
+    - text: Self-host it
+      link: /self-hosting/docker-compose/
+      variant: minimal
+---
+
+import Capture from "../../components/Capture.astro";
+
+<Capture
+  name="predict-session"
+  alt="The Predict page of a bookmark: the form's results on the left, a session of named runs waiting to be saved on the right."
+  caption="A bookmark's run page: the generated form, its results and the session of runs waiting to be saved."
+/>
+
+This is the manual for MLsuite, an open-source platform for running machine-learning models
+through generated forms and collecting human feedback on their results. It covers every option
+of the web application, the client API that outside software calls, and how to run your own
+instance. The screens come from the public instance at
+[mlsuite.irlab.org](https://mlsuite.irlab.org/), where anyone can create an account and try it.
+
+:::caution[Early software]
+MLsuite is pre-1.0. Expect rough edges and breaking changes. Model bundles run unsandboxed in the
+runtime, so only members you trust should be able to upload them; see the
+[security policy](/security/).
+:::
+
+## Find your path
+
+<div class="path-grid not-content">
+  <a class="path-card" href="/start/quick-start/">
+    <strong>Make a first prediction</strong>
+    <span>Upload a bundle, create a schema, bookmark it and run it.</span>
+  </a>
+  <a class="path-card" href="/schemas/changes/">
+    <strong>Shape the form</strong>
+    <span>Labels, field kinds, layout and review questions in the schema JSON.</span>
+  </a>
+  <a class="path-card" href="/feedback/reviews/">
+    <strong>Collect feedback</strong>
+    <span>Assign inferences to reviewers and read their answers.</span>
+  </a>
+  <a class="path-card" href="/predictions/export/">
+    <strong>Get the data out</strong>
+    <span>One CSV with inputs, outputs and every reviewer's answers.</span>
+  </a>
+  <a class="path-card" href="/publishing/publish/">
+    <strong>Share a model publicly</strong>
+    <span>A public page anyone can run, with examples and a publication note.</span>
+  </a>
+  <a class="path-card" href="/api/reference/">
+    <strong>Call it from software</strong>
+    <span>API clients, <code>mls_</code> keys and the prediction endpoint.</span>
+  </a>
+</div>
+
+## How it fits together
+
+MLsuite keeps the whole loop in one place, and keeps every result tied to what produced it:
+
+| Step | Where | What is kept |
+| --- | --- | --- |
+| Upload a trained model | [Models](/models/upload/) | The `.mlbundle` file, its SHA-256 and what the bundle says about the model. |
+| Describe its inputs and outputs | [Schemas](/schemas/overview/) | Immutable, numbered snapshots of the form and its model bindings. |
+| Run it | [Predict](/predictions/run/) | Each saved run, with its inputs, every model's result and the exact snapshot. |
+| Review the results | [Review](/feedback/reviews/) | Each reviewer's answers, per inference and per report. |
+| Use the data | [Inferences](/predictions/inferences/) and [export](/predictions/export/) | A filterable table and a CSV of everything above. |
+
+Models come from [MLbundle](https://docs.mlbundle.eshkra.dev/), which packages scikit-learn,
+XGBoost, CatBoost and ONNX models without pickle. Forms are drawn by
+[MLform](https://docs.mlform.eshkra.dev/). Both are part of [eshkra](https://eshkra.dev), like
+MLsuite. MLsuite is MIT licensed; read the source on
+[GitHub](https://github.com/UlloaSP/mlsuite).

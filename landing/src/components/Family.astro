@@ -1,0 +1,44 @@
+---
+import Wordmark from "./Wordmark.astro";
+
+// What each eshkra library does inside MLsuite.
+const parts = [
+  {
+    name: "mlbundle",
+    href: "https://mlbundle.eshkra.dev/",
+    text: "Packages the model, its manifest and its schema in the one file MLsuite accepts. The runtime loads models through it.",
+  },
+  {
+    name: "mlschema",
+    href: "https://mlschema.eshkra.dev/",
+    text: "Infers the fields from the training data on your machine, at export. MLsuite starts every schema from them.",
+  },
+  {
+    name: "mlform",
+    href: "https://mlform.eshkra.dev/",
+    text: "Renders every form, result and review questionnaire, and runs the fields and reports that plugins add.",
+  },
+] as const;
+---
+
+<section class="section feature" id="family" aria-labelledby="family-title">
+  <div class="wrap">
+    <header class="section-head">
+      <h2 id="family-title">Built from the family.</h2>
+      <p>
+        MLsuite is the last step of the eshkra path. The libraries before it work on their own; here
+        they meet.
+      </p>
+    </header>
+    <ul class="family">
+      {parts.map(({ name, href, text }) => (
+        <li>
+          <a href={href}>
+            <Wordmark name={name} />
+          </a>
+          <p>{text}</p>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>

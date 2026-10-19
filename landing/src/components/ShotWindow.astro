@@ -1,0 +1,26 @@
+---
+import Shot from "./Shot.astro";
+
+// A capture in a browser-like window titled with the page it shows.
+interface Props {
+  name: string;
+  path: string;
+  title: string;
+  alt: string;
+  sizes?: string;
+  eager?: boolean;
+}
+const { path, ...shot } = Astro.props;
+---
+
+<div class="window">
+  <div class="window-bar">
+    <span class="dots" aria-hidden="true">
+      <i></i>
+      <i></i>
+      <i></i>
+    </span>
+    <span class="window-title mono">mlsuite.irlab.org{path}</span>
+  </div>
+  <Shot {...shot} />
+</div>

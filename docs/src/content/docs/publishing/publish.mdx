@@ -1,0 +1,54 @@
+---
+title: Publish a bookmark
+description: Make a bookmark public in Explore, what visitors see and do not see, size limits, public examples and unpublishing.
+---
+
+Publishing a bookmark gives it a public page at `/explore/<id>` and lists it in
+[Explore](/publishing/public-pages/), where anyone, with or without an account, can fill its form
+and run it. Publishing and unpublishing need **Publish bookmarks** (Owner and Admin by default).
+
+## Publish
+
+On the schema's **Bookmarks** tab, open the bookmark's actions and choose **Publish**, then
+confirm.
+
+| Visitors see | Stays private |
+| --- | --- |
+| The bookmark's name, description and publication note | The schema's name and the snapshot |
+| The organization's name and logo | The models |
+| The form and reports of the snapshot the bookmark points to | Other runs, members and reviews |
+| The input values of the runs you mark as examples | Those runs' outputs, authors and dates |
+
+The page link is fixed when the bookmark is first published and never changes, even if you
+unpublish and publish again. Use **Copy public link** or **Open public page** in the bookmark's
+actions.
+
+Publishing is refused when a model of the snapshot is larger than the public size limit, 50 MB by
+default, because every public run sends the model to the runtime. A public bookmark cannot move to
+such a snapshot either.
+
+## Examples
+
+Examples let visitors fill the form from a real record. Open a saved inference of the bookmark,
+made on the snapshot the bookmark points to, and choose **Mark as public example** (needs
+**Publish bookmarks**), then confirm. A bookmark can collect examples while it is still private. Visitors can then pick its name under **Start
+from an example** and load its input values; its outputs, author and date stay private. **Remove
+example** takes it back.
+
+An example is served only while the bookmark is public and points at the snapshot the run used.
+Its state says so: **Served**, **Not served: bookmark is private** or **Not served: bookmark
+moved**. **Public examples** in the bookmark's actions lists them all, and the bookmark row
+summarizes them, for example "Serves 1 example".
+
+## Runs from the public page
+
+Every public run is kept as one of the organization's inferences with the origin **Public page**
+and the author "Visitor", or the account's name when the visitor is signed in. They are never
+deleted on their own. Visitors can [review their own runs](/publishing/public-pages/#review-a-run);
+their answers appear in the Inferences table and the export like any other reviewer's.
+
+## Unpublish
+
+**Unpublish** in the bookmark's actions makes it private again at once: it leaves Explore and its
+page answers "Bookmark not found". Nothing is deleted. A superadmin can also unpublish any bookmark
+from [Moderation](/admin/moderation/).

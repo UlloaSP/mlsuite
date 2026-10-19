@@ -1,0 +1,93 @@
+---
+title: Quick start
+description: Export a model with MLbundle, upload it, create a schema and a bookmark, run a prediction and save it.
+---
+
+import { Steps } from "@astrojs/starlight/components";
+import Capture from "../../../components/Capture.astro";
+
+This walkthrough takes a scikit-learn classifier from a Python session to a saved, reviewable
+inference. It uses the demo model behind the screenshots in this manual: a decision tree that
+approves or declines a synthetic loan application.
+
+## 1. Export a bundle
+
+MLsuite accepts models only as `.mlbundle` files written by
+[MLbundle](https://docs.mlbundle.eshkra.dev/). Export with the MLbundle and scikit-learn versions
+the instance pins in `backend/pyproject.toml` (MLbundle 0.2.1 and scikit-learn 1.9.1 at the time
+of writing); a scikit-learn bundle loads only with the version that wrote it.
+
+```bash
+python -m pip install "mlbundle[sklearn,schema]==0.2.1" "scikit-learn==1.9.1" pandas
+```
+
+```python title="export_demo.py"
+import numpy as np
+import pandas as pd
+from sklearn.tree import DecisionTreeClassifier
+
+from mlbundle import export
+
+rng = np.random.default_rng(7)
+frame = pd.DataFrame({
+    "age": rng.integers(21, 70, 400),
+    "income": rng.normal(42000, 12000, 400).round(0),
+    "has_guarantor": rng.random(400) < 0.3,
+    "employment": rng.choice(["salaried", "self_employed", "unemployed"], 400),
+})
+score = (
+    frame.income / 1000
+    + frame.has_guarantor * 15
+    - (frame.employment == "unemployed") * 25
+)
+y = np.where(score > 40, "approve", "decline")
+X = pd.get_dummies(frame, columns=["employment"], prefix_sep="__", dtype=int)
+model = DecisionTreeClassifier(max_depth=4, random_state=7).fit(X, y)
+
+export(model, "demo-loan-tree.mlbundle", training_data=X)
+```
+
+Passing `training_data=` lets MLbundle infer the form fields from the training frame: a number,
+a true/false choice and one `employment` choice built from the three one-hot columns. Without it,
+every feature becomes a number field.
+
+## 2. Upload, describe, run
+
+<Steps>
+
+1. **Upload the model.** Sign in, open **Models** and choose **New model**. Drop
+   `demo-loan-tree.mlbundle` on the page, check its name and choose **Save**. See
+   [Upload models](/models/upload/).
+
+2. **Create a schema.** Open **Schemas**, choose **New schema**, select the model, name the schema
+   and choose **Create schema**. Its first snapshot, `v1`, is published at once with the fields
+   and report the bundle carried. See [Schemas](/schemas/overview/).
+
+3. **Bookmark the snapshot.** Open the schema's **Snapshots** tab, open the actions of `v1` and
+   choose **Bookmark**. Name it, for example `loan-approval`, and choose **Save bookmark**. See
+   [Bookmarks](/schemas/bookmarks/).
+
+4. **Run it.** Open **Predict** and choose the bookmark. Fill the form and choose **Run schema**.
+   The result appears in the **Results** tab and the run joins the **Session** panel.
+
+5. **Save the run.** Give the run a name in the session panel and choose **Save**. It is now an
+   inference, listed under **Inferences** with its inputs, outputs and the snapshot it ran on.
+   See [Run predictions](/predictions/run/).
+
+</Steps>
+
+<Capture
+  name="inferences"
+  alt="The Inferences table listing saved runs with their status, feedback state, schema, snapshot, bookmark, author and origin."
+  caption="Every saved run, one row each, with the schema's inputs and outputs as columns."
+/>
+
+## Next steps
+
+- Give the fields readable labels and add review questions by
+  [publishing a change](/schemas/changes/).
+- Run many records at once with a [CSV or XLSX upload](/predictions/bulk-upload/).
+- [Ask reviewers](/feedback/reviews/) to check the results, then
+  [export](/predictions/export/) everything.
+- [Publish the bookmark](/publishing/publish/) so anyone can run it, or give it to an
+  [API client](/api/clients/).

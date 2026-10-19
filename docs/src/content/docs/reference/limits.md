@@ -1,0 +1,54 @@
+---
+title: Limits
+description: Every size, length, count and rate limit in MLsuite in one table, with where to change it.
+---
+
+Limits marked *configurable* are defaults that an operator changes in
+[`.env`](/self-hosting/configuration/).
+
+## Accounts and organizations
+
+| What | Limit |
+| --- | --- |
+| Password | 10 to 128 characters |
+| Full name | 150 characters |
+| Organization name, slug, description | 150, 120, 600 characters |
+| Organization logo | PNG or JPG, at least 64 × 64 px, up to 2 MB; stored as a 256 px square |
+| Role name, description | 120, 600 characters |
+| Invitation validity | 7 days |
+
+## Models, schemas and runs
+
+| What | Limit |
+| --- | --- |
+| Upload size | 1000 MB per request (nginx and the API) |
+| Bundle archive | 512 MiB, 100,000 features and 1,024 outputs (MLbundle) |
+| Schema name, description | 180, 800 characters |
+| Bookmark name, description, publication note | 180, 800, 1000 characters |
+| Bulk upload | 10,000 records per CSV or XLSX file |
+| Column conditions in the Inferences filters | 100 |
+| Review expiry | Default 30 days after creation |
+
+## Public pages
+
+| What | Limit |
+| --- | --- |
+| Model size of a public bookmark | 50 MB, *configurable* |
+| Runs of one bookmark in 24 hours | 50 per network address without an account, 500 per signed-in account, *configurable* |
+| Public runs at once | 2 on the instance, *configurable* |
+| Input value | Null, boolean, number or text of at most 256 characters |
+| Request body | 64 KB |
+
+## Client API
+
+| What | Limit |
+| --- | --- |
+| Client name, description | 80, 400 characters |
+| Key name | 80 characters |
+| Calls per client | 60 per clock minute, *configurable* |
+| Succeeded calls per organization | 10,000 per UTC month, *configurable*, or set per organization by a superadmin |
+| API runs at once | 2 on the instance, *configurable* |
+| Bookmark | Exactly one bound model, within the public model size limit |
+| Feature value | Null, boolean, number or text of at most 256 characters |
+| Request log retention | 90 days, at least 31, *configurable* |
+| Suspension reason | 400 characters |

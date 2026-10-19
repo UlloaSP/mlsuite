@@ -1,0 +1,131 @@
+/* The closing section: where to go next, then the family path. */
+.start {
+  border-top: 1px solid var(--border);
+}
+.resources {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-top: 2.5rem;
+  border-top: 1px solid var(--border);
+}
+.resources a {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.125rem 0.75rem;
+  padding: 1.25rem 1rem 1.25rem 0;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+}
+.resources strong {
+  font-weight: 600;
+}
+.resources span {
+  grid-column: 1;
+  color: var(--text-3);
+  font-size: 0.8125rem;
+}
+.resources .icon {
+  grid-row: 1 / 3;
+  grid-column: 2;
+  align-self: center;
+  color: var(--text-3);
+}
+.resources a:hover strong,
+.resources a:hover .icon {
+  color: var(--ember-ink);
+}
+@media (max-width: 64rem) {
+  .resources {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 1.5rem;
+  }
+}
+@media (max-width: 30rem) {
+  .resources {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.path {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 3rem 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--border);
+}
+.path li {
+  display: grid;
+  gap: 0.25rem;
+  padding: 1.25rem 1rem 0 0;
+  border-top: 2px solid transparent;
+  margin-top: -1px;
+}
+.path li[aria-current="step"] {
+  border-top-color: var(--ember);
+}
+.path-stage {
+  color: var(--text-3);
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+}
+.path a {
+  line-height: 1.2;
+  font-size: 1.5rem;
+  text-decoration: none;
+}
+.path a:hover {
+  color: var(--ember-ink);
+}
+@media (max-width: 48rem) {
+  .path {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .path li {
+    grid-template-columns: 7rem minmax(0, 1fr);
+    align-items: center;
+    padding: 0.875rem 0 0.875rem 0.75rem;
+    border-top: 0;
+    border-bottom: 1px solid var(--border);
+    margin-top: 0;
+  }
+  .path li,
+  .path li[aria-current="step"] {
+    border-left: 2px solid transparent;
+  }
+  .path li[aria-current="step"] {
+    border-left-color: var(--ember);
+  }
+}
+/* Two ways in: the live instance and a self-hosted stack. */
+.ways {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: clamp(1.5rem, 4vw, 3rem);
+  margin-top: 2.5rem;
+}
+.way {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) * 1.5);
+  background: var(--bg-subtle);
+}
+.way h3 {
+  font-size: 1.375rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.way p {
+  color: var(--text-2);
+}
+.way .code-window {
+  align-self: stretch;
+}
+@media (max-width: 64rem) {
+  .ways {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

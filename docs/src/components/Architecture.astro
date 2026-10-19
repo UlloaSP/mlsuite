@@ -1,0 +1,58 @@
+---
+// The Compose services and the calls between them, coloured by the documentation theme.
+---
+
+<figure class="diagram not-content">
+  <div class="diagram-scroll">
+    <svg viewBox="0 0 760 330" role="img" aria-labelledby="architecture-title">
+      <title id="architecture-title">
+        The browser calls nginx, which serves the React app and proxies /api to the Spring API. The
+        API stores state in PostgreSQL and model files in MinIO, sends artifacts and inputs to the
+        Python runtime, and reads Docker Compose through the operations agent.
+      </title>
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" class="arrow-head"></path>
+        </marker>
+      </defs>
+      <rect x="20" y="130" width="120" height="64" rx="10" class="box-subtle"></rect>
+      <text x="80" y="158" text-anchor="middle" class="title">Browser</text>
+      <text x="80" y="178" text-anchor="middle" class="small">people, software</text>
+
+      <rect x="190" y="130" width="140" height="64" rx="10" class="box"></rect>
+      <text x="260" y="158" text-anchor="middle" class="title">frontend</text>
+      <text x="260" y="178" text-anchor="middle" class="small">nginx · React</text>
+
+      <rect x="390" y="130" width="150" height="64" rx="10" class="box-accent"></rect>
+      <text x="465" y="158" text-anchor="middle" class="title">spring-app</text>
+      <text x="465" y="178" text-anchor="middle" class="small">auth · permissions · state</text>
+
+      <rect x="600" y="130" width="140" height="64" rx="10" class="box"></rect>
+      <text x="670" y="158" text-anchor="middle" class="title">py-analyzer</text>
+      <text x="670" y="178" text-anchor="middle" class="small">load · predict · explain</text>
+
+      <rect x="330" y="250" width="120" height="56" rx="10" class="box-subtle"></rect>
+      <text x="390" y="275" text-anchor="middle" class="title">postgres</text>
+      <text x="390" y="293" text-anchor="middle" class="small">application state</text>
+
+      <rect x="480" y="250" width="120" height="56" rx="10" class="box-subtle"></rect>
+      <text x="540" y="275" text-anchor="middle" class="title">minio</text>
+      <text x="540" y="293" text-anchor="middle" class="small">model files</text>
+
+      <rect x="405" y="24" width="120" height="56" rx="10" class="box-subtle"></rect>
+      <text x="465" y="49" text-anchor="middle" class="title">ops-agent</text>
+      <text x="465" y="67" text-anchor="middle" class="small">Docker Compose</text>
+
+      <line x1="140" y1="162" x2="186" y2="162" class="edge" marker-end="url(#arrow)"></line>
+      <text x="163" y="152" text-anchor="middle" class="mono-muted">HTTPS</text>
+      <line x1="330" y1="162" x2="386" y2="162" class="edge" marker-end="url(#arrow)"></line>
+      <text x="358" y="152" text-anchor="middle" class="mono-muted">/api</text>
+      <line x1="540" y1="162" x2="596" y2="162" class="edge-accent" marker-end="url(#arrow)"></line>
+      <text x="568" y="152" text-anchor="middle" class="mono-muted">HTTP</text>
+      <line x1="430" y1="194" x2="400" y2="246" class="edge" marker-end="url(#arrow)"></line>
+      <line x1="500" y1="194" x2="530" y2="246" class="edge" marker-end="url(#arrow)"></line>
+      <line x1="465" y1="130" x2="465" y2="84" class="edge-dashed" marker-end="url(#arrow)"></line>
+    </svg>
+  </div>
+  <figcaption>The Compose services. Only <code>frontend</code> (and PostgreSQL's port) is published on the host.</figcaption>
+</figure>

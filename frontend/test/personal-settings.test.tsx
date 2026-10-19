@@ -119,7 +119,7 @@ describe("personal settings", () => {
     await click(airbnbLight);
     expect(localStorage.getItem("ui/color-scheme")).toBe('"light"');
     expect(localStorage.getItem("ui/theme-selection")).toBe(
-      JSON.stringify({ light: "airbnb", dark: "mlsuite" }),
+      JSON.stringify({ light: "airbnb", dark: "eshkra" }),
     );
     const applyAirbnbPair = airbnbCard.querySelector<HTMLElement>(
       '[aria-label="Use Airbnb for light and dark modes"]',
