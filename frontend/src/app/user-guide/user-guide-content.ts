@@ -26,7 +26,7 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
   "workspace-switcher": {
     title: "Active organization",
     description:
-      "Everything you see belongs to the active organization. Open this menu for its overview, members, invitations, roles, and settings, or to switch organization.",
+      "Everything you see belongs to the active organization. Open this menu for its overview, members, invitations, roles, audit log, and settings, or to switch organization.",
   },
   "nav:Organizations": {
     title: "Organizations",

@@ -59,7 +59,7 @@ class ApiClientMigrationTest {
                     """);
         }
 
-        assertEquals(1, flyway("keys", null).migrate().migrationsExecuted);
+        assertEquals(1, flyway("keys", MigrationVersion.fromVersion("16")).migrate().migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());

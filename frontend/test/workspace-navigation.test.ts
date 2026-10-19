@@ -11,7 +11,12 @@ describe("workspace navigation in the organization switcher", () => {
   it("lists every page of the active organization for a full-access member", () => {
     expect(
       getWorkspaceLinks(
-        permissions({ canViewMembers: true, canViewInvitations: true, canViewOrganization: true }),
+        permissions({
+          canViewMembers: true,
+          canViewInvitations: true,
+          canViewAuditLog: true,
+          canViewOrganization: true,
+        }),
         7,
       ).map(({ label, to }) => [label, to]),
     ).toEqual([
@@ -19,7 +24,16 @@ describe("workspace navigation in the organization switcher", () => {
       ["Members", "/workspace/organizations/7/members"],
       ["Invitations", "/workspace/organizations/7/invitations"],
       ["Roles & templates", "/workspace/organizations/7/roles"],
+      ["Audit log", "/workspace/organizations/7/audit-log"],
       ["Settings", "/workspace/organizations/7/settings"],
+    ]);
+  });
+
+  it("offers the audit log only while the role grants it", () => {
+    expect(labels({ canViewAuditLog: true })).toEqual(["Overview", "Audit log"]);
+    expect(labels({ canViewAuditLog: false, canViewOrganization: true })).toEqual([
+      "Overview",
+      "Settings",
     ]);
   });
 

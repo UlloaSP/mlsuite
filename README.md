@@ -65,7 +65,9 @@ the full stack is here to inspect, change and fork.
   the bookmark's name, text and the publisher's logo.
 - Let outside software run an organization's bookmarks through the
   [client API](#client-api) with keys, usage metering and limits.
-- Manage organizations, teams, roles, invitations and workspace permissions.
+- Manage organizations, teams, roles, invitations and workspace permissions, and
+  read who changed invitations, roles and API access in the organization's
+  audit log (roles with `VIEW_AUDIT_LOG`).
 - Let superadmins review every public bookmark on the instance and unpublish any
   of them, and watch every organization's API traffic.
 - Monitor the local Compose stack through the operations service.

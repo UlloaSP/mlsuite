@@ -1,10 +1,10 @@
 package dev.ulloasp.mlsuite.audit.application.port.in;
 
-import java.util.List;
-
 import dev.ulloasp.mlsuite.audit.application.dto.AuditEventDto;
+import dev.ulloasp.mlsuite.util.CatalogRequest;
+import dev.ulloasp.mlsuite.util.PageDto;
 
 public interface AuditLogUseCase {
 
-    List<AuditEventDto> list(Long userId, Long organizationId);
+    PageDto<AuditEventDto> list(Long userId, Long organizationId, CatalogRequest request);
 }

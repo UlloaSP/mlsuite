@@ -35,6 +35,9 @@ export const protectedPages: RouteObject[] = [
   page("workspace/organizations/:organizationId/roles", () =>
     import("@/features/workspace/pages/roles-page").then((m) => m.RolesPage),
   ),
+  page("workspace/organizations/:organizationId/audit-log", () =>
+    import("@/features/workspace/pages/audit-log-page").then((m) => m.AuditLogPage),
+  ),
   page("workspace/organizations/:organizationId/settings", () =>
     import("@/features/workspace/pages/organization-settings-page").then(
       (m) => m.OrganizationSettingsPage,

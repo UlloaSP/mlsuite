@@ -7,6 +7,7 @@ import type {
   InvitationDto,
   InvitationCandidateDto,
   OrganizationMembershipRowDto,
+  PageDtoAuditEventDto,
   PermissionGroupDto,
   RoleCatalogMetadataDto,
   RoleDefinitionDto,
@@ -14,6 +15,7 @@ import type {
   RoleTemplateDto,
 } from "@/shared/api/openapi.gen";
 import {
+  organizationAuditEventsQueryKey,
   organizationMembersQueryKey,
   organizationInvitationsQueryKey,
   organizationInvitationCandidatesQueryKey,
@@ -70,6 +72,20 @@ export function useInvitationCatalog(id: number, controls: Controls) {
         { signal },
       ),
     enabled: Boolean(id),
+  });
+}
+
+/** Every visit reads the log afresh: actions across the product add to it. */
+export function useAuditEventCatalog(id: number, controls: Controls, enabled = true) {
+  return useInfiniteCatalog({
+    queryKey: [...organizationAuditEventsQueryKey(id), "infinite", controls],
+    queryFn: (page, signal) =>
+      appFetch<PageDtoAuditEventDto>(
+        `/api/organizations/${id}/audit-events/catalog?${params(page, controls)}`,
+        { signal },
+      ),
+    enabled: Boolean(id) && enabled,
+    staleTime: 0,
   });
 }
 

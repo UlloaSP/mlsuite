@@ -18,3 +18,5 @@ export const organizationInvitationCandidatesQueryKey = (organizationId: number 
   [...organizationQueryKey(organizationId), "invitation-candidates"] as const;
 export const organizationRolesQueryKey = (organizationId: number | string) =>
   [...organizationQueryKey(organizationId), "roles"] as const;
+export const organizationAuditEventsQueryKey = (organizationId: number | string) =>
+  [...organizationQueryKey(organizationId), "audit-events"] as const;

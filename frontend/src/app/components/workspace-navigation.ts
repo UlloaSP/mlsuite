@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { KeyRound, LayoutGrid, Mail, Settings, Users } from "lucide-react";
+import { History, KeyRound, LayoutGrid, Mail, Settings, Users } from "lucide-react";
 import type { NavigationChild } from "./sidebar-navigation-support";
 import type { WorkspacePermissionsDto } from "@/shared/api/openapi.gen";
 
@@ -27,6 +27,9 @@ export function getWorkspaceLinks(
     permissions.canInviteMembers ||
     permissions.canManageMemberRoles
       ? [{ to: `${organizationPath}/roles`, icon: KeyRound, label: "Roles & templates" }]
+      : []),
+    ...(permissions.canViewAuditLog
+      ? [{ to: `${organizationPath}/audit-log`, icon: History, label: "Audit log" }]
       : []),
     ...(permissions.canViewOrganization
       ? [{ to: `${organizationPath}/settings`, icon: Settings, label: "Settings" }]
