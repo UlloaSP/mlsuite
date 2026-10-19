@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
 import org.springframework.data.domain.PageRequest;
@@ -74,6 +75,8 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
 
         String prefilter = searchQuery.prefilter();
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
+        Set<PermissionKey> granted = workspaceAuthorizationService
+                .effectiveOrganizationPermissions(userId, organization.getId());
         Pageable candidates = PageRequest.of(0, MAX_CANDIDATES);
         List<SearchGroupDto> groups = new ArrayList<>();
         addGroup(groups, "Organizations", rank(
@@ -83,31 +86,35 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
                         .toList(),
                 searchQuery,
                 SearchWorkspaceCandidateFactory::fromOrganization));
-        addGroup(groups, "Models", rank(
-                modelRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
-                searchQuery,
-                SearchWorkspaceCandidateFactory::fromModel));
-        addGroup(groups, "Schemas", rank(
-                schemaRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
-                searchQuery,
-                SearchWorkspaceCandidateFactory::fromSchema));
-        addGroup(groups, "Snapshots", rank(
-                schemaVersionRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
-                searchQuery,
-                SearchWorkspaceCandidateFactory::fromSnapshot));
-        addGroup(groups, "Bookmarks", rank(
-                schemaBookmarkRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
-                searchQuery,
-                SearchWorkspaceCandidateFactory::fromBookmark));
-        addGroup(groups, "Prediction Runs", rank(
-                predictionRunRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
-                searchQuery,
-                SearchWorkspaceCandidateFactory::fromPredictionRun));
-        workspaceAuthorizationService.require(userId, organization.getId(), PermissionKey.VIEW_PLUGINS);
-        addGroup(groups, "Plugins", rank(
-                pluginMetadataRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
-                searchQuery,
-                SearchWorkspaceCandidateFactory::fromPlugin));
+        // Each group needs the permission its own catalog endpoint requires; others are left out, not denied.
+        if (granted.contains(PermissionKey.VIEW_MODELS)) {
+            addGroup(groups, "Models", rank(
+                    modelRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
+                    searchQuery,
+                    SearchWorkspaceCandidateFactory::fromModel));
+            addGroup(groups, "Schemas", rank(
+                    schemaRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
+                    searchQuery,
+                    SearchWorkspaceCandidateFactory::fromSchema));
+            addGroup(groups, "Snapshots", rank(
+                    schemaVersionRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
+                    searchQuery,
+                    SearchWorkspaceCandidateFactory::fromSnapshot));
+            addGroup(groups, "Bookmarks", rank(
+                    schemaBookmarkRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
+                    searchQuery,
+                    SearchWorkspaceCandidateFactory::fromBookmark));
+            addGroup(groups, "Prediction Runs", rank(
+                    predictionRunRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
+                    searchQuery,
+                    SearchWorkspaceCandidateFactory::fromPredictionRun));
+        }
+        if (granted.contains(PermissionKey.VIEW_PLUGINS)) {
+            addGroup(groups, "Plugins", rank(
+                    pluginMetadataRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
+                    searchQuery,
+                    SearchWorkspaceCandidateFactory::fromPlugin));
+        }
         return new SearchResponseDto(searchQuery.raw(), groups);
     }
     private <T> List<RankedResult> rank(

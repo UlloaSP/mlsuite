@@ -113,9 +113,7 @@ export function AppGlobalSearch() {
             <div className="max-h-[26rem] overflow-y-auto bg-surface-subtle">
               {showPanel ? (
                 isError ? (
-                  <AppCopy className="px-6 py-5">
-                    Search is unavailable. Try again in a moment.
-                  </AppCopy>
+                  <AppCopy className="px-6 py-5">Search failed. Try again in a moment.</AppCopy>
                 ) : !data ? (
                   <div className="px-6 py-5">
                     <AppLoadingState compact label="Searching workspace…" rows={3} />
