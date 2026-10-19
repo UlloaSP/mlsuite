@@ -11,6 +11,7 @@ import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
+import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
@@ -48,7 +49,7 @@ export function ModelDetailPage() {
             title={missing ? "Model not found" : "Model unavailable"}
             description={
               missing
-                ? "It may have been archived, deleted, or belong to another organization."
+                ? "It may have been deleted or belong to another organization."
                 : "The model could not be loaded. Try again in a moment."
             }
             action={
@@ -61,10 +62,22 @@ export function ModelDetailPage() {
           <>
             <AppPageHeader
               breadcrumbs={[{ label: "Models", to: "/models" }, { label: model.name }]}
-              title={model.name}
-              description={`${algorithm ?? model.specificType} · Created ${formatTimestamp(model.createdAt)}`}
+              title={
+                <>
+                  {model.name}
+                  {model.archivedAt ? (
+                    <AppBadge tone="warning" className="ml-3 align-middle">
+                      Archived
+                    </AppBadge>
+                  ) : null}
+                </>
+              }
+              description={`${algorithm ?? model.specificType} · Created ${formatTimestamp(model.createdAt)}${
+                model.archivedAt ? ` · Archived ${formatTimestamp(model.archivedAt)}` : ""
+              }`}
               actions={
-                canEditModels ? (
+                // An archived model is no longer offered for new schemas.
+                canEditModels && !model.archivedAt ? (
                   <AppButton
                     type="button"
                     onClick={() => navigate(`/schemas/create?modelId=${model.id}`)}

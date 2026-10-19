@@ -119,6 +119,3 @@ Read by the scripts in `scripts/`, not by the application. See
 | `RECOVERY_LAST_RESTORE_UTC`, `RECOVERY_LAST_RTO_SECONDS`, `RECOVERY_LAST_RESTORE_RESULT` | | Written by the restore rehearsal. |
 | `RESTORE_SMOKE_PORT` | `18080` | Local port of the API restored during a rehearsal. |
 | `RELEASE_COMPOSE` | `docker-compose.release.yml` | Path of the digest-pinned release override, inside the repository. |
-
-`.env.example` also lists `DB_TEST`, `MINIO_API_PORT`, `MINIO_CONSOLE_PORT` and
-`REVIEW_LINK_SECRET`, which the current release does not read.

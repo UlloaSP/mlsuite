@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.model;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -89,18 +90,27 @@ class ModelReadPermissionTest {
     }
 
     @Test
-    void modelViewPermissionReadsOneActiveOrganizationModel() {
+    void modelViewPermissionReadsOneOrganizationModel() {
         membership(Set.of(PermissionKey.VIEW_MODELS));
         Model model = new Model();
-        when(models.findByIdAndOrganizationIdAndArchivedAtIsNull(9L, 41L)).thenReturn(Optional.of(model));
+        when(models.findByIdAndOrganizationId(9L, 41L)).thenReturn(Optional.of(model));
         assertSame(model, service.getModel(3L, 9L));
     }
 
     @Test
-    void unknownOtherOrganizationOrArchivedModelIsNotFound() {
+    void archivedModelStaysReadableWithItsArchivedState() {
+        membership(Set.of(PermissionKey.VIEW_MODELS));
+        Model archived = new Model();
+        archived.setArchivedAt(OffsetDateTime.parse("2026-10-01T10:00:00Z"));
+        when(models.findByIdAndOrganizationId(9L, 41L)).thenReturn(Optional.of(archived));
+        assertNotNull(service.getModel(3L, 9L).getArchivedAt());
+    }
+
+    @Test
+    void unknownOrOtherOrganizationModelIsNotFound() {
         membership(Set.of(PermissionKey.VIEW_MODELS));
         when(users.requireById(3L)).thenReturn(new User("alice", "a@example.com", "x", "Alice", SystemRole.USER));
-        when(models.findByIdAndOrganizationIdAndArchivedAtIsNull(9L, 41L)).thenReturn(Optional.empty());
+        when(models.findByIdAndOrganizationId(9L, 41L)).thenReturn(Optional.empty());
         assertThrows(ModelDoesNotExistsException.class, () -> service.getModel(3L, 9L));
     }
 

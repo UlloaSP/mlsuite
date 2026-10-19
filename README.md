@@ -118,9 +118,8 @@ cp .env.example .env
 On Windows PowerShell, use `Set-Location mlsuite` and `Copy-Item .env.example .env`.
 
 Open `.env` and give every blank secret its own value, especially `DB_PASS`,
-`STORAGE_SECRET_KEY`, `OPS_AGENT_SHARED_SECRET`, `REVIEW_LINK_SECRET` and
-`MLSUITE_SUPERADMIN_PASSWORD`. Keep `.env` private; commit only sanitized
-defaults to `.env.example`.
+`STORAGE_SECRET_KEY`, `OPS_AGENT_SHARED_SECRET` and `MLSUITE_SUPERADMIN_PASSWORD`.
+Keep `.env` private; commit only sanitized defaults to `.env.example`.
 
 Start the development stack:
 

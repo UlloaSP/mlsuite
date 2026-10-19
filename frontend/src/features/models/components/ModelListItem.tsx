@@ -25,6 +25,7 @@ const getModelIcon = (type: string) => {
 
 type ModelListItemProps = {
   canDelete: boolean;
+  canDuplicate: boolean;
   canEdit: boolean;
   item: ModelDto;
   schemaCount: number;
@@ -33,7 +34,14 @@ type ModelListItemProps = {
   onAction: (action: ModelAction, item: ModelDto) => void;
 };
 
-export function ModelListItem({ canDelete, canEdit, item, to, onAction }: ModelListItemProps) {
+export function ModelListItem({
+  canDelete,
+  canDuplicate,
+  canEdit,
+  item,
+  to,
+  onAction,
+}: ModelListItemProps) {
   const Icon = getModelIcon(item.type);
   const modifier = modifierName(item.updatedByName, item.updatedByEmail);
 
@@ -63,10 +71,11 @@ export function ModelListItem({ canDelete, canEdit, item, to, onAction }: ModelL
       }
       to={to}
       actions={
-        canDelete || canEdit ? (
+        canDelete || canDuplicate || canEdit ? (
           <ModelActionsMenu
             archived={Boolean(item.archivedAt)}
             canDelete={canDelete}
+            canDuplicate={canDuplicate}
             canEdit={canEdit}
             modelName={item.name}
             onAction={(action) => onAction(action, item)}

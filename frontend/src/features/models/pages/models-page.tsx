@@ -171,6 +171,7 @@ export function ModelsPage() {
           <ModelListItem
             key={model.id}
             canDelete={canDeleteModels}
+            canDuplicate={canCreateModels}
             canEdit={canEditModels}
             item={model}
             schemaCount={hasSchema(model) ? 1 : 0}
