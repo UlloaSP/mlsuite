@@ -167,6 +167,17 @@ using published images. The release bundle supplies verified artifacts;
 deployment, migration, backup, readiness, promotion and rollback remain operator
 responsibilities.
 
+### Websites
+
+`landing/` and `docs/` deploy to Cloudflare Workers Static Assets as `mlsuite-landing`
+(`mlsuite.eshkra.dev`) and `mlsuite-docs` (`docs.mlsuite.eshkra.dev`). CI checks and builds
+both sites and validates their Wrangler configuration without uploading. Only when every CI
+job passes on a push to `main`, or on a manual CI run on `main`, are the tested builds
+deployed without rebuilding, each through its own GitHub environment (`landing`, `docs`)
+limited to `main`, followed by an HTTPS check of the homepage title. Pull requests, forks and
+`develop` never deploy. The repository needs the Actions secrets `CLOUDFLARE_API_TOKEN` and
+`CLOUDFLARE_ACCOUNT_ID`. To roll back, revert the change and merge it to `main`.
+
 ### Production cutover
 
 For a real cutover, run the repeatable, gated operator wizard from the repository
