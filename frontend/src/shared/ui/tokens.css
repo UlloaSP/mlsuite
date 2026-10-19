@@ -2,6 +2,10 @@
 Design tokens. Presets and custom themes only set the `--theme-*` inputs in
 theme-presets.css; every token below derives from them, so a new role never
 needs a hand-picked value per theme and mode.
+
+Neutral mixes interpolate in oklab. In oklch, Chromium treats the hue of a
+near-grey (chroma below about 0.02) as powerless and paints the result at hue 0,
+tinting cool greys pink. Accent and status mixes keep oklch to hold their hue.
 */
 
 @theme static {
@@ -11,54 +15,54 @@ needs a hand-picked value per theme and mode.
 
   /* Neutrals, adjusted by the contrast preference. */
   --color-page: color-mix(
-    in oklch,
+    in oklab,
     var(--theme-page-bg),
     var(--contrast-anchor) var(--contrast-page-mix)
   );
   --color-page-accent: var(--theme-page-bg-accent);
   --color-surface: var(--theme-surface-primary);
   --color-surface-subtle: color-mix(
-    in oklch,
+    in oklab,
     var(--theme-surface-secondary),
     var(--contrast-anchor) var(--contrast-surface-mix)
   );
   --color-surface-muted: color-mix(
-    in oklch,
+    in oklab,
     var(--theme-surface-muted),
     var(--contrast-anchor) var(--contrast-surface-mix)
   );
-  --color-surface-hover: color-mix(in oklch, var(--color-fg) 5%, var(--color-surface));
+  --color-surface-hover: color-mix(in oklab, var(--color-fg) 5%, var(--color-surface));
   --color-surface-selected: var(--color-accent-subtle);
   --color-surface-raised: var(--color-surface);
   --color-surface-inverse: var(--theme-surface-inverse);
   --color-sidebar: var(--theme-sidebar-bg);
-  --color-overlay: color-mix(in oklch, var(--theme-text-primary) 35%, transparent);
+  --color-overlay: color-mix(in oklab, var(--theme-text-primary) 35%, transparent);
 
   --color-fg: color-mix(
-    in oklch,
+    in oklab,
     var(--theme-text-primary),
     var(--contrast-anchor) var(--contrast-text-mix)
   );
   --color-fg-secondary: color-mix(
-    in oklch,
+    in oklab,
     var(--theme-text-secondary),
     var(--contrast-anchor) var(--contrast-text-mix)
   );
   --color-fg-muted: color-mix(
-    in oklch,
+    in oklab,
     var(--theme-text-muted),
     var(--contrast-anchor) var(--contrast-text-mix)
   );
-  --color-fg-disabled: color-mix(in oklch, var(--color-fg-muted) 60%, var(--color-surface));
+  --color-fg-disabled: color-mix(in oklab, var(--color-fg-muted) 60%, var(--color-surface));
   --color-fg-inverse: var(--theme-text-inverse);
 
   --color-line: color-mix(
-    in oklch,
+    in oklab,
     var(--theme-border-soft),
     var(--contrast-anchor) var(--contrast-border-mix)
   );
   --color-line-strong: color-mix(
-    in oklch,
+    in oklab,
     var(--theme-border-strong),
     var(--contrast-anchor) var(--contrast-border-mix)
   );
@@ -104,9 +108,9 @@ needs a hand-picked value per theme and mode.
 
   /* Logs and terminals stay dark in both modes. */
   --color-code: var(--theme-surface-inverse);
-  --color-code-fg: color-mix(in oklch, var(--theme-text-inverse) 88%, var(--theme-surface-inverse));
+  --color-code-fg: color-mix(in oklab, var(--theme-text-inverse) 88%, var(--theme-surface-inverse));
   --color-code-muted: color-mix(
-    in oklch,
+    in oklab,
     var(--theme-text-inverse) 45%,
     var(--theme-surface-inverse)
   );
@@ -145,7 +149,7 @@ needs a hand-picked value per theme and mode.
 
   --shadow-card: var(--theme-shadow-card);
   --shadow-hover: var(--theme-shadow-hover);
-  --shadow-overlay: 0 16px 40px color-mix(in oklch, var(--theme-text-primary) 18%, transparent);
+  --shadow-overlay: 0 16px 40px color-mix(in oklab, var(--theme-text-primary) 18%, transparent);
 
   --ease-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
   --duration-fast: 120ms;
@@ -160,7 +164,7 @@ needs a hand-picked value per theme and mode.
 }
 
 html.dark {
-  --color-surface-raised: color-mix(in oklch, var(--color-fg) 5%, var(--color-surface));
+  --color-surface-raised: color-mix(in oklab, var(--color-fg) 5%, var(--color-surface));
   --color-overlay: rgb(0 0 0 / 0.6);
   --shadow-overlay: 0 18px 44px rgb(0 0 0 / 0.45);
 
@@ -179,7 +183,7 @@ html.dark {
   --color-chart-5: #38bdf8;
   --color-chart-6: #a78bfa;
 
-  --color-code: color-mix(in oklch, var(--theme-page-bg), #000 35%);
-  --color-code-fg: color-mix(in oklch, var(--theme-text-primary) 88%, var(--theme-page-bg));
-  --color-code-muted: color-mix(in oklch, var(--theme-text-primary) 45%, var(--theme-page-bg));
+  --color-code: color-mix(in oklab, var(--theme-page-bg), #000 35%);
+  --color-code-fg: color-mix(in oklab, var(--theme-text-primary) 88%, var(--theme-page-bg));
+  --color-code-muted: color-mix(in oklab, var(--theme-text-primary) 45%, var(--theme-page-bg));
 }
