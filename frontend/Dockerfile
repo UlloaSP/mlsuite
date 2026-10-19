@@ -10,8 +10,8 @@ RUN vp install --ignore-scripts --frozen-lockfile
 COPY . .
 RUN vp run build
 
-FROM nginx:1.31.5-alpine@sha256:72ba65eb42c10344912a84ff42408db7d34f2feb642204570ab8fc5ffd29f1d3
-RUN apk upgrade --no-cache libuuid libexpat pcre2 tiff
+FROM nginx:1.31.5-alpine@sha256:72ba65eb42c10344912a84ff42408db7d34f2feb642204570ab8fc5ffd29f1d3 AS runtime
+RUN apk upgrade --no-cache
 
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf

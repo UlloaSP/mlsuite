@@ -11,7 +11,7 @@ COPY src ./src
 
 RUN uv sync --frozen --no-dev
 
-FROM cgr.dev/chainguard/python:latest@sha256:3f411b4aac1ed9cd6c9dec1486f92a8898737d9d6f95488dd727ca7d6f5254ee
+FROM cgr.dev/chainguard/python:latest@sha256:3f411b4aac1ed9cd6c9dec1486f92a8898737d9d6f95488dd727ca7d6f5254ee AS runtime
 
 WORKDIR /app
 COPY --from=build /app/.venv ./.venv
