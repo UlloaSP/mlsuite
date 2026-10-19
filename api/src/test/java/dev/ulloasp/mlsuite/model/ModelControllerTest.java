@@ -113,6 +113,15 @@ class ModelControllerTest {
     }
 
     @Test
+    void getModel_ExposesTheArchivedState() {
+        Model archived = model();
+        archived.setArchivedAt(java.time.OffsetDateTime.parse("2026-10-01T10:00:00Z"));
+        when(modelCatalogUseCase.getModel(4L, 9L)).thenReturn(archived);
+
+        assertEquals(archived.getArchivedAt(), controller.getModel(user, 9L).getBody().archivedAt());
+    }
+
+    @Test
     void getModel_PropagatesNotFoundForTheExceptionHandler() {
         when(modelCatalogUseCase.getModel(4L, 9L)).thenThrow(new ModelDoesNotExistsException(9L, "alice"));
 

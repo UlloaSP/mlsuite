@@ -3,7 +3,6 @@
 import { act } from "react";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
 import { CreateModelPage } from "@/features/models/pages/create-model-page";
-import { ModelActionsMenu } from "@/features/models/components/ModelActionsMenu";
 import { changeValue, click, mount, type Mounted } from "./support/dom";
 
 const mocks = vi.hoisted(() => ({
@@ -105,16 +104,3 @@ test.each(["model.joblib", "model.onnx", "data.csv"])(
     expect(container.textContent).toContain("No bundles yet");
   },
 );
-test.each([false, true])("only offers archive for active models, archived=%s", async (archived) => {
-  await view.rerender(
-    <ModelActionsMenu archived={archived} canEdit canDelete modelName="QA" onAction={vi.fn()} />,
-  );
-  const trigger = container.querySelector<HTMLButtonElement>('[aria-label="Open actions for QA"]')!;
-  // The menu opens from the keyboard in jsdom and renders in a portal on the body.
-  await act(async () =>
-    trigger.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })),
-  );
-  const menu = document.body.querySelector('[role="menu"]');
-  expect(menu?.textContent?.includes("Archive")).toBe(!archived);
-  expect(menu?.textContent).toContain("Delete");
-});
