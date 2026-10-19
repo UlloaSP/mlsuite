@@ -60,7 +60,7 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
   "nav:Plugins": {
     title: "Plugins",
     description:
-      "Add catalog plugins that extend forms and reports, and configure them for this organization.",
+      "Upload plugins that add custom fields and reports to this organization's forms, and delete the ones you no longer use.",
   },
   "nav:Review": {
     title: "Review",
