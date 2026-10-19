@@ -173,7 +173,7 @@ describe("schema plugin real mlform lifecycle", () => {
       "/api/analyzer/explanations?modelId=1",
       "/api/analyzer/explanations?modelId=2",
     ]);
-    expect(result.reportFetchResults["crystal-1"]).toEqual({
+    expect(result.reportFetchResults["crystal_1"]).toEqual({
       explanation: "/api/analyzer/explanations?modelId=1",
     });
   });
@@ -276,7 +276,7 @@ describe("schema plugin real mlform lifecycle", () => {
         reports: [
           {
             kind: "Crystal Tree",
-            label: "Report",
+            label: "Tree Explanation",
             mappedTo: { "Model One": "crystal-tree" },
           },
         ],
@@ -311,7 +311,7 @@ describe("schema plugin real mlform lifecycle", () => {
       category__1: 1,
       category__11: 0,
     });
-    expect(result.reportFetchResults.report).toEqual({
+    expect(result.reportFetchResults["tree-explanation"]).toEqual({
       explanation: "/api/analyzer/explanations?modelId=1",
     });
   });

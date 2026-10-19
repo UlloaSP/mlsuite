@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { normalizeSchemaId } from "mlform/schema";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { mappedTarget, targetKey } from "@/capabilities/prediction-runtime/mlform/mapped-to";
 
@@ -12,12 +13,13 @@ type Binding = {
   modelName?: string;
 };
 
+// MLForm keeps explicit ids literal and rejects whitespace, so an id derived from a label is
+// generated the way MLForm generates one; stored runs keep the report ids they always had.
 const reportId = (report: Record<string, unknown>, index: number): string =>
   typeof report.id === "string" && report.id.trim()
     ? report.id
-    : typeof report.label === "string" && report.label.trim()
-      ? report.label
-      : `report-${index + 1}`;
+    : normalizeSchemaId(typeof report.label === "string" ? report.label : "") ||
+      `report-${index + 1}`;
 
 const reportLabel = (report: Record<string, unknown>, binding: Binding): string | undefined => {
   const label = typeof report.label === "string" ? report.label : undefined;

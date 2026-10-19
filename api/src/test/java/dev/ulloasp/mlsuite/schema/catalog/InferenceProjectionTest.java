@@ -142,6 +142,21 @@ class InferenceProjectionTest {
     }
 
     @Test
+    void marksQuestionnairesWhoseIdsTheFormCannotRunAsErrors() throws Exception {
+        String step = "/versions/0/formSchema/reports/0/feedbackQuestionnaire/steps/0";
+        assertTrue(rows(data(16)).stream()
+                .noneMatch(row -> row.dto().feedbackStatus() == InferenceFeedbackStatus.ERROR));
+        for (String[] invalid : List.of(new String[] { step, "first review" },
+                new String[] { step + "/fields/0", "review agree" },
+                new String[] { step + "/fields/0", "constructor" })) {
+            ObjectNode data = data(16);
+            object(data, invalid[0]).put("id", invalid[1]);
+            assertTrue(rows(data).stream()
+                    .allMatch(row -> row.dto().feedbackStatus() == InferenceFeedbackStatus.ERROR), invalid[1]);
+        }
+    }
+
+    @Test
     void searchesWhatTheRowShows() throws Exception {
         JsonNode fixtures = InferenceCatalogFixtures.all();
         Row row = rows(fixtures.get(fixtures.size() - 1).get("data")).getFirst();
