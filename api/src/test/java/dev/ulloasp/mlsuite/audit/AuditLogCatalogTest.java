@@ -56,7 +56,9 @@ class AuditLogCatalogTest extends PublicPredictionFixture {
             viewer = new User("viewer-" + unique, "viewer-" + unique + "@example.test", "unused",
                     "Viewer", SystemRole.USER);
             entityManager.persist(viewer);
-            RoleDefinition viewing = new RoleDefinition(current, RoleScope.ORGANIZATION, "Viewer", "viewer", null);
+            // Not a seeded slug: organizations outlive the test and are seeded again on later startups.
+            RoleDefinition viewing = new RoleDefinition(current, RoleScope.ORGANIZATION, "Model reader",
+                    "model-reader", null);
             viewing.setPermissions(EnumSet.of(PermissionKey.VIEW_WORKSPACE, PermissionKey.VIEW_MODELS));
             entityManager.persist(viewing);
             entityManager.persist(new OrganizationMembership(current, viewer, viewing, MembershipStatus.ACTIVE));
