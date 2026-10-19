@@ -1,0 +1,96 @@
+/* Hero: the eshkra hero (mark, ember accent, faded dot grid) with the product on stage. */
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding-bottom: clamp(3rem, 6vw, 4.5rem);
+  background: radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0) 0 0 / 24px 24px;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(70% 60% at 50% 30%, transparent 0%, var(--bg) 85%);
+  pointer-events: none;
+}
+.hero-inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: clamp(2rem, 4vw, 3rem);
+}
+.hero-mark {
+  width: auto;
+  height: clamp(3rem, 4.6vw, 4rem);
+  margin-bottom: 1.25rem;
+  animation: mark-in 900ms var(--ease) both;
+}
+@keyframes mark-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+}
+.hero h1 {
+  max-width: 19ch;
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 700;
+  font-stretch: 106%;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+}
+.accent {
+  color: var(--ember);
+}
+.hero h1 .accent {
+  display: block;
+}
+.lede {
+  max-width: 44rem;
+  margin-top: 1.25rem;
+  font-size: clamp(1.0625rem, 1.6vw, 1.25rem);
+  color: var(--text-2);
+}
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+.hero-note {
+  margin-top: 1.25rem;
+  color: var(--text-3);
+  font-size: 0.875rem;
+}
+.hero-note a {
+  color: var(--text-2);
+}
+.hero-note a:hover {
+  color: var(--ember-ink);
+}
+.stage {
+  position: relative;
+  margin-top: clamp(2rem, 4vw, 3rem);
+}
+.stage > figcaption {
+  margin-top: 0.875rem;
+  color: var(--text-3);
+  font-size: 0.8125rem;
+  text-align: center;
+}
+.hero .plate {
+  --gx: 10%;
+  --gy: 92%;
+}
+@media (max-width: 40rem) {
+  .hero-actions {
+    gap: 0.5rem;
+  }
+  .hero-actions .button {
+    padding-inline: 1rem;
+    font-size: 0.875rem;
+  }
+}

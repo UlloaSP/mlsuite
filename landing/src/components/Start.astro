@@ -1,0 +1,65 @@
+---
+import CodeWindow from "./CodeWindow.astro";
+import Icon from "./Icon.astro";
+import Wordmark from "./Wordmark.astro";
+import { family, links, selfHost } from "../data/site";
+
+const resources = [
+  { title: "Live instance", text: "mlsuite.irlab.org", href: links.app },
+  { title: "Documentation", text: "Guides and concepts", href: links.docs },
+  { title: "GitHub", text: "Source and issues", href: links.github },
+  { title: "Discussions", text: "Ideas and questions", href: links.discussions },
+  { title: "Releases", text: "Digest-pinned images", href: links.releases },
+];
+---
+
+<section class="section start" id="start" aria-labelledby="start-title">
+  <div class="wrap">
+    <header class="section-head">
+      <h2 id="start-title">Try it, or run your own.</h2>
+      <p>
+        MLsuite is early software: expect rough edges and breaking changes. The full stack is open
+        to inspect, change and fork.
+      </p>
+    </header>
+    <div class="ways">
+      <div class="way">
+        <h3>Use the live instance</h3>
+        <p>
+          Create an account at mlsuite.irlab.org. It comes with a personal organization, ready for
+          your first bundle.
+        </p>
+        <a class="button" href={links.register}>
+          Create an account <Icon name="arrow-up-right" size={14} />
+        </a>
+      </div>
+      <div class="way">
+        <h3>Self-host with Docker Compose</h3>
+        <p>
+          You need Git and Docker. Fill in every blank secret in <code class="mono">.env</code>{" "}
+          before you start.
+        </p>
+        <CodeWindow title="Terminal" code={selfHost} lang="bash" />
+      </div>
+    </div>
+    <nav class="resources" aria-label="Resources">
+      {resources.map(({ title, text, href }) => (
+        <a href={href}>
+          <strong>{title}</strong>
+          <span>{text}</span>
+          <Icon name="arrow-up-right" size={16} />
+        </a>
+      ))}
+    </nav>
+    <ol class="path" aria-label="The eshkra path from a trained model to a reviewed prediction">
+      {family.map(({ name, stage, href }) => (
+        <li aria-current={name === "mlsuite" ? "step" : undefined}>
+          <span class="path-stage">{stage}</span>
+          <a href={href}>
+            <Wordmark name={name} />
+          </a>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>

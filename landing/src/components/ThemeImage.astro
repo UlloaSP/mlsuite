@@ -1,0 +1,40 @@
+---
+import { getImage } from "astro:assets";
+import type { ImageMetadata } from "astro";
+
+interface Props {
+  light: ImageMetadata;
+  dark: ImageMetadata;
+  alt: string;
+  eager?: boolean;
+  sizes?: string;
+}
+const { light, dark, alt, eager = false, sizes = "(max-width: 767px) 92vw, 720px" } = Astro.props;
+// Captures are taken at 2x; the largest candidate keeps them sharp on high-density screens.
+const srcset = async (src: ImageMetadata) => {
+  const widths = [...new Set([720, 1440, 2240].map((width) => Math.min(width, src.width)))];
+  const images = await Promise.all(
+    widths.map((width) => getImage({ src, width, format: "webp", quality: 86 })),
+  );
+  return {
+    src: images[0].src,
+    srcset: images.map((image, index) => `${image.src} ${widths[index]}w`).join(", "),
+  };
+};
+const [lightSet, darkSet] = await Promise.all([srcset(light), srcset(dark)]);
+---
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset={darkSet.srcset} sizes={sizes} />
+  <img
+    src={lightSet.src}
+    srcset={lightSet.srcset}
+    sizes={sizes}
+    width={light.width}
+    height={light.height}
+    alt={alt}
+    loading={eager ? "eager" : "lazy"}
+    fetchpriority={eager ? "high" : "auto"}
+    decoding="async"
+  />
+</picture>
