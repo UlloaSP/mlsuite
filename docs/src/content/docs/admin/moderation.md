@@ -11,7 +11,7 @@ organization, and sort by latest updated, name or organization. A public bookmar
 archived shows **Schema archived**; its page is not available.
 
 **Unpublish** makes a bookmark private at once. Nothing is deleted, the action is recorded in the
-organization's audit log, and members who may publish can make it public again.
+organization's [audit log](/organizations/audit-log/), and members who may publish can make it public again.
 
 ## API traffic
 
@@ -38,4 +38,5 @@ outcomes and latency, never their content.
   clients may make together per calendar month (UTC), or **Follow the instance default**. A limit
   of 0 refuses every call.
 
-Suspensions, reinstatements and limits are recorded in the organization's audit log.
+Suspensions, reinstatements and limits are recorded in the organization's
+[audit log](/organizations/audit-log/).

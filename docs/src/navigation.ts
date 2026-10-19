@@ -23,6 +23,7 @@ export const sidebar = [
       { label: "Organizations", slug: "organizations/overview" },
       { label: "Members and invitations", slug: "organizations/members" },
       { label: "Roles and permissions", slug: "organizations/roles" },
+      { label: "Audit log", slug: "organizations/audit-log" },
     ],
   },
   {
