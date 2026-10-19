@@ -187,7 +187,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_11"];
+        get: operations["list_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -740,14 +740,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/organizations/{organizationId}/audit-events": {
+    "/api/organizations/{organizationId}/audit-events/catalog": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["list_10"];
+        get: operations["auditEventCatalog"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2666,10 +2666,14 @@ export interface components {
             /** Format: int64 */
             succeeded: number;
         };
+        AuditActorDto: {
+            /** Format: int64 */
+            id: number;
+            name: string;
+        };
         AuditEventDto: {
             action: string;
-            actorEmail: string;
-            actorName: string;
+            actor: components["schemas"]["AuditActorDto"];
             /** Format: date-time */
             createdAt: string;
             /** Format: int64 */
@@ -3206,6 +3210,16 @@ export interface components {
         PageDtoApiRequestDto: {
             hasNext: boolean;
             items: components["schemas"]["ApiRequestDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoAuditEventDto: {
+            hasNext: boolean;
+            items: components["schemas"]["AuditEventDto"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -4195,6 +4209,7 @@ export interface components {
             canRunPredictions: boolean;
             canTransferOwnership: boolean;
             canViewApiAccess: boolean;
+            canViewAuditLog: boolean;
             canViewInvitations: boolean;
             canViewMembers: boolean;
             canViewModels: boolean;
@@ -4239,6 +4254,7 @@ export type ApiRequestDto = components['schemas']['ApiRequestDto'];
 export type ApiUsageDto = components['schemas']['ApiUsageDto'];
 export type ApiUsageMonth = components['schemas']['ApiUsageMonth'];
 export type ApiUsagePoint = components['schemas']['ApiUsagePoint'];
+export type AuditActorDto = components['schemas']['AuditActorDto'];
 export type AuditEventDto = components['schemas']['AuditEventDto'];
 export type AuthRequest = components['schemas']['AuthRequest'];
 export type BookmarkExampleStateDto = components['schemas']['BookmarkExampleStateDto'];
@@ -4303,6 +4319,7 @@ export type PageDtoAdminApiOrganizationDto = components['schemas']['PageDtoAdmin
 export type PageDtoAdminUserDto = components['schemas']['PageDtoAdminUserDto'];
 export type PageDtoApiClientSummaryDto = components['schemas']['PageDtoApiClientSummaryDto'];
 export type PageDtoApiRequestDto = components['schemas']['PageDtoApiRequestDto'];
+export type PageDtoAuditEventDto = components['schemas']['PageDtoAuditEventDto'];
 export type PageDtoInferenceCatalogRowDto = components['schemas']['PageDtoInferenceCatalogRowDto'];
 export type PageDtoInvitationCandidateDto = components['schemas']['PageDtoInvitationCandidateDto'];
 export type PageDtoInvitationDto = components['schemas']['PageDtoInvitationDto'];
@@ -4667,7 +4684,7 @@ export interface operations {
             };
         };
     };
-    list_11: {
+    list_10: {
         parameters: {
             query?: {
                 page?: number;
@@ -5787,9 +5804,15 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    auditEventCatalog: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
             header?: never;
             path: {
                 organizationId: number;
@@ -5804,7 +5827,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuditEventDto"][];
+                    "application/json": components["schemas"]["PageDtoAuditEventDto"];
                 };
             };
         };

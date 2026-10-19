@@ -143,7 +143,7 @@ class PublicBookmarkModerationServiceTest {
         assertTrue(bookmarks.findPublishedByPublicId("acme-public").isEmpty());
         assertEquals(List.of("legacy", "live"), names(service.list(0, 8, "", "name")));
 
-        List<AuditEvent> events = auditEvents.findTop20ByOrganizationIdOrderByCreatedAtDesc(acme.getId());
+        List<AuditEvent> events = recorded(acme);
         assertEquals(1, events.size());
         AuditEvent event = events.get(0);
         assertEquals("BOOKMARK_MODERATION_UNPUBLISH", event.getAction());
@@ -159,7 +159,7 @@ class PublicBookmarkModerationServiceTest {
         entityManager.flush();
 
         assertEquals(BookmarkVisibility.PRIVATE, result.getVisibility());
-        assertTrue(auditEvents.findTop20ByOrganizationIdOrderByCreatedAtDesc(acme.getId()).isEmpty());
+        assertTrue(recorded(acme).isEmpty());
         assertEquals(3, service.list(0, 8, "", "name").totalItems());
     }
 
@@ -182,6 +182,12 @@ class PublicBookmarkModerationServiceTest {
 
     private static List<String> names(PageDto<ModeratedBookmarkDto> page) {
         return page.items().stream().map(ModeratedBookmarkDto::name).toList();
+    }
+
+    private List<AuditEvent> recorded(Organization organization) {
+        return auditEvents.findAll().stream()
+                .filter(event -> event.getOrganization().getId().equals(organization.getId()))
+                .toList();
     }
 
     private User user(String name, SystemRole role) {
