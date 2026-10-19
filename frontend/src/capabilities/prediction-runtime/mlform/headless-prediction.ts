@@ -20,6 +20,8 @@ const MLSUITE_THEME_TOKENS = {
   "--mlf-color-accent-soft": "var(--color-accent-subtle)",
   "--mlf-color-focus-ring": "var(--color-accent)",
   "--mlf-color-hover-surface": "var(--color-surface-hover)",
+  "--mlf-submit-bg": "var(--color-action)",
+  "--mlf-submit-bg-hover": "var(--color-action-hover)",
   "--mlf-color-success": "var(--color-success-fg)",
   "--mlf-color-warning": "var(--color-warning-fg)",
   "--mlf-color-danger": "var(--color-danger-fg)",

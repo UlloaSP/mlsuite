@@ -80,6 +80,12 @@ tinting cool greys pink. Accent and status mixes keep oklch to hold their hue.
   --color-on-accent: oklch(from var(--color-accent) clamp(0, (0.68 - l) * 1000, 1) 0 0);
   --color-focus: var(--color-accent);
 
+  /* Primary action fill: the accent, unless a theme sets the optional --theme-action inputs. */
+  --color-action: var(--theme-action, var(--theme-accent-primary));
+  --color-action-strong: var(--theme-action-strong, var(--theme-accent-primary-strong));
+  --color-action-hover: color-mix(in oklab, var(--color-action), var(--color-action-strong));
+  --color-on-action: oklch(from var(--color-action) clamp(0, (0.68 - l) * 1000, 1) 0 0);
+
   /* Status roles: solid and fg are fixed per mode; subtle and border follow the theme surface. */
   --color-success: #16a34a;
   --color-success-fg: #047857;
