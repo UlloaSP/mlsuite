@@ -13,7 +13,7 @@
     "preview": "astro preview --host 127.0.0.1 --port 4350"
   },
   "dependencies": {
-    "astro": "7.3.2",
+    "astro": "7.3.3",
     "sharp": "0.35.5"
   },
   "devDependencies": {
