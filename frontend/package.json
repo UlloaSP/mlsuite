@@ -31,7 +31,7 @@
     "read-excel-file": "^9.3.10",
     "recharts": "^3.10.1",
     "sonner": "^2.0.8",
-    "zod": "4.6.5"
+    "zod": "4.6.6"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
