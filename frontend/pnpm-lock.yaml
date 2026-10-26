@@ -6,6 +6,7 @@ settings:
 
 overrides:
   dompurify: ^3.4.16
+  zod: 4.6.6
 
 importers:
 
@@ -2918,9 +2919,6 @@ packages:
   yuku-parser@0.9.5:
     resolution: {integrity: sha512-IBnAdNVMswWbJcM7woPluOudectJzFjJ1N8jVRxP9Uq4CIv5hZdBIcdmtRbFDYF/Ph2j2gVup4YJ4N9mh0jYFA==}
 
-  zod@4.6.5:
-    resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
-
   zod@4.6.6:
     resolution: {integrity: sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA==}
 
@@ -4852,7 +4850,7 @@ snapshots:
   mlform@0.2.0:
     dependencies:
       lit: 3.3.3
-      zod: 4.6.5
+      zod: 4.6.6
 
   monaco-editor@0.56.0:
     dependencies:
@@ -5501,8 +5499,6 @@ snapshots:
       '@yuku-parser/binding-linux-x64-musl': 0.9.5
       '@yuku-parser/binding-win32-arm64': 0.9.5
       '@yuku-parser/binding-win32-x64': 0.9.5
-
-  zod@4.6.5: {}
 
   zod@4.6.6: {}
 
