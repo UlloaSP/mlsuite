@@ -6,6 +6,8 @@ minimumReleaseAgeExclude:
 # monaco-editor pins dompurify exactly (0.56.0 -> 3.4.8, 0.57.0 -> 3.4.15), both vulnerable.
 overrides:
   dompurify: ^3.4.16
+  # mlform 0.2.0 pins zod 4.6.5 (vulnerable); a second zod copy also exhausts tsc memory.
+  zod: 4.6.6
 
 #  - react-doctor@0.8.1
 #trustPolicy: no-downgrade

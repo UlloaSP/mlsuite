@@ -28,7 +28,7 @@ frontend:
   image: node:26-alpine
   before_script:
     - cd frontend
-    - npm install --global vite-plus@0.3.3
+    - npm install --global vite-plus@1.1.0
     - vp install --frozen-lockfile
   script:
     - NODE_OPTIONS=--no-webstorage ./node_modules/.bin/vp test --run
