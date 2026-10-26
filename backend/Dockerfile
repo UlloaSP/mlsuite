@@ -11,8 +11,12 @@ COPY src ./src
 
 RUN uv sync --frozen --no-dev
 
-FROM cgr.dev/chainguard/python:latest@sha256:3f411b4aac1ed9cd6c9dec1486f92a8898737d9d6f95488dd727ca7d6f5254ee AS runtime
+# Chainguard's free python:latest moved to 3.15, which the locked ML wheels do not support yet.
+# Install 3.14 on wolfi-base instead so package upgrades still reach the runtime.
+FROM cgr.dev/chainguard/wolfi-base:latest@sha256:360896efb0753a5701c48f860e17130c205eae5a264797aa3e7ea126ee2923a7 AS runtime
+RUN apk upgrade --no-cache && apk add --no-cache python-3.14
 
+USER 65532
 WORKDIR /app
 COPY --from=build /app/.venv ./.venv
 COPY --from=build /app/src ./src
