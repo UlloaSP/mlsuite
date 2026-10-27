@@ -6,20 +6,21 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
 import { createSchemaRunTransport } from "@/capabilities/prediction-runtime/mlform/run-transport";
 import { mountSchemaRunForm } from "@/capabilities/prediction-runtime/mlform/schema-run-mount";
+import { RUN_TARGET } from "./api-fixtures";
 
 type Options = Parameters<typeof createSchemaRunRuntime>[0] & {
-  bindings: Parameters<typeof createSchemaRunTransport>[0];
+  bindings: Parameters<typeof createSchemaRunTransport>[1];
 };
 
 /**
  * A run as the app makes one: the schema normalized with its plugins (in the sandbox, in the
- * app) and the normalized fields run through the app's transport.
+ * app) and the normalized fields run through the app's transport for `RUN_TARGET`.
  */
 export const schemaRunRuntime = (options: Options) => {
   const runtime = createSchemaRunRuntime(options);
   return {
     ...runtime,
-    transport: createSchemaRunTransport(options.bindings, runtime.normalizedFields),
+    transport: createSchemaRunTransport(RUN_TARGET, options.bindings, runtime.normalizedFields),
   };
 };
 
@@ -29,5 +30,5 @@ export const mountRunForm = (
 ) =>
   mountSchemaRunForm({
     ...options,
-    transport: (fields) => createSchemaRunTransport(options.bindings, fields),
+    transport: (fields) => createSchemaRunTransport(RUN_TARGET, options.bindings, fields),
   });

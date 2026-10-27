@@ -67,6 +67,7 @@ equivalent roles yourself; the migration role must be able to install `pg_trgm`.
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `MODEL_MUTATIONS_REQUIRE_VERSION` | `true` | Refuse model changes that do not send the model's version (`428`), so stale pages cannot overwrite each other. Keep `true`. |
+| `PREDICTION_ATTESTATION_SECRET` | | Signs the predictions the API runs for workspace inferences; an inference can only be saved with results signed by it, within 24 hours. Required: at least 32 random characters, the same on every API instance. Changing it invalidates unsaved results. |
 
 ## Public runs and the client API
 

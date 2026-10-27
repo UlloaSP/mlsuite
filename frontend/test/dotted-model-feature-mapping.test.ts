@@ -10,6 +10,7 @@ import { z } from "zod";
 import { applySchemaRunInputMapping } from "@/capabilities/prediction-runtime/mlform/model-input-mapping";
 import { schemaRunRuntime } from "./support/schema-run-runtime";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
+import { workspacePrediction, predictionRequest } from "./support/api-fixtures";
 
 const crystalReport: CatalogReportDefinition = {
   fileName: "crystal.ts",
@@ -57,12 +58,9 @@ test("keeps dotted model feature names literal in prediction and explanation pay
     "fetch",
     vi.fn(async (url: string, init?: RequestInit) => {
       if (url.includes("/predictions")) {
-        const data = init?.body instanceof FormData ? init.body.get("data") : null;
-        predictionInput = JSON.parse(data instanceof File ? await data.text() : "{}") as Record<
-          string,
-          unknown
-        >;
-        return new Response(JSON.stringify({ reports: [] }));
+        predictionInput = (predictionRequest(init) as { modelInput: Record<string, unknown> })
+          .modelInput;
+        return workspacePrediction(init);
       }
       const bodyText = typeof init?.body === "string" ? init.body : "{}";
       const body = JSON.parse(bodyText) as { instance: Record<string, unknown> };

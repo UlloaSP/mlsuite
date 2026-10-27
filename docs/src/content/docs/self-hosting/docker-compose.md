@@ -28,8 +28,8 @@ cp .env.example .env
 On Windows PowerShell, use `Copy-Item .env.example .env`.
 
 Open `.env` and give every blank secret its own random value, at least `DB_ADMIN_PASS`, `DB_PASS`,
-`DB_MIGRATION_PASS`, `MINIO_ROOT_PASSWORD`, `STORAGE_SECRET_KEY`, `OPS_AGENT_SHARED_SECRET` and
-`MLSUITE_SUPERADMIN_PASSWORD`, and set `MLSUITE_SUPERADMIN_EMAIL` to your address. Keep `.env`
+`DB_MIGRATION_PASS`, `MINIO_ROOT_PASSWORD`, `STORAGE_SECRET_KEY`, `OPS_AGENT_SHARED_SECRET`,
+`PREDICTION_ATTESTATION_SECRET` and `MLSUITE_SUPERADMIN_PASSWORD`, and set `MLSUITE_SUPERADMIN_EMAIL` to your address. Keep `.env`
 private. Every variable is described in [Configuration](/self-hosting/configuration/).
 
 ## Start

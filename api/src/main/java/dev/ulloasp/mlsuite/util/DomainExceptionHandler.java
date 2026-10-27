@@ -14,15 +14,19 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
+import org.springframework.web.ErrorResponse;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelAlreadyExistsException;
@@ -137,6 +141,14 @@ public class DomainExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ErrorDto.of(HttpStatus.BAD_REQUEST.value(), "The request body is not valid JSON for this endpoint.",
                         req.getRequestURI()));
+    }
+
+    /** A route or method the API does not serve is answered as such, not as a server failure. */
+    @ExceptionHandler({ NoResourceFoundException.class, HttpRequestMethodNotSupportedException.class })
+    public ResponseEntity<ErrorDto> handleUnservedRoute(ErrorResponse ex, HttpServletRequest req) {
+        HttpStatusCode status = ex.getStatusCode();
+        return ResponseEntity.status(status)
+                .body(ErrorDto.of(status.value(), "This endpoint does not accept this request.", req.getRequestURI()));
     }
 
     // ---- Analyzer (dynamic status) ----

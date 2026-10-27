@@ -33,6 +33,7 @@ const INITIAL = {
 const MAX_RECORDS = 10000;
 
 export function useSchemaRunBulkUpload(
+  bookmarkId: string,
   version: SchemaVersionDto,
   onResult: ReturnType<typeof useInferenceSession>["addResult"],
 ) {
@@ -82,6 +83,7 @@ export function useSchemaRunBulkUpload(
         return;
       }
       const transport = createSchemaRunTransport(
+        { bookmarkId, schemaVersionId: version.id },
         version.bindings,
         run.fields as unknown as PredictionPayloadField[],
       );

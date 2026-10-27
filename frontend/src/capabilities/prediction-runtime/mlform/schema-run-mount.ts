@@ -7,7 +7,7 @@ import { mountForm } from "mlform/kit";
 import { connectStoredStatusConditions } from "./stored-status-conditions";
 import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
 import type { AfterSubmitContext, FormState, SubmitErrorContext, Transport } from "mlform/runtime";
-import { normalizeSchema, type ReportContext } from "mlform/schema";
+import { normalizeSchema } from "mlform/schema";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
 import { getPredictionDesignSystem } from "./headless-prediction";
 import {
@@ -27,8 +27,8 @@ import type {
   CatalogReportDefinition,
 } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 import {
-  buildSchemaRunRawFromSubmitResult,
   reportStatesFromSnapshot,
+  schemaRunReportsPending,
 } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
 
 type RunResultCallback = (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => void;
@@ -78,26 +78,18 @@ export const mountSchemaRunForm = ({
   let mounted: ReturnType<typeof mountForm> | undefined;
   // The submitted result waits here while "all" report fetching finishes; the run
   // completes once every report has settled, as the split layout's success event did.
-  let submitted: { raw: JsonRecord; contexts: Record<string, ReportContext> } | null = null;
+  let submitted: JsonRecord | null = null;
   const completeWhenSettled = () => {
     if (!mounted || !submitted) return;
-    const next = buildSchemaRunRawFromSubmitResult(
-      submitted.raw,
-      mounted.form.reports,
-      reportStatesFromSnapshot(mounted.form.state.reportStates),
-      bindings,
-      submitted.contexts,
-    );
-    if (next.reportsPending) return;
+    const reportStates = reportStatesFromSnapshot(mounted.form.state.reportStates);
+    if (schemaRunReportsPending(mounted.form.reports, reportStates)) return;
+    const raw = submitted;
     submitted = null;
     onRunningChange?.(false);
-    onSubmit?.(isRecord(next.raw.inputData) ? next.raw.inputData : {}, next.raw, false);
+    onSubmit?.(isRecord(raw.inputData) ? raw.inputData : {}, raw, false);
   };
   const handleSubmitted = async ({ result }: AfterSubmitContext) => {
-    submitted = {
-      raw: isRecord(result.raw) ? result.raw : { raw: result.raw },
-      contexts: (result.reportContexts ?? {}) as Record<string, ReportContext>,
-    };
+    submitted = isRecord(result.raw) ? result.raw : { raw: result.raw };
     if (mounted && normalized.reports.length > 0) await showRunResults(mounted.host);
     completeWhenSettled();
   };
@@ -139,17 +131,11 @@ export const mountSchemaRunForm = ({
     if (!lastResult || !onResultUpdate) return;
     if (reported?.lastResult === lastResult && reported.reportStates === reportStates) return;
     reported = { lastResult, reportStates };
-    const next = buildSchemaRunRawFromSubmitResult(
-      isRecord(lastResult.raw) ? lastResult.raw : { raw: lastResult.raw },
-      form.form.reports,
-      reportStatesFromSnapshot(reportStates),
-      bindings,
-      lastResult.reportContexts,
-    );
+    const raw = isRecord(lastResult.raw) ? lastResult.raw : { raw: lastResult.raw };
     onResultUpdate(
-      isRecord(next.raw.inputData) ? next.raw.inputData : {},
-      next.raw,
-      next.reportsPending,
+      isRecord(raw.inputData) ? raw.inputData : {},
+      raw,
+      schemaRunReportsPending(form.form.reports, reportStatesFromSnapshot(reportStates)),
     );
   };
   const unsubscribe = form.form.subscribe((state) => {

@@ -45,7 +45,17 @@ const entry = (key: string, age: number, versionId = 23): SessionEntry => ({
   name: `Case ${key}`,
   state: "ready",
   inputData: {},
-  results: [{ modelId: 1, modelInput: { "0": age }, output: {}, status: "SUCCESS" }],
+  results: [
+    {
+      modelId: 1,
+      modelInput: { "0": age },
+      output: {},
+      status: "SUCCESS",
+      errorMessage: null,
+      errorJson: null,
+      attestation: "seal-1",
+    },
+  ],
   reportsPending: false,
   createdAt: "2026-09-30T10:00:00Z",
 });
@@ -55,6 +65,7 @@ const renderPreview = (
 ) =>
   mount(
     <BookmarkPredictPanel
+      bookmarkId="bookmark-1"
       version={version}
       session={{
         entries,

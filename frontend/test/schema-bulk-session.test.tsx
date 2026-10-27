@@ -54,7 +54,17 @@ const version = schemaVersion({
 const completed = (age: number) => ({
   raw: {
     inputData: { age },
-    results: [{ modelId: 1, modelInput: { age }, output: {}, status: "SUCCESS" }],
+    results: [
+      {
+        modelId: 1,
+        modelInput: { age },
+        output: {},
+        status: "SUCCESS",
+        errorMessage: null,
+        errorJson: null,
+        attestation: `seal-${age}`,
+      },
+    ],
   },
 });
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -63,7 +73,11 @@ function BulkHarness({ snapshot = version }: { snapshot?: SchemaVersionDto }) {
   const session = useInferenceSession("bookmark-1", snapshot.id);
   return (
     <>
-      <SchemaRunBulkUploadButton version={snapshot} onResult={session.addResult} />
+      <SchemaRunBulkUploadButton
+        bookmarkId="bookmark-1"
+        version={snapshot}
+        onResult={session.addResult}
+      />
       <InferenceSessionPanel session={session} selectedKey={null} onSelect={() => {}} />
     </>
   );
@@ -126,13 +140,13 @@ describe("bulk inference session", () => {
         schemaVersionId: 23,
         name: "first",
         inputData: { age: 42 },
-        results: completed(42).raw.results,
+        results: [{ attestation: "seal-42" }],
       },
       {
         schemaVersionId: 23,
         name: "second",
         inputData: { age: 55 },
-        results: completed(55).raw.results,
+        results: [{ attestation: "seal-55" }],
       },
     ]);
     expect(host.textContent).toContain("All saved");

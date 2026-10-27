@@ -15,7 +15,7 @@ import { BookmarkPredictPanel } from "@/features/schemas/components/BookmarkPred
 import { useInferenceSession } from "@/features/schemas/lib/use-inference-session";
 import { buttonByText, changeValue, click, mount } from "./support/dom";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
-import { binding, schemaVersion } from "./support/api-fixtures";
+import { binding, schemaVersion, workspacePrediction } from "./support/api-fixtures";
 import { mountRunForm } from "./support/schema-run-runtime";
 
 const mountState = vi.hoisted(() => ({
@@ -88,6 +88,9 @@ const completedRaw = {
       modelInput: { age: 42 },
       output: { reports: [{ mappedTo: "score", value: 0.8 }] },
       status: "SUCCESS",
+      errorMessage: null,
+      errorJson: null,
+      attestation: "seal-1",
     },
   ],
 };
@@ -113,12 +116,13 @@ describe("schema run creation UI", () => {
     store.set(themeWithHtmlAtom, "light");
     await mount(
       <Provider store={store}>
-        <SchemaRunForm version={version} onSubmit={vi.fn()} />
+        <SchemaRunForm bookmarkId="bookmark-1" version={version} onSubmit={vi.fn()} />
       </Provider>,
     );
     await act(flush);
     expect(mountState.mount).toHaveBeenCalledTimes(1);
     expect(mountState.mount.mock.calls[0][0]).toMatchObject({
+      target: { bookmarkId: "bookmark-1", schemaVersionId: version.id },
       schema: version.formSchema,
       bindings: version.bindings,
       plugins: { fields: [], reports: [] },
@@ -136,7 +140,7 @@ describe("schema run creation UI", () => {
   test("enters running only after MLForm validation succeeds", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ reports: [] }))),
+      vi.fn(async (_url: string, init?: RequestInit) => workspacePrediction(init)),
     );
     const container = document.createElement("div");
     document.body.append(container);
@@ -214,9 +218,13 @@ describe("schema run creation UI", () => {
       saveButton(rows()[0]).click();
       await vi.runAllTimersAsync();
     });
-    expect(pageState.mutateAsync).toHaveBeenLastCalledWith(
-      expect.objectContaining({ name: "Reviewed case", schemaVersionId: 1 }),
-    );
+    // Saving sends back only the server's seal of each result, never an output of its own.
+    expect(pageState.mutateAsync).toHaveBeenLastCalledWith({
+      name: "Reviewed case",
+      schemaVersionId: 1,
+      inputData: { age: 42 },
+      results: [{ attestation: "seal-1" }],
+    });
     expect(rows()[0].textContent).toContain("Saved");
     expect(rows()[0].querySelector("a")?.getAttribute("href")).toBe("/inferences/1");
     expect(nameInputs()[0].disabled).toBe(true);
@@ -336,7 +344,7 @@ function SessionHarness() {
   const session = useInferenceSession("bookmark-1", version.id);
   return (
     <MemoryRouter>
-      <BookmarkPredictPanel version={version} session={session} />
+      <BookmarkPredictPanel bookmarkId="bookmark-1" version={version} session={session} />
     </MemoryRouter>
   );
 }

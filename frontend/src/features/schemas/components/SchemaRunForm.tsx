@@ -19,6 +19,7 @@ import { useCurrentOrganizationId } from "@/capabilities/workspace-context/works
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type Props = {
+  bookmarkId: string;
   version: SchemaVersionDto;
   initialInputs?: JsonRecord;
   onSubmit: (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => void;
@@ -30,6 +31,7 @@ const errorText = (error: unknown) => (error instanceof Error ? error.message : 
 
 /** A schema version's run form, drawn in the plugin sandbox with the organization's plugins. */
 export function SchemaRunForm({
+  bookmarkId,
   version,
   initialInputs,
   onSubmit,
@@ -64,6 +66,7 @@ export function SchemaRunForm({
     if (showCatalogLoading || !containerRef.current || (needsPlugins && status !== "ready")) return;
     const mounted = mountSandboxedSchemaRunForm({
       container: containerRef.current,
+      target: { bookmarkId, schemaVersionId: version.id },
       schema: formSchema,
       bindings: version.bindings,
       plugins: data,
@@ -75,7 +78,16 @@ export function SchemaRunForm({
         toast.error("Schema incompatible", { description: errorText(error) }),
     });
     return () => mounted.unmount();
-  }, [data, formSchema, needsPlugins, showCatalogLoading, status, version.bindings, version.id]);
+  }, [
+    bookmarkId,
+    data,
+    formSchema,
+    needsPlugins,
+    showCatalogLoading,
+    status,
+    version.bindings,
+    version.id,
+  ]);
 
   return version.bindings.length === 0 ? (
     <AppPanel>

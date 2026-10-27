@@ -7,7 +7,7 @@ import {
   toSchemaRunFieldValues,
 } from "@/features/schemas/lib/bulk-upload";
 import { parseCsvPredictionFile } from "@/capabilities/prediction-runtime/data/parse-csv-prediction-file";
-import { schemaVersion } from "./support/api-fixtures";
+import { schemaVersion, workspacePrediction } from "./support/api-fixtures";
 import { withSeriesColumns } from "@/capabilities/prediction-runtime/mlform/series-schema";
 
 afterEach(() => {
@@ -135,7 +135,7 @@ describe("series runtime contract", () => {
     async (raw) => {
       vi.stubGlobal(
         "fetch",
-        vi.fn(async () => new Response(JSON.stringify({ reports: [] }))),
+        vi.fn(async (_url: string, init?: RequestInit) => workspacePrediction(init)),
       );
       const field = {
         id: "history",

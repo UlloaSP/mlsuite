@@ -10,13 +10,8 @@ import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
-import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultFeedbackRequest;
-import dev.ulloasp.mlsuite.schema.application.dto.UpdatePredictionResultFeedbackRequest;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionResultFeedbackUseCase;
-import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
-import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
-import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -26,33 +21,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PredictionResultFeedbackService implements PredictionResultFeedbackUseCase {
 
-    private final UserLookupService userLookupService;
     private final WorkspaceAuthorizationService authorizationService;
     private final PredictionResultRepository resultRepository;
     private final PredictionResultFeedbackRepository feedbackRepository;
     private final PredictionRunRepository runRepository;
-
-    @Override
-    public PredictionResultFeedback create(Long userId, CreatePredictionResultFeedbackRequest request) {
-        User user = userLookupService.requireById(userId);
-        Long orgId = requireOrg(userId);
-        PredictionResult result = resultRepository.findByIdAndOrganizationId(request.resultId(), orgId)
-                .orElseThrow(() -> notFound("Prediction result not found"));
-        PredictionResultFeedback feedback = feedbackRepository
-                .findByResultIdAndUserIdAndTypeAndOrder(request.resultId(), userId, request.type(), request.order())
-                .orElseGet(() -> new PredictionResultFeedback(result, user, request.type(), request.order(), request.value()));
-        feedback.setValue(request.value());
-        return feedbackRepository.save(feedback);
-    }
-
-    @Override
-    public PredictionResultFeedback update(Long userId, UpdatePredictionResultFeedbackRequest request) {
-        Long orgId = requireOrg(userId);
-        PredictionResultFeedback feedback = feedbackRepository.findByIdAndOrganizationId(request.feedbackId(), orgId)
-                .orElseThrow(() -> notFound("Prediction result feedback not found"));
-        feedback.setValue(request.value());
-        return feedbackRepository.save(feedback);
-    }
 
     @Override
     public List<PredictionResultFeedback> listByResult(Long userId, Long resultId) {
@@ -78,10 +50,6 @@ public class PredictionResultFeedbackService implements PredictionResultFeedback
 
     private Long requireRead(Long userId) {
         return authorizationService.requireCurrent(userId, PermissionKey.VIEW_MODELS).getId();
-    }
-
-    private Long requireOrg(Long userId) {
-        return authorizationService.requireCurrent(userId, PermissionKey.VIEW_ORGANIZATION).getId();
     }
 
     private ResponseStatusException notFound(String message) {

@@ -24,14 +24,11 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionR
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.application.service.PredictionResultFeedbackService;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
-import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
-import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 @ExtendWith(MockitoExtension.class)
 class PredictionFeedbackBatchServiceTest {
 
-    @Mock private UserLookupService userLookupService;
     @Mock private WorkspaceAuthorizationService authorizationService;
     @Mock private PredictionResultRepository resultRepository;
     @Mock private PredictionResultFeedbackRepository feedbackRepository;
@@ -40,11 +37,10 @@ class PredictionFeedbackBatchServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new PredictionResultFeedbackService(userLookupService,
+        service = new PredictionResultFeedbackService(
                 authorizationService, resultRepository, feedbackRepository, runRepository);
         Organization organization = new Organization();
         organization.setId(41L);
-        lenient().when(userLookupService.requireById(7L)).thenReturn(new User());
         lenient().when(authorizationService.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization);
     }
 

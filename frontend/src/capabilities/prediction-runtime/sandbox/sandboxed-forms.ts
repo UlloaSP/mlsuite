@@ -4,7 +4,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { SubmitRequest } from "mlform/runtime";
-import { createSchemaRunTransport } from "@/capabilities/prediction-runtime/mlform/run-transport";
+import {
+  createSchemaRunTransport,
+  type SchemaRunTarget,
+} from "@/capabilities/prediction-runtime/mlform/run-transport";
 import {
   isRecord,
   type JsonRecord,
@@ -41,12 +44,13 @@ const explanationPath = (modelId: number) =>
 
 /**
  * A workspace run form drawn in the plugin sandbox. The sandbox submits the form's values; the
- * app runs them against the version's own bindings through the run transport and hands the
- * results back for the reports to draw. A report may ask for an explanation of a model the form
- * runs, and nothing else.
+ * app asks the server to run them against the bookmark's snapshot through the run transport and
+ * hands the sealed results back for the reports to draw. A report may ask for an explanation of
+ * a model the form runs, and nothing else; such a payload is only shown, never saved.
  */
 export const mountSandboxedSchemaRunForm = ({
   container,
+  target,
   schema,
   plugins,
   bindings,
@@ -56,6 +60,7 @@ export const mountSandboxedSchemaRunForm = ({
   onRunningChange,
   onMountError,
 }: Common & {
+  target: SchemaRunTarget;
   bindings: readonly Binding[];
   onSubmit: RunResultCallback;
   onResultUpdate?: RunResultCallback;
@@ -69,7 +74,11 @@ export const mountSandboxedSchemaRunForm = ({
     className: "h-full",
     handlers: {
       async submit({ request, fields }) {
-        const transport = createSchemaRunTransport(bindings, fields as PredictionPayloadField[]);
+        const transport = createSchemaRunTransport(
+          target,
+          bindings,
+          fields as PredictionPayloadField[],
+        );
         const response = await transport.submit({
           ...request,
           fields: [],

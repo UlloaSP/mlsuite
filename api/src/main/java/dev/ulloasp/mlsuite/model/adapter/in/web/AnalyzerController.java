@@ -39,19 +39,6 @@ public class AnalyzerController {
         return ResponseEntity.ok(inspection);
     }
 
-    @PostMapping("/predictions")
-    public ResponseEntity<Map<String, Object>> predict(
-            CurrentUser user,
-            @RequestParam Long modelId,
-            @RequestPart("data") Map<String,
-            Object> data) {
-        Map<String, Object> prediction = analyzerUseCase.predict(
-                user.userId(),
-                modelId,
-                data);
-        return ResponseEntity.ok(prediction);
-    }
-
     @PostMapping("/explanations")
     public ResponseEntity<Map<String, Object>> explain(
             CurrentUser user,
