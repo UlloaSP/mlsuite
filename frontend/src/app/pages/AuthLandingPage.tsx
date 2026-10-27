@@ -115,7 +115,9 @@ export function AuthLandingPage() {
             mode={mode}
             locked={access.phase !== 0}
             failure={
-              mutation.isError && access.phase === 0 ? authFailureMessage(mode, mutation.error) : null
+              mutation.isError && access.phase === 0
+                ? authFailureMessage(mode, mutation.error)
+                : null
             }
             onModeChange={changeMode}
             onSubmit={submit}
