@@ -2880,6 +2880,12 @@ export interface components {
             /** Format: double */
             importance: number;
         };
+        FeedbackRevisionReviewDto: {
+            /** Format: date-time */
+            createdAt: string;
+            createdByName: string | null;
+            publicId: string;
+        };
         InferenceCatalogColumnDto: {
             choices: string[];
             /** @enum {string} */
@@ -3584,6 +3590,7 @@ export interface components {
             change: "CREATED" | "UPDATED" | "DELETED";
             /** Format: date-time */
             changedAt: string;
+            changedByName: string | null;
             /** Format: int64 */
             changedByUserId: number | null;
             /** Format: int64 */
@@ -3594,12 +3601,14 @@ export interface components {
             order: number;
             /** Format: int64 */
             resultId: number;
+            review: components["schemas"]["FeedbackRevisionReviewDto"] | null;
             /** Format: int64 */
             reviewId: number | null;
             /** @enum {string} */
             type: "OUTPUT" | "EXPLANATION";
             /** Format: int64 */
             userId: number | null;
+            userName: string | null;
             value: components["schemas"]["JsonNode"] | null;
             /** Format: uuid */
             visitorId: string | null;
@@ -4348,6 +4357,7 @@ export type DuplicateRoleRequest = components['schemas']['DuplicateRoleRequest']
 export type ErrorDto = components['schemas']['ErrorDto'];
 export type ExplainRequest = components['schemas']['ExplainRequest'];
 export type FeatureImportanceDto = components['schemas']['FeatureImportanceDto'];
+export type FeedbackRevisionReviewDto = components['schemas']['FeedbackRevisionReviewDto'];
 export type InferenceCatalogColumnDto = components['schemas']['InferenceCatalogColumnDto'];
 export type InferenceCatalogMetadataDto = components['schemas']['InferenceCatalogMetadataDto'];
 export type InferenceCatalogRequest = components['schemas']['InferenceCatalogRequest'];

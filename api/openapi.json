@@ -1668,6 +1668,29 @@
         ],
         "type": "object"
       },
+      "FeedbackRevisionReviewDto": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdByName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "publicId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "createdByName",
+          "publicId"
+        ],
+        "type": "object"
+      },
       "InferenceCatalogColumnDto": {
         "properties": {
           "choices": {
@@ -4089,6 +4112,12 @@
             "format": "date-time",
             "type": "string"
           },
+          "changedByName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "changedByUserId": {
             "format": "int64",
             "type": [
@@ -4112,6 +4141,16 @@
             "format": "int64",
             "type": "integer"
           },
+          "review": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/FeedbackRevisionReviewDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "reviewId": {
             "format": "int64",
             "type": [
@@ -4130,6 +4169,12 @@
             "format": "int64",
             "type": [
               "integer",
+              "null"
+            ]
+          },
+          "userName": {
+            "type": [
+              "string",
               "null"
             ]
           },
@@ -4154,14 +4199,17 @@
         "required": [
           "change",
           "changedAt",
+          "changedByName",
           "changedByUserId",
           "feedbackId",
           "id",
           "order",
           "resultId",
+          "review",
           "reviewId",
           "type",
           "userId",
+          "userName",
           "value",
           "visitorId"
         ],

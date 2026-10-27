@@ -1,6 +1,10 @@
 import { createStore } from "jotai";
 import { expect, test } from "vite-plus/test";
-import { editorCheckErrorsAtom, schemaAtom, schemaTextAtom } from "@/features/schemas/lib/editor-atoms";
+import {
+  editorCheckErrorsAtom,
+  schemaAtom,
+  schemaTextAtom,
+} from "@/features/schemas/lib/editor-atoms";
 
 test("keeps schema editor state isolated per draft store", () => {
   const firstDraft = createStore();

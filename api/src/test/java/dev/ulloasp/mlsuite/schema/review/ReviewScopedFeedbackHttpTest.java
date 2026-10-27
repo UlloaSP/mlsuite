@@ -84,6 +84,12 @@ class ReviewScopedFeedbackHttpTest extends PublicPredictionFixture {
         assertEquals(first, history.get(2).get("feedbackId").asLong());
         assertEquals(owner.getId(), history.get(2).get("changedByUserId").asLong());
         assertEquals(reviews.get(0).getId(), history.get(2).get("reviewId").asLong());
+        // Who answered, who removed it and in which review, named as people tell them apart.
+        assertEquals(owner.getFullName(), history.get(2).get("userName").asText());
+        assertEquals(owner.getFullName(), history.get(2).get("changedByName").asText());
+        assertEquals(reviews.get(0).getPublicId(), history.get(2).at("/review/publicId").asText());
+        assertEquals(reviews.get(1).getPublicId(), history.get(1).at("/review/publicId").asText());
+        assertEquals(owner.getFullName(), history.get(2).at("/review/createdByName").asText());
     }
 
     @Test

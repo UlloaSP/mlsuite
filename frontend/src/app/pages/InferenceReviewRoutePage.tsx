@@ -6,10 +6,11 @@ import { ReviewerFeedbackAnswers } from "@/features/schemas/components/ReviewerF
 export function InferenceReviewRoutePage() {
   return (
     <InferenceReviewPage
-      renderAnswers={(inferenceId, reviewerId) => (
+      renderAnswers={(inferenceId, reviewerId, reviewerName) => (
         <ReviewerFeedbackAnswers
           runId={inferenceId}
           reviewerId={reviewerId}
+          reviewerName={reviewerName}
           pollMs={REVIEW_POLL_MS}
         />
       )}

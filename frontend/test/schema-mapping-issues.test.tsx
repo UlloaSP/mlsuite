@@ -13,7 +13,8 @@ const formSchema = {
 };
 const ISSUE = {
   pointer: "/reports/0/mappedTo/risk-forest",
-  message: 'Report "Risk" reads output "risk", which model "risk-forest" does not have (its outputs: 0).',
+  message:
+    'Report "Risk" reads output "risk", which model "risk-forest" does not have (its outputs: 0).',
 };
 const refusal = (issues: unknown) =>
   new HttpError({

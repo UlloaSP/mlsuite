@@ -31,8 +31,7 @@ public class PredictionResultFeedbackController {
     @GetMapping("/history")
     public ResponseEntity<List<PredictionResultFeedbackRevisionDto>> history(CurrentUser user,
             @RequestParam Long resultId) {
-        return ResponseEntity.ok(feedbackUseCase.historyOfResult(user.userId(), resultId).stream()
-                .map(PredictionResultFeedbackRevisionDto::from).toList());
+        return ResponseEntity.ok(feedbackUseCase.historyOfResult(user.userId(), resultId));
     }
 
     @GetMapping("/by-runs")

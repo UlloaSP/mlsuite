@@ -4,6 +4,7 @@ import type {
   CreatePredictionRunRequest,
   CreatePredictionRunsRequest,
   PredictionResultFeedbackDto,
+  PredictionResultFeedbackRevisionDto,
   PredictionRunDto,
 } from "@/shared/api/openapi.gen";
 
@@ -38,6 +39,16 @@ export const getPredictionResultFeedback = (
 ): Promise<PredictionResultFeedbackDto[]> =>
   appFetch<PredictionResultFeedbackDto[]>(
     `/api/prediction-result-feedback?resultId=${encodeURIComponent(resultId)}`,
+    { signal },
+  );
+
+/** Every change of every answer about the result, oldest first, including answers since removed. */
+export const getPredictionResultFeedbackHistory = (
+  resultId: number | string,
+  signal?: AbortSignal,
+): Promise<PredictionResultFeedbackRevisionDto[]> =>
+  appFetch<PredictionResultFeedbackRevisionDto[]>(
+    `/api/prediction-result-feedback/history?resultId=${encodeURIComponent(resultId)}`,
     { signal },
   );
 
