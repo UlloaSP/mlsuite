@@ -174,6 +174,7 @@ public class DomainExceptionHandler {
                 ? ex.getStatusCode().toString()
                 : ex.getReason();
         return ResponseEntity.status(ex.getStatusCode())
+                .headers(ex.getHeaders())
                 .body(ErrorDto.of(ex.getStatusCode().value(), message, req.getRequestURI()));
     }
 

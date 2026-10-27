@@ -31,8 +31,9 @@ import lombok.RequiredArgsConstructor;
  * record the runtime refuses, or a runtime that fails, gives a failed result, sealed the same way.
  *
  * <p>This class is deliberately not transactional, and its endpoint is left out of open-in-view
- * (see OpenInViewConfig): the plan is read and returned, then the run takes one slot of the
- * workspace share (503 when it is all in use) and calls the runtime with no connection held.
+ * (see OpenInViewConfig): the run first takes its member's place in the workspace share's queue,
+ * so a run that cannot be served is turned away before any database work; then the plan is read
+ * and returned, and the run waits for a slot and calls the runtime with no connection held.
  */
 @Service
 @RequiredArgsConstructor
@@ -48,9 +49,12 @@ public class WorkspacePredictionService implements WorkspacePredictionUseCase {
 
     @Override
     public WorkspacePredictionDto predict(Long userId, Long bookmarkId, WorkspacePredictionRequest request) {
-        Plan plan = planner.plan(userId, bookmarkId, request);
-        // Admission follows the checks and precedes the first artifact read; the explanation shares the slot.
-        AttestedPrediction prediction = slots.run(() -> perform(plan, request.modelInput()));
+        AttestedPrediction prediction;
+        try (RuntimeSlots.Admission admission = slots.admit(userId)) {
+            Plan plan = planner.plan(userId, bookmarkId, request);
+            // The explanation shares the prediction's slot.
+            prediction = admission.run(() -> perform(plan, request.modelInput()));
+        }
         return new WorkspacePredictionDto(prediction.modelId(), prediction.modelInput(), prediction.output(),
                 prediction.status(), prediction.errorMessage(), prediction.errorJson(), attestations.seal(prediction));
     }

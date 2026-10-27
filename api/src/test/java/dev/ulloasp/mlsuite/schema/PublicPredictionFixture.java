@@ -84,6 +84,8 @@ import jakarta.persistence.EntityManager;
         "mlsuite.public-prediction.max-model-size-mb=1",
         "mlsuite.public-prediction.max-concurrent=1",
         "mlsuite.workspace-prediction.max-concurrent=1",
+        // No run waits here, so a run finding its share in use is answered at once (RuntimeSlotsTest covers waiting).
+        "mlsuite.runtime-queue.max-waiting=0",
         "spring.jpa.properties.hibernate.session_factory.statement_inspector=dev.ulloasp.mlsuite.model.RecordedSql"
 })
 @AutoConfigureMockMvc

@@ -157,7 +157,7 @@ class ApiPredictionTest extends ApiAccessFixture {
 
         mockMvc.perform(predicting(secret, FEATURES))
                 .andExpect(status().isServiceUnavailable())
-                .andExpect(header().string(HttpHeaders.RETRY_AFTER, "5"))
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, "2"))
                 .andExpect(jsonPath("$.code").value("runtime_busy"));
 
         finish.countDown();

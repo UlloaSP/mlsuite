@@ -39,6 +39,7 @@ import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelReposit
 import dev.ulloasp.mlsuite.model.application.dto.ExplainRequest;
 import dev.ulloasp.mlsuite.model.application.service.AnalyzerServiceImpl;
 import dev.ulloasp.mlsuite.model.application.service.WorkspaceRuntimeSlots;
+import dev.ulloasp.mlsuite.schema.application.service.RuntimeQueue;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
@@ -53,6 +54,9 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationS
 
 @ExtendWith(MockitoExtension.class)
 class AnalyzerServiceTest {
+
+    /** A share that turns away at once a run finding it in use. */
+    private static final RuntimeQueue NO_WAITING = new RuntimeQueue(0, 16, 0);
 
     @Mock
     private ModelRepository modelRepository;
@@ -76,7 +80,7 @@ class AnalyzerServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = service(new WorkspaceRuntimeSlots(4));
+        service = service(new WorkspaceRuntimeSlots(4, NO_WAITING));
         lenient().when(authorizationService.requireCurrent(3L, PermissionKey.RUN_PREDICTIONS)).thenReturn(organization());
     }
 
@@ -154,19 +158,19 @@ class AnalyzerServiceTest {
 
     @Test
     void explain_IsTurnedAwayWithoutCallingTheRuntimeWhenEverySlotIsInUse() {
-        service = service(new WorkspaceRuntimeSlots(0));
-        when(modelRepository.findArtifactReference(11L, 5L)).thenReturn(Optional.of(artifact()));
+        service = service(new WorkspaceRuntimeSlots(0, NO_WAITING));
 
         ResponseStatusException busy = assertThrows(ResponseStatusException.class, () -> service.explain(3L, 11L, request()));
 
         assertEquals(503, busy.getStatusCode().value());
         assertEquals("Too many workspace runs are in progress. Try again in a moment.", busy.getReason());
-        verifyNoInteractions(restTemplate);
+        // Turned away before any database work.
+        verifyNoInteractions(authorizationService, modelRepository, restTemplate);
     }
 
     @Test
     void explain_ReturnsTheSlotHoweverTheRunEnds() {
-        service = service(new WorkspaceRuntimeSlots(1));
+        service = service(new WorkspaceRuntimeSlots(1, NO_WAITING));
         when(modelRepository.findArtifactReference(11L, 5L)).thenReturn(Optional.of(artifact()));
         when(restTemplate.postForObject(eq("http://py-analyzer:8000/explain"), any(), eq(Map.class)))
                 .thenThrow(restError(400, "{\"detail\":\"Missing features\"}"))

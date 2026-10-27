@@ -87,9 +87,9 @@ Every refusal is an [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem
 | 429 | `quota_exceeded` | The organization's monthly calls are used up. |
 | 500 | `internal_error` | The call could not be completed. |
 | 502 | `runtime_failed` | The runtime failed to predict. |
-| 503 | `runtime_busy` | Every runtime slot for API clients is in use. |
+| 503 | `runtime_busy` | The client's runs could not wait for a runtime slot: too many already wait, the client holds too many places, or its turn did not come in time. |
 
-`429` and `503` carry `Retry-After` in seconds: to the next minute, to the next UTC month, or 5.
+`429` and `503` carry `Retry-After` in seconds: to the next minute, to the next UTC month, or 2.
 
 ## Limits and CORS
 

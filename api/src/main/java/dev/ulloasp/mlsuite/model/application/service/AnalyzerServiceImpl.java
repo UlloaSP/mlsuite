@@ -21,6 +21,7 @@ import dev.ulloasp.mlsuite.model.application.dto.ExplainRequest;
 import dev.ulloasp.mlsuite.model.application.port.in.AnalyzerUseCase;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
+import dev.ulloasp.mlsuite.schema.application.service.RuntimeSlots;
 import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -29,7 +30,8 @@ import lombok.RequiredArgsConstructor;
 /**
  * Runtime calls of workspace members. Nothing here is transactional and these endpoints are left
  * out of open-in-view (see OpenInViewConfig): the caller and model are resolved in short reads,
- * and the runtime is called in a {@link WorkspaceRuntimeSlots} slot with no connection held.
+ * and the runtime is called in a {@link WorkspaceRuntimeSlots} slot with no connection held. A
+ * call takes its member's place in the share's queue before any database work.
  */
 @Service
 @RequiredArgsConstructor
@@ -48,14 +50,16 @@ public class AnalyzerServiceImpl implements AnalyzerUseCase {
         userLookupService.requireById(userId);
         LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("model_file", artifact.getResource());
-        return analyzerClient.inspect(body);
+        return slots.run(userId, () -> analyzerClient.inspect(body));
     }
 
     @Override
     public Map<String, Object> explain(Long userId, Long modelId, ExplainRequest request) {
-        ModelArtifactReference artifact = requireRunnableModel(userId, modelId);
-        Map<String, String> fields = Map.of("data", json(request.instance()), "traces", json(request.traces()));
-        return slots.run(() -> modelRuntime.run("/explain", artifact, fields));
+        try (RuntimeSlots.Admission admission = slots.admit(userId)) {
+            ModelArtifactReference artifact = requireRunnableModel(userId, modelId);
+            Map<String, String> fields = Map.of("data", json(request.instance()), "traces", json(request.traces()));
+            return admission.run(() -> modelRuntime.run("/explain", artifact, fields));
+        }
     }
 
     private String json(Object value) {

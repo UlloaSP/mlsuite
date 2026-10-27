@@ -1,6 +1,8 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -10,6 +12,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
@@ -18,6 +21,11 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +33,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,6 +50,7 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModel
 import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionDto;
 import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionRequest;
 import dev.ulloasp.mlsuite.schema.domain.model.BoundModel;
+import dev.ulloasp.mlsuite.schema.domain.exception.RuntimeBusyException;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
@@ -51,6 +61,9 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationS
 /** A member's prediction: performed by the server for one bound model, shaped as runs store it, and sealed. */
 @ExtendWith(MockitoExtension.class)
 class WorkspacePredictionServiceTest {
+
+    /** A share that turns away at once a run finding it in use. */
+    private static final RuntimeQueue NO_WAITING = new RuntimeQueue(0, 16, 0);
 
     private static final Instant NOW = Instant.parse("2026-10-27T10:00:00Z");
     private static final Map<String, Object> INPUT = Map.of("age", 52);
@@ -74,7 +87,7 @@ class WorkspacePredictionServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = service(new WorkspaceRuntimeSlots(1));
+        service = service(new WorkspaceRuntimeSlots(1, NO_WAITING));
         Organization organization = new Organization();
         organization.setId(41L);
         lenient().when(authorization.requireCurrent(7L, PermissionKey.RUN_PREDICTIONS)).thenReturn(organization);
@@ -190,10 +203,39 @@ class WorkspacePredictionServiceTest {
     }
 
     @Test
-    void aRunFindingTheWorkspaceShareInUseIsTurnedAwayBeforeTheRuntime() {
-        service = service(new WorkspaceRuntimeSlots(0));
+    void aRunTheShareCannotQueueIsTurnedAwayWithRetryAfterBeforeAnyDatabaseWork() {
+        service = service(new WorkspaceRuntimeSlots(0, NO_WAITING));
 
-        assertRefused(503, () -> service.predict(7L, 70L, request(11L)));
+        RuntimeBusyException busy = assertThrows(RuntimeBusyException.class, () -> service.predict(7L, 70L, request(11L)));
+
+        assertEquals(503, busy.getStatusCode().value());
+        assertEquals("2", busy.getHeaders().getFirst(HttpHeaders.RETRY_AFTER));
+        verifyNoInteractions(authorization, bookmarks, bindings, models, runtime);
+    }
+
+    @Test
+    void aRunFindingTheWorkspaceShareInUseWaitsItsTurnAndRuns() throws Exception {
+        service = service(new WorkspaceRuntimeSlots(1, new RuntimeQueue(4, 16, 10_000)));
+        CountDownLatch running = new CountDownLatch(1);
+        CountDownLatch finish = new CountDownLatch(1);
+        when(runtime.run("/predict", FOREST, PREDICT)).thenAnswer(call -> {
+            if (running.getCount() > 0) {
+                running.countDown();
+                assertTrue(finish.await(10, TimeUnit.SECONDS));
+            }
+            return Map.of("reports", List.of(CLASSIFIER));
+        });
+        try (ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor()) {
+            Future<WorkspacePredictionDto> first = pool.submit(() -> service.predict(7L, 70L, request(11L)));
+            assertTrue(running.await(10, TimeUnit.SECONDS));
+            Future<WorkspacePredictionDto> second = pool.submit(() -> service.predict(7L, 70L, request(11L)));
+            Thread.sleep(100);
+            assertFalse(second.isDone());
+
+            finish.countDown();
+            assertEquals(PredictionResultStatus.SUCCESS, first.get(10, TimeUnit.SECONDS).status());
+            assertEquals(PredictionResultStatus.SUCCESS, second.get(10, TimeUnit.SECONDS).status());
+        }
     }
 
     private WorkspacePredictionService service(WorkspaceRuntimeSlots slots) {
