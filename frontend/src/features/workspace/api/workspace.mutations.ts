@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { WORKSPACE_CONTEXT_QUERY_KEY } from "@/capabilities/workspace-context/workspace-context";
+import { actInOrganization } from "@/shared/api/http";
 import { acceptInvitation, declineInvitation } from "./invitations.api";
 import {
   createOrganization,
@@ -130,6 +131,8 @@ export const useSelectOrganization = () => {
   return useMutation({
     mutationFn: selectOrganization,
     onSuccess: async (context) => {
+      // This tab works in the selected organization from now on; other tabs keep theirs.
+      actInOrganization(context.currentOrganization.id);
       const previous = qc.getQueryData<WorkspaceCurrentContextDto>(WORKSPACE_CONTEXT_QUERY_KEY);
       const previousOrganizationId = previous?.currentOrganization.id;
       if (previousOrganizationId !== undefined) {

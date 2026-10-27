@@ -39,11 +39,28 @@ export const json = (method: string, body?: unknown): RequestInit => ({
   body: body === undefined ? undefined : JSON.stringify(body),
 });
 
-const buildInit = (init?: RequestInit): RequestInit => ({
-  credentials: "include",
-  ...init,
-  headers: new Headers(init?.headers),
-});
+/** Names the organization a request acts in (the API's WorkspaceAccessService.ORGANIZATION_HEADER). */
+export const ORGANIZATION_HEADER = "X-MLSuite-Organization";
+
+let tabOrganizationId: number | null = null;
+
+/**
+ * Sets the organization this tab works in, which every request names from then on, so a tab
+ * keeps reading and writing its own organization whatever another tab selects. Null names none,
+ * and the API acts in the organization the account last selected.
+ */
+export const actInOrganization = (organizationId: number | null) => {
+  tabOrganizationId = organizationId;
+};
+
+export const tabOrganization = () => tabOrganizationId;
+
+const buildInit = (init?: RequestInit): RequestInit => {
+  const headers = new Headers(init?.headers);
+  if (tabOrganizationId !== null && !headers.has(ORGANIZATION_HEADER))
+    headers.set(ORGANIZATION_HEADER, String(tabOrganizationId));
+  return { credentials: "include", ...init, headers };
+};
 /** An API path as a browser can fetch it, for `src` and `href` attributes. */
 export const apiUrl = (path: string) => new URL(path, getBackendBaseUrl()).toString();
 const toUrl = apiUrl;

@@ -424,6 +424,11 @@ complete or fail work reclaimed by another instance.
   the session ends on its next request, which receives `401 Unauthorized`.
   Workspace roles and permissions are read on every request and apply at once
   without ending the session.
+- **Organization per request.** The app names its tab's organization on every
+  request in the `X-MLSuite-Organization` header, and the API checks the account's
+  membership in it each time (a superadmin may name any). A request that names none
+  acts in the organization the account last selected, which is also where a new tab
+  opens. Two tabs on two organizations therefore each read and write their own.
 - **Throttling.** One client network may fail to sign in `AUTH_MAX_LOGIN_FAILURES`
   times (default `10`) and attempt to register `AUTH_MAX_REGISTRATIONS` times
   (default `5`) in the 15 minutes after its first counted attempt. Past either
