@@ -7,7 +7,6 @@ import { FileCode2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { useUploadPluginMutation } from "@/features/plugins/api/plugin.mutations";
 import { PluginUploadCard } from "@/features/plugins/components/PluginUploadCard";
 import { PluginUploadSummary } from "@/features/plugins/components/PluginUploadSummary";
@@ -29,8 +28,6 @@ const PLUGIN_FILE_ACCEPT = `${PLUGIN_FILE_EXTENSION},text/typescript,application
 
 export function UploadPluginPage() {
   const navigate = useNavigate();
-  const { data: workspace } = useWorkspaceContext();
-  const organizationId = workspace?.currentOrganization.id ?? "none";
   const uploadMutation = useUploadPluginMutation();
   const [items, setItems] = useState<PluginUploadItem[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -47,9 +44,7 @@ export function UploadPluginPage() {
     }));
     setItems((previous) => [...previous, ...added]);
     await Promise.all(
-      added.map(async (item) =>
-        update(item.id, await inspectPluginFile(organizationId, item.file)),
-      ),
+      added.map(async (item) => update(item.id, await inspectPluginFile(item.file))),
     );
   };
 

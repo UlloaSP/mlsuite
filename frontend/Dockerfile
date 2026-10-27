@@ -15,5 +15,10 @@ RUN apk upgrade --no-cache
 
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+# A build whose API is on another origin may connect to it; the CSP otherwise allows only this one.
+ARG VITE_BACKEND_URL
+RUN if [ -n "$VITE_BACKEND_URL" ]; then \
+      sed -i "s#connect-src 'self';#connect-src 'self' ${VITE_BACKEND_URL};#" /etc/nginx/conf.d/default.conf; \
+    fi
 
 EXPOSE 5173

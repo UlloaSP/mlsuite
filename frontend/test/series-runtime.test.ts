@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { createForm } from "mlform/runtime";
-import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
+import { schemaRunRuntime } from "./support/schema-run-runtime";
 import { validateMlformSchema } from "@/capabilities/prediction-runtime/mlform/schema-validation";
 import {
   getModelInputBulkSchema,
@@ -59,7 +59,7 @@ describe("series runtime contract", () => {
                 ],
                 reports: [],
               };
-      const runtime = createSchemaRunRuntime({ schema, bindings: [] });
+      const runtime = schemaRunRuntime({ schema, bindings: [] });
       const form = createForm({
         schema: runtime.formSchema,
         registry: runtime.registry,
@@ -103,7 +103,7 @@ describe("series runtime contract", () => {
     async ({ defaultValue }) => {
       const schema = { fields: [{ ...pair, defaultValue }], reports: [] };
       const original = structuredClone(schema);
-      const runtime = createSchemaRunRuntime({ schema, bindings: [] });
+      const runtime = schemaRunRuntime({ schema, bindings: [] });
       const form = createForm({
         schema: runtime.formSchema,
         registry: runtime.registry,
@@ -160,7 +160,7 @@ describe("series runtime contract", () => {
           { time: 3, value: 4, note: "last" },
         ],
       };
-      const runtime = createSchemaRunRuntime({
+      const runtime = schemaRunRuntime({
         schema: { fields: [field], reports: [] },
         bindings: [
           { modelId: 1, modelName: "Model A" },

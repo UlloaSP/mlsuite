@@ -9,6 +9,11 @@ import type { PublicBookmarkDto, PublicRunQuotaDto } from "@/shared/api/openapi.
 import { formatTimestamp } from "@/shared/lib/date-time";
 import { mount } from "./support/dom";
 
+// Plugin sandboxes run in-process: jsdom loads no frame.
+vi.mock("@/capabilities/prediction-runtime/sandbox/plugin-sandbox", async () =>
+  (await import("./support/loopback-sandbox")).loopbackSandboxModule(),
+);
+
 // The session and the frame are the real ones: only the app shell's chrome is replaced.
 vi.mock("@/app/layouts/AppShellLayout", () => ({
   AppShellFrame: ({ children }: PropsWithChildren) => <div data-frame="app-shell">{children}</div>,

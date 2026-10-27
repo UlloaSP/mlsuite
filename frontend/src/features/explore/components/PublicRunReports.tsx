@@ -30,7 +30,7 @@ export function PublicRunReports({ publicId, formSchema, run }: Props) {
           key={key}
           result={result}
           report={report}
-          customReportDefinitions={catalog.plugins?.reportDefinitions}
+          reportPlugins={catalog.plugins.reports}
         />
       ))}
     </div>

@@ -9,7 +9,7 @@ import { createForm, executeFormPipeline } from "mlform/runtime";
 import type { ReportConfig, ReportFetchFactory } from "mlform/schema";
 import { z } from "zod";
 import { createSchemaRunTransport } from "@/capabilities/prediction-runtime/mlform/run-transport";
-import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
+import { schemaRunRuntime } from "./support/schema-run-runtime";
 import { buildSchemaRunRawFromSubmitResult } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 
@@ -22,13 +22,8 @@ const requestBody = (request: RequestInit | undefined): string =>
 const customReportDefinition = (
   fetch?: ReportFetchFactory<ReportConfig>,
 ): CatalogReportDefinition => ({
-  id: "report-plugin",
   fileName: "report.ts",
   source: "",
-  updatedAt: "",
-  createdAt: "",
-  contentType: "text/typescript",
-  sizeBytes: 1,
   kind: "plugin-report",
   definition: defineReportKind({
     kind: "plugin-report",
@@ -205,7 +200,7 @@ describe("schema binding plugin policy", () => {
         ),
     );
     const fetchDefinition = customReportDefinition(explanationFetch);
-    const runtime = createSchemaRunRuntime({
+    const runtime = schemaRunRuntime({
       schema: {
         fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
