@@ -14,6 +14,7 @@ import {
   type ResultOf,
   type SandboxMethods,
   type SandboxSizing,
+  type SandboxTheme,
   type SandboxView,
 } from "./sandbox-protocol";
 import { observeAppAppearance, readAppTheme } from "./sandbox-theme";
@@ -86,6 +87,15 @@ export const openPluginSandbox = ({
     frame.setAttribute("aria-hidden", "true");
   }
   if (sizing === "content") frame.style.height = "0px";
+  // Until the sandbox document has the app's theme and its view, it is not shown: a document
+  // without the app's color scheme is painted on an opaque white canvas, a flash in dark mode.
+  if (sizing !== "hidden") frame.style.visibility = "hidden";
+  // The browser paints a frame's canvas opaque when its color scheme and its document's differ,
+  // so the frame keeps the scheme its document has applied, never the app's newer one.
+  const showIn = (mode: SandboxTheme["mode"]) => {
+    frame.style.colorScheme = mode;
+    if (sizing !== "hidden") frame.style.removeProperty("visibility");
+  };
   let currentSizing = sizing;
   let destroyed = false;
   let stopObserving: (() => void) | null = null;
@@ -153,13 +163,18 @@ export const openPluginSandbox = ({
         const next = readAppTheme();
         if (JSON.stringify(next) === sentTheme) return;
         sentTheme = JSON.stringify(next);
-        void channel.request("theme", next).catch(() => {});
+        void channel.request("theme", next).then(
+          () => showIn(next.mode),
+          () => {},
+        );
       });
-      return channel.request("mount", {
+      const drawn = await channel.request("mount", {
         view,
         theme,
         sizing: currentSizing === "hidden" ? "content" : currentSizing,
       });
+      showIn(theme.mode);
+      return drawn;
     },
     request,
     setSizing(next) {
