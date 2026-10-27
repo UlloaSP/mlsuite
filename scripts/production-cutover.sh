@@ -117,9 +117,12 @@ banner "MLsuite production cutover"
 stage "Preflight"
 [[ -f "$ENV_FILE" ]] || { warn "$ENV_FILE does not exist; copy .env.example and fill it first"; exit 1; }
 for command in docker curl find python3 sha256sum sort systemctl; do command -v "$command" >/dev/null || { warn "missing command: $command"; exit 1; }; done
-for key in DB_ADMIN_USER DB_ADMIN_PASS DB_LEGACY_OWNER DB_LEGACY_PASS DB_USER DB_PASS DB_MIGRATION_USER DB_MIGRATION_PASS MINIO_ROOT_USER MINIO_ROOT_PASSWORD STORAGE_ACCESS_KEY STORAGE_SECRET_KEY; do
+for key in DB_ADMIN_USER DB_ADMIN_PASS DB_LEGACY_OWNER DB_LEGACY_PASS DB_USER DB_PASS DB_MIGRATION_USER DB_MIGRATION_PASS MINIO_ROOT_USER MINIO_ROOT_PASSWORD STORAGE_ACCESS_KEY STORAGE_SECRET_KEY PREDICTION_ATTESTATION_SECRET; do
   [[ -n "$(env_value "$key" || true)" ]] || { warn "$key must be set in $ENV_FILE"; exit 1; }
 done
+attestation_secret="$(env_value PREDICTION_ATTESTATION_SECRET)"
+(( ${#attestation_secret} >= 32 )) || { warn "PREDICTION_ATTESTATION_SECRET must be at least 32 random characters"; exit 1; }
+unset attestation_secret
 [[ "$(env_value MINIO_ROOT_USER)" != "$(env_value STORAGE_ACCESS_KEY)" ]] || {
   warn "MINIO_ROOT_USER and STORAGE_ACCESS_KEY must be different"; exit 1;
 }

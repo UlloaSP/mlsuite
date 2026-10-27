@@ -67,6 +67,7 @@ import dev.ulloasp.mlsuite.schema.application.port.in.SchemaCreationUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaDraftUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaRepositoryCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaVersionUseCase;
+import dev.ulloasp.mlsuite.schema.application.port.in.WorkspacePredictionUseCase;
 import dev.ulloasp.mlsuite.schema.catalog.CatalogSelectionService;
 import dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogService;
 import dev.ulloasp.mlsuite.schema.catalog.InferenceFacetCatalogService;
@@ -115,7 +116,8 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
         SchemaCreationUseCase.class, SchemaDraftUseCase.class, SchemaRepositoryCatalogUseCase.class,
         SchemaReviewCatalogUseCase.class, SchemaReviewManagementUseCase.class,
         SchemaReviewUseCase.class, SchemaVersionUseCase.class, SearchWorkspaceUseCase.class,
-        RestTemplate.class, StartupReadinessService.class, WorkspaceContextUseCase.class })
+        RestTemplate.class, StartupReadinessService.class, WorkspaceContextUseCase.class,
+        WorkspacePredictionUseCase.class })
 class OpenApiContractTest {
 
     private static final Path SPEC = Path.of("openapi.json");

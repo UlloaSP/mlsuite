@@ -54,10 +54,10 @@ public final class PublicRunReports {
     }
 
     /**
-     * A model's answer as a workspace run stores it: the runtime's reply, its reports followed
-     * by one copy per stored report the model serves (named and routed as the workspace names
-     * and routes them), and the meta a workspace run records. {@code input} is the record the
-     * model received.
+     * A model's answer as every run stores it, whether a member, a visitor or an API client made
+     * it: the runtime's reply, its reports followed by one copy per stored report the model
+     * serves (named and routed as the workspace names and routes them), and the meta a run
+     * records. {@code input} is the record the model received.
      */
     public static Map<String, Object> storedOutput(Long modelId, Map<String, Object> input, Map<String, Object> answer,
             List<ReportRoute> routes) {

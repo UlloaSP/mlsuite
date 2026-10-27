@@ -15,8 +15,8 @@ import { AppButton } from "@/shared/ui/AppButton";
 import { applyPredictionInputsToSchema } from "@/capabilities/prediction-runtime/mlform/schema-inputs";
 import { mountSchemaRunForm } from "@/capabilities/prediction-runtime/mlform/schema-run-mount";
 import {
-  buildSchemaRunRawFromSubmitResult,
   reportStatesFromSnapshot,
+  schemaRunReportsPending,
 } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
@@ -26,6 +26,7 @@ import { useCurrentOrganizationId } from "@/capabilities/workspace-context/works
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type Props = {
+  bookmarkId: string;
   version: SchemaVersionDto;
   initialInputs?: JsonRecord;
   onSubmit: (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => void;
@@ -34,6 +35,7 @@ type Props = {
 };
 
 export function SchemaRunForm({
+  bookmarkId,
   version,
   initialInputs,
   onSubmit,
@@ -72,6 +74,7 @@ export function SchemaRunForm({
     try {
       const mounted = mountSchemaRunForm({
         container: containerRef.current,
+        target: { bookmarkId, schemaVersionId: version.id },
         schema: formSchema,
         bindings: version.bindings,
         theme: initialTheme,
@@ -95,17 +98,13 @@ export function SchemaRunForm({
         const raw = isRecord(state.lastResult.raw)
           ? state.lastResult.raw
           : { raw: state.lastResult.raw };
-        const next = buildSchemaRunRawFromSubmitResult(
-          raw,
-          mounted.form.reports,
-          reportStatesFromSnapshot(state.reportStates),
-          version.bindings,
-          state.lastResult.reportContexts,
-        );
         onResultUpdateRef.current(
-          isRecord(next.raw.inputData) ? next.raw.inputData : {},
-          next.raw,
-          next.reportsPending,
+          isRecord(raw.inputData) ? raw.inputData : {},
+          raw,
+          schemaRunReportsPending(
+            mounted.form.reports,
+            reportStatesFromSnapshot(state.reportStates),
+          ),
         );
       });
       return () => {
@@ -119,6 +118,7 @@ export function SchemaRunForm({
       });
     }
   }, [
+    bookmarkId,
     data.fieldDefinitions,
     data.reportDefinitions,
     formSchema,

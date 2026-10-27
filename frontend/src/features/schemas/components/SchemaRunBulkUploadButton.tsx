@@ -14,13 +14,14 @@ import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 import type { useInferenceSession } from "@/features/schemas/lib/use-inference-session";
 
 type Props = {
+  bookmarkId: string;
   version: SchemaVersionDto;
   onResult: ReturnType<typeof useInferenceSession>["addResult"];
 };
 
-export function SchemaRunBulkUploadButton({ version, onResult }: Props) {
+export function SchemaRunBulkUploadButton({ bookmarkId, version, onResult }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const bulk = useSchemaRunBulkUpload(version, onResult);
+  const bulk = useSchemaRunBulkUpload(bookmarkId, version, onResult);
   const summary = bulkUploadSummary(
     bulk.added,
     bulk.failed,

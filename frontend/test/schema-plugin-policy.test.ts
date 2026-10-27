@@ -10,8 +10,9 @@ import type { ReportConfig, ReportFetchFactory } from "mlform/schema";
 import { z } from "zod";
 import { createSchemaRunTransport } from "@/capabilities/prediction-runtime/mlform/run-transport";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
-import { buildSchemaRunRawFromSubmitResult } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
+import { schemaRunReportsPending } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
+import { RUN_TARGET, workspacePrediction, predictionRequest } from "./support/api-fixtures";
 
 const stringMeta = (value: unknown, fallback = ""): string =>
   typeof value === "string" ? value : fallback;
@@ -79,11 +80,12 @@ describe("schema binding plugin policy", () => {
   test("exposes a mapped report even when stale policy lacks its kind", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(
-        async () => new Response(JSON.stringify({ reports: [{ mappedTo: "score", value: 1 }] })),
+      vi.fn(async (_url: string, init?: RequestInit) =>
+        workspacePrediction(init, [{ mappedTo: "score", value: 1 }]),
       ),
     );
     const transport = createSchemaRunTransport(
+      RUN_TARGET,
       [
         {
           modelId: 1,
@@ -121,16 +123,13 @@ describe("schema binding plugin policy", () => {
   test("schema report context maps schema report ids to model contexts", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify({ reports: [{ mappedTo: "score", value: 1 }] })),
-        )
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify({ reports: [{ mappedTo: "score", value: 2 }] })),
-        ),
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        const { modelId } = predictionRequest(init);
+        return workspacePrediction(init, [{ mappedTo: "score", value: modelId }]);
+      }),
     );
     const transport = createSchemaRunTransport(
+      RUN_TARGET,
       [
         { modelId: 1, modelName: "model-1" },
         { modelId: 2, modelName: "model-2" },
@@ -165,9 +164,13 @@ describe("schema binding plugin policy", () => {
   test("schema report context exists when custom report payload must be fetched", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ reports: [] }))),
+      vi.fn(async (_url: string, init?: RequestInit) => workspacePrediction(init)),
     );
-    const transport = createSchemaRunTransport([{ modelId: 1, modelName: "model-1" }], []);
+    const transport = createSchemaRunTransport(
+      RUN_TARGET,
+      [{ modelId: 1, modelName: "model-1" }],
+      [],
+    );
     const result = await transport.submit({
       inputs: [],
       displayValues: {},
@@ -194,18 +197,15 @@ describe("schema binding plugin policy", () => {
   test("registered schema report fetch handles real mlform request shape", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValueOnce(new Response(JSON.stringify({ reports: [] })))
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify({ reports: [{ explanation: "root||leaf" }] })),
-        )
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify({ reports: [{ explanation: "root||leaf" }] })),
-        ),
+      vi.fn(async (url: string, init?: RequestInit) =>
+        url.includes("/predictions")
+          ? workspacePrediction(init)
+          : new Response(JSON.stringify({ reports: [{ explanation: "root||leaf" }] })),
+      ),
     );
     const fetchDefinition = customReportDefinition(explanationFetch);
     const runtime = createSchemaRunRuntime({
+      target: RUN_TARGET,
       schema: {
         fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
@@ -231,62 +231,9 @@ describe("schema binding plugin policy", () => {
     expect(JSON.parse(requestBody(explanationCall?.[1])).instance).toEqual({ age: 42 });
   });
 
-  test("schema raw builder treats skipped as terminal", () => {
-    const built = buildSchemaRunRawFromSubmitResult(
-      { reports: [], results: [] },
-      [{ id: "report_1", state: { status: "skipped" } }],
-      {},
-      [],
+  test("a skipped report leaves nothing pending", () => {
+    expect(schemaRunReportsPending([{ id: "report_1", state: { status: "skipped" } }], {})).toBe(
+      false,
     );
-    expect(built.raw.reports).toEqual([]);
-    expect(built.reportsPending).toBe(false);
-  });
-
-  test("schema raw builder persists async plugin payload in owning result output", () => {
-    const initialRaw = {
-      reports: [],
-      results: [
-        {
-          modelId: 1,
-          output: { reports: [], meta: { modelId: "1" } },
-        },
-      ],
-    };
-    const built = buildSchemaRunRawFromSubmitResult(
-      initialRaw,
-      [
-        {
-          id: "report_1",
-          mappedTo: { "model-1": "score" },
-          state: { status: "ready", payload: { explanation: "ok" } },
-        },
-      ],
-      {},
-      [{ modelId: 1, modelName: "model-1" }],
-      {
-        report_1: {
-          reportId: "report_1",
-          kind: "plugin-report",
-          target: "score",
-          backend: "model-1",
-          displayValues: {},
-          modelValues: {},
-          reports: [],
-          meta: { modelId: "1" },
-          raw: {},
-        },
-      },
-    );
-    const raw = built.raw as {
-      results: Array<{ output?: { reports: Array<Record<string, unknown>> } }>;
-    };
-    const output = raw.results[0]?.output;
-    expect(output?.reports).toMatchObject([
-      { id: "report_1", mappedTo: "score", payload: { explanation: "ok" } },
-    ]);
-    expect(built.raw.reports).toMatchObject([
-      { id: "report_1", mappedTo: "score", payload: { explanation: "ok" } },
-    ]);
-    expect(built.reportsPending).toBe(false);
   });
 });

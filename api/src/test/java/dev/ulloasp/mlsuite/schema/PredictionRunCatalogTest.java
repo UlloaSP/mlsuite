@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.schema;
 
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,6 +37,7 @@ import dev.ulloasp.mlsuite.schema.application.dto.InferenceTableDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionResultDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionResultFeedbackDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunCatalogItemDto;
+import dev.ulloasp.mlsuite.schema.application.port.in.WorkspacePredictionUseCase;
 import dev.ulloasp.mlsuite.schema.application.service.PredictionRunServiceImpl;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
@@ -200,7 +202,7 @@ class PredictionRunCatalogTest {
 
     private PredictionRunController controller() {
         user = new CurrentUser(7L, "alice", SystemRole.USER);
-        return new PredictionRunController(service, results);
+        return new PredictionRunController(service, mock(WorkspacePredictionUseCase.class), results);
     }
 
     private PredictionRun tableRun(Long id) {

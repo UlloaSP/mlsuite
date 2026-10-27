@@ -1271,79 +1271,15 @@
         ],
         "type": "object"
       },
-      "CreatePredictionResultInitialFeedbackRequest": {
-        "properties": {
-          "order": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "type": {
-            "enum": [
-              "OUTPUT",
-              "EXPLANATION"
-            ],
-            "type": "string"
-          },
-          "value": {
-            "$ref": "#/components/schemas/JsonNode"
-          }
-        },
-        "required": [
-          "order",
-          "type",
-          "value"
-        ],
-        "type": "object"
-      },
       "CreatePredictionResultRequest": {
         "properties": {
-          "errorJson": {
-            "additionalProperties": { },
-            "type": [
-              "object",
-              "null"
-            ]
-          },
-          "errorMessage": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "feedback": {
-            "items": {
-              "$ref": "#/components/schemas/CreatePredictionResultInitialFeedbackRequest"
-            },
-            "type": [
-              "array",
-              "null"
-            ]
-          },
-          "modelId": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "modelInput": {
-            "additionalProperties": { },
-            "type": "object"
-          },
-          "output": {
-            "additionalProperties": { },
-            "type": "object"
-          },
-          "status": {
-            "enum": [
-              "SUCCESS",
-              "FAILED"
-            ],
+          "attestation": {
+            "minLength": 1,
             "type": "string"
           }
         },
         "required": [
-          "modelId",
-          "modelInput",
-          "output",
-          "status"
+          "attestation"
         ],
         "type": "object"
       },
@@ -6477,6 +6413,77 @@
         ],
         "type": "object"
       },
+      "WorkspacePredictionDto": {
+        "properties": {
+          "attestation": {
+            "type": "string"
+          },
+          "errorJson": {
+            "additionalProperties": { },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "errorMessage": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "modelId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "modelInput": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "output": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "status": {
+            "enum": [
+              "SUCCESS",
+              "FAILED"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "attestation",
+          "errorJson",
+          "errorMessage",
+          "modelId",
+          "modelInput",
+          "output",
+          "status"
+        ],
+        "type": "object"
+      },
+      "WorkspacePredictionRequest": {
+        "properties": {
+          "modelId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "modelInput": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "schemaVersionId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "modelId",
+          "modelInput",
+          "schemaVersionId"
+        ],
+        "type": "object"
+      },
       "WorkspaceUserDto": {
         "properties": {
           "avatarUrl": {
@@ -7341,56 +7348,6 @@
             }
           },
           "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": { },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "analyzer-controller"
-        ]
-      }
-    },
-    "/api/analyzer/predictions": {
-      "post": {
-        "operationId": "predict",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "modelId",
-            "required": true,
-            "schema": {
-              "format": "int64",
-              "type": "integer"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "data": {
-                    "additionalProperties": { },
-                    "type": "object"
-                  }
-                },
-                "required": [
-                  "data"
-                ],
-                "type": "object"
-              }
-            }
-          }
         },
         "responses": {
           "200": {
@@ -11615,6 +11572,47 @@
         },
         "tags": [
           "schema-bookmark-example-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks/{bookmarkId}/predictions": {
+      "post": {
+        "operationId": "predictForBookmark",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkspacePredictionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspacePredictionDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-run-controller"
         ]
       }
     },
