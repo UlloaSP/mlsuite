@@ -36,6 +36,7 @@ import dev.ulloasp.mlsuite.admin.infrastructure.OpsAgentException;
 import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicRunLimitDto;
 import dev.ulloasp.mlsuite.schema.domain.exception.PublicRunLimitException;
+import dev.ulloasp.mlsuite.security.auth.AuthAttemptLimitException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -111,6 +112,14 @@ public class DomainExceptionHandler {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds))
                 .body(PublicRunLimitDto.of(ex, HttpStatus.TOO_MANY_REQUESTS.value(), req.getRequestURI()));
+    }
+
+    @ExceptionHandler(AuthAttemptLimitException.class)
+    public ResponseEntity<ErrorDto> handleAuthAttemptLimit(AuthAttemptLimitException ex, HttpServletRequest req) {
+        long retryAfterSeconds = ex.getRetryAfter().plusMillis(999).toSeconds();
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds))
+                .body(ErrorDto.of(HttpStatus.TOO_MANY_REQUESTS.value(), ex.getMessage(), req.getRequestURI()));
     }
 
     // ---- 400 BAD REQUEST ----

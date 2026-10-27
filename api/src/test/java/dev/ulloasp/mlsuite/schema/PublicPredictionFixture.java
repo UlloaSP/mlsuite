@@ -55,6 +55,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.security.auth.AuthenticatedUserPrincipal;
+import dev.ulloasp.mlsuite.security.auth.SessionAccountCheck;
 import dev.ulloasp.mlsuite.security.identity.PublicCaller;
 import dev.ulloasp.mlsuite.storage.ArtifactHash;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
@@ -64,7 +65,9 @@ import jakarta.persistence.EntityManager;
 /**
  * The whole application for the public prediction tests and for the catalog tests of every
  * feature: the real web configuration, security chain and migrated PostgreSQL schema, with one
- * published bookmark stored as rows before each test. Only the runtime is a stand-in.
+ * published bookmark stored as rows before each test. Only the runtime is a stand-in, and the check
+ * that a session's account is unchanged since sign-in: the sessions here are built by
+ * {@link #signedIn}, not signed in.
  */
 @SpringBootTest(properties = {
         "spring.profiles.active=test",
@@ -128,6 +131,7 @@ public abstract class PublicPredictionFixture {
     @Autowired protected ObjectMapper objectMapper;
     @Autowired protected MockMvc mockMvc;
     @MockitoBean protected AnalyzerClient analyzer;
+    @MockitoBean SessionAccountCheck sessionAccountCheck;
     @Autowired PublicBookmarkService publicBookmarks;
     @Autowired PublicPredictionService service;
 

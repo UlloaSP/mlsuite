@@ -16,9 +16,23 @@ x-api-pool-env: &api-pool-env
   DB_POOL_MIN_IDLE: ${DB_POOL_MIN_IDLE:-2}
   DB_POOL_CONNECTION_TIMEOUT_MS: ${DB_POOL_CONNECTION_TIMEOUT_MS:-30000}
 
+# Docker keeps every container's output on the host disk; rotate it so it cannot fill it.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
 
+
+# Each network joins only the services that call each other. The browser reaches nginx,
+# which proxies to the API and to the agent's boot-status endpoint; the API alone reaches
+# the stores and the runtime. The runtime parses untrusted uploaded models, so its network
+# is internal: it reaches neither the agent, the stores nor the internet.
 networks:
-  appnet:
+  edge:
+  data:
+  runtime:
+    internal: true
 
 
 volumes:
@@ -44,8 +58,9 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./:/workspace:ro
-    networks: [ appnet ]
+    networks: [ edge ]
     restart: unless-stopped
+    logging: *logging
 
   postgres:
     image: postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
@@ -54,8 +69,9 @@ services:
       POSTGRES_USER: ${DB_ADMIN_USER}
       POSTGRES_PASSWORD: ${DB_ADMIN_PASS}
       PGDATA: /var/lib/postgresql/data/pgdata
+    # Loopback only: Docker-published ports bypass host firewalls such as ufw.
     ports:
-      - ${DB_HOST_PORT}:5432
+      - 127.0.0.1:${DB_HOST_PORT}:5432
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -63,8 +79,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-    networks: [ appnet ]
+    networks: [ data ]
     restart: unless-stopped
+    logging: *logging
 
   db-provision:
     image: postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
@@ -88,19 +105,24 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    networks: [ appnet ]
+    networks: [ data ]
     restart: "no"
+    logging: *logging
 
   py-analyzer:
     environment:
       PYTHON_HOST: ${PYTHON_HOST}
       PYTHON_PORT: ${PYTHON_PORT}
       CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks: [ appnet ]
+    healthcheck:
+      test: [ "CMD", "/app/.venv/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:${PYTHON_PORT}/health', timeout=4)" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks: [ runtime ]
     restart: unless-stopped
+    logging: *logging
 
   minio:
     image: ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
@@ -115,8 +137,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-    networks: [ appnet ]
+    networks: [ data ]
     restart: unless-stopped
+    logging: *logging
 
   minio-init:
     image: ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
@@ -133,8 +156,9 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    networks: [ appnet ]
+    networks: [ data ]
     restart: "no"
+    logging: *logging
 
   db-migrate:
     environment:
@@ -148,10 +172,11 @@ services:
     depends_on:
       db-provision:
         condition: service_completed_successfully
-    networks: [ appnet ]
+    networks: [ data ]
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: "no"
+    logging: *logging
 
   artifact-migrate:
     profiles: [ operations ]
@@ -175,10 +200,11 @@ services:
         condition: service_completed_successfully
       minio-init:
         condition: service_completed_successfully
-    networks: [ appnet ]
+    networks: [ data ]
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: "no"
+    logging: *logging
 
   spring-app:
     environment:
@@ -198,6 +224,7 @@ services:
       STORAGE_DELETION_BATCH_SIZE: ${STORAGE_DELETION_BATCH_SIZE:-20}
       STORAGE_DELETION_STALE_AFTER_SECONDS: ${STORAGE_DELETION_STALE_AFTER_SECONDS:-300}
       MODEL_MUTATIONS_REQUIRE_VERSION: ${MODEL_MUTATIONS_REQUIRE_VERSION:-true}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
       PUBLIC_PREDICTION_MAX_MODEL_SIZE_MB: ${PUBLIC_PREDICTION_MAX_MODEL_SIZE_MB:-50}
       PUBLIC_PREDICTION_MAX_CONCURRENT: ${PUBLIC_PREDICTION_MAX_CONCURRENT:-2}
       PUBLIC_PREDICTION_ANONYMOUS_RUNS_PER_DAY: ${PUBLIC_PREDICTION_ANONYMOUS_RUNS_PER_DAY:-50}
@@ -206,6 +233,8 @@ services:
       API_ACCESS_REQUESTS_PER_MINUTE: ${API_ACCESS_REQUESTS_PER_MINUTE:-60}
       API_ACCESS_MONTHLY_CALLS: ${API_ACCESS_MONTHLY_CALLS:-10000}
       API_ACCESS_REQUEST_RETENTION_DAYS: ${API_ACCESS_REQUEST_RETENTION_DAYS:-90}
+      AUTH_MAX_LOGIN_FAILURES: ${AUTH_MAX_LOGIN_FAILURES:-10}
+      AUTH_MAX_REGISTRATIONS: ${AUTH_MAX_REGISTRATIONS:-5}
       MLSUITE_SUPERADMIN_EMAIL: ${MLSUITE_SUPERADMIN_EMAIL}
       MLSUITE_SUPERADMIN_PASSWORD: ${MLSUITE_SUPERADMIN_PASSWORD}
       MLSUITE_SUPERADMIN_FULL_NAME: ${MLSUITE_SUPERADMIN_FULL_NAME}
@@ -217,6 +246,8 @@ services:
         condition: service_started
       postgres:
         condition: service_healthy
+      py-analyzer:
+        condition: service_healthy
       db-migrate:
         condition: service_completed_successfully
       minio-init:
@@ -227,10 +258,11 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
-    networks: [ appnet ]
+    networks: [ edge, data, runtime ]
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
+    logging: *logging
 
   frontend:
     ports:
@@ -239,5 +271,6 @@ services:
     depends_on:
       ops-agent:
         condition: service_started
-    networks: [ appnet ]
+    networks: [ edge ]
     restart: unless-stopped
+    logging: *logging

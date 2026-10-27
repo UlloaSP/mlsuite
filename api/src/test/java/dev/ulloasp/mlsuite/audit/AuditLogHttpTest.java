@@ -31,6 +31,7 @@ import dev.ulloasp.mlsuite.audit.application.dto.AuditEventDto;
 import dev.ulloasp.mlsuite.audit.application.port.in.AuditLogUseCase;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.security.SecurityConfig;
+import dev.ulloasp.mlsuite.security.auth.SessionAccountCheck;
 import dev.ulloasp.mlsuite.security.auth.AuthenticatedUserPrincipal;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
@@ -43,7 +44,7 @@ import dev.ulloasp.mlsuite.util.PageDto;
         "server.port=0",
         "cors.allow-origins=http://localhost:5173" })
 @Import(SecurityConfig.class)
-@MockitoBean(types = { RestTemplate.class, UserDetailsService.class })
+@MockitoBean(types = { RestTemplate.class, UserDetailsService.class, SessionAccountCheck.class })
 class AuditLogHttpTest {
 
     private static final long MEMBER_ID = 7L;

@@ -40,6 +40,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.security.SecurityConfig;
+import dev.ulloasp.mlsuite.security.auth.SessionAccountCheck;
 import dev.ulloasp.mlsuite.security.auth.AuthenticatedUserPrincipal;
 import dev.ulloasp.mlsuite.support.TestFixtures;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
@@ -53,7 +54,7 @@ import dev.ulloasp.mlsuite.util.PageDto;
         "cors.allow-origins=http://localhost:5173" })
 @Import(SecurityConfig.class)
 @MockitoBean(types = { PredictBookmarkCatalogUseCase.class, RestTemplate.class, SchemaBookmarkExampleUseCase.class,
-        UserDetailsService.class })
+        UserDetailsService.class, SessionAccountCheck.class })
 class PublicBookmarkModerationHttpTest {
 
     private static final long SUPERADMIN_ID = 1L;
