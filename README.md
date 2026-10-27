@@ -392,7 +392,12 @@ holds `RUNTIME_QUEUE_MAX_PER_CALLER` places in the share, running or waiting
 runtime within 10 seconds and an artifact inspection within 50, below the 60 seconds
 nginx waits for the API. The API keeps its connections to the runtime open for
 reuse, and serves requests on virtual threads, so calls waiting for the runtime do
-not delay unrelated requests. A call
+not delay unrelated requests. Bulk uploads run on the server as jobs through the
+same workspace share, 100 records at a time, as the member who started them; an
+upload holds at most `PREDICTION_JOBS_MAX_ROWS` records (default `10000`), and at
+most `PREDICTION_JOBS_MAX_OPEN_PER_MEMBER` uploads per member (default `2`) and
+`PREDICTION_JOBS_MAX_OPEN_PER_ORGANIZATION` per organization (default `4`) are
+queued or running at once. A call
 names its model's artifact by SHA-256; the API sends the artifact only when the
 runtime answers that it does not hold it, and the runtime checks the bytes against
 that hash. The runtime serves in `RUNTIME_WORKERS` processes (default `2`; about
