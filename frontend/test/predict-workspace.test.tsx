@@ -29,6 +29,7 @@ vi.mock("@/capabilities/workspace-context/session", () => ({
 }));
 vi.mock("@/features/schemas/api/schema-prediction-mutations", () => ({
   useCreatePredictionRunForBookmarkMutation: () => ({ mutateAsync: vi.fn() }),
+  useCreatePredictionRunsForBookmarkMutation: () => ({ mutateAsync: vi.fn() }),
 }));
 vi.mock("@/features/schemas/api/schema-queries", () => ({
   useOrganizationBookmarks: () => ({

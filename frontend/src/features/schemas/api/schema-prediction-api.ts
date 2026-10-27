@@ -1,6 +1,8 @@
 import { appFetch, json } from "@/shared/api/http";
 import type {
+  CreatedPredictionRunsDto,
   CreatePredictionRunRequest,
+  CreatePredictionRunsRequest,
   PredictionResultFeedbackDto,
   PredictionRunDto,
 } from "@/shared/api/openapi.gen";
@@ -11,6 +13,16 @@ export const createPredictionRunForBookmark = (
 ): Promise<PredictionRunDto> =>
   appFetch<PredictionRunDto>(
     `/api/schema-bookmarks/${encodeURIComponent(bookmarkId)}/runs`,
+    json("POST", req),
+  );
+
+/** Saves up to 100 runs of the bookmark in order, all or none. */
+export const createPredictionRunsForBookmark = (
+  bookmarkId: number | string,
+  req: CreatePredictionRunsRequest,
+): Promise<CreatedPredictionRunsDto> =>
+  appFetch<CreatedPredictionRunsDto>(
+    `/api/schema-bookmarks/${encodeURIComponent(bookmarkId)}/runs/batch`,
     json("POST", req),
   );
 

@@ -8,10 +8,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { mergeSchemaRunInputs } from "@/capabilities/prediction-runtime/data/input-display";
 import { useUser } from "@/capabilities/workspace-context/session";
-import { useCreatePredictionRunForBookmarkMutation } from "@/features/schemas/api/schema-prediction-mutations";
+import {
+  useCreatePredictionRunForBookmarkMutation,
+  useCreatePredictionRunsForBookmarkMutation,
+} from "@/features/schemas/api/schema-prediction-mutations";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
 import { inferenceSessionsAtom, type SessionEntry } from "./inference-session-store";
-import type { PredictionRunDto, WorkspacePredictionDto } from "@/shared/api/openapi.gen";
+import type {
+  CreatePredictionRunRequest,
+  PredictionRunDto,
+  WorkspacePredictionDto,
+} from "@/shared/api/openapi.gen";
 
 export type { SessionEntry } from "./inference-session-store";
 
@@ -30,6 +37,16 @@ export const sessionEntryStatus = (entry: SessionEntry): PredictionRunDto["statu
 
 export const canSaveSessionEntry = (entry: SessionEntry) =>
   entry.state === "ready" && !entry.reportsPending && entry.name.trim().length > 0;
+
+/** A finished bulk row: its name, the values it was run with, and each model's sealed result. */
+export type CompletedRow = { name: string; inputData: JsonRecord; results: Results };
+
+const runRequest = (entry: SessionEntry): CreatePredictionRunRequest => ({
+  schemaVersionId: entry.schemaVersionId,
+  name: entry.name.trim(),
+  inputData: mergeSchemaRunInputs(entry.inputData, entry.results),
+  results: entry.results.map(({ attestation }) => ({ attestation })),
+});
 
 const NO_ENTRIES: SessionEntry[] = [];
 
@@ -59,6 +76,7 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
     [setEntries],
   );
   const createRun = useCreatePredictionRunForBookmarkMutation(bookmarkId);
+  const createRuns = useCreatePredictionRunsForBookmarkMutation(bookmarkId);
   // The entry the mounted form is producing; results stream into it.
   const liveKeyRef = useRef<string | null>(null);
   const [liveKey, setLiveKeyState] = useState<string | null>(null);
@@ -125,23 +143,23 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
     [],
   );
 
-  /** Completed bulk rows join the same reviewable session as individual runs. */
-  const addResult = useCallback(
-    (name: string, inputData: JsonRecord, raw: JsonRecord) => {
-      if (schemaVersionId === undefined) return;
-      setEntries((current) => [
-        {
-          key: crypto.randomUUID(),
-          schemaVersionId,
-          name,
-          state: "ready",
-          inputData,
-          results: toResults(raw),
-          reportsPending: false,
-          createdAt: new Date().toISOString(),
-        },
-        ...current,
-      ]);
+  /** Completed bulk rows join the same reviewable session as individual runs, a batch at once. */
+  const addResults = useCallback(
+    (rows: readonly CompletedRow[]) => {
+      if (schemaVersionId === undefined || rows.length === 0) return;
+      const createdAt = new Date().toISOString();
+      const added = rows.map((row): SessionEntry => ({
+        key: crypto.randomUUID(),
+        schemaVersionId,
+        name: row.name,
+        state: "ready",
+        inputData: row.inputData,
+        results: row.results,
+        reportsPending: false,
+        createdAt,
+      }));
+      // Newest first: the batch's last row tops the session.
+      setEntries((current) => [...added.reverse(), ...current]);
     },
     [schemaVersionId, setEntries],
   );
@@ -155,12 +173,7 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
       savingRef.current.add(entry.key);
       update(entry.key, { state: "saving" });
       try {
-        const run = await createRun.mutateAsync({
-          schemaVersionId: entry.schemaVersionId,
-          name: entry.name.trim(),
-          inputData: mergeSchemaRunInputs(entry.inputData, entry.results),
-          results: entry.results.map(({ attestation }) => ({ attestation })),
-        });
+        const run = await createRun.mutateAsync(runRequest(entry));
         update(entry.key, { state: "saved", savedRunId: run.id });
         return true;
       } catch (error) {
@@ -176,15 +189,48 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
     [createRun, update],
   );
 
+  /** Saves every finished run, oldest first, so history keeps the order the runs happened in. */
   const saveAll = useCallback(async () => {
+    const pending = [...entries]
+      .reverse()
+      .filter((entry) => canSaveSessionEntry(entry) && !savingRef.current.has(entry.key));
+    if (pending.length === 0) return;
+    const keys = new Set(pending.map((entry) => entry.key));
+    keys.forEach((key) => savingRef.current.add(key));
+    setEntries((current) =>
+      current.map((entry) => (keys.has(entry.key) ? { ...entry, state: "saving" } : entry)),
+    );
     let saved = 0;
-    // Sequential, oldest first, so history keeps the order the runs happened in.
-    for (const entry of [...entries].reverse()) {
-      // react-doctor-disable-next-line react-doctor/async-await-in-loop -- Saves one at a time, in the order the runs happened.
-      if (canSaveSessionEntry(entry) && (await save(entry))) saved += 1;
+    try {
+      await createRuns.mutateAsync({
+        runs: pending.map(runRequest),
+        onSaved: (from, runIds) => {
+          const ids = new Map(runIds.map((id, index) => [pending[from + index]!.key, id]));
+          saved += runIds.length;
+          setEntries((current) =>
+            current.map((entry) =>
+              ids.has(entry.key)
+                ? { ...entry, state: "saved", savedRunId: ids.get(entry.key) }
+                : entry,
+            ),
+          );
+        },
+      });
+    } catch (error) {
+      const left = pending.length - saved;
+      toast.error(`Could not save ${left} inference${left === 1 ? "" : "s"}`, {
+        description: error instanceof Error ? error.message : String(error),
+      });
+    } finally {
+      setEntries((current) =>
+        current.map((entry) =>
+          keys.has(entry.key) && entry.state === "saving" ? { ...entry, state: "ready" } : entry,
+        ),
+      );
+      keys.forEach((key) => savingRef.current.delete(key));
     }
     if (saved > 0) toast.success(saved === 1 ? "Inference saved" : `${saved} inferences saved`);
-  }, [entries, save]);
+  }, [entries, createRuns, setEntries]);
 
   const rename = useCallback((key: string, name: string) => update(key, { name }), [update]);
 
@@ -208,7 +254,7 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
     unsavedCount: entries.filter((entry) => entry.state !== "saved").length,
     onRunningChange,
     onResult,
-    addResult,
+    addResults,
     detachForm,
     save,
     saveAll,

@@ -16,12 +16,12 @@ import type { useInferenceSession } from "@/features/schemas/lib/use-inference-s
 type Props = {
   bookmarkId: string;
   version: SchemaVersionDto;
-  onResult: ReturnType<typeof useInferenceSession>["addResult"];
+  onResults: ReturnType<typeof useInferenceSession>["addResults"];
 };
 
-export function SchemaRunBulkUploadButton({ bookmarkId, version, onResult }: Props) {
+export function SchemaRunBulkUploadButton({ bookmarkId, version, onResults }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const bulk = useSchemaRunBulkUpload(bookmarkId, version, onResult);
+  const bulk = useSchemaRunBulkUpload(bookmarkId, version, onResults);
   const summary = bulkUploadSummary(
     bulk.added,
     bulk.failed,

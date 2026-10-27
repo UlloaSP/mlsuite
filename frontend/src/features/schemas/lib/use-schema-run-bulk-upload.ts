@@ -7,16 +7,15 @@ import { useCurrentOrganizationId } from "@/capabilities/workspace-context/works
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { createSchemaRunTransport } from "@/capabilities/prediction-runtime/mlform/run-transport";
 import {
-  isRecord,
-  type PredictionPayloadField,
-} from "@/capabilities/prediction-runtime/mlform/shared";
+  runSchemaBatch,
+  SCHEMA_RUN_BATCH_SIZE,
+} from "@/capabilities/prediction-runtime/mlform/schema-run-batch";
+import type { PredictionPayloadField } from "@/capabilities/prediction-runtime/mlform/shared";
 import { predictionCatalogQueryOptions } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
 import { prepareSchemaRun } from "@/capabilities/prediction-runtime/sandbox/plugin-sandbox-services";
 import { parseSpreadsheetPredictionFile } from "@/capabilities/prediction-runtime/data/parse-spreadsheet-prediction-file";
 import { bulkUploadSummary, getModelInputBulkSchema } from "@/features/schemas/lib/bulk-upload";
-import type { SubmitRequest } from "mlform/runtime";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 import type { useInferenceSession } from "./use-inference-session";
 
@@ -31,18 +30,36 @@ const INITIAL = {
   skipped: 0,
 };
 const MAX_RECORDS = 10000;
+/** How many distinct reasons a failure or skip notice names. */
+const REASONS_SHOWN = 3;
 
+const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+/** One notice for many problems: how many, and the first few distinct reasons. */
+const describe = (reasons: readonly string[]) => {
+  const distinct = [...new Set(reasons)];
+  const shown = distinct.slice(0, REASONS_SHOWN).join("; ");
+  return distinct.length > REASONS_SHOWN
+    ? `${shown}; and ${distinct.length - REASONS_SHOWN} more`
+    : shown;
+};
+
+/**
+ * Runs a spreadsheet's records against the bookmark's snapshot a batch at a time (one request
+ * per bound model and batch), adding each batch's rows to the session as it completes. Stop
+ * aborts the batch in flight; the rows already added stay.
+ */
 export function useSchemaRunBulkUpload(
   bookmarkId: string,
   version: SchemaVersionDto,
-  onResult: ReturnType<typeof useInferenceSession>["addResult"],
+  onResults: ReturnType<typeof useInferenceSession>["addResults"],
 ) {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const [state, setState] = useState(INITIAL);
   const abortRef = useRef<AbortController | null>(null);
   const queryClient = useQueryClient();
 
-  useEffect(() => () => abortRef.current?.abort(), [onResult, version.id]);
+  useEffect(() => () => abortRef.current?.abort(), [onResults, version.id]);
 
   const cancel = () => abortRef.current?.abort();
   const reset = () => setState(INITIAL);
@@ -50,6 +67,7 @@ export function useSchemaRunBulkUpload(
   const start = async (file: File) => {
     const controller = new AbortController();
     abortRef.current = controller;
+    const { signal } = controller;
     try {
       setState({ ...INITIAL, status: "parsing" });
       const parsed = await parseSpreadsheetPredictionFile(
@@ -58,15 +76,18 @@ export function useSchemaRunBulkUpload(
         MAX_RECORDS,
         `bulk-upload-${crypto.randomUUID()}`,
       );
-      if (controller.signal.aborted) {
+      if (signal.aborted) {
         setState((current) => ({ ...current, status: "done" }));
         return;
       }
-      parsed.skipped
-        .slice(0, 5)
-        .forEach((entry) =>
-          toast.error(`Skipped line ${entry.line}`, { description: entry.reason }),
-        );
+      if (parsed.skipped.length > 0) {
+        const lines = parsed.skipped.length;
+        toast.error(`Skipped ${lines} line${lines === 1 ? "" : "s"}`, {
+          description: describe(
+            parsed.skipped.map((entry) => `line ${entry.line}: ${entry.reason}`),
+          ),
+        });
+      }
       if (parsed.records.length === 0) {
         setState({ ...INITIAL, status: "done", skipped: parsed.skipped.length });
         toast.warning(
@@ -78,15 +99,12 @@ export function useSchemaRunBulkUpload(
       const plugins = await queryClient.fetchQuery(predictionCatalogQueryOptions(organizationId));
       // The schema is normalized with its plugins in the sandbox; the app runs the records.
       const run = await prepareSchemaRun(version.formSchema, version.bindings, plugins);
-      if (controller.signal.aborted) {
+      if (signal.aborted) {
         setState((current) => ({ ...current, status: "done" }));
         return;
       }
-      const transport = createSchemaRunTransport(
-        { bookmarkId, schemaVersionId: version.id },
-        version.bindings,
-        run.fields as unknown as PredictionPayloadField[],
-      );
+      const fields = run.fields as unknown as PredictionPayloadField[];
+      const target = { bookmarkId, schemaVersionId: version.id };
 
       setState({
         status: "processing",
@@ -99,32 +117,50 @@ export function useSchemaRunBulkUpload(
 
       let added = 0;
       let failed = 0;
-      for (let index = 0; index < parsed.records.length; index += 1) {
-        if (controller.signal.aborted) break;
-        const record = parsed.records[index];
+      const failures: string[] = [];
+      for (
+        let from = 0;
+        from < parsed.records.length && !signal.aborted;
+        from += SCHEMA_RUN_BATCH_SIZE
+      ) {
+        const batch = parsed.records.slice(from, from + SCHEMA_RUN_BATCH_SIZE);
         try {
-          // react-doctor-disable-next-line react-doctor/async-await-in-loop -- Bulk upload is intentionally sequential for progress, cancellation, and backend load control.
-          const result = await transport.submit({
-            inputs: [],
-            displayValues: record.inputs,
-            modelValues: record.inputs,
-            reports: run.reports,
-          } as unknown as SubmitRequest);
-          if (controller.signal.aborted) break;
-          const raw = isRecord(result) && isRecord(result.raw) ? result.raw : {};
-          onResult(record.name, isRecord(raw.inputData) ? raw.inputData : record.inputs, raw);
-          added += 1;
+          // react-doctor-disable-next-line react-doctor/async-await-in-loop -- One batch at a time keeps progress, Stop and the server's queue honest.
+          const results = await runSchemaBatch(
+            target,
+            version.bindings,
+            fields,
+            batch.map((record) => record.inputs),
+            signal,
+          );
+          if (signal.aborted) break;
+          onResults(
+            batch.map((record, index) => ({
+              name: record.name,
+              inputData: record.inputs,
+              results: results[index]!,
+            })),
+          );
+          added += batch.length;
         } catch (error) {
-          if (controller.signal.aborted) break;
-          failed += 1;
-          toast.error(`Failed: ${record.name}`, {
-            description: error instanceof Error ? error.message : String(error),
-          });
+          if (signal.aborted) break;
+          failed += batch.length;
+          failures.push(errorMessage(error));
         }
-        setState((current) => ({ ...current, processed: index + 1, added, failed }));
+        setState((current) => ({
+          ...current,
+          processed: Math.min(from + batch.length, parsed.records.length),
+          added,
+          failed,
+        }));
       }
 
       setState((current) => ({ ...current, status: "done", added, failed }));
+      if (failed > 0) {
+        toast.error(`${failed} row${failed === 1 ? "" : "s"} could not run`, {
+          description: describe(failures),
+        });
+      }
       const summary = bulkUploadSummary(
         added,
         failed,
@@ -132,14 +168,10 @@ export function useSchemaRunBulkUpload(
         parsed.records.length - added - failed,
       );
       const notify = summary.warning ? toast.warning : toast.success;
-      notify(
-        `Bulk upload ${controller.signal.aborted ? "cancelled" : "complete"}: ${summary.message}`,
-      );
+      notify(`Bulk upload ${signal.aborted ? "cancelled" : "complete"}: ${summary.message}`);
     } catch (error) {
       setState(INITIAL);
-      toast.error("Bulk upload could not start", {
-        description: error instanceof Error ? error.message : String(error),
-      });
+      toast.error("Bulk upload could not start", { description: errorMessage(error) });
     } finally {
       abortRef.current = null;
     }

@@ -8,11 +8,14 @@ import { getBackendBaseUrl } from "@/shared/config/runtime";
 
 export class HttpError extends Error {
   readonly dto: ErrorDto;
+  /** How long the server asked the client to wait before retrying, when it said (Retry-After). */
+  readonly retryAfterSeconds: number | undefined;
 
-  constructor(dto: ErrorDto) {
+  constructor(dto: ErrorDto, retryAfterSeconds?: number) {
     super(dto.message);
     this.name = "HttpError";
     this.dto = dto;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 
   get status() {
@@ -48,6 +51,12 @@ const isJson = (response: Response) =>
   response.headers.get("content-type")?.includes("application/json") ?? false;
 const nowIso = () => new Date().toISOString();
 
+/** Retry-After in whole seconds; the date form is not sent by this API and reads as unsaid. */
+const retryAfter = (response: Response) => {
+  const value = response.headers.get("Retry-After");
+  return value !== null && /^\d+$/.test(value.trim()) ? Number(value) : undefined;
+};
+
 function responseError(response: Response, path: string, message: string): ErrorDto {
   return {
     timestamp: nowIso(),
@@ -74,8 +83,12 @@ export async function appFetch<T = unknown>(path: string, init?: RequestInit): P
       if (isJson(response)) return (await response.json()) as T;
       return undefined as T;
     }
-    if (isJson(response)) throw new HttpError((await response.json()) as ErrorDto);
-    throw new HttpError(responseError(response, path, response.statusText || "Request error"));
+    if (isJson(response))
+      throw new HttpError((await response.json()) as ErrorDto, retryAfter(response));
+    throw new HttpError(
+      responseError(response, path, response.statusText || "Request error"),
+      retryAfter(response),
+    );
   } catch (error) {
     if (isHttpError(error)) throw error;
     if (init?.signal?.aborted) throw error;
