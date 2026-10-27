@@ -107,9 +107,9 @@ pg_volume="${project}_pg_data"
 minio_volume="${project}_minio_data"
 "$DOCKER_BIN" volume inspect "$pg_volume" "$minio_volume" >/dev/null
 
-# Keep one slot free before writing. On the only disk, reserve 125% of live data
-# for the backup and another 125% for the mandatory isolated restore rehearsal.
-prune_backups "$((retention - 1))"
+# Existing backups are pruned only after the new one is verified, so a failed run
+# never costs a good backup. On the only disk, reserve 125% of live data for the
+# backup and another 125% for the mandatory isolated restore rehearsal.
 # The single-quoted program must expand inside the measurement container.
 # shellcheck disable=SC2016
 volume_stats=$(MSYS_NO_PATHCONV=1 "$DOCKER_BIN" run --rm \

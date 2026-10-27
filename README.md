@@ -229,9 +229,11 @@ failed rehearsal stops the cutover and stays visible instead of leaving a stale
 successful result.
 
 The backup command pauses the frontend and API, dumps PostgreSQL, takes a cold
-archive of MinIO that preserves version IDs, verifies checksums, applies
-`LOCAL_BACKUP_RETENTION_COUNT`, checks the remaining disk space, and restarts only
-the application services that were running. Backups live under
+archive of MinIO that preserves version IDs, verifies checksums, and only then
+prunes the oldest backups down to `LOCAL_BACKUP_RETENTION_COUNT`; a refused or
+failed run never removes an existing backup, so the disk briefly holds one backup
+more than the retention count. It then checks the remaining disk space and
+restarts only the application services that were running. Backups live under
 `LOCAL_BACKUP_ROOT`, outside the Docker data volumes but currently on the same
 physical disk. Keep at least 15% free with `LOCAL_BACKUP_MIN_FREE_PERCENT`. Before
 stopping writes, the command requires headroom for both the archive and the
