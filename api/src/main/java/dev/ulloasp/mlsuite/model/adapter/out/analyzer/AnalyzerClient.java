@@ -28,8 +28,9 @@ import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
  *
  * <p>A run (a prediction or an explanation) must answer within {@link #RUN_TIMEOUT}; it waited
  * for its turn in a runtime share before (see RuntimeSlots), and the share keeps the runtime's
- * work bounded so an admitted run finishes in time. Reading a whole uploaded bundle takes longer,
- * so an inspection has {@link #INSPECTION_TIMEOUT}, below the 60 seconds nginx waits for the API.
+ * work bounded so an admitted run finishes in time. A request that carries a whole bundle (an
+ * inspection, or a run resent with its artifact) takes longer, so it has {@link #INSPECTION_TIMEOUT},
+ * below the 60 seconds nginx waits for the API.
  */
 @Component
 public class AnalyzerClient {
@@ -66,6 +67,11 @@ public class AnalyzerClient {
 
     public Map<String, Object> post(String path, MultiValueMap<String, ?> parts) {
         return post(runs, path, parts);
+    }
+
+    /** Posts a run that carries its model's artifact, which can take as long as an inspection. */
+    public Map<String, Object> postWithArtifact(String path, MultiValueMap<String, ?> parts) {
+        return post(inspections, path, parts);
     }
 
     private Map<String, Object> post(RestTemplate restTemplate, String path, MultiValueMap<String, ?> parts) {

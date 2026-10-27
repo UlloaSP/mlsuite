@@ -56,7 +56,7 @@ public class ModelRuntimeClient {
         parts.part("model_file", new StreamedArtifact(source, artifact.fileName()))
                 .filename(artifact.fileName())
                 .contentType(MediaType.APPLICATION_OCTET_STREAM);
-        return analyzerClient.post(path, parts.build());
+        return analyzerClient.postWithArtifact(path, parts.build());
     }
 
     /**

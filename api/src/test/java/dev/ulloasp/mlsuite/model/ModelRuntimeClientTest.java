@@ -99,6 +99,21 @@ class ModelRuntimeClientTest {
     }
 
     @Test
+    void aRunResentWithItsArtifactHasTheTimeOfABundleTransferNotOfARun() {
+        RestTemplate bundles = mock(RestTemplate.class);
+        ModelRuntimeClient timed = new ModelRuntimeClient(new AnalyzerClient(restTemplate, bundles, "http://runtime"),
+                new ModelArtifactContentReader(storage, inline));
+        when(restTemplate.postForObject(eq("http://runtime/predict"), any(), eq(Map.class)))
+                .thenThrow(runtimeError(409, "Artifact is not loaded; send it with its SHA-256"));
+        when(bundles.postForObject(eq("http://runtime/predict"), any(), eq(Map.class))).thenReturn(Map.of());
+
+        timed.run("/predict", stored(SHA256), FIELDS);
+
+        verify(restTemplate, times(1)).postForObject(any(String.class), any(), eq(Map.class));
+        verify(bundles, times(1)).postForObject(any(String.class), any(), eq(Map.class));
+    }
+
+    @Test
     void anArtifactThatNoLongerMatchesItsIdentityFailsWhileItIsSent() {
         when(storage.open("bucket", "key", "v1")).thenReturn(new ByteArrayInputStream("tampered-bytes!".getBytes()));
         when(restTemplate.postForObject(eq("http://runtime/predict"), any(), eq(Map.class)))
