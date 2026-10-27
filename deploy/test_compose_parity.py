@@ -113,6 +113,14 @@ def main() -> None:
         "object storage provisioner must use the same pinned image"
     )
     validate_release_config(production)
+    published = {
+        name: [(port.get("host_ip", ""), port["target"]) for port in service.get("ports", [])]
+        for name, service in production["services"].items()
+        if service.get("ports")
+    }
+    assert published == {"postgres": [("127.0.0.1", 5432)], "frontend": [("", 5173)]}, (
+        "only the web app may be published publicly; PostgreSQL stays on loopback"
+    )
     script_pins = (ROOT / "scripts/lib.sh").read_text().splitlines()
     assert f"POSTGRES_IMAGE={postgres_image}" in script_pins, (
         "operational scripts must use the Compose PostgreSQL image"

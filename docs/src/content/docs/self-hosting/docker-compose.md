@@ -59,7 +59,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml down
 | `frontend` | nginx serving the React app and proxying `/api` to the API | `WEB_PORT` (5173) |
 | `spring-app` | The Spring Boot API: accounts, organizations, permissions, persistence | none |
 | `py-analyzer` | The Python runtime: loads bundles and runs predictions | none |
-| `postgres` | PostgreSQL 18, application state | `DB_HOST_PORT` (5430), on all interfaces |
+| `postgres` | PostgreSQL 18, application state | `DB_HOST_PORT` (5430), on `127.0.0.1` only |
 | `minio` | Object storage for model and plugin files, versioned | none |
 | `ops-agent` | Reads Docker Compose for the [Infrastructure](/admin/infrastructure/) page | none |
 | `db-provision`, `minio-init` | One-shot: create database roles, the bucket and its policy | none |
@@ -67,8 +67,9 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml down
 | `artifact-migrate` | One-shot, profile `operations`: move stored models into object storage | none |
 
 The browser talks only to `frontend`. Keep the API reachable only through it: nginx passes the
-client's address to the API in a header that the API trusts for the public run limits. If PostgreSQL
-should not be reachable from other hosts, bind or firewall `DB_HOST_PORT`.
+client's address to the API in a header that the API trusts for the public run limits. PostgreSQL is
+published on the host's loopback address only, because Docker-published ports bypass host firewalls
+such as ufw; from another machine, reach it through an SSH tunnel.
 
 ## Behind a reverse proxy
 

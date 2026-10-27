@@ -54,8 +54,9 @@ services:
       POSTGRES_USER: ${DB_ADMIN_USER}
       POSTGRES_PASSWORD: ${DB_ADMIN_PASS}
       PGDATA: /var/lib/postgresql/data/pgdata
+    # Loopback only: Docker-published ports bypass host firewalls such as ufw.
     ports:
-      - ${DB_HOST_PORT}:5432
+      - 127.0.0.1:${DB_HOST_PORT}:5432
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:

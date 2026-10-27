@@ -21,7 +21,7 @@ never commit `.env`.
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `WEB_PORT` | `5173` | Host port of the web app. |
-| `DB_HOST_PORT` | `5430` | Host port of PostgreSQL. |
+| `DB_HOST_PORT` | `5430` | Host port of PostgreSQL, bound to `127.0.0.1` only. |
 | `SPRING_PORT` | `8080` | API port inside the network. Keep 8080: nginx proxies to it. |
 | `PYTHON_HOST`, `PYTHON_PORT` | `0.0.0.0`, `8000` | Runtime bind address inside the network. |
 | `ANALYZER_BASE_URL` | `http://py-analyzer:8000` | How the API reaches the runtime. |
