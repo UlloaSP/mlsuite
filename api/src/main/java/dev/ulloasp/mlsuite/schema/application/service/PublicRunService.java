@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -75,8 +77,17 @@ public class PublicRunService implements PublicRunUseCase {
     private final UserLookupService userLookupService;
     private final PublicRunCatalogSearch catalogSearch;
 
-    /** A run kept, and whether it started a new visitor whose id the browser must be given. */
-    public record Recorded(PublicRunDto run, UUID visitorId, boolean issued) {
+    /**
+     * How stale a visitor's last-seen time may be. Concurrent runs of one visitor would otherwise
+     * all update its row and wait for each other's lock, holding pooled connections while they wait.
+     */
+    static final Duration SEEN_PRECISION = Duration.ofMinutes(15);
+
+    /**
+     * A run kept, whether it started a new visitor whose id the browser must be given, and when
+     * that visitor had last been seen before it.
+     */
+    public record Recorded(PublicRunDto run, UUID visitorId, boolean issued, OffsetDateTime lastSeenAt) {
     }
 
     /** Keeps a run the runtime answered. {@code answers} are the runtime's replies by model. */
@@ -88,7 +99,6 @@ public class PublicRunService implements PublicRunUseCase {
         OffsetDateTime now = OffsetDateTime.now();
         Optional<Visitor> known = Optional.ofNullable(caller.visitorId()).flatMap(visitorRepository::findById);
         Visitor visitor = known.orElseGet(() -> visitorRepository.save(new Visitor(UUID.randomUUID(), now)));
-        visitor.setLastSeenAt(now);
 
         PredictionRun run = new PredictionRun(bookmark, bookmark.getVersion(), runName(now), plan.storedInputs(),
                 PredictionRunStatus.SUCCESS);
@@ -108,7 +118,21 @@ public class PublicRunService implements PublicRunUseCase {
                     call.input(), output, PredictionResultStatus.SUCCESS, null, null)));
         }
         PublicForm form = publicBookmarks.formOf(run.getSchemaVersion());
-        return new Recorded(dto(run, form, results, List.of()), visitor.getId(), known.isEmpty());
+        return new Recorded(dto(run, form, results, List.of()), visitor.getId(), known.isEmpty(),
+                visitor.getLastSeenAt());
+    }
+
+    /**
+     * Notes that a recorded run's visitor was seen, once its run is committed and only when it
+     * was last seen more than {@link #SEEN_PRECISION} ago: most runs write nothing to the visitor.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public void markSeen(Recorded recorded) {
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime since = now.minus(SEEN_PRECISION);
+        if (recorded.lastSeenAt().isBefore(since)) {
+            visitorRepository.markSeen(recorded.visitorId(), now, since);
+        }
     }
 
     @Override

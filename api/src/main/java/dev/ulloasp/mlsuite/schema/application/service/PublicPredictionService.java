@@ -54,6 +54,7 @@ public class PublicPredictionService implements PublicPredictionUseCase {
             try {
                 Map<Long, Map<String, Object>> answers = admission.run(() -> perform(plan));
                 PublicRunService.Recorded recorded = runs.record(plan, answers, caller);
+                runs.markSeen(recorded);
                 return new PublicRunOutcome(
                         new PublicPredictionDto(recorded.run(), quota.status(caller, publicId)),
                         recorded.issued() ? recorded.visitorId() : null);
