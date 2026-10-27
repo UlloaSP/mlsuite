@@ -96,6 +96,8 @@ services:
       PYTHON_HOST: ${PYTHON_HOST}
       PYTHON_PORT: ${PYTHON_PORT}
       CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
+      RUNTIME_MAX_CONCURRENT: ${RUNTIME_MAX_CONCURRENT:-8}
+      RUNTIME_BUNDLE_CACHE_MB: ${RUNTIME_BUNDLE_CACHE_MB:-512}
     depends_on:
       postgres:
         condition: service_healthy

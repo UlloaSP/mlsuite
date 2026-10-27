@@ -4,6 +4,7 @@ from fastapi import UploadFile
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 from ..bundles import load_bundle
+from ..execution import run_model_work
 from ..utils.crystal_tree import (
     build_tree_path_explanation,
     explain_tree,
@@ -15,6 +16,10 @@ from ..utils.records import parse_record_json
 
 async def explain(model_upload: UploadFile, data: str, traces: str) -> dict[str, list[dict[str, str]]]:
     bundle = await load_bundle(model_upload)
+    return await run_model_work(_explain, bundle, data, traces)
+
+
+def _explain(bundle: mlbundle.LoadedBundle, data: str, traces: str) -> dict[str, list[dict[str, str]]]:
     model = bundle.native_model
     if not isinstance(model, (DecisionTreeClassifier, DecisionTreeRegressor)):
         message = f"crystal-tree requires a DecisionTree estimator, got {model.__class__.__name__}"

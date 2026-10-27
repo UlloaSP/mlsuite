@@ -4,6 +4,7 @@ import mlbundle
 from fastapi import UploadFile
 
 from ..bundles import load_bundle
+from ..execution import run_model_work
 from ..utils.errors import bad_request, internal_runtime_error
 from ..utils.records import parse_record_json
 
@@ -11,7 +12,10 @@ from ..utils.records import parse_record_json
 async def predict(model_upload: UploadFile, data: str) -> dict[str, object]:
     bundle = await load_bundle(model_upload)
     record = parse_record_json(data, "Invalid JSON")
+    return await run_model_work(_predict, bundle, record)
 
+
+def _predict(bundle: mlbundle.LoadedBundle, record: dict[str, object]) -> dict[str, object]:
     try:
         started = time.perf_counter()
         predictions = bundle.predict_record(record)
