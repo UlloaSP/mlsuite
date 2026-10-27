@@ -24,7 +24,7 @@ import { AuthFormPanel } from "./auth-landing/AuthFormPanel";
 import { AuthHorizon } from "./auth-landing/AuthHorizon";
 import { AuthPassStub } from "./auth-landing/AuthPassStub";
 import { AuthTypeBands } from "./auth-landing/AuthTypeBands";
-import { AUTH_MODES, type AuthMode } from "./auth-landing/authLandingCopy";
+import { AUTH_MODES, authFailureMessage, type AuthMode } from "./auth-landing/authLandingCopy";
 import { useAuthAccess } from "./auth-landing/useAuthAccess";
 import { useAuthStageScale } from "./auth-landing/useAuthStageScale";
 import "./auth-landing/auth-landing.css";
@@ -114,7 +114,9 @@ export function AuthLandingPage() {
           <AuthFormPanel
             mode={mode}
             locked={access.phase !== 0}
-            failed={mutation.isError && access.phase === 0}
+            failure={
+              mutation.isError && access.phase === 0 ? authFailureMessage(mode, mutation.error) : null
+            }
             onModeChange={changeMode}
             onSubmit={submit}
           />

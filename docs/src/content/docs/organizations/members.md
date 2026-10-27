@@ -34,8 +34,8 @@ Expired or Revoked. Members with **Manage invitations** can act on each invitati
 
 Pending invitations appear in **Notifications** (the account menu shows how many) with
 **Accept** and **Decline**. An invitation link opens the **Join workspace** page with the same two
-choices. Accepting needs the account whose email was invited; an expired or already answered
-invitation cannot be accepted. After accepting, the organization becomes your current one.
+choices. Accepting or declining needs the account whose email was invited; an expired or already
+answered invitation can be neither. After accepting, the organization becomes your current one.
 
 ## Members
 

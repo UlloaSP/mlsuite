@@ -8,7 +8,6 @@ import { z } from "zod";
 import { describe, expect, test } from "vite-plus/test";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
-import { RUN_TARGET } from "./support/api-fixtures";
 
 const findReport = (reports: readonly unknown[], id: string) =>
   reports.find(
@@ -20,13 +19,8 @@ const findReport = (reports: readonly unknown[], id: string) =>
   );
 
 const definition = (): CatalogReportDefinition => ({
-  id: "crystal",
   fileName: "crystal.ts",
   source: "",
-  updatedAt: "",
-  createdAt: "",
-  contentType: "text/typescript",
-  sizeBytes: 1,
   kind: "Crystal Tree",
   definition: defineReportKind({
     kind: "Crystal Tree",
@@ -47,7 +41,6 @@ const definition = (): CatalogReportDefinition => ({
 describe("schema plugin defaults", () => {
   test("custom report schema default endpoint is present after runtime normalization", () => {
     const runtime = createSchemaRunRuntime({
-      target: RUN_TARGET,
       schema: {
         fields: [],
         reports: [{ id: "crystal", kind: "Crystal Tree", mappedTo: "crystal" }],

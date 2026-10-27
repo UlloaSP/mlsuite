@@ -7,45 +7,41 @@ import { inspectPluginFile } from "@/features/plugins/lib/plugin-upload-queue";
 import { buttonByText, mount } from "./support/dom";
 
 const mocks = vi.hoisted(() => ({
-  detect: vi.fn<(organizationId: number | string, source: string) => Promise<unknown>>(),
+  detect: vi.fn<(plugin: { fileName: string; source: string }) => Promise<unknown>>(),
   upload: vi.fn<(file: File) => Promise<unknown>>(),
 }));
-vi.mock("@/capabilities/prediction-runtime/plugins/plugin-catalog-loader", () => ({
-  detectPluginType: (organizationId: number | string, source: string) =>
-    mocks.detect(organizationId, source),
+vi.mock("@/capabilities/prediction-runtime/sandbox/plugin-sandbox-services", () => ({
+  inspectPluginSource: (plugin: { fileName: string; source: string }) => mocks.detect(plugin),
 }));
 vi.mock("@/features/plugins/api/plugin.mutations", () => ({
   useUploadPluginMutation: () => ({ mutateAsync: mocks.upload }),
-}));
-vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
-  useWorkspaceContext: () => ({ data: { currentOrganization: { id: 7 } } }),
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn() } }));
 
 const file = (name: string, source = "export default {}") => new File([source], name);
 
 beforeEach(() => {
-  mocks.detect.mockImplementation(async (_, source) => {
+  mocks.detect.mockImplementation(async ({ source }) => {
     if (source.includes("broken")) throw new Error("Plugin validation failed for field: no kind");
     return { pluginType: source.includes("report") ? "report" : "field", kind: "rating" };
   });
 });
 
-test("only a .ts file the runtime accepts becomes uploadable", async () => {
-  await expect(inspectPluginFile(7, file("notes.txt"))).resolves.toEqual({
+test("only a .ts file the plugin sandbox accepts becomes uploadable", async () => {
+  await expect(inspectPluginFile(file("notes.txt"))).resolves.toEqual({
     status: "invalid",
     error: "Only .ts plugin files are supported.",
   });
-  await expect(inspectPluginFile(7, file("rating.ts"))).resolves.toEqual({
+  await expect(inspectPluginFile(file("rating.ts"))).resolves.toEqual({
     status: "ready",
     pluginType: "field",
     kind: "rating",
   });
-  await expect(inspectPluginFile(7, file("bad.ts", "broken"))).resolves.toEqual({
+  await expect(inspectPluginFile(file("bad.ts", "broken"))).resolves.toEqual({
     status: "invalid",
     error: "Plugin validation failed for field: no kind",
   });
-  expect(mocks.detect).toHaveBeenCalledWith(7, "export default {}");
+  expect(mocks.detect).toHaveBeenCalledWith({ fileName: "rating.ts", source: "export default {}" });
 });
 
 let container: HTMLDivElement;

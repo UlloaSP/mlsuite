@@ -52,6 +52,15 @@ const MLSUITE_THEME_TOKENS = {
   "--mlf-transition-easing": "var(--ease-emphasized)",
 } as const;
 
+/** The app tokens the design system reads: a form drawn in the plugin sandbox is given them. */
+export const PREDICTION_THEME_VARIABLES = [
+  ...new Set(
+    Object.values(MLSUITE_THEME_TOKENS).flatMap((value) =>
+      [...value.matchAll(/var\((--[\w-]+)\)/g)].map((match) => match[1]),
+    ),
+  ),
+];
+
 export const getPredictionDesignSystem = (theme: PredictionTheme) => ({
   mode: theme,
   theme: "airbnb" as const,

@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMemo } from "react";
-import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
+import type { PluginCatalogEntry } from "@/capabilities/prediction-runtime/sandbox/sandbox-protocol";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
 import { SchemaRunReportRenderer } from "@/capabilities/prediction-runtime/reports/SchemaRunReportRenderer";
@@ -14,16 +14,10 @@ type Props = {
   version: SchemaVersionDto;
   /** Saved results, or a session's unsaved ones: the panel reads only what models returned. */
   results: Pick<PredictionResultDto, "modelId" | "modelInput" | "output">[];
-  customReportDefinitions?: readonly CatalogReportDefinition[];
+  reportPlugins?: readonly PluginCatalogEntry[];
 };
 
-const EMPTY_CUSTOM_REPORT_DEFINITIONS: readonly CatalogReportDefinition[] = [];
-
-export function SchemaRunReportsPanel({
-  version,
-  results,
-  customReportDefinitions = EMPTY_CUSTOM_REPORT_DEFINITIONS,
-}: Props) {
+export function SchemaRunReportsPanel({ version, results, reportPlugins }: Props) {
   const reports = useMemo(
     () =>
       results.flatMap((result) =>
@@ -41,7 +35,7 @@ export function SchemaRunReportsPanel({
               key={`${result.modelId}-${report.id}`}
               result={result}
               report={report}
-              customReportDefinitions={customReportDefinitions}
+              reportPlugins={reportPlugins}
             />
           ))}
         </div>

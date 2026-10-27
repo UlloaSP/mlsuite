@@ -7,9 +7,13 @@ import { useCurrentOrganizationId } from "@/capabilities/workspace-context/works
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
-import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
+import { createSchemaRunTransport } from "@/capabilities/prediction-runtime/mlform/run-transport";
+import {
+  isRecord,
+  type PredictionPayloadField,
+} from "@/capabilities/prediction-runtime/mlform/shared";
 import { predictionCatalogQueryOptions } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
+import { prepareSchemaRun } from "@/capabilities/prediction-runtime/sandbox/plugin-sandbox-services";
 import { parseSpreadsheetPredictionFile } from "@/capabilities/prediction-runtime/data/parse-spreadsheet-prediction-file";
 import { bulkUploadSummary, getModelInputBulkSchema } from "@/features/schemas/lib/bulk-upload";
 import type { SubmitRequest } from "mlform/runtime";
@@ -71,18 +75,18 @@ export function useSchemaRunBulkUpload(
         return;
       }
 
-      const catalog = await queryClient.fetchQuery(predictionCatalogQueryOptions(organizationId));
+      const plugins = await queryClient.fetchQuery(predictionCatalogQueryOptions(organizationId));
+      // The schema is normalized with its plugins in the sandbox; the app runs the records.
+      const run = await prepareSchemaRun(version.formSchema, version.bindings, plugins);
       if (controller.signal.aborted) {
         setState((current) => ({ ...current, status: "done" }));
         return;
       }
-      const runtime = createSchemaRunRuntime({
-        target: { bookmarkId, schemaVersionId: version.id },
-        schema: version.formSchema,
-        bindings: version.bindings,
-        customFieldDefinitions: catalog.fieldDefinitions,
-        customReportDefinitions: catalog.reportDefinitions,
-      });
+      const transport = createSchemaRunTransport(
+        { bookmarkId, schemaVersionId: version.id },
+        version.bindings,
+        run.fields as unknown as PredictionPayloadField[],
+      );
 
       setState({
         status: "processing",
@@ -100,11 +104,11 @@ export function useSchemaRunBulkUpload(
         const record = parsed.records[index];
         try {
           // react-doctor-disable-next-line react-doctor/async-await-in-loop -- Bulk upload is intentionally sequential for progress, cancellation, and backend load control.
-          const result = await runtime.transport.submit({
+          const result = await transport.submit({
             inputs: [],
             displayValues: record.inputs,
             modelValues: record.inputs,
-            reports: runtime.formSchema.reports,
+            reports: run.reports,
           } as unknown as SubmitRequest);
           if (controller.signal.aborted) break;
           const raw = isRecord(result) && isRecord(result.raw) ? result.raw : {};

@@ -16,6 +16,8 @@ Limits marked *configurable* are defaults that an operator changes in
 | Organization logo | PNG or JPG, at least 64 × 64 px, up to 2 MB; stored as a 256 px square |
 | Role name, description | 120, 600 characters |
 | Invitation validity | 7 days |
+| Failed sign-ins | 10 per network in 15 minutes, then `429` until the window ends, *configurable* |
+| Registration attempts | 5 per network in 15 minutes, *configurable* |
 
 ## Models, schemas and runs
 

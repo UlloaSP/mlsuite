@@ -21,7 +21,7 @@ never commit `.env`.
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `WEB_PORT` | `5173` | Host port of the web app. |
-| `DB_HOST_PORT` | `5430` | Host port of PostgreSQL. |
+| `DB_HOST_PORT` | `5430` | Host port of PostgreSQL, bound to `127.0.0.1` only. |
 | `SPRING_PORT` | `8080` | API port inside the network. Keep 8080: nginx proxies to it. |
 | `PYTHON_HOST`, `PYTHON_PORT` | `0.0.0.0`, `8000` | Runtime bind address inside the network. |
 | `ANALYZER_BASE_URL` | `http://py-analyzer:8000` | How the API reaches the runtime. |
@@ -86,12 +86,24 @@ The public run counts are kept in the API's memory: they restart with the API an
 single API instance. The client API limits are counted from the request log, so they hold across
 restarts and instances.
 
+## Sign-in and sessions
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `SESSION_COOKIE_SECURE` | `true` | Send the session cookie only over HTTPS. Browsers treat `http://localhost` as secure; set `false` only for plain HTTP on another address. |
+| `AUTH_MAX_LOGIN_FAILURES` | `10` | Failed sign-ins one network may make in 15 minutes; past it every sign-in from it receives `429` until the window ends. At least 1. |
+| `AUTH_MAX_REGISTRATIONS` | `5` | Registration attempts one network may make in 15 minutes; more receive `429`. At least 1. |
+
+Like the public run counts, these are kept in the API's memory and hold only with a single API
+instance. A session ends on its next request once its account is disabled or deleted, or its
+password or system role changes.
+
 ## Operations agent
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `OPS_AGENT_BASE_URL` | `http://ops-agent:8091` | How the API reaches the agent. |
-| `OPS_AGENT_SHARED_SECRET` | | Shared by the API and the agent. Always set it. |
+| `OPS_AGENT_SHARED_SECRET` | | Shared by the API and the agent. Required: the agent refuses to start without it. |
 | `OPS_AGENT_HOST`, `OPS_AGENT_PORT` | `0.0.0.0`, `8091` | Agent bind address. |
 | `OPS_AGENT_DOCKER_BIN` | `docker` | Docker CLI. |
 | `OPS_AGENT_COMPOSE_PROJECT` | `mlsuite` | Must match the project the stack runs under. |

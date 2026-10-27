@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 import asyncio
+import hmac
 import json
 
 from fastapi import Depends, FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
@@ -16,7 +17,14 @@ from .startup import StartupStatus
 from .state import AgentState, parse_topics
 
 
+class MissingSharedSecretError(RuntimeError):
+    """The agent controls the host's Docker; it never serves without a secret."""
+
+
 def create_app() -> FastAPI:
+    secret = SETTINGS.shared_secret.encode()
+    if not secret:
+        raise MissingSharedSecretError("OPS_AGENT_SHARED_SECRET must be set; refusing to start.")
     state = AgentState(SETTINGS)
 
     @asynccontextmanager
@@ -35,12 +43,15 @@ def create_app() -> FastAPI:
     async def handle_compose_error(_request: Request, exc: ComposeError) -> JSONResponse:
         return JSONResponse(status_code=400, content={"detail": str(exc)})
 
+    def authorized(provided: str | None) -> bool:
+        return hmac.compare_digest((provided or "").encode(), secret)
+
     def verify_request(request: Request) -> None:
-        if request.headers.get("X-MLSuite-Ops-Secret") != SETTINGS.shared_secret:
+        if not authorized(request.headers.get("X-MLSuite-Ops-Secret")):
             raise HTTPException(status_code=401, detail="Invalid ops secret.")
 
     async def verify_socket(websocket: WebSocket) -> bool:
-        if websocket.headers.get("x-mlsuite-ops-secret") != SETTINGS.shared_secret:
+        if not authorized(websocket.headers.get("x-mlsuite-ops-secret")):
             await websocket.close(code=4401)
             return False
         return True

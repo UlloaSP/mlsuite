@@ -14,6 +14,11 @@ import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { locationDisplayAtom, type LocationDisplay } from "@/shared/ui/sidebar-preferences";
 import { click, mount } from "./support/dom";
 
+// Plugin sandboxes run in-process: jsdom loads no frame.
+vi.mock("@/capabilities/prediction-runtime/sandbox/plugin-sandbox", async () =>
+  (await import("./support/loopback-sandbox")).loopbackSandboxModule(),
+);
+
 const toasts = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
 vi.mock("sonner", () => ({ toast: toasts }));
 

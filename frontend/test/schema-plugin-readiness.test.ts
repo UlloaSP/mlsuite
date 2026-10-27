@@ -7,21 +7,16 @@ import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/view";
 import { createForm, executeFormPipeline } from "mlform/runtime";
 import { z } from "zod";
-import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
+import { schemaRunRuntime } from "./support/schema-run-runtime";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
-import { RUN_TARGET, workspacePrediction } from "./support/api-fixtures";
+import { workspacePrediction } from "./support/api-fixtures";
 
 const stringMeta = (value: unknown): string =>
   typeof value === "string" || typeof value === "number" ? String(value) : "";
 
 const crystal = (): CatalogReportDefinition => ({
-  id: "crystal",
   fileName: "crystal.ts",
   source: "",
-  updatedAt: "",
-  createdAt: "",
-  contentType: "text/typescript",
-  sizeBytes: 1,
   kind: "Crystal Tree",
   definition: defineReportKind({
     kind: "Crystal Tree",
@@ -48,7 +43,7 @@ const crystal = (): CatalogReportDefinition => ({
   }),
 });
 
-const submit = (runtime: ReturnType<typeof createSchemaRunRuntime>) => {
+const submit = (runtime: ReturnType<typeof schemaRunRuntime>) => {
   const form = createForm({
     schema: runtime.formSchema,
     registry: runtime.registry,
@@ -63,8 +58,7 @@ describe("schema plugin readiness failures", () => {
 
   test("missing active catalog definition fails before submit", () => {
     expect(() =>
-      createSchemaRunRuntime({
-        target: RUN_TARGET,
+      schemaRunRuntime({
         schema: {
           fields: [],
           reports: [{ id: "crystal", kind: "Crystal Tree" }],
@@ -82,8 +76,7 @@ describe("schema plugin readiness failures", () => {
         workspacePrediction(init, [{ mappedTo: "risk", value: 1 }]),
       ),
     );
-    const runtime = createSchemaRunRuntime({
-      target: RUN_TARGET,
+    const runtime = schemaRunRuntime({
       schema: {
         fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
@@ -112,8 +105,7 @@ describe("schema plugin readiness failures", () => {
       vi.fn(async (_url: string, init?: RequestInit) => workspacePrediction(init)),
     );
     expect(() =>
-      createSchemaRunRuntime({
-        target: RUN_TARGET,
+      schemaRunRuntime({
         schema: {
           fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
           reports: [{ id: "crystal", source: "crystal", kind: "Crystal Tree" }],
@@ -132,8 +124,7 @@ describe("schema plugin readiness failures", () => {
         return new Response(JSON.stringify({ reports: [{ explanation: "ok" }] }));
       }),
     );
-    const runtime = createSchemaRunRuntime({
-      target: RUN_TARGET,
+    const runtime = schemaRunRuntime({
       schema: {
         fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
@@ -162,8 +153,7 @@ describe("schema plugin readiness failures", () => {
         return new Response(JSON.stringify({ reports: [{ explanation: "ok" }] }));
       }),
     );
-    const runtime = createSchemaRunRuntime({
-      target: RUN_TARGET,
+    const runtime = schemaRunRuntime({
       schema: {
         fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [

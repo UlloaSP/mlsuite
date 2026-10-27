@@ -8,20 +8,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/view";
 import { z } from "zod";
-import { mountSchemaRunForm } from "@/capabilities/prediction-runtime/mlform/schema-run-mount";
+import { mountRunForm } from "./support/schema-run-runtime";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
-import { RUN_TARGET, workspacePrediction, predictionRequest } from "./support/api-fixtures";
+import { workspacePrediction, predictionRequest } from "./support/api-fixtures";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 const crystal = (): CatalogReportDefinition => ({
-  id: "crystal-tree",
   fileName: "crystal.ts",
   source: "",
-  updatedAt: "",
-  createdAt: "",
-  contentType: "text/typescript",
-  sizeBytes: 1,
   kind: "Crystal Tree",
   definition: defineReportKind({
     kind: "Crystal Tree",
@@ -69,8 +64,7 @@ describe("schema run multi-model plugin reports", () => {
     const container = document.createElement("div");
     document.body.append(container);
     const updates: Array<{ raw: Record<string, unknown>; pending: boolean }> = [];
-    const mounted = mountSchemaRunForm({
-      target: RUN_TARGET,
+    const mounted = mountRunForm({
       container,
       schema: {
         fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],

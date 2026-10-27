@@ -6,12 +6,11 @@ import {
   validateMlformSchema,
 } from "@/capabilities/prediction-runtime/mlform/schema-validation";
 import { connectStoredStatusConditions } from "@/capabilities/prediction-runtime/mlform/stored-status-conditions";
-import { RUN_TARGET } from "./support/api-fixtures";
 
 const field = { id: "value", kind: "number", label: "Value", mappedTo: "value", defaultValue: 1 };
 const stored = (equals: unknown) => ({ kind: "form-status", equals });
 const create = (schema: unknown, options: Partial<Parameters<typeof createForm>[0]> = {}) => {
-  const runtime = createSchemaRunRuntime({ target: RUN_TARGET, schema, bindings: [] });
+  const runtime = createSchemaRunRuntime({ schema, bindings: [] });
   const form = createForm({
     schema: runtime.formSchema,
     registry: runtime.registry,

@@ -7,32 +7,26 @@ import { useEffect, useMemo } from "react";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { schemaNeedsPluginCatalog } from "@/capabilities/prediction-runtime/mlform/schema-plugin-requirement";
-import {
-  getCatalogDefinitions,
-  type PredictionCatalogDefinitions,
-} from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
+import { inspectPluginCatalog } from "@/capabilities/prediction-runtime/sandbox/plugin-sandbox-services";
+import type { PluginCatalog } from "@/capabilities/prediction-runtime/sandbox/sandbox-protocol";
 import {
   PLUGIN_RUNTIME_SOURCES_QUERY_KEY,
   pluginRuntimeSourcesQueryOptions,
 } from "@/capabilities/prediction-runtime/plugins/plugin-runtime-sources";
 
-const EMPTY_CATALOG: PredictionCatalogDefinitions = {
-  fieldDefinitions: [],
-  reportDefinitions: [],
-};
+const EMPTY_CATALOG: PluginCatalog = { fields: [], reports: [] };
 
 const CATALOG_ERROR_TOAST_ID = "plugin-catalog-unavailable";
 
 /**
- * Compiled plugin definitions. The key nests under the runtime sources key, so
- * invalidating the sources also recompiles the catalog.
+ * The organization's plugins split into field and report kinds, checked in the plugin sandbox.
+ * The key nests under the runtime sources key, so invalidating the sources checks them again.
  */
 export const predictionCatalogQueryOptions = (organizationId: number | string) =>
   queryOptions({
-    queryKey: [...PLUGIN_RUNTIME_SOURCES_QUERY_KEY(organizationId), "definitions"],
+    queryKey: [...PLUGIN_RUNTIME_SOURCES_QUERY_KEY(organizationId), "catalog"],
     queryFn: async ({ client }) =>
-      getCatalogDefinitions(
-        organizationId,
+      inspectPluginCatalog(
         await client.fetchQuery(pluginRuntimeSourcesQueryOptions(organizationId)),
       ),
     retry: false,
