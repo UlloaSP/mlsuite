@@ -167,9 +167,11 @@ class WorkspacePredictionHttpTest extends PublicPredictionFixture {
         });
         assertTrue(running.await(10, TimeUnit.SECONDS));
 
-        mockMvc.perform(predictRequest(forestModel.getId()))
+        // An app served from another origin can read how long to wait.
+        mockMvc.perform(predictRequest(forestModel.getId()).header(HttpHeaders.ORIGIN, "http://localhost:5173"))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(header().string(HttpHeaders.RETRY_AFTER, "2"))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, "Retry-After"))
                 .andExpect(jsonPath("$.message").value("Too many workspace runs are in progress. Try again in a moment."));
 
         finish.countDown();
