@@ -69,6 +69,14 @@ equivalent roles yourself; the migration role must be able to install `pg_trgm`.
 | `MODEL_MUTATIONS_REQUIRE_VERSION` | `true` | Refuse model changes that do not send the model's version (`428`), so stale pages cannot overwrite each other. Keep `true`. |
 | `PREDICTION_ATTESTATION_SECRET` | | Signs the predictions the API runs for workspace inferences; an inference can only be saved with results signed by it, within 24 hours. Required: at least 32 random characters, the same on every API instance. Changing it invalidates unsaved results. |
 
+## Runtime capacity
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `WORKSPACE_PREDICTION_MAX_CONCURRENT` | `4` | Workspace predictions and explanations at once, apart from public and client runs; more receive `503`. |
+| `RUNTIME_MAX_CONCURRENT` | `8` | Threads the runtime runs models on. Keep it at least the sum of the workspace, public and client shares, or admitted runs queue in the runtime. |
+| `RUNTIME_BUNDLE_CACHE_MB` | `512` | Total artifact size of the verified bundles the runtime keeps loaded; the newest is kept even when larger. A run sends its artifact only when the runtime does not hold it. |
+
 ## Public runs and the client API
 
 | Variable | Default | Meaning |

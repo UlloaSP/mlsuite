@@ -1,34 +1,55 @@
 package dev.ulloasp.mlsuite.schema;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.util.MultiValueMap;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.zaxxer.hikari.HikariDataSource;
+
+import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 
 /**
  * The HTTP contract of a workspace run: the server performs each prediction and seals it, and
  * saving keeps only sealed results. The route that let a client run a model and keep whatever
- * it reported is gone.
+ * it reported is gone. The runtime is asked for a model by its artifact's hash, no connection is
+ * held while it works, and a run finding the workspace share in use is answered 503 (the fixture
+ * allows one at a time).
  */
 class WorkspacePredictionHttpTest extends PublicPredictionFixture {
+
+    private static final Map<String, Object> EXPLANATION = Map.of("kind", "Crystal Tree", "explanation", "age > 50");
+
+    private final List<MultiValueMap<String, HttpEntity<?>>> sent = new ArrayList<>();
+    private final List<String> held = new ArrayList<>();
 
     @BeforeEach
     void signInTheOwner() {
@@ -88,6 +109,72 @@ class WorkspacePredictionHttpTest extends PublicPredictionFixture {
     }
 
     @Test
+    void aRunNamesTheModelByItsArtifactAndHoldsNoConnectionWhileTheRuntimeWorks() throws Exception {
+        explainTheForest();
+        when(analyzer.post(eq("/predict"), any())).thenAnswer(call -> recorded(call.getArgument(1),
+                Map.of("reports", List.of(CLASSIFIER))));
+        when(analyzer.post(eq("/explain"), any())).thenAnswer(call -> recorded(call.getArgument(1),
+                Map.of("reports", List.of(EXPLANATION))));
+
+        JsonNode forest = predict(forestModel.getId());
+
+        List<String> explained = new ArrayList<>();
+        forest.at("/output/reports").forEach(report -> explained.add(report.path("explanation").asText(null)));
+        assertTrue(explained.contains("age > 50"), explained::toString);
+        assertEquals(2, sent.size());
+        for (MultiValueMap<String, HttpEntity<?>> parts : sent) {
+            assertEquals(FOREST_SHA256, artifact(parts));
+            assertNull(parts.getFirst("model_file"));
+            assertEquals("{\"age\":52}", data(parts));
+        }
+        assertEquals("[]", sent.get(1).getFirst("traces").getBody());
+        assertEquals(List.of("transaction false, connections 0", "transaction false, connections 0"), held);
+    }
+
+    @Test
+    void anExplanationHoldsNoConnectionWhileTheRuntimeWorks() throws Exception {
+        when(analyzer.post(eq("/explain"), any())).thenAnswer(call -> recorded(call.getArgument(1),
+                Map.of("reports", List.of(EXPLANATION))));
+
+        mockMvc.perform(signedIn(post("/api/analyzer/explanations")
+                        .param("modelId", String.valueOf(forestModel.getId()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"instance\":{\"age\":52},\"traces\":[]}"), owner.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.reports[0].explanation").value("age > 50"));
+
+        assertEquals(FOREST_SHA256, artifact(sent.get(0)));
+        assertEquals(List.of("transaction false, connections 0"), held);
+    }
+
+    @Test
+    void aRunFindingTheWorkspaceShareInUseIsAnswered503AndTheNextOneRuns() throws Exception {
+        CountDownLatch running = new CountDownLatch(1);
+        CountDownLatch finish = new CountDownLatch(1);
+        when(analyzer.post(eq("/predict"), any())).thenAnswer(call -> {
+            running.countDown();
+            assertTrue(finish.await(10, TimeUnit.SECONDS));
+            return Map.of("reports", List.of(CLASSIFIER));
+        });
+        var first = CompletableFuture.supplyAsync(() -> {
+            try {
+                return mockMvc.perform(predictRequest(forestModel.getId())).andReturn().getResponse().getStatus();
+            } catch (Exception failure) {
+                throw new IllegalStateException(failure);
+            }
+        });
+        assertTrue(running.await(10, TimeUnit.SECONDS));
+
+        mockMvc.perform(predictRequest(forestModel.getId()))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.message").value("Too many workspace runs are in progress. Try again in a moment."));
+
+        finish.countDown();
+        assertEquals(200, first.get(10, TimeUnit.SECONDS));
+        mockMvc.perform(predictRequest(forestModel.getId())).andExpect(status().isOk());
+    }
+
+    @Test
     void aPredictionForAModelTheSnapshotDoesNotBindIsRefused() throws Exception {
         mockMvc.perform(predictRequest(9_999_999L)).andExpect(status().isBadRequest());
 
@@ -108,6 +195,26 @@ class WorkspacePredictionHttpTest extends PublicPredictionFixture {
         return Map.of("modelId", modelId, "modelInput", Map.of("age", 52),
                 "output", Map.of("reports", List.of(Map.of("kind", "classifier", "mappedTo", "risk", "prediction", "low"))),
                 "status", "SUCCESS");
+    }
+
+    /** Gives the forest a plugin report, which a run fills with the runtime's explanation. */
+    private void explainTheForest() {
+        inTransaction(() -> {
+            SchemaVersion stored = entityManager.find(SchemaVersion.class, version.getId());
+            Map<String, Object> form = new LinkedHashMap<>(stored.getFormSchema());
+            List<Object> reports = new ArrayList<>((List<?>) form.get("reports"));
+            reports.add(Map.of("kind", "Crystal Tree", "label", "Path", "mappedTo", Map.of("risk-forest", "tree")));
+            form.put("reports", reports);
+            stored.setFormSchema(form);
+        });
+    }
+
+    private Map<String, Object> recorded(MultiValueMap<String, HttpEntity<?>> parts, Map<String, Object> answer)
+            throws Exception {
+        sent.add(parts);
+        held.add("transaction " + TransactionSynchronizationManager.isActualTransactionActive() + ", connections "
+                + dataSource.unwrap(HikariDataSource.class).getHikariPoolMXBean().getActiveConnections());
+        return answer;
     }
 
     private JsonNode predict(long modelId) throws Exception {

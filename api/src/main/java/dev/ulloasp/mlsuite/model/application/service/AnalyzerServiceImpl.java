@@ -7,8 +7,6 @@ package dev.ulloasp.mlsuite.model.application.service;
 
 import java.util.Map;
 
-import org.springframework.http.MediaType;
-import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,26 +15,30 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
+import dev.ulloasp.mlsuite.model.adapter.out.analyzer.ModelRuntimeClient;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.application.dto.ExplainRequest;
 import dev.ulloasp.mlsuite.model.application.port.in.AnalyzerUseCase;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
-import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
-import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
+import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Runtime calls of workspace members. Nothing here is transactional and these endpoints are left
+ * out of open-in-view (see OpenInViewConfig): the caller and model are resolved in short reads,
+ * and the runtime is called in a {@link WorkspaceRuntimeSlots} slot with no connection held.
+ */
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class AnalyzerServiceImpl implements AnalyzerUseCase {
 
     private final AnalyzerClient analyzerClient;
+    private final ModelRuntimeClient modelRuntime;
+    private final WorkspaceRuntimeSlots slots;
     private final ModelRepository modelRepository;
-    private final ModelArtifactContentReader artifactReader;
     private final UserLookupService userLookupService;
     private final WorkspaceAuthorizationService authorizationService;
     private final ObjectMapper objectMapper;
@@ -50,26 +52,10 @@ public class AnalyzerServiceImpl implements AnalyzerUseCase {
     }
 
     @Override
-    public Map<String, Object> predict(Long userId, Long modelId, Map<String, Object> data) {
-        MultipartBodyBuilder builder = modelParts(requireRunnableModel(userId, modelId));
-        builder.part("data", json(data)).contentType(MediaType.APPLICATION_JSON);
-        return analyzerClient.post("/predict", builder.build());
-    }
-
-    @Override
     public Map<String, Object> explain(Long userId, Long modelId, ExplainRequest request) {
-        MultipartBodyBuilder builder = modelParts(requireRunnableModel(userId, modelId));
-        builder.part("data", json(request.instance())).contentType(MediaType.APPLICATION_JSON);
-        builder.part("traces", json(request.traces())).contentType(MediaType.APPLICATION_JSON);
-        return analyzerClient.post("/explain", builder.build());
-    }
-
-    private MultipartBodyBuilder modelParts(Model model) {
-        MultipartBodyBuilder builder = new MultipartBodyBuilder();
-        builder.part("model_file", artifactReader.loadVerified(model))
-                .filename(model.getFileName())
-                .contentType(MediaType.APPLICATION_OCTET_STREAM);
-        return builder;
+        ModelArtifactReference artifact = requireRunnableModel(userId, modelId);
+        Map<String, String> fields = Map.of("data", json(request.instance()), "traces", json(request.traces()));
+        return slots.run(() -> modelRuntime.run("/explain", artifact, fields));
     }
 
     private String json(Object value) {
@@ -80,10 +66,10 @@ public class AnalyzerServiceImpl implements AnalyzerUseCase {
         }
     }
 
-    /** Executing a model, whether to predict or to explain, requires permission to run predictions. */
-    private Model requireRunnableModel(Long userId, Long modelId) {
+    /** Explaining a model executes it, which requires permission to run predictions. */
+    private ModelArtifactReference requireRunnableModel(Long userId, Long modelId) {
         Long organizationId = authorizationService.requireCurrent(userId, PermissionKey.RUN_PREDICTIONS).getId();
-        return modelRepository.findByIdAndOrganizationId(modelId, organizationId)
+        return modelRepository.findArtifactReference(modelId, organizationId)
                 .orElseThrow(() -> new ModelDoesNotExistsException(modelId, userLookupService.requireById(userId).getUsername()));
     }
 }

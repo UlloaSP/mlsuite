@@ -16,9 +16,9 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.schema.domain.model.SnapshotModel;
 
 /**
- * Whether a snapshot may be public. Anyone can run a public bookmark, and every run ships each
- * bound artifact to the runtime, so each one has to fit under a size ceiling. Publishing, moving
- * a public bookmark, and public execution all ask here.
+ * Whether a snapshot may be public. Anyone can run a public bookmark, and the runtime must load
+ * each bound artifact, so each one has to fit under a size ceiling. Publishing, moving a public
+ * bookmark, and public execution all ask here.
  */
 @Service
 public class BookmarkPublishability {

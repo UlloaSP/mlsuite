@@ -7,24 +7,21 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
+import dev.ulloasp.mlsuite.model.adapter.out.analyzer.ModelRuntimeClient;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
-import dev.ulloasp.mlsuite.model.domain.model.Model;
-import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
+import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
 import lombok.RequiredArgsConstructor;
 
 /**
- * The runtime calls of runs made from outside the workspace: one model's verified artifact and
- * one record, with no database connection held while the runtime works. {@code caller} names
+ * The runtime calls of runs made from outside the workspace: one model, named by its artifact,
+ * and one record, with no database connection held while the runtime works. {@code caller} names
  * the run in the server log, the only place the runtime's failures are kept in full.
  */
 @Component
@@ -34,8 +31,7 @@ public class PublicModelRuntime {
     private static final Logger log = LoggerFactory.getLogger(PublicModelRuntime.class);
 
     private final ModelRepository modelRepository;
-    private final ModelArtifactContentReader artifactReader;
-    private final AnalyzerClient analyzerClient;
+    private final ModelRuntimeClient modelRuntime;
     private final ObjectMapper objectMapper;
 
     /**
@@ -46,7 +42,7 @@ public class PublicModelRuntime {
     public Map<String, Object> predict(String caller, Long modelId, Map<String, Object> input) {
         try {
             Map<String, Object> answer = new LinkedHashMap<>();
-            analyzerClient.post("/predict", parts(modelId, input).build())
+            modelRuntime.run("/predict", artifact(modelId), Map.of("data", json(input)))
                     .forEach((key, value) -> answer.put(String.valueOf(key), value));
             return answer;
         } catch (AnalyzerServiceException ex) {
@@ -65,9 +61,8 @@ public class PublicModelRuntime {
      */
     public List<?> explain(String caller, Long modelId, Map<String, Object> input) {
         try {
-            MultipartBodyBuilder parts = parts(modelId, input);
-            parts.part("traces", "[]").contentType(MediaType.APPLICATION_JSON);
-            return analyzerClient.post("/explain", parts.build()).get("reports") instanceof List<?> reports
+            Map<String, String> fields = Map.of("data", json(input), "traces", "[]");
+            return modelRuntime.run("/explain", artifact(modelId), fields).get("reports") instanceof List<?> reports
                     ? reports
                     : List.of();
         } catch (JsonProcessingException | RuntimeException ex) {
@@ -76,14 +71,12 @@ public class PublicModelRuntime {
         }
     }
 
-    private MultipartBodyBuilder parts(Long modelId, Map<String, Object> input) throws JsonProcessingException {
-        Model model = modelRepository.findById(modelId).orElseThrow();
-        MultipartBodyBuilder parts = new MultipartBodyBuilder();
-        parts.part("model_file", artifactReader.loadVerified(model))
-                .filename(model.getFileName())
-                .contentType(MediaType.APPLICATION_OCTET_STREAM);
-        parts.part("data", objectMapper.writeValueAsString(input)).contentType(MediaType.APPLICATION_JSON);
-        return parts;
+    private ModelArtifactReference artifact(Long modelId) {
+        return modelRepository.findArtifactReference(modelId).orElseThrow();
+    }
+
+    private String json(Map<String, Object> input) throws JsonProcessingException {
+        return objectMapper.writeValueAsString(input);
     }
 
     static ResponseStatusException failed() {

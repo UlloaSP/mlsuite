@@ -82,7 +82,9 @@ import jakarta.persistence.EntityManager;
         "storage.auto-create-bucket=false",
         "storage.deletion.enabled=false",
         "mlsuite.public-prediction.max-model-size-mb=1",
-        "mlsuite.public-prediction.max-concurrent=1"
+        "mlsuite.public-prediction.max-concurrent=1",
+        "mlsuite.workspace-prediction.max-concurrent=1",
+        "spring.jpa.properties.hibernate.session_factory.statement_inspector=dev.ulloasp.mlsuite.model.RecordedSql"
 })
 @AutoConfigureMockMvc
 @Testcontainers(disabledWithoutDocker = true)
@@ -114,6 +116,8 @@ public abstract class PublicPredictionFixture {
     protected static final long MB = 1024L * 1024L;
     protected static final byte[] FOREST_BYTES = "forest-artifact".getBytes();
     static final byte[] NET_BYTES = "net-artifact".getBytes();
+    protected static final String FOREST_SHA256 = ArtifactHash.sha256(FOREST_BYTES);
+    static final String NET_SHA256 = ArtifactHash.sha256(NET_BYTES);
     protected static final Map<String, Object> CLASSIFIER = Map.of("kind", "classifier", "label", "Predicted class",
             "mapping", List.of("low", "high"), "probabilities", List.of(List.of(0.2, 0.8)));
     /** The classifier's answer as a run keeps it: the instance's own row, its labels and its class. */
@@ -183,7 +187,7 @@ public abstract class PublicPredictionFixture {
             entityManager.persist(bookmark);
         });
         when(analyzer.post(eq("/predict"), any())).thenAnswer(call -> Map.of("reports",
-                fileName(call.getArgument(1)).startsWith("net") ? List.of(CLASSIFIER, REGRESSOR) : List.of(CLASSIFIER)));
+                NET_SHA256.equals(artifact(call.getArgument(1))) ? List.of(CLASSIFIER, REGRESSOR) : List.of(CLASSIFIER)));
     }
 
     private Model model(User owner, String name, String fileName, byte[] bytes) {
@@ -251,8 +255,9 @@ public abstract class PublicPredictionFixture {
         return entityManager.createQuery("select count(x) from " + entity + " x", Long.class).getSingleResult();
     }
 
-    protected static String fileName(MultiValueMap<String, HttpEntity<?>> parts) {
-        return parts.getFirst("model_file").getHeaders().getContentDisposition().getFilename();
+    /** The artifact a runtime call names: its SHA-256, sent without the artifact while the runtime holds it. */
+    protected static String artifact(MultiValueMap<String, HttpEntity<?>> parts) {
+        return (String) parts.getFirst("artifact_sha256").getBody();
     }
 
     protected static String data(MultiValueMap<String, HttpEntity<?>> parts) {

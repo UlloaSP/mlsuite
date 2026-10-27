@@ -4,7 +4,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.restclient.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.client.BufferingClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -32,14 +31,7 @@ public class MlsuiteApplication {
         requestFactory.setConnectTimeout(5000);
         requestFactory.setReadTimeout(10000);
 
-        RestTemplate rt = builder
-                .requestFactory(() -> new BufferingClientHttpRequestFactory(requestFactory))
-                .build();
-
-        rt.getInterceptors().add((req, body, ex) -> {
-            return ex.execute(req, body);
-        });
-
-        return rt;
+        // Streamed rather than buffered, so an artifact sent to the runtime is not copied again.
+        return builder.requestFactory(() -> requestFactory).build();
     }
 }

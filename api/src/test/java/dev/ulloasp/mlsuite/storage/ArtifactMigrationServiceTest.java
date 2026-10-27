@@ -54,6 +54,7 @@ class ArtifactMigrationServiceTest {
         when(queue.claim(anyInt(), anyLong(), anyString()))
                 .thenReturn(Optional.of(new ArtifactMigrationWorkItem(7L, "test-worker")), Optional.empty());
         when(models.findById(7L)).thenReturn(Optional.of(model));
+        when(models.findModelFile(7L)).thenReturn(Optional.of(model.getModelFile()));
 
         ArtifactMigrationReport report = service.migrate(properties);
 
@@ -68,6 +69,7 @@ class ArtifactMigrationServiceTest {
         when(queue.claim(anyInt(), anyLong(), anyString()))
                 .thenReturn(Optional.of(new ArtifactMigrationWorkItem(7L, "test-worker")), Optional.empty());
         when(models.findById(7L)).thenReturn(Optional.of(model), Optional.of(claimed));
+        when(models.findModelFile(7L)).thenReturn(Optional.of(model.getModelFile()));
         when(writer.attachExisting(model, model.getModelFile())).thenAnswer(invocation -> {
             model.setStorageBucket("models");
             model.setStorageObjectKey("content-addressed-key");
@@ -191,6 +193,7 @@ class ArtifactMigrationServiceTest {
         when(queue.claim(anyInt(), anyLong(), anyString()))
                 .thenReturn(Optional.of(new ArtifactMigrationWorkItem(7L, "test-worker")), Optional.empty());
         when(models.findById(7L)).thenReturn(Optional.of(model));
+        when(models.findModelFile(7L)).thenReturn(Optional.of(model.getModelFile()));
         org.mockito.Mockito.doThrow(new ObjectStorageException("down"))
                 .when(writer).storeAndAttach(any(), any(), any());
 
