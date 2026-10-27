@@ -80,7 +80,8 @@ import jakarta.persistence.EntityManager;
         "storage.deletion.enabled=false",
         "mlsuite.public-prediction.max-model-size-mb=1",
         "mlsuite.public-prediction.max-concurrent=1",
-        "mlsuite.workspace-prediction.max-concurrent=1"
+        "mlsuite.workspace-prediction.max-concurrent=1",
+        "spring.jpa.properties.hibernate.session_factory.statement_inspector=dev.ulloasp.mlsuite.model.RecordedSql"
 })
 @AutoConfigureMockMvc
 @Testcontainers(disabledWithoutDocker = true)

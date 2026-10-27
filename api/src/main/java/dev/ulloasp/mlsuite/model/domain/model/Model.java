@@ -16,10 +16,12 @@ import org.hibernate.type.SqlTypes;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.user.domain.model.User;
+import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -85,6 +87,12 @@ public class Model {
     @Column(name = "file_name", nullable = false, length = 255)
     private String fileName;
 
+    /**
+     * The inline copy of the artifact. Loaded only when read inside a session, so a read of models
+     * never carries their artifacts; this needs the build-time enhancement in pom.xml. Outside a
+     * session read it with ModelRepository.findModelFile.
+     */
+    @Basic(fetch = FetchType.LAZY)
     @JdbcTypeCode(SqlTypes.VARBINARY)
     @Column(name = "model_file", nullable = false)
     private byte[] modelFile;
