@@ -18,9 +18,6 @@ export const protectedPages: RouteObject[] = [
   page("notifications", () =>
     import("@/features/workspace/pages/notifications-page").then((m) => m.NotificationsPage),
   ),
-  page("invite/:token", () =>
-    import("@/features/workspace/pages/invitation-accept-page").then((m) => m.InvitationAcceptPage),
-  ),
   page("workspace/organizations/:organizationId", () =>
     import("@/features/workspace/pages/organization-admin-page").then(
       (m) => m.OrganizationAdminPage,

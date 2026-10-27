@@ -39,6 +39,7 @@ public class PublicPredictionService implements PublicPredictionUseCase {
     private final PublicModelRuntime runtime;
 
     /**
+     * A run first takes its caller's place in the public share's queue, before any database work.
      * A run is counted only after the bookmark and its values were accepted, so a missing
      * bookmark or a refused body costs the caller nothing, and before the runtime is asked, so
      * requests sent together cannot pass the limit. The caller gets the run back when the server
@@ -47,19 +48,22 @@ public class PublicPredictionService implements PublicPredictionUseCase {
      */
     @Override
     public PublicRunOutcome run(String publicId, PublicPredictionRequest request, PublicCaller caller) {
-        PublicPredictionPlan plan = publicBookmarks.planPrediction(publicId, request);
-        quota.admit(caller, publicId);
-        try {
-            Map<Long, Map<String, Object>> answers = perform(plan);
-            PublicRunService.Recorded recorded = runs.record(plan, answers, caller);
-            return new PublicRunOutcome(
-                    new PublicPredictionDto(recorded.run(), quota.status(caller, publicId)),
-                    recorded.issued() ? recorded.visitorId() : null);
-        } catch (RuntimeException ex) {
-            if (!(ex instanceof ResponseStatusException answer && answer.getStatusCode().is4xxClientError())) {
-                quota.giveBack(caller, publicId);
+        try (RuntimeSlots.Admission admission = slots.admit(caller.key())) {
+            PublicPredictionPlan plan = publicBookmarks.planPrediction(publicId, request);
+            quota.admit(caller, publicId);
+            try {
+                Map<Long, Map<String, Object>> answers = admission.run(() -> perform(plan));
+                PublicRunService.Recorded recorded = runs.record(plan, answers, caller);
+                runs.markSeen(recorded);
+                return new PublicRunOutcome(
+                        new PublicPredictionDto(recorded.run(), quota.status(caller, publicId)),
+                        recorded.issued() ? recorded.visitorId() : null);
+            } catch (RuntimeException ex) {
+                if (!(ex instanceof ResponseStatusException answer && answer.getStatusCode().is4xxClientError())) {
+                    quota.giveBack(caller, publicId);
+                }
+                throw ex;
             }
-            throw ex;
         }
     }
 
@@ -70,21 +74,18 @@ public class PublicPredictionService implements PublicPredictionUseCase {
     }
 
     private Map<Long, Map<String, Object>> perform(PublicPredictionPlan plan) {
-        // Admission follows the cheap checks and precedes the first artifact read.
-        return slots.run(() -> {
-            String caller = "Public bookmark " + plan.publicId();
-            Map<Long, Map<String, Object>> answers = new LinkedHashMap<>();
-            for (ModelCall call : plan.calls()) {
-                Map<String, Object> answer = predict(caller, call);
-                // A visitor's browser asks for no explanation, as a workspace form does: the same run produces it.
-                if (plan.reports().stream().anyMatch(route -> route.modelId().equals(call.modelId()) && !route.assessed())) {
-                    answer.put("reports", withExplanation(answer.get("reports"),
-                            runtime.explain(caller, call.modelId(), call.input())));
-                }
-                answers.put(call.modelId(), answer);
+        String caller = "Public bookmark " + plan.publicId();
+        Map<Long, Map<String, Object>> answers = new LinkedHashMap<>();
+        for (ModelCall call : plan.calls()) {
+            Map<String, Object> answer = predict(caller, call);
+            // A visitor's browser asks for no explanation, as a workspace form does: the same run produces it.
+            if (plan.reports().stream().anyMatch(route -> route.modelId().equals(call.modelId()) && !route.assessed())) {
+                answer.put("reports", withExplanation(answer.get("reports"),
+                        runtime.explain(caller, call.modelId(), call.input())));
             }
-            return answers;
-        });
+            answers.put(call.modelId(), answer);
+        }
+        return answers;
     }
 
     private Map<String, Object> predict(String caller, ModelCall call) {

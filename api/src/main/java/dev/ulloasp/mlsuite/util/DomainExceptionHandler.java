@@ -26,6 +26,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
@@ -39,7 +40,9 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundExc
 import dev.ulloasp.mlsuite.admin.infrastructure.OpsAgentException;
 import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicRunLimitDto;
+import dev.ulloasp.mlsuite.schema.application.dto.SchemaMappingErrorDto;
 import dev.ulloasp.mlsuite.schema.domain.exception.PublicRunLimitException;
+import dev.ulloasp.mlsuite.schema.domain.exception.SchemaMappingException;
 import dev.ulloasp.mlsuite.security.auth.AuthAttemptLimitException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
@@ -126,7 +129,24 @@ public class DomainExceptionHandler {
                 .body(ErrorDto.of(HttpStatus.TOO_MANY_REQUESTS.value(), ex.getMessage(), req.getRequestURI()));
     }
 
+    // ---- 413 CONTENT TOO LARGE ----
+
+    /** An upload above the multipart limit (a model bundle above 512 MB) is refused before it is read. */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorDto> handleUploadTooLarge(MaxUploadSizeExceededException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE)
+                .body(ErrorDto.of(HttpStatus.CONTENT_TOO_LARGE.value(),
+                        "The file is too large: a model bundle can be at most 512 MB.", req.getRequestURI()));
+    }
+
     // ---- 400 BAD REQUEST ----
+
+    /** A schema whose mappings name nothing its models have, with each such mapping located. */
+    @ExceptionHandler(SchemaMappingException.class)
+    public ResponseEntity<SchemaMappingErrorDto> handleSchemaMapping(SchemaMappingException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(SchemaMappingErrorDto.of(ex, HttpStatus.BAD_REQUEST.value(), req.getRequestURI()));
+    }
 
     @ExceptionHandler({
             IllegalArgumentException.class
@@ -174,6 +194,7 @@ public class DomainExceptionHandler {
                 ? ex.getStatusCode().toString()
                 : ex.getReason();
         return ResponseEntity.status(ex.getStatusCode())
+                .headers(ex.getHeaders())
                 .body(ErrorDto.of(ex.getStatusCode().value(), message, req.getRequestURI()));
     }
 

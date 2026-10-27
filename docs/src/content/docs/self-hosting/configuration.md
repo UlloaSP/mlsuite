@@ -73,19 +73,23 @@ equivalent roles yourself; the migration role must be able to install `pg_trgm`.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `WORKSPACE_PREDICTION_MAX_CONCURRENT` | `4` | Workspace predictions and explanations at once, apart from public and client runs; more receive `503`. |
-| `RUNTIME_MAX_CONCURRENT` | `8` | Threads the runtime runs models on. Keep it at least the sum of the workspace, public and client shares, or admitted runs queue in the runtime. |
-| `RUNTIME_BUNDLE_CACHE_MB` | `512` | Total artifact size of the verified bundles the runtime keeps loaded; the newest is kept even when larger. A run sends its artifact only when the runtime does not hold it. |
+| `WORKSPACE_PREDICTION_MAX_CONCURRENT` | `4` | Workspace predictions, explanations and artifact inspections at once, apart from public and client runs; more wait their turn. |
+| `RUNTIME_QUEUE_MAX_WAITING` | `1000` | Runs that may wait in each share (workspace, public, client) for their turn, in arrival order. A run that finds every place taken receives `503` with `Retry-After`. |
+| `RUNTIME_QUEUE_MAX_PER_CALLER` | `16` | Places, running or waiting, one caller may hold in a share: a member, a public page's network or account, an API client. More receive `503` with `Retry-After`. At least 1. |
+| `RUNTIME_QUEUE_MAX_WAIT_MS` | `5000` | How long a run may wait for its turn before it receives `503` with `Retry-After`. |
+| `RUNTIME_WORKERS` | `2` | Processes the runtime serves in, about one per core it may use; each holds the bundles it loaded, so size them by memory too. |
+| `RUNTIME_MAX_CONCURRENT` | `1` | Threads each worker runs predictions and explanations on. One is fastest: threads of one process contend for its interpreter. Bundles load on a thread of their own. |
+| `RUNTIME_BUNDLE_CACHE_MB` | `512` | Total artifact size of the verified bundles each worker keeps loaded, and of the verified artifacts kept on disk for every worker; the newest is kept even when larger. A run sends its artifact only when no worker holds it. |
 
 ## Public runs and the client API
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `PUBLIC_PREDICTION_MAX_MODEL_SIZE_MB` | `50` | Largest model a public bookmark or an API client may run. |
-| `PUBLIC_PREDICTION_MAX_CONCURRENT` | `2` | Public runs at once; more receive `503`. |
+| `PUBLIC_PREDICTION_MAX_CONCURRENT` | `2` | Public runs at once; more wait their turn (see `RUNTIME_QUEUE_*`). |
 | `PUBLIC_PREDICTION_ANONYMOUS_RUNS_PER_DAY` | `50` | Runs of one bookmark per network address without a session in 24 hours (an IPv6 address counts as its /64). |
 | `PUBLIC_PREDICTION_SIGNED_IN_RUNS_PER_DAY` | `500` | The same, per signed-in account. |
-| `API_ACCESS_MAX_CONCURRENT` | `2` | API client runs at once, apart from public runs. |
+| `API_ACCESS_MAX_CONCURRENT` | `2` | API client runs at once, apart from public runs; more wait their turn (see `RUNTIME_QUEUE_*`). |
 | `API_ACCESS_REQUESTS_PER_MINUTE` | `60` | Calls one client may make per clock minute. At least 1. |
 | `API_ACCESS_MONTHLY_CALLS` | `10000` | Succeeded calls an organization's clients may make per UTC month, unless a superadmin sets another limit. |
 | `API_ACCESS_REQUEST_RETENTION_DAYS` | `90` | How long the request log is kept. At least 31. |

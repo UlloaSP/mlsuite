@@ -8,11 +8,14 @@ import { getBackendBaseUrl } from "@/shared/config/runtime";
 
 export class HttpError extends Error {
   readonly dto: ErrorDto;
+  /** How long the server asked the client to wait before retrying, when it said (Retry-After). */
+  readonly retryAfterSeconds: number | undefined;
 
-  constructor(dto: ErrorDto) {
+  constructor(dto: ErrorDto, retryAfterSeconds?: number) {
     super(dto.message);
     this.name = "HttpError";
     this.dto = dto;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 
   get status() {
@@ -36,17 +39,40 @@ export const json = (method: string, body?: unknown): RequestInit => ({
   body: body === undefined ? undefined : JSON.stringify(body),
 });
 
-const buildInit = (init?: RequestInit): RequestInit => ({
-  credentials: "include",
-  ...init,
-  headers: new Headers(init?.headers),
-});
+/** Names the organization a request acts in (the API's WorkspaceAccessService.ORGANIZATION_HEADER). */
+export const ORGANIZATION_HEADER = "X-MLSuite-Organization";
+
+let tabOrganizationId: number | null = null;
+
+/**
+ * Sets the organization this tab works in, which every request names from then on, so a tab
+ * keeps reading and writing its own organization whatever another tab selects. Null names none,
+ * and the API acts in the organization the account last selected.
+ */
+export const actInOrganization = (organizationId: number | null) => {
+  tabOrganizationId = organizationId;
+};
+
+export const tabOrganization = () => tabOrganizationId;
+
+const buildInit = (init?: RequestInit): RequestInit => {
+  const headers = new Headers(init?.headers);
+  if (tabOrganizationId !== null && !headers.has(ORGANIZATION_HEADER))
+    headers.set(ORGANIZATION_HEADER, String(tabOrganizationId));
+  return { credentials: "include", ...init, headers };
+};
 /** An API path as a browser can fetch it, for `src` and `href` attributes. */
 export const apiUrl = (path: string) => new URL(path, getBackendBaseUrl()).toString();
 const toUrl = apiUrl;
 const isJson = (response: Response) =>
   response.headers.get("content-type")?.includes("application/json") ?? false;
 const nowIso = () => new Date().toISOString();
+
+/** Retry-After in whole seconds; the date form is not sent by this API and reads as unsaid. */
+const retryAfter = (response: Response) => {
+  const value = response.headers.get("Retry-After");
+  return value !== null && /^\d+$/.test(value.trim()) ? Number(value) : undefined;
+};
 
 function responseError(response: Response, path: string, message: string): ErrorDto {
   return {
@@ -74,8 +100,12 @@ export async function appFetch<T = unknown>(path: string, init?: RequestInit): P
       if (isJson(response)) return (await response.json()) as T;
       return undefined as T;
     }
-    if (isJson(response)) throw new HttpError((await response.json()) as ErrorDto);
-    throw new HttpError(responseError(response, path, response.statusText || "Request error"));
+    if (isJson(response))
+      throw new HttpError((await response.json()) as ErrorDto, retryAfter(response));
+    throw new HttpError(
+      responseError(response, path, response.statusText || "Request error"),
+      retryAfter(response),
+    );
   } catch (error) {
     if (isHttpError(error)) throw error;
     if (init?.signal?.aborted) throw error;

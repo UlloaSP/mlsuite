@@ -2,10 +2,6 @@ package dev.ulloasp.mlsuite;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.restclient.RestTemplateBuilder;
-import org.springframework.context.annotation.Bean;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
@@ -23,15 +19,5 @@ public class MlsuiteApplication {
             return;
         }
         SpringApplication.run(MlsuiteApplication.class, args);
-    }
-
-    @Bean
-    RestTemplate restTemplate(RestTemplateBuilder builder) {
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(5000);
-        requestFactory.setReadTimeout(10000);
-
-        // Streamed rather than buffered, so an artifact sent to the runtime is not copied again.
-        return builder.requestFactory(() -> requestFactory).build();
     }
 }

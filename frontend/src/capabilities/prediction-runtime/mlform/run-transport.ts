@@ -7,6 +7,7 @@ import type { ReportConfig, Transport } from "mlform/runtime";
 import type { ReportResult } from "mlform/schema";
 import { createFanoutTransport } from "mlform/transport";
 import { appFetch, json } from "@/shared/api/http";
+import { retryWhileBusy } from "@/shared/api/busy-retry";
 import type { WorkspacePredictionDto, WorkspacePredictionRequest } from "@/shared/api/openapi.gen";
 import { getBackendBaseUrl } from "@/shared/config/runtime";
 import { applySchemaRunInputMapping } from "@/capabilities/prediction-runtime/mlform/model-input-mapping";
@@ -17,7 +18,7 @@ import {
   isRecord,
 } from "@/capabilities/prediction-runtime/mlform/shared";
 
-type SchemaRunBinding = {
+export type SchemaRunBinding = {
   modelId: number;
   modelName?: string;
   pluginPolicy?: JsonRecord | null;
@@ -31,22 +32,28 @@ export type SchemaRunTarget = {
 
 /**
  * The server runs the model and answers with the result as a saved run will store it, sealed;
- * a record the model refuses comes back as a failed result. Any other refusal fails the run.
+ * a record the model refuses comes back as a failed result. A run the server's queue could not
+ * take is sent again as its Retry-After asks; any other refusal fails the run.
  */
 const runBinding = (
   target: SchemaRunTarget,
   binding: SchemaRunBinding,
   modelValues: JsonRecord,
   fields: readonly PredictionPayloadField[],
+  signal?: AbortSignal,
 ): Promise<WorkspacePredictionDto> => {
   const request: WorkspacePredictionRequest = {
     schemaVersionId: target.schemaVersionId,
     modelId: binding.modelId,
     modelInput: applySchemaRunInputMapping(modelValues, fields, binding),
   };
-  return appFetch<WorkspacePredictionDto>(
-    `/api/schema-bookmarks/${encodeURIComponent(target.bookmarkId)}/predictions`,
-    json("POST", request),
+  return retryWhileBusy(
+    () =>
+      appFetch<WorkspacePredictionDto>(
+        `/api/schema-bookmarks/${encodeURIComponent(target.bookmarkId)}/predictions`,
+        { ...json("POST", request), signal },
+      ),
+    signal,
   );
 };
 
@@ -99,7 +106,7 @@ export const createSchemaRunTransport = (
     targets: bindings,
     failurePolicy: "fail-fast",
     submit: (binding, request) =>
-      runBinding(target, binding, requestRecord(request.modelValues), fields),
+      runBinding(target, binding, requestRecord(request.modelValues), fields, request.signal),
     merge: (outcomes, request) => {
       const reports = request.reports as readonly ReportConfig[];
       const canonical = requestRecord(request.modelValues);

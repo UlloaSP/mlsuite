@@ -11,9 +11,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Set;
-
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import org.junit.jupiter.api.Test;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
@@ -33,15 +30,9 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionR
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.schema.adapter.in.web.PredictionRunController;
-import dev.ulloasp.mlsuite.schema.application.dto.InferenceTableDto;
-import dev.ulloasp.mlsuite.schema.application.dto.PredictionResultDto;
-import dev.ulloasp.mlsuite.schema.application.dto.PredictionResultFeedbackDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunCatalogItemDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.WorkspacePredictionUseCase;
 import dev.ulloasp.mlsuite.schema.application.service.PredictionRunServiceImpl;
-import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
-import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
-import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackType;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
@@ -62,76 +53,6 @@ class PredictionRunCatalogTest {
     @Mock private WorkspaceAuthorizationService authorization;
     @InjectMocks private PredictionRunServiceImpl service;
     private CurrentUser user;
-
-    @Test
-    void listsOnlyCurrentOrganizationRunsNewestFirst() {
-        Organization organization = organization();
-        PredictionRun run = new PredictionRun();
-        lenient().when(users.requireById(7L)).thenReturn(new User());
-        lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization);
-        when(runs.findByOrganizationIdOrderByCreatedAtDesc(41L)).thenReturn(List.of(run));
-
-        assertEquals(List.of(run), service.listOrganizationRuns(7L));
-        verify(authorization).requireCurrent(7L, PermissionKey.VIEW_MODELS);
-    }
-
-    @Test
-    void rejectsCatalogWithoutModelViewPermission() {
-        Organization organization = organization();
-        lenient().when(users.requireById(7L)).thenReturn(new User());
-        lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization);
-        when(authorization.requireCurrent(7L, PermissionKey.VIEW_MODELS)).thenThrow(new OrganizationAccessDeniedException(41L));
-
-        assertThrows(OrganizationAccessDeniedException.class, () -> service.listOrganizationRuns(7L));
-    }
-
-    @Test
-    void tableJoinsRunsWithResultsFeedbackAndEachVersionOnce() {
-        allowRead();
-        PredictionRun first = tableRun(12L);
-        PredictionRun second = tableRun(13L);
-        PredictionResult result = SchemaFlowFixtures.predictionResult();
-        PredictionResultFeedback answer = new PredictionResultFeedback(result, SchemaFlowFixtures.user(),
-                PredictionResultFeedbackType.OUTPUT, 0, JsonNodeFactory.instance.textNode("Yes"));
-        when(runs.findByOrganizationIdOrderByCreatedAtDesc(41L)).thenReturn(List.of(first, second));
-        when(results.findByOrganizationId(41L)).thenReturn(List.of(result));
-        when(feedback.findByOrganizationId(41L)).thenReturn(List.of(answer));
-        when(bindings.findBySchemaVersionIdIn(Set.of(9L)))
-                .thenReturn(List.of(SchemaFlowFixtures.binding(first.getSchemaVersion(), 11L)));
-
-        InferenceTableDto table = controller().table(user).getBody();
-
-        assertEquals(List.of(12L, 13L), table.runs().stream().map(run -> run.summary().id()).toList());
-        assertEquals(52, table.runs().getFirst().inputData().get("age"));
-        assertEquals(List.of(77L), table.results().stream().map(PredictionResultDto::id).toList());
-        assertEquals(List.of(77L), table.feedback().stream().map(PredictionResultFeedbackDto::resultId).toList());
-        assertEquals(1, table.versions().size());
-        assertEquals(9L, table.versions().getFirst().id());
-        assertEquals(11L, table.versions().getFirst().bindings().getFirst().modelId());
-        verify(authorization).requireCurrent(7L, PermissionKey.VIEW_MODELS);
-    }
-
-    @Test
-    void emptyOrganizationTableSkipsVersionBindings() {
-        allowRead();
-        when(runs.findByOrganizationIdOrderByCreatedAtDesc(41L)).thenReturn(List.of());
-
-        InferenceTableDto table = service.getOrganizationInferenceTable(7L);
-
-        assertEquals(List.of(), table.runs());
-        assertEquals(List.of(), table.versions());
-        verify(bindings, never()).findBySchemaVersionIdIn(any());
-    }
-
-    @Test
-    void tableRejectsUserWithoutModelViewPermission() {
-        allowRead();
-        when(authorization.requireCurrent(7L, PermissionKey.VIEW_MODELS)).thenThrow(new OrganizationAccessDeniedException(41L));
-
-        assertThrows(OrganizationAccessDeniedException.class, () -> service.getOrganizationInferenceTable(7L));
-        verify(runs, never()).findByOrganizationIdOrderByCreatedAtDesc(any());
-        verify(feedback, never()).findByOrganizationId(any());
-    }
 
     @Test
     void deletesOrganizationInferenceAndItsDependentResults() {
@@ -203,13 +124,6 @@ class PredictionRunCatalogTest {
     private PredictionRunController controller() {
         user = new CurrentUser(7L, "alice", SystemRole.USER);
         return new PredictionRunController(service, mock(WorkspacePredictionUseCase.class), results);
-    }
-
-    private PredictionRun tableRun(Long id) {
-        PredictionRun run = new PredictionRun(SchemaFlowFixtures.bookmark(), SchemaFlowFixtures.version(), "case-" + id,
-                java.util.Map.of("age", 52), PredictionRunStatus.SUCCESS);
-        run.setId(id);
-        return run;
     }
 
     private void allowRead() {

@@ -16,6 +16,7 @@ import dev.ulloasp.mlsuite.apiaccess.domain.exception.ApiProblem;
 import dev.ulloasp.mlsuite.apiaccess.domain.model.ApiCaller;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.schema.application.service.PublicModelRuntime;
+import dev.ulloasp.mlsuite.schema.application.service.RuntimeSlots;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -51,24 +52,26 @@ public class ApiPredictionService implements ApiPredictionUseCase {
                 throw new ApiProblem(ApiErrorCode.CLIENT_SUSPENDED,
                         "The platform suspended this client. Its organization can see why.");
             }
-            limits.admit(caller);
-            target = runs.target(caller, bookmarkId);
-            ApiRunPlan plan = runs.plan(caller, target, request.features());
-            Map<String, Object> answer = slots.run(() -> perform(plan));
-            // A reply that gives no outputs is a failed run: it is neither answered nor kept.
-            ApiOutputs.Read read = ApiOutputs.of(answer);
-            if (read.malformed() != null) {
-                log.error("API client {}: the runtime's reply for model {} is malformed: {}",
-                        caller.clientId(), plan.modelId(), read.malformed());
-                throw failed();
+            try (RuntimeSlots.Admission admission = slots.admit(caller.clientId())) {
+                limits.admit(caller);
+                target = runs.target(caller, bookmarkId);
+                ApiRunPlan plan = runs.plan(caller, target, request.features());
+                Map<String, Object> answer = admission.run(() -> perform(plan));
+                // A reply that gives no outputs is a failed run: it is neither answered nor kept.
+                ApiOutputs.Read read = ApiOutputs.of(answer);
+                if (read.malformed() != null) {
+                    log.error("API client {}: the runtime's reply for model {} is malformed: {}",
+                            caller.clientId(), plan.modelId(), read.malformed());
+                    throw failed();
+                }
+                Long runId = runs.record(plan, answer);
+                logCall(requestId, caller, target, runId, 200, null, started);
+                return new ApiPredictionDto(requestId,
+                        new ApiPredictionDto.ApiPredictionBookmark(target.apiId(), target.name()),
+                        new ApiPredictionDto.ApiPredictionSnapshot(plan.version(), plan.versionName()),
+                        new ApiPredictionDto.ApiPredictionModel(plan.modelName(), plan.modelSha256()),
+                        read.outputs());
             }
-            Long runId = runs.record(plan, answer);
-            logCall(requestId, caller, target, runId, 200, null, started);
-            return new ApiPredictionDto(requestId,
-                    new ApiPredictionDto.ApiPredictionBookmark(target.apiId(), target.name()),
-                    new ApiPredictionDto.ApiPredictionSnapshot(plan.version(), plan.versionName()),
-                    new ApiPredictionDto.ApiPredictionModel(plan.modelName(), plan.modelSha256()),
-                    read.outputs());
         } catch (ApiProblem problem) {
             logCall(requestId, caller, target, null, problem.code().status().value(), problem.code().code(), started);
             throw problem.forRequest(requestId);

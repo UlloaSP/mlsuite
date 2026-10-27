@@ -95,7 +95,6 @@ class ActiveMembershipRuleTest {
                 organization,
                 user.getEmail(),
                 viewer,
-                "token",
                 user(8L),
                 OffsetDateTime.now().plusDays(1));
         OrganizationMembership inactive = membership(organization, user, inactiveStatus);
@@ -114,10 +113,10 @@ class ActiveMembershipRuleTest {
                 mock(RoleDefinitionRepository.class),
                 mock(UserRepository.class));
         when(users.requireById(7L)).thenReturn(user);
-        when(invitations.findByToken("token")).thenReturn(Optional.of(invitation));
+        when(invitations.findById(5L)).thenReturn(Optional.of(invitation));
         when(memberships.findByOrganizationIdAndUserId(41L, 7L)).thenReturn(Optional.of(inactive));
 
-        service.acceptInvitation(7L, "token");
+        service.acceptInvitation(7L, 5L);
 
         assertEquals(MembershipStatus.ACTIVE, inactive.getStatus());
         assertSame(viewer, inactive.getRoleDefinition());
@@ -138,7 +137,6 @@ class ActiveMembershipRuleTest {
                 organization,
                 user.getEmail(),
                 viewer,
-                "token",
                 user(8L),
                 OffsetDateTime.now().plusDays(1));
         OrganizationMembership active = membership(organization, user, MembershipStatus.ACTIVE);
@@ -157,10 +155,10 @@ class ActiveMembershipRuleTest {
                 mock(RoleDefinitionRepository.class),
                 mock(UserRepository.class));
         when(users.requireById(7L)).thenReturn(user);
-        when(invitations.findByToken("token")).thenReturn(Optional.of(invitation));
+        when(invitations.findById(5L)).thenReturn(Optional.of(invitation));
         when(memberships.findByOrganizationIdAndUserId(41L, 7L)).thenReturn(Optional.of(active));
 
-        service.acceptInvitation(7L, "token");
+        service.acceptInvitation(7L, 5L);
 
         assertSame(admin, active.getRoleDefinition());
         assertEquals(InvitationStatus.ACCEPTED, invitation.getStatus());

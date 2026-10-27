@@ -42,11 +42,20 @@ const mountView = (
 const explanationPath = (modelId: number) =>
   `/api/analyzer/explanations?modelId=${encodeURIComponent(modelId)}`;
 
+/** Names the submission a sandbox's answer belongs to; the sandbox only echoes it back. */
+const SUBMISSION = "mlsuiteSubmission";
+
 /**
  * A workspace run form drawn in the plugin sandbox. The sandbox submits the form's values; the
  * app asks the server to run them against the bookmark's snapshot through the run transport and
  * hands the sealed results back for the reports to draw. A report may ask for an explanation of
  * a model the form runs, and nothing else; such a payload is only shown, never saved.
+ *
+ * What a run keeps is what the app's own request answered, never what the sandbox reports back:
+ * the app numbers each submission in the answer it hands over, and when the sandbox says a run
+ * settled, the app takes that submission's values and sealed results from its own record. Only
+ * the latest submission can settle, so plugin code can neither alter a run's results nor give
+ * one run another's seals.
  */
 export const mountSandboxedSchemaRunForm = ({
   container,
@@ -67,6 +76,10 @@ export const mountSandboxedSchemaRunForm = ({
   onSubmitError?: (error: Error) => void;
   onRunningChange?: (running: boolean) => void;
 }): MountedSandboxedForm => {
+  let submissions = 0;
+  let latest: { submission: number; inputData: JsonRecord; raw: JsonRecord } | null = null;
+  const made = (raw: JsonRecord) =>
+    latest !== null && raw[SUBMISSION] === latest.submission ? latest : null;
   const sandbox = openPluginSandbox({
     container,
     title: "Prediction form",
@@ -74,6 +87,7 @@ export const mountSandboxedSchemaRunForm = ({
     className: "h-full",
     handlers: {
       async submit({ request, fields }) {
+        const submission = ++submissions;
         const transport = createSchemaRunTransport(
           target,
           bindings,
@@ -83,7 +97,13 @@ export const mountSandboxedSchemaRunForm = ({
           ...request,
           fields: [],
         } as unknown as SubmitRequest);
-        return isRecord(response) ? response : {};
+        const answered = isRecord(response) ? response : {};
+        const raw = isRecord(answered.raw) ? answered.raw : {};
+        // A later submission replaces this one, which then can no longer settle.
+        if (submission === submissions) {
+          latest = { submission, inputData: isRecord(raw.inputData) ? raw.inputData : {}, raw };
+        }
+        return { ...answered, raw: { ...raw, [SUBMISSION]: submission } };
       },
       async explain({ modelId, body }) {
         if (!bindings.some((binding) => binding.modelId === modelId))
@@ -101,11 +121,12 @@ export const mountSandboxedSchemaRunForm = ({
     },
     onEvent(event) {
       if (event.name === "running") onRunningChange?.(event.payload.running);
-      else if (event.name === "run-settled")
-        onSubmit(event.payload.inputData, event.payload.raw, event.payload.reportsPending);
-      else if (event.name === "run-updated")
-        onResultUpdate?.(event.payload.inputData, event.payload.raw, event.payload.reportsPending);
-      else if (event.name === "submit-error") onSubmitError?.(new Error(event.payload.message));
+      else if (event.name === "run-settled" || event.name === "run-updated") {
+        const run = made(event.payload.raw);
+        if (!run) return;
+        const report = event.name === "run-settled" ? onSubmit : onResultUpdate;
+        report?.(run.inputData, run.raw, event.payload.reportsPending);
+      } else if (event.name === "submit-error") onSubmitError?.(new Error(event.payload.message));
     },
   });
   mountView(

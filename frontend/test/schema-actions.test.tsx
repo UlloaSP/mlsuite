@@ -4,7 +4,7 @@ import { expect, test, vi } from "vite-plus/test";
 import { SchemaActionsMenu } from "@/features/schemas/components/SchemaActionsMenu";
 import { mount } from "./support/dom";
 
-test.each([false, true])("archive action respects archived=%s", async (archived) => {
+test.each([false, true])("archive and restore actions respect archived=%s", async (archived) => {
   const { host } = await mount(
     <SchemaActionsMenu archived={archived} canDelete canEdit onAction={vi.fn()} schemaName="QA" />,
   );
@@ -18,6 +18,7 @@ test.each([false, true])("archive action respects archived=%s", async (archived)
     (item) => item.textContent,
   );
   expect(labels.includes("Archive")).toBe(!archived);
+  expect(labels.includes("Restore")).toBe(archived);
   expect(labels).toContain("Delete");
   expect(labels).toContain("Duplicate");
 });

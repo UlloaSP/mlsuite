@@ -26,13 +26,3 @@ export interface CreateModelRequest {
   name: string;
   modelFile: File;
 }
-
-export interface ArtifactInspectionDto {
-  fileName: string;
-  type: "classifier" | "regressor";
-  specificType: string;
-  library: string;
-  features: string[];
-  featureSource: string;
-  schema: Record<string, unknown>;
-}

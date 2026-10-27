@@ -18,7 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.schema.adapter.in.web.PublicBookmarkController;
@@ -36,7 +35,7 @@ import dev.ulloasp.mlsuite.security.auth.SessionAccountCheck;
         "server.port=0",
         "cors.allow-origins=http://localhost:5173" })
 @Import(SecurityConfig.class)
-@MockitoBean(types = { PublicPredictionUseCase.class, PublicRunUseCase.class, RestTemplate.class,
+@MockitoBean(types = { PublicPredictionUseCase.class, PublicRunUseCase.class,
         UserDetailsService.class, SessionAccountCheck.class })
 class PublicBookmarkPreviewHttpTest {
 

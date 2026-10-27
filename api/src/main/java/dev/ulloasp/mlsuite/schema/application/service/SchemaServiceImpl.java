@@ -62,6 +62,17 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
         return schemaRepository.save(schema);
     }
 
+    /** Returns an archived schema to the active catalog, where it runs and may be published again. */
+    @Override
+    public Schema restoreSchema(Long userId, Long schemaId) {
+        User user = userLookupService.requireById(userId);
+        Organization organization = authorizationService.requireCurrent(userId, PermissionKey.EDIT_MODELS);
+        Schema schema = requireSchema(schemaId, organization.getId());
+        schema.setArchivedAt(null);
+        schema.setUpdatedBy(user);
+        return schemaRepository.save(schema);
+    }
+
     @Override
     public List<Schema> listSchemas(Long userId) {
         Long organizationId = authorizationService.requireCurrent(userId, PermissionKey.VIEW_MODELS).getId();

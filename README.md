@@ -379,17 +379,38 @@ matching it to the HTTP thread count.
 
 Runtime calls hold no database connection: a prediction or explanation resolves
 its model in short reads and waits for the runtime outside any transaction. Each
-kind of caller has its own share of the runtime, and a call that finds its share in
-use receives `503 Service Unavailable`: `WORKSPACE_PREDICTION_MAX_CONCURRENT`
-(default `4`) for workspace members, and the public and client shares below. A call
+kind of caller has its own share of the runtime: `WORKSPACE_PREDICTION_MAX_CONCURRENT`
+(default `4`) for workspace members' predictions, explanations and artifact
+inspections, and the public and client shares below. A call that finds its share in
+use waits its turn in arrival order. It takes its place in the queue before any
+database work, and receives `503 Service Unavailable` with `Retry-After` only when
+`RUNTIME_QUEUE_MAX_WAITING` calls (default `1000`) already wait in its share, when
+its caller (a member, a public page's network or account, an API client) already
+holds `RUNTIME_QUEUE_MAX_PER_CALLER` places in the share, running or waiting
+(default `16`), or when its turn does not come within `RUNTIME_QUEUE_MAX_WAIT_MS`
+(default `5000`). Once admitted, a prediction or explanation must be answered by the
+runtime within 10 seconds and an artifact inspection within 50, below the 60 seconds
+nginx waits for the API. The API keeps its connections to the runtime open for
+reuse, and serves requests on virtual threads, so calls waiting for the runtime do
+not delay unrelated requests. Bulk uploads run on the server as jobs through the
+same workspace share, 100 records at a time, as the member who started them; an
+upload holds at most `PREDICTION_JOBS_MAX_ROWS` records (default `10000`), and at
+most `PREDICTION_JOBS_MAX_OPEN_PER_MEMBER` uploads per member (default `2`) and
+`PREDICTION_JOBS_MAX_OPEN_PER_ORGANIZATION` per organization (default `4`) are
+queued or running at once. A call
 names its model's artifact by SHA-256; the API sends the artifact only when the
 runtime answers that it does not hold it, and the runtime checks the bytes against
-that hash. The runtime runs model work on at most `RUNTIME_MAX_CONCURRENT` threads
-(default `8`; keep it at least the sum of the three shares, or admitted runs queue
-there), so its health check and other requests stay answered while models run, and
-keeps verified bundles while their artifacts total at most
+that hash. The runtime serves in `RUNTIME_WORKERS` processes (default `2`; about
+one per core it may use), since one Python process runs model code on one core at
+a time. Each worker runs predictions and explanations on `RUNTIME_MAX_CONCURRENT`
+threads (default `1`, the fastest: more threads of one process only contend for
+it) and loads bundles on a thread of its own, so a slow upload never delays a
+prediction, and its health check stays answered while models run. A worker keeps
+the verified bundles it loaded while their artifacts total at most
 `RUNTIME_BUNDLE_CACHE_MB` (default `512`; the newest bundle is kept even when
-larger).
+larger), and keeps the verified bytes once on disk for every worker under the same
+bound, so the API sends an artifact once whichever worker it reaches. Size the
+workers by memory as well as cores: each holds its own bundles.
 
 Monitor `storageDeletionQueue` on `/actuator/info` and alert on any `failed` row
 or a `pending` count that grows continuously. Cleanup workers use database leases,
@@ -408,6 +429,11 @@ complete or fail work reclaimed by another instance.
   the session ends on its next request, which receives `401 Unauthorized`.
   Workspace roles and permissions are read on every request and apply at once
   without ending the session.
+- **Organization per request.** The app names its tab's organization on every
+  request in the `X-MLSuite-Organization` header, and the API checks the account's
+  membership in it each time (a superadmin may name any). A request that names none
+  acts in the organization the account last selected, which is also where a new tab
+  opens. Two tabs on two organizations therefore each read and write their own.
 - **Throttling.** One client network may fail to sign in `AUTH_MAX_LOGIN_FAILURES`
   times (default `10`) and attempt to register `AUTH_MAX_REGISTRATIONS` times
   (default `5`) in the 15 minutes after its first counted attempt. Past either
@@ -429,8 +455,10 @@ an account.
   the runtime must load the artifact of every model it runs. The same limit
   applies to API client runs.
 - **Concurrency.** `PUBLIC_PREDICTION_MAX_CONCURRENT` (default `2`) public runs may
-  execute at once; further ones receive `503 Service Unavailable` until a slot
-  frees. API clients have a share of their own, so neither can take the other's.
+  execute at once; further ones wait their turn as described in
+  [Concurrency and monitoring](#concurrency-and-monitoring), each network or account
+  holding at most `RUNTIME_QUEUE_MAX_PER_CALLER` places. API clients have a share of
+  their own, so neither can take the other's.
 - **Quota.** Each caller may run one public bookmark a limited number of times in
   24 hours, counted from their first run of it:
   `PUBLIC_PREDICTION_ANONYMOUS_RUNS_PER_DAY` (default `50`) per client address
@@ -541,7 +569,7 @@ set an organization's monthly limit, both audited.
 | --- | --- | --- |
 | `API_ACCESS_REQUESTS_PER_MINUTE` | `60` | Calls one client may make in a clock minute. |
 | `API_ACCESS_MONTHLY_CALLS` | `10000` | Succeeded calls an organization's clients may make together in a calendar month (UTC), unless a superadmin set its own limit. |
-| `API_ACCESS_MAX_CONCURRENT` | `2` | Client runs executing at once. |
+| `API_ACCESS_MAX_CONCURRENT` | `2` | Client runs executing at once; more wait their turn, as workspace runs do. |
 | `API_ACCESS_REQUEST_RETENTION_DAYS` | `90` (at least `31`) | How long calls are kept. |
 
 The limits are counted from the log, so they hold across restarts and API

@@ -12,6 +12,7 @@ const { getPredictionRunsFeedback } = vi.hoisted(() => ({
 
 vi.mock("@/features/schemas/api/schema-prediction-api", () => ({
   getPredictionResultFeedback: vi.fn(),
+  getPredictionResultFeedbackHistory: vi.fn(),
   getPredictionRun: vi.fn(),
   getPredictionRunsFeedback,
 }));

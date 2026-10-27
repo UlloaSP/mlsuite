@@ -23,6 +23,7 @@ import dev.ulloasp.mlsuite.schema.application.port.in.SchemaVersionUseCase;
 import dev.ulloasp.mlsuite.schema.application.service.*;
 import dev.ulloasp.mlsuite.schema.domain.model.*;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
+import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.*;
 
@@ -54,21 +55,23 @@ class SchemaReadPermissionTest {
         schemaService = new SchemaServiceImpl(users, schemas, versions, bindings, runs,
                 mock(SchemaReviewRepository.class), auth, drafts, bookmarks);
         versionService = new SchemaVersionServiceImpl(users, schemas, versions, bindings,
-                mock(ModelRepository.class), auth);
+                mock(ModelRepository.class), auth, mock(SchemaMappingCheck.class));
         draftService = new SchemaDraftServiceImpl(users, schemas, versions, drafts,
                 mock(SchemaVersionUseCase.class), mock(SchemaDraftDiffService.class),
-                mock(SchemaDraftPublishedVersionResolver.class), auth);
+                mock(SchemaDraftPublishedVersionResolver.class), auth, mock(SchemaMappingCheck.class));
         bookmarkService = new SchemaBookmarkServiceImpl(schemas, versions, bookmarks, auth,
                 new BookmarkPublishability(bindings, 50));
         predictCatalog = new PredictBookmarkCatalogService(auth, bookmarks, versions, bindings, runs);
-        runService = new PredictionRunServiceImpl(users, bookmarks, bindings, runs, results, feedback,
-                mock(ModelRepository.class), auth, mock(PredictionAttestations.class));
-        feedbackService = new PredictionResultFeedbackService(auth, results, feedback, runs);
+        runService = new PredictionRunServiceImpl(users, bookmarks, runs, results, feedback, auth,
+                mock(PredictionAttestations.class), mock(PredictionRunStore.class));
+        feedbackService = new PredictionResultFeedbackService(auth, results, feedback, runs,
+                mock(PredictionResultFeedbackRevisionRepository.class), mock(UserRepository.class),
+                mock(SchemaReviewRepository.class));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"catalog", "page", "schema", "versions", "version", "bindings", "drafts", "draft",
-            "bookmarks", "organizationBookmarks", "bookmark", "runs", "run", "organizationRuns", "feedback", "runFeedback"})
+            "bookmarks", "organizationBookmarks", "bookmark", "run", "feedback", "runFeedback", "history"})
     void modelViewAllowsAllReadPathsWithoutOrganizationView(String operation) {
         membership(Set.of(PermissionKey.VIEW_MODELS));
         allowObjects();
@@ -78,7 +81,7 @@ class SchemaReadPermissionTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"catalog", "page", "schema", "versions", "version", "bindings", "drafts", "draft",
-            "bookmarks", "organizationBookmarks", "bookmark", "runs", "run", "organizationRuns", "feedback", "runFeedback"})
+            "bookmarks", "organizationBookmarks", "bookmark", "run", "feedback", "runFeedback", "history"})
     void organizationViewAloneDoesNotExposeMlData(String operation) {
         membership(Set.of(PermissionKey.VIEW_ORGANIZATION));
         assertThrows(OrganizationAccessDeniedException.class, () -> read(operation));
@@ -87,7 +90,7 @@ class SchemaReadPermissionTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"catalog", "page", "schema", "versions", "version", "bindings", "drafts", "draft",
-            "bookmarks", "organizationBookmarks", "bookmark", "runs", "run", "organizationRuns", "feedback", "runFeedback"})
+            "bookmarks", "organizationBookmarks", "bookmark", "run", "feedback", "runFeedback", "history"})
     void nonmemberCannotReadOrganizationMlData(String operation) {
         when(access.requireMembership(3L, 41L)).thenThrow(new OrganizationAccessDeniedException(41L));
         assertThrows(OrganizationAccessDeniedException.class, () -> read(operation));
@@ -96,7 +99,7 @@ class SchemaReadPermissionTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"schema", "versions", "version", "bindings", "drafts", "draft",
-            "bookmarks", "bookmark", "runs", "run", "feedback", "runFeedback"})
+            "bookmarks", "bookmark", "run", "feedback", "runFeedback", "history"})
     void resourceOutsideCurrentOrganizationIsNotFound(String operation) {
         membership(Set.of(PermissionKey.VIEW_MODELS));
         var error = assertThrows(ResponseStatusException.class, () -> read(operation));
@@ -137,11 +140,10 @@ class SchemaReadPermissionTest {
             case "bookmarks" -> bookmarkService.listBookmarks(3L, 7L);
             case "organizationBookmarks" -> predictCatalog.listBookmarks(3L);
             case "bookmark" -> bookmarkService.getBookmark(3L, 7L);
-            case "runs" -> runService.listRunsForBookmark(3L, 7L);
             case "run" -> runService.getRun(3L, 7L);
-            case "organizationRuns" -> runService.listOrganizationRuns(3L);
             case "feedback" -> feedbackService.listByResult(3L, 7L);
             case "runFeedback" -> feedbackService.listByRuns(3L, List.of(7L));
+            case "history" -> feedbackService.historyOfResult(3L, 7L);
             default -> throw new IllegalArgumentException(operation);
         }
     }

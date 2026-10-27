@@ -13,11 +13,17 @@ describe("authFailureMessage", () => {
   });
 
   test("wrong credentials keep the form's own copy", () => {
-    expect(authFailureMessage("login", refusal(401, "Bad credentials"))).toBe(AUTH_COPY.login.error);
-    expect(authFailureMessage("register", refusal(409, "User exists"))).toBe(AUTH_COPY.register.error);
+    expect(authFailureMessage("login", refusal(401, "Bad credentials"))).toBe(
+      AUTH_COPY.login.error,
+    );
+    expect(authFailureMessage("register", refusal(409, "User exists"))).toBe(
+      AUTH_COPY.register.error,
+    );
   });
 
   test("a network failure keeps the form's own copy", () => {
-    expect(authFailureMessage("login", new TypeError("Failed to fetch"))).toBe(AUTH_COPY.login.error);
+    expect(authFailureMessage("login", new TypeError("Failed to fetch"))).toBe(
+      AUTH_COPY.login.error,
+    );
   });
 });

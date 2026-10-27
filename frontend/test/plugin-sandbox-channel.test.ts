@@ -29,7 +29,12 @@ const pair = (handler = vi.fn(async ({ value }: { value: number }) => ({ value: 
     hears: events,
     onEvent,
   });
-  const sandbox = createSandboxChannel<typeof methods, Record<never, never>, Record<never, never>, typeof events>({
+  const sandbox = createSandboxChannel<
+    typeof methods,
+    Record<never, never>,
+    Record<never, never>,
+    typeof events
+  >({
     listener: windows.sandbox,
     peer: () => windows.app,
     serves: methods,
@@ -150,7 +155,9 @@ describe("plugin sandbox channel", () => {
 
   test("closing rejects what is pending and stops listening", async () => {
     const { app, windows, onEvent } = pair(vi.fn(() => new Promise<never>(() => {})));
-    const pending = expect(app.request("double", { value: 1 })).rejects.toThrow("closed for the test");
+    const pending = expect(app.request("double", { value: 1 })).rejects.toThrow(
+      "closed for the test",
+    );
 
     app.close("closed for the test");
     deliver(windows.app, windows.sandbox, {

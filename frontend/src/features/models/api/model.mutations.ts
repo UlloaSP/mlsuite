@@ -10,8 +10,8 @@ import {
   createModel,
   deleteModel,
   duplicateModel,
-  inspectArtifact,
   renameModel,
+  restoreModel,
 } from "./model.api";
 import { modelKeys } from "./model.keys";
 import type { CreateModelRequest } from "./model.types";
@@ -33,6 +33,11 @@ const invalidatingMutationOptions = <TVariables>(
 export const useArchiveModelMutation = () => {
   const invalidate = useInvalidateModelQueries();
   return useMutation(invalidatingMutationOptions(archiveModel, invalidate));
+};
+
+export const useRestoreModelMutation = () => {
+  const invalidate = useInvalidateModelQueries();
+  return useMutation(invalidatingMutationOptions(restoreModel, invalidate));
 };
 
 export const useDeleteModelMutation = () => {
@@ -57,7 +62,3 @@ export const useCreateModelMutation = () => {
     onSuccess: () => invalidate(),
   });
 };
-
-export const useInspectArtifactMutation = () =>
-  // react-doctor-disable-next-line react-doctor/query-mutation-missing-invalidation -- Inspection is a read-only command and changes no cached resource.
-  useMutation({ meta: { errorHandledLocally: true }, mutationFn: inspectArtifact });

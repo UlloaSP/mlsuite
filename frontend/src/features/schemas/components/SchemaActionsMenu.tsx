@@ -3,15 +3,16 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Archive, Copy, Pencil, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, Copy, Pencil, Trash2 } from "lucide-react";
 import { AppActionsMenu, type AppMenuAction } from "@/shared/ui/AppActionsMenu";
 
-export type SchemaAction = "archive" | "delete" | "duplicate" | "edit";
+export type SchemaAction = "archive" | "delete" | "duplicate" | "edit" | "restore";
 
 const ACTIONS: Array<{ value: SchemaAction; label: string; icon: typeof Pencil }> = [
   { value: "edit", label: "Rename", icon: Pencil },
   { value: "duplicate", label: "Duplicate", icon: Copy },
   { value: "archive", label: "Archive", icon: Archive },
+  { value: "restore", label: "Restore", icon: ArchiveRestore },
   { value: "delete", label: "Delete", icon: Trash2 },
 ];
 
@@ -33,6 +34,7 @@ export function SchemaActionsMenu({
   const actions = ACTIONS.filter(
     (action) =>
       !(action.value === "archive" && archived) &&
+      !(action.value === "restore" && !archived) &&
       (action.value === "delete" ? canDelete : canEdit),
   ).map<AppMenuAction>((action) => ({
     key: action.value,

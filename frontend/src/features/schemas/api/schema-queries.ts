@@ -6,10 +6,12 @@ import { getSchemaBookmark } from "./schema-bookmark-api";
 import { getSchemaDraft, getSchemaDraftDiff } from "./schema-draft-api";
 import {
   getPredictionResultFeedback,
+  getPredictionResultFeedbackHistory,
   getPredictionRunsFeedback,
   getPredictionRun,
 } from "./schema-prediction-api";
 import {
+  PREDICTION_RESULT_FEEDBACK_HISTORY_QUERY_KEY,
   PREDICTION_RESULT_FEEDBACK_QUERY_KEY,
   PREDICTION_RUNS_FEEDBACK_QUERY_KEY,
   PREDICTION_RUN_QUERY_KEY,
@@ -53,10 +55,16 @@ const predictionResultFeedbackQuery = byIdQuery(
   PREDICTION_RESULT_FEEDBACK_QUERY_KEY,
   getPredictionResultFeedback,
 );
+const predictionResultFeedbackHistoryQuery = byIdQuery(
+  PREDICTION_RESULT_FEEDBACK_HISTORY_QUERY_KEY,
+  getPredictionResultFeedbackHistory,
+);
 
 export const schemaVersionQueryOptions = schemaVersionQuery.options;
 export const predictionRunQueryOptions = predictionRunQuery.options;
 export const predictionResultFeedbackQueryOptions = predictionResultFeedbackQuery.options;
+export const predictionResultFeedbackHistoryQueryOptions =
+  predictionResultFeedbackHistoryQuery.options;
 
 export const useSchema = schemaQuery.useById;
 export const useSchemaVersion = schemaVersionQuery.useById;

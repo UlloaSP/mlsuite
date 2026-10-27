@@ -10,6 +10,7 @@ import static dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogFixtures.rows;
 import static dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogFixtures.table;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -65,8 +66,10 @@ class InferenceCatalogTest {
         var olderThanForty = request(0, "", "createdAt.desc", new Condition(AGE, "gt", "40"));
         assertEquals(1, service.page(MEMBER, olderThanForty).totalItems());
         assertEquals(2L, service.selection(MEMBER, olderThanForty).getFirst().id());
-        assertEquals(1L, service.page(MEMBER, request(0, "", AGE + ".asc")).items().getFirst().item().id());
-        var youngestSecond = service.page(MEMBER, request(1, "", AGE + ".asc"));
+        // With a derived filter the scope is ranked in memory; without one, by stored keys (InferenceSortKeysTest).
+        var anyAge = new Condition(AGE, "notEmpty", "");
+        assertEquals(1L, service.page(MEMBER, request(0, "", AGE + ".asc", anyAge)).items().getFirst().item().id());
+        var youngestSecond = service.page(MEMBER, request(1, "", AGE + ".asc", anyAge));
         assertEquals(2L, youngestSecond.items().getFirst().item().id());
         assertEquals(2, youngestSecond.totalItems());
         assertFalse(youngestSecond.hasNext());
@@ -96,6 +99,19 @@ class InferenceCatalogTest {
         assertThrows(ResponseStatusException.class,
                 () -> request(0, "", "createdAt.desc", Collections.nCopies(101, new Condition("age", "eq", "1"))));
         assertEquals(0, request(-4, "", "createdAt.desc").page());
+    }
+
+    @Test
+    void keysStoredSortOrdersByWhatOrdersThemNotByTheTagSent() {
+        String english = TEXT.sortKeyLocale();
+        assertEquals(english, InferenceCatalogText.of("en-US-x-made-up").sortKeyLocale());
+        assertEquals(english, InferenceCatalogText.of("en-US-u-co-phonebk").sortKeyLocale());
+        assertEquals(InferenceCatalogText.of("de-DE").sortKeyLocale(),
+                InferenceCatalogText.of("de-DE-u-co-phonebk").sortKeyLocale());
+        assertNotEquals(english, InferenceCatalogText.of("es-ES").sortKeyLocale());
+        assertNotEquals(english, InferenceCatalogText.of("en-IN").sortKeyLocale());
+        assertNotEquals(InferenceCatalogText.of("sv-SE").sortKeyLocale(),
+                InferenceCatalogText.of("de-DE").sortKeyLocale());
     }
 
     @Test
@@ -205,6 +221,11 @@ class InferenceCatalogTest {
     private static InferenceCatalogService serving(InferenceTableDto data) {
         InferenceCatalogReader reader = mock(InferenceCatalogReader.class);
         doAnswer(call -> deliver(call, 2, data)).when(reader).scan(eq(MEMBER), any(), any());
+        doAnswer(call -> {
+            call.<Consumer<List<PredictionRunCatalogItemDto>>>getArgument(2)
+                    .accept(data.runs().stream().map(InferenceTableRunDto::summary).toList());
+            return null;
+        }).when(reader).scanSummaries(eq(MEMBER), any(), any());
         doAnswer(call -> deliver(call, 2, only(data, call.getArgument(1))))
                 .when(reader).selected(eq(MEMBER), any(), any());
         when(reader.page(eq(MEMBER), any(), anyBoolean(), anyInt(), anyInt(), any())).thenAnswer(call -> {
@@ -223,8 +244,9 @@ class InferenceCatalogTest {
                 .thenReturn(new InferenceCatalogReader.Choices(data.runs().size(), List.of(), List.of()));
         ResponseStatusException forbidden = new ResponseStatusException(HttpStatus.FORBIDDEN);
         doThrow(forbidden).when(reader).scan(eq(OUTSIDER), any(), any());
+        doThrow(forbidden).when(reader).scanSummaries(eq(OUTSIDER), any(), any());
         when(reader.page(eq(OUTSIDER), any(), anyBoolean(), anyInt(), anyInt(), any())).thenThrow(forbidden);
-        return new InferenceCatalogService(reader);
+        return new InferenceCatalogService(reader, mock(InferenceSortKeys.class));
     }
 
     private static Object deliver(InvocationOnMock call, int consumer, InferenceTableDto table) {

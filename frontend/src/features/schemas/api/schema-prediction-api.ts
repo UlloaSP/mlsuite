@@ -1,9 +1,11 @@
 import { appFetch, json } from "@/shared/api/http";
 import type {
+  CreatedPredictionRunsDto,
   CreatePredictionRunRequest,
+  CreatePredictionRunsRequest,
   PredictionResultFeedbackDto,
+  PredictionResultFeedbackRevisionDto,
   PredictionRunDto,
-  PredictionRunSequenceDto,
 } from "@/shared/api/openapi.gen";
 
 export const createPredictionRunForBookmark = (
@@ -15,16 +17,21 @@ export const createPredictionRunForBookmark = (
     json("POST", req),
   );
 
+/** Saves up to 100 runs of the bookmark in order, all or none. */
+export const createPredictionRunsForBookmark = (
+  bookmarkId: number | string,
+  req: CreatePredictionRunsRequest,
+): Promise<CreatedPredictionRunsDto> =>
+  appFetch<CreatedPredictionRunsDto>(
+    `/api/schema-bookmarks/${encodeURIComponent(bookmarkId)}/runs/batch`,
+    json("POST", req),
+  );
+
 export const getPredictionRun = (
   runId: number | string,
   signal?: AbortSignal,
 ): Promise<PredictionRunDto> =>
   appFetch<PredictionRunDto>(`/api/prediction-runs/${encodeURIComponent(runId)}`, { signal });
-
-export const getLastPredictionRunId = async (): Promise<number> => {
-  const dto = await appFetch<PredictionRunSequenceDto>("/api/prediction-runs/last-id");
-  return dto.lastId;
-};
 
 export const getPredictionResultFeedback = (
   resultId: number | string,
@@ -32,6 +39,16 @@ export const getPredictionResultFeedback = (
 ): Promise<PredictionResultFeedbackDto[]> =>
   appFetch<PredictionResultFeedbackDto[]>(
     `/api/prediction-result-feedback?resultId=${encodeURIComponent(resultId)}`,
+    { signal },
+  );
+
+/** Every change of every answer about the result, oldest first, including answers since removed. */
+export const getPredictionResultFeedbackHistory = (
+  resultId: number | string,
+  signal?: AbortSignal,
+): Promise<PredictionResultFeedbackRevisionDto[]> =>
+  appFetch<PredictionResultFeedbackRevisionDto[]>(
+    `/api/prediction-result-feedback/history?resultId=${encodeURIComponent(resultId)}`,
     { signal },
   );
 

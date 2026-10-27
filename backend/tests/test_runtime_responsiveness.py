@@ -9,10 +9,11 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-import mlsuite_backend.services.prediction_service as prediction_service
-from mlsuite_backend import config, execution
+import mlsuite_backend.services.coalescing as coalescing
+from mlsuite_backend import __main__ as launcher
+from mlsuite_backend import bundles, config, execution
 from mlsuite_backend.main import app
-from tests.helpers import make_regressor, run_request, serialize_bundle
+from tests.helpers import make_regressor, make_tree, run_request, serialize_bundle, sha256_of
 
 RECORD = json.dumps({"rooms": 3, "area": 60})
 
@@ -26,12 +27,12 @@ def test_health() -> None:
 def test_health_answers_while_a_prediction_is_running(monkeypatch) -> None:
     started, release = threading.Event(), threading.Event()
 
-    def slow_predict(_bundle: object, _record: object) -> dict[str, object]:
+    def slow_predict(_bundle: object, records: list[object]) -> list[dict[str, object]]:
         started.set()
         release.wait(timeout=5)
-        return {"reports": []}
+        return [{"reports": []} for _ in records]
 
-    monkeypatch.setattr(prediction_service, "_predict", slow_predict)
+    monkeypatch.setattr(coalescing, "predict_rows", slow_predict)
     form = run_request(serialize_bundle(make_regressor()), data=RECORD)
 
     async def scenario():
@@ -89,3 +90,49 @@ def test_an_unset_bound_takes_its_default(monkeypatch) -> None:
     monkeypatch.delenv("RUNTIME_BUNDLE_CACHE_MB", raising=False)
 
     assert config._positive_int("RUNTIME_BUNDLE_CACHE_MB", 512) == 512
+
+
+def test_a_prediction_does_not_wait_for_a_bundle_being_loaded(monkeypatch) -> None:
+    release = threading.Event()
+    verify = bundles._verify
+
+    def slow_verify(content: bytes) -> object:
+        release.wait(timeout=5)
+        return verify(content)
+
+    loaded = serialize_bundle(make_regressor())
+    assert TestClient(app).post("/predict", **run_request(loaded, data=RECORD)).status_code == 200
+    monkeypatch.setattr(bundles, "_verify", slow_verify)
+    loading = serialize_bundle(make_tree())
+
+    async def scenario():
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://runtime") as client:
+            inspection = asyncio.create_task(client.post("/metadata", files={"model_file": loading}))
+            while bundles._loaded.verifying(sha256_of(loading)) is None:
+                await asyncio.sleep(0.01)
+            prediction = await client.post(
+                "/predict", data={"artifact_sha256": sha256_of(loaded), "data": RECORD}
+            )
+            still_loading = not inspection.done()
+            release.set()
+            return prediction, still_loading, await inspection
+
+    prediction, still_loading, inspection = asyncio.run(scenario())
+
+    assert prediction.status_code == 200, prediction.text
+    assert still_loading
+    assert inspection.status_code == 200
+
+
+def test_the_runtime_serves_in_the_configured_worker_processes(monkeypatch) -> None:
+    started = {}
+    monkeypatch.setattr(launcher.uvicorn, "run", lambda app, **options: started.update(app=app, **options))
+    monkeypatch.setenv("PYTHON_HOST", "0.0.0.0")
+    monkeypatch.setenv("PYTHON_PORT", "8000")
+
+    launcher.main()
+
+    assert started["app"] == "mlsuite_backend.main:app"
+    assert started["workers"] == config.RUNTIME_WORKERS
+    assert started["timeout_keep_alive"] > 60

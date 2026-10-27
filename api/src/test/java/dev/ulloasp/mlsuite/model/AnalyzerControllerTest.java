@@ -2,7 +2,6 @@ package dev.ulloasp.mlsuite.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Map;
@@ -12,9 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.multipart.MultipartFile;
 
 import dev.ulloasp.mlsuite.model.adapter.in.web.AnalyzerController;
 import dev.ulloasp.mlsuite.model.application.dto.ExplainRequest;
@@ -31,9 +27,6 @@ class AnalyzerControllerTest {
     private CurrentUser user;
 
     @Mock
-    private MultipartFile modelFile;
-
-    @Mock
     private HttpServletRequest request;
 
     private AnalyzerController controller;
@@ -42,17 +35,6 @@ class AnalyzerControllerTest {
     void setUp() {
         controller = new AnalyzerController(analyzerUseCase);
         user = new CurrentUser(5L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER);
-    }
-
-    @Test
-    void inspectArtifact_UsesInternalUserId() {
-        when(analyzerUseCase.inspectArtifact(5L, modelFile)).thenReturn(Map.of("type", "classifier"));
-
-        ResponseEntity<Map<String, Object>> response = controller.inspectArtifact(user, modelFile);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("classifier", response.getBody().get("type"));
-        verify(analyzerUseCase).inspectArtifact(5L, modelFile);
     }
 
     @Test

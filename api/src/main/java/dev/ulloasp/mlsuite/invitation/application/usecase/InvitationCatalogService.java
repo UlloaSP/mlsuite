@@ -40,11 +40,10 @@ public class InvitationCatalogService {
 
     public InvitationCatalogDto list(Long userId, Long organizationId, CatalogRequest request) {
         authorization.require(userId, organizationId, PermissionKey.VIEW_INVITATIONS);
-        boolean includeTokens = authorization.has(userId, organizationId, PermissionKey.MANAGE_INVITATIONS);
         Page<Invitation> page = invitationRepository.findAll(matching(organizationId, request),
                 CatalogPages.pageable(request, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id"))));
         return new InvitationCatalogDto(
-                page.getContent().stream().map(invitation -> InvitationDto.from(invitation, includeTokens)).toList(),
+                page.getContent().stream().map(InvitationDto::from).toList(),
                 page.getNumber(), page.getSize(), page.getTotalElements(), page.hasNext(),
                 invitationRepository.countByOrganizationId(organizationId));
     }

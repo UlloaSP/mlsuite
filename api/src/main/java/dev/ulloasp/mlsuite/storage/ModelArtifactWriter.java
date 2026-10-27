@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.storage;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
@@ -16,14 +18,23 @@ public class ModelArtifactWriter {
     private final ObjectStorageService objectStorageService;
     private final StorageProperties properties;
 
-    public StoredObject storeAndAttach(Model model, byte[] bytes, String contentType) {
+    /**
+     * Streams the artifact into the object store, checking as it goes that it is the one
+     * {@code sha256} names, then checks the stored object and points the model at it.
+     */
+    public StoredObject storeAndAttach(Model model, ArtifactSource source, String sha256, String contentType) {
         requirePersisted(model);
-        String sha256 = ArtifactHash.sha256(bytes);
         String objectKey = objectKey(model, sha256);
-        StoredObject stored = objectStorageService.store(objectKey, model.getFileName(), contentType, bytes);
+        StoredObject stored;
+        try (InputStream in = new VerifyingInputStream(
+                source.open(), "model " + model.getId(), source.sizeBytes(), sha256)) {
+            stored = objectStorageService.store(objectKey, model.getFileName(), contentType, in, source.sizeBytes(), sha256);
+        } catch (IOException ex) {
+            throw new ObjectStorageException("The artifact of model " + model.getId() + " could not be read", ex);
+        }
         try {
             ArtifactIntegrityVerifier.verifyRequired(
-                    "model " + model.getId(), (long) bytes.length, sha256,
+                    "model " + model.getId(), source.sizeBytes(), sha256,
                     objectStorageService.verify(stored.bucket(), stored.objectKey(), stored.versionId()));
         } catch (RuntimeException failure) {
             deleteExactVersion(stored, failure);

@@ -3,21 +3,15 @@ package dev.ulloasp.mlsuite.schema.application.port.in;
 import java.util.List;
 
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionRunRequest;
-import dev.ulloasp.mlsuite.schema.application.dto.InferenceTableDto;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 
 public interface PredictionRunUseCase {
     PredictionRun createRunForBookmark(Long userId, Long schemaBookmarkId, CreatePredictionRunRequest request);
 
-    List<PredictionRun> listRunsForBookmark(Long userId, Long schemaBookmarkId);
-
-    List<PredictionRun> listOrganizationRuns(Long userId);
-
-    InferenceTableDto getOrganizationInferenceTable(Long userId);
+    /** Saves the runs in order in one transaction: all of them, or none when one is refused. */
+    List<Long> createRunsForBookmark(Long userId, Long schemaBookmarkId, List<CreatePredictionRunRequest> requests);
 
     PredictionRun getRun(Long userId, Long runId);
 
     void deleteRun(Long userId, Long runId);
-
-    Long getLastPredictionRunId(Long userId);
 }

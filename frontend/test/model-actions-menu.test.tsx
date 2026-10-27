@@ -29,10 +29,18 @@ async function openMenu(archived: boolean, permissions: Partial<Permissions>) {
   );
 }
 
-test.each([false, true])("only offers archive for active models, archived=%s", async (archived) => {
-  const items = await openMenu(archived, { canEdit: true, canDelete: true });
-  expect(items?.includes("Archive")).toBe(!archived);
-  expect(items).toContain("Delete");
+test.each([false, true])(
+  "offers archive for an active model and restore for an archived one, archived=%s",
+  async (archived) => {
+    const items = await openMenu(archived, { canEdit: true, canDelete: true });
+    expect(items?.includes("Archive")).toBe(!archived);
+    expect(items?.includes("Restore")).toBe(archived);
+    expect(items).toContain("Delete");
+  },
+);
+
+test("does not offer restore to a member who cannot edit models", async () => {
+  expect(await openMenu(true, { canDuplicate: true })).toEqual(["Duplicate"]);
 });
 
 test("does not offer duplicate to a member who can edit but not create models", async () => {

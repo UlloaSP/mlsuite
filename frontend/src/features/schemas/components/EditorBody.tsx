@@ -11,7 +11,12 @@ import { predictionCatalogQueryOptions } from "@/capabilities/prediction-runtime
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { type EditorErrorCard, getMarkerMessage } from "@/features/schemas/lib/schema-diagnostics";
 import { loadLocalMonacoEditor } from "@/capabilities/editor/load-local-monaco-editor";
-import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "@/features/schemas/lib/editor-atoms";
+import {
+  editorCheckErrorsAtom,
+  schemaAtom,
+  schemaTextAtom,
+} from "@/features/schemas/lib/editor-atoms";
+import { useMappingIssueMarkers } from "@/features/schemas/lib/use-mapping-issue-markers";
 import { useSchemaCompatValidation } from "@/features/schemas/lib/use-schema-compat-validation";
 import {
   applyEditorTheme,
@@ -30,7 +35,7 @@ export function EditorBody() {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
   const [, setSchema] = useAtom(schemaAtom);
-  const [, setSchemaErrors] = useAtom(schemaErrorsAtom);
+  const [, setSchemaErrors] = useAtom(editorCheckErrorsAtom);
   const appearance = useEditorAppearance();
   const typography = useAtomValue(typographyAtom);
   const { data: catalog, error: catalogError } = useQuery(
@@ -48,6 +53,7 @@ export function EditorBody() {
     setCatalog,
     cardsRef: compatCardsRef,
   } = useSchemaCompatValidation({ editorRef, monacoRef, onValid: setSchema });
+  const mappingMarkers = useMappingIssueMarkers({ editorRef, monacoRef });
 
   const handleOnMount = (editor: MonacoEditorInstance, monacoNs: MonacoNamespace) => {
     editorRef.current = editor;
@@ -56,12 +62,14 @@ export function EditorBody() {
     applyEditorTheme(monacoNs, appearance.dark);
 
     applyCompatValidation(editor.getValue());
+    mappingMarkers.show(editor.getValue());
   };
 
   const handleOnChange = (value?: string) => {
     const text = value ?? "";
     setSchemaText(text);
     applyCompatValidation(text);
+    mappingMarkers.show(text);
   };
 
   const handleOnValidate = useCallback(
@@ -78,7 +86,7 @@ export function EditorBody() {
 
       const content = model.getValue();
       const workerCards = markers.reduce<EditorErrorCard[]>((cards, marker) => {
-        if (marker.source !== "mlform-compat") {
+        if (marker.source !== "mlform-compat" && marker.source !== mappingMarkers.owner) {
           cards.push(
             getMarkerMessage(
               content,
@@ -98,7 +106,7 @@ export function EditorBody() {
 
       setSchemaErrors([...workerCards, ...compatCardsRef.current]);
     },
-    [compatCardsRef, setSchemaErrors],
+    [compatCardsRef, mappingMarkers.owner, setSchemaErrors],
   );
 
   useEffect(() => {

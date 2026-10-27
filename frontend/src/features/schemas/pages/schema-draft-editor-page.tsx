@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useSearchParamState } from "@/shared/lib/use-search-param-state";
-import { useAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 import { GitCompareArrows, PencilLine, Save } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
@@ -26,7 +26,13 @@ import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSegmentedControl } from "@/shared/ui/AppSegmentedControl";
 import { AppSurface } from "@/shared/ui/AppSurface";
-import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "@/features/schemas/lib/editor-atoms";
+import {
+  schemaAtom,
+  schemaErrorsAtom,
+  schemaMappingIssuesAtom,
+  schemaTextAtom,
+} from "@/features/schemas/lib/editor-atoms";
+import { refusedMappings } from "@/features/schemas/lib/schema-mapping-issues";
 import { EditorWrapper } from "@/features/schemas/components/EditorWrapper";
 import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
 import { SchemaFormPreview } from "@/features/schemas/components/SchemaFormPreview";
@@ -45,6 +51,7 @@ export function SchemaDraftEditorPage() {
   const [schema, setSchema] = useAtom(schemaAtom);
   const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
   const [schemaErrors] = useAtom(schemaErrorsAtom);
+  const setMappingIssues = useSetAtom(schemaMappingIssuesAtom);
   const [editorView, setEditorView] = useSearchParamState<EditorView>("view", "code", EDITOR_VIEWS);
   const [renameOpen, setRenameOpen] = useState(false);
 
@@ -71,9 +78,11 @@ export function SchemaDraftEditorPage() {
         formSchema: isRecord(parsed) ? parsed : draft.formSchema,
         bindings: draft.bindings,
       });
+      setMappingIssues([]);
       toast.success("Schema change saved");
       return true;
     } catch (error) {
+      setMappingIssues(refusedMappings(error));
       toast.error("Schema change save failed", {
         description: error instanceof Error ? error.message : String(error),
       });

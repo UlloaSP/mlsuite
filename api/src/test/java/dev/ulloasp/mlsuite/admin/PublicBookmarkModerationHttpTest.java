@@ -24,7 +24,6 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.admin.moderation.ModeratedBookmarkDto;
@@ -53,7 +52,7 @@ import dev.ulloasp.mlsuite.util.PageDto;
         "server.port=0",
         "cors.allow-origins=http://localhost:5173" })
 @Import(SecurityConfig.class)
-@MockitoBean(types = { PredictBookmarkCatalogUseCase.class, RestTemplate.class, SchemaBookmarkExampleUseCase.class,
+@MockitoBean(types = { PredictBookmarkCatalogUseCase.class, SchemaBookmarkExampleUseCase.class,
         UserDetailsService.class, SessionAccountCheck.class })
 class PublicBookmarkModerationHttpTest {
 

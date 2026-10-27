@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
@@ -13,7 +13,6 @@ import { AppPage } from "@/shared/ui/AppPage";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
-import { emitErrorFromUnknown } from "@/shared/api/error-notifications";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import type { Bundle } from "@/features/models/lib/bundle-types";
@@ -22,48 +21,39 @@ import { BUNDLE_EXT, appendBundleFiles, isBundleFile } from "@/features/models/l
 import { BundleCard } from "@/features/models/components/BundleCard";
 import { BundleDropZone } from "@/features/models/components/BundleDropZone";
 import { BundleSummaryPanel } from "@/features/models/components/BundleSummaryPanel";
-import {
-  useCreateModelMutation,
-  useInspectArtifactMutation,
-} from "@/features/models/api/model.mutations";
+import { useCreateModelMutation } from "@/features/models/api/model.mutations";
 
 export function CreateModelPage() {
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const nextIdRef = useRef(1);
   const mutation = useCreateModelMutation();
-  const inspectArtifact = useInspectArtifactMutation();
   const navigate = useNavigate();
   const { data: user, error } = useUser();
   const { data: workspace } = useWorkspaceContext();
 
   // ── Ingest dropped/selected files ───────────────────────────────────────
 
-  const handleFiles = useCallback(
-    async (files: File[]) => {
-      const inspected = await Promise.all(
-        files.map(async (file) => {
-          if (!isBundleFile(file.name)) {
-            toast.error(
-              `Unsupported file: ${file.name}. Choose a ${BUNDLE_EXT} file exported with mlbundle.`,
-            );
-            return null;
-          }
-          try {
-            await inspectArtifact.mutateAsync(file);
-            return file;
-          } catch (error) {
-            emitErrorFromUnknown(error);
-            return null;
-          }
-        }),
-      );
-      const accepted = inspected.filter((file): file is File => file !== null);
-      const firstId = nextIdRef.current;
-      nextIdRef.current += accepted.length;
-      setBundles((prev) => appendBundleFiles(prev, accepted, firstId));
-    },
-    [inspectArtifact.mutateAsync],
-  );
+  // A bundle is uploaded once, when it is saved: the runtime reads it then, and a bundle it
+  // cannot read is refused with the runtime's reason on its card's save.
+  const handleFiles = (files: File[]) => {
+    const accepted: File[] = [];
+    for (const file of files) {
+      if (!isBundleFile(file.name)) {
+        toast.error(
+          `Unsupported file: ${file.name}. Choose a ${BUNDLE_EXT} file exported with mlbundle.`,
+        );
+      } else if (
+        [...bundles.map((b) => b.modelFile), ...accepted].some((f) => f.name === file.name)
+      ) {
+        toast.error(`${file.name} is already in the list.`);
+      } else {
+        accepted.push(file);
+      }
+    }
+    const firstId = nextIdRef.current;
+    nextIdRef.current += accepted.length;
+    setBundles((prev) => appendBundleFiles(prev, accepted, firstId));
+  };
 
   // ── Bundle actions ───────────────────────────────────────────────────────
 
@@ -93,6 +83,12 @@ export function CreateModelPage() {
 
   const saveAll = async () => {
     const unsaved = bundles.filter((b) => !b.saved);
+    const unnamed = unsaved.filter((b) => b.name.trim() === "");
+    if (unnamed.length > 0) {
+      toast.error(
+        `Name ${unnamed.length === 1 ? "this bundle" : "these bundles"} to save ${unnamed.length === 1 ? "it" : "them"}: ${unnamed.map((b) => b.modelFile.name).join(", ")}`,
+      );
+    }
     const complete = await saveModelBundlesSequentially(
       unsaved.map((bundle) => bundle.id),
       (id) => saveBundle(id, { navigateWhenComplete: false }),

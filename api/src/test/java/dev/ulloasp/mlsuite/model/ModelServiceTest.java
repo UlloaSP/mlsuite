@@ -7,12 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,12 +24,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartFile;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.storage.ArtifactSource;
+import dev.ulloasp.mlsuite.storage.ModelArtifactInlineCopy;
+import dev.ulloasp.mlsuite.storage.StorageProperties;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelAlreadyExistsException;
-import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
+import dev.ulloasp.mlsuite.model.application.upload.BundleInspection;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.application.service.ModelServiceImpl;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
@@ -47,34 +48,15 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationS
 class ModelServiceTest {
 
     @Mock private UserLookupService userLookupService;
-
     @Mock private ModelRepository modelRepository;
-
     @Mock private ObjectStorageService objectStorageService;
-
-    @Mock
-    private SchemaModelBindingRepository bindingRepository;
-
-    @Mock
-    private PredictionResultRepository resultRepository;
-
-    @Mock
-    private RestTemplate restTemplate;
-
-    @Mock
-    private MultipartFile modelFile;
-
-    @Mock
-    private WorkspaceAuthorizationService workspaceAuthorizationService;
-
-    @Mock
-    private ModelArtifactWriter artifactWriter;
-
-    @Mock
-    private ModelArtifactContentReader artifactReader;
-
-    @Mock
-    private StorageDeletionQueue deletionQueue;
+    @Mock private SchemaModelBindingRepository bindingRepository;
+    @Mock private PredictionResultRepository resultRepository;
+    @Mock private WorkspaceAuthorizationService workspaceAuthorizationService;
+    @Mock private ModelArtifactWriter artifactWriter;
+    @Mock private ModelArtifactContentReader artifactReader;
+    @Mock private StorageDeletionQueue deletionQueue;
+    @Mock private ModelArtifactInlineCopy inlineCopy;
 
     private ModelServiceImpl service;
 
@@ -90,7 +72,8 @@ class ModelServiceTest {
                 artifactWriter,
                 artifactReader,
                 deletionQueue,
-                new AnalyzerClient(restTemplate, "http://analyzer"),
+                inlineCopy,
+                new StorageProperties(),
                 false);
         lenient().when(workspaceAuthorizationService.requireCurrent(eq(3L), any(PermissionKey[].class))).thenReturn(organization());
     }
@@ -121,7 +104,9 @@ class ModelServiceTest {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(true);
 
-        assertThrows(ModelAlreadyExistsException.class, () -> service.createModel(3L, "demo", modelFile));
+        assertThrows(ModelAlreadyExistsException.class, () -> service.requireCreatable(3L, "demo"));
+        assertThrows(ModelAlreadyExistsException.class,
+                () -> service.createModel(3L, "demo", inspection(List.of()), ArtifactSource.of("x".getBytes()), "sha-x", "application/octet-stream"));
     }
 
     @Test
@@ -194,65 +179,56 @@ class ModelServiceTest {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(source));
         when(modelRepository.existsByNameAndOrganizationId("copy", 41L)).thenReturn(false);
-        when(artifactReader.loadVerified(dev.ulloasp.mlsuite.storage.ModelArtifactReference.of(source))).thenReturn("bytes".getBytes());
+        source.setArtifactSha256("sha-source");
+        source.setModelSizeBytes(5L);
+        when(artifactReader.source(dev.ulloasp.mlsuite.storage.ModelArtifactReference.of(source)))
+                .thenReturn(ArtifactSource.of("bytes".getBytes()));
         org.mockito.Mockito.doAnswer(invocation -> {
             Model copy = invocation.getArgument(0);
             copy.setStorageBucket("bucket");
             copy.setStorageObjectKey("new-key");
             return null;
-        }).when(artifactWriter).storeAndAttach(any(Model.class), any(byte[].class), eq("application/octet-stream"));
-        when(modelRepository.save(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        }).when(artifactWriter).storeAndAttach(any(Model.class), any(ArtifactSource.class), eq("sha-source"),
+                eq("application/octet-stream"));
+        when(modelRepository.saveAndFlush(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Model copy = service.duplicateModel(3L, 9L, "copy");
 
         assertEquals("copy", copy.getName());
         assertEquals("new-key", copy.getStorageObjectKey());
         assertEquals("Alice", copy.getUpdatedBy().getFullName());
+        verify(inlineCopy).write(eq(copy.getId()), any(ArtifactSource.class), eq("sha-source"));
     }
 
     @Test
     void createModel_StoresObjectAndPersistsModel() throws Exception {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
-        when(restTemplate.postForObject(anyString(), any(), eq(Map.class)))
-                .thenReturn(Map.of("type", "clf", "specificType", "rf", "fileName", "model.mlbundle",
-                        "schema", Map.of("fields", List.of(), "reports", List.of()),
-                        "manifest", Map.of("writer_version", "0.1.0a3"),
-                        "featureImportances", List.of(Map.of("feature", "age", "importance", 62.5))));
-        when(modelFile.getBytes()).thenReturn("x".getBytes());
-        when(modelFile.getName()).thenReturn("modelFile");
-        when(modelFile.getOriginalFilename()).thenReturn("model.mlbundle");
-        when(modelFile.getContentType()).thenReturn("application/octet-stream");
-        when(modelRepository.save(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(modelRepository.saveAndFlush(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Model result = service.createModel(3L, "demo", modelFile);
+        Model result = service.createModel(3L, "demo",
+                inspection(List.of(Map.of("feature", "age", "importance", 62.5))), ArtifactSource.of("x".getBytes()), "sha-x", "application/octet-stream");
 
         assertEquals("demo", result.getName());
+        assertEquals("model.mlbundle", result.getFileName());
+        assertEquals("rf", result.getSpecificType());
         assertEquals(Map.of("fields", List.of(), "reports", List.of()), result.getInputSchema());
         assertEquals(Map.of("writer_version", "0.1.0a3"), result.getBundleManifest());
         assertEquals(List.of(Map.of("feature", "age", "importance", 62.5)), result.getFeatureImportances());
-        verify(modelRepository).save(any(Model.class));
-        verify(artifactWriter).storeAndAttach(any(Model.class), any(byte[].class), eq("application/octet-stream"));
+        // The inline copy is written last, from the stream, after the entity's final flush.
+        var order = inOrder(modelRepository, artifactWriter, inlineCopy);
+        order.verify(artifactWriter).storeAndAttach(any(), any(), eq("sha-x"), eq("application/octet-stream"));
+        order.verify(modelRepository).saveAndFlush(any(Model.class));
+        order.verify(inlineCopy).write(any(), any(ArtifactSource.class), eq("sha-x"));
     }
 
     @Test
     void createModel_StoresAModelWhoseBundleHasNoImportances() throws Exception {
-        Map<String, Object> answer = new HashMap<>(Map.of("type", "clf", "specificType", "Pipeline",
-                "fileName", "model.mlbundle", "schema", Map.of("fields", List.of(), "reports", List.of()),
-                "manifest", Map.of("writer_version", "0.1.0a3")));
-        answer.put("featureImportances", null);
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
-        when(restTemplate.postForObject(anyString(), any(), eq(Map.class))).thenReturn(answer);
-        when(modelFile.getBytes()).thenReturn("x".getBytes());
-        when(modelFile.getName()).thenReturn("modelFile");
-        when(modelFile.getOriginalFilename()).thenReturn("model.mlbundle");
-        when(modelFile.getContentType()).thenReturn("application/octet-stream");
-        when(modelRepository.save(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(modelRepository.saveAndFlush(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Model result = service.createModel(3L, "demo", modelFile);
+        Model result = service.createModel(3L, "demo", inspection(null), ArtifactSource.of("x".getBytes()), "sha-x", "application/octet-stream");
 
         assertNull(result.getFeatureImportances());
         assertEquals(Map.of("writer_version", "0.1.0a3"), result.getBundleManifest());
@@ -263,19 +239,17 @@ class ModelServiceTest {
         RuntimeException failure = new RuntimeException("persist failed");
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
-        when(restTemplate.postForObject(anyString(), any(), eq(Map.class)))
-                .thenReturn(Map.of("type", "clf", "specificType", "rf", "fileName", "model.mlbundle",
-                        "schema", Map.of("fields", List.of(), "reports", List.of()),
-                        "manifest", Map.of("writer_version", "0.1.0a3"),
-                        "featureImportances", List.of(Map.of("feature", "age", "importance", 62.5))));
-        when(modelFile.getBytes()).thenReturn("x".getBytes());
-        when(modelFile.getName()).thenReturn("modelFile");
-        when(modelFile.getOriginalFilename()).thenReturn("model.mlbundle");
-        when(modelFile.getContentType()).thenReturn("application/octet-stream");
         when(modelRepository.saveAndFlush(any(Model.class))).thenThrow(failure);
 
-        assertEquals(failure, assertThrows(RuntimeException.class, () -> service.createModel(3L, "demo", modelFile)));
-        verify(artifactWriter, never()).storeAndAttach(any(), any(), any());
+        assertEquals(failure, assertThrows(RuntimeException.class, () -> service.createModel(3L, "demo",
+                inspection(List.of()), ArtifactSource.of("x".getBytes()), "sha-x", "application/octet-stream")));
+        verify(artifactWriter, never()).storeAndAttach(any(), any(), any(), any());
+        verify(inlineCopy, never()).write(any(), any(), any());
+    }
+
+    private static BundleInspection inspection(List<Map<String, Object>> importances) {
+        return new BundleInspection("clf", "rf", "model.mlbundle", Map.of("fields", List.of(), "reports", List.of()),
+                Map.of("writer_version", "0.1.0a3"), importances);
     }
 
     private User user() {

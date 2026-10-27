@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 
 import dev.ulloasp.mlsuite.schema.application.dto.PublicRunLimitDto;
+import dev.ulloasp.mlsuite.schema.application.dto.SchemaMappingErrorDto;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.PublicCaller;
 import dev.ulloasp.mlsuite.util.ErrorDto;
@@ -85,12 +86,12 @@ class OpenApiContractConventions {
     }
 
     /**
-     * Every error response carries ErrorDto, and the 429 of a public run adds to it, but no
-     * controller names either in a signature.
+     * Every error response carries ErrorDto, and the 429 of a public run and the 400 of a schema
+     * whose mappings name nothing add to it, but no controller names any of them in a signature.
      */
     @Bean
     OpenApiCustomizer errorSchemas() {
-        return openApi -> Stream.of(ErrorDto.class, PublicRunLimitDto.class)
+        return openApi -> Stream.of(ErrorDto.class, PublicRunLimitDto.class, SchemaMappingErrorDto.class)
                 .forEach(error -> openApi.getComponents().getSchemas()
                         .putAll(ModelConverters.getInstance(true).readAll(new AnnotatedType(error))));
     }

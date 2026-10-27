@@ -102,6 +102,8 @@ public class SecurityConfig {
                 config.setAllowCredentials(true);
                 config.setAllowedOrigins(allowedOrigins);
                 config.addAllowedHeader("*");
+                // The app waits what a busy or limited answer asks, also when served from another origin.
+                config.addExposedHeader("Retry-After");
                 config.addAllowedMethod("OPTIONS");
                 config.addAllowedMethod("GET");
                 config.addAllowedMethod("POST");

@@ -209,27 +209,6 @@ class InvitationManagementServiceTest {
     }
 
     @Test
-    void listInvitations_RedactsTokensForViewOnlyAccess() {
-        Organization org = organization();
-        Invitation invitation = new Invitation(
-                org,
-                "target@example.com",
-                reviewerRole(org),
-                "secret-token",
-                user(7L),
-                OffsetDateTime.now().plusDays(1));
-        when(workspaceAuthorizationService.has(7L, 41L, PermissionKey.MANAGE_INVITATIONS)).thenReturn(false);
-        when(invitationRepository.findByOrganizationIdOrderByCreatedAtDesc(41L))
-                .thenReturn(List.of(invitation));
-
-        var result = service.listInvitations(7L, 41L);
-
-        assertEquals(1, result.size());
-        assertEquals(null, result.get(0).token());
-        verify(workspaceAuthorizationService).require(7L, 41L, PermissionKey.VIEW_INVITATIONS);
-    }
-
-    @Test
     void listInvitations_StopsWhenUserCannotViewInvitations() {
         doThrow(new IllegalArgumentException("Denied"))
                 .when(workspaceAuthorizationService)

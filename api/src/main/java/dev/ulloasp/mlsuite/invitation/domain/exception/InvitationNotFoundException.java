@@ -2,7 +2,7 @@ package dev.ulloasp.mlsuite.invitation.domain.exception;
 
 public class InvitationNotFoundException extends RuntimeException {
 
-    public InvitationNotFoundException(String tokenOrId) {
-        super("Invitation '" + tokenOrId + "' does not exist.");
+    public InvitationNotFoundException(Long id) {
+        super("Invitation '" + id + "' does not exist.");
     }
 }

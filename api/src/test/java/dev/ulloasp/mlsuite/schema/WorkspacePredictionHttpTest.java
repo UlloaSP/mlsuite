@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -26,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -165,8 +167,11 @@ class WorkspacePredictionHttpTest extends PublicPredictionFixture {
         });
         assertTrue(running.await(10, TimeUnit.SECONDS));
 
-        mockMvc.perform(predictRequest(forestModel.getId()))
+        // An app served from another origin can read how long to wait.
+        mockMvc.perform(predictRequest(forestModel.getId()).header(HttpHeaders.ORIGIN, "http://localhost:5173"))
                 .andExpect(status().isServiceUnavailable())
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, "2"))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, "Retry-After"))
                 .andExpect(jsonPath("$.message").value("Too many workspace runs are in progress. Try again in a moment."));
 
         finish.countDown();
@@ -188,6 +193,19 @@ class WorkspacePredictionHttpTest extends PublicPredictionFixture {
                 .andExpect(status().is4xxClientError());
 
         verify(analyzer, never()).post(eq("/predict"), any());
+    }
+
+    /**
+     * The instance-wide run counter told every organization how many runs all others made, and
+     * the unbounded listings read every run, result and answer of the organization at once.
+     */
+    @Test
+    void theGlobalRunCounterAndTheUnboundedRunListingsAreGone() throws Exception {
+        for (String path : List.of("/api/prediction-runs/last-id", "/api/prediction-runs", "/api/prediction-runs/table",
+                "/api/schema-bookmarks/" + bookmark.getId() + "/runs")) {
+            int status = mockMvc.perform(signedIn(get(path), owner.getId())).andReturn().getResponse().getStatus();
+            assertTrue(status == 404 || status == 405 || status == 400, path + " answered " + status);
+        }
     }
 
     /** A result as clients used to send it: an output of their own under a real model. */

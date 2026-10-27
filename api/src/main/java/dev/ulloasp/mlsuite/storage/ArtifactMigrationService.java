@@ -98,7 +98,7 @@ public class ArtifactMigrationService {
                     String sha256 = ArtifactHash.sha256(bytes);
                     if (!verifyExisting(model, bytes, sha256)) {
                         if (!writer.attachExisting(model, bytes)) {
-                            writer.storeAndAttach(model, bytes, "application/octet-stream");
+                            writer.storeAndAttach(model, ArtifactSource.of(bytes), ArtifactHash.sha256(bytes), "application/octet-stream");
                         }
                     }
                 } else if (model.hasStoredObject()) {
@@ -197,7 +197,7 @@ public class ArtifactMigrationService {
             }
         }
         if (metadata.versionId() == null || metadata.versionId().isBlank()) {
-            writer.storeAndAttach(model, stored, "application/octet-stream");
+            writer.storeAndAttach(model, ArtifactSource.of(stored), ArtifactHash.sha256(stored), "application/octet-stream");
             return;
         }
         model.setArtifactSha256(ArtifactHash.sha256(stored));

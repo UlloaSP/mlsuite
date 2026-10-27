@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -306,16 +305,6 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
         for (ResponseStatusException error : errors.subList(1, 4)) {
             assertEquals("The prediction could not be completed. Try again later.", error.getReason());
         }
-    }
-
-    @Test
-    void anArtifactThatFailsVerificationIsNeverSentToTheRuntime() {
-        inTransaction(() -> entityManager.find(Model.class, forestModel.getId()).setArtifactSha256("0".repeat(64)));
-        when(analyzer.post(eq("/predict"), any()))
-                .thenThrow(new AnalyzerServiceException(409, "Artifact is not loaded; send it with its SHA-256"));
-
-        assertEquals(502, refused(bookmark.getPublicId(), request(Map.of("in0", 52))).getStatusCode().value());
-        verify(analyzer).post(eq("/predict"), argThat(parts -> parts.getFirst("model_file") == null));
     }
 
     @Test

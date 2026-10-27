@@ -1,10 +1,14 @@
 """Verified bundles are kept by SHA-256, bounded by the size of their artifacts, verified once."""
 
+import hashlib
+import os
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
+from mlsuite_backend.artifact_store import ArtifactStore
 from mlsuite_backend.bundles import LoadedBundles
 
 
@@ -86,3 +90,42 @@ def test_a_failed_verification_fails_every_waiting_run_and_keeps_nothing() -> No
 
     assert held.get("a") is None
     assert held.verifying("a") is None
+
+
+def test_kept_artifacts_are_bounded_on_disk_least_recently_used_first(tmp_path) -> None:
+    store = ArtifactStore(tmp_path, max_bytes=10)
+    contents = {name: name.encode() * 4 for name in ("a", "b", "c")}
+    digests = {name: hashlib.sha256(content).hexdigest() for name, content in contents.items()}
+    store.keep(digests["a"], contents["a"])
+    store.keep(digests["b"], contents["b"])
+    old = time.time() - 60
+    os.utime(tmp_path / f"{digests['b']}.mlbundle", (old, old))
+
+    store.keep(digests["c"], contents["c"])
+
+    assert store.read(digests["b"]) is None
+    assert store.read(digests["a"]) == contents["a"]
+    assert store.read(digests["c"]) == contents["c"]
+
+
+def test_an_artifact_larger_than_the_disk_bound_is_kept_alone(tmp_path) -> None:
+    store = ArtifactStore(tmp_path, max_bytes=10)
+    small, large = b"s" * 4, b"l" * 50
+    store.keep(hashlib.sha256(small).hexdigest(), small)
+
+    store.keep(hashlib.sha256(large).hexdigest(), large)
+
+    assert store.read(hashlib.sha256(small).hexdigest()) is None
+    assert store.read(hashlib.sha256(large).hexdigest()) == large
+
+
+def test_a_partial_file_a_stopped_worker_left_is_removed(tmp_path) -> None:
+    store = ArtifactStore(tmp_path, max_bytes=10)
+    abandoned = tmp_path / ("0" * 64 + ".123.456.partial")
+    abandoned.write_bytes(b"half")
+    old = time.time() - 3600
+    os.utime(abandoned, (old, old))
+
+    store.keep(hashlib.sha256(b"new").hexdigest(), b"new")
+
+    assert not abandoned.exists()

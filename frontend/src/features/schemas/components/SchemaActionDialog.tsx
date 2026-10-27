@@ -33,7 +33,14 @@ const copy = {
   archive: {
     title: "Archive schema?",
     submit: "Archive",
-    description: "Archived schemas stay readable and can be filtered from the catalog.",
+    description:
+      "It leaves the active catalog and the Predict list, and its bookmarks stop running on public pages and for API clients. It stays readable under Archived, where you can restore it.",
+  },
+  restore: {
+    title: "Restore schema?",
+    submit: "Restore",
+    description:
+      "It returns to the active catalog, and its bookmarks run again where they are published.",
   },
   delete: {
     title: "Delete schema?",

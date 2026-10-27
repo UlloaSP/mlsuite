@@ -31,6 +31,7 @@ const catalogState = vi.hoisted(() => ({
 }));
 const pageState = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
+  saveMany: vi.fn(),
   version: null as SchemaVersionDto | null,
 }));
 
@@ -59,6 +60,7 @@ vi.mock("@/features/schemas/api/schema-prediction-mutations", () => ({
     isPending: false,
     mutateAsync: pageState.mutateAsync,
   }),
+  useCreatePredictionRunsForBookmarkMutation: () => ({ mutateAsync: pageState.saveMany }),
 }));
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -101,6 +103,20 @@ describe("schema run creation UI", () => {
     mountState.unmount.mockReset();
     pageState.mutateAsync.mockReset();
     pageState.mutateAsync.mockResolvedValue({ id: 1 });
+    pageState.saveMany.mockReset();
+    pageState.saveMany.mockImplementation(
+      async ({
+        runs,
+        onSaved,
+      }: {
+        runs: unknown[];
+        onSaved: (from: number, ids: number[]) => void;
+      }) =>
+        onSaved(
+          0,
+          runs.map((_, index) => index + 1),
+        ),
+    );
     pageState.version = version;
     mountState.mount.mockImplementation(() => ({ unmount: mountState.unmount }));
   });
@@ -257,10 +273,10 @@ describe("schema run creation UI", () => {
       buttonByText("Save all (2)", container)!.click();
       await vi.runAllTimersAsync();
     });
-    expect(pageState.mutateAsync.mock.calls.map(([request]) => request.name)).toEqual([
-      "run-2026-08-24T14:51:00.000Z",
-      "run-2026-08-24T14:52:00.000Z",
-    ]);
+    expect(pageState.saveMany).toHaveBeenCalledTimes(1);
+    expect(
+      pageState.saveMany.mock.calls[0]![0].runs.map((request: { name: string }) => request.name),
+    ).toEqual(["run-2026-08-24T14:51:00.000Z", "run-2026-08-24T14:52:00.000Z"]);
     expect(container.textContent).toContain("All saved");
 
     await act(async () => {

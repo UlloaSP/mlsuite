@@ -30,7 +30,6 @@ import {
 } from "@/capabilities/prediction-runtime/mlform/run-tabs-layout";
 import { adoptShadowRules } from "@/capabilities/prediction-runtime/mlform/shadow-rules";
 
-
 type Options = {
   container: HTMLElement;
   /**

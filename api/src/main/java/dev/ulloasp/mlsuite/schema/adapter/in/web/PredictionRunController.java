@@ -1,7 +1,5 @@
 package dev.ulloasp.mlsuite.schema.adapter.in.web;
 
-import java.util.List;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,10 +12,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionRunRequest;
-import dev.ulloasp.mlsuite.schema.application.dto.InferenceTableDto;
+import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionRunsRequest;
+import dev.ulloasp.mlsuite.schema.application.dto.CreatedPredictionRunsDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunCatalogItemDto;
-import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunSequenceDto;
 import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionDto;
 import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionRequest;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionRunUseCase;
@@ -49,30 +47,11 @@ public class PredictionRunController {
         return ResponseEntity.status(HttpStatus.CREATED).body(toDto(run));
     }
 
-    @GetMapping("/schema-bookmarks/{bookmarkId}/runs")
-    public ResponseEntity<List<PredictionRunDto>> listForBookmark(CurrentUser user,
-            @PathVariable Long bookmarkId) {
-        return ResponseEntity.ok(predictionRunUseCase.listRunsForBookmark(user.userId(), bookmarkId).stream()
-                .map(this::toDto)
-                .toList());
-    }
-
-    @GetMapping("/prediction-runs/last-id")
-    public ResponseEntity<PredictionRunSequenceDto> lastId(CurrentUser user) {
-        return ResponseEntity.ok(new PredictionRunSequenceDto(
-                predictionRunUseCase.getLastPredictionRunId(user.userId())));
-    }
-
-    @GetMapping("/prediction-runs")
-    public ResponseEntity<List<PredictionRunCatalogItemDto>> listOrganizationRuns(CurrentUser user) {
-        return ResponseEntity.ok(predictionRunUseCase.listOrganizationRuns(user.userId()).stream()
-                .map(PredictionRunCatalogItemDto::from)
-                .toList());
-    }
-
-    @GetMapping("/prediction-runs/table")
-    public ResponseEntity<InferenceTableDto> table(CurrentUser user) {
-        return ResponseEntity.ok(predictionRunUseCase.getOrganizationInferenceTable(user.userId()));
+    @PostMapping("/schema-bookmarks/{bookmarkId}/runs/batch")
+    public ResponseEntity<CreatedPredictionRunsDto> createManyForBookmark(CurrentUser user,
+            @PathVariable Long bookmarkId, @Valid @RequestBody CreatePredictionRunsRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(new CreatedPredictionRunsDto(
+                predictionRunUseCase.createRunsForBookmark(user.userId(), bookmarkId, request.runs())));
     }
 
     @GetMapping("/prediction-runs/{runId}")

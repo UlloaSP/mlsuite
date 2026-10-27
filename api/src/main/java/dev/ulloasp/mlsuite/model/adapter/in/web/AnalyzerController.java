@@ -10,9 +10,7 @@ import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import dev.ulloasp.mlsuite.model.application.dto.ExplainRequest;
 import dev.ulloasp.mlsuite.model.application.port.in.AnalyzerUseCase;
@@ -28,16 +26,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class AnalyzerController {
 
     private final AnalyzerUseCase analyzerUseCase;
-
-    @PostMapping("/artifacts/inspect")
-    public ResponseEntity<Map<String, Object>> inspectArtifact(
-            CurrentUser user,
-            @RequestPart("artifact") MultipartFile artifact) {
-        Map<String, Object> inspection = analyzerUseCase.inspectArtifact(
-                user.userId(),
-                artifact);
-        return ResponseEntity.ok(inspection);
-    }
 
     @PostMapping("/explanations")
     public ResponseEntity<Map<String, Object>> explain(

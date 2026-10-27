@@ -44,7 +44,9 @@ import dev.ulloasp.mlsuite.schema.application.dto.SchemaCatalogItemDto;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.schema.application.service.PredictionAttestations;
 import dev.ulloasp.mlsuite.schema.application.service.PredictionRunServiceImpl;
+import dev.ulloasp.mlsuite.schema.application.service.PredictionRunStore;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaServiceImpl;
+import dev.ulloasp.mlsuite.schema.application.service.SchemaMappingCheck;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaVersionServiceImpl;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
@@ -77,10 +79,10 @@ class SchemaFlowServiceTest {
                 bindingRepository, runRepository, reviewRepository,
                 authorizationService, mock(SchemaDraftRepository.class), mock(SchemaBookmarkRepository.class));
         versionService = new SchemaVersionServiceImpl(userLookupService, schemaRepository, versionRepository,
-                bindingRepository, modelRepository, authorizationService);
-        runService = new PredictionRunServiceImpl(userLookupService, bookmarkRepository, bindingRepository,
-                runRepository, resultRepository, feedbackRepository, modelRepository, authorizationService,
-                mock(PredictionAttestations.class));
+                bindingRepository, modelRepository, authorizationService, new SchemaMappingCheck(modelRepository));
+        runService = new PredictionRunServiceImpl(userLookupService, bookmarkRepository, runRepository,
+                resultRepository, feedbackRepository, authorizationService, mock(PredictionAttestations.class),
+                new PredictionRunStore(bindingRepository, runRepository, resultRepository, modelRepository));
         lenient().when(userLookupService.requireById(7L)).thenReturn(user());
         lenient().when(authorizationService.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization());
     }
@@ -179,14 +181,6 @@ class SchemaFlowServiceTest {
         CreateSchemaVersionRequest request = new CreateSchemaVersionRequest("v1", formSchema(), List.of());
 
         assertThrows(ResponseStatusException.class, () -> versionService.createVersion(7L, 5L, request));
-    }
-
-    @Test
-    void getLastPredictionRunId_ReturnsRepositoryMaxAfterOperateCheck() {
-        when(runRepository.findLastPredictionRunId()).thenReturn(41L);
-
-        assertEquals(41L, runService.getLastPredictionRunId(7L));
-        verify(authorizationService).requireCurrent(7L, PermissionKey.RUN_PREDICTIONS);
     }
 
 }

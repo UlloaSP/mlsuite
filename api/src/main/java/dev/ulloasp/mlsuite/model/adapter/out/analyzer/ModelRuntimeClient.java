@@ -1,15 +1,19 @@
 package dev.ulloasp.mlsuite.model.adapter.out.analyzer;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.AbstractResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Component;
 
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.storage.ArtifactHash;
+import dev.ulloasp.mlsuite.storage.ArtifactSource;
 import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
 import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
 import lombok.RequiredArgsConstructor;
@@ -45,14 +49,48 @@ public class ModelRuntimeClient {
                 log.info("The runtime does not hold the artifact of model {}; sending it", artifact.modelId());
             }
         }
-        byte[] bytes = artifactReader.loadVerified(artifact);
-        // A model stored before artifacts were hashed is named by the hash of its verified bytes.
-        String sha256 = artifact.sha256() != null ? artifact.sha256() : ArtifactHash.sha256(bytes);
+        ArtifactSource source = artifactReader.source(artifact);
+        // A model stored before artifacts were hashed is named by the hash of its bytes, read once more.
+        String sha256 = artifact.sha256() != null ? artifact.sha256() : ArtifactHash.sha256(source);
         MultipartBodyBuilder parts = parts(sha256, jsonFields);
-        parts.part("model_file", bytes)
+        parts.part("model_file", new StreamedArtifact(source, artifact.fileName()))
                 .filename(artifact.fileName())
                 .contentType(MediaType.APPLICATION_OCTET_STREAM);
-        return analyzerClient.post(path, parts.build());
+        return analyzerClient.postWithArtifact(path, parts.build());
+    }
+
+    /**
+     * The artifact as a multipart body part, streamed into the request: its length is known, so
+     * nothing reads the stream to measure it first.
+     */
+    private static final class StreamedArtifact extends AbstractResource {
+        private final ArtifactSource source;
+        private final String fileName;
+
+        StreamedArtifact(ArtifactSource source, String fileName) {
+            this.source = source;
+            this.fileName = fileName;
+        }
+
+        @Override
+        public InputStream getInputStream() throws IOException {
+            return source.open();
+        }
+
+        @Override
+        public long contentLength() {
+            return source.sizeBytes();
+        }
+
+        @Override
+        public String getFilename() {
+            return fileName;
+        }
+
+        @Override
+        public String getDescription() {
+            return "artifact " + fileName;
+        }
     }
 
     private static MultipartBodyBuilder parts(String sha256, Map<String, String> jsonFields) {

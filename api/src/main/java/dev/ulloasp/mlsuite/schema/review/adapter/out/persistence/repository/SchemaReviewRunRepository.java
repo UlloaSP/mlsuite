@@ -58,11 +58,11 @@ public interface SchemaReviewRunRepository extends JpaRepository<SchemaReviewRun
                 OR (:state = 'COMPLETED' AND submission.id IS NOT NULL)
                 OR (:state = 'IN_PROGRESS' AND submission.id IS NULL AND EXISTS (
                     SELECT 1 FROM PredictionResultFeedback feedback
-                    WHERE feedback.result.run = run AND feedback.user.id = :userId
+                    WHERE feedback.result.run = run AND feedback.user.id = :userId AND feedback.review = review
                 ))
                 OR (:state = 'PENDING' AND submission.id IS NULL AND NOT EXISTS (
                     SELECT 1 FROM PredictionResultFeedback feedback
-                    WHERE feedback.result.run = run AND feedback.user.id = :userId
+                    WHERE feedback.result.run = run AND feedback.user.id = :userId AND feedback.review = review
                 ))
             )
             """;

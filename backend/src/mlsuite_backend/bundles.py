@@ -1,9 +1,9 @@
 """Load .mlbundle artifacts by SHA-256, verifying each one once.
 
-A run names its artifact by SHA-256 and sends no bytes. When the runtime does not hold that
-artifact it answers 409 (ARTIFACT_NOT_LOADED); the caller then sends the artifact with the same
-hash, which must match the bytes. Runs arriving while an artifact is being verified wait for that
-verification instead of repeating it.
+A run names its artifact by SHA-256 and sends no bytes. When no worker of the runtime holds that
+artifact (in its memory or on the disk the workers share) it answers 409 (ARTIFACT_NOT_LOADED);
+the caller then sends the artifact with the same hash, which must match the bytes. Runs arriving
+while an artifact is being verified wait for that verification instead of repeating it.
 """
 
 import asyncio
@@ -18,8 +18,9 @@ from dataclasses import replace
 import mlbundle
 from fastapi import HTTPException, UploadFile
 
-from .config import BUNDLE_CACHE_BYTES, BUNDLE_SUFFIX
-from .execution import run_model_work
+from .artifact_store import ArtifactStore
+from .config import ARTIFACT_DIRECTORY, BUNDLE_CACHE_BYTES, BUNDLE_SUFFIX
+from .execution import run_load_work
 from .utils.errors import bad_request
 
 ARTIFACT_NOT_LOADED = 409
@@ -86,6 +87,7 @@ class LoadedBundles:
 
 
 _loaded = LoadedBundles(BUNDLE_CACHE_BYTES)
+_store = ArtifactStore(ARTIFACT_DIRECTORY, BUNDLE_CACHE_BYTES)
 
 
 def _verify(content: bytes) -> mlbundle.LoadedBundle:
@@ -107,7 +109,19 @@ def _load(content: bytes, declared_sha256: str | None) -> mlbundle.LoadedBundle:
     sha256 = hashlib.sha256(content).hexdigest()
     if declared_sha256 is not None and sha256 != declared_sha256:
         raise bad_request("Artifact does not match its SHA-256")
-    return _loaded.verified(sha256, content, _verify)
+    return _loaded.verified(sha256, content, lambda verified: _verify_and_keep(sha256, verified))
+
+
+def _verify_and_keep(sha256: str, content: bytes) -> mlbundle.LoadedBundle:
+    bundle = _verify(content)
+    _store.keep(sha256, content)
+    return bundle
+
+
+def _load_kept(sha256: str) -> mlbundle.LoadedBundle | None:
+    """The bundle another worker (or this one, before evicting it) verified and kept on disk."""
+    content = _store.read(sha256)
+    return None if content is None else _loaded.verified(sha256, content, _verify)
 
 
 async def _read(upload: UploadFile) -> bytes:
@@ -118,7 +132,7 @@ async def _read(upload: UploadFile) -> bytes:
 
 async def load_bundle(upload: UploadFile) -> mlbundle.LoadedBundle:
     """An artifact sent without a hash: one being inspected before it is stored."""
-    return await run_model_work(_load, await _read(upload), None)
+    return await run_load_work(_load, await _read(upload), None)
 
 
 async def resolve_bundle(artifact_sha256: str, upload: UploadFile | None) -> mlbundle.LoadedBundle:
@@ -126,13 +140,18 @@ async def resolve_bundle(artifact_sha256: str, upload: UploadFile | None) -> mlb
     if not _SHA256.fullmatch(artifact_sha256):
         raise bad_request("artifact_sha256 must be a lowercase hexadecimal SHA-256")
     if upload is not None:
-        return await run_model_work(_load, await _read(upload), artifact_sha256)
+        return await run_load_work(_load, await _read(upload), artifact_sha256)
     bundle = _loaded.get(artifact_sha256)
     if bundle is not None:
         return bundle
     verifying = _loaded.verifying(artifact_sha256)
     if verifying is not None:
         return await asyncio.wrap_future(verifying)
+    # A miss is answered at once, never after the loads already waiting for the load thread.
+    if _store.has(artifact_sha256):
+        bundle = await run_load_work(_load_kept, artifact_sha256)
+        if bundle is not None:
+            return bundle
     raise HTTPException(
         status_code=ARTIFACT_NOT_LOADED,
         detail="Artifact is not loaded; send it with its SHA-256",

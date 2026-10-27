@@ -1242,6 +1242,26 @@
         ],
         "type": "object"
       },
+      "CreatePredictionJobRequest": {
+        "properties": {
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/PredictionJobRow"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "schemaVersionId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rows",
+          "schemaVersionId"
+        ],
+        "type": "object"
+      },
       "CreatePredictionResultFeedbackRequest": {
         "properties": {
           "order": {
@@ -1311,6 +1331,22 @@
           "name",
           "results",
           "schemaVersionId"
+        ],
+        "type": "object"
+      },
+      "CreatePredictionRunsRequest": {
+        "properties": {
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/CreatePredictionRunRequest"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "runs"
         ],
         "type": "object"
       },
@@ -1544,6 +1580,21 @@
         ],
         "type": "object"
       },
+      "CreatedPredictionRunsDto": {
+        "properties": {
+          "runIds": {
+            "items": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "runIds"
+        ],
+        "type": "object"
+      },
       "Dependency": {
         "properties": {
           "message": {
@@ -1634,6 +1685,29 @@
         "required": [
           "feature",
           "importance"
+        ],
+        "type": "object"
+      },
+      "FeedbackRevisionReviewDto": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdByName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "publicId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "createdByName",
+          "publicId"
         ],
         "type": "object"
       },
@@ -1836,57 +1910,6 @@
         ],
         "type": "object"
       },
-      "InferenceTableDto": {
-        "properties": {
-          "feedback": {
-            "items": {
-              "$ref": "#/components/schemas/PredictionResultFeedbackDto"
-            },
-            "type": "array"
-          },
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/PredictionResultDto"
-            },
-            "type": "array"
-          },
-          "runs": {
-            "items": {
-              "$ref": "#/components/schemas/InferenceTableRunDto"
-            },
-            "type": "array"
-          },
-          "versions": {
-            "items": {
-              "$ref": "#/components/schemas/SchemaVersionDto"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "feedback",
-          "results",
-          "runs",
-          "versions"
-        ],
-        "type": "object"
-      },
-      "InferenceTableRunDto": {
-        "properties": {
-          "inputData": {
-            "additionalProperties": { },
-            "type": "object"
-          },
-          "summary": {
-            "$ref": "#/components/schemas/PredictionRunCatalogItemDto"
-          }
-        },
-        "required": [
-          "inputData",
-          "summary"
-        ],
-        "type": "object"
-      },
       "InvitationCandidateDto": {
         "properties": {
           "avatarUrl": {
@@ -1987,12 +2010,6 @@
               "REVOKED"
             ],
             "type": "string"
-          },
-          "token": {
-            "type": [
-              "string",
-              "null"
-            ]
           }
         },
         "required": [
@@ -2003,8 +2020,7 @@
           "organizationId",
           "organizationName",
           "roleDefinition",
-          "status",
-          "token"
+          "status"
         ],
         "type": "object"
       },
@@ -3976,6 +3992,147 @@
         ],
         "type": "object"
       },
+      "PredictionJobDto": {
+        "properties": {
+          "bookmarkId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdByName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "doneRows": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "failedRows": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "finishedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "pendingRows": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "schemaVersionId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "QUEUED",
+              "RUNNING",
+              "COMPLETED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "totalRows": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bookmarkId",
+          "createdAt",
+          "createdByName",
+          "doneRows",
+          "failedRows",
+          "finishedAt",
+          "id",
+          "pendingRows",
+          "schemaVersionId",
+          "status",
+          "totalRows",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "PredictionJobFailureDto": {
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rowIndex": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "error",
+          "name",
+          "rowIndex"
+        ],
+        "type": "object"
+      },
+      "PredictionJobModelInput": {
+        "properties": {
+          "modelId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "modelInput": {
+            "additionalProperties": { },
+            "type": "object"
+          }
+        },
+        "required": [
+          "modelId",
+          "modelInput"
+        ],
+        "type": "object"
+      },
+      "PredictionJobRow": {
+        "properties": {
+          "inputData": {
+            "additionalProperties": { },
+            "minProperties": 1,
+            "type": "object"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/PredictionJobModelInput"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "inputData",
+          "models",
+          "name"
+        ],
+        "type": "object"
+      },
       "PredictionResultDto": {
         "properties": {
           "createdAt": {
@@ -4099,6 +4256,123 @@
           "userId",
           "userName",
           "value"
+        ],
+        "type": "object"
+      },
+      "PredictionResultFeedbackRevisionDto": {
+        "properties": {
+          "change": {
+            "enum": [
+              "CREATED",
+              "UPDATED",
+              "DELETED"
+            ],
+            "type": "string"
+          },
+          "changedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "changedByName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "changedByUserId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "feedbackId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "order": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "resultId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "review": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/FeedbackRevisionReviewDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reviewId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "enum": [
+              "OUTPUT",
+              "EXPLANATION"
+            ],
+            "type": "string"
+          },
+          "userId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "userName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "value": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/JsonNode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "visitorId": {
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "change",
+          "changedAt",
+          "changedByName",
+          "changedByUserId",
+          "feedbackId",
+          "id",
+          "order",
+          "resultId",
+          "review",
+          "reviewId",
+          "type",
+          "userId",
+          "userName",
+          "value",
+          "visitorId"
         ],
         "type": "object"
       },
@@ -4281,18 +4555,6 @@
           "schemaVersionId",
           "status",
           "updatedAt"
-        ],
-        "type": "object"
-      },
-      "PredictionRunSequenceDto": {
-        "properties": {
-          "lastId": {
-            "format": "int64",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "lastId"
         ],
         "type": "object"
       },
@@ -5554,6 +5816,53 @@
           "name",
           "organizationId",
           "updatedAt"
+        ],
+        "type": "object"
+      },
+      "SchemaMappingErrorDto": {
+        "properties": {
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/SchemaMappingIssueDto"
+            },
+            "type": "array"
+          },
+          "message": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "issues",
+          "message",
+          "path",
+          "status",
+          "timestamp"
+        ],
+        "type": "object"
+      },
+      "SchemaMappingIssueDto": {
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "pointer": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message",
+          "pointer"
         ],
         "type": "object"
       },
@@ -6939,7 +7248,7 @@
     },
     "/api/admin/public-bookmarks": {
       "get": {
-        "operationId": "list_10",
+        "operationId": "list_11",
         "parameters": [
           {
             "in": "query",
@@ -7030,7 +7339,7 @@
     },
     "/api/admin/users": {
       "get": {
-        "operationId": "list_5",
+        "operationId": "list_6",
         "parameters": [
           {
             "in": "query",
@@ -7283,45 +7592,6 @@
         },
         "tags": [
           "admin-user-controller"
-        ]
-      }
-    },
-    "/api/analyzer/artifacts/inspect": {
-      "post": {
-        "operationId": "inspectArtifact",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "artifact": {
-                    "format": "binary",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "artifact"
-                ],
-                "type": "object"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": { },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "analyzer-controller"
         ]
       }
     },
@@ -8049,16 +8319,17 @@
         ]
       }
     },
-    "/api/invitations/{token}/accept": {
+    "/api/invitations/{invitationId}/accept": {
       "post": {
         "operationId": "acceptInvitation",
         "parameters": [
           {
             "in": "path",
-            "name": "token",
+            "name": "invitationId",
             "required": true,
             "schema": {
-              "type": "string"
+              "format": "int64",
+              "type": "integer"
             }
           }
         ],
@@ -8079,16 +8350,17 @@
         ]
       }
     },
-    "/api/invitations/{token}/decline": {
+    "/api/invitations/{invitationId}/decline": {
       "post": {
         "operationId": "declineInvitation",
         "parameters": [
           {
             "in": "path",
-            "name": "token",
+            "name": "invitationId",
             "required": true,
             "schema": {
-              "type": "string"
+              "format": "int64",
+              "type": "integer"
             }
           }
         ],
@@ -8438,6 +8710,46 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "model-controller"
+        ]
+      }
+    },
+    "/api/models/{modelId}/restore": {
+      "post": {
+        "operationId": "restore_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "modelId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
             }
           }
         ],
@@ -9767,7 +10079,7 @@
     },
     "/api/organizations/{organizationId}/roles": {
       "get": {
-        "operationId": "list_4",
+        "operationId": "list_5",
         "parameters": [
           {
             "in": "path",
@@ -10289,7 +10601,7 @@
     },
     "/api/plugins/runtime": {
       "get": {
-        "operationId": "list_9",
+        "operationId": "list_10",
         "responses": {
           "200": {
             "content": {
@@ -10330,9 +10642,136 @@
         ]
       }
     },
+    "/api/prediction-jobs/{jobId}": {
+      "get": {
+        "operationId": "get_6",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionJobDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-job-controller"
+        ]
+      }
+    },
+    "/api/prediction-jobs/{jobId}/cancel": {
+      "post": {
+        "operationId": "cancel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionJobDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-job-controller"
+        ]
+      }
+    },
+    "/api/prediction-jobs/{jobId}/failures": {
+      "get": {
+        "operationId": "failures",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PredictionJobFailureDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-job-controller"
+        ]
+      }
+    },
+    "/api/prediction-jobs/{jobId}/retry": {
+      "post": {
+        "operationId": "retry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionJobDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-job-controller"
+        ]
+      }
+    },
     "/api/prediction-result-feedback": {
       "get": {
-        "operationId": "list_8",
+        "operationId": "list_9",
         "parameters": [
           {
             "in": "query",
@@ -10401,16 +10840,27 @@
         ]
       }
     },
-    "/api/prediction-runs": {
+    "/api/prediction-result-feedback/history": {
       "get": {
-        "operationId": "listOrganizationRuns",
+        "operationId": "history",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "resultId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/PredictionRunCatalogItemDto"
+                    "$ref": "#/components/schemas/PredictionResultFeedbackRevisionDto"
                   },
                   "type": "array"
                 }
@@ -10420,7 +10870,7 @@
           }
         },
         "tags": [
-          "prediction-run-controller"
+          "prediction-result-feedback-controller"
         ]
       }
     },
@@ -10547,46 +10997,6 @@
         ]
       }
     },
-    "/api/prediction-runs/last-id": {
-      "get": {
-        "operationId": "lastId",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PredictionRunSequenceDto"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "prediction-run-controller"
-        ]
-      }
-    },
-    "/api/prediction-runs/table": {
-      "get": {
-        "operationId": "table",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InferenceTableDto"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "prediction-run-controller"
-        ]
-      }
-    },
     "/api/prediction-runs/{runId}": {
       "delete": {
         "operationId": "delete_5",
@@ -10673,7 +11083,7 @@
     },
     "/api/public/bookmarks": {
       "get": {
-        "operationId": "list_7",
+        "operationId": "list_8",
         "parameters": [
           {
             "in": "query",
@@ -11472,7 +11882,7 @@
     },
     "/api/schema-bookmarks/{bookmarkId}/examples": {
       "get": {
-        "operationId": "list_6",
+        "operationId": "list_7",
         "parameters": [
           {
             "in": "path",
@@ -11575,6 +11985,79 @@
         ]
       }
     },
+    "/api/schema-bookmarks/{bookmarkId}/prediction-jobs": {
+      "get": {
+        "operationId": "list_4",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PredictionJobDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-job-controller"
+        ]
+      },
+      "post": {
+        "operationId": "start",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePredictionJobRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionJobDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-job-controller"
+        ]
+      }
+    },
     "/api/schema-bookmarks/{bookmarkId}/predictions": {
       "post": {
         "operationId": "predictForBookmark",
@@ -11648,38 +12131,6 @@
       }
     },
     "/api/schema-bookmarks/{bookmarkId}/runs": {
-      "get": {
-        "operationId": "listForBookmark",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "bookmarkId",
-            "required": true,
-            "schema": {
-              "format": "int64",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/PredictionRunDto"
-                  },
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "prediction-run-controller"
-        ]
-      },
       "post": {
         "operationId": "createForBookmark",
         "parameters": [
@@ -11709,6 +12160,47 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PredictionRunDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-run-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks/{bookmarkId}/runs/batch": {
+      "post": {
+        "operationId": "createManyForBookmark",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePredictionRunsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedPredictionRunsDto"
                 }
               }
             },
@@ -13451,6 +13943,37 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-controller"
+        ]
+      }
+    },
+    "/api/schemas/{schemaId}/restore": {
+      "post": {
+        "operationId": "restore",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schemaId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
             }
           }
         ],

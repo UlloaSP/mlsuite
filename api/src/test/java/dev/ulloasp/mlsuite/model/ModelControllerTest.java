@@ -23,6 +23,7 @@ import dev.ulloasp.mlsuite.model.application.dto.FeatureImportanceDto;
 import dev.ulloasp.mlsuite.model.application.dto.ModelDetailsDto;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
+import dev.ulloasp.mlsuite.model.application.port.in.ModelUploadUseCase;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
@@ -34,14 +35,16 @@ class ModelControllerTest {
     @Mock
     private ModelCatalogUseCase modelCatalogUseCase;
 
+    @Mock
+    private ModelUploadUseCase modelUploadUseCase;
+
     private CurrentUser user;
 
     private ModelController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new ModelController(
-                modelCatalogUseCase);
+        controller = new ModelController(modelCatalogUseCase, modelUploadUseCase);
         user = new CurrentUser(4L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER);
     }
 
@@ -52,7 +55,7 @@ class ModelControllerTest {
         model.setId(11L);
         model.setName("demo");
         model.setVersion(0L);
-        when(modelCatalogUseCase.createModel(4L, "demo", modelFile)).thenReturn(model);
+        when(modelUploadUseCase.createModel(4L, "demo", modelFile)).thenReturn(model);
 
         ResponseEntity<CreateModelDto> response = controller.createModel(user, "demo", modelFile);
 

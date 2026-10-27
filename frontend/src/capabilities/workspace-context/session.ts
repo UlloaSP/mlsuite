@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getProfile, login, logout, openDocument, register } from "./session-api";
+import { actInOrganization } from "@/shared/api/http";
 import type { UserDto } from "@/shared/api/openapi.gen";
 
 export const USER_QUERY_KEY = ["user"] as const;
@@ -67,6 +68,8 @@ const useSessionMutation = <Payload>(authenticate: (payload: Payload) => Promise
     meta: { errorHandledLocally: true },
     mutationFn: authenticate,
     onSuccess: (user) => {
+      // A new session starts where its account last worked, not where the previous one did.
+      actInOrganization(null);
       queryClient.setQueryData(USER_QUERY_KEY, user);
       void queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
     },

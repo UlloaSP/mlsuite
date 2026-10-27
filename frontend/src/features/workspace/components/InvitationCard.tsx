@@ -1,4 +1,4 @@
-import { Copy, RotateCcw, X } from "lucide-react";
+import { RotateCcw, X } from "lucide-react";
 import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { RoleBadge } from "./RoleBadge";
@@ -53,16 +53,6 @@ export function InvitationCard({
                 icon: RotateCcw,
                 disabled: invite.status === "ACCEPTED",
                 onSelect: onResend,
-              },
-              {
-                key: "copy",
-                label: "Copy link",
-                icon: Copy,
-                disabled: !invite.token,
-                onSelect: () =>
-                  void navigator.clipboard?.writeText(
-                    `${window.location.origin}/invite/${invite.token}`,
-                  ),
               },
               { key: "revoke", label: "Revoke", icon: X, tone: "danger", onSelect: onRevoke },
             ]}

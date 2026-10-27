@@ -66,6 +66,15 @@ public class InferenceCatalogReader {
         deliver(organizationId, queries.ids(organizationId, scope), consume);
     }
 
+    /** Every run summary of a scope, newest first, in batches: all a summary order needs to rank. */
+    public void scanSummaries(Long userId, InferenceCatalogScope scope,
+            Consumer<List<PredictionRunCatalogItemDto>> consume) {
+        Long organizationId = organization(userId);
+        for (List<Long> batch : batches(queries.ids(organizationId, scope))) {
+            consume.accept(inOrder(queries.summaries(organizationId, batch), PredictionRunCatalogItemDto::id, batch));
+        }
+    }
+
     /** The given runs of the organization, in the given order; one that is not there is left out. */
     public void selected(Long userId, List<Long> ids, Consumer<InferenceTableDto> consume) {
         deliver(organization(userId), ids, consume);
