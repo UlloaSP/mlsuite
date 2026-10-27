@@ -76,6 +76,9 @@ and `ops-agent`; `data` joins the API, its one-shot jobs, PostgreSQL and MinIO; 
 only the API and `py-analyzer`. `py-analyzer` parses uploaded models, so `runtime` is internal: the
 runtime cannot reach the agent, the stores or the internet.
 
+The API starts once `py-analyzer` reports healthy on `/health`. Docker rotates each container's log
+at 10 MB and keeps five files, so `docker compose logs` shows at most that much history.
+
 ## Behind a reverse proxy
 
 When a TLS terminator or another proxy sits in front of `frontend`, every visitor seems to come from

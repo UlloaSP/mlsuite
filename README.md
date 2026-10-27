@@ -168,7 +168,9 @@ PostgreSQL and MinIO; `runtime` joins only the API and `py-analyzer`. The runtim
 parses uploaded models, so its network is internal and reaches neither the
 ops-agent, the stores nor the internet. Only the frontend is published on every
 interface; PostgreSQL is published on `127.0.0.1` alone, because Docker-published
-ports bypass host firewalls such as ufw.
+ports bypass host firewalls such as ufw. The API starts once `py-analyzer` reports
+healthy on `/health`. Docker rotates every container's log at 10 MB and keeps five
+files per container.
 
 Successful publications from `main` create immutable `build-<commit>` releases
 with digest-pinned images and a Compose override; MLsuite does not update

@@ -132,7 +132,16 @@ def main() -> None:
     assert production["networks"]["runtime"].get("internal") is True, (
         "the runtime network must have no route to other networks or the internet"
     )
-    script_pins =(ROOT / "scripts/lib.sh").read_text().splitlines()
+    for name, service in production["services"].items():
+        options = service.get("logging", {}).get("options", {})
+        assert options.get("max-size") and options.get("max-file"), (
+            f"{name} must rotate its container logs"
+        )
+    assert "healthcheck" in production["services"]["py-analyzer"], "the runtime must report health"
+    assert production["services"]["spring-app"]["depends_on"]["py-analyzer"]["condition"] == (
+        "service_healthy"
+    ), "the API must wait for a healthy runtime"
+    script_pins = (ROOT / "scripts/lib.sh").read_text().splitlines()
     assert f"POSTGRES_IMAGE={postgres_image}" in script_pins, (
         "operational scripts must use the Compose PostgreSQL image"
     )
