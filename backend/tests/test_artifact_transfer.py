@@ -1,12 +1,16 @@
 """A run names its artifact by SHA-256; the bytes travel only when the runtime lacks them."""
 
+import asyncio
 import json
+import threading
 from io import BytesIO
 
+import httpx
 import mlbundle
 import pytest
 from fastapi.testclient import TestClient
 
+from mlsuite_backend import bundles
 from mlsuite_backend.main import app
 from tests.helpers import make_regressor, make_tree, run_request, serialize_bundle, sha256_of
 
@@ -37,6 +41,39 @@ def test_an_inspected_artifact_is_held_for_its_first_run() -> None:
     response = client.post("/predict", data={"artifact_sha256": sha256_of(upload), "data": RECORD})
 
     assert response.status_code == 200, response.text
+
+
+def test_a_run_by_hash_while_its_artifact_is_verified_waits_for_it_instead_of_409(monkeypatch) -> None:
+    release = threading.Event()
+    verify = bundles._verify
+
+    def slow_verify(content: bytes) -> mlbundle.LoadedBundle:
+        release.wait(timeout=5)
+        return verify(content)
+
+    monkeypatch.setattr(bundles, "_verify", slow_verify)
+    upload = serialize_bundle(make_regressor())
+    sha256 = sha256_of(upload)
+
+    async def scenario():
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://runtime") as client:
+            sending = asyncio.create_task(client.post("/predict", **run_request(upload, data=RECORD)))
+            while bundles._loaded.verifying(sha256) is None:
+                await asyncio.sleep(0.01)
+            by_hash = asyncio.create_task(
+                client.post("/predict", data={"artifact_sha256": sha256, "data": RECORD})
+            )
+            await asyncio.sleep(0.2)
+            waited = not by_hash.done()
+            release.set()
+            return waited, await sending, await by_hash
+
+    waited, sending, by_hash = asyncio.run(scenario())
+
+    assert waited
+    assert sending.status_code == 200
+    assert by_hash.status_code == 200, by_hash.text
 
 
 @pytest.mark.parametrize("path", ["/predict", "/explain"])

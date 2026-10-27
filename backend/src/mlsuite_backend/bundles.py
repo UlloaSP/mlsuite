@@ -2,13 +2,17 @@
 
 A run names its artifact by SHA-256 and sends no bytes. When the runtime does not hold that
 artifact it answers 409 (ARTIFACT_NOT_LOADED); the caller then sends the artifact with the same
-hash, which must match the bytes.
+hash, which must match the bytes. Runs arriving while an artifact is being verified wait for that
+verification instead of repeating it.
 """
 
+import asyncio
 import hashlib
 import re
 import threading
 from collections import OrderedDict
+from collections.abc import Callable
+from concurrent.futures import Future
 from dataclasses import replace
 
 import mlbundle
@@ -28,6 +32,7 @@ class LoadedBundles:
     def __init__(self, max_bytes: int) -> None:
         self._max_bytes = max_bytes
         self._entries: OrderedDict[str, tuple[mlbundle.LoadedBundle, int]] = OrderedDict()
+        self._verifying: dict[str, Future[mlbundle.LoadedBundle]] = {}
         self._bytes = 0
         self._lock = threading.Lock()
 
@@ -39,18 +44,45 @@ class LoadedBundles:
             self._entries.move_to_end(sha256)
             return entry[0]
 
-    def keep(self, sha256: str, bundle: mlbundle.LoadedBundle, size: int) -> mlbundle.LoadedBundle:
-        """Keep the bundle, evicting the least recently used; the newest is kept even if alone too large."""
+    def verifying(self, sha256: str) -> Future[mlbundle.LoadedBundle] | None:
         with self._lock:
-            if sha256 in self._entries:
+            return self._verifying.get(sha256)
+
+    def verified(
+        self, sha256: str, content: bytes, verify: Callable[[bytes], mlbundle.LoadedBundle]
+    ) -> mlbundle.LoadedBundle:
+        """The bundle held for sha256, else verified from content once for every caller asking meanwhile."""
+        with self._lock:
+            entry = self._entries.get(sha256)
+            if entry is not None:
                 self._entries.move_to_end(sha256)
-                return self._entries[sha256][0]
-            self._entries[sha256] = (bundle, size)
-            self._bytes += size
-            while self._bytes > self._max_bytes and len(self._entries) > 1:
-                _, (_, evicted) = self._entries.popitem(last=False)
-                self._bytes -= evicted
-            return bundle
+                return entry[0]
+            pending = self._verifying.get(sha256)
+            owner = pending is None
+            if owner:
+                pending = self._verifying[sha256] = Future()
+        if not owner:
+            return pending.result()
+        try:
+            bundle = verify(content)
+        except BaseException as error:
+            with self._lock:
+                del self._verifying[sha256]
+            pending.set_exception(error)
+            raise
+        with self._lock:
+            del self._verifying[sha256]
+            self._keep(sha256, bundle, len(content))
+        pending.set_result(bundle)
+        return bundle
+
+    def _keep(self, sha256: str, bundle: mlbundle.LoadedBundle, size: int) -> None:
+        """Evict the least recently used beyond the bound; the newest is kept even if alone too large."""
+        self._entries[sha256] = (bundle, size)
+        self._bytes += size
+        while self._bytes > self._max_bytes and len(self._entries) > 1:
+            _, (_, evicted) = self._entries.popitem(last=False)
+            self._bytes -= evicted
 
 
 _loaded = LoadedBundles(BUNDLE_CACHE_BYTES)
@@ -75,10 +107,7 @@ def _load(content: bytes, declared_sha256: str | None) -> mlbundle.LoadedBundle:
     sha256 = hashlib.sha256(content).hexdigest()
     if declared_sha256 is not None and sha256 != declared_sha256:
         raise bad_request("Artifact does not match its SHA-256")
-    bundle = _loaded.get(sha256)
-    if bundle is None:
-        bundle = _loaded.keep(sha256, _verify(content), len(content))
-    return bundle
+    return _loaded.verified(sha256, content, _verify)
 
 
 async def _read(upload: UploadFile) -> bytes:
@@ -99,9 +128,12 @@ async def resolve_bundle(artifact_sha256: str, upload: UploadFile | None) -> mlb
     if upload is not None:
         return await run_model_work(_load, await _read(upload), artifact_sha256)
     bundle = _loaded.get(artifact_sha256)
-    if bundle is None:
-        raise HTTPException(
-            status_code=ARTIFACT_NOT_LOADED,
-            detail="Artifact is not loaded; send it with its SHA-256",
-        )
-    return bundle
+    if bundle is not None:
+        return bundle
+    verifying = _loaded.verifying(artifact_sha256)
+    if verifying is not None:
+        return await asyncio.wrap_future(verifying)
+    raise HTTPException(
+        status_code=ARTIFACT_NOT_LOADED,
+        detail="Artifact is not loaded; send it with its SHA-256",
+    )
