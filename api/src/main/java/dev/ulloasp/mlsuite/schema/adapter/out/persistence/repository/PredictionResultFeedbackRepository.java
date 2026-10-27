@@ -71,11 +71,4 @@ public interface PredictionResultFeedbackRepository extends JpaRepository<Predic
             WHERE f.result.run.id IN :runIds AND f.user.id = :userId
             """)
     Set<Long> findRunIdsAnsweredBy(Collection<Long> runIds, Long userId);
-
-    @Query("""
-            SELECT f FROM PredictionResultFeedback f
-            WHERE f.id = :id
-            AND f.result.run.schemaVersion.schema.organization.id = :organizationId
-            """)
-    Optional<PredictionResultFeedback> findByIdAndOrganizationId(Long id, Long organizationId);
 }

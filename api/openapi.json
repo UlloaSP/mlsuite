@@ -7023,7 +7023,7 @@
     },
     "/api/admin/users": {
       "get": {
-        "operationId": "list_6",
+        "operationId": "list_5",
         "parameters": [
           {
             "in": "query",
@@ -7090,7 +7090,7 @@
         ]
       },
       "post": {
-        "operationId": "create_8",
+        "operationId": "create_7",
         "requestBody": {
           "content": {
             "application/json": {
@@ -7206,7 +7206,7 @@
         ]
       },
       "patch": {
-        "operationId": "update_4",
+        "operationId": "update_3",
         "parameters": [
           {
             "in": "path",
@@ -9810,7 +9810,7 @@
     },
     "/api/organizations/{organizationId}/roles": {
       "get": {
-        "operationId": "list_5",
+        "operationId": "list_4",
         "parameters": [
           {
             "in": "path",
@@ -9839,7 +9839,7 @@
         ]
       },
       "post": {
-        "operationId": "create_7",
+        "operationId": "create_6",
         "parameters": [
           {
             "in": "path",
@@ -10065,7 +10065,7 @@
         ]
       },
       "patch": {
-        "operationId": "update_3",
+        "operationId": "update_2",
         "parameters": [
           {
             "in": "path",
@@ -10375,7 +10375,7 @@
     },
     "/api/prediction-result-feedback": {
       "get": {
-        "operationId": "list_4",
+        "operationId": "list_8",
         "parameters": [
           {
             "in": "query",
@@ -10396,62 +10396,6 @@
                     "$ref": "#/components/schemas/PredictionResultFeedbackDto"
                   },
                   "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "prediction-result-feedback-controller"
-        ]
-      },
-      "patch": {
-        "operationId": "update_2",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdatePredictionResultFeedbackRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PredictionResultFeedbackDto"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "prediction-result-feedback-controller"
-        ]
-      },
-      "post": {
-        "operationId": "create_6",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePredictionResultFeedbackRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PredictionResultFeedbackDto"
                 }
               }
             },
@@ -10772,7 +10716,7 @@
     },
     "/api/public/bookmarks": {
       "get": {
-        "operationId": "list_8",
+        "operationId": "list_7",
         "parameters": [
           {
             "in": "query",
@@ -11571,7 +11515,7 @@
     },
     "/api/schema-bookmarks/{bookmarkId}/examples": {
       "get": {
-        "operationId": "list_7",
+        "operationId": "list_6",
         "parameters": [
           {
             "in": "path",
@@ -12907,45 +12851,6 @@
                     "$ref": "#/components/schemas/SchemaModelBindingDto"
                   },
                   "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "schema-version-controller"
-        ]
-      },
-      "post": {
-        "operationId": "addBinding",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "versionId",
-            "required": true,
-            "schema": {
-              "format": "int64",
-              "type": "integer"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSchemaModelBindingRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SchemaModelBindingDto"
                 }
               }
             },

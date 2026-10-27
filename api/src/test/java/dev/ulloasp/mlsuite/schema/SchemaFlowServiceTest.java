@@ -25,7 +25,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
@@ -38,7 +37,6 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookm
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
-import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultFeedbackRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionRunRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaModelBindingRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaRequest;
@@ -46,12 +44,8 @@ import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaVersionRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaCatalogItemDto;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.schema.application.service.PredictionRunServiceImpl;
-import dev.ulloasp.mlsuite.schema.application.service.PredictionResultFeedbackService;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaServiceImpl;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaVersionServiceImpl;
-import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
-import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
-import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackType;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
@@ -81,7 +75,6 @@ class SchemaFlowServiceTest {
     private SchemaServiceImpl schemaService;
     private SchemaVersionServiceImpl versionService;
     private PredictionRunServiceImpl runService;
-    private PredictionResultFeedbackService feedbackService;
 
     @BeforeEach
     void setUp() {
@@ -89,11 +82,9 @@ class SchemaFlowServiceTest {
                 bindingRepository, runRepository, reviewRepository,
                 authorizationService, mock(SchemaDraftRepository.class), mock(SchemaBookmarkRepository.class));
         versionService = new SchemaVersionServiceImpl(userLookupService, schemaRepository, versionRepository,
-                bindingRepository, modelRepository, mock(SchemaDraftRepository.class), authorizationService);
+                bindingRepository, modelRepository, authorizationService);
         runService = new PredictionRunServiceImpl(userLookupService, bookmarkRepository, bindingRepository,
                 runRepository, resultRepository, feedbackRepository, modelRepository, authorizationService);
-        feedbackService = new PredictionResultFeedbackService(
-                userLookupService, authorizationService, resultRepository, feedbackRepository, runRepository);
         lenient().when(userLookupService.requireById(7L)).thenReturn(user());
         lenient().when(authorizationService.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization());
     }
@@ -277,33 +268,6 @@ class SchemaFlowServiceTest {
 
         assertEquals(41L, runService.getLastPredictionRunId(7L));
         verify(authorizationService).requireCurrent(7L, PermissionKey.RUN_PREDICTIONS);
-    }
-
-    @Test
-    void createFeedback_UpsertsResultFeedback() {
-        PredictionResult result = predictionResult();
-        when(resultRepository.findByIdAndOrganizationId(77L, 41L)).thenReturn(Optional.of(result));
-        when(feedbackRepository.findByResultIdAndUserIdAndTypeAndOrder(
-                77L, 7L, PredictionResultFeedbackType.OUTPUT, 0)).thenReturn(Optional.empty());
-        when(feedbackRepository.save(any(PredictionResultFeedback.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
-        PredictionResultFeedback feedback = feedbackService.create(7L,
-                new CreatePredictionResultFeedbackRequest(77L, PredictionResultFeedbackType.OUTPUT, 0,
-                        JsonNodeFactory.instance.objectNode().put("correct", true)));
-
-        assertEquals(PredictionResultFeedbackType.OUTPUT, feedback.getType());
-        assertEquals(77L, feedback.getResult().getId());
-        verify(authorizationService).requireCurrent(7L, PermissionKey.VIEW_ORGANIZATION);
-    }
-
-    @Test
-    void createFeedback_RejectsResultOutsideOrganization() {
-        when(resultRepository.findByIdAndOrganizationId(77L, 41L)).thenReturn(Optional.empty());
-
-        assertThrows(ResponseStatusException.class, () -> feedbackService.create(7L,
-                new CreatePredictionResultFeedbackRequest(77L, PredictionResultFeedbackType.OUTPUT, 0,
-                        JsonNodeFactory.instance.objectNode())));
     }
 
 }

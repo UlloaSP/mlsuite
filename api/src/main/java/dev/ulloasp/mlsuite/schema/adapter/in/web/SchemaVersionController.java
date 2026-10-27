@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaModelBindingRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaVersionRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaModelBindingDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaVersionDto;
@@ -48,13 +47,6 @@ public class SchemaVersionController {
     public ResponseEntity<SchemaVersionDto> get(CurrentUser user, @PathVariable Long versionId) {
         Long userId = user.userId();
         return ResponseEntity.ok(toDto(userId, schemaVersionUseCase.getVersion(userId, versionId)));
-    }
-
-    @PostMapping("/schema-versions/{versionId}/bindings")
-    public ResponseEntity<SchemaModelBindingDto> addBinding(CurrentUser user, @PathVariable Long versionId,
-            @Valid @RequestBody CreateSchemaModelBindingRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(SchemaModelBindingDto.from(
-                schemaVersionUseCase.addBinding(user.userId(), versionId, request)));
     }
 
     @GetMapping("/schema-versions/{versionId}/bindings")

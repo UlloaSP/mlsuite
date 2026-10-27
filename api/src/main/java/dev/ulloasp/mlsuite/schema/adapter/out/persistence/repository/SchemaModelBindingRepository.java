@@ -2,7 +2,6 @@ package dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -35,13 +34,6 @@ public interface SchemaModelBindingRepository extends JpaRepository<SchemaModelB
     List<SnapshotModel> findBoundModelsIn(Collection<Long> schemaVersionIds);
 
     List<SchemaModelBinding> findBySchemaVersionIdIn(Collection<Long> schemaVersionIds);
-
-    @Query("""
-            SELECT b FROM SchemaModelBinding b
-            WHERE b.schemaVersion.id = :schemaVersionId
-            AND b.model.id = :modelId
-            """)
-    Optional<SchemaModelBinding> findBinding(Long schemaVersionId, Long modelId);
 
     boolean existsByModelId(Long modelId);
 

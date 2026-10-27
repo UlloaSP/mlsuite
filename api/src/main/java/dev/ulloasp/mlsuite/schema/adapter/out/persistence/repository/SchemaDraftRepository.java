@@ -24,7 +24,4 @@ public interface SchemaDraftRepository
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT d FROM SchemaDraft d WHERE d.id = :id AND d.schema.organization.id = :organizationId")
     Optional<SchemaDraft> findForUpdate(Long id, Long organizationId);
-
-    @Query("SELECT d FROM SchemaDraft d WHERE d.baseVersion.id = :baseVersionId AND d.baseBindings IS NULL")
-    List<SchemaDraft> findByBaseVersionIdAndBaseBindingsIsNull(Long baseVersionId);
 }

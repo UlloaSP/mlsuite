@@ -219,9 +219,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_6"];
+        get: operations["list_5"];
         put?: never;
-        post: operations["create_8"];
+        post: operations["create_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -257,7 +257,7 @@ export interface paths {
         delete: operations["delete_4"];
         options?: never;
         head?: never;
-        patch: operations["update_4"];
+        patch: operations["update_3"];
         trace?: never;
     };
     "/api/admin/users/{id}/password": {
@@ -1019,9 +1019,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_5"];
+        get: operations["list_4"];
         put?: never;
-        post: operations["create_7"];
+        post: operations["create_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1089,7 +1089,7 @@ export interface paths {
         delete: operations["delete_2"];
         options?: never;
         head?: never;
-        patch: operations["update_3"];
+        patch: operations["update_2"];
         trace?: never;
     };
     "/api/organizations/{organizationId}/roles/{roleId}/duplicate": {
@@ -1179,13 +1179,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_4"];
+        get: operations["list_8"];
         put?: never;
-        post: operations["create_6"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["update_2"];
+        patch?: never;
         trace?: never;
     };
     "/api/prediction-result-feedback/by-runs": {
@@ -1355,7 +1355,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1643,7 +1643,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2125,7 +2125,7 @@ export interface paths {
         };
         get: operations["listBindings"];
         put?: never;
-        post: operations["addBinding"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4731,7 +4731,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_5: {
         parameters: {
             query?: {
                 page?: number;
@@ -4757,7 +4757,7 @@ export interface operations {
             };
         };
     };
-    create_8: {
+    create_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -4827,7 +4827,7 @@ export interface operations {
             };
         };
     };
-    update_4: {
+    update_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -6316,7 +6316,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -6338,7 +6338,7 @@ export interface operations {
             };
         };
     };
-    create_7: {
+    create_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -6463,7 +6463,7 @@ export interface operations {
             };
         };
     };
-    update_3: {
+    update_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -6656,7 +6656,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_8: {
         parameters: {
             query: {
                 resultId: number;
@@ -6674,54 +6674,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PredictionResultFeedbackDto"][];
-                };
-            };
-        };
-    };
-    create_6: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreatePredictionResultFeedbackRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PredictionResultFeedbackDto"];
-                };
-            };
-        };
-    };
-    update_2: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdatePredictionResultFeedbackRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PredictionResultFeedbackDto"];
                 };
             };
         };
@@ -6968,7 +6920,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_7: {
         parameters: {
             query?: {
                 page?: number;
@@ -7441,7 +7393,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -8254,32 +8206,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SchemaModelBindingDto"][];
-                };
-            };
-        };
-    };
-    addBinding: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                versionId: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateSchemaModelBindingRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SchemaModelBindingDto"];
                 };
             };
         };
