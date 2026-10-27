@@ -154,17 +154,25 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         invitationRepository.save(invitation);
     }
 
+    /**
+     * The invitations addressed to the user's email, without their links. MLsuite verifies no
+     * email address, so whoever registered an address first would otherwise read its invitations'
+     * tokens and join: an invitee joins only with the link the inviter sends them.
+     */
     @Override
     public List<InvitationDto> listPendingForUser(Long userId) {
         User user = userLookupService.requireById(userId);
         return invitationRepository.findByEmailAndStatusOrderByCreatedAtDesc(user.getEmail().toLowerCase(), InvitationStatus.PENDING)
                 .stream()
                 .filter(inv -> inv.getExpiresAt().isAfter(OffsetDateTime.now(ZoneOffset.UTC)))
-                .map(InvitationDto::from)
+                .map(inv -> InvitationDto.from(inv, false))
                 .toList();
     }
 
-    /** Only the invitee may answer an invitation, and only while it is pending and unexpired. */
+    /**
+     * Only the invitee may answer an invitation, holding its link (the token), and only while it
+     * is pending and unexpired.
+     */
     private Invitation requireOwnPendingInvitation(User user, String token) {
         Invitation invitation = invitationRepository.findByToken(token)
                 .orElseThrow(() -> new InvitationNotFoundException(token));

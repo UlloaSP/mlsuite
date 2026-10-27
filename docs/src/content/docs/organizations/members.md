@@ -3,10 +3,10 @@ title: Members and invitations
 description: Invite existing accounts into an organization, accept or decline invitations, change members' roles and remove them.
 ---
 
-People join an organization by invitation. MLsuite sends no email: the invited person finds the
-invitation under **Notifications**, or opens a link you copy to them. Only accounts that already
-exist on the instance can be invited, so ask the person to [create an
-account](/start/account/) first.
+People join an organization by invitation. MLsuite sends no email and verifies no address, so the
+invited person joins through a link you copy to them, sent by a channel you trust; the invitation
+also shows under their **Notifications**, without the link. Only accounts that already exist on
+the instance can be invited, so ask the person to [create an account](/start/account/) first.
 
 ## Invite someone
 
@@ -27,15 +27,17 @@ Expired or Revoked. Members with **Manage invitations** can act on each invitati
 | Action | Effect |
 | --- | --- |
 | Resend | Issues a new link and another 7 days. Not offered for accepted invitations. |
-| Copy link | Copies `/invite/<token>` for you to send yourself. |
+| Copy link | Copies `/invite/<token>`, the link the person joins with, for you to send yourself. |
 | Revoke | Cancels the invitation. Tick several and choose **Bulk revoke** to cancel them together. |
 
 ## Accept or decline
 
-Pending invitations appear in **Notifications** (the account menu shows how many) with
-**Accept** and **Decline**. An invitation link opens the **Join workspace** page with the same two
-choices. Accepting or declining needs the account whose email was invited; an expired or already
-answered invitation can be neither. After accepting, the organization becomes your current one.
+Pending invitations appear in **Notifications** (the account menu shows how many), which says to
+open the invitation link. The link opens the **Join workspace** page with **Accept** and
+**Decline**. Accepting or declining needs both the link and the account whose email was invited:
+anyone could register an address before its owner does, and without the link that account cannot
+join. An expired or already answered invitation can be neither. After accepting, the organization
+becomes your current one.
 
 ## Members
 

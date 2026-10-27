@@ -156,7 +156,7 @@ class InvitationCatalogTest extends PublicPredictionFixture {
         mockMvc.perform(asOwner(get(path)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalItems").value(2))
-                .andExpect(jsonPath("$.items[0].token").isString());
+                .andExpect(jsonPath("$.items[0].token").isEmpty());
         mockMvc.perform(asOwner(get(path).param("size", "1").param("page", "1")))
                 .andExpect(jsonPath("$.items.length()").value(1))
                 .andExpect(jsonPath("$.hasNext").value(false));

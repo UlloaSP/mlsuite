@@ -70,7 +70,9 @@ public class InvitationCatalogService {
                                 CatalogPages.likeLiteral(request.search()), '!')));
         Page<Invitation> page = invitationRepository.findAll(matching,
                 CatalogPages.pageable(request, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id"))));
-        return PageDto.of(page, page.getContent().stream().map(InvitationDto::from).toList());
+        // The token is the invitation link: an invitee joins only through the link they were sent.
+        return PageDto.of(page,
+                page.getContent().stream().map(invitation -> InvitationDto.from(invitation, false)).toList());
     }
 
     private Specification<Invitation> matching(Long organizationId, CatalogRequest request) {
