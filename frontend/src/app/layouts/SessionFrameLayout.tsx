@@ -19,7 +19,9 @@ import { PublicFrame } from "./PublicFrame";
 export function SessionFrameLayout() {
   const user = useUser();
   const workspace = useWorkspaceContext(Boolean(user.data) && !user.error);
-  const showLoader = useStableLoading(user.isLoading || workspace.isLoading);
+  // Only the first answer about the session holds the page. Asking again, as on coming back to
+  // the window, puts a visitor's "no session" back to pending; it must not unmount the page.
+  const showLoader = useStableLoading((user.isLoading && !user.isFetched) || workspace.isLoading);
 
   if (showLoader) return <AppPageLoader viewport label="Loading…" />;
 
