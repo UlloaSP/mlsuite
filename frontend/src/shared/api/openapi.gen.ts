@@ -1620,6 +1620,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/schema-bookmarks/{bookmarkId}/predictions/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["predictBatchForBookmark"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/schema-bookmarks/{bookmarkId}/publish": {
         parameters: {
             query?: never;
@@ -1646,6 +1662,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["createForBookmark"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schema-bookmarks/{bookmarkId}/runs/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["createManyForBookmark"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2728,6 +2760,9 @@ export interface components {
             /** Format: int64 */
             schemaVersionId: number;
         };
+        CreatePredictionRunsRequest: {
+            runs: components["schemas"]["CreatePredictionRunRequest"][];
+        };
         CreateRoleFromTemplateRequest: {
             name?: string | null;
             permissionKeys?: string[] | null;
@@ -2782,6 +2817,9 @@ export interface components {
         CreateSchemaWithInitialVersionRequest: {
             initialVersion: components["schemas"]["CreateSchemaVersionRequest"];
             schema: components["schemas"]["CreateSchemaRequest"];
+        };
+        CreatedPredictionRunsDto: {
+            runIds: number[];
         };
         Dependency: {
             message: string;
@@ -4132,6 +4170,18 @@ export interface components {
             canViewPlugins: boolean;
             canViewWorkspace: boolean;
         };
+        WorkspacePredictionBatchDto: {
+            results: components["schemas"]["WorkspacePredictionDto"][];
+        };
+        WorkspacePredictionBatchRequest: {
+            /** Format: int64 */
+            modelId: number;
+            rows: {
+                [key: string]: unknown;
+            }[];
+            /** Format: int64 */
+            schemaVersionId: number;
+        };
         WorkspacePredictionDto: {
             attestation: string;
             errorJson: {
@@ -4213,6 +4263,7 @@ export type CreateOrganizationRequest = components['schemas']['CreateOrganizatio
 export type CreatePredictionResultFeedbackRequest = components['schemas']['CreatePredictionResultFeedbackRequest'];
 export type CreatePredictionResultRequest = components['schemas']['CreatePredictionResultRequest'];
 export type CreatePredictionRunRequest = components['schemas']['CreatePredictionRunRequest'];
+export type CreatePredictionRunsRequest = components['schemas']['CreatePredictionRunsRequest'];
 export type CreateRoleFromTemplateRequest = components['schemas']['CreateRoleFromTemplateRequest'];
 export type CreateRoleRequest = components['schemas']['CreateRoleRequest'];
 export type CreateSchemaBookmarkRequest = components['schemas']['CreateSchemaBookmarkRequest'];
@@ -4222,6 +4273,7 @@ export type CreateSchemaRequest = components['schemas']['CreateSchemaRequest'];
 export type CreateSchemaReviewRequest = components['schemas']['CreateSchemaReviewRequest'];
 export type CreateSchemaVersionRequest = components['schemas']['CreateSchemaVersionRequest'];
 export type CreateSchemaWithInitialVersionRequest = components['schemas']['CreateSchemaWithInitialVersionRequest'];
+export type CreatedPredictionRunsDto = components['schemas']['CreatedPredictionRunsDto'];
 export type Dependency = components['schemas']['Dependency'];
 export type DuplicateRoleRequest = components['schemas']['DuplicateRoleRequest'];
 export type ErrorDto = components['schemas']['ErrorDto'];
@@ -4358,6 +4410,8 @@ export type UserDto = components['schemas']['UserDto'];
 export type WorkspaceContextDto = components['schemas']['WorkspaceContextDto'];
 export type WorkspaceCurrentContextDto = components['schemas']['WorkspaceCurrentContextDto'];
 export type WorkspacePermissionsDto = components['schemas']['WorkspacePermissionsDto'];
+export type WorkspacePredictionBatchDto = components['schemas']['WorkspacePredictionBatchDto'];
+export type WorkspacePredictionBatchRequest = components['schemas']['WorkspacePredictionBatchRequest'];
 export type WorkspacePredictionDto = components['schemas']['WorkspacePredictionDto'];
 export type WorkspacePredictionRequest = components['schemas']['WorkspacePredictionRequest'];
 export type WorkspaceUserDto = components['schemas']['WorkspaceUserDto'];
@@ -7332,6 +7386,32 @@ export interface operations {
             };
         };
     };
+    predictBatchForBookmark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspacePredictionBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspacePredictionBatchDto"];
+                };
+            };
+        };
+    };
     publish_1: {
         parameters: {
             query?: never;
@@ -7376,6 +7456,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PredictionRunDto"];
+                };
+            };
+        };
+    };
+    createManyForBookmark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePredictionRunsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedPredictionRunsDto"];
                 };
             };
         };

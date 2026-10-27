@@ -47,6 +47,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
+import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionBatchRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionDto;
 import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionRequest;
 import dev.ulloasp.mlsuite.schema.domain.model.BoundModel;
@@ -211,6 +212,36 @@ class WorkspacePredictionServiceTest {
         assertEquals(503, busy.getStatusCode().value());
         assertEquals("2", busy.getHeaders().getFirst(HttpHeaders.RETRY_AFTER));
         verifyNoInteractions(authorization, bookmarks, bindings, models, runtime);
+    }
+
+    @Test
+    void aBatchTakesOnePlaceAndIsTurnedAwayBeforeAnyDatabaseWork() {
+        service = service(new WorkspaceRuntimeSlots(0, NO_WAITING));
+
+        assertThrows(RuntimeBusyException.class, () -> service.predictBatch(7L, 70L,
+                new WorkspacePredictionBatchRequest(9L, 11L, List.of(INPUT, Map.of("age", 61)))));
+
+        verifyNoInteractions(authorization, bookmarks, bindings, models, runtime);
+    }
+
+    @Test
+    void aBatchExplainsEachRecordItsPluginReportsAskFor() {
+        useReports(List.of(Map.of("id", "risk", "kind", "classifier", "label", "Risk", "mappedTo", Map.of("forest", 0)),
+                Map.of("id", "why", "kind", "Crystal Tree", "label", "Why", "mappedTo", Map.of("forest", "why"))));
+        when(runtime.run("/predict/batch", FOREST, Map.of("data", "[{\"age\":52},{\"age\":61}]")))
+                .thenReturn(Map.of("rows", List.of(Map.of("reports", List.of(CLASSIFIER)),
+                        Map.of("error", Map.of("status", 400, "detail", "Missing features")))));
+        when(runtime.run("/explain", FOREST, EXPLAIN)).thenReturn(Map.of("reports", List.of(Map.of("kind", "Crystal Tree"))));
+
+        List<WorkspacePredictionDto> results = service.predictBatch(7L, 70L,
+                new WorkspacePredictionBatchRequest(9L, 11L, List.of(INPUT, Map.of("age", 61)))).results();
+
+        assertEquals(PredictionResultStatus.SUCCESS, results.get(0).status());
+        assertEquals(PredictionResultStatus.FAILED, results.get(1).status());
+        assertEquals("Missing features", results.get(1).errorMessage());
+        assertEquals(11L, attestations.open(results.get(1).attestation()).modelId());
+        // Only the record that was predicted is explained.
+        verify(runtime).run("/explain", FOREST, EXPLAIN);
     }
 
     @Test

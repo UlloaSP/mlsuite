@@ -1314,6 +1314,22 @@
         ],
         "type": "object"
       },
+      "CreatePredictionRunsRequest": {
+        "properties": {
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/CreatePredictionRunRequest"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "runs"
+        ],
+        "type": "object"
+      },
       "CreateRoleFromTemplateRequest": {
         "properties": {
           "name": {
@@ -1541,6 +1557,21 @@
         "required": [
           "initialVersion",
           "schema"
+        ],
+        "type": "object"
+      },
+      "CreatedPredictionRunsDto": {
+        "properties": {
+          "runIds": {
+            "items": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "runIds"
         ],
         "type": "object"
       },
@@ -6347,6 +6378,47 @@
           "canViewOrganization",
           "canViewPlugins",
           "canViewWorkspace"
+        ],
+        "type": "object"
+      },
+      "WorkspacePredictionBatchDto": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspacePredictionDto"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "type": "object"
+      },
+      "WorkspacePredictionBatchRequest": {
+        "properties": {
+          "modelId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "rows": {
+            "items": {
+              "additionalProperties": { },
+              "type": "object"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array"
+          },
+          "schemaVersionId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "modelId",
+          "rows",
+          "schemaVersionId"
         ],
         "type": "object"
       },
@@ -11490,6 +11562,47 @@
         ]
       }
     },
+    "/api/schema-bookmarks/{bookmarkId}/predictions/batch": {
+      "post": {
+        "operationId": "predictBatchForBookmark",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkspacePredictionBatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspacePredictionBatchDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-run-controller"
+        ]
+      }
+    },
     "/api/schema-bookmarks/{bookmarkId}/publish": {
       "post": {
         "operationId": "publish_1",
@@ -11551,6 +11664,47 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PredictionRunDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-run-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks/{bookmarkId}/runs/batch": {
+      "post": {
+        "operationId": "createManyForBookmark",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePredictionRunsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedPredictionRunsDto"
                 }
               }
             },

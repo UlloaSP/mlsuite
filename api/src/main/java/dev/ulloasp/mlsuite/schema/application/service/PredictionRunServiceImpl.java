@@ -51,11 +51,16 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
         User user = userLookupService.requireById(userId);
         Long organizationId = requireRunPredictions(userId);
         SchemaBookmark bookmark = requireBookmark(schemaBookmarkId, organizationId);
-        if (!bookmark.getVersion().getId().equals(request.schemaVersionId())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "The bookmark moved to another snapshot; reload before saving");
-        }
-        return createRun(organizationId, user, bookmark, bookmark.getVersion(), request);
+        return createRun(organizationId, user, bookmark, request);
+    }
+
+    @Override
+    public List<Long> createRunsForBookmark(Long userId, Long schemaBookmarkId,
+            List<CreatePredictionRunRequest> requests) {
+        User user = userLookupService.requireById(userId);
+        Long organizationId = requireRunPredictions(userId);
+        SchemaBookmark bookmark = requireBookmark(schemaBookmarkId, organizationId);
+        return requests.stream().map(request -> createRun(organizationId, user, bookmark, request).getId()).toList();
     }
 
     @Override
@@ -96,10 +101,16 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
      * A run keeps only results the server produced: each one is opened from its seal, which must
      * be for this organization and snapshot, and stored exactly as sealed.
      */
-    private PredictionRun createRun(Long organizationId, User user, SchemaBookmark bookmark, SchemaVersion version,
+    private PredictionRun createRun(Long organizationId, User user, SchemaBookmark bookmark,
             CreatePredictionRunRequest request) {
+        SchemaVersion version = bookmark.getVersion();
+        if (!version.getId().equals(request.schemaVersionId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "The bookmark moved to another snapshot; reload before saving");
+        }
         if (runRepository.existsBySchemaVersionIdAndName(version.getId(), request.name())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Prediction run name already exists");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Prediction run name already exists: " + request.name());
         }
         List<AttestedPrediction> results = request.results().stream()
                 .map(result -> attestations.open(result.attestation()))

@@ -10,7 +10,6 @@ import org.springframework.web.server.ResponseStatusException;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
-import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionRequest;
 import dev.ulloasp.mlsuite.schema.application.service.PublicForm.ReportRoute;
 import dev.ulloasp.mlsuite.schema.domain.model.BoundModel;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
@@ -48,18 +47,19 @@ public class WorkspacePredictionPlanner {
         }
     }
 
-    public Plan plan(Long userId, Long bookmarkId, WorkspacePredictionRequest request) {
+    /** The run of {@code modelId} for the bookmark, whose form was built from {@code schemaVersionId}. */
+    public Plan plan(Long userId, Long bookmarkId, Long schemaVersionId, Long modelId) {
         Long organizationId = authorizationService.requireCurrent(userId, PermissionKey.RUN_PREDICTIONS).getId();
         SchemaBookmark bookmark = bookmarkRepository.findByIdAndOrganizationId(bookmarkId, organizationId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema bookmark not found"));
         SchemaVersion version = bookmark.getVersion();
-        if (!version.getId().equals(request.schemaVersionId())) {
+        if (!version.getId().equals(schemaVersionId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "The bookmark moved to another snapshot; reload before running");
         }
         List<BoundModel> models = publishability.models(version);
-        if (models.stream().noneMatch(model -> model.id().equals(request.modelId()))) throw notBound();
-        ModelArtifactReference artifact = modelRepository.findArtifactReference(request.modelId(), organizationId)
+        if (models.stream().noneMatch(model -> model.id().equals(modelId))) throw notBound();
+        ModelArtifactReference artifact = modelRepository.findArtifactReference(modelId, organizationId)
                 .orElseThrow(WorkspacePredictionPlanner::notBound);
         return new Plan(organizationId, version.getId(), artifact,
                 PublicForm.of(version.getFormSchema(), models).reportRoutes());

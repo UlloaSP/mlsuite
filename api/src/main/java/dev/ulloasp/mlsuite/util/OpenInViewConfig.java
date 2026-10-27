@@ -20,6 +20,7 @@ public class OpenInViewConfig {
     private static final String PUBLIC_PREDICTIONS = "/api/public/bookmarks/*/predictions";
     private static final String CLIENT_PREDICTIONS = "/api/v1/bookmarks/*/predictions";
     private static final String WORKSPACE_PREDICTIONS = "/api/schema-bookmarks/*/predictions";
+    private static final String WORKSPACE_PREDICTION_BATCHES = "/api/schema-bookmarks/*/predictions/batch";
     private static final String WORKSPACE_EXPLANATIONS = "/api/analyzer/explanations";
     private static final String ARTIFACT_INSPECTIONS = "/api/analyzer/artifacts/inspect";
 
@@ -35,7 +36,8 @@ public class OpenInViewConfig {
             public void addInterceptors(InterceptorRegistry registry) {
                 registry.addWebRequestInterceptor(interceptor)
                         .excludePathPatterns(PUBLIC_PREDICTIONS, CLIENT_PREDICTIONS,
-                                WORKSPACE_PREDICTIONS, WORKSPACE_EXPLANATIONS, ARTIFACT_INSPECTIONS);
+                                WORKSPACE_PREDICTIONS, WORKSPACE_PREDICTION_BATCHES, WORKSPACE_EXPLANATIONS,
+                                ARTIFACT_INSPECTIONS);
             }
         };
     }
