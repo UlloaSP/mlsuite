@@ -8428,6 +8428,46 @@
         ]
       }
     },
+    "/api/models/{modelId}/restore": {
+      "post": {
+        "operationId": "restore_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "modelId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "model-controller"
+        ]
+      }
+    },
     "/api/organizations": {
       "get": {
         "operationId": "listOrganizations",
@@ -13408,6 +13448,37 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-controller"
+        ]
+      }
+    },
+    "/api/schemas/{schemaId}/restore": {
+      "post": {
+        "operationId": "restore",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schemaId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
             }
           }
         ],

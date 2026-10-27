@@ -162,6 +162,17 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         return modelRepository.save(model);
     }
 
+    /** Returns an archived model to the active catalog, where new schemas may bind it again. */
+    @Override
+    public Model restoreModel(Long userId, Long modelId, Long expectedVersion) {
+        Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.EDIT_MODELS);
+        Model model = requireModel(userId, organization.getId(), modelId);
+        ModelVersionGuard.requireCurrent(model, expectedVersion, requireMutationVersion);
+        model.setArchivedAt(null);
+        model.setUpdatedBy(userLookupService.requireById(userId));
+        return modelRepository.save(model);
+    }
+
     @Override
     public Model duplicateModel(Long userId, Long modelId, String name) {
         User user = userLookupService.requireById(userId);

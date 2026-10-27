@@ -71,6 +71,11 @@ public class SchemaController {
         return ResponseEntity.ok(SchemaDto.from(schemaCatalogUseCase.archiveSchema(user.userId(), schemaId)));
     }
 
+    @PostMapping("/{schemaId}/restore")
+    public ResponseEntity<SchemaDto> restore(CurrentUser user, @PathVariable Long schemaId) {
+        return ResponseEntity.ok(SchemaDto.from(schemaCatalogUseCase.restoreSchema(user.userId(), schemaId)));
+    }
+
     @PostMapping("/{schemaId}/duplicate")
     public ResponseEntity<SchemaDto> duplicate(CurrentUser user, @PathVariable Long schemaId,
             @RequestParam(required = false) Long versionId, @RequestParam String name) {

@@ -63,5 +63,5 @@ The actions of each row in the schemas list:
 | --- | --- |
 | Rename | Change the name; snapshots and runs stay attached. |
 | Duplicate | Copy the latest snapshot and its bindings into a new schema starting at `v1`. |
-| Archive | Hide it from the active list. Its bookmarks leave Predict and Explore, and API clients can no longer run them. |
+| Archive | Hide it from the active list. Its bookmarks leave Predict and Explore, and API clients can no longer run them. **Restore** under **Archived** brings it and its bookmarks back. |
 | Delete | Remove the schema with its changes, bookmarks and snapshots. Refused while any inference or review uses it: archive it instead. |

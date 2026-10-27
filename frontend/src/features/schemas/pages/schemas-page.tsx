@@ -9,6 +9,7 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
   useArchiveSchemaMutation,
+  useRestoreSchemaMutation,
   useDeleteSchemaMutation,
   useDuplicateSchemaMutation,
   useRenameSchemaMutation,
@@ -53,6 +54,7 @@ export function SchemasPage() {
   });
   const renameMutation = useRenameSchemaMutation();
   const archiveMutation = useArchiveSchemaMutation();
+  const restoreMutation = useRestoreSchemaMutation();
   const deleteMutation = useDeleteSchemaMutation();
   const duplicateMutation = useDuplicateSchemaMutation();
   const pageQuery = useSchemaCatalogPageQuery(
@@ -87,6 +89,10 @@ export function SchemasPage() {
         await archiveMutation.mutateAsync(schema.id);
         toast.success("Schema archived.");
       }
+      if (action === "restore") {
+        await restoreMutation.mutateAsync(schema.id);
+        toast.success("Schema restored.");
+      }
       if (action === "delete") {
         await deleteMutation.mutateAsync(schema.id);
         toast.success("Schema deleted.");
@@ -101,6 +107,7 @@ export function SchemasPage() {
   const isActionPending =
     renameMutation.isPending ||
     archiveMutation.isPending ||
+    restoreMutation.isPending ||
     deleteMutation.isPending ||
     duplicateMutation.isPending;
 

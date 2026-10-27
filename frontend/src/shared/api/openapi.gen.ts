@@ -644,6 +644,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/models/{modelId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["restore_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/organizations": {
         parameters: {
             query?: never;
@@ -2254,6 +2270,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["duplicate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schemas/{schemaId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["restore"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5561,6 +5593,30 @@ export interface operations {
             };
         };
     };
+    restore_1: {
+        parameters: {
+            query?: {
+                version?: number;
+            };
+            header?: never;
+            path: {
+                modelId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelDto"];
+                };
+            };
+        };
+    };
     listOrganizations: {
         parameters: {
             query?: never;
@@ -8462,6 +8518,28 @@ export interface operations {
                 versionId?: number;
                 name: string;
             };
+            header?: never;
+            path: {
+                schemaId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaDto"];
+                };
+            };
+        };
+    };
+    restore: {
+        parameters: {
+            query?: never;
             header?: never;
             path: {
                 schemaId: number;

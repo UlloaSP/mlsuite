@@ -25,6 +25,8 @@ public interface ModelCatalogUseCase {
 
     Model archiveModel(Long userId, Long modelId, Long expectedVersion);
 
+    Model restoreModel(Long userId, Long modelId, Long expectedVersion);
+
     Model duplicateModel(Long userId, Long modelId, String name);
 
     void deleteModel(Long userId, Long modelId, Long expectedVersion);

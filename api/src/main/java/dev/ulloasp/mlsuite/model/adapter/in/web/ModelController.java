@@ -107,6 +107,14 @@ public class ModelController {
                 version)));
     }
 
+    @PostMapping("/{modelId}/restore")
+    public ResponseEntity<ModelDto> restore(
+            CurrentUser user,
+            @PathVariable Long modelId,
+            @RequestParam(required = false) Long version) {
+        return ResponseEntity.ok(ModelDto.toDto(modelCatalogUseCase.restoreModel(user.userId(), modelId, version)));
+    }
+
     @PostMapping("/{modelId}/duplicate")
     public ResponseEntity<ModelDto> duplicate(
             CurrentUser user,

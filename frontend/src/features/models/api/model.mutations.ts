@@ -5,7 +5,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { archiveModel, createModel, deleteModel, duplicateModel, renameModel } from "./model.api";
+import {
+  archiveModel,
+  createModel,
+  deleteModel,
+  duplicateModel,
+  renameModel,
+  restoreModel,
+} from "./model.api";
 import { modelKeys } from "./model.keys";
 import type { CreateModelRequest } from "./model.types";
 
@@ -26,6 +33,11 @@ const invalidatingMutationOptions = <TVariables>(
 export const useArchiveModelMutation = () => {
   const invalidate = useInvalidateModelQueries();
   return useMutation(invalidatingMutationOptions(archiveModel, invalidate));
+};
+
+export const useRestoreModelMutation = () => {
+  const invalidate = useInvalidateModelQueries();
+  return useMutation(invalidatingMutationOptions(restoreModel, invalidate));
 };
 
 export const useDeleteModelMutation = () => {
