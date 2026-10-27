@@ -362,6 +362,20 @@ bounds database concurrency with `DB_POOL_MAX_SIZE`, `DB_POOL_MIN_IDLE` and
 budget, leaving capacity for the migration job and operations, rather than
 matching it to the HTTP thread count.
 
+Runtime calls hold no database connection: a prediction or explanation resolves
+its model in short reads and waits for the runtime outside any transaction. Each
+kind of caller has its own share of the runtime, and a call that finds its share in
+use receives `503 Service Unavailable`: `WORKSPACE_PREDICTION_MAX_CONCURRENT`
+(default `4`) for workspace members, and the public and client shares below. A call
+names its model's artifact by SHA-256; the API sends the artifact only when the
+runtime answers that it does not hold it, and the runtime checks the bytes against
+that hash. The runtime runs model work on at most `RUNTIME_MAX_CONCURRENT` threads
+(default `8`; keep it at least the sum of the three shares, or admitted runs queue
+there), so its health check and other requests stay answered while models run, and
+keeps verified bundles while their artifacts total at most
+`RUNTIME_BUNDLE_CACHE_MB` (default `512`; the newest bundle is kept even when
+larger).
+
 Monitor `storageDeletionQueue` on `/actuator/info` and alert on any `failed` row
 or a `pending` count that grows continuously. Cleanup workers use database leases,
 so several API instances process disjoint tasks and an expired worker cannot

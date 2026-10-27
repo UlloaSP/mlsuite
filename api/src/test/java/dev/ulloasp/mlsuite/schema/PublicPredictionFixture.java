@@ -79,7 +79,8 @@ import jakarta.persistence.EntityManager;
         "storage.auto-create-bucket=false",
         "storage.deletion.enabled=false",
         "mlsuite.public-prediction.max-model-size-mb=1",
-        "mlsuite.public-prediction.max-concurrent=1"
+        "mlsuite.public-prediction.max-concurrent=1",
+        "mlsuite.workspace-prediction.max-concurrent=1"
 })
 @AutoConfigureMockMvc
 @Testcontainers(disabledWithoutDocker = true)

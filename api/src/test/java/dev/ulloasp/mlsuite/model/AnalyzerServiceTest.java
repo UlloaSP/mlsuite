@@ -29,6 +29,7 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -37,6 +38,7 @@ import dev.ulloasp.mlsuite.model.adapter.out.analyzer.ModelRuntimeClient;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.application.dto.ExplainRequest;
 import dev.ulloasp.mlsuite.model.application.service.AnalyzerServiceImpl;
+import dev.ulloasp.mlsuite.model.application.service.WorkspaceRuntimeSlots;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
@@ -74,7 +76,7 @@ class AnalyzerServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = service();
+        service = service(new WorkspaceRuntimeSlots(4));
         lenient().when(authorizationService.requireCurrent(3L, PermissionKey.RUN_PREDICTIONS)).thenReturn(organization());
     }
 
@@ -165,6 +167,36 @@ class AnalyzerServiceTest {
     }
 
     @Test
+    void predictAndExplain_AreTurnedAwayWithoutCallingTheRuntimeWhenEverySlotIsInUse() {
+        service = service(new WorkspaceRuntimeSlots(0));
+        when(modelRepository.findArtifactReference(11L, 5L)).thenReturn(Optional.of(artifact()));
+
+        ResponseStatusException predicting = assertThrows(ResponseStatusException.class,
+                () -> service.predict(3L, 11L, Map.of("x", 1)));
+        ResponseStatusException explaining = assertThrows(ResponseStatusException.class,
+                () -> service.explain(3L, 11L, new ExplainRequest(Map.of("x", 1), List.of())));
+
+        for (ResponseStatusException busy : List.of(predicting, explaining)) {
+            assertEquals(503, busy.getStatusCode().value());
+            assertEquals("Too many workspace runs are in progress. Try again in a moment.", busy.getReason());
+        }
+        verifyNoInteractions(restTemplate);
+    }
+
+    @Test
+    void predict_ReturnsTheSlotHoweverTheRunEnds() {
+        service = service(new WorkspaceRuntimeSlots(1));
+        when(modelRepository.findArtifactReference(11L, 5L)).thenReturn(Optional.of(artifact()));
+        when(restTemplate.postForObject(eq("http://py-analyzer:8000/predict"), any(), eq(Map.class)))
+                .thenThrow(restError(400, "{\"detail\":\"Missing features\"}"))
+                .thenReturn(Map.of("prediction", 1));
+
+        assertEquals(400, assertThrows(AnalyzerServiceException.class,
+                () -> service.predict(3L, 11L, Map.of("x", 1))).getStatus());
+        assertEquals(1, service.predict(3L, 11L, Map.of("x", 1)).get("prediction"));
+    }
+
+    @Test
     void predict_ThrowsWhenTheOrganizationHasNoSuchModel() {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.findArtifactReference(11L, 5L)).thenReturn(Optional.empty());
@@ -192,11 +224,11 @@ class AnalyzerServiceTest {
         verifyNoInteractions(modelRepository, restTemplate);
     }
 
-    private AnalyzerServiceImpl service() {
+    private AnalyzerServiceImpl service(WorkspaceRuntimeSlots slots) {
         AnalyzerClient analyzerClient = new AnalyzerClient(restTemplate, "http://py-analyzer:8000");
         ModelRuntimeClient modelRuntime = new ModelRuntimeClient(analyzerClient,
                 new ModelArtifactContentReader(objectStorageService, modelRepository));
-        return new AnalyzerServiceImpl(analyzerClient, modelRuntime, modelRepository,
+        return new AnalyzerServiceImpl(analyzerClient, modelRuntime, slots, modelRepository,
                 userLookupService, authorizationService, new ObjectMapper());
     }
 

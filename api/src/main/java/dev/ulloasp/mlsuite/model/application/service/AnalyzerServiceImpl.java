@@ -24,16 +24,20 @@ import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Runtime calls of workspace members. Nothing here is transactional and these endpoints are left
+ * out of open-in-view (see OpenInViewConfig): the caller and model are resolved in short reads,
+ * and the runtime is called in a {@link WorkspaceRuntimeSlots} slot with no connection held.
+ */
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class AnalyzerServiceImpl implements AnalyzerUseCase {
 
     private final AnalyzerClient analyzerClient;
     private final ModelRuntimeClient modelRuntime;
+    private final WorkspaceRuntimeSlots slots;
     private final ModelRepository modelRepository;
     private final UserLookupService userLookupService;
     private final WorkspaceAuthorizationService authorizationService;
@@ -51,14 +55,14 @@ public class AnalyzerServiceImpl implements AnalyzerUseCase {
     public Map<String, Object> predict(Long userId, Long modelId, Map<String, Object> data) {
         ModelArtifactReference artifact = requireRunnableModel(userId, modelId);
         Map<String, String> fields = Map.of("data", json(data));
-        return modelRuntime.run("/predict", artifact, fields);
+        return slots.run(() -> modelRuntime.run("/predict", artifact, fields));
     }
 
     @Override
     public Map<String, Object> explain(Long userId, Long modelId, ExplainRequest request) {
         ModelArtifactReference artifact = requireRunnableModel(userId, modelId);
         Map<String, String> fields = Map.of("data", json(request.instance()), "traces", json(request.traces()));
-        return modelRuntime.run("/explain", artifact, fields);
+        return slots.run(() -> modelRuntime.run("/explain", artifact, fields));
     }
 
     private String json(Object value) {
