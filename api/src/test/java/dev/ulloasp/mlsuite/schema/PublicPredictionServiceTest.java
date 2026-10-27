@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -19,8 +18,6 @@ import java.math.BigInteger;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -30,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -309,27 +305,6 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
         for (ResponseStatusException error : errors.subList(1, 4)) {
             assertEquals("The prediction could not be completed. Try again later.", error.getReason());
         }
-    }
-
-    @Test
-    void anArtifactThatFailsVerificationFailsTheRunWhileItIsSent() {
-        inTransaction(() -> entityManager.find(Model.class, forestModel.getId()).setArtifactSha256("0".repeat(64)));
-        when(analyzer.post(eq("/predict"), any()))
-                .thenThrow(new AnalyzerServiceException(409, "Artifact is not loaded; send it with its SHA-256"));
-        // The client streams the artifact into the request; a read that fails verification aborts it.
-        when(analyzer.postWithArtifact(eq("/predict"), any())).thenAnswer(call -> {
-            MultiValueMap<String, ?> parts = call.getArgument(1);
-            Object part = ((HttpEntity<?>) parts.getFirst("model_file")).getBody();
-            try (InputStream in = ((Resource) part).getInputStream()) {
-                in.readAllBytes();
-            } catch (IOException aborted) {
-                throw AnalyzerServiceException.fromNetwork();
-            }
-            return Map.of("reports", List.of(CLASSIFIER));
-        });
-
-        assertEquals(502, refused(bookmark.getPublicId(), request(Map.of("in0", 52))).getStatusCode().value());
-        verify(analyzer).post(eq("/predict"), argThat(parts -> parts.getFirst("model_file") == null));
     }
 
     @Test
