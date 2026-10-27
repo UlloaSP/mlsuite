@@ -19,7 +19,7 @@ public class OpenInViewConfig {
 
     private static final String PUBLIC_PREDICTIONS = "/api/public/bookmarks/*/predictions";
     private static final String CLIENT_PREDICTIONS = "/api/v1/bookmarks/*/predictions";
-    private static final String WORKSPACE_PREDICTIONS = "/api/analyzer/predictions";
+    private static final String WORKSPACE_PREDICTIONS = "/api/schema-bookmarks/*/predictions";
     private static final String WORKSPACE_EXPLANATIONS = "/api/analyzer/explanations";
     private static final String ARTIFACT_INSPECTIONS = "/api/analyzer/artifacts/inspect";
 

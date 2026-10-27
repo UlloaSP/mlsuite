@@ -52,13 +52,6 @@ public class AnalyzerServiceImpl implements AnalyzerUseCase {
     }
 
     @Override
-    public Map<String, Object> predict(Long userId, Long modelId, Map<String, Object> data) {
-        ModelArtifactReference artifact = requireRunnableModel(userId, modelId);
-        Map<String, String> fields = Map.of("data", json(data));
-        return slots.run(() -> modelRuntime.run("/predict", artifact, fields));
-    }
-
-    @Override
     public Map<String, Object> explain(Long userId, Long modelId, ExplainRequest request) {
         ModelArtifactReference artifact = requireRunnableModel(userId, modelId);
         Map<String, String> fields = Map.of("data", json(request.instance()), "traces", json(request.traces()));
@@ -73,7 +66,7 @@ public class AnalyzerServiceImpl implements AnalyzerUseCase {
         }
     }
 
-    /** Executing a model, whether to predict or to explain, requires permission to run predictions. */
+    /** Explaining a model executes it, which requires permission to run predictions. */
     private ModelArtifactReference requireRunnableModel(Long userId, Long modelId) {
         Long organizationId = authorizationService.requireCurrent(userId, PermissionKey.RUN_PREDICTIONS).getId();
         return modelRepository.findArtifactReference(modelId, organizationId)

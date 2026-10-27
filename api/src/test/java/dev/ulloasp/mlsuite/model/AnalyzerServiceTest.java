@@ -138,80 +138,52 @@ class AnalyzerServiceTest {
     }
 
     @Test
-    void predict_NamesTheOrganizationsModelByItsArtifactHash() {
-        when(modelRepository.findArtifactReference(11L, 5L)).thenReturn(Optional.of(artifact()));
-        when(restTemplate.postForObject(eq("http://py-analyzer:8000/predict"), any(), eq(Map.class)))
-                .thenReturn(Map.of("prediction", 1));
-
-        Map<String, Object> result = service.predict(3L, 11L, Map.of("x", 1));
-
-        assertEquals(1, result.get("prediction"));
-        MultiValueMap<String, HttpEntity<?>> sent = sent(1).get(0);
-        assertEquals("abc123", sent.getFirst("artifact_sha256").getBody());
-        assertEquals("{\"x\":1}", sent.getFirst("data").getBody());
-        verifyNoInteractions(objectStorageService);
-    }
-
-    @Test
     void explain_SendsTheInstanceAndTracesForTheModelsArtifact() {
         when(modelRepository.findArtifactReference(11L, 5L)).thenReturn(Optional.of(artifact()));
         when(restTemplate.postForObject(eq("http://py-analyzer:8000/explain"), any(), eq(Map.class)))
                 .thenReturn(Map.of("reports", List.of()));
 
-        service.explain(3L, 11L, new ExplainRequest(Map.of("x", 1), List.of()));
+        service.explain(3L, 11L, request());
 
         MultiValueMap<String, HttpEntity<?>> sent = sent(1).get(0);
         assertEquals("abc123", sent.getFirst("artifact_sha256").getBody());
         assertEquals("{\"x\":1}", sent.getFirst("data").getBody());
         assertEquals("[]", sent.getFirst("traces").getBody());
+        verifyNoInteractions(objectStorageService);
     }
 
     @Test
-    void predictAndExplain_AreTurnedAwayWithoutCallingTheRuntimeWhenEverySlotIsInUse() {
+    void explain_IsTurnedAwayWithoutCallingTheRuntimeWhenEverySlotIsInUse() {
         service = service(new WorkspaceRuntimeSlots(0));
         when(modelRepository.findArtifactReference(11L, 5L)).thenReturn(Optional.of(artifact()));
 
-        ResponseStatusException predicting = assertThrows(ResponseStatusException.class,
-                () -> service.predict(3L, 11L, Map.of("x", 1)));
-        ResponseStatusException explaining = assertThrows(ResponseStatusException.class,
-                () -> service.explain(3L, 11L, new ExplainRequest(Map.of("x", 1), List.of())));
+        ResponseStatusException busy = assertThrows(ResponseStatusException.class, () -> service.explain(3L, 11L, request()));
 
-        for (ResponseStatusException busy : List.of(predicting, explaining)) {
-            assertEquals(503, busy.getStatusCode().value());
-            assertEquals("Too many workspace runs are in progress. Try again in a moment.", busy.getReason());
-        }
+        assertEquals(503, busy.getStatusCode().value());
+        assertEquals("Too many workspace runs are in progress. Try again in a moment.", busy.getReason());
         verifyNoInteractions(restTemplate);
     }
 
     @Test
-    void predict_ReturnsTheSlotHoweverTheRunEnds() {
+    void explain_ReturnsTheSlotHoweverTheRunEnds() {
         service = service(new WorkspaceRuntimeSlots(1));
         when(modelRepository.findArtifactReference(11L, 5L)).thenReturn(Optional.of(artifact()));
-        when(restTemplate.postForObject(eq("http://py-analyzer:8000/predict"), any(), eq(Map.class)))
+        when(restTemplate.postForObject(eq("http://py-analyzer:8000/explain"), any(), eq(Map.class)))
                 .thenThrow(restError(400, "{\"detail\":\"Missing features\"}"))
-                .thenReturn(Map.of("prediction", 1));
+                .thenReturn(Map.of("reports", List.of()));
 
         assertEquals(400, assertThrows(AnalyzerServiceException.class,
-                () -> service.predict(3L, 11L, Map.of("x", 1))).getStatus());
-        assertEquals(1, service.predict(3L, 11L, Map.of("x", 1)).get("prediction"));
+                () -> service.explain(3L, 11L, request())).getStatus());
+        assertEquals(List.of(), service.explain(3L, 11L, request()).get("reports"));
     }
 
     @Test
-    void predict_ThrowsWhenTheOrganizationHasNoSuchModel() {
+    void explain_ThrowsWhenTheOrganizationHasNoSuchModel() {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.findArtifactReference(11L, 5L)).thenReturn(Optional.empty());
 
-        assertThrows(ModelDoesNotExistsException.class, () -> service.predict(3L, 11L, Map.of("x", 1)));
+        assertThrows(ModelDoesNotExistsException.class, () -> service.explain(3L, 11L, request()));
         verifyNoInteractions(restTemplate);
-    }
-
-    @Test
-    void predict_RequiresRunPredictionsPermission() {
-        when(authorizationService.requireCurrent(3L, PermissionKey.RUN_PREDICTIONS))
-                .thenThrow(new OrganizationAccessDeniedException(5L));
-
-        assertThrows(OrganizationAccessDeniedException.class, () -> service.predict(3L, 11L, Map.of("x", 1)));
-        verifyNoInteractions(modelRepository, restTemplate);
     }
 
     @Test
@@ -220,7 +192,7 @@ class AnalyzerServiceTest {
                 .thenThrow(new OrganizationAccessDeniedException(5L));
 
         assertThrows(OrganizationAccessDeniedException.class,
-                () -> service.explain(3L, 11L, new ExplainRequest(Map.of("x", 1), List.of())));
+                () -> service.explain(3L, 11L, request()));
         verifyNoInteractions(modelRepository, restTemplate);
     }
 
@@ -239,6 +211,10 @@ class AnalyzerServiceTest {
         return captor.getAllValues().stream()
                 .map(entity -> (MultiValueMap<String, HttpEntity<?>>) entity.getBody())
                 .toList();
+    }
+
+    private static ExplainRequest request() {
+        return new ExplainRequest(Map.of("x", 1), List.of());
     }
 
     private ModelArtifactReference artifact() {
