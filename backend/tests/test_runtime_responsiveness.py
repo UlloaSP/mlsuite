@@ -9,7 +9,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-import mlsuite_backend.services.prediction_service as prediction_service
+import mlsuite_backend.services.coalescing as coalescing
 from mlsuite_backend import __main__ as launcher
 from mlsuite_backend import bundles, config, execution
 from mlsuite_backend.main import app
@@ -27,12 +27,12 @@ def test_health() -> None:
 def test_health_answers_while_a_prediction_is_running(monkeypatch) -> None:
     started, release = threading.Event(), threading.Event()
 
-    def slow_predict(_bundle: object, _record: object) -> dict[str, object]:
+    def slow_predict(_bundle: object, records: list[object]) -> list[dict[str, object]]:
         started.set()
         release.wait(timeout=5)
-        return {"reports": []}
+        return [{"reports": []} for _ in records]
 
-    monkeypatch.setattr(prediction_service, "_predict", slow_predict)
+    monkeypatch.setattr(coalescing, "predict_rows", slow_predict)
     form = run_request(serialize_bundle(make_regressor()), data=RECORD)
 
     async def scenario():
