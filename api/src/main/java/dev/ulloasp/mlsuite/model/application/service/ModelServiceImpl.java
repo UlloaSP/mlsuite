@@ -26,7 +26,11 @@ import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelReposit
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
+import dev.ulloasp.mlsuite.storage.ArtifactHash;
+import dev.ulloasp.mlsuite.storage.ArtifactSource;
+import dev.ulloasp.mlsuite.storage.ModelArtifactInlineCopy;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
+import dev.ulloasp.mlsuite.storage.StorageProperties;
 import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
 import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
 import dev.ulloasp.mlsuite.storage.ModelArtifactWriter;
@@ -51,6 +55,8 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
     private final ModelArtifactWriter artifactWriter;
     private final ModelArtifactContentReader artifactReader;
     private final StorageDeletionQueue deletionQueue;
+    private final ModelArtifactInlineCopy inlineCopy;
+    private final boolean retainInlineCopy;
     private final boolean requireMutationVersion;
 
     public ModelServiceImpl(
@@ -63,6 +69,8 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
             ModelArtifactWriter artifactWriter,
             ModelArtifactContentReader artifactReader,
             StorageDeletionQueue deletionQueue,
+            ModelArtifactInlineCopy inlineCopy,
+            StorageProperties storageProperties,
             @Value("${model.mutations.require-version:false}") boolean requireMutationVersion) {
         this.userLookupService = userLookupService;
         this.modelRepository = modelRepository;
@@ -73,6 +81,8 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         this.artifactWriter = artifactWriter;
         this.artifactReader = artifactReader;
         this.deletionQueue = deletionQueue;
+        this.inlineCopy = inlineCopy;
+        this.retainInlineCopy = storageProperties.isRetainInlineCopy();
         this.requireMutationVersion = requireMutationVersion;
         this.catalogReader = new ModelCatalogReader(modelRepository, workspaceAuthorizationService);
     }
@@ -86,8 +96,8 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
     }
 
     @Override
-    public Model createModel(Long userId, String name, BundleInspection inspection, byte[] artifactBytes,
-            String contentType) {
+    public Model createModel(Long userId, String name, BundleInspection inspection, ArtifactSource artifact,
+            String sha256, String contentType) {
         User user = userLookupService.requireById(userId);
         Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.CREATE_MODELS);
         // Checked again: another upload may have taken the name while the runtime read this one.
@@ -106,14 +116,26 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         model.setInputSchema(inspection.schema());
         model.setBundleManifest(inspection.manifest());
         model.setFeatureImportances(inspection.featureImportances());
-        model.setModelFile(artifactBytes);
-        model.setModelSizeBytes((long) artifactBytes.length);
+        model.setModelFile(new byte[0]);
+        model.setModelSizeBytes(artifact.sizeBytes());
         model.setArtifactState(ModelArtifactState.INLINE_ONLY);
+        return storeArtifact(model, artifact, sha256, contentType);
+    }
 
+    /**
+     * Streams the new model's artifact into the object store and, when the inline copy is kept,
+     * into its row; the copy is written last, over JDBC, so no later flush of the entity, which
+     * holds no artifact, overwrites it.
+     */
+    private Model storeArtifact(Model model, ArtifactSource artifact, String sha256, String contentType) {
         try {
             modelRepository.saveAndFlush(model);
-            artifactWriter.storeAndAttach(model, artifactBytes, contentType);
-            return modelRepository.save(model);
+            artifactWriter.storeAndAttach(model, artifact, sha256, contentType);
+            Model stored = modelRepository.saveAndFlush(model);
+            if (retainInlineCopy) {
+                inlineCopy.write(stored.getId(), artifact, sha256);
+            }
+            return stored;
         } catch (RuntimeException ex) {
             deleteStoredObject(model, ex);
             throw ex;
@@ -183,16 +205,12 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
             throw new ModelAlreadyExistsException(nextName, organization.getName());
         }
 
-        byte[] bytes = artifactReader.loadVerified(ModelArtifactReference.of(source));
-        Model copy = copyModel(user, organization, source, nextName, bytes);
-        try {
-            modelRepository.saveAndFlush(copy);
-            artifactWriter.storeAndAttach(copy, bytes, "application/octet-stream");
-            return modelRepository.save(copy);
-        } catch (RuntimeException ex) {
-            deleteStoredObject(copy, ex);
-            throw ex;
-        }
+        ModelArtifactReference reference = ModelArtifactReference.of(source);
+        ArtifactSource artifact = artifactReader.source(reference);
+        // A model stored before artifacts were hashed gets the hash of its bytes, read once more.
+        String sha256 = reference.sha256() != null ? reference.sha256() : ArtifactHash.sha256(artifact);
+        Model copy = copyModel(user, organization, source, nextName, artifact.sizeBytes());
+        return storeArtifact(copy, artifact, sha256, "application/octet-stream");
     }
 
     @Override
@@ -221,7 +239,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         return name.strip();
     }
 
-    private Model copyModel(User user, Organization organization, Model source, String name, byte[] bytes) {
+    private Model copyModel(User user, Organization organization, Model source, String name, long sizeBytes) {
         Model copy = new Model();
         copy.setUser(user);
         copy.setUpdatedBy(user);
@@ -230,8 +248,8 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         copy.setType(source.getType());
         copy.setSpecificType(source.getSpecificType());
         copy.setFileName(source.getFileName());
-        copy.setModelFile(bytes);
-        copy.setModelSizeBytes((long) bytes.length);
+        copy.setModelFile(new byte[0]);
+        copy.setModelSizeBytes(sizeBytes);
         copy.setArtifactState(ModelArtifactState.INLINE_ONLY);
         copy.setInputSchema(source.getInputSchema());
         copy.setBundleManifest(source.getBundleManifest());

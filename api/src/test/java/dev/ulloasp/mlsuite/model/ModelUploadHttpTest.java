@@ -37,6 +37,8 @@ import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
+import dev.ulloasp.mlsuite.storage.ArtifactHash;
+import dev.ulloasp.mlsuite.storage.ArtifactSource;
 import dev.ulloasp.mlsuite.storage.ModelArtifactWriter;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
@@ -83,7 +85,8 @@ class ModelUploadHttpTest extends PublicPredictionFixture {
                 .setParameter("organization", organization.getId()).getSingleResult();
         assertEquals("Forest", stored.getSpecificType());
         assertEquals((long) BUNDLE.length, stored.getModelSizeBytes());
-        verify(artifactWriter).storeAndAttach(any(Model.class), eq(BUNDLE), eq("application/octet-stream"));
+        verify(artifactWriter).storeAndAttach(any(Model.class), any(ArtifactSource.class), eq(ArtifactHash.sha256(BUNDLE)),
+                eq("application/octet-stream"));
     }
 
     @Test
@@ -122,7 +125,7 @@ class ModelUploadHttpTest extends PublicPredictionFixture {
                 .andExpect(jsonPath("$.message").value("Cannot load bundle: bad zip"));
 
         assertEquals(models, count("Model"));
-        verify(artifactWriter, never()).storeAndAttach(any(), any(), any());
+        verify(artifactWriter, never()).storeAndAttach(any(), any(), any(), any());
     }
 
     @Test

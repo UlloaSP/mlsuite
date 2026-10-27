@@ -82,7 +82,7 @@ class ArtifactMigrationServiceTest {
         assertEquals(1, report.verified());
         assertEquals(ModelArtifactState.VERIFIED, claimed.getArtifactState());
         org.mockito.Mockito.verify(writer, org.mockito.Mockito.never())
-                .storeAndAttach(any(), any(), any());
+                .storeAndAttach(any(), any(), any(), any());
     }
 
     @Test
@@ -102,7 +102,8 @@ class ArtifactMigrationServiceTest {
                 new StoredObjectMetadata("models", "legacy-key", 5, "etag", null, null)));
         when(storage.load("models", "legacy-key", null)).thenReturn("model".getBytes());
         when(writer.storeAndAttach(
-                org.mockito.Mockito.eq(model), any(byte[].class),
+                org.mockito.Mockito.eq(model), any(ArtifactSource.class),
+                org.mockito.Mockito.eq(ArtifactHash.sha256("model".getBytes())),
                 org.mockito.Mockito.eq("application/octet-stream")))
                 .thenAnswer(invocation -> {
                     model.setStorageBucket("models");
@@ -121,7 +122,8 @@ class ArtifactMigrationServiceTest {
         assertEquals("version-1", claimed.getStorageVersionId());
         org.mockito.Mockito.verify(writer)
                 .storeAndAttach(
-                        org.mockito.Mockito.eq(model), any(byte[].class),
+                        org.mockito.Mockito.eq(model), any(ArtifactSource.class),
+                        org.mockito.Mockito.eq(ArtifactHash.sha256("model".getBytes())),
                         org.mockito.Mockito.eq("application/octet-stream"));
     }
 
@@ -195,7 +197,7 @@ class ArtifactMigrationServiceTest {
         when(models.findById(7L)).thenReturn(Optional.of(model));
         when(models.findModelFile(7L)).thenReturn(Optional.of(model.getModelFile()));
         org.mockito.Mockito.doThrow(new ObjectStorageException("down"))
-                .when(writer).storeAndAttach(any(), any(), any());
+                .when(writer).storeAndAttach(any(), any(), any(), any());
 
         ArtifactMigrationReport report = service.migrate(properties);
 
@@ -234,7 +236,7 @@ class ArtifactMigrationServiceTest {
             return false;
         });
         when(models.findById(7L)).thenReturn(Optional.of(model));
-        when(writer.storeAndAttach(any(), any(), any())).thenAnswer(invocation -> {
+        when(writer.storeAndAttach(any(), any(), any(), any())).thenAnswer(invocation -> {
             if (!heartbeat.await(3, TimeUnit.SECONDS)) {
                 throw new AssertionError("lease heartbeat did not run");
             }

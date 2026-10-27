@@ -81,15 +81,15 @@ class MinioObjectStorageService implements ObjectStorageService {
     }
 
     @Override
-    public byte[] load(String bucket, String objectKey, String versionId) {
+    public InputStream open(String bucket, String objectKey, String versionId) {
         ensureBucketExists();
 
         GetObjectArgs.Builder builder = GetObjectArgs.builder().bucket(bucket).object(objectKey);
         if (versionId != null && !versionId.isBlank()) {
             builder.versionId(versionId);
         }
-        try (InputStream inputStream = minioClient.getObject(builder.build())) {
-            return inputStream.readAllBytes();
+        try {
+            return minioClient.getObject(builder.build());
         } catch (Exception ex) {
             throw new ObjectStorageException("No se pudo cargar el modelo desde MinIO", ex);
         }

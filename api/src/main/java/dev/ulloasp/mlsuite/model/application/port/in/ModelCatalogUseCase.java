@@ -6,6 +6,7 @@ import dev.ulloasp.mlsuite.model.application.dto.ModelDto;
 import dev.ulloasp.mlsuite.model.application.upload.BundleInspection;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.storage.ArtifactSource;
 
 public interface ModelCatalogUseCase {
 
@@ -13,7 +14,9 @@ public interface ModelCatalogUseCase {
     void requireCreatable(Long userId, String name);
 
     /** Stores the bundle the runtime read as a model of the member's organization. */
-    Model createModel(Long userId, String name, BundleInspection inspection, byte[] artifact, String contentType);
+    /** Stores a model whose artifact is {@code artifact}, which {@code sha256} names; it is streamed, never held. */
+    Model createModel(Long userId, String name, BundleInspection inspection, ArtifactSource artifact, String sha256,
+            String contentType);
 
     List<Model> getModels(Long userId);
 

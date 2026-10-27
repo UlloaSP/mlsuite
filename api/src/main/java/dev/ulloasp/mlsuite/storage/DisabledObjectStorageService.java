@@ -19,7 +19,7 @@ class DisabledObjectStorageService implements ObjectStorageService {
     }
 
     @Override
-    public byte[] load(String bucket, String objectKey, String versionId) {
+    public java.io.InputStream open(String bucket, String objectKey, String versionId) {
         throw new ObjectStorageException(MESSAGE);
     }
 
