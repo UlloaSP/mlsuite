@@ -18,6 +18,11 @@ import { PublicBookmarkPage } from "@/features/explore/pages/public-bookmark-pag
 import type { PublicBookmarkDto, PublicRunDto } from "@/shared/api/openapi.gen";
 import { LOADING_REVEAL_DELAY_MS } from "@/shared/ui/useStableLoading";
 
+// Plugin sandboxes run in-process: jsdom loads no frame.
+vi.mock("@/capabilities/prediction-runtime/sandbox/plugin-sandbox", async () =>
+  (await import("./support/loopback-sandbox")).loopbackSandboxModule(),
+);
+
 vi.mock("@/capabilities/workspace-context/session", async (original) => ({
   ...(await original<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({ data: undefined, error: new Error("Unauthorized"), isLoading: false }),

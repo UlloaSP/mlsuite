@@ -6,7 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { Diagnostic } from "typescript";
 import * as zod from "zod";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
-import { memoizeCompiledPlugin } from "@/capabilities/prediction-runtime/plugins/plugin-runtime-cache";
 
 type TypeScriptModule = typeof import("typescript");
 
@@ -45,7 +44,7 @@ const transpileSource = async (
 ): Promise<string> => {
   const ts = await import("typescript");
   // Plugin sources use `z` and the define helper as free identifiers. Blob-URL modules
-  // cannot import app chunks, so bind both to per-source globals set around the import.
+  // cannot import bundled chunks, so bind both to per-source globals set around the import.
   const shimmed = `const ${defineName} = (value) => globalThis[${JSON.stringify(defineKey)}](value);
 const z = globalThis[${JSON.stringify(zodKey)}];
 ${source}`;
@@ -120,12 +119,21 @@ const importDefinition = async (source: string, spec: CompileSpec): Promise<unkn
   }
 };
 
-/** Compiles one plugin source once per organization and source content. */
-export const compilePluginSource = (
-  organizationId: number | string,
-  source: string,
-  spec: CompileSpec,
-): Promise<unknown> =>
-  memoizeCompiledPlugin(organizationId, `${spec.plugin}-source:${hashString(source)}`, () =>
-    importDefinition(source, spec),
-  );
+const compiled = new Map<string, Promise<unknown>>();
+
+/**
+ * Compiles and runs one plugin source once per sandbox, which shows one organization's plugins
+ * and is discarded with the view: a failed compilation is not kept, so a retry compiles again.
+ * Only the plugin sandbox imports this module; the app never evaluates plugin code.
+ */
+export const compilePluginSource = (source: string, spec: CompileSpec): Promise<unknown> => {
+  const key = `${spec.plugin}
+${source}`;
+  let definition = compiled.get(key);
+  if (!definition) {
+    definition = importDefinition(source, spec);
+    compiled.set(key, definition);
+    definition.catch(() => compiled.delete(key));
+  }
+  return definition;
+};

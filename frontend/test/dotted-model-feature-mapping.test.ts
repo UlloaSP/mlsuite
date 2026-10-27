@@ -8,17 +8,12 @@ import { defineReportKind } from "mlform/view";
 import { createForm, executeFormPipeline } from "mlform/runtime";
 import { z } from "zod";
 import { applySchemaRunInputMapping } from "@/capabilities/prediction-runtime/mlform/model-input-mapping";
-import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
+import { schemaRunRuntime } from "./support/schema-run-runtime";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 
 const crystalReport: CatalogReportDefinition = {
-  id: "crystal",
   fileName: "crystal.ts",
   source: "",
-  updatedAt: "",
-  createdAt: "",
-  contentType: "text/typescript",
-  sizeBytes: 1,
   kind: "Crystal Tree",
   definition: defineReportKind({
     kind: "Crystal Tree",
@@ -75,7 +70,7 @@ test("keeps dotted model feature names literal in prediction and explanation pay
       return new Response(JSON.stringify({ explanation: "ok" }));
     }),
   );
-  const runtime = createSchemaRunRuntime({
+  const runtime = schemaRunRuntime({
     schema: {
       fields: [
         {

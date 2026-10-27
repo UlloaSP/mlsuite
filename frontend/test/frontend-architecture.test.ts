@@ -255,6 +255,26 @@ describe("frontend architecture contract", () => {
     expect(removedRoots.filter((root) => existsSync(join(SRC, root)))).toEqual([]);
   });
 
+  test("keeps plugin code and the TypeScript compiler out of the app document", () => {
+    // Plugin code runs only in the plugin sandbox document; the app must not be able to load it.
+    const COMPILER = "capabilities/prediction-runtime/plugins/plugin-source-compiler.ts";
+    const reach = (entry: string) => {
+      const seen = new Set<string>();
+      const visit = (file: string) => {
+        if (seen.has(file)) return;
+        seen.add(file);
+        ALL_IMPORTS.filter((edge) => edge.importer === file).forEach((edge) => visit(edge.target));
+      };
+      visit(entry);
+      return seen;
+    };
+    const loadsCompiler = (file: string) =>
+      file === COMPILER || moduleSpecifiers(join(SRC, file)).includes("typescript");
+
+    expect([...reach("app/plugin-sandbox-main.ts")].some(loadsCompiler)).toBe(true);
+    expect([...reach("app/main.tsx")].filter(loadsCompiler)).toEqual([]);
+  });
+
   test("keeps source modules within the line limit", () => {
     const failures = sourceFiles()
       .filter((file) => rel(file) !== GENERATED_API_TYPES)

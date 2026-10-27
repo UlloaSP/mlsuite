@@ -39,11 +39,11 @@ vi.mock("@/capabilities/prediction-runtime/plugins/schema-plugin-catalog", () =>
     queryFn: state.catalog,
   }),
 }));
-vi.mock("@/capabilities/prediction-runtime/mlform/runtime-assembly", () => ({
-  createSchemaRunRuntime: () => ({
-    formSchema: { reports: [] },
-    transport: { submit: state.submit },
-  }),
+vi.mock("@/capabilities/prediction-runtime/sandbox/plugin-sandbox-services", () => ({
+  prepareSchemaRun: async () => ({ fields: [], reports: [] }),
+}));
+vi.mock("@/capabilities/prediction-runtime/mlform/run-transport", () => ({
+  createSchemaRunTransport: () => ({ submit: state.submit }),
 }));
 
 const version = schemaVersion({
@@ -105,7 +105,7 @@ describe("bulk inference session", () => {
     state.save.mockReset();
     state.userId = 7;
     state.catalog.mockReset();
-    state.catalog.mockResolvedValue({ fieldDefinitions: [], reportDefinitions: [] });
+    state.catalog.mockResolvedValue({ fields: [], reports: [] });
     state.save.mockResolvedValue({ id: 99 });
     state.submit.mockImplementation(async (request) => completed(request.modelValues.age));
   });

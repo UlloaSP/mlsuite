@@ -16,6 +16,12 @@ export default defineConfig({
   lint: { ignorePatterns: [API_TYPES], options: { typeAware: true, typeCheck: true } },
   resolve: { alias: { "@": resolve(import.meta.dirname, "src") } },
   server: {
+    // The plugin sandbox iframe has an opaque origin (its `sandbox` attribute drops
+    // allow-same-origin in every environment), so its module scripts are cross-origin requests.
+    // Production serves them with `Access-Control-Allow-Origin: *` from nginx; the dev server
+    // needs the same, or the sandbox cannot load. (In production nginx also sets the CSPs that
+    // keep the document opaque when opened top-level; dev relies on the iframe attribute alone.)
+    cors: true,
     proxy: {
       "/api": {
         target: "http://spring-app:8080",
@@ -33,6 +39,11 @@ export default defineConfig({
   build: {
     outDir: "./dist",
     rolldownOptions: {
+      // The plugin sandbox is a document of its own; only it loads plugin code and TypeScript.
+      input: {
+        index: resolve(import.meta.dirname, "index.html"),
+        "plugin-sandbox": resolve(import.meta.dirname, "plugin-sandbox.html"),
+      },
       output: {
         codeSplitting: {
           groups: [

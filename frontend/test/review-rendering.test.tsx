@@ -23,21 +23,21 @@ vi.mock("@/capabilities/prediction-runtime/plugins/schema-plugin-catalog", () =>
     status: state.status,
     error: state.error,
     retry: state.retry,
-    data: { reportDefinitions: state.definitions },
+    data: { reports: state.definitions },
   }),
 }));
 vi.mock("@/capabilities/prediction-runtime/reports/SchemaRunReportRenderer", () => ({
   SchemaRunReportRenderer: ({
     report,
     result,
-    customReportDefinitions,
+    reportPlugins,
   }: {
     report: { kind: string };
     result: { modelId: string };
-    customReportDefinitions: Array<{ kind: string }>;
+    reportPlugins: Array<{ kind: string }>;
   }) => (
     <div data-rendered={result.modelId}>
-      {report.kind} renderer {customReportDefinitions.map((item) => item.kind).join(",")}
+      {report.kind} renderer {reportPlugins.map((item) => item.kind).join(",")}
     </div>
   ),
 }));

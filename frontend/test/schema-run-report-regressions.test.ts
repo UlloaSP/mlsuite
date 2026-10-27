@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { createForm, executeFormPipeline } from "mlform/runtime";
 import { resolveMappedReportPayload } from "mlform/schema";
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
-import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
+import { schemaRunRuntime } from "./support/schema-run-runtime";
 import { buildSchemaRunRawFromSubmitResult } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
 
 describe("schema run report regressions", () => {
@@ -24,7 +24,7 @@ describe("schema run report regressions", () => {
         );
       }),
     );
-    const runtime = createSchemaRunRuntime({
+    const runtime = schemaRunRuntime({
       schema: {
         fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [

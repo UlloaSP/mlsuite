@@ -1,4 +1,4 @@
 {
-  "entry": ["src/app/main.tsx", "test/**/*.test.{ts,tsx}"],
+  "entry": ["src/app/main.tsx", "src/app/plugin-sandbox-main.ts", "test/**/*.test.{ts,tsx}"],
   "project": ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx}"]
 }

@@ -7,7 +7,7 @@ import { describe, expect, test, vi, afterEach } from "vite-plus/test";
 import { createForm, executeFormPipeline } from "mlform/runtime";
 import { defineReportKind } from "mlform/view";
 import { z } from "zod";
-import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
+import { schemaRunRuntime } from "./support/schema-run-runtime";
 import {
   buildSchemaRunRawFromSubmitResult,
   reportStatesFromSnapshot,
@@ -17,13 +17,8 @@ import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/
 const stringMeta = (value: unknown): string => (typeof value === "string" ? value : "");
 
 const crystal = (): CatalogReportDefinition => ({
-  id: "crystal",
   fileName: "crystal.ts",
   source: "",
-  updatedAt: "",
-  createdAt: "",
-  contentType: "text/typescript",
-  sizeBytes: 1,
   kind: "Crystal Tree",
   definition: defineReportKind({
     kind: "Crystal Tree",
@@ -68,7 +63,7 @@ describe("schema plugin real mlform lifecycle", () => {
         return new Response(JSON.stringify({ explanation: url }));
       }),
     );
-    const runtime = createSchemaRunRuntime({
+    const runtime = schemaRunRuntime({
       schema: {
         fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
@@ -139,7 +134,7 @@ describe("schema plugin real mlform lifecycle", () => {
         return new Response(JSON.stringify({ explanation: url }));
       }),
     );
-    const runtime = createSchemaRunRuntime({
+    const runtime = schemaRunRuntime({
       schema: {
         fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
@@ -189,7 +184,7 @@ describe("schema plugin real mlform lifecycle", () => {
         return new Response(JSON.stringify({ explanation: url }));
       }),
     );
-    const runtime = createSchemaRunRuntime({
+    const runtime = schemaRunRuntime({
       schema: {
         fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
@@ -262,7 +257,7 @@ describe("schema plugin real mlform lifecycle", () => {
       value: String(index + 1),
       mappedTo: { "Model One": `category__${index + 1}` },
     }));
-    const runtime = createSchemaRunRuntime({
+    const runtime = schemaRunRuntime({
       schema: {
         fields: [
           ...normalFields,

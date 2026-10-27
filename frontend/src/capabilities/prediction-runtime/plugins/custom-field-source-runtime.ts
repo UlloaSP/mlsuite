@@ -9,21 +9,15 @@ import { compilePluginSource } from "@/capabilities/prediction-runtime/plugins/p
 // Catalog kinds have different config and value types, validated by their definitions.
 export type CustomFieldKind = DefinedFieldKind<any, any>;
 
-export const resolveCustomFieldDefinition = (
-  organizationId: number | string,
-  source: string,
-): Promise<CustomFieldKind> =>
-  compilePluginSource(organizationId, source, {
+export const resolveCustomFieldDefinition = (source: string): Promise<CustomFieldKind> =>
+  compilePluginSource(source, {
     plugin: "field",
     defineName: "defineFieldKind",
     define: defineFieldKind,
   }) as Promise<CustomFieldKind>;
 
-export const validateCustomFieldSource = async (
-  organizationId: number | string,
-  source: string,
-): Promise<CustomFieldKind> => {
-  const definition = await resolveCustomFieldDefinition(organizationId, source);
+export const validateCustomFieldSource = async (source: string): Promise<CustomFieldKind> => {
+  const definition = await resolveCustomFieldDefinition(source);
   const probe = definition.definition.schema.safeParse({
     kind: definition.kind,
     label: "Preview field",

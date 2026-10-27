@@ -16,14 +16,14 @@ import { useInferenceSession } from "@/features/schemas/lib/use-inference-sessio
 import { buttonByText, changeValue, click, mount } from "./support/dom";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 import { binding, schemaVersion } from "./support/api-fixtures";
+import { mountRunForm } from "./support/schema-run-runtime";
 
 const mountState = vi.hoisted(() => ({
   mount: vi.fn(),
   unmount: vi.fn(),
-  updateTheme: vi.fn(),
 }));
 const catalogState = vi.hoisted(() => ({
-  data: { fieldDefinitions: [], reportDefinitions: [] },
+  data: { fields: [], reports: [] },
   error: "",
   needsPlugins: false,
   retry: vi.fn(),
@@ -38,8 +38,8 @@ const sessionUser = vi.hoisted(() => ({ id: "user-1" }));
 vi.mock("@/capabilities/workspace-context/session", () => ({
   useUser: () => ({ data: { id: sessionUser.id } }),
 }));
-vi.mock("@/capabilities/prediction-runtime/mlform/schema-run-mount", () => ({
-  mountSchemaRunForm: mountState.mount,
+vi.mock("@/capabilities/prediction-runtime/sandbox/sandboxed-forms", () => ({
+  mountSandboxedSchemaRunForm: mountState.mount,
 }));
 
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
@@ -96,20 +96,10 @@ describe("schema run creation UI", () => {
   beforeEach(() => {
     mountState.mount.mockReset();
     mountState.unmount.mockReset();
-    mountState.updateTheme.mockReset();
     pageState.mutateAsync.mockReset();
     pageState.mutateAsync.mockResolvedValue({ id: 1 });
     pageState.version = version;
-    mountState.mount.mockImplementation(() => ({
-      form: {
-        reports: [],
-        state: { reportStates: {} },
-        subscribe: () => () => {},
-      },
-      host: document.createElement("div"),
-      unmount: mountState.unmount,
-      updateTheme: mountState.updateTheme,
-    }));
+    mountState.mount.mockImplementation(() => ({ unmount: mountState.unmount }));
   });
 
   afterEach(() => {
@@ -118,7 +108,7 @@ describe("schema run creation UI", () => {
     vi.clearAllMocks();
   });
 
-  test("updates mounted form theme without remounting resolved reports", async () => {
+  test("draws the version's form in the plugin sandbox and keeps it across theme changes", async () => {
     const store = createStore();
     store.set(themeWithHtmlAtom, "light");
     await mount(
@@ -128,7 +118,11 @@ describe("schema run creation UI", () => {
     );
     await act(flush);
     expect(mountState.mount).toHaveBeenCalledTimes(1);
-    mountState.updateTheme.mockClear();
+    expect(mountState.mount.mock.calls[0][0]).toMatchObject({
+      schema: version.formSchema,
+      bindings: version.bindings,
+      plugins: { fields: [], reports: [] },
+    });
 
     await act(async () => {
       store.set(themeWithHtmlAtom, "dark");
@@ -137,7 +131,6 @@ describe("schema run creation UI", () => {
 
     expect(mountState.mount).toHaveBeenCalledTimes(1);
     expect(mountState.unmount).not.toHaveBeenCalled();
-    expect(mountState.updateTheme).toHaveBeenCalledWith("dark");
   });
 
   test("enters running only after MLForm validation succeeds", async () => {
@@ -147,11 +140,8 @@ describe("schema run creation UI", () => {
     );
     const container = document.createElement("div");
     document.body.append(container);
-    const actual = await vi.importActual<
-      typeof import("@/capabilities/prediction-runtime/mlform/schema-run-mount")
-    >("@/capabilities/prediction-runtime/mlform/schema-run-mount");
     const runningChanges: boolean[] = [];
-    const mounted = actual.mountSchemaRunForm({
+    const mounted = mountRunForm({
       container,
       schema: {
         fields: [

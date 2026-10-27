@@ -43,7 +43,7 @@ export function ReviewOutputsSection({
             key={`${result.id}-${report.id}`}
             result={result}
             report={report}
-            customReportDefinitions={catalog.data.reportDefinitions}
+            reportPlugins={catalog.data.reports}
           />
         ))
       )}

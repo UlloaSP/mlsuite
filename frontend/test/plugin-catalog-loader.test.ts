@@ -27,7 +27,6 @@ describe("plugin catalog loader", () => {
       await import("@/capabilities/prediction-runtime/plugins/plugin-catalog-loader");
 
     const result = await detectPluginType(
-      41,
       "export default defineReportKind<CrystalTreeConfig, CrystalTreePayload>({});",
     );
 
@@ -42,7 +41,7 @@ describe("plugin catalog loader", () => {
       await import("@/capabilities/prediction-runtime/plugins/plugin-catalog-loader");
 
     await expect(
-      detectPluginType(41, "export default defineReportKind<Config, Payload>({});"),
+      detectPluginType("export default defineReportKind<Config, Payload>({});"),
     ).rejects.toThrow("Plugin validation failed for report: bad report");
     expect(validateCustomFieldSource).not.toHaveBeenCalled();
   });
@@ -53,7 +52,7 @@ describe("plugin catalog loader", () => {
     const { detectPluginType } =
       await import("@/capabilities/prediction-runtime/plugins/plugin-catalog-loader");
 
-    await expect(detectPluginType(41, "not a plugin")).rejects.toThrow(
+    await expect(detectPluginType("not a plugin")).rejects.toThrow(
       "Plugin validation failed for field/report: bad field | bad report",
     );
   });

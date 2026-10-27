@@ -8,8 +8,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { QueryClient } from "@tanstack/react-query";
 import { SchemaFormPreview } from "@/features/schemas/components/SchemaFormPreview";
-import { createSchemaPreviewTransport } from "@/features/schemas/lib/preview-transport";
+import { createSchemaPreviewTransport } from "@/capabilities/prediction-runtime/mlform/preview-transport";
 import { mount } from "./support/dom";
+
+// Plugin sandboxes run in-process: jsdom loads no frame.
+vi.mock("@/capabilities/prediction-runtime/sandbox/plugin-sandbox", async () =>
+  (await import("./support/loopback-sandbox")).loopbackSandboxModule(),
+);
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 const kitState = vi.hoisted(() => ({ mountError: null as Error | null }));
@@ -24,8 +29,8 @@ vi.mock("mlform/kit", async (importOriginal) => {
     },
   };
 });
-vi.mock("@/capabilities/prediction-runtime/plugins/plugin-catalog", () => ({
-  getCatalogDefinitions: vi.fn(async () => {
+vi.mock("@/capabilities/prediction-runtime/sandbox/plugin-sandbox-services", () => ({
+  inspectPluginCatalog: vi.fn(async () => {
     throw new Error("catalog failed");
   }),
 }));

@@ -8,19 +8,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/view";
 import { z } from "zod";
-import { mountSchemaRunForm } from "@/capabilities/prediction-runtime/mlform/schema-run-mount";
+import { mountRunForm } from "./support/schema-run-runtime";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-const crystal = (id = "crystal"): CatalogReportDefinition => ({
-  id,
-  fileName: "crystal.ts",
+const crystal = (fileName = "crystal.ts"): CatalogReportDefinition => ({
+  fileName,
   source: "",
-  updatedAt: "",
-  createdAt: "",
-  contentType: "text/typescript",
-  sizeBytes: 1,
   kind: "Crystal Tree",
   definition: defineReportKind({
     kind: "Crystal Tree",
@@ -67,7 +62,7 @@ describe("schema run mounted render", () => {
     const container = document.createElement("div");
     document.body.append(container);
     const submitted: Record<string, unknown>[] = [];
-    const mounted = mountSchemaRunForm({
+    const mounted = mountRunForm({
       container,
       schema: {
         fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
@@ -109,7 +104,7 @@ describe("schema run mounted render", () => {
     const container = document.createElement("div");
     document.body.append(container);
     const updates: Array<{ raw: Record<string, unknown>; pending: boolean }> = [];
-    const mounted = mountSchemaRunForm({
+    const mounted = mountRunForm({
       container,
       schema: {
         fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
@@ -147,7 +142,7 @@ describe("schema run mounted render", () => {
     const container = document.createElement("div");
     document.body.append(container);
     const updates: Array<{ raw: Record<string, unknown>; pending: boolean }> = [];
-    const mounted = mountSchemaRunForm({
+    const mounted = mountRunForm({
       container,
       schema: {
         fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
@@ -188,7 +183,7 @@ describe("schema run mounted render", () => {
     const container = document.createElement("div");
     document.body.append(container);
     const updates: Array<{ raw: Record<string, unknown>; pending: boolean }> = [];
-    const mounted = mountSchemaRunForm({
+    const mounted = mountRunForm({
       container,
       schema: {
         fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
@@ -236,7 +231,7 @@ describe("schema run mounted render", () => {
     const container = document.createElement("div");
     document.body.append(container);
     const updates: Array<{ raw: Record<string, unknown>; pending: boolean }> = [];
-    const mounted = mountSchemaRunForm({
+    const mounted = mountRunForm({
       container,
       schema: {
         fields: [

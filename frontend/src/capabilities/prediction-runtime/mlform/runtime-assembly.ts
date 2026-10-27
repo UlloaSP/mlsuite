@@ -6,14 +6,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { createMlSuiteRegistry } from "./builtin-registry";
 import { createBuiltinDescriptorRegistry } from "mlform/view";
 import type { PrimitiveDescriptorRegistry } from "mlform/primitives";
-import type { FormSchema, Registry, Transport } from "mlform/runtime";
+import type { FormSchema, Registry } from "mlform/runtime";
 import type {
   CatalogFieldDefinition,
   CatalogReportDefinition,
 } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 import { toMlformSchema } from "@/capabilities/prediction-runtime/mlform/schema-validation";
 import type { PredictionPayloadField } from "@/capabilities/prediction-runtime/mlform/shared";
-import { createSchemaRunTransport } from "@/capabilities/prediction-runtime/mlform/run-transport";
 import { prepareRuntimeReports } from "@/capabilities/prediction-runtime/mlform/runtime-report-targets";
 
 type Binding = {
@@ -33,7 +32,6 @@ export type SchemaRunRuntime = {
   formSchema: FormSchema;
   registry: Registry;
   descriptorRegistry: PrimitiveDescriptorRegistry;
-  transport: Transport;
   normalizedFields: readonly PredictionPayloadField[];
 };
 
@@ -72,7 +70,6 @@ export const createSchemaRunRuntime = ({
     formSchema,
     registry: pack.registry,
     descriptorRegistry: pack.descriptorRegistry,
-    transport: createSchemaRunTransport(bindings, normalizedFields),
     normalizedFields,
   };
 };
