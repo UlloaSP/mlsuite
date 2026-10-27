@@ -395,12 +395,17 @@ reuse, and serves requests on virtual threads, so calls waiting for the runtime 
 not delay unrelated requests. A call
 names its model's artifact by SHA-256; the API sends the artifact only when the
 runtime answers that it does not hold it, and the runtime checks the bytes against
-that hash. The runtime runs model work on at most `RUNTIME_MAX_CONCURRENT` threads
-(default `8`; keep it at least the sum of the three shares, or admitted runs queue
-there), so its health check and other requests stay answered while models run, and
-keeps verified bundles while their artifacts total at most
+that hash. The runtime serves in `RUNTIME_WORKERS` processes (default `2`; about
+one per core it may use), since one Python process runs model code on one core at
+a time. Each worker runs predictions and explanations on `RUNTIME_MAX_CONCURRENT`
+threads (default `1`, the fastest: more threads of one process only contend for
+it) and loads bundles on a thread of its own, so a slow upload never delays a
+prediction, and its health check stays answered while models run. A worker keeps
+the verified bundles it loaded while their artifacts total at most
 `RUNTIME_BUNDLE_CACHE_MB` (default `512`; the newest bundle is kept even when
-larger).
+larger), and keeps the verified bytes once on disk for every worker under the same
+bound, so the API sends an artifact once whichever worker it reaches. Size the
+workers by memory as well as cores: each holds its own bundles.
 
 Monitor `storageDeletionQueue` on `/actuator/info` and alert on any `failed` row
 or a `pending` count that grows continuously. Cleanup workers use database leases,

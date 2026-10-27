@@ -77,8 +77,9 @@ equivalent roles yourself; the migration role must be able to install `pg_trgm`.
 | `RUNTIME_QUEUE_MAX_WAITING` | `1000` | Runs that may wait in each share (workspace, public, client) for their turn, in arrival order. A run that finds every place taken receives `503` with `Retry-After`. |
 | `RUNTIME_QUEUE_MAX_PER_CALLER` | `16` | Places, running or waiting, one caller may hold in a share: a member, a public page's network or account, an API client. More receive `503` with `Retry-After`. At least 1. |
 | `RUNTIME_QUEUE_MAX_WAIT_MS` | `5000` | How long a run may wait for its turn before it receives `503` with `Retry-After`. |
-| `RUNTIME_MAX_CONCURRENT` | `8` | Threads the runtime runs models on. Keep it at least the sum of the workspace, public and client shares, or admitted runs queue in the runtime. |
-| `RUNTIME_BUNDLE_CACHE_MB` | `512` | Total artifact size of the verified bundles the runtime keeps loaded; the newest is kept even when larger. A run sends its artifact only when the runtime does not hold it. |
+| `RUNTIME_WORKERS` | `2` | Processes the runtime serves in, about one per core it may use; each holds the bundles it loaded, so size them by memory too. |
+| `RUNTIME_MAX_CONCURRENT` | `1` | Threads each worker runs predictions and explanations on. One is fastest: threads of one process contend for its interpreter. Bundles load on a thread of their own. |
+| `RUNTIME_BUNDLE_CACHE_MB` | `512` | Total artifact size of the verified bundles each worker keeps loaded, and of the verified artifacts kept on disk for every worker; the newest is kept even when larger. A run sends its artifact only when no worker holds it. |
 
 ## Public runs and the client API
 

@@ -11,6 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from mlsuite_backend import bundles
+from mlsuite_backend.artifact_store import ArtifactStore
 from mlsuite_backend.main import app
 from tests.helpers import make_regressor, make_tree, run_request, serialize_bundle, sha256_of
 
@@ -129,3 +130,67 @@ def test_an_artifact_sent_for_a_run_must_be_a_bundle() -> None:
 
     assert response.status_code == 400
     assert response.json()["detail"] == "File must be .mlbundle"
+
+
+def test_a_worker_that_never_saw_an_artifact_runs_it_from_the_bytes_another_worker_kept(monkeypatch) -> None:
+    upload = serialize_bundle(make_regressor())
+    assert client.post("/predict", **run_request(upload, data=RECORD)).status_code == 200
+    # Another worker process: its memory holds no bundle, the disk is the one the workers share.
+    monkeypatch.setattr(bundles, "_loaded", bundles.LoadedBundles(1024 * 1024))
+
+    response = client.post("/predict", data={"artifact_sha256": sha256_of(upload), "data": RECORD})
+
+    assert response.status_code == 200, response.text
+
+
+def test_a_damaged_kept_artifact_is_a_miss_and_is_dropped(monkeypatch, artifact_directory) -> None:
+    upload = serialize_bundle(make_regressor())
+    sha256 = sha256_of(upload)
+    assert client.post("/predict", **run_request(upload, data=RECORD)).status_code == 200
+    kept = artifact_directory / f"{sha256}.mlbundle"
+    kept.write_bytes(b"not the artifact")
+    monkeypatch.setattr(bundles, "_loaded", bundles.LoadedBundles(1024 * 1024))
+
+    response = client.post("/predict", data={"artifact_sha256": sha256, "data": RECORD})
+
+    assert response.status_code == 409
+    assert not kept.exists()
+
+
+def test_a_run_whose_artifact_cannot_be_kept_on_disk_still_runs(monkeypatch, tmp_path) -> None:
+    blocked = tmp_path / "a-file"
+    blocked.write_text("not a directory")
+    monkeypatch.setattr(bundles, "_store", ArtifactStore(blocked / "artifacts", 1024 * 1024))
+
+    response = client.post("/predict", **run_request(serialize_bundle(make_regressor()), data=RECORD))
+
+    assert response.status_code == 200, response.text
+
+
+def test_a_miss_is_answered_at_once_while_another_artifact_loads(monkeypatch) -> None:
+    release = threading.Event()
+    verify = bundles._verify
+
+    def slow_verify(content: bytes) -> mlbundle.LoadedBundle:
+        release.wait(timeout=5)
+        return verify(content)
+
+    monkeypatch.setattr(bundles, "_verify", slow_verify)
+    upload = serialize_bundle(make_tree())
+
+    async def scenario():
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://runtime") as runtime:
+            loading = asyncio.create_task(runtime.post("/metadata", files={"model_file": upload}))
+            while bundles._loaded.verifying(sha256_of(upload)) is None:
+                await asyncio.sleep(0.01)
+            miss = await runtime.post("/predict", data={"artifact_sha256": UNKNOWN, "data": RECORD})
+            still_loading = not loading.done()
+            release.set()
+            return miss, still_loading, await loading
+
+    miss, still_loading, loading = asyncio.run(scenario())
+
+    assert miss.status_code == 409
+    assert still_loading
+    assert loading.status_code == 200

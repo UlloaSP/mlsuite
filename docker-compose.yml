@@ -114,7 +114,8 @@ services:
       PYTHON_HOST: ${PYTHON_HOST}
       PYTHON_PORT: ${PYTHON_PORT}
       CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
-      RUNTIME_MAX_CONCURRENT: ${RUNTIME_MAX_CONCURRENT:-8}
+      RUNTIME_WORKERS: ${RUNTIME_WORKERS:-2}
+      RUNTIME_MAX_CONCURRENT: ${RUNTIME_MAX_CONCURRENT:-1}
       RUNTIME_BUNDLE_CACHE_MB: ${RUNTIME_BUNDLE_CACHE_MB:-512}
     healthcheck:
       test: [ "CMD", "/app/.venv/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:${PYTHON_PORT}/health', timeout=4)" ]
