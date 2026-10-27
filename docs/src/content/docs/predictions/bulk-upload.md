@@ -4,8 +4,8 @@ description: Run up to 10,000 records from a CSV or XLSX file, the columns it ne
 ---
 
 **Bulk upload** on a bookmark's run page runs every record of a CSV or XLSX file through the form,
-one at a time, and adds each result to the [session](/predictions/run/#the-session). Nothing is
-saved until you save the entries, so you can check them first.
+100 records at a time, and adds each batch's results to the [session](/predictions/run/#the-session).
+Nothing is saved until you save the entries, so you can check them first.
 
 ## The file
 
@@ -37,9 +37,13 @@ batch-applicant-02,24,18500,true,0,1,0
 
 ## Run and check
 
-Choose **Bulk upload** and pick the file. The button shows the progress ("Bulk 12/40") and turns
-into **Stop** while it runs; when it ends it summarizes the outcome, for example "38 uploaded,
-1 failed, 1 skipped". Then save the session entries you want to keep.
+Choose **Bulk upload** and pick the file. The button shows the progress ("Bulk 200/4000") and
+turns into **Stop** while it runs; Stop cancels the batch in flight and keeps the rows already run.
+When it ends it summarizes the outcome, for example "3800 uploaded, 100 failed, 100 skipped", and
+names the reasons once rather than per row. A record a model refuses still joins the session, as a
+failed result; a batch the server could not run counts its rows as failed. When the server is busy
+the upload waits and tries again on its own. **Save all** then saves the entries in the order they
+ran, a hundred at a time.
 
 A problem with the file as a whole refuses it before anything runs:
 
@@ -52,5 +56,5 @@ A problem with the file as a whole refuses it before anything runs:
 | Unsupported file type | Not a CSV or XLSX file. |
 
 A problem with one record skips that record and the others still run: a missing required value, a
-number that is not finite, a boolean that is not one of the words above, or invalid JSON. The first
-five skipped lines are reported by line number.
+number that is not finite, a boolean that is not one of the words above, or invalid JSON. One notice
+reports how many lines were skipped and the reasons of the first ones, with their line numbers.
