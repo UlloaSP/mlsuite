@@ -15,6 +15,11 @@ import type {
 import { predictionRun } from "./support/api-fixtures";
 import { buttonByText, changeValue, click, mount } from "./support/dom";
 
+// Plugin sandboxes run in-process: jsdom loads no frame.
+vi.mock("@/capabilities/prediction-runtime/sandbox/plugin-sandbox", async () =>
+  (await import("./support/loopback-sandbox")).loopbackSandboxModule(),
+);
+
 const session = vi.hoisted(() => ({ canPublish: false }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   // The public page is opened without a session here, so no workspace is cached.

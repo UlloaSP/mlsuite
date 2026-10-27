@@ -48,9 +48,9 @@ Each user's menu offers:
 
 | Action | Effect |
 | --- | --- |
-| Change password | Set a new password. This is how users who forgot theirs get back in. |
-| Change role | Make the account a User or a Superadmin. |
-| Disable user / Enable user | A disabled account cannot sign in. Applies at once. |
+| Change password | Set a new password. This is how users who forgot theirs get back in. The account's open sessions end. |
+| Change role | Make the account a User or a Superadmin. The account's open sessions end, so it signs in again with the new role. |
+| Disable user / Enable user | A disabled account cannot sign in, and its open sessions end on their next request. |
 | Delete | Remove the account, if nothing else refers to it. Accounts that created models, runs or other records cannot be deleted; disable them instead. |
 
 The last enabled superadmin cannot be demoted, disabled or deleted.

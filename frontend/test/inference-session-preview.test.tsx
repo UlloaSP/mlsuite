@@ -18,7 +18,7 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   useCurrentOrganizationId: () => 1,
 }));
 vi.mock("@/capabilities/prediction-runtime/plugins/schema-plugin-catalog", () => ({
-  useSchemaPluginCatalog: () => ({ data: { fieldDefinitions: [], reportDefinitions: [] } }),
+  useSchemaPluginCatalog: () => ({ data: { fields: [], reports: [] } }),
 }));
 vi.mock("@/features/schemas/components/SchemaRunForm", () => ({
   SchemaRunForm: () => <input aria-label="Live form input" defaultValue="keep me" />,

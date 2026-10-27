@@ -3,10 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import {
-  detectPluginType,
-  type DetectedPluginType,
-} from "@/capabilities/prediction-runtime/plugins/plugin-catalog-loader";
+import { inspectPluginSource } from "@/capabilities/prediction-runtime/sandbox/plugin-sandbox-services";
+import type { PluginType } from "@/capabilities/prediction-runtime/sandbox/sandbox-protocol";
 
 export const PLUGIN_FILE_EXTENSION = ".ts";
 
@@ -26,7 +24,7 @@ export type PluginUploadItem = {
   id: number;
   file: File;
   status: PluginUploadStatus;
-  pluginType?: DetectedPluginType;
+  pluginType?: PluginType;
   kind?: string;
   error?: string;
 };
@@ -34,9 +32,11 @@ export type PluginUploadItem = {
 export const pluginErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : String(error);
 
-/** Reads and validates one file with the same runtime check the catalog applies when loading plugins. */
+/**
+ * Reads and validates one file with the check the catalog applies when loading plugins: compiled
+ * and run in the plugin sandbox, never in the app.
+ */
 export async function inspectPluginFile(
-  organizationId: number | string,
   file: File,
 ): Promise<Pick<PluginUploadItem, "status" | "pluginType" | "kind" | "error">> {
   if (!file.name.toLowerCase().endsWith(PLUGIN_FILE_EXTENSION)) {
@@ -46,7 +46,7 @@ export async function inspectPluginFile(
     };
   }
   try {
-    const detected = await detectPluginType(organizationId, await file.text());
+    const detected = await inspectPluginSource({ fileName: file.name, source: await file.text() });
     return { status: "ready", pluginType: detected.pluginType, kind: detected.kind };
   } catch (error: unknown) {
     return { status: "invalid", error: pluginErrorMessage(error) };

@@ -1,0 +1,46 @@
+/* The plugin sandbox document: one MLForm view, drawn with the tokens the app sends it. */
+
+:root {
+  font-size: var(--ui-font-size, 16px);
+  font-family: var(--font-sans);
+}
+
+html,
+body {
+  margin: 0;
+  background: transparent;
+}
+
+body {
+  color: var(--color-fg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* A frame that fills its place scrolls inside; one sized to its content never does. */
+html[data-sizing="fill"],
+html[data-sizing="fill"] body,
+html[data-sizing="fill"] #sandbox-root {
+  height: 100%;
+}
+
+html[data-sizing="fill"] #sandbox-root {
+  overflow: auto;
+}
+
+html[data-sizing="content"] {
+  overflow: hidden;
+}
+
+/*
+ * MLForm's split layout sizes its inputs pane to its content (~360px), leaving the results pane
+ * mostly empty. Its `--mlf-shell-left-min-width` token is declared but unused, so the pane gets
+ * half the row through the exposed `form-pane` part, still capped by MLForm's own maximum.
+ */
+#sandbox-root mlf-form::part(form-pane) {
+  min-width: min(50%, 48rem);
+}

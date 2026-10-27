@@ -133,7 +133,7 @@ export function PredictionRunDetails({ runId, bookmarkName, reviews }: Props) {
               <SchemaRunReportsPanel
                 version={executableVersion}
                 results={run.results}
-                customReportDefinitions={catalog.data.reportDefinitions}
+                reportPlugins={catalog.data.reports}
               />
             </ScrollPanel>
           ) : null}

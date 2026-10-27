@@ -122,7 +122,9 @@ On Windows PowerShell, use `Set-Location mlsuite` and `Copy-Item .env.example .e
 Open `.env` and give every blank secret its own value, especially `DB_PASS`,
 `STORAGE_SECRET_KEY`, `OPS_AGENT_SHARED_SECRET`, `PREDICTION_ATTESTATION_SECRET` and
 `MLSUITE_SUPERADMIN_PASSWORD`.
-Keep `.env` private; commit only sanitized defaults to `.env.example`.
+The ops-agent controls the host's Docker and refuses to start without
+`OPS_AGENT_SHARED_SECRET`. Keep `.env` private; commit only sanitized defaults to
+`.env.example`.
 
 Start the development stack:
 
@@ -160,6 +162,16 @@ production-only operational metadata and has no image defaults: its mandatory
 release override, `docker-compose.release.yml`, supplies every application image
 pinned by digest. CI compares the fully rendered models and rejects any other
 drift.
+
+Services share a network only with the services they call: `edge` joins the
+frontend, the API and the ops-agent; `data` joins the API, its one-shot jobs,
+PostgreSQL and MinIO; `runtime` joins only the API and `py-analyzer`. The runtime
+parses uploaded models, so its network is internal and reaches neither the
+ops-agent, the stores nor the internet. Only the frontend is published on every
+interface; PostgreSQL is published on `127.0.0.1` alone, because Docker-published
+ports bypass host firewalls such as ufw. The API starts once `py-analyzer` reports
+healthy on `/health`. Docker rotates every container's log at 10 MB and keeps five
+files per container.
 
 Successful publications from `main` create immutable `build-<commit>` releases
 with digest-pinned images and a Compose override; MLsuite does not update
@@ -218,9 +230,11 @@ failed rehearsal stops the cutover and stays visible instead of leaving a stale
 successful result.
 
 The backup command pauses the frontend and API, dumps PostgreSQL, takes a cold
-archive of MinIO that preserves version IDs, verifies checksums, applies
-`LOCAL_BACKUP_RETENTION_COUNT`, checks the remaining disk space, and restarts only
-the application services that were running. Backups live under
+archive of MinIO that preserves version IDs, verifies checksums, and only then
+prunes the oldest backups down to `LOCAL_BACKUP_RETENTION_COUNT`; a refused or
+failed run never removes an existing backup, so the disk briefly holds one backup
+more than the retention count. It then checks the remaining disk space and
+restarts only the application services that were running. Backups live under
 `LOCAL_BACKUP_ROOT`, outside the Docker data volumes but currently on the same
 physical disk. Keep at least 15% free with `LOCAL_BACKUP_MIN_FREE_PERCENT`. Before
 stopping writes, the command requires headroom for both the archive and the
@@ -381,6 +395,28 @@ Monitor `storageDeletionQueue` on `/actuator/info` and alert on any `failed` row
 or a `pending` count that grows continuously. Cleanup workers use database leases,
 so several API instances process disjoint tasks and an expired worker cannot
 complete or fail work reclaimed by another instance.
+
+### Sign-in and sessions
+
+- **Session cookie.** The session cookie is HttpOnly, SameSite=Lax and, unless
+  `SESSION_COOKIE_SECURE=false`, Secure: browsers send it only over HTTPS. They
+  treat `http://localhost` as secure, so local development needs no change; set
+  `false` only to use plain HTTP on another address.
+- **Session lifetime.** Signing in always continues under a new session id. A
+  session lasts only while its account is as it was at sign-in: once a superadmin
+  disables or deletes the account, resets its password or changes its system role,
+  the session ends on its next request, which receives `401 Unauthorized`.
+  Workspace roles and permissions are read on every request and apply at once
+  without ending the session.
+- **Throttling.** One client network may fail to sign in `AUTH_MAX_LOGIN_FAILURES`
+  times (default `10`) and attempt to register `AUTH_MAX_REGISTRATIONS` times
+  (default `5`) in the 15 minutes after its first counted attempt. Past either
+  limit it receives `429 Too Many Requests` with `Retry-After` until that window
+  ends, even with the right password. Successful sign-ins are not counted and do
+  not reset the failures. The network is the client address as for public runs
+  (see [Client address behind a proxy](#client-address-behind-a-proxy)). Counts
+  live in the API process memory: they restart with the API and are correct only
+  with a single API instance.
 
 ## Public bookmarks
 

@@ -6,10 +6,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { mountForm } from "mlform/kit";
 import { connectStoredStatusConditions } from "./stored-status-conditions";
 import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
-import type { AfterSubmitContext, SubmitErrorContext } from "mlform/runtime";
+import type { AfterSubmitContext, FormState, SubmitErrorContext, Transport } from "mlform/runtime";
 import { normalizeSchema } from "mlform/schema";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
-import type { SchemaRunTarget } from "@/capabilities/prediction-runtime/mlform/run-transport";
 import { getPredictionDesignSystem } from "./headless-prediction";
 import {
   hideRunTabTitles,
@@ -19,6 +18,7 @@ import {
 import {
   type JsonRecord,
   type MountedPredictionForm,
+  type PredictionPayloadField,
   type PredictionTheme,
   isRecord,
 } from "@/capabilities/prediction-runtime/mlform/shared";
@@ -31,9 +31,10 @@ import {
   schemaRunReportsPending,
 } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
 
+type RunResultCallback = (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => void;
+
 type Options = {
   container: HTMLElement;
-  target: SchemaRunTarget;
   schema: unknown;
   bindings: readonly {
     modelId: number;
@@ -43,25 +44,30 @@ type Options = {
   theme: PredictionTheme;
   customFieldDefinitions?: readonly CatalogFieldDefinition[];
   customReportDefinitions?: readonly CatalogReportDefinition[];
-  onSubmit?: (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => void;
+  /** Runs the form's values against its models, given the fields the schema normalized to. */
+  transport: (fields: readonly PredictionPayloadField[]) => Transport;
+  /** The run, once every report it asked for has settled. */
+  onSubmit?: RunResultCallback;
+  /** The last run, each time its result or a report's state changes. */
+  onResultUpdate?: RunResultCallback;
   onSubmitError?: (error: unknown) => void;
   onRunningChange?: (running: boolean) => void;
 };
 
 export const mountSchemaRunForm = ({
   container,
-  target,
   schema,
   bindings,
   theme,
   customFieldDefinitions = [],
   customReportDefinitions = [],
+  transport,
   onSubmit,
+  onResultUpdate,
   onSubmitError,
   onRunningChange,
 }: Options): MountedPredictionForm => {
   const runtime = createSchemaRunRuntime({
-    target,
     schema,
     bindings,
     customFieldDefinitions,
@@ -92,7 +98,7 @@ export const mountSchemaRunForm = ({
     registry: runtime.registry,
     descriptorRegistry: runtime.descriptorRegistry,
     primitiveRegistry: createBuiltinPrimitiveRegistry(),
-    transport: runtime.transport,
+    transport: transport(runtime.normalizedFields),
     hooks: {
       beforeSubmit() {
         onRunningChange?.(true);
@@ -119,7 +125,23 @@ export const mountSchemaRunForm = ({
   const form = mounted;
   connectStoredStatusConditions(form.form);
   hideRunTabTitles(form.host);
-  const unsubscribe = form.form.subscribe(completeWhenSettled);
+  let reported: Pick<FormState, "lastResult" | "reportStates"> | null = null;
+  const reportUpdate = (state: FormState) => {
+    const { lastResult, reportStates } = state;
+    if (!lastResult || !onResultUpdate) return;
+    if (reported?.lastResult === lastResult && reported.reportStates === reportStates) return;
+    reported = { lastResult, reportStates };
+    const raw = isRecord(lastResult.raw) ? lastResult.raw : { raw: lastResult.raw };
+    onResultUpdate(
+      isRecord(raw.inputData) ? raw.inputData : {},
+      raw,
+      schemaRunReportsPending(form.form.reports, reportStatesFromSnapshot(reportStates)),
+    );
+  };
+  const unsubscribe = form.form.subscribe((state) => {
+    completeWhenSettled();
+    reportUpdate(state);
+  });
   return {
     form: form.form,
     host: form.host,

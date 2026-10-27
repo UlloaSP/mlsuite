@@ -20,13 +20,8 @@ const findReport = (reports: readonly unknown[], id: string) =>
   );
 
 const definition = (): CatalogReportDefinition => ({
-  id: "crystal",
   fileName: "crystal.ts",
   source: "",
-  updatedAt: "",
-  createdAt: "",
-  contentType: "text/typescript",
-  sizeBytes: 1,
   kind: "Crystal Tree",
   definition: defineReportKind({
     kind: "Crystal Tree",

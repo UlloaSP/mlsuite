@@ -41,7 +41,7 @@ export function InferenceSessionResultPreview({ entry, currentVersion }: Props) 
       <SchemaRunReportsPanel
         version={version}
         results={entry.results}
-        customReportDefinitions={catalog.data.reportDefinitions}
+        reportPlugins={catalog.data.reports}
       />
       <details className="border-t border-line pt-4">
         <summary

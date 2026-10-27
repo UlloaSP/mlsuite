@@ -27,7 +27,7 @@ vi.mock("@/features/schemas/api/schema-draft-mutations", () => ({
   useCreateSchemaDraftMutation: () => ({ isPending: false }),
 }));
 vi.mock("@/capabilities/prediction-runtime/plugins/schema-plugin-catalog", () => ({
-  useSchemaPluginCatalog: () => ({ data: { reportDefinitions: [] } }),
+  useSchemaPluginCatalog: () => ({ data: { fields: [], reports: [] } }),
 }));
 afterEach(() => {
   vi.useRealTimers();

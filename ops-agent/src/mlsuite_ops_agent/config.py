@@ -18,7 +18,8 @@ def _env_list(name: str, default: str) -> tuple[str, ...]:
 class Settings:
     host: str = _env("OPS_AGENT_HOST", "127.0.0.1")
     port: int = int(_env("OPS_AGENT_PORT", "8091"))
-    shared_secret: str = _env("OPS_AGENT_SHARED_SECRET", "mlsuite-dev-secret")
+    # No default: create_app refuses to serve without a secret.
+    shared_secret: str = _env("OPS_AGENT_SHARED_SECRET", "")
     compose_files: tuple[str, ...] = _env_list(
         "OPS_AGENT_COMPOSE_FILES",
         "docker-compose.yml,docker-compose.dev.yml",
