@@ -7,7 +7,6 @@ import { changeValue, click, mount, type Mounted } from "./support/dom";
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
-  inspect: vi.fn(),
   navigate: vi.fn(),
   error: vi.fn(),
 }));
@@ -24,14 +23,12 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
 }));
 vi.mock("@/features/models/api/model.mutations", () => ({
   useCreateModelMutation: () => ({ mutateAsync: mocks.create }),
-  useInspectArtifactMutation: () => ({ mutateAsync: mocks.inspect }),
 }));
 
 let view: Mounted;
 let container: HTMLDivElement;
 beforeEach(async () => {
   vi.clearAllMocks();
-  mocks.inspect.mockResolvedValue({ type: "classifier" });
   mocks.create.mockResolvedValue({});
   view = await mount(<CreateModelPage />, { route: "/" });
   container = view.host;
@@ -57,27 +54,40 @@ test("saves all valid models and returns to catalog", async () => {
   expect(mocks.create).toHaveBeenCalledTimes(2);
   expect(mocks.navigate).toHaveBeenCalledWith("/models");
 });
-test("inspects a bundle before listing it and saves it under its name", async () => {
+test("uploads a bundle once, when it is saved, under its name", async () => {
   await upload("risk.mlbundle");
-  expect(mocks.inspect).toHaveBeenCalledWith(expect.objectContaining({ name: "risk.mlbundle" }));
+  expect(mocks.create).not.toHaveBeenCalled();
   await saveAll();
+  expect(mocks.create).toHaveBeenCalledTimes(1);
   expect(mocks.create).toHaveBeenCalledWith({
     name: "Risk",
     modelFile: expect.objectContaining({ name: "risk.mlbundle" }),
   });
 });
-test("does not list a bundle the runtime rejects", async () => {
-  mocks.inspect.mockRejectedValueOnce(new Error("Cannot load bundle"));
+test("keeps a bundle the runtime rejects listed, to fix or remove", async () => {
+  mocks.create.mockRejectedValueOnce(new Error("Cannot load bundle"));
   await upload("broken.mlbundle");
-  expect(container.textContent).toContain("No bundles yet");
+  await saveAll();
+  expect(mocks.navigate).not.toHaveBeenCalled();
+  expect(container.textContent).toContain("broken.mlbundle");
 });
-test("retains a nameless bundle after saving the valid bundle", async () => {
+test("names the nameless bundles Save all leaves unsaved, and keeps them", async () => {
   await upload("first.mlbundle", "second.mlbundle");
   await blankFirstName();
   await saveAll();
   expect(mocks.create).toHaveBeenCalledTimes(1);
   expect(mocks.navigate).not.toHaveBeenCalled();
-  expect(container.querySelector<HTMLInputElement>('input[aria-label^="Rename"]')?.value).toBe("");
+  expect(mocks.error).toHaveBeenCalledWith("Name this bundle to save it: first.mlbundle");
+  const unnamed = container.querySelector<HTMLInputElement>('input[aria-label^="Rename"]')!;
+  expect(unnamed.value).toBe("");
+  expect(unnamed.getAttribute("aria-invalid")).toBe("true");
+  expect(container.textContent).toContain("Name the model to save it.");
+});
+test("says so when a file is already in the list", async () => {
+  await upload("risk.mlbundle");
+  await upload("risk.mlbundle");
+  expect(mocks.error).toHaveBeenCalledWith("risk.mlbundle is already in the list.");
+  expect(container.querySelectorAll('input[aria-label^="Rename"]')).toHaveLength(1);
 });
 test("retains other incomplete bundles after an individual save", async () => {
   await upload("first.mlbundle", "second.mlbundle");
@@ -96,10 +106,9 @@ test("stays on upload page when persistence fails", async () => {
   expect(mocks.navigate).not.toHaveBeenCalled();
 });
 test.each(["model.joblib", "model.onnx", "data.csv"])(
-  "reports %s as unsupported without inspecting it",
+  "reports %s as unsupported without listing it",
   async (name) => {
     await upload(name);
-    expect(mocks.inspect).not.toHaveBeenCalled();
     expect(mocks.error).toHaveBeenCalledWith(expect.stringContaining(name));
     expect(container.textContent).toContain("No bundles yet");
   },

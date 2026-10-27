@@ -12,7 +12,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,12 +23,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartFile;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelAlreadyExistsException;
-import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
+import dev.ulloasp.mlsuite.model.application.upload.BundleInspection;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.application.service.ModelServiceImpl;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
@@ -59,12 +56,6 @@ class ModelServiceTest {
     private PredictionResultRepository resultRepository;
 
     @Mock
-    private RestTemplate restTemplate;
-
-    @Mock
-    private MultipartFile modelFile;
-
-    @Mock
     private WorkspaceAuthorizationService workspaceAuthorizationService;
 
     @Mock
@@ -90,7 +81,6 @@ class ModelServiceTest {
                 artifactWriter,
                 artifactReader,
                 deletionQueue,
-                new AnalyzerClient(restTemplate, restTemplate, "http://analyzer"),
                 false);
         lenient().when(workspaceAuthorizationService.requireCurrent(eq(3L), any(PermissionKey[].class))).thenReturn(organization());
     }
@@ -121,7 +111,9 @@ class ModelServiceTest {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(true);
 
-        assertThrows(ModelAlreadyExistsException.class, () -> service.createModel(3L, "demo", modelFile));
+        assertThrows(ModelAlreadyExistsException.class, () -> service.requireCreatable(3L, "demo"));
+        assertThrows(ModelAlreadyExistsException.class,
+                () -> service.createModel(3L, "demo", inspection(List.of()), "x".getBytes(), "application/octet-stream"));
     }
 
     @Test
@@ -214,21 +206,15 @@ class ModelServiceTest {
     void createModel_StoresObjectAndPersistsModel() throws Exception {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
-        when(restTemplate.postForObject(anyString(), any(), eq(Map.class)))
-                .thenReturn(Map.of("type", "clf", "specificType", "rf", "fileName", "model.mlbundle",
-                        "schema", Map.of("fields", List.of(), "reports", List.of()),
-                        "manifest", Map.of("writer_version", "0.1.0a3"),
-                        "featureImportances", List.of(Map.of("feature", "age", "importance", 62.5))));
-        when(modelFile.getBytes()).thenReturn("x".getBytes());
-        when(modelFile.getName()).thenReturn("modelFile");
-        when(modelFile.getOriginalFilename()).thenReturn("model.mlbundle");
-        when(modelFile.getContentType()).thenReturn("application/octet-stream");
         when(modelRepository.save(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(modelRepository.saveAndFlush(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Model result = service.createModel(3L, "demo", modelFile);
+        Model result = service.createModel(3L, "demo",
+                inspection(List.of(Map.of("feature", "age", "importance", 62.5))), "x".getBytes(), "application/octet-stream");
 
         assertEquals("demo", result.getName());
+        assertEquals("model.mlbundle", result.getFileName());
+        assertEquals("rf", result.getSpecificType());
         assertEquals(Map.of("fields", List.of(), "reports", List.of()), result.getInputSchema());
         assertEquals(Map.of("writer_version", "0.1.0a3"), result.getBundleManifest());
         assertEquals(List.of(Map.of("feature", "age", "importance", 62.5)), result.getFeatureImportances());
@@ -238,21 +224,12 @@ class ModelServiceTest {
 
     @Test
     void createModel_StoresAModelWhoseBundleHasNoImportances() throws Exception {
-        Map<String, Object> answer = new HashMap<>(Map.of("type", "clf", "specificType", "Pipeline",
-                "fileName", "model.mlbundle", "schema", Map.of("fields", List.of(), "reports", List.of()),
-                "manifest", Map.of("writer_version", "0.1.0a3")));
-        answer.put("featureImportances", null);
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
-        when(restTemplate.postForObject(anyString(), any(), eq(Map.class))).thenReturn(answer);
-        when(modelFile.getBytes()).thenReturn("x".getBytes());
-        when(modelFile.getName()).thenReturn("modelFile");
-        when(modelFile.getOriginalFilename()).thenReturn("model.mlbundle");
-        when(modelFile.getContentType()).thenReturn("application/octet-stream");
         when(modelRepository.save(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(modelRepository.saveAndFlush(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Model result = service.createModel(3L, "demo", modelFile);
+        Model result = service.createModel(3L, "demo", inspection(null), "x".getBytes(), "application/octet-stream");
 
         assertNull(result.getFeatureImportances());
         assertEquals(Map.of("writer_version", "0.1.0a3"), result.getBundleManifest());
@@ -263,19 +240,16 @@ class ModelServiceTest {
         RuntimeException failure = new RuntimeException("persist failed");
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
-        when(restTemplate.postForObject(anyString(), any(), eq(Map.class)))
-                .thenReturn(Map.of("type", "clf", "specificType", "rf", "fileName", "model.mlbundle",
-                        "schema", Map.of("fields", List.of(), "reports", List.of()),
-                        "manifest", Map.of("writer_version", "0.1.0a3"),
-                        "featureImportances", List.of(Map.of("feature", "age", "importance", 62.5))));
-        when(modelFile.getBytes()).thenReturn("x".getBytes());
-        when(modelFile.getName()).thenReturn("modelFile");
-        when(modelFile.getOriginalFilename()).thenReturn("model.mlbundle");
-        when(modelFile.getContentType()).thenReturn("application/octet-stream");
         when(modelRepository.saveAndFlush(any(Model.class))).thenThrow(failure);
 
-        assertEquals(failure, assertThrows(RuntimeException.class, () -> service.createModel(3L, "demo", modelFile)));
+        assertEquals(failure, assertThrows(RuntimeException.class, () -> service.createModel(3L, "demo",
+                inspection(List.of()), "x".getBytes(), "application/octet-stream")));
         verify(artifactWriter, never()).storeAndAttach(any(), any(), any());
+    }
+
+    private static BundleInspection inspection(List<Map<String, Object>> importances) {
+        return new BundleInspection("clf", "rf", "model.mlbundle", Map.of("fields", List.of(), "reports", List.of()),
+                Map.of("writer_version", "0.1.0a3"), importances);
     }
 
     private User user() {

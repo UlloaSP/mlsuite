@@ -26,6 +26,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
@@ -124,6 +125,16 @@ public class DomainExceptionHandler {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds))
                 .body(ErrorDto.of(HttpStatus.TOO_MANY_REQUESTS.value(), ex.getMessage(), req.getRequestURI()));
+    }
+
+    // ---- 413 CONTENT TOO LARGE ----
+
+    /** An upload above the multipart limit (a model bundle above 512 MB) is refused before it is read. */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorDto> handleUploadTooLarge(MaxUploadSizeExceededException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE)
+                .body(ErrorDto.of(HttpStatus.CONTENT_TOO_LARGE.value(),
+                        "The file is too large: a model bundle can be at most 512 MB.", req.getRequestURI()));
     }
 
     // ---- 400 BAD REQUEST ----

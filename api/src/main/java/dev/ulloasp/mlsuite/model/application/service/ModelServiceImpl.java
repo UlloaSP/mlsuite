@@ -7,27 +7,22 @@ package dev.ulloasp.mlsuite.model.application.service;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
-import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
 import dev.ulloasp.mlsuite.model.application.dto.ModelDto;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
+import dev.ulloasp.mlsuite.model.application.upload.BundleInspection;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelAlreadyExistsException;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
-import dev.ulloasp.mlsuite.model.application.upload.BufferedMultipartFile;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
@@ -56,7 +51,6 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
     private final ModelArtifactWriter artifactWriter;
     private final ModelArtifactContentReader artifactReader;
     private final StorageDeletionQueue deletionQueue;
-    private final AnalyzerClient analyzerClient;
     private final boolean requireMutationVersion;
 
     public ModelServiceImpl(
@@ -69,7 +63,6 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
             ModelArtifactWriter artifactWriter,
             ModelArtifactContentReader artifactReader,
             StorageDeletionQueue deletionQueue,
-            AnalyzerClient analyzerClient,
             @Value("${model.mutations.require-version:false}") boolean requireMutationVersion) {
         this.userLookupService = userLookupService;
         this.modelRepository = modelRepository;
@@ -80,42 +73,26 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         this.artifactWriter = artifactWriter;
         this.artifactReader = artifactReader;
         this.deletionQueue = deletionQueue;
-        this.analyzerClient = analyzerClient;
         this.requireMutationVersion = requireMutationVersion;
         this.catalogReader = new ModelCatalogReader(modelRepository, workspaceAuthorizationService);
     }
 
     @Override
-    public Model createModel(Long userId, String name, MultipartFile modelFile) {
-        User user = userLookupService.requireById(userId);
+    public void requireCreatable(Long userId, String name) {
         Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.CREATE_MODELS);
-
         if (modelRepository.existsByNameAndOrganizationId(name, organization.getId())) {
             throw new ModelAlreadyExistsException(name, organization.getName());
         }
+    }
 
-        MultipartFile reusableModelFile = modelFile instanceof BufferedMultipartFile
-                ? modelFile
-                : BufferedMultipartFile.from(modelFile);
-
-        LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("model_file", reusableModelFile.getResource());
-        Map<String, Object> response = analyzerClient.inspect(body);
-        String type = response.get("type") != null ? response.get("type").toString() : null;
-        String specificType = response.get("specificType") != null ? response.get("specificType").toString() : null;
-        Map<String, Object> inputSchema = jsonObject(response, "schema");
-        Map<String, Object> manifest = jsonObject(response, "manifest");
-        List<Map<String, Object>> importances = response.get("featureImportances") instanceof List<?> items
-                ? items.stream().filter(Map.class::isInstance).map(item -> jsonObject((Map<?, ?>) item)).toList()
-                : null;
-        String fileName = response.get("fileName") != null
-                ? response.get("fileName").toString()
-                : reusableModelFile.getOriginalFilename();
-        byte[] artifactBytes;
-        try {
-            artifactBytes = reusableModelFile.getBytes();
-        } catch (Exception ex) {
-            throw new IllegalArgumentException("Model file is empty or invalid", ex);
+    @Override
+    public Model createModel(Long userId, String name, BundleInspection inspection, byte[] artifactBytes,
+            String contentType) {
+        User user = userLookupService.requireById(userId);
+        Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.CREATE_MODELS);
+        // Checked again: another upload may have taken the name while the runtime read this one.
+        if (modelRepository.existsByNameAndOrganizationId(name, organization.getId())) {
+            throw new ModelAlreadyExistsException(name, organization.getName());
         }
 
         Model model = new Model();
@@ -123,19 +100,19 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         model.setUpdatedBy(user);
         model.setOrganization(organization);
         model.setName(name);
-        model.setType(type);
-        model.setSpecificType(specificType);
-        model.setFileName(fileName);
-        model.setInputSchema(inputSchema);
-        model.setBundleManifest(manifest);
-        model.setFeatureImportances(importances);
+        model.setType(inspection.type());
+        model.setSpecificType(inspection.specificType());
+        model.setFileName(inspection.fileName());
+        model.setInputSchema(inspection.schema());
+        model.setBundleManifest(inspection.manifest());
+        model.setFeatureImportances(inspection.featureImportances());
         model.setModelFile(artifactBytes);
         model.setModelSizeBytes((long) artifactBytes.length);
         model.setArtifactState(ModelArtifactState.INLINE_ONLY);
 
         try {
             modelRepository.saveAndFlush(model);
-            artifactWriter.storeAndAttach(model, artifactBytes, reusableModelFile.getContentType());
+            artifactWriter.storeAndAttach(model, artifactBytes, contentType);
             return modelRepository.save(model);
         } catch (RuntimeException ex) {
             deleteStoredObject(model, ex);
@@ -249,20 +226,6 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         copy.setBundleManifest(source.getBundleManifest());
         copy.setFeatureImportances(source.getFeatureImportances());
         return copy;
-    }
-
-    /** A JSON object the analyzer must answer with; its absence is the analyzer's fault, not the caller's. */
-    private static Map<String, Object> jsonObject(Map<String, Object> response, String key) {
-        if (!(response.get(key) instanceof Map<?, ?> value)) {
-            throw new IllegalStateException("Analyzer answered without the model " + key);
-        }
-        return jsonObject(value);
-    }
-
-    private static Map<String, Object> jsonObject(Map<?, ?> value) {
-        Map<String, Object> object = new LinkedHashMap<>();
-        value.forEach((key, item) -> object.put(String.valueOf(key), item));
-        return object;
     }
 
     private void deleteStoredObject(Model model, RuntimeException original) {

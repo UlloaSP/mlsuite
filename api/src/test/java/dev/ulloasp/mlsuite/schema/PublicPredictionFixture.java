@@ -27,6 +27,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.AbstractMockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -221,11 +222,11 @@ public abstract class PublicPredictionFixture {
     }
 
     /** The same request with a logged-in session, as the login endpoint leaves it for the filter chain. */
-    protected static MockHttpServletRequestBuilder signedIn(MockHttpServletRequestBuilder request, long userId) {
+    protected static <B extends AbstractMockHttpServletRequestBuilder<B>> B signedIn(B request, long userId) {
         return signedIn(request, userId, SystemRole.USER);
     }
 
-    protected static MockHttpServletRequestBuilder signedIn(MockHttpServletRequestBuilder request, long userId,
+    protected static <B extends AbstractMockHttpServletRequestBuilder<B>> B signedIn(B request, long userId,
             SystemRole role) {
         var principal = new AuthenticatedUserPrincipal(userId, "member@example.test", "hash", role, true);
         var authentication = UsernamePasswordAuthenticationToken.authenticated(
@@ -253,7 +254,7 @@ public abstract class PublicPredictionFixture {
         new TransactionTemplate(transactionManager).executeWithoutResult(status -> work.run());
     }
 
-    long count(String entity) {
+    protected long count(String entity) {
         return entityManager.createQuery("select count(x) from " + entity + " x", Long.class).getSingleResult();
     }
 

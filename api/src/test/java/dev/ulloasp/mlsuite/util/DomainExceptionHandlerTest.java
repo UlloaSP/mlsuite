@@ -14,7 +14,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.mock.http.MockHttpInputMessage;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
+
+import dev.ulloasp.mlsuite.schema.domain.exception.RuntimeBusyException;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -38,6 +41,30 @@ class DomainExceptionHandlerTest {
         assertEquals(403, response.getBody().status());
         assertEquals("Access denied", response.getBody().message());
         assertEquals("/api/schema-reviews/missing", response.getBody().path());
+    }
+
+    @Test
+    void handleUploadTooLarge_NamesTheBundleLimit() {
+        DomainExceptionHandler handler = new DomainExceptionHandler();
+        when(request.getRequestURI()).thenReturn("/api/models");
+
+        ResponseEntity<ErrorDto> response = handler.handleUploadTooLarge(
+                new MaxUploadSizeExceededException(512L * 1024 * 1024), request);
+
+        assertEquals(HttpStatus.CONTENT_TOO_LARGE, response.getStatusCode());
+        assertEquals("The file is too large: a model bundle can be at most 512 MB.", response.getBody().message());
+    }
+
+    @Test
+    void handleRuntimeBusy_TellsTheClientWhenToRetry() {
+        DomainExceptionHandler handler = new DomainExceptionHandler();
+        when(request.getRequestURI()).thenReturn("/api/schema-bookmarks/1/predictions");
+
+        ResponseEntity<ErrorDto> response = handler.handleResponseStatus(
+                new RuntimeBusyException("Too many workspace runs are in progress. Try again in a moment.", 2), request);
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
+        assertEquals("2", response.getHeaders().getFirst("Retry-After"));
     }
 
     @Test

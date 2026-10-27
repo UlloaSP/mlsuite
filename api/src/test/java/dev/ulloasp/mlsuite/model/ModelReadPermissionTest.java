@@ -13,7 +13,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.application.service.ModelServiceImpl;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
@@ -51,7 +50,7 @@ class ModelReadPermissionTest {
         service = new ModelServiceImpl(users, models, mock(ObjectStorageService.class),
                 mock(SchemaModelBindingRepository.class), mock(PredictionResultRepository.class), authorization,
                 mock(ModelArtifactWriter.class), mock(ModelArtifactContentReader.class),
-                mock(StorageDeletionQueue.class), mock(AnalyzerClient.class), false);
+                mock(StorageDeletionQueue.class), false);
     }
 
     @ParameterizedTest

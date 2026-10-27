@@ -18,6 +18,7 @@ import dev.ulloasp.mlsuite.model.application.dto.ModelDetailsDto;
 import dev.ulloasp.mlsuite.model.application.dto.ModelDto;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
+import dev.ulloasp.mlsuite.model.application.port.in.ModelUploadUseCase;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class ModelController {
 
     private final ModelCatalogUseCase modelCatalogUseCase;
+    private final ModelUploadUseCase modelUploadUseCase;
 
     @PostMapping
     public ResponseEntity<CreateModelDto> createModel(
@@ -41,7 +43,7 @@ public class ModelController {
             @RequestParam String name,
             @RequestParam MultipartFile modelFile) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(CreateModelDto.toDto(modelCatalogUseCase.createModel(user.userId(), name, modelFile)));
+                .body(CreateModelDto.toDto(modelUploadUseCase.createModel(user.userId(), name, modelFile)));
     }
 
     @GetMapping

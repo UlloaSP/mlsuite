@@ -8,13 +8,10 @@ package dev.ulloasp.mlsuite.model.application.service;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.ModelRuntimeClient;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.application.dto.ExplainRequest;
@@ -37,21 +34,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AnalyzerServiceImpl implements AnalyzerUseCase {
 
-    private final AnalyzerClient analyzerClient;
     private final ModelRuntimeClient modelRuntime;
     private final WorkspaceRuntimeSlots slots;
     private final ModelRepository modelRepository;
     private final UserLookupService userLookupService;
     private final WorkspaceAuthorizationService authorizationService;
     private final ObjectMapper objectMapper;
-
-    @Override
-    public Map<String, Object> inspectArtifact(Long userId, MultipartFile artifact) {
-        userLookupService.requireById(userId);
-        LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("model_file", artifact.getResource());
-        return slots.run(userId, () -> analyzerClient.inspect(body));
-    }
 
     @Override
     public Map<String, Object> explain(Long userId, Long modelId, ExplainRequest request) {

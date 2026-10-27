@@ -28,7 +28,6 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -73,72 +72,12 @@ class AnalyzerServiceTest {
     @Mock
     private WorkspaceAuthorizationService authorizationService;
 
-    @Mock
-    private MultipartFile artifactFile;
-
     private AnalyzerServiceImpl service;
 
     @BeforeEach
     void setUp() {
         service = service(new WorkspaceRuntimeSlots(4, NO_WAITING));
         lenient().when(authorizationService.requireCurrent(3L, PermissionKey.RUN_PREDICTIONS)).thenReturn(organization());
-    }
-
-    @Test
-    void inspectArtifact_ForwardsUploadToAnalyzer() {
-        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
-        when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
-        when(restTemplate.postForObject(eq("http://py-analyzer:8000/metadata"), any(), eq(Map.class)))
-                .thenReturn(Map.of("type", "classifier"));
-
-        Map<String, Object> result = service.inspectArtifact(3L, artifactFile);
-
-        assertEquals("classifier", result.get("type"));
-        verify(restTemplate).postForObject(eq("http://py-analyzer:8000/metadata"), any(), eq(Map.class));
-    }
-
-    @Test
-    void inspectArtifact_KeepsAKeyTheAnalyzerAnswersWithNull() {
-        Map<String, Object> answer = new HashMap<>(Map.of("type", "classifier"));
-        answer.put("featureImportances", null);
-        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
-        when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
-        when(restTemplate.postForObject(eq("http://py-analyzer:8000/metadata"), any(), eq(Map.class)))
-                .thenReturn(answer);
-
-        Map<String, Object> result = service.inspectArtifact(3L, artifactFile);
-
-        assertEquals(answer, result);
-    }
-
-    @Test
-    void inspectArtifact_PropagatesAnalyzerValidationError() {
-        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
-        when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
-        when(restTemplate.postForObject(eq("http://py-analyzer:8000/metadata"), any(), eq(Map.class)))
-                .thenThrow(restError(400, "{\"detail\":\"File must be .mlbundle\"}"));
-
-        AnalyzerServiceException ex = assertThrows(
-                AnalyzerServiceException.class,
-                () -> service.inspectArtifact(3L, artifactFile));
-
-        assertEquals(400, ex.getStatus());
-        assertEquals("File must be .mlbundle", ex.getDetail());
-    }
-
-    @Test
-    void inspectArtifact_PropagatesAnalyzerNetworkError() {
-        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
-        when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
-        when(restTemplate.postForObject(eq("http://py-analyzer:8000/metadata"), any(), eq(Map.class)))
-                .thenThrow(new ResourceAccessException("down"));
-
-        AnalyzerServiceException ex = assertThrows(
-                AnalyzerServiceException.class,
-                () -> service.inspectArtifact(3L, artifactFile));
-
-        assertEquals(0, ex.getStatus());
-        assertEquals("Analyzer service unreachable", ex.getDetail());
     }
 
     @Test
@@ -204,7 +143,7 @@ class AnalyzerServiceTest {
         AnalyzerClient analyzerClient = new AnalyzerClient(restTemplate, restTemplate, "http://py-analyzer:8000");
         ModelRuntimeClient modelRuntime = new ModelRuntimeClient(analyzerClient,
                 new ModelArtifactContentReader(objectStorageService, modelRepository));
-        return new AnalyzerServiceImpl(analyzerClient, modelRuntime, slots, modelRepository,
+        return new AnalyzerServiceImpl(modelRuntime, slots, modelRepository,
                 userLookupService, authorizationService, new ObjectMapper());
     }
 

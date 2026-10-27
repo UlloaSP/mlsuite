@@ -5,14 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import {
-  archiveModel,
-  createModel,
-  deleteModel,
-  duplicateModel,
-  inspectArtifact,
-  renameModel,
-} from "./model.api";
+import { archiveModel, createModel, deleteModel, duplicateModel, renameModel } from "./model.api";
 import { modelKeys } from "./model.keys";
 import type { CreateModelRequest } from "./model.types";
 
@@ -57,7 +50,3 @@ export const useCreateModelMutation = () => {
     onSuccess: () => invalidate(),
   });
 };
-
-export const useInspectArtifactMutation = () =>
-  // react-doctor-disable-next-line react-doctor/query-mutation-missing-invalidation -- Inspection is a read-only command and changes no cached resource.
-  useMutation({ meta: { errorHandledLocally: true }, mutationFn: inspectArtifact });

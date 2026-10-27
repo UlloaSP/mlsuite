@@ -38,17 +38,19 @@ you trust; see the [security policy](/security/).
 />
 
 1. Open **Models** and choose **New model** (needs **Create models**).
-2. Drop one or more `.mlbundle` files, or choose **Add files**. Each file is checked by the
-   runtime first; a file that cannot be loaded is not added, and the reason appears as a message
-   such as "Cannot load bundle: …".
+2. Drop one or more `.mlbundle` files, or choose **Add files**. A file that is not a bundle, or one
+   already in the list, is not added and a message says so.
 3. Check the name of each model. It defaults to the file name in title case and must be unique in
-   the organization.
-4. Choose **Save** on a card, or **Save all** to save every bundle in turn. When all are saved,
-   MLsuite opens the models list.
+   the organization; a card without a name says so, and **Save all** names the bundles it left
+   unsaved for that reason.
+4. Choose **Save** on a card, or **Save all** to save every bundle in turn. Each file is uploaded
+   once, when it is saved: the runtime reads it then, and a file it cannot load stays in the list
+   with the reason, such as "Cannot load bundle: …". When all are saved, MLsuite opens the models
+   list.
 
-Files up to 1000 MB pass the upload limits of a default installation; MLbundle itself refuses
-archives over 512 MiB. Models that a [public bookmark](/publishing/publish/) or an
-[API client](/api/clients/) runs are limited to 50 MB by default.
+A bundle can be at most 512 MB, the largest archive MLbundle reads; a larger file is refused with
+`413`. Models that a [public bookmark](/publishing/publish/) or an [API client](/api/clients/) runs
+are limited to 50 MB by default.
 
 ## The models list
 

@@ -7295,45 +7295,6 @@
         ]
       }
     },
-    "/api/analyzer/artifacts/inspect": {
-      "post": {
-        "operationId": "inspectArtifact",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "artifact": {
-                    "format": "binary",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "artifact"
-                ],
-                "type": "object"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": { },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "analyzer-controller"
-        ]
-      }
-    },
     "/api/analyzer/explanations": {
       "post": {
         "operationId": "explain",

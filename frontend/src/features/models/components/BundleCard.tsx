@@ -19,6 +19,7 @@ type Props = {
 };
 
 export function BundleCard({ bundle, onSave, onRemove, onRename }: Props) {
+  const unnamed = !bundle.saved && bundle.name.trim() === "";
   return (
     <div
       className={cx(
@@ -42,14 +43,22 @@ export function BundleCard({ bundle, onSave, onRemove, onRename }: Props) {
             value={bundle.name}
             onChange={(e) => onRename(e.target.value)}
             placeholder="Model name…"
+            aria-invalid={unnamed}
+            aria-describedby={unnamed ? `bundle-${bundle.id}-name` : undefined}
             disabled={bundle.saved}
             className={cx(
               "w-full rounded-control border border-line bg-surface-subtle",
               "px-3 py-2 text-xs font-semibold text-fg outline-none",
               "transition-all duration-150 focus:border-accent focus:bg-surface",
               bundle.saved && "cursor-not-allowed opacity-70",
+              unnamed && "border-danger-border",
             )}
           />
+          {unnamed ? (
+            <p id={`bundle-${bundle.id}-name`} className="text-2xs text-danger-fg">
+              Name the model to save it.
+            </p>
+          ) : null}
 
           <div className="flex items-center justify-between gap-2">
             {bundle.saved ? (

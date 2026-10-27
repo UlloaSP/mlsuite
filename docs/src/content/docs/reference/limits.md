@@ -23,7 +23,7 @@ Limits marked *configurable* are defaults that an operator changes in
 
 | What | Limit |
 | --- | --- |
-| Upload size | 1000 MB per request (nginx and the API) |
+| Model bundle | 512 MB per file (nginx and the API) |
 | Bundle archive | 512 MiB, 100,000 features and 1,024 outputs (MLbundle) |
 | Schema name, description | 180, 800 characters |
 | Bookmark name, description, publication note | 180, 800, 1000 characters |

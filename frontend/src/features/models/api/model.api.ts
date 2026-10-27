@@ -5,7 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { appFetch } from "@/shared/api/http";
 import type {
-  ArtifactInspectionDto,
   CreateModelRequest,
   ModelNameRequest,
   ModelPageRequest,
@@ -70,14 +69,5 @@ export const renameModel = ({ id, name, version }: ModelNameRequest): Promise<Mo
   const params = new URLSearchParams({ name, version: String(version) });
   return appFetch<ModelDto>(`/api/models/${encodeURIComponent(id)}?${params.toString()}`, {
     method: "PATCH",
-  });
-};
-
-export const inspectArtifact = (artifact: File): Promise<ArtifactInspectionDto> => {
-  const formData = new FormData();
-  formData.append("artifact", artifact);
-  return appFetch<ArtifactInspectionDto>("/api/analyzer/artifacts/inspect", {
-    method: "POST",
-    body: formData,
   });
 };
