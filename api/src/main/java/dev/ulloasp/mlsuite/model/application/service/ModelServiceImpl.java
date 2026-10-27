@@ -33,6 +33,7 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionR
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
+import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
 import dev.ulloasp.mlsuite.storage.ModelArtifactWriter;
 import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
 import dev.ulloasp.mlsuite.model.domain.model.ModelArtifactState;
@@ -194,7 +195,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
             throw new ModelAlreadyExistsException(nextName, organization.getName());
         }
 
-        byte[] bytes = artifactReader.loadVerified(source);
+        byte[] bytes = artifactReader.loadVerified(ModelArtifactReference.of(source));
         Model copy = copyModel(user, organization, source, nextName, bytes);
         try {
             modelRepository.saveAndFlush(copy);

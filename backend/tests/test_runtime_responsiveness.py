@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 import mlsuite_backend.services.prediction_service as prediction_service
 from mlsuite_backend import config, execution
 from mlsuite_backend.main import app
-from tests.helpers import make_regressor, serialize_bundle
+from tests.helpers import make_regressor, run_request, serialize_bundle
 
 RECORD = json.dumps({"rooms": 3, "area": 60})
 
@@ -32,7 +32,7 @@ def test_health_answers_while_a_prediction_is_running(monkeypatch) -> None:
         return {"reports": []}
 
     monkeypatch.setattr(prediction_service, "_predict", slow_predict)
-    form = {"files": {"model_file": serialize_bundle(make_regressor())}, "data": {"data": RECORD}}
+    form = run_request(serialize_bundle(make_regressor()), data=RECORD)
 
     async def scenario():
         transport = httpx.ASGITransport(app=app)

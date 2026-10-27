@@ -81,7 +81,7 @@ class ApiPredictionTest extends ApiAccessFixture {
                 body.get("outputs").toString());
         // The record goes as sent, to the one model, with no connection held and no explanation asked.
         assertEquals(1, sent.size());
-        assertEquals("forest.mlbundle", fileName(sent.get(0)));
+        assertEquals(ArtifactHash.sha256(FOREST_BYTES), artifact(sent.get(0)));
         assertEquals("{\"age\":52,\"sex__male\":1}", data(sent.get(0)));
         assertEquals(List.of("transaction false, connections 0"), held);
 

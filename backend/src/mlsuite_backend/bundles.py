@@ -1,16 +1,25 @@
-"""Load uploaded .mlbundle artifacts, verifying each one once."""
+"""Load .mlbundle artifacts by SHA-256, verifying each one once.
+
+A run names its artifact by SHA-256 and sends no bytes. When the runtime does not hold that
+artifact it answers 409 (ARTIFACT_NOT_LOADED); the caller then sends the artifact with the same
+hash, which must match the bytes.
+"""
 
 import hashlib
+import re
 import threading
 from collections import OrderedDict
 from dataclasses import replace
 
 import mlbundle
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile
 
 from .config import BUNDLE_CACHE_BYTES, BUNDLE_SUFFIX
 from .execution import run_model_work
 from .utils.errors import bad_request
+
+ARTIFACT_NOT_LOADED = 409
+_SHA256 = re.compile(r"[0-9a-f]{64}")
 
 
 class LoadedBundles:
@@ -44,8 +53,6 @@ class LoadedBundles:
             return bundle
 
 
-# Spring sends the artifact with every request and verifying a bundle can take seconds,
-# so verified bundles are kept by content hash.
 _loaded = LoadedBundles(BUNDLE_CACHE_BYTES)
 
 
@@ -64,15 +71,37 @@ def _verify(content: bytes) -> mlbundle.LoadedBundle:
     return replace(bundle, structure=structure, samples=None)
 
 
-def _load(content: bytes) -> mlbundle.LoadedBundle:
+def _load(content: bytes, declared_sha256: str | None) -> mlbundle.LoadedBundle:
     sha256 = hashlib.sha256(content).hexdigest()
+    if declared_sha256 is not None and sha256 != declared_sha256:
+        raise bad_request("Artifact does not match its SHA-256")
     bundle = _loaded.get(sha256)
     if bundle is None:
         bundle = _loaded.keep(sha256, _verify(content), len(content))
     return bundle
 
 
-async def load_bundle(upload: UploadFile) -> mlbundle.LoadedBundle:
+async def _read(upload: UploadFile) -> bytes:
     if not (upload.filename or "").lower().endswith(BUNDLE_SUFFIX):
         raise bad_request(f"File must be {BUNDLE_SUFFIX}")
-    return await run_model_work(_load, await upload.read())
+    return await upload.read()
+
+
+async def load_bundle(upload: UploadFile) -> mlbundle.LoadedBundle:
+    """An artifact sent without a hash: one being inspected before it is stored."""
+    return await run_model_work(_load, await _read(upload), None)
+
+
+async def resolve_bundle(artifact_sha256: str, upload: UploadFile | None) -> mlbundle.LoadedBundle:
+    """The bundle a run names by SHA-256, from the bytes sent with it or else from those held."""
+    if not _SHA256.fullmatch(artifact_sha256):
+        raise bad_request("artifact_sha256 must be a lowercase hexadecimal SHA-256")
+    if upload is not None:
+        return await run_model_work(_load, await _read(upload), artifact_sha256)
+    bundle = _loaded.get(artifact_sha256)
+    if bundle is None:
+        raise HTTPException(
+            status_code=ARTIFACT_NOT_LOADED,
+            detail="Artifact is not loaded; send it with its SHA-256",
+        )
+    return bundle

@@ -73,7 +73,7 @@ equivalent roles yourself; the migration role must be able to install `pg_trgm`.
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `RUNTIME_MAX_CONCURRENT` | `8` | Threads the runtime runs models on. Keep it at least the sum of the public and client shares, or admitted runs queue in the runtime. |
-| `RUNTIME_BUNDLE_CACHE_MB` | `512` | Total artifact size of the verified bundles the runtime keeps loaded; the newest is kept even when larger. |
+| `RUNTIME_BUNDLE_CACHE_MB` | `512` | Total artifact size of the verified bundles the runtime keeps loaded; the newest is kept even when larger. A run sends its artifact only when the runtime does not hold it. |
 
 ## Public runs and the client API
 

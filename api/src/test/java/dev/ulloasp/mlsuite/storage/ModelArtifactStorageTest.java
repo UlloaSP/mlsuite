@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.storage;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -16,6 +17,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
+import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.domain.model.ModelArtifactState;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
@@ -129,39 +131,65 @@ class ModelArtifactStorageTest {
     @Test
     void readerFallsBackOnlyToAnInlineCopyThatMatchesTheExpectedHash() {
         ObjectStorageService storage = mock(ObjectStorageService.class);
-        Model model = model();
+        ModelRepository models = mock(ModelRepository.class);
         byte[] bytes = "model".getBytes();
-        model.setModelFile(bytes);
-        model.setModelSizeBytes((long) bytes.length);
-        model.setArtifactSha256(ArtifactHash.sha256(bytes));
-        model.setStorageBucket("bucket");
-        model.setStorageObjectKey("key");
         when(storage.load("bucket", "key", null)).thenThrow(new ObjectStorageException("down"));
+        when(models.findModelFile(7L)).thenReturn(Optional.of(bytes));
+        ModelArtifactContentReader reader = new ModelArtifactContentReader(storage, models);
 
-        assertArrayEquals(bytes, new ModelArtifactContentReader(storage).loadVerified(model));
+        assertArrayEquals(bytes, reader.loadVerified(stored(null, ArtifactHash.sha256(bytes), bytes.length)));
 
-        model.setArtifactSha256(ArtifactHash.sha256("different".getBytes()));
-        assertThrows(ArtifactIntegrityException.class,
-                () -> new ModelArtifactContentReader(storage).loadVerified(model));
+        assertThrows(ArtifactIntegrityException.class, () -> reader.loadVerified(
+                stored(null, ArtifactHash.sha256("different".getBytes()), bytes.length)));
+    }
+
+    @Test
+    void readerRethrowsTheStorageFailureWhenNoInlineCopyIsKept() {
+        ObjectStorageService storage = mock(ObjectStorageService.class);
+        ModelRepository models = mock(ModelRepository.class);
+        ObjectStorageException down = new ObjectStorageException("down");
+        when(storage.load("bucket", "key", null)).thenThrow(down);
+        when(models.findModelFile(7L)).thenReturn(Optional.of(new byte[0]));
+        ModelArtifactContentReader reader = new ModelArtifactContentReader(storage, models);
+
+        assertSame(down, assertThrows(ObjectStorageException.class,
+                () -> reader.loadVerified(stored(null, ArtifactHash.sha256("model".getBytes()), 5))));
     }
 
     @Test
     void readerLoadsThePersistedObjectVersionInsteadOfTheLatestVersion() {
         ObjectStorageService storage = mock(ObjectStorageService.class);
-        Model model = model();
+        ModelRepository models = mock(ModelRepository.class);
         byte[] bytes = "model".getBytes();
-        model.setModelFile(new byte[0]);
-        model.setModelSizeBytes((long) bytes.length);
-        model.setArtifactSha256(ArtifactHash.sha256(bytes));
-        model.setStorageBucket("bucket");
-        model.setStorageObjectKey("key");
-        model.setStorageVersionId("v1");
         when(storage.load("bucket", "key", "v1")).thenReturn(bytes);
 
-        assertArrayEquals(bytes, new ModelArtifactContentReader(storage).loadVerified(model));
+        assertArrayEquals(bytes, new ModelArtifactContentReader(storage, models)
+                .loadVerified(stored("v1", ArtifactHash.sha256(bytes), bytes.length)));
 
         verify(storage).load("bucket", "key", "v1");
         verify(storage, never()).load("bucket", "key", null);
+        verify(models, never()).findModelFile(any());
+    }
+
+    @Test
+    void readerReadsTheInlineCopyOfAModelWithoutAStoredObject() {
+        ObjectStorageService storage = mock(ObjectStorageService.class);
+        ModelRepository models = mock(ModelRepository.class);
+        byte[] bytes = "model".getBytes();
+        when(models.findModelFile(7L)).thenReturn(Optional.of(bytes));
+        ModelArtifactContentReader reader = new ModelArtifactContentReader(storage, models);
+        ModelArtifactReference inlineOnly = new ModelArtifactReference(7L, "model.mlbundle", null, null, null,
+                (long) bytes.length, null);
+
+        assertArrayEquals(bytes, reader.loadVerified(inlineOnly));
+
+        when(models.findModelFile(7L)).thenReturn(Optional.of(new byte[0]));
+        assertThrows(ArtifactIntegrityException.class, () -> reader.loadVerified(inlineOnly));
+        verify(storage, never()).load(any(), any(), any());
+    }
+
+    private static ModelArtifactReference stored(String versionId, String sha256, long sizeBytes) {
+        return new ModelArtifactReference(7L, "model.mlbundle", "bucket", "key", versionId, sizeBytes, sha256);
     }
 
     private Model model() {

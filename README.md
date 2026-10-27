@@ -375,8 +375,8 @@ an account.
 - **Model size.** `PUBLIC_PREDICTION_MAX_MODEL_SIZE_MB` (default `50`) is the
   largest model artifact a public bookmark may bind. Publishing, moving a public
   bookmark to another snapshot and each public run are refused above it, because
-  every run ships the artifact to the runtime. The same limit applies to API
-  client runs.
+  the runtime must load the artifact of every model it runs. The same limit
+  applies to API client runs.
 - **Concurrency.** `PUBLIC_PREDICTION_MAX_CONCURRENT` (default `2`) public runs may
   execute at once; further ones receive `503 Service Unavailable` until a slot
   frees. API clients have a share of their own, so neither can take the other's.
@@ -567,7 +567,7 @@ The Python runtime requires Python 3.14+ and `uv`:
 ```bash
 cd backend
 uv sync --extra dev
-uv run pytest tests/test_runtime_api.py
+uv run pytest tests
 ```
 
 ## Documentation and community

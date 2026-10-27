@@ -3,14 +3,14 @@ import time
 import mlbundle
 from fastapi import UploadFile
 
-from ..bundles import load_bundle
+from ..bundles import resolve_bundle
 from ..execution import run_model_work
 from ..utils.errors import bad_request, internal_runtime_error
 from ..utils.records import parse_record_json
 
 
-async def predict(model_upload: UploadFile, data: str) -> dict[str, object]:
-    bundle = await load_bundle(model_upload)
+async def predict(artifact_sha256: str, model_upload: UploadFile | None, data: str) -> dict[str, object]:
+    bundle = await resolve_bundle(artifact_sha256, model_upload)
     record = parse_record_json(data, "Invalid JSON")
     return await run_model_work(_predict, bundle, record)
 

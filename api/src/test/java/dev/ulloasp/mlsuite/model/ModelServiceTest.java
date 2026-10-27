@@ -194,7 +194,7 @@ class ModelServiceTest {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(source));
         when(modelRepository.existsByNameAndOrganizationId("copy", 41L)).thenReturn(false);
-        when(artifactReader.loadVerified(source)).thenReturn("bytes".getBytes());
+        when(artifactReader.loadVerified(dev.ulloasp.mlsuite.storage.ModelArtifactReference.of(source))).thenReturn("bytes".getBytes());
         org.mockito.Mockito.doAnswer(invocation -> {
             Model copy = invocation.getArgument(0);
             copy.setStorageBucket("bucket");

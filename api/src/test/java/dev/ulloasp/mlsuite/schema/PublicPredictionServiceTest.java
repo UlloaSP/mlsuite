@@ -1,12 +1,14 @@
 package dev.ulloasp.mlsuite.schema;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -94,11 +96,11 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
                 request(Map.of("in0", 52, "in1", 240.5, "in2", 1, "in3", 0)));
 
         assertEquals(2, calls.size());
-        assertEquals("forest.mlbundle", fileName(calls.get(0)));
-        assertArrayEquals(FOREST_BYTES, (byte[]) calls.get(0).getFirst("model_file").getBody());
+        assertEquals(FOREST_SHA256, artifact(calls.get(0)));
+        assertNull(calls.get(0).getFirst("model_file"));
         assertEquals("{\"age\":52,\"chol\":240.5,\"smoker__yes\":1,\"smoker__no\":0}", data(calls.get(0)));
-        assertEquals("net.mlbundle", fileName(calls.get(1)));
-        assertArrayEquals(NET_BYTES, (byte[]) calls.get(1).getFirst("model_file").getBody());
+        assertEquals(NET_SHA256, artifact(calls.get(1)));
+        assertNull(calls.get(1).getFirst("model_file"));
         // The positional model reads by position: 0 before 1, whatever the order of the fields.
         assertEquals("{\"0\":240.5,\"1\":52}", data(calls.get(1)));
         assertEquals(List.of(false, false), transactionOpen);
@@ -138,7 +140,7 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
 
         // Only the model that serves the plugin report is explained, with the values it predicted on.
         assertEquals(1, explained.size());
-        assertEquals("forest.mlbundle", fileName(explained.get(0)));
+        assertEquals(FOREST_SHA256, artifact(explained.get(0)));
         assertEquals("{\"age\":52,\"chol\":240.5,\"smoker__yes\":1,\"smoker__no\":0}", data(explained.get(0)));
         assertEquals(List.of(KEPT_CLASSIFIER, Map.of("kind", "Crystal Tree", "explanation", "age > 50")),
                 result.run().reports().stream().map(report -> report.payload()).toList());
@@ -309,9 +311,11 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
     @Test
     void anArtifactThatFailsVerificationIsNeverSentToTheRuntime() {
         inTransaction(() -> entityManager.find(Model.class, forestModel.getId()).setArtifactSha256("0".repeat(64)));
+        when(analyzer.post(eq("/predict"), any()))
+                .thenThrow(new AnalyzerServiceException(409, "Artifact is not loaded; send it with its SHA-256"));
 
         assertEquals(502, refused(bookmark.getPublicId(), request(Map.of("in0", 52))).getStatusCode().value());
-        verifyNoInteractions(analyzer);
+        verify(analyzer).post(eq("/predict"), argThat(parts -> parts.getFirst("model_file") == null));
     }
 
     @Test

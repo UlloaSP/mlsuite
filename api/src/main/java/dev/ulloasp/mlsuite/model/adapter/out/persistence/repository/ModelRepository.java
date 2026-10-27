@@ -17,6 +17,7 @@ import org.springframework.stereotype.Repository;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.domain.model.ModelArtifactState;
+import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
 import dev.ulloasp.mlsuite.storage.StoredArtifactReference;
 
 @Repository
@@ -27,6 +28,28 @@ public interface ModelRepository extends JpaRepository<Model, Long> {
     /** The artifact's SHA-256 alone, without reading the artifact; empty while none is recorded. */
     @Query("SELECT m.artifactSha256 FROM Model m WHERE m.id = :id")
     Optional<String> findArtifactSha256(Long id);
+
+    /** The inline copy of the artifact, which no other read loads: an empty array when none is kept. */
+    @Query("SELECT m.modelFile FROM Model m WHERE m.id = :id")
+    Optional<byte[]> findModelFile(Long id);
+
+    @Query("""
+            SELECT new dev.ulloasp.mlsuite.storage.ModelArtifactReference(
+                m.id, m.fileName, m.storageBucket, m.storageObjectKey, m.storageVersionId,
+                m.modelSizeBytes, m.artifactSha256)
+            FROM Model m
+            WHERE m.id = :id
+            """)
+    Optional<ModelArtifactReference> findArtifactReference(Long id);
+
+    @Query("""
+            SELECT new dev.ulloasp.mlsuite.storage.ModelArtifactReference(
+                m.id, m.fileName, m.storageBucket, m.storageObjectKey, m.storageVersionId,
+                m.modelSizeBytes, m.artifactSha256)
+            FROM Model m
+            WHERE m.id = :id AND m.organization.id = :organizationId
+            """)
+    Optional<ModelArtifactReference> findArtifactReference(Long id, Long organizationId);
 
     List<Model> findByOrganizationIdAndArchivedAtIsNull(Long organizationId);
 

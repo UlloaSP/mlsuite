@@ -155,8 +155,4 @@ public class Model {
                 && this.storageObjectKey != null
                 && !this.storageObjectKey.isBlank();
     }
-
-    public boolean hasInlineModelFile() {
-        return this.modelFile != null && this.modelFile.length > 0;
-    }
 }
