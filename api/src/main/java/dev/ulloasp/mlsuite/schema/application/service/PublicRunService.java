@@ -72,6 +72,7 @@ public class PublicRunService implements PublicRunUseCase {
     private final PredictionRunRepository runRepository;
     private final PredictionResultRepository resultRepository;
     private final PredictionResultFeedbackRepository feedbackRepository;
+    private final FeedbackHistory history;
     private final ModelRepository modelRepository;
     private final VisitorRepository visitorRepository;
     private final UserLookupService userLookupService;
@@ -210,13 +211,14 @@ public class PublicRunService implements PublicRunUseCase {
                     .findFirst()
                     .orElseThrow(() -> badRequest("The run has no result for report \"%s\".".formatted(item.reportKey())));
             PredictionResultFeedback feedback = (user != null
-                    ? feedbackRepository.findByResultIdAndUserIdAndTypeAndOrder(result.getId(), user.getId(), item.type(), route.order())
+                    ? feedbackRepository.findByResultIdAndUserIdAndTypeAndOrderAndReviewIsNull(result.getId(), user.getId(),
+                            item.type(), route.order())
                     : feedbackRepository.findByResultIdAndVisitorIdAndTypeAndOrder(result.getId(), run.getVisitor().getId(), item.type(), route.order()))
                     .orElseGet(() -> user != null
                             ? new PredictionResultFeedback(result, user, item.type(), route.order(), item.value())
                             : new PredictionResultFeedback(result, run.getVisitor(), item.type(), route.order(), item.value()));
             feedback.setValue(item.value());
-            feedbackRepository.save(feedback);
+            history.save(feedback, user == null ? null : user.getId());
         }
         return dto(run, form, results, ownFeedback(List.of(runId), caller));
     }
@@ -230,7 +232,9 @@ public class PublicRunService implements PublicRunUseCase {
     }
 
     private List<PredictionResultFeedback> ownFeedback(List<Long> runIds, PublicCaller caller) {
-        if (caller.signedIn()) return feedbackRepository.findByResultRunIdInAndUserIdOrderByIdAsc(runIds, caller.userId());
+        if (caller.signedIn()) {
+            return feedbackRepository.findByResultRunIdInAndUserIdAndReviewIsNullOrderByIdAsc(runIds, caller.userId());
+        }
         if (caller.visitorId() == null) return List.of();
         return feedbackRepository.findByResultRunIdInAndVisitorIdOrderByIdAsc(runIds, caller.visitorId());
     }

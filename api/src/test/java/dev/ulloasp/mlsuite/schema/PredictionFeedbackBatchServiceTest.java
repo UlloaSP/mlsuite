@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.schema;
 
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -21,6 +22,7 @@ import org.springframework.web.server.ResponseStatusException;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRevisionRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.application.service.PredictionResultFeedbackService;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
@@ -38,7 +40,8 @@ class PredictionFeedbackBatchServiceTest {
     @BeforeEach
     void setUp() {
         service = new PredictionResultFeedbackService(
-                authorizationService, resultRepository, feedbackRepository, runRepository);
+                authorizationService, resultRepository, feedbackRepository, runRepository,
+                mock(PredictionResultFeedbackRevisionRepository.class));
         Organization organization = new Organization();
         organization.setId(41L);
         lenient().when(authorizationService.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization);

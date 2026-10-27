@@ -22,7 +22,7 @@ public class SchemaReviewAssignmentCatalogReader {
             CASE WHEN submission.id IS NOT NULL
                 THEN dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewState.COMPLETED
             WHEN EXISTS (SELECT 1 FROM PredictionResultFeedback f
-                WHERE f.result.run = rr.run AND f.user = reviewer)
+                WHERE f.result.run = rr.run AND f.user = reviewer AND f.review = review)
                 THEN dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewState.IN_PROGRESS
             ELSE dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewState.PENDING END
             """;
@@ -36,9 +36,11 @@ public class SchemaReviewAssignmentCatalogReader {
             AND (:filter = 'all'
                 OR (:filter = 'COMPLETED' AND submission.id IS NOT NULL)
                 OR (:filter = 'IN_PROGRESS' AND submission.id IS NULL AND EXISTS (
-                    SELECT 1 FROM PredictionResultFeedback f WHERE f.result.run = rr.run AND f.user = reviewer))
+                    SELECT 1 FROM PredictionResultFeedback f
+                    WHERE f.result.run = rr.run AND f.user = reviewer AND f.review = review))
                 OR (:filter = 'PENDING' AND submission.id IS NULL AND NOT EXISTS (
-                    SELECT 1 FROM PredictionResultFeedback f WHERE f.result.run = rr.run AND f.user = reviewer)))
+                    SELECT 1 FROM PredictionResultFeedback f
+                    WHERE f.result.run = rr.run AND f.user = reviewer AND f.review = review)))
             AND (lower(reviewer.fullName) LIKE :search ESCAPE '!'
                 OR lower(reviewer.email) LIKE :search ESCAPE '!'
                 OR lower(creator.fullName) LIKE :search ESCAPE '!'

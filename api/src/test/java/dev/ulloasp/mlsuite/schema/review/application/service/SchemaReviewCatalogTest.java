@@ -264,7 +264,7 @@ class SchemaReviewCatalogTest extends PublicPredictionFixture {
                 .createQuery("select r from PredictionResult r where r.run = :run", PredictionResult.class)
                 .setParameter("run", reviewRun.getRun())
                 .getSingleResult();
-        entityManager.persist(new PredictionResultFeedback(result, reviewer, PredictionResultFeedbackType.OUTPUT, 0,
+        entityManager.persist(new PredictionResultFeedback(result, reviewer, reviewRun.getReview(), PredictionResultFeedbackType.OUTPUT, 0,
                 objectMapper.valueToTree(Map.of("output-feedback-assessment", "high"))));
     }
 

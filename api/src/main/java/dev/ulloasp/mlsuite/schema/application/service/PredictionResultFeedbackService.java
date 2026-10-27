@@ -8,10 +8,12 @@ import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRevisionRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionResultFeedbackUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
+import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackRevision;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class PredictionResultFeedbackService implements PredictionResultFeedback
     private final PredictionResultRepository resultRepository;
     private final PredictionResultFeedbackRepository feedbackRepository;
     private final PredictionRunRepository runRepository;
+    private final PredictionResultFeedbackRevisionRepository revisionRepository;
 
     @Override
     public List<PredictionResultFeedback> listByResult(Long userId, Long resultId) {
@@ -46,6 +49,15 @@ public class PredictionResultFeedbackService implements PredictionResultFeedback
             throw notFound("Prediction run not found");
         }
         return feedbackRepository.findByRunIdsAndOrganizationId(uniqueRunIds, orgId);
+    }
+
+    @Override
+    public List<PredictionResultFeedbackRevision> historyOfResult(Long userId, Long resultId) {
+        Long orgId = requireRead(userId);
+        if (resultRepository.findByIdAndOrganizationId(resultId, orgId).isEmpty()) {
+            throw notFound("Prediction result not found");
+        }
+        return revisionRepository.findByResultIdOrderByIdAsc(resultId);
     }
 
     private Long requireRead(Long userId) {

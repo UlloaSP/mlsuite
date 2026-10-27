@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionResultFeedbackDto;
+import dev.ulloasp.mlsuite.schema.application.dto.PredictionResultFeedbackRevisionDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionResultFeedbackUseCase;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,13 @@ public class PredictionResultFeedbackController {
             @RequestParam Long resultId) {
         return ResponseEntity.ok(PredictionResultFeedbackDto.fromList(
                 feedbackUseCase.listByResult(user.userId(), resultId)));
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<List<PredictionResultFeedbackRevisionDto>> history(CurrentUser user,
+            @RequestParam Long resultId) {
+        return ResponseEntity.ok(feedbackUseCase.historyOfResult(user.userId(), resultId).stream()
+                .map(PredictionResultFeedbackRevisionDto::from).toList());
     }
 
     @GetMapping("/by-runs")

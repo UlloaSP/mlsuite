@@ -25,6 +25,7 @@ import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaVersionDto;
 import dev.ulloasp.mlsuite.schema.application.dto.UpdatePredictionResultFeedbackRequest;
+import dev.ulloasp.mlsuite.schema.application.service.FeedbackHistory;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
@@ -66,6 +67,7 @@ public class SchemaReviewService implements SchemaReviewUseCase {
     private final PredictionRunRepository runs;
     private final PredictionResultRepository results;
     private final PredictionResultFeedbackRepository feedback;
+    private final FeedbackHistory history;
 
     public void create(Long userId, CreateSchemaReviewRequest request) {
         Long organizationId = organizationId(userId);
@@ -117,8 +119,9 @@ public class SchemaReviewService implements SchemaReviewUseCase {
         SchemaReviewRun selected = openReviewRun(userId, publicId, reviewRunId);
         requireNotSubmitted(userId, selected);
         List<PredictionResult> runResults = results.findByRunIdOrderByIdAsc(selected.getRun().getId());
+        Long reviewId = selected.getReview().getId();
         List<PredictionResultFeedbackDto> userFeedback = runResults.stream()
-                .flatMap(result -> feedback.findByResultIdAndUserId(result.getId(), userId).stream())
+                .flatMap(result -> feedback.findByResultIdAndUserIdAndReviewId(result.getId(), userId, reviewId).stream())
                 .map(PredictionResultFeedbackDto::from).toList();
         return new SchemaReviewRunDetailDto(PredictionRunDto.from(selected.getRun(), runResults), userFeedback);
     }
@@ -130,11 +133,12 @@ public class SchemaReviewService implements SchemaReviewUseCase {
         PredictionResult result = results.findById(request.resultId()).orElseThrow(SchemaReviewUnavailableException::new);
         if (!result.getRun().getId().equals(selected.getRun().getId())) throw new SchemaReviewUnavailableException();
         PredictionResultFeedback item = feedback
-                .findByResultIdAndUserIdAndTypeAndOrder(result.getId(), userId, request.type(), request.order())
+                .findByResultIdAndUserIdAndTypeAndOrderAndReviewId(result.getId(), userId, request.type(),
+                        request.order(), selected.getReview().getId())
                 .orElseGet(() -> new PredictionResultFeedback(result, users.requireById(userId),
-                        request.type(), request.order(), request.value()));
+                        selected.getReview(), request.type(), request.order(), request.value()));
         item.setValue(request.value());
-        return PredictionResultFeedbackDto.from(feedback.save(item));
+        return PredictionResultFeedbackDto.from(history.save(item, userId));
     }
 
     public PredictionResultFeedbackDto updateFeedback(Long userId, String publicId, String reviewRunId,
@@ -143,11 +147,13 @@ public class SchemaReviewService implements SchemaReviewUseCase {
         requireNotSubmitted(userId, selected);
         PredictionResultFeedback item = feedback.findById(request.feedbackId())
                 .orElseThrow(SchemaReviewUnavailableException::new);
-        boolean invalid = !userId.equals(item.getUser().getId())
-                || !selected.getRun().getId().equals(item.getResult().getRun().getId());
+        // Only the reviewer's own answer in this review: not another review's, nor a public page's.
+        boolean invalid = item.getUser() == null || !userId.equals(item.getUser().getId())
+                || !selected.getRun().getId().equals(item.getResult().getRun().getId())
+                || item.getReview() == null || !item.getReview().getId().equals(selected.getReview().getId());
         if (invalid) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         item.setValue(request.value());
-        return PredictionResultFeedbackDto.from(feedback.save(item));
+        return PredictionResultFeedbackDto.from(history.save(item, userId));
     }
 
     public void submit(Long userId, String publicId, List<String> reviewRunIds) {
@@ -194,7 +200,7 @@ public class SchemaReviewService implements SchemaReviewUseCase {
     private SchemaReviewRunListItemDto runItem(Long userId, SchemaReviewRun item,
             SchemaReviewRunSubmission submission) {
         SchemaReviewState reviewState = submission != null ? SchemaReviewState.COMPLETED
-                : hasFeedback(userId, item.getRun()) ? SchemaReviewState.IN_PROGRESS : SchemaReviewState.PENDING;
+                : hasFeedback(userId, item) ? SchemaReviewState.IN_PROGRESS : SchemaReviewState.PENDING;
         OffsetDateTime stateAt = submission == null ? item.getRun().getCreatedAt() : submission.getSubmittedAt();
         return new SchemaReviewRunListItemDto(item.getPublicId(),
                 PredictionRunDto.from(item.getRun(), results.findByRunIdOrderByIdAsc(item.getRun().getId())),
@@ -211,9 +217,9 @@ public class SchemaReviewService implements SchemaReviewUseCase {
         return selected;
     }
 
-    private boolean hasFeedback(Long userId, PredictionRun run) {
-        return results.findByRunIdOrderByIdAsc(run.getId()).stream()
-                .anyMatch(result -> !feedback.findByResultIdAndUserId(result.getId(), userId).isEmpty());
+    private boolean hasFeedback(Long userId, SchemaReviewRun reviewRun) {
+        return feedback.existsByResultRunIdAndUserIdAndReviewId(reviewRun.getRun().getId(), userId,
+                reviewRun.getReview().getId());
     }
 
     private void requireNotSubmitted(Long userId, SchemaReviewRun reviewRun) {

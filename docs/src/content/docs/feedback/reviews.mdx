@@ -67,6 +67,11 @@ A tile's menu offers:
 | Action | When | Effect |
 | --- | --- | --- |
 | Reopen | Completed, and the review has not expired. | The inference returns to the reviewer's inbox as In progress, with their answers kept. |
-| Delete response | In progress or Completed. | Deletes the reviewer's answers for this inference. The assignment stays and returns to Pending. |
+| Delete response | In progress or Completed. | Deletes the reviewer's answers for this inference in this review. Their answers in other reviews of the inference, and on a public page, stay. The assignment stays and returns to Pending. |
+
+A reviewer's answers belong to the review they were given in: an inference in two reviews gets
+an answer in each. Every answer given, changed or deleted is kept in the result's answer history
+(`GET /api/prediction-result-feedback/history?resultId=…`), with who gave it, what it said and
+who changed it when, so a label stays auditable after it changes or goes.
 
 An inference that belongs to a review cannot be deleted.

@@ -4082,6 +4082,98 @@
         ],
         "type": "object"
       },
+      "PredictionResultFeedbackRevisionDto": {
+        "properties": {
+          "change": {
+            "enum": [
+              "CREATED",
+              "UPDATED",
+              "DELETED"
+            ],
+            "type": "string"
+          },
+          "changedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "changedByUserId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "feedbackId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "order": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "resultId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "reviewId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "enum": [
+              "OUTPUT",
+              "EXPLANATION"
+            ],
+            "type": "string"
+          },
+          "userId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "value": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/JsonNode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "visitorId": {
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "change",
+          "changedAt",
+          "changedByUserId",
+          "feedbackId",
+          "id",
+          "order",
+          "resultId",
+          "reviewId",
+          "type",
+          "userId",
+          "value",
+          "visitorId"
+        ],
+        "type": "object"
+      },
       "PredictionRunCatalogItemDto": {
         "properties": {
           "bookmarkId": {
@@ -10398,6 +10490,40 @@
                 "schema": {
                   "items": {
                     "$ref": "#/components/schemas/PredictionResultFeedbackDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-result-feedback-controller"
+        ]
+      }
+    },
+    "/api/prediction-result-feedback/history": {
+      "get": {
+        "operationId": "history",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "resultId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PredictionResultFeedbackRevisionDto"
                   },
                   "type": "array"
                 }

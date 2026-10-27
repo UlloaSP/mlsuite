@@ -1188,6 +1188,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/prediction-result-feedback/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/prediction-runs/catalog": {
         parameters: {
             query?: never;
@@ -3564,6 +3580,31 @@ export interface components {
             userName: string | null;
             value: components["schemas"]["JsonNode"];
         };
+        PredictionResultFeedbackRevisionDto: {
+            /** @enum {string} */
+            change: "CREATED" | "UPDATED" | "DELETED";
+            /** Format: date-time */
+            changedAt: string;
+            /** Format: int64 */
+            changedByUserId: number | null;
+            /** Format: int64 */
+            feedbackId: number;
+            /** Format: int64 */
+            id: number;
+            /** Format: int32 */
+            order: number;
+            /** Format: int64 */
+            resultId: number;
+            /** Format: int64 */
+            reviewId: number | null;
+            /** @enum {string} */
+            type: "OUTPUT" | "EXPLANATION";
+            /** Format: int64 */
+            userId: number | null;
+            value: components["schemas"]["JsonNode"] | null;
+            /** Format: uuid */
+            visitorId: string | null;
+        };
         PredictionRunCatalogItemDto: {
             /** Format: int64 */
             bookmarkId: number | null;
@@ -4359,6 +4400,7 @@ export type PluginStatsDto = components['schemas']['PluginStatsDto'];
 export type PredictBookmarkDto = components['schemas']['PredictBookmarkDto'];
 export type PredictionResultDto = components['schemas']['PredictionResultDto'];
 export type PredictionResultFeedbackDto = components['schemas']['PredictionResultFeedbackDto'];
+export type PredictionResultFeedbackRevisionDto = components['schemas']['PredictionResultFeedbackRevisionDto'];
 export type PredictionRunCatalogItemDto = components['schemas']['PredictionRunCatalogItemDto'];
 export type PredictionRunDto = components['schemas']['PredictionRunDto'];
 export type PublicBookmarkDto = components['schemas']['PublicBookmarkDto'];
@@ -6668,6 +6710,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PredictionResultFeedbackDto"][];
+                };
+            };
+        };
+    };
+    history: {
+        parameters: {
+            query: {
+                resultId: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PredictionResultFeedbackRevisionDto"][];
                 };
             };
         };

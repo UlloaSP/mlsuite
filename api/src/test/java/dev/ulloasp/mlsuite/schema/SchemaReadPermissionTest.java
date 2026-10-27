@@ -63,7 +63,8 @@ class SchemaReadPermissionTest {
         predictCatalog = new PredictBookmarkCatalogService(auth, bookmarks, versions, bindings, runs);
         runService = new PredictionRunServiceImpl(users, bookmarks, bindings, runs, results, feedback,
                 mock(ModelRepository.class), auth, mock(PredictionAttestations.class));
-        feedbackService = new PredictionResultFeedbackService(auth, results, feedback, runs);
+        feedbackService = new PredictionResultFeedbackService(auth, results, feedback, runs,
+                mock(PredictionResultFeedbackRevisionRepository.class));
     }
 
     @ParameterizedTest
