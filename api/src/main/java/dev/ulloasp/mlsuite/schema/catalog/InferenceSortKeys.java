@@ -94,12 +94,13 @@ class InferenceSortKeys {
         if (ids.isEmpty()) return stale;
         jdbc.query(connection -> {
             var statement = connection.prepareStatement("""
-                    SELECT s.id, m.mark FROM unnest(?) AS s(id)
-                    CROSS JOIN LATERAL (SELECT coalesce(max(v.id), 0) AS mark FROM prediction_result res
-                        JOIN prediction_result_feedback_revision v ON v.prediction_result_id = res.id
-                        WHERE res.prediction_run_id = s.id) m
+                    WITH marks AS (SELECT res.prediction_run_id AS run_id, max(v.id) AS mark
+                        FROM prediction_result_feedback_revision v
+                        JOIN prediction_result res ON res.id = v.prediction_result_id GROUP BY res.prediction_run_id)
+                    SELECT s.id, coalesce(m.mark, 0) FROM unnest(?) AS s(id)
+                    LEFT JOIN marks m ON m.run_id = s.id
                     LEFT JOIN inference_sort_run k ON k.locale = ? AND k.prediction_run_id = s.id
-                    WHERE k.prediction_run_id IS NULL OR k.revision_mark < m.mark""");
+                    WHERE k.prediction_run_id IS NULL OR k.revision_mark < coalesce(m.mark, 0)""");
             statement.setArray(1, array(connection, ids));
             statement.setString(2, locale);
             return statement;
