@@ -52,6 +52,7 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
     private final SchemaDraftDiffService merger;
     private final SchemaDraftPublishedVersionResolver publishedVersions;
     private final WorkspaceAuthorizationService authorization;
+    private final SchemaMappingCheck mappingCheck;
     @Override
     public List<SchemaDraft> listDrafts(Long userId, Long schemaId) {
         Long orgId = requireRead(userId);
@@ -81,6 +82,8 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
         SchemaDraft draft = requireDraftForUpdate(draftId, orgId);
         requireEditable(draft);
         requireRevision(draft, request.expectedDraftRevision());
+        mappingCheck.require(orgId, request.formSchema(),
+                SchemaDraftBindingValues.requestBindings(request.bindings()));
         draft.setName(request.name());
         draft.setFormSchema(request.formSchema());
         draft.setBindings(request.bindings());

@@ -29,6 +29,7 @@ import dev.ulloasp.mlsuite.schema.application.port.in.SchemaVersionUseCase;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaDraftDiffService;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaDraftPublishedVersionResolver;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaDraftServiceImpl;
+import dev.ulloasp.mlsuite.schema.application.service.SchemaMappingCheck;
 import dev.ulloasp.mlsuite.schema.domain.model.*;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
@@ -52,7 +53,7 @@ class SchemaDraftServiceTest {
     void setUp() {
         engine = new SchemaDraftDiffService();
         service = new SchemaDraftServiceImpl(users, schemas, versions, drafts, versionUseCase,
-                engine, publishedVersions, authorization);
+                engine, publishedVersions, authorization, mock(SchemaMappingCheck.class));
         lenient().when(users.requireById(7L)).thenReturn(user());
         lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization());
     }

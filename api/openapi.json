@@ -5610,6 +5610,53 @@
         ],
         "type": "object"
       },
+      "SchemaMappingErrorDto": {
+        "properties": {
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/SchemaMappingIssueDto"
+            },
+            "type": "array"
+          },
+          "message": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "issues",
+          "message",
+          "path",
+          "status",
+          "timestamp"
+        ],
+        "type": "object"
+      },
+      "SchemaMappingIssueDto": {
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "pointer": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message",
+          "pointer"
+        ],
+        "type": "object"
+      },
       "SchemaModelBindingDto": {
         "properties": {
           "id": {

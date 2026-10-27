@@ -45,6 +45,7 @@ import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.schema.application.service.PredictionAttestations;
 import dev.ulloasp.mlsuite.schema.application.service.PredictionRunServiceImpl;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaServiceImpl;
+import dev.ulloasp.mlsuite.schema.application.service.SchemaMappingCheck;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaVersionServiceImpl;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
@@ -77,7 +78,7 @@ class SchemaFlowServiceTest {
                 bindingRepository, runRepository, reviewRepository,
                 authorizationService, mock(SchemaDraftRepository.class), mock(SchemaBookmarkRepository.class));
         versionService = new SchemaVersionServiceImpl(userLookupService, schemaRepository, versionRepository,
-                bindingRepository, modelRepository, authorizationService);
+                bindingRepository, modelRepository, authorizationService, new SchemaMappingCheck(modelRepository));
         runService = new PredictionRunServiceImpl(userLookupService, bookmarkRepository, bindingRepository,
                 runRepository, resultRepository, feedbackRepository, modelRepository, authorizationService,
                 mock(PredictionAttestations.class));

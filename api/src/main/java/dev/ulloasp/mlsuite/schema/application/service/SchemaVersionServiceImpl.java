@@ -40,6 +40,7 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
     private final SchemaModelBindingRepository bindingRepository;
     private final ModelRepository modelRepository;
     private final WorkspaceAuthorizationService authorizationService;
+    private final SchemaMappingCheck mappingCheck;
 
     @Override
     public SchemaVersion createVersion(Long userId, Long schemaId, CreateSchemaVersionRequest request) {
@@ -48,6 +49,7 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
         validateFormSchema(request.formSchema());
         Schema schema = requireSchemaForUpdate(schemaId, organizationId);
         assertUniqueBindings(request.bindings());
+        mappingCheck.require(organizationId, request.formSchema(), request.bindings());
         touch(schema, user);
         int nextVersion = versionRepository.findMaxVersionBySchemaId(schemaId) + 1;
         SchemaVersion version = versionRepository.save(

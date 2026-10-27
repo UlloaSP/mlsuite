@@ -8,7 +8,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import dev.ulloasp.mlsuite.schema.domain.model.BoundModel;
 
@@ -30,7 +29,6 @@ public final class PublicForm {
     private static final String FIELDS = "fields";
     private static final String REPORTS = "reports";
     private static final String MODEL_ROUTING = "mappedTo";
-    private static final String DEFAULT_ROUTE = "default";
     private static final String STORED_VALUE = "defaultValue";
     private static final String ONE_HOT = "onehot-category";
     private static final String QUESTIONNAIRE = "feedbackQuestionnaire";
@@ -263,14 +261,9 @@ public final class PublicForm {
         return field instanceof Map<?, ?> config && !Boolean.TRUE.equals(config.get("hidden"));
     }
 
-    /** MLForm's resolution: a bare target serves every model; a map is read by model name, then id. */
     private static Object featureFor(Object mappedTo, BoundModel model) {
-        if (mappedTo instanceof String || mappedTo instanceof Number) return mappedTo;
-        if (!(mappedTo instanceof Map<?, ?> routes)) return null;
-        return Stream.of(model.name(), DEFAULT_ROUTE, String.valueOf(model.id()))
-                .map(routes::get)
-                .filter(target -> target instanceof String || target instanceof Number)
-                .findFirst().orElse(null);
+        ModelRoute route = ModelRoute.of(mappedTo, model.id(), model.name());
+        return route == null ? null : route.target();
     }
 
     private static boolean isRouting(Object mappedTo) {
@@ -283,9 +276,7 @@ public final class PublicForm {
     }
 
     private static String featureName(Object feature) {
-        return feature instanceof Number number && number.doubleValue() == Math.rint(number.doubleValue())
-                ? String.valueOf(number.longValue())
-                : String.valueOf(feature);
+        return ModelRoute.name(feature);
     }
 
     private static boolean isPosition(String feature) {

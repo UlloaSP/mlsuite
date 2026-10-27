@@ -20,10 +20,17 @@ export interface EditorErrorCard {
 const isFieldKindPath = (p: (string | number)[]) =>
   p.length === 3 && p[0] === "fields" && typeof p[1] === "number" && p[2] === "kind";
 
-export const pathToPos = (content: string, pathArr: (string | number)[]) => {
-  const pointer = `/${pathArr.map(String).join("/")}`;
-  const parsed = parseWithSourceMap(content);
-  const loc = parsed.pointers[pointer]?.value ?? { line: 0, column: 0 };
+export const pathToPos = (content: string, pathArr: (string | number)[]) =>
+  pointerToPos(content, `/${pathArr.map(String).join("/")}`);
+
+/** Where a JSON pointer's value starts in the text; the first line when the text has no such value. */
+export const pointerToPos = (content: string, pointer: string) => {
+  let loc = { line: 0, column: 0 };
+  try {
+    loc = parseWithSourceMap(content).pointers[pointer]?.value ?? loc;
+  } catch {
+    // Text that does not parse places nothing.
+  }
   return { line: loc.line + 1, column: loc.column + 1 };
 };
 

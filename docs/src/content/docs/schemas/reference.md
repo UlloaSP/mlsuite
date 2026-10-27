@@ -56,6 +56,11 @@ models:
 The model's id also works as a key. A snapshot must keep a field for every feature its models
 need; a model that misses a feature refuses the run.
 
+Saving a change or a snapshot checks every `mappedTo` against the features and outputs its models
+were uploaded with. A field or report that names one they do not have, or that names no bound
+model, is refused, and the editor marks the mapping on its line. Snapshots saved before this check
+are left as they are and keep running; the check applies when they are next changed.
+
 ## Field kinds
 
 | Kind | Asks for |

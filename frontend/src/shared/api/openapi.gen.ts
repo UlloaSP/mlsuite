@@ -4005,6 +4005,19 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
+        SchemaMappingErrorDto: {
+            issues: components["schemas"]["SchemaMappingIssueDto"][];
+            message: string;
+            path: string;
+            /** Format: int32 */
+            status: number;
+            /** Format: date-time */
+            timestamp: string;
+        };
+        SchemaMappingIssueDto: {
+            message: string;
+            pointer: string;
+        };
         SchemaModelBindingDto: {
             /** Format: int64 */
             id: number;
@@ -4437,6 +4450,8 @@ export type SchemaDraftMergeResolutionDto = components['schemas']['SchemaDraftMe
 export type SchemaDraftMergeResultDto = components['schemas']['SchemaDraftMergeResultDto'];
 export type SchemaDraftPublishResultDto = components['schemas']['SchemaDraftPublishResultDto'];
 export type SchemaDto = components['schemas']['SchemaDto'];
+export type SchemaMappingErrorDto = components['schemas']['SchemaMappingErrorDto'];
+export type SchemaMappingIssueDto = components['schemas']['SchemaMappingIssueDto'];
 export type SchemaModelBindingDto = components['schemas']['SchemaModelBindingDto'];
 export type SchemaReviewAssignmentStatusDto = components['schemas']['SchemaReviewAssignmentStatusDto'];
 export type SchemaReviewContextDto = components['schemas']['SchemaReviewContextDto'];

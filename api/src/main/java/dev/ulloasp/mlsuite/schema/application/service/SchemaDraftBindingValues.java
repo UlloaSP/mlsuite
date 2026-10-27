@@ -11,7 +11,11 @@ final class SchemaDraftBindingValues {
     private SchemaDraftBindingValues() {}
 
     static List<CreateSchemaModelBindingRequest> requestBindings(SchemaDraft draft) {
-        return draft.getBindings().stream().map(binding -> new CreateSchemaModelBindingRequest(
+        return requestBindings(draft.getBindings());
+    }
+
+    static List<CreateSchemaModelBindingRequest> requestBindings(List<Map<String, Object>> bindings) {
+        return bindings.stream().map(binding -> new CreateSchemaModelBindingRequest(
                 modelId(binding.get("modelId")), pluginPolicy(binding.get("pluginPolicy")))).toList();
     }
 

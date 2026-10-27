@@ -40,7 +40,9 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundExc
 import dev.ulloasp.mlsuite.admin.infrastructure.OpsAgentException;
 import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicRunLimitDto;
+import dev.ulloasp.mlsuite.schema.application.dto.SchemaMappingErrorDto;
 import dev.ulloasp.mlsuite.schema.domain.exception.PublicRunLimitException;
+import dev.ulloasp.mlsuite.schema.domain.exception.SchemaMappingException;
 import dev.ulloasp.mlsuite.security.auth.AuthAttemptLimitException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
@@ -138,6 +140,13 @@ public class DomainExceptionHandler {
     }
 
     // ---- 400 BAD REQUEST ----
+
+    /** A schema whose mappings name nothing its models have, with each such mapping located. */
+    @ExceptionHandler(SchemaMappingException.class)
+    public ResponseEntity<SchemaMappingErrorDto> handleSchemaMapping(SchemaMappingException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(SchemaMappingErrorDto.of(ex, HttpStatus.BAD_REQUEST.value(), req.getRequestURI()));
+    }
 
     @ExceptionHandler({
             IllegalArgumentException.class
