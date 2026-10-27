@@ -32,9 +32,17 @@ export const toCell = (value: unknown): string => {
   return "";
 };
 
+// What a spreadsheet would start a formula with, also from a visitor's public input.
+const FORMULA_START = /^[=+\-@\t\r]/;
+// A plain number, "-5" or "+1.5e3", is data a spreadsheet reads as a number, never a formula.
+const NUMBER = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+
+/**
+ * One field as RFC 4180 writes it: quoted, with its quotes doubled, when it holds a quote, the
+ * separator or a line break. A field a spreadsheet would run as a formula is kept as text by a
+ * leading apostrophe, so an export never executes what someone typed into a form.
+ */
 export const csvEscape = (value: string, separator: string) => {
-  let next = value;
-  if (next.includes('"')) next = next.replace(/"/g, '""');
-  if (next.includes(separator) || next.includes("\n") || next.includes("\r")) next = `"${next}"`;
-  return next;
+  const text = FORMULA_START.test(value) && !NUMBER.test(value) ? `'${value}` : value;
+  return /["\r\n]/.test(text) || text.includes(separator) ? `"${text.replace(/"/g, '""')}"` : text;
 };
