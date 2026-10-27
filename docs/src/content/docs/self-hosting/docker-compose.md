@@ -71,6 +71,11 @@ client's address to the API in a header that the API trusts for the public run l
 published on the host's loopback address only, because Docker-published ports bypass host firewalls
 such as ufw; from another machine, reach it through an SSH tunnel.
 
+Each service joins only the networks of the services it calls. `edge` joins `frontend`, the API
+and `ops-agent`; `data` joins the API, its one-shot jobs, PostgreSQL and MinIO; `runtime` joins
+only the API and `py-analyzer`. `py-analyzer` parses uploaded models, so `runtime` is internal: the
+runtime cannot reach the agent, the stores or the internet.
+
 ## Behind a reverse proxy
 
 When a TLS terminator or another proxy sits in front of `frontend`, every visitor seems to come from

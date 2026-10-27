@@ -162,6 +162,14 @@ release override, `docker-compose.release.yml`, supplies every application image
 pinned by digest. CI compares the fully rendered models and rejects any other
 drift.
 
+Services share a network only with the services they call: `edge` joins the
+frontend, the API and the ops-agent; `data` joins the API, its one-shot jobs,
+PostgreSQL and MinIO; `runtime` joins only the API and `py-analyzer`. The runtime
+parses uploaded models, so its network is internal and reaches neither the
+ops-agent, the stores nor the internet. Only the frontend is published on every
+interface; PostgreSQL is published on `127.0.0.1` alone, because Docker-published
+ports bypass host firewalls such as ufw.
+
 Successful publications from `main` create immutable `build-<commit>` releases
 with digest-pinned images and a Compose override; MLsuite does not update
 `latest`. Read [release selection and verification](./docs/RELEASES.md) before

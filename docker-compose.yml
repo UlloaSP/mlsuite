@@ -17,8 +17,15 @@ x-api-pool-env: &api-pool-env
   DB_POOL_CONNECTION_TIMEOUT_MS: ${DB_POOL_CONNECTION_TIMEOUT_MS:-30000}
 
 
+# Each network joins only the services that call each other. The browser reaches nginx,
+# which proxies to the API and to the agent's boot-status endpoint; the API alone reaches
+# the stores and the runtime. The runtime parses untrusted uploaded models, so its network
+# is internal: it reaches neither the agent, the stores nor the internet.
 networks:
-  appnet:
+  edge:
+  data:
+  runtime:
+    internal: true
 
 
 volumes:
@@ -44,7 +51,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./:/workspace:ro
-    networks: [ appnet ]
+    networks: [ edge ]
     restart: unless-stopped
 
   postgres:
@@ -64,7 +71,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-    networks: [ appnet ]
+    networks: [ data ]
     restart: unless-stopped
 
   db-provision:
@@ -89,7 +96,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    networks: [ appnet ]
+    networks: [ data ]
     restart: "no"
 
   py-analyzer:
@@ -97,10 +104,7 @@ services:
       PYTHON_HOST: ${PYTHON_HOST}
       PYTHON_PORT: ${PYTHON_PORT}
       CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks: [ appnet ]
+    networks: [ runtime ]
     restart: unless-stopped
 
   minio:
@@ -116,7 +120,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-    networks: [ appnet ]
+    networks: [ data ]
     restart: unless-stopped
 
   minio-init:
@@ -134,7 +138,7 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    networks: [ appnet ]
+    networks: [ data ]
     restart: "no"
 
   db-migrate:
@@ -149,7 +153,7 @@ services:
     depends_on:
       db-provision:
         condition: service_completed_successfully
-    networks: [ appnet ]
+    networks: [ data ]
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: "no"
@@ -176,7 +180,7 @@ services:
         condition: service_completed_successfully
       minio-init:
         condition: service_completed_successfully
-    networks: [ appnet ]
+    networks: [ data ]
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: "no"
@@ -228,7 +232,7 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
-    networks: [ appnet ]
+    networks: [ edge, data, runtime ]
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
@@ -240,5 +244,5 @@ services:
     depends_on:
       ops-agent:
         condition: service_started
-    networks: [ appnet ]
+    networks: [ edge ]
     restart: unless-stopped

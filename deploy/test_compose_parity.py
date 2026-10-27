@@ -121,7 +121,18 @@ def main() -> None:
     assert published == {"postgres": [("127.0.0.1", 5432)], "frontend": [("", 5173)]}, (
         "only the web app may be published publicly; PostgreSQL stays on loopback"
     )
-    script_pins = (ROOT / "scripts/lib.sh").read_text().splitlines()
+    runtime_peers = {
+        name for name, service in production["services"].items()
+        if "runtime" in service.get("networks", {})
+    }
+    assert runtime_peers == {"py-analyzer", "spring-app"}, (
+        "only the API may share a network with the runtime that parses uploaded models"
+    )
+    assert set(production["services"]["py-analyzer"]["networks"]) == {"runtime"}
+    assert production["networks"]["runtime"].get("internal") is True, (
+        "the runtime network must have no route to other networks or the internet"
+    )
+    script_pins =(ROOT / "scripts/lib.sh").read_text().splitlines()
     assert f"POSTGRES_IMAGE={postgres_image}" in script_pins, (
         "operational scripts must use the Compose PostgreSQL image"
     )
