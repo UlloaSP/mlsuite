@@ -1,5 +1,9 @@
 package dev.ulloasp.mlsuite.security.auth;
 
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,8 +24,12 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final WorkspaceBootstrapService workspaceBootstrapService;
+    private final AuthenticationManager authenticationManager;
+    private final AuthAttemptLimiter attemptLimiter;
 
-    public UserDto register(AuthRequest request) {
+    /** Creates the account and signs it in; every attempt counts against the caller's network. */
+    public Authentication register(AuthRequest request, String caller) {
+        attemptLimiter.admitRegistration(caller);
         String email = request.email().trim().toLowerCase();
         if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new UserAlreadyExistsException(email);
@@ -34,7 +42,19 @@ public class AuthService {
                 SystemRole.USER);
         userRepository.save(user);
         workspaceBootstrapService.ensureCurrentOrganization(user);
-        return UserDto.toDto(user);
+        return authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, request.password()));
+    }
+
+    /** Signs in, or counts the failure against the caller's network once it has failures left. */
+    public Authentication login(LoginRequest request, String caller) {
+        attemptLimiter.checkLogin(caller);
+        try {
+            return authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.email(), request.password()));
+        } catch (AuthenticationException failure) {
+            attemptLimiter.recordLoginFailure(caller);
+            throw failure;
+        }
     }
 
     public UserDto profile(Long userId) {

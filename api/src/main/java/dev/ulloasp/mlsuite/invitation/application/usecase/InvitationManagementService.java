@@ -141,6 +141,31 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     @Override
     public InvitationDto acceptInvitation(Long userId, String token) {
         User user = userLookupService.requireById(userId);
+        Invitation invitation = requireOwnPendingInvitation(user, token);
+        acceptPendingInvitation(invitation, user);
+        return InvitationDto.from(invitation);
+    }
+
+    @Override
+    public void declineInvitation(Long userId, String token) {
+        User user = userLookupService.requireById(userId);
+        Invitation invitation = requireOwnPendingInvitation(user, token);
+        invitation.setStatus(InvitationStatus.REVOKED);
+        invitationRepository.save(invitation);
+    }
+
+    @Override
+    public List<InvitationDto> listPendingForUser(Long userId) {
+        User user = userLookupService.requireById(userId);
+        return invitationRepository.findByEmailAndStatusOrderByCreatedAtDesc(user.getEmail().toLowerCase(), InvitationStatus.PENDING)
+                .stream()
+                .filter(inv -> inv.getExpiresAt().isAfter(OffsetDateTime.now(ZoneOffset.UTC)))
+                .map(InvitationDto::from)
+                .toList();
+    }
+
+    /** Only the invitee may answer an invitation, and only while it is pending and unexpired. */
+    private Invitation requireOwnPendingInvitation(User user, String token) {
         Invitation invitation = invitationRepository.findByToken(token)
                 .orElseThrow(() -> new InvitationNotFoundException(token));
         if (invitation.getStatus() != InvitationStatus.PENDING) {
@@ -154,28 +179,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         if (!user.getEmail().equalsIgnoreCase(invitation.getEmail())) {
             throw new IllegalArgumentException("Invitation email does not match current user.");
         }
-
-        acceptPendingInvitation(invitation, user);
-        return InvitationDto.from(invitation);
-    }
-
-    @Override
-    public void declineInvitation(Long userId, String token) {
-        userLookupService.requireById(userId);
-        Invitation invitation = invitationRepository.findByToken(token)
-                .orElseThrow(() -> new InvitationNotFoundException(token));
-        invitation.setStatus(InvitationStatus.REVOKED);
-        invitationRepository.save(invitation);
-    }
-
-    @Override
-    public List<InvitationDto> listPendingForUser(Long userId) {
-        User user = userLookupService.requireById(userId);
-        return invitationRepository.findByEmailAndStatusOrderByCreatedAtDesc(user.getEmail().toLowerCase(), InvitationStatus.PENDING)
-                .stream()
-                .filter(inv -> inv.getExpiresAt().isAfter(OffsetDateTime.now(ZoneOffset.UTC)))
-                .map(InvitationDto::from)
-                .toList();
+        return invitation;
     }
 
     private void acceptPendingInvitation(Invitation invitation, User user) {

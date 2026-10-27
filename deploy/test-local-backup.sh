@@ -94,12 +94,17 @@ destination=$(cd "$root" && ENV_FILE="$env_file" DOCKER_BIN="$fake_docker" \
 [[ -d "$destination" ]]
 grep -q 'up -d --no-deps spring-app frontend' "$calls"
 
+list_backups() { find "$backup_root" -mindepth 1 -maxdepth 1 -type d -name 'production-*' | sort; }
+kept_backups=$(list_backups)
+[[ $(wc -l <<<"$kept_backups") -eq 2 ]]
+
 : > "$calls"
 if (cd "$root" && FAKE_SOURCE_KIB=100 FAKE_HOST_AVAILABLE_KIB=249 ENV_FILE="$env_file" DOCKER_BIN="$fake_docker" \
   ./scripts/create-local-backup.sh >/dev/null 2>&1); then
   exit 1
 fi
 if grep -q 'stop frontend spring-app' "$calls"; then exit 1; fi
+[[ "$(list_backups)" == "$kept_backups" ]] || { echo "a refused backup pruned an existing one" >&2; exit 1; }
 
 : > "$calls"
 first_output="$work/first.out"
@@ -115,10 +120,12 @@ grep -q 'another local backup is running' "$work/concurrent.err"
 wait "$first_pid"
 
 : > "$calls"
+kept_backups=$(list_backups)
 if (cd "$root" && FAKE_FAIL_RUN=true ENV_FILE="$env_file" DOCKER_BIN="$fake_docker" \
   ./scripts/create-local-backup.sh >/dev/null 2>&1); then
   exit 1
 fi
+[[ "$(list_backups)" == "$kept_backups" ]] || { echo "a failed backup pruned an existing one" >&2; exit 1; }
 [[ -f "$backup_root/.backup.lock" ]]
 if find "$backup_root" -mindepth 1 -maxdepth 1 -type d -name '.partial-*' | grep -q .; then exit 1; fi
 grep -q 'up -d minio minio-init' "$calls"
