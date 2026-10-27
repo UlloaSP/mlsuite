@@ -1188,22 +1188,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/prediction-runs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listOrganizationRuns"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/prediction-runs/catalog": {
         parameters: {
             query?: never;
@@ -1262,38 +1246,6 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["selection"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/prediction-runs/last-id": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["lastId"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/prediction-runs/table": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["table"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1691,7 +1643,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listForBookmark"];
+        get?: never;
         put?: never;
         post: operations["createForBookmark"];
         delete?: never;
@@ -2912,18 +2864,6 @@ export interface components {
             /** Format: int32 */
             size: number;
         };
-        InferenceTableDto: {
-            feedback: components["schemas"]["PredictionResultFeedbackDto"][];
-            results: components["schemas"]["PredictionResultDto"][];
-            runs: components["schemas"]["InferenceTableRunDto"][];
-            versions: components["schemas"]["SchemaVersionDto"][];
-        };
-        InferenceTableRunDto: {
-            inputData: {
-                [key: string]: unknown;
-            };
-            summary: components["schemas"]["PredictionRunCatalogItemDto"];
-        };
         InvitationCandidateDto: {
             avatarUrl: string | null;
             email: string;
@@ -3619,10 +3559,6 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
-        PredictionRunSequenceDto: {
-            /** Format: int64 */
-            lastId: number;
-        };
         PublicBookmarkDto: {
             description: string | null;
             formSchema: {
@@ -4296,8 +4232,6 @@ export type InferenceCatalogMetadataDto = components['schemas']['InferenceCatalo
 export type InferenceCatalogRequest = components['schemas']['InferenceCatalogRequest'];
 export type InferenceCatalogRowDto = components['schemas']['InferenceCatalogRowDto'];
 export type InferenceFacetRequest = components['schemas']['InferenceFacetRequest'];
-export type InferenceTableDto = components['schemas']['InferenceTableDto'];
-export type InferenceTableRunDto = components['schemas']['InferenceTableRunDto'];
 export type InvitationCandidateDto = components['schemas']['InvitationCandidateDto'];
 export type InvitationCatalogDto = components['schemas']['InvitationCatalogDto'];
 export type InvitationDto = components['schemas']['InvitationDto'];
@@ -4359,7 +4293,6 @@ export type PredictionResultDto = components['schemas']['PredictionResultDto'];
 export type PredictionResultFeedbackDto = components['schemas']['PredictionResultFeedbackDto'];
 export type PredictionRunCatalogItemDto = components['schemas']['PredictionRunCatalogItemDto'];
 export type PredictionRunDto = components['schemas']['PredictionRunDto'];
-export type PredictionRunSequenceDto = components['schemas']['PredictionRunSequenceDto'];
 export type PublicBookmarkDto = components['schemas']['PublicBookmarkDto'];
 export type PublicBookmarkExampleDto = components['schemas']['PublicBookmarkExampleDto'];
 export type PublicBookmarkSummaryDto = components['schemas']['PublicBookmarkSummaryDto'];
@@ -6674,26 +6607,6 @@ export interface operations {
             };
         };
     };
-    listOrganizationRuns: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PredictionRunCatalogItemDto"][];
-                };
-            };
-        };
-    };
     page: {
         parameters: {
             query?: never;
@@ -6786,46 +6699,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PredictionRunCatalogItemDto"][];
-                };
-            };
-        };
-    };
-    lastId: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PredictionRunSequenceDto"];
-                };
-            };
-        };
-    };
-    table: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InferenceTableDto"];
                 };
             };
         };
@@ -7477,28 +7350,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SchemaBookmarkDto"];
-                };
-            };
-        };
-    };
-    listForBookmark: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bookmarkId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PredictionRunDto"][];
                 };
             };
         };

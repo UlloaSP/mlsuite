@@ -3,7 +3,6 @@ import type {
   CreatePredictionRunRequest,
   PredictionResultFeedbackDto,
   PredictionRunDto,
-  PredictionRunSequenceDto,
 } from "@/shared/api/openapi.gen";
 
 export const createPredictionRunForBookmark = (
@@ -20,11 +19,6 @@ export const getPredictionRun = (
   signal?: AbortSignal,
 ): Promise<PredictionRunDto> =>
   appFetch<PredictionRunDto>(`/api/prediction-runs/${encodeURIComponent(runId)}`, { signal });
-
-export const getLastPredictionRunId = async (): Promise<number> => {
-  const dto = await appFetch<PredictionRunSequenceDto>("/api/prediction-runs/last-id");
-  return dto.lastId;
-};
 
 export const getPredictionResultFeedback = (
   resultId: number | string,

@@ -1836,57 +1836,6 @@
         ],
         "type": "object"
       },
-      "InferenceTableDto": {
-        "properties": {
-          "feedback": {
-            "items": {
-              "$ref": "#/components/schemas/PredictionResultFeedbackDto"
-            },
-            "type": "array"
-          },
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/PredictionResultDto"
-            },
-            "type": "array"
-          },
-          "runs": {
-            "items": {
-              "$ref": "#/components/schemas/InferenceTableRunDto"
-            },
-            "type": "array"
-          },
-          "versions": {
-            "items": {
-              "$ref": "#/components/schemas/SchemaVersionDto"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "feedback",
-          "results",
-          "runs",
-          "versions"
-        ],
-        "type": "object"
-      },
-      "InferenceTableRunDto": {
-        "properties": {
-          "inputData": {
-            "additionalProperties": { },
-            "type": "object"
-          },
-          "summary": {
-            "$ref": "#/components/schemas/PredictionRunCatalogItemDto"
-          }
-        },
-        "required": [
-          "inputData",
-          "summary"
-        ],
-        "type": "object"
-      },
       "InvitationCandidateDto": {
         "properties": {
           "avatarUrl": {
@@ -4281,18 +4230,6 @@
           "schemaVersionId",
           "status",
           "updatedAt"
-        ],
-        "type": "object"
-      },
-      "PredictionRunSequenceDto": {
-        "properties": {
-          "lastId": {
-            "format": "int64",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "lastId"
         ],
         "type": "object"
       },
@@ -10401,29 +10338,6 @@
         ]
       }
     },
-    "/api/prediction-runs": {
-      "get": {
-        "operationId": "listOrganizationRuns",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/PredictionRunCatalogItemDto"
-                  },
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "prediction-run-controller"
-        ]
-      }
-    },
     "/api/prediction-runs/catalog": {
       "post": {
         "operationId": "page",
@@ -10544,46 +10458,6 @@
         },
         "tags": [
           "inference-catalog-controller"
-        ]
-      }
-    },
-    "/api/prediction-runs/last-id": {
-      "get": {
-        "operationId": "lastId",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PredictionRunSequenceDto"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "prediction-run-controller"
-        ]
-      }
-    },
-    "/api/prediction-runs/table": {
-      "get": {
-        "operationId": "table",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InferenceTableDto"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "prediction-run-controller"
         ]
       }
     },
@@ -11648,38 +11522,6 @@
       }
     },
     "/api/schema-bookmarks/{bookmarkId}/runs": {
-      "get": {
-        "operationId": "listForBookmark",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "bookmarkId",
-            "required": true,
-            "schema": {
-              "format": "int64",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/PredictionRunDto"
-                  },
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "prediction-run-controller"
-        ]
-      },
       "post": {
         "operationId": "createForBookmark",
         "parameters": [

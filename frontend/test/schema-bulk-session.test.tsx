@@ -26,7 +26,6 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   useCurrentOrganizationId: () => 1,
 }));
 vi.mock("@/features/schemas/api/schema-prediction-api", () => ({
-  getLastPredictionRunId: async () => 0,
   createPredictionRunForBookmark: state.persist,
 }));
 vi.mock("@/features/schemas/api/schema-prediction-mutations", () => ({

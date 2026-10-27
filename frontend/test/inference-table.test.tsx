@@ -28,7 +28,6 @@ import {
   useInferenceTable,
 } from "@/features/inferences/lib/use-inference-table";
 import type {
-  InferenceTableDto,
   PredictionResultFeedbackDto,
   PredictionRunCatalogItemDto,
   SchemaVersionDto,
@@ -100,7 +99,8 @@ const answer = (runId: number, value: string): PredictionResultFeedbackDto => ({
 
 const AGE = { id: "age", displayKey: "age", kind: "number", label: "Age" };
 
-const payload = (overrides: Partial<InferenceTableDto> = {}): InferenceTableDto => ({
+/** Whatever a warmed table holds; only whether its query is invalidated is checked. */
+const payload = () => ({
   runs: [
     { summary: summary(2), inputData: { age: 52, income: 900 } },
     { summary: summary(1, { schemaVersionId: 6, schemaVersion: 1 }), inputData: { age: 31 } },
@@ -114,7 +114,6 @@ const payload = (overrides: Partial<InferenceTableDto> = {}): InferenceTableDto 
     ]),
     version(6, [AGE]),
   ],
-  ...overrides,
 });
 
 const serverColumns: InferenceDataColumn[] = [

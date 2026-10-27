@@ -193,6 +193,19 @@ class WorkspacePredictionHttpTest extends PublicPredictionFixture {
         verify(analyzer, never()).post(eq("/predict"), any());
     }
 
+    /**
+     * The instance-wide run counter told every organization how many runs all others made, and
+     * the unbounded listings read every run, result and answer of the organization at once.
+     */
+    @Test
+    void theGlobalRunCounterAndTheUnboundedRunListingsAreGone() throws Exception {
+        for (String path : List.of("/api/prediction-runs/last-id", "/api/prediction-runs", "/api/prediction-runs/table",
+                "/api/schema-bookmarks/" + bookmark.getId() + "/runs")) {
+            int status = mockMvc.perform(signedIn(get(path), owner.getId())).andReturn().getResponse().getStatus();
+            assertTrue(status == 404 || status == 405 || status == 400, path + " answered " + status);
+        }
+    }
+
     /** A result as clients used to send it: an output of their own under a real model. */
     private static Map<String, Object> written(long modelId) {
         return Map.of("modelId", modelId, "modelInput", Map.of("age", 52),

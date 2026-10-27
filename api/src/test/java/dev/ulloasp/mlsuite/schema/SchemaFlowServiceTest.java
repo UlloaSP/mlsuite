@@ -181,12 +181,4 @@ class SchemaFlowServiceTest {
         assertThrows(ResponseStatusException.class, () -> versionService.createVersion(7L, 5L, request));
     }
 
-    @Test
-    void getLastPredictionRunId_ReturnsRepositoryMaxAfterOperateCheck() {
-        when(runRepository.findLastPredictionRunId()).thenReturn(41L);
-
-        assertEquals(41L, runService.getLastPredictionRunId(7L));
-        verify(authorizationService).requireCurrent(7L, PermissionKey.RUN_PREDICTIONS);
-    }
-
 }

@@ -68,7 +68,7 @@ class SchemaReadPermissionTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"catalog", "page", "schema", "versions", "version", "bindings", "drafts", "draft",
-            "bookmarks", "organizationBookmarks", "bookmark", "runs", "run", "organizationRuns", "feedback", "runFeedback"})
+            "bookmarks", "organizationBookmarks", "bookmark", "run", "feedback", "runFeedback"})
     void modelViewAllowsAllReadPathsWithoutOrganizationView(String operation) {
         membership(Set.of(PermissionKey.VIEW_MODELS));
         allowObjects();
@@ -78,7 +78,7 @@ class SchemaReadPermissionTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"catalog", "page", "schema", "versions", "version", "bindings", "drafts", "draft",
-            "bookmarks", "organizationBookmarks", "bookmark", "runs", "run", "organizationRuns", "feedback", "runFeedback"})
+            "bookmarks", "organizationBookmarks", "bookmark", "run", "feedback", "runFeedback"})
     void organizationViewAloneDoesNotExposeMlData(String operation) {
         membership(Set.of(PermissionKey.VIEW_ORGANIZATION));
         assertThrows(OrganizationAccessDeniedException.class, () -> read(operation));
@@ -87,7 +87,7 @@ class SchemaReadPermissionTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"catalog", "page", "schema", "versions", "version", "bindings", "drafts", "draft",
-            "bookmarks", "organizationBookmarks", "bookmark", "runs", "run", "organizationRuns", "feedback", "runFeedback"})
+            "bookmarks", "organizationBookmarks", "bookmark", "run", "feedback", "runFeedback"})
     void nonmemberCannotReadOrganizationMlData(String operation) {
         when(access.requireMembership(3L, 41L)).thenThrow(new OrganizationAccessDeniedException(41L));
         assertThrows(OrganizationAccessDeniedException.class, () -> read(operation));
@@ -96,7 +96,7 @@ class SchemaReadPermissionTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"schema", "versions", "version", "bindings", "drafts", "draft",
-            "bookmarks", "bookmark", "runs", "run", "feedback", "runFeedback"})
+            "bookmarks", "bookmark", "run", "feedback", "runFeedback"})
     void resourceOutsideCurrentOrganizationIsNotFound(String operation) {
         membership(Set.of(PermissionKey.VIEW_MODELS));
         var error = assertThrows(ResponseStatusException.class, () -> read(operation));
@@ -137,9 +137,7 @@ class SchemaReadPermissionTest {
             case "bookmarks" -> bookmarkService.listBookmarks(3L, 7L);
             case "organizationBookmarks" -> predictCatalog.listBookmarks(3L);
             case "bookmark" -> bookmarkService.getBookmark(3L, 7L);
-            case "runs" -> runService.listRunsForBookmark(3L, 7L);
             case "run" -> runService.getRun(3L, 7L);
-            case "organizationRuns" -> runService.listOrganizationRuns(3L);
             case "feedback" -> feedbackService.listByResult(3L, 7L);
             case "runFeedback" -> feedbackService.listByRuns(3L, List.of(7L));
             default -> throw new IllegalArgumentException(operation);
