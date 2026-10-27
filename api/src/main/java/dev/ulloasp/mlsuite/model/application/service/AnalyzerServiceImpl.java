@@ -48,7 +48,7 @@ public class AnalyzerServiceImpl implements AnalyzerUseCase {
         userLookupService.requireById(userId);
         LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("model_file", artifact.getResource());
-        return analyzerClient.post("/metadata", body);
+        return analyzerClient.inspect(body);
     }
 
     @Override

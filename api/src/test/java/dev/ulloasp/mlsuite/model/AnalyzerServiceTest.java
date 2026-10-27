@@ -197,7 +197,7 @@ class AnalyzerServiceTest {
     }
 
     private AnalyzerServiceImpl service(WorkspaceRuntimeSlots slots) {
-        AnalyzerClient analyzerClient = new AnalyzerClient(restTemplate, "http://py-analyzer:8000");
+        AnalyzerClient analyzerClient = new AnalyzerClient(restTemplate, restTemplate, "http://py-analyzer:8000");
         ModelRuntimeClient modelRuntime = new ModelRuntimeClient(analyzerClient,
                 new ModelArtifactContentReader(objectStorageService, modelRepository));
         return new AnalyzerServiceImpl(analyzerClient, modelRuntime, slots, modelRepository,

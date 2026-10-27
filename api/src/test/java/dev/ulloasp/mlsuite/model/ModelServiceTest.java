@@ -90,7 +90,7 @@ class ModelServiceTest {
                 artifactWriter,
                 artifactReader,
                 deletionQueue,
-                new AnalyzerClient(restTemplate, "http://analyzer"),
+                new AnalyzerClient(restTemplate, restTemplate, "http://analyzer"),
                 false);
         lenient().when(workspaceAuthorizationService.requireCurrent(eq(3L), any(PermissionKey[].class))).thenReturn(organization());
     }

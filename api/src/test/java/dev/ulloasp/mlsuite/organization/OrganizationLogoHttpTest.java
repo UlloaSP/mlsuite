@@ -29,7 +29,6 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.AbstractMockHttpServletRequestBuilder;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.organization.adapter.in.web.OrganizationLogoController;
@@ -49,7 +48,7 @@ import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
         "server.port=0",
         "cors.allow-origins=http://localhost:5173" })
 @Import(SecurityConfig.class)
-@MockitoBean(types = { RestTemplate.class, UserDetailsService.class, SessionAccountCheck.class })
+@MockitoBean(types = { UserDetailsService.class, SessionAccountCheck.class })
 class OrganizationLogoHttpTest {
 
     private static final long USER_ID = 7L;

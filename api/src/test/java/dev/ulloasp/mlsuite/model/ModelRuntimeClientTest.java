@@ -54,7 +54,7 @@ class ModelRuntimeClientTest {
 
     @BeforeEach
     void setUp() {
-        client = new ModelRuntimeClient(new AnalyzerClient(restTemplate, "http://runtime"),
+        client = new ModelRuntimeClient(new AnalyzerClient(restTemplate, restTemplate, "http://runtime"),
                 new ModelArtifactContentReader(storage, models));
     }
 

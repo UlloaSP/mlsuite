@@ -23,7 +23,6 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.web.client.RestTemplate;
 
 import dev.ulloasp.mlsuite.audit.adapter.in.web.AuditLogController;
 import dev.ulloasp.mlsuite.audit.application.dto.AuditActorDto;
@@ -44,7 +43,7 @@ import dev.ulloasp.mlsuite.util.PageDto;
         "server.port=0",
         "cors.allow-origins=http://localhost:5173" })
 @Import(SecurityConfig.class)
-@MockitoBean(types = { RestTemplate.class, UserDetailsService.class, SessionAccountCheck.class })
+@MockitoBean(types = { UserDetailsService.class, SessionAccountCheck.class })
 class AuditLogHttpTest {
 
     private static final long MEMBER_ID = 7L;

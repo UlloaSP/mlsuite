@@ -100,7 +100,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
 
         LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("model_file", reusableModelFile.getResource());
-        Map<String, Object> response = analyzerClient.post("/metadata", body);
+        Map<String, Object> response = analyzerClient.inspect(body);
         String type = response.get("type") != null ? response.get("type").toString() : null;
         String specificType = response.get("specificType") != null ? response.get("specificType").toString() : null;
         Map<String, Object> inputSchema = jsonObject(response, "schema");

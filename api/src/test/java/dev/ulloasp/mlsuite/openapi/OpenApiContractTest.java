@@ -21,7 +21,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
@@ -116,7 +115,7 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
         SchemaCreationUseCase.class, SchemaDraftUseCase.class, SchemaRepositoryCatalogUseCase.class,
         SchemaReviewCatalogUseCase.class, SchemaReviewManagementUseCase.class,
         SchemaReviewUseCase.class, SchemaVersionUseCase.class, SearchWorkspaceUseCase.class,
-        RestTemplate.class, StartupReadinessService.class, WorkspaceContextUseCase.class,
+        StartupReadinessService.class, WorkspaceContextUseCase.class,
         WorkspacePredictionUseCase.class })
 class OpenApiContractTest {
 

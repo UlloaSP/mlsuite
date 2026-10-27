@@ -32,7 +32,6 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.web.client.RestTemplate;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
@@ -79,7 +78,7 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationS
                 "cors.allow-origins=http://localhost:5173" })
 @Import({ SecurityConfig.class, SchemaBookmarkServiceImpl.class, SchemaBookmarkExampleService.class,
         PublicBookmarkService.class, BookmarkPublishability.class, WorkspaceAuthorizationService.class })
-@MockitoBean(types = { PredictBookmarkCatalogUseCase.class, PublicPredictionUseCase.class, PublicRunUseCase.class, RestTemplate.class,
+@MockitoBean(types = { PredictBookmarkCatalogUseCase.class, PublicPredictionUseCase.class, PublicRunUseCase.class,
         UserDetailsService.class, SessionAccountCheck.class, SchemaRepository.class, SchemaModelBindingRepository.class,
         RoleDefinitionRepository.class, ListPluginRuntimeSourcesUseCase.class })
 class BookmarkExampleHttpTest {
