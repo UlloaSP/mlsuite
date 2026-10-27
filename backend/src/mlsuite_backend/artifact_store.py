@@ -7,6 +7,7 @@ so a damaged file is a miss, never another model. Files are kept while they tota
 bound, least recently used out first. Failing to write one only costs a later transfer.
 """
 
+import contextlib
 import hashlib
 import logging
 import os
@@ -54,7 +55,9 @@ class ArtifactStore:
             # Atomic: another worker reads the whole file or none of it.
             os.replace(partial, path)
         except OSError as error:
-            partial.unlink(missing_ok=True)
+            # When the directory cannot exist, POSIX refuses even to look for the partial (ENOTDIR).
+            with contextlib.suppress(OSError):
+                partial.unlink(missing_ok=True)
             _log.warning("Could not keep artifact %s on disk: %s", sha256, error)
             return
         self._evict(keep=path)
