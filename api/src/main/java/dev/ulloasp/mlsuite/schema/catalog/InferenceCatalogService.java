@@ -44,9 +44,14 @@ public class InferenceCatalogService {
             return new PageDto<>(items, request.page(), request.size(), total, limit < total);
         }
         Leading leading = new Leading(order.comparator(), limit);
-        reader.scan(userId, scope, table -> projector.project(table).stream()
-                .filter(filter::matches)
-                .forEach(row -> leading.offer(order.rank(row))));
+        if (order.bySummary() && !filter.derived()) {
+            // Ranked by run summaries alone: no result or answer of the scope is read.
+            reader.scanSummaries(userId, scope, summaries -> summaries.forEach(item -> leading.offer(order.rank(item))));
+        } else {
+            reader.scan(userId, scope, table -> projector.project(table).stream()
+                    .filter(filter::matches)
+                    .forEach(row -> leading.offer(order.rank(row))));
+        }
         List<Long> ids = leading.from((long) request.page() * request.size());
         // Only the page's own rows are projected again in full; the scan kept what ordering needs.
         Map<Long, InferenceCatalogRowDto> rows = new HashMap<>();
@@ -78,9 +83,14 @@ public class InferenceCatalogService {
         InferenceCatalogOrder order = InferenceCatalogOrder.of(request.sort(), text);
         InferenceCatalogFilter filter = InferenceCatalogFilter.of(request);
         List<Ranked> matched = new ArrayList<>();
-        reader.scan(userId, InferenceCatalogScope.rows(request), table -> projector.project(table).stream()
-                .filter(filter::matches)
-                .forEach(row -> matched.add(order.rank(row))));
+        if (order.bySummary() && !filter.derived()) {
+            reader.scanSummaries(userId, InferenceCatalogScope.rows(request),
+                    summaries -> summaries.forEach(item -> matched.add(order.rank(item))));
+        } else {
+            reader.scan(userId, InferenceCatalogScope.rows(request), table -> projector.project(table).stream()
+                    .filter(filter::matches)
+                    .forEach(row -> matched.add(order.rank(row))));
+        }
         return matched.stream().sorted(order.comparator()).map(Ranked::item).toList();
     }
 

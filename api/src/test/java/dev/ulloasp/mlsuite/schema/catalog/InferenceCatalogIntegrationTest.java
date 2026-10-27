@@ -22,6 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.model.RecordedSql;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
@@ -180,6 +181,26 @@ class InferenceCatalogIntegrationTest extends PublicPredictionFixture {
         mockMvc.perform(posting("/api/prediction-runs/catalog/facets", "{\"kind\":\"schemas\",\"scope\":{}}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].value").value(schema.getId().toString()));
+    }
+
+    @Test
+    void anOrderBySummaryColumnsRanksTheScopeWithoutReadingItsResultsOrAnswers() throws Exception {
+        inTransaction(() -> {
+            for (int i = 0; i < 230; i++) {
+                entityManager.persist(new PredictionRun(bookmark, version, "summary-" + i, Map.of("Age", i),
+                        PredictionRunStatus.SUCCESS));
+            }
+        });
+        var byName = request(0, "", "name.desc", "all", List.of());
+
+        List<String> paging = RecordedSql.during(() -> assertEquals("summary-229",
+                catalog.page(owner.getId(), byName).items().getFirst().item().name()));
+        List<String> selecting = RecordedSql.during(() -> assertEquals(230,
+                catalog.selection(owner.getId(), byName).size()));
+
+        // The page's own 24 rows are read in full, once; ranking the 230 read none.
+        assertEquals(2, paging.stream().filter(sql -> sql.contains("prediction_result")).count(), paging::toString);
+        assertTrue(selecting.stream().noneMatch(sql -> sql.contains("prediction_result")), selecting::toString);
     }
 
     @Test

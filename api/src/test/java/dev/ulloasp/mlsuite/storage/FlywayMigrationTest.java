@@ -31,9 +31,9 @@ class FlywayMigrationTest {
     void appliesCompleteHistoryToEmptyPostgresAndIsRepeatable() throws Exception {
         Flyway flyway = flyway("fresh", null);
 
-        assertEquals(17, flyway.migrate().migrationsExecuted);
+        assertEquals(18, flyway.migrate().migrationsExecuted);
         assertEquals(0, flyway.migrate().migrationsExecuted);
-        assertEquals("17", flyway.info().current().getVersion().toString());
+        assertEquals("18", flyway.info().current().getVersion().toString());
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
@@ -46,6 +46,21 @@ class FlywayMigrationTest {
             try (var result = statement.executeQuery()) {
                 assertTrue(result.next());
                 assertEquals(4, result.getInt(1));
+            }
+        }
+        try (var connection = DriverManager.getConnection(
+                POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+                var statement = connection.prepareStatement("""
+                        SELECT indexname FROM pg_indexes
+                        WHERE indexname IN ('idx_prediction_run_bookmark', 'idx_prediction_run_created',
+                                            'idx_prediction_result_model')
+                        ORDER BY indexname
+                        """);
+                var result = statement.executeQuery()) {
+            for (String index : new String[] { "idx_prediction_result_model", "idx_prediction_run_bookmark",
+                    "idx_prediction_run_created" }) {
+                assertTrue(result.next());
+                assertEquals(index, result.getString(1));
             }
         }
     }
@@ -112,7 +127,7 @@ class FlywayMigrationTest {
                 .baselineOnMigrate(true)
                 .baselineVersion(MigrationVersion.fromVersion("1"))
                 .load();
-        assertEquals(16, upgraded.migrate().migrationsExecuted);
+        assertEquals(17, upgraded.migrate().migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());

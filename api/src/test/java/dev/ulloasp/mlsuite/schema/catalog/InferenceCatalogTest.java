@@ -205,6 +205,11 @@ class InferenceCatalogTest {
     private static InferenceCatalogService serving(InferenceTableDto data) {
         InferenceCatalogReader reader = mock(InferenceCatalogReader.class);
         doAnswer(call -> deliver(call, 2, data)).when(reader).scan(eq(MEMBER), any(), any());
+        doAnswer(call -> {
+            call.<Consumer<List<PredictionRunCatalogItemDto>>>getArgument(2)
+                    .accept(data.runs().stream().map(InferenceTableRunDto::summary).toList());
+            return null;
+        }).when(reader).scanSummaries(eq(MEMBER), any(), any());
         doAnswer(call -> deliver(call, 2, only(data, call.getArgument(1))))
                 .when(reader).selected(eq(MEMBER), any(), any());
         when(reader.page(eq(MEMBER), any(), anyBoolean(), anyInt(), anyInt(), any())).thenAnswer(call -> {
@@ -223,6 +228,7 @@ class InferenceCatalogTest {
                 .thenReturn(new InferenceCatalogReader.Choices(data.runs().size(), List.of(), List.of()));
         ResponseStatusException forbidden = new ResponseStatusException(HttpStatus.FORBIDDEN);
         doThrow(forbidden).when(reader).scan(eq(OUTSIDER), any(), any());
+        doThrow(forbidden).when(reader).scanSummaries(eq(OUTSIDER), any(), any());
         when(reader.page(eq(OUTSIDER), any(), anyBoolean(), anyInt(), anyInt(), any())).thenThrow(forbidden);
         return new InferenceCatalogService(reader);
     }

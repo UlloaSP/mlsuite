@@ -2,6 +2,7 @@ package dev.ulloasp.mlsuite.schema.catalog;
 
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.Set;
 
 import com.ibm.icu.text.CollationKey;
 
@@ -17,6 +18,9 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunOrigin;
 final class InferenceCatalogOrder {
 
     private static final String CREATED_AT = "createdAt";
+    /** The columns a run's summary holds, so ranking by them reads no results or answers. */
+    private static final Set<String> SUMMARY_COLUMNS = Set.of(CREATED_AT, "name", "status", "schema", "version",
+            "bookmark", "author", "origin");
     private static final Comparator<Ranked> NEWEST_FIRST = Comparator
             .comparing((Ranked ranked) -> ranked.createdAt()).reversed()
             .thenComparing(ranked -> ranked.item().id());
@@ -73,12 +77,22 @@ final class InferenceCatalogOrder {
         return column.equals(CREATED_AT);
     }
 
+    /** Whether the order reads only a run's summary, so a scope is ranked without its payloads. */
+    boolean bySummary() {
+        return SUMMARY_COLUMNS.contains(column);
+    }
+
     boolean descending() {
         return descending;
     }
 
     Ranked rank(Row row) {
         return new Ranked(row.dto().item(), byCreation() ? null : key(row));
+    }
+
+    /** A run ranked by a {@link #bySummary() summary column}. */
+    Ranked rank(PredictionRunCatalogItemDto item) {
+        return new Ranked(item, byCreation() ? null : summaryKey(item));
     }
 
     Comparator<Ranked> comparator() {
@@ -97,11 +111,19 @@ final class InferenceCatalogOrder {
     }
 
     private Key key(Row row) {
-        PredictionRunCatalogItemDto item = row.dto().item();
+        if (bySummary()) return summaryKey(row.dto().item());
+        return switch (column) {
+            case "feedbackStatus" -> text(row.dto().feedbackStatus().name());
+            default -> row.dto().values().get(column) instanceof Number number
+                    ? new Key(true, number.doubleValue(), null)
+                    : text(row.dto().displayValues().get(column));
+        };
+    }
+
+    private Key summaryKey(PredictionRunCatalogItemDto item) {
         return switch (column) {
             case "name" -> text(item.name());
             case "status" -> text(item.status().name());
-            case "feedbackStatus" -> text(row.dto().feedbackStatus().name());
             case "schema" -> text(item.schemaName());
             case "version" -> new Key(true, item.schemaVersion(), null);
             case "bookmark" -> text(item.bookmarkName());
@@ -111,9 +133,7 @@ final class InferenceCatalogOrder {
                 case PUBLIC -> "Public page";
                 case API -> "API";
             });
-            default -> row.dto().values().get(column) instanceof Number number
-                    ? new Key(true, number.doubleValue(), null)
-                    : text(row.dto().displayValues().get(column));
+            default -> throw new IllegalStateException("Not a summary column: " + column);
         };
     }
 
