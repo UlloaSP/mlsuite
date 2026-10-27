@@ -65,8 +65,10 @@ class InferenceCatalogTest {
         var olderThanForty = request(0, "", "createdAt.desc", new Condition(AGE, "gt", "40"));
         assertEquals(1, service.page(MEMBER, olderThanForty).totalItems());
         assertEquals(2L, service.selection(MEMBER, olderThanForty).getFirst().id());
-        assertEquals(1L, service.page(MEMBER, request(0, "", AGE + ".asc")).items().getFirst().item().id());
-        var youngestSecond = service.page(MEMBER, request(1, "", AGE + ".asc"));
+        // With a derived filter the scope is ranked in memory; without one, by stored keys (InferenceSortKeysTest).
+        var anyAge = new Condition(AGE, "notEmpty", "");
+        assertEquals(1L, service.page(MEMBER, request(0, "", AGE + ".asc", anyAge)).items().getFirst().item().id());
+        var youngestSecond = service.page(MEMBER, request(1, "", AGE + ".asc", anyAge));
         assertEquals(2L, youngestSecond.items().getFirst().item().id());
         assertEquals(2, youngestSecond.totalItems());
         assertFalse(youngestSecond.hasNext());
@@ -230,7 +232,7 @@ class InferenceCatalogTest {
         doThrow(forbidden).when(reader).scan(eq(OUTSIDER), any(), any());
         doThrow(forbidden).when(reader).scanSummaries(eq(OUTSIDER), any(), any());
         when(reader.page(eq(OUTSIDER), any(), anyBoolean(), anyInt(), anyInt(), any())).thenThrow(forbidden);
-        return new InferenceCatalogService(reader);
+        return new InferenceCatalogService(reader, mock(InferenceSortKeys.class));
     }
 
     private static Object deliver(InvocationOnMock call, int consumer, InferenceTableDto table) {

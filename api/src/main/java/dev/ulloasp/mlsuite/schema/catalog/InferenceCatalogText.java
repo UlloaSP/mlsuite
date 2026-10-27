@@ -23,6 +23,7 @@ final class InferenceCatalogText {
     private final Collator cells;
     private final Collator choices;
     private final Collator options;
+    private final String sortKeyLocale;
 
     private InferenceCatalogText(ULocale locale) {
         numbers = NumberFormatter.withLocale(locale)
@@ -31,6 +32,15 @@ final class InferenceCatalogText {
         cells = collator(locale, Collator.PRIMARY, true);
         choices = collator(locale, Collator.TERTIARY, true);
         options = collator(locale, Collator.TERTIARY, false);
+        sortKeyLocale = locale.toLanguageTag() + "|" + cells.getVersion() + "|" + InferenceSortKeys.PROJECTION_VERSION;
+    }
+
+    /**
+     * What stored sort keys are valid for: this locale, as this collator orders it, of rows as this
+     * version of the projection shows them. Keys made under another ICU or projection are not read.
+     */
+    String sortKeyLocale() {
+        return sortKeyLocale;
     }
 
     static InferenceCatalogText of(String locale) {

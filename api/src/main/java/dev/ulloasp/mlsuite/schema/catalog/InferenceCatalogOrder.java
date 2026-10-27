@@ -82,6 +82,11 @@ final class InferenceCatalogOrder {
         return SUMMARY_COLUMNS.contains(column);
     }
 
+    /** The column a derived order is by: a data column or the feedback status. */
+    String column() {
+        return column;
+    }
+
     boolean descending() {
         return descending;
     }
@@ -111,12 +116,19 @@ final class InferenceCatalogOrder {
     }
 
     private Key key(Row row) {
-        if (bySummary()) return summaryKey(row.dto().item());
+        return bySummary() ? summaryKey(row.dto().item()) : derivedKey(row.dto(), column, text);
+    }
+
+    /**
+     * A row's key in a column derived from its payloads: a number by value, anything else by its
+     * displayed text; none when the row does not show the column. InferenceSortKeys stores these.
+     */
+    static Key derivedKey(InferenceCatalogRowDto row, String column, InferenceCatalogText text) {
         return switch (column) {
-            case "feedbackStatus" -> text(row.dto().feedbackStatus().name());
-            default -> row.dto().values().get(column) instanceof Number number
+            case "feedbackStatus" -> text(row.feedbackStatus().name(), text);
+            default -> row.values().get(column) instanceof Number number
                     ? new Key(true, number.doubleValue(), null)
-                    : text(row.dto().displayValues().get(column));
+                    : text(row.displayValues().get(column), text);
         };
     }
 
@@ -138,6 +150,10 @@ final class InferenceCatalogOrder {
     }
 
     private Key text(String value) {
+        return text(value, text);
+    }
+
+    private static Key text(String value, InferenceCatalogText text) {
         return value == null ? null : new Key(false, 0, text.cellKey(text.format(value)));
     }
 

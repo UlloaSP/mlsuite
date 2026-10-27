@@ -21,7 +21,10 @@ import lombok.RequiredArgsConstructor;
 /**
  * The inferences table: its rows, its columns and filter choices, and whole-result selections.
  * Values derived from stored payloads are filtered and sorted before paging, across every persisted
- * snapshot and answer, and every read of one request sees a single snapshot of the data.
+ * snapshot and answer, and every read of one request sees a single snapshot of the data. A sort by
+ * a derived column alone is paged by the database from stored sort keys (InferenceSortKeys), brought
+ * up to date and committed just before that snapshot is taken; a derived filter still projects the
+ * scope.
  */
 @Service
 @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
@@ -29,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 public class InferenceCatalogService {
 
     private final InferenceCatalogReader reader;
+    private final InferenceSortKeys sortKeys;
 
     public PageDto<InferenceCatalogRowDto> page(Long userId, InferenceCatalogRequest request) {
         InferenceCatalogText text = InferenceCatalogText.of(request.locale());
@@ -42,6 +46,19 @@ public class InferenceCatalogService {
             long total = reader.page(userId, scope, !order.descending(), request.page(), request.size(),
                     table -> projector.project(table).forEach(row -> items.add(row.dto())));
             return new PageDto<>(items, request.page(), request.size(), total, limit < total);
+        }
+        if (!order.bySummary() && !filter.derived()) {
+            // Ranked by stored sort keys: only the page's own runs are projected.
+            List<Long> ids = sortKeys.refresh(userId, scope, text);
+            if (!ids.isEmpty()) {
+                List<Long> pageIds = sortKeys.page(ids, text, order, (long) request.page() * request.size(),
+                        request.size());
+                Map<Long, InferenceCatalogRowDto> rows = new HashMap<>();
+                reader.selected(userId, pageIds, table -> projector.project(table)
+                        .forEach(row -> rows.put(row.dto().item().id(), row.dto())));
+                pageIds.stream().map(rows::get).forEach(items::add);
+            }
+            return new PageDto<>(items, request.page(), request.size(), ids.size(), limit < ids.size());
         }
         Leading leading = new Leading(order.comparator(), limit);
         if (order.bySummary() && !filter.derived()) {
