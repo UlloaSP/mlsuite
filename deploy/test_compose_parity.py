@@ -113,6 +113,34 @@ def main() -> None:
         "object storage provisioner must use the same pinned image"
     )
     validate_release_config(production)
+    published = {
+        name: [(port.get("host_ip", ""), port["target"]) for port in service.get("ports", [])]
+        for name, service in production["services"].items()
+        if service.get("ports")
+    }
+    assert published == {"postgres": [("127.0.0.1", 5432)], "frontend": [("", 5173)]}, (
+        "only the web app may be published publicly; PostgreSQL stays on loopback"
+    )
+    runtime_peers = {
+        name for name, service in production["services"].items()
+        if "runtime" in service.get("networks", {})
+    }
+    assert runtime_peers == {"py-analyzer", "spring-app"}, (
+        "only the API may share a network with the runtime that parses uploaded models"
+    )
+    assert set(production["services"]["py-analyzer"]["networks"]) == {"runtime"}
+    assert production["networks"]["runtime"].get("internal") is True, (
+        "the runtime network must have no route to other networks or the internet"
+    )
+    for name, service in production["services"].items():
+        options = service.get("logging", {}).get("options", {})
+        assert options.get("max-size") and options.get("max-file"), (
+            f"{name} must rotate its container logs"
+        )
+    assert "healthcheck" in production["services"]["py-analyzer"], "the runtime must report health"
+    assert production["services"]["spring-app"]["depends_on"]["py-analyzer"]["condition"] == (
+        "service_healthy"
+    ), "the API must wait for a healthy runtime"
     script_pins = (ROOT / "scripts/lib.sh").read_text().splitlines()
     assert f"POSTGRES_IMAGE={postgres_image}" in script_pins, (
         "operational scripts must use the Compose PostgreSQL image"

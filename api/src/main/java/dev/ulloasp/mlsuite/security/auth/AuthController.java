@@ -2,8 +2,6 @@ package dev.ulloasp.mlsuite.security.auth;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
@@ -12,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import dev.ulloasp.mlsuite.security.identity.ClientNetworks;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.user.application.dto.UserDto;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,33 +22,34 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthenticationManager authenticationManager;
     private final AuthService authService;
+    private final ClientNetworks clientNetworks = new ClientNetworks();
 
     @PostMapping("/register")
     public ResponseEntity<UserDto> register(
             @Valid @RequestBody AuthRequest request,
             HttpServletRequest servletRequest) {
-        UserDto user = authService.register(request);
-        authenticate(request.email(), request.password(), servletRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(user);
+        Authentication authentication = authService.register(request, clientNetworks.key(servletRequest));
+        return ResponseEntity.status(HttpStatus.CREATED).body(signIn(authentication, servletRequest));
     }
 
     @PostMapping("/login")
     public ResponseEntity<UserDto> login(
             @Valid @RequestBody LoginRequest request,
             HttpServletRequest servletRequest) {
-        Authentication authentication = authenticate(request.email(), request.password(), servletRequest);
-        return ResponseEntity.ok(authService.profile(CurrentUser.from(authentication).userId()));
+        Authentication authentication = authService.login(request, clientNetworks.key(servletRequest));
+        return ResponseEntity.ok(signIn(authentication, servletRequest));
     }
 
-    private Authentication authenticate(String email, String password, HttpServletRequest servletRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(email, password));
+    private UserDto signIn(Authentication authentication, HttpServletRequest servletRequest) {
         SecurityContextHolder.getContext().setAuthentication(authentication);
+        // A session id known before sign-in may have been planted (session fixation): sign in under a new one.
+        if (servletRequest.getSession(false) != null) {
+            servletRequest.changeSessionId();
+        }
         servletRequest.getSession(true).setAttribute(
                 HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
                 SecurityContextHolder.getContext());
-        return authentication;
+        return authService.profile(CurrentUser.from(authentication).userId());
     }
 }
