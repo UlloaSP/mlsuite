@@ -69,7 +69,7 @@ class ReviewFeedbackMigrationTest {
                     """);
         }
 
-        assertEquals(1, flyway(null).migrate().migrationsExecuted);
+        assertEquals(1, flyway(MigrationVersion.fromVersion("19")).migrate().migrationsExecuted);
 
         assertEquals(List.of("1:1:{\"answer\": \"high\"}", "1:2:{\"answer\": \"high\"}", "2:null:{\"answer\": \"low\"}"),
                 rows("""
