@@ -74,8 +74,8 @@ class InferenceSortKeysTest extends PublicPredictionFixture {
         }
 
         assertEquals(inMemory, paged);
-        assertTrue(jdbc.queryForObject("SELECT count(*) FROM inference_sort_run WHERE locale LIKE ?", Long.class,
-                locale.split("-")[0] + "%") >= AGES.size());
+        assertTrue(jdbc.queryForObject("SELECT count(*) FROM inference_sort_run WHERE locale = ?", Long.class,
+                InferenceCatalogText.of(locale).sortKeyLocale()) >= AGES.size());
     }
 
     @ParameterizedTest
@@ -93,7 +93,7 @@ class InferenceSortKeysTest extends PublicPredictionFixture {
         catalog.page(owner.getId(), request(0, sort, "en-US"));
 
         assertEquals(newest, jdbc.queryForObject("SELECT revision_mark FROM inference_sort_run WHERE prediction_run_id = ?"
-                + " AND locale LIKE 'en-US|%'", Long.class, runId));
+                + " AND locale = ?", Long.class, runId, InferenceCatalogText.of("en-US").sortKeyLocale()));
     }
 
     private Long inTransactionReturning(Long runId) {

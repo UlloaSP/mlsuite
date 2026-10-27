@@ -10,6 +10,7 @@ import static dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogFixtures.rows;
 import static dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogFixtures.table;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -98,6 +99,19 @@ class InferenceCatalogTest {
         assertThrows(ResponseStatusException.class,
                 () -> request(0, "", "createdAt.desc", Collections.nCopies(101, new Condition("age", "eq", "1"))));
         assertEquals(0, request(-4, "", "createdAt.desc").page());
+    }
+
+    @Test
+    void keysStoredSortOrdersByWhatOrdersThemNotByTheTagSent() {
+        String english = TEXT.sortKeyLocale();
+        assertEquals(english, InferenceCatalogText.of("en-US-x-made-up").sortKeyLocale());
+        assertEquals(english, InferenceCatalogText.of("en-US-u-co-phonebk").sortKeyLocale());
+        assertEquals(InferenceCatalogText.of("de-DE").sortKeyLocale(),
+                InferenceCatalogText.of("de-DE-u-co-phonebk").sortKeyLocale());
+        assertNotEquals(english, InferenceCatalogText.of("es-ES").sortKeyLocale());
+        assertNotEquals(english, InferenceCatalogText.of("en-IN").sortKeyLocale());
+        assertNotEquals(InferenceCatalogText.of("sv-SE").sortKeyLocale(),
+                InferenceCatalogText.of("de-DE").sortKeyLocale());
     }
 
     @Test
