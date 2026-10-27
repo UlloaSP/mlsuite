@@ -187,7 +187,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_10"];
+        get: operations["list_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -219,7 +219,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
         post: operations["create_7"];
         delete?: never;
@@ -1003,7 +1003,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
         post: operations["create_6"];
         delete?: never;
@@ -1131,7 +1131,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1156,6 +1156,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/prediction-jobs/{jobId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_6"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/prediction-jobs/{jobId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/prediction-jobs/{jobId}/failures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["failures"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/prediction-jobs/{jobId}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["retry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/prediction-result-feedback": {
         parameters: {
             query?: never;
@@ -1163,7 +1227,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_9"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1307,7 +1371,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1595,7 +1659,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1620,6 +1684,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/schema-bookmarks/{bookmarkId}/prediction-jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_4"];
+        put?: never;
+        post: operations["start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/schema-bookmarks/{bookmarkId}/predictions": {
         parameters: {
             query?: never;
@@ -1630,22 +1710,6 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["predictForBookmark"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/schema-bookmarks/{bookmarkId}/predictions/batch": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["predictBatchForBookmark"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2771,6 +2835,11 @@ export interface components {
             ownerUserId?: number | null;
             slug?: string | null;
         };
+        CreatePredictionJobRequest: {
+            rows: components["schemas"]["PredictionJobRow"][];
+            /** Format: int64 */
+            schemaVersionId: number;
+        };
         CreatePredictionResultFeedbackRequest: {
             /** Format: int32 */
             order: number;
@@ -3544,6 +3613,51 @@ export interface components {
             versionId: number;
             versionName: string | null;
         };
+        PredictionJobDto: {
+            /** Format: int64 */
+            bookmarkId: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdByName: string | null;
+            /** Format: int32 */
+            doneRows: number;
+            /** Format: int32 */
+            failedRows: number;
+            /** Format: date-time */
+            finishedAt: string | null;
+            /** Format: int64 */
+            id: number;
+            /** Format: int32 */
+            pendingRows: number;
+            /** Format: int64 */
+            schemaVersionId: number;
+            /** @enum {string} */
+            status: "QUEUED" | "RUNNING" | "COMPLETED" | "CANCELLED";
+            /** Format: int32 */
+            totalRows: number;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        PredictionJobFailureDto: {
+            error: string;
+            name: string;
+            /** Format: int32 */
+            rowIndex: number;
+        };
+        PredictionJobModelInput: {
+            /** Format: int64 */
+            modelId: number;
+            modelInput: {
+                [key: string]: unknown;
+            };
+        };
+        PredictionJobRow: {
+            inputData: {
+                [key: string]: unknown;
+            };
+            models: components["schemas"]["PredictionJobModelInput"][];
+            name: string;
+        };
         PredictionResultDto: {
             /** Format: date-time */
             createdAt: string;
@@ -4248,18 +4362,6 @@ export interface components {
             canViewPlugins: boolean;
             canViewWorkspace: boolean;
         };
-        WorkspacePredictionBatchDto: {
-            results: components["schemas"]["WorkspacePredictionDto"][];
-        };
-        WorkspacePredictionBatchRequest: {
-            /** Format: int64 */
-            modelId: number;
-            rows: {
-                [key: string]: unknown;
-            }[];
-            /** Format: int64 */
-            schemaVersionId: number;
-        };
         WorkspacePredictionDto: {
             attestation: string;
             errorJson: {
@@ -4338,6 +4440,7 @@ export type CreateApiClientRequest = components['schemas']['CreateApiClientReque
 export type CreateInvitationRequest = components['schemas']['CreateInvitationRequest'];
 export type CreateModelDto = components['schemas']['CreateModelDto'];
 export type CreateOrganizationRequest = components['schemas']['CreateOrganizationRequest'];
+export type CreatePredictionJobRequest = components['schemas']['CreatePredictionJobRequest'];
 export type CreatePredictionResultFeedbackRequest = components['schemas']['CreatePredictionResultFeedbackRequest'];
 export type CreatePredictionResultRequest = components['schemas']['CreatePredictionResultRequest'];
 export type CreatePredictionRunRequest = components['schemas']['CreatePredictionRunRequest'];
@@ -4420,6 +4523,10 @@ export type PluginDto = components['schemas']['PluginDto'];
 export type PluginRuntimeSourceDto = components['schemas']['PluginRuntimeSourceDto'];
 export type PluginStatsDto = components['schemas']['PluginStatsDto'];
 export type PredictBookmarkDto = components['schemas']['PredictBookmarkDto'];
+export type PredictionJobDto = components['schemas']['PredictionJobDto'];
+export type PredictionJobFailureDto = components['schemas']['PredictionJobFailureDto'];
+export type PredictionJobModelInput = components['schemas']['PredictionJobModelInput'];
+export type PredictionJobRow = components['schemas']['PredictionJobRow'];
 export type PredictionResultDto = components['schemas']['PredictionResultDto'];
 export type PredictionResultFeedbackDto = components['schemas']['PredictionResultFeedbackDto'];
 export type PredictionResultFeedbackRevisionDto = components['schemas']['PredictionResultFeedbackRevisionDto'];
@@ -4492,8 +4599,6 @@ export type UserDto = components['schemas']['UserDto'];
 export type WorkspaceContextDto = components['schemas']['WorkspaceContextDto'];
 export type WorkspaceCurrentContextDto = components['schemas']['WorkspaceCurrentContextDto'];
 export type WorkspacePermissionsDto = components['schemas']['WorkspacePermissionsDto'];
-export type WorkspacePredictionBatchDto = components['schemas']['WorkspacePredictionBatchDto'];
-export type WorkspacePredictionBatchRequest = components['schemas']['WorkspacePredictionBatchRequest'];
 export type WorkspacePredictionDto = components['schemas']['WorkspacePredictionDto'];
 export type WorkspacePredictionRequest = components['schemas']['WorkspacePredictionRequest'];
 export type WorkspaceUserDto = components['schemas']['WorkspaceUserDto'];
@@ -4759,7 +4864,7 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_11: {
         parameters: {
             query?: {
                 page?: number;
@@ -4806,7 +4911,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: {
                 page?: number;
@@ -6354,7 +6459,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -6654,7 +6759,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -6694,7 +6799,95 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    get_6: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PredictionJobDto"];
+                };
+            };
+        };
+    };
+    cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PredictionJobDto"];
+                };
+            };
+        };
+    };
+    failures: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PredictionJobFailureDto"][];
+                };
+            };
+        };
+    };
+    retry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PredictionJobDto"];
+                };
+            };
+        };
+    };
+    list_9: {
         parameters: {
             query: {
                 resultId: number;
@@ -6920,7 +7113,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query?: {
                 page?: number;
@@ -7393,7 +7586,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -7459,6 +7652,54 @@ export interface operations {
             };
         };
     };
+    list_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PredictionJobDto"][];
+                };
+            };
+        };
+    };
+    start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePredictionJobRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PredictionJobDto"];
+                };
+            };
+        };
+    };
     predictForBookmark: {
         parameters: {
             query?: never;
@@ -7481,32 +7722,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkspacePredictionDto"];
-                };
-            };
-        };
-    };
-    predictBatchForBookmark: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bookmarkId: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WorkspacePredictionBatchRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkspacePredictionBatchDto"];
                 };
             };
         };

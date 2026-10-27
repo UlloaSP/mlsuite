@@ -39,7 +39,6 @@ export const canSaveSessionEntry = (entry: SessionEntry) =>
   entry.state === "ready" && !entry.reportsPending && entry.name.trim().length > 0;
 
 /** A finished bulk row: its name, the values it was run with, and each model's sealed result. */
-export type CompletedRow = { name: string; inputData: JsonRecord; results: Results };
 
 const runRequest = (entry: SessionEntry): CreatePredictionRunRequest => ({
   schemaVersionId: entry.schemaVersionId,
@@ -143,27 +142,6 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
     [],
   );
 
-  /** Completed bulk rows join the same reviewable session as individual runs, a batch at once. */
-  const addResults = useCallback(
-    (rows: readonly CompletedRow[]) => {
-      if (schemaVersionId === undefined || rows.length === 0) return;
-      const createdAt = new Date().toISOString();
-      const added = rows.map((row): SessionEntry => ({
-        key: crypto.randomUUID(),
-        schemaVersionId,
-        name: row.name,
-        state: "ready",
-        inputData: row.inputData,
-        results: row.results,
-        reportsPending: false,
-        createdAt,
-      }));
-      // Newest first: the batch's last row tops the session.
-      setEntries((current) => [...added.reverse(), ...current]);
-    },
-    [schemaVersionId, setEntries],
-  );
-
   /** The form remounted (e.g. prefilled from a saved run); earlier entries stop being live. */
   const detachForm = useCallback(() => setLiveKey(null), [setLiveKey]);
 
@@ -254,7 +232,6 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
     unsavedCount: entries.filter((entry) => entry.state !== "saved").length,
     onRunningChange,
     onResult,
-    addResults,
     detachForm,
     save,
     saveAll,

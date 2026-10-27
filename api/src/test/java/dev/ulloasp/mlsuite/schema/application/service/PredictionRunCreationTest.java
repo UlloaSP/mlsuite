@@ -78,8 +78,8 @@ class PredictionRunCreationTest {
 
     @BeforeEach
     void setUp() {
-        service = new PredictionRunServiceImpl(users, bookmarks, bindings, runs, results, feedback, models,
-                authorization, attestations);
+        service = new PredictionRunServiceImpl(users, bookmarks, runs, results, feedback, authorization, attestations,
+                new PredictionRunStore(bindings, runs, results, models));
         Organization organization = new Organization();
         organization.setId(ORG);
         User user = new User();

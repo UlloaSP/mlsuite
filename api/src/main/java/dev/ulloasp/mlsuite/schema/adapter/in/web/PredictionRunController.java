@@ -16,8 +16,6 @@ import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionRunsRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatedPredictionRunsDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunCatalogItemDto;
-import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionBatchDto;
-import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionBatchRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionDto;
 import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionRequest;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionRunUseCase;
@@ -40,12 +38,6 @@ public class PredictionRunController {
     public ResponseEntity<WorkspacePredictionDto> predictForBookmark(CurrentUser user,
             @PathVariable Long bookmarkId, @Valid @RequestBody WorkspacePredictionRequest request) {
         return ResponseEntity.ok(workspacePredictionUseCase.predict(user.userId(), bookmarkId, request));
-    }
-
-    @PostMapping("/schema-bookmarks/{bookmarkId}/predictions/batch")
-    public ResponseEntity<WorkspacePredictionBatchDto> predictBatchForBookmark(CurrentUser user,
-            @PathVariable Long bookmarkId, @Valid @RequestBody WorkspacePredictionBatchRequest request) {
-        return ResponseEntity.ok(workspacePredictionUseCase.predictBatch(user.userId(), bookmarkId, request));
     }
 
     @PostMapping("/schema-bookmarks/{bookmarkId}/runs")

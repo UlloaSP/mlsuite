@@ -52,6 +52,7 @@ import dev.ulloasp.mlsuite.plugin.application.port.in.PluginCatalogUseCase;
 import dev.ulloasp.mlsuite.role.application.port.in.RoleCatalogUseCase;
 import dev.ulloasp.mlsuite.role.application.port.in.RoleListCatalogUseCase;
 import dev.ulloasp.mlsuite.role.application.port.in.RoleManagementUseCase;
+import dev.ulloasp.mlsuite.schema.job.PredictionJobService;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.application.port.in.BookmarkListCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictBookmarkCatalogUseCase;
@@ -109,7 +110,7 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
         OrganizationCatalogService.class, OrganizationLogoService.class,
         OrganizationManagementUseCase.class,
         PluginCatalogUseCase.class, PredictBookmarkCatalogUseCase.class, PredictionResultFeedbackUseCase.class,
-        PredictionResultRepository.class, PredictionRunUseCase.class, PublicBookmarkModerationService.class,
+        PredictionJobService.class, PredictionResultRepository.class, PredictionRunUseCase.class, PublicBookmarkModerationService.class,
         PublicBookmarkUseCase.class, PublicPredictionUseCase.class, PublicRunUseCase.class, RoleCatalogUseCase.class,
         RoleListCatalogUseCase.class, RoleManagementUseCase.class, SchemaBookmarkExampleUseCase.class,
         SchemaBookmarkUseCase.class, SchemaCatalogUseCase.class,

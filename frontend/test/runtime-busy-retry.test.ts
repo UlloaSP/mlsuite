@@ -8,7 +8,6 @@ import type { SubmitRequest } from "mlform/runtime";
 import { BUSY_ATTEMPTS, busyWaitMs, retryWhileBusy } from "@/shared/api/busy-retry";
 import { HttpError } from "@/shared/api/http";
 import { createSchemaRunTransport } from "@/capabilities/prediction-runtime/mlform/run-transport";
-import { runSchemaBatch } from "@/capabilities/prediction-runtime/mlform/schema-run-batch";
 import type { PredictionPayloadField } from "@/capabilities/prediction-runtime/mlform/shared";
 
 const busy = (retryAfter?: string) =>
@@ -36,8 +35,6 @@ const sealed = (modelId: number, age: unknown) => ({
   errorJson: null,
   attestation: `seal-${modelId}-${String(age)}`,
 });
-const bodyOf = (call: unknown[]) =>
-  JSON.parse((call[1] as RequestInit).body as string) as Record<string, unknown>;
 const target = { bookmarkId: 7, schemaVersionId: 3 };
 const fields = [{ id: "age", mappedTo: "age" }] as unknown as PredictionPayloadField[];
 
@@ -133,41 +130,5 @@ describe("runs wait out a busy server", () => {
 
     expect(((await attempt) as DOMException).name).toBe("AbortError");
     expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-
-  test("a batch sends each model its mapped records and answers each record's results in order", async () => {
-    fetchMock.mockImplementation(async (_url: string, init: RequestInit) => {
-      const { modelId, rows } = JSON.parse(init.body as string) as {
-        modelId: number;
-        rows: { age: number }[];
-      };
-      return ok({ results: rows.map((row) => sealed(modelId, row.age)) });
-    });
-
-    const results = await runSchemaBatch(target, [{ modelId: 1 }, { modelId: 2 }], fields, [
-      { age: 42 },
-      { age: 55 },
-    ]);
-
-    expect(fetchMock.mock.calls.map((call) => String(call[0]))).toEqual([
-      expect.stringContaining("/api/schema-bookmarks/7/predictions/batch"),
-      expect.stringContaining("/api/schema-bookmarks/7/predictions/batch"),
-    ]);
-    expect(fetchMock.mock.calls.map(bodyOf).map((body) => body.rows)).toEqual([
-      [{ age: 42 }, { age: 55 }],
-      [{ age: 42 }, { age: 55 }],
-    ]);
-    expect(results.map((row) => row.map((result) => result.attestation))).toEqual([
-      ["seal-1-42", "seal-2-42"],
-      ["seal-1-55", "seal-2-55"],
-    ]);
-  });
-
-  test("a batch answered with the wrong number of results fails as a whole", async () => {
-    fetchMock.mockResolvedValue(ok({ results: [sealed(1, 42)] }));
-
-    await expect(
-      runSchemaBatch(target, [{ modelId: 1 }], fields, [{ age: 42 }, { age: 55 }]),
-    ).rejects.toThrow("The server answered 1 of 2 records");
   });
 });

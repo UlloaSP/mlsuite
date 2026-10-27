@@ -16,8 +16,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.ModelRuntimeClient;
 import dev.ulloasp.mlsuite.model.application.service.WorkspaceRuntimeSlots;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
-import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionBatchDto;
-import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionBatchRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionDto;
 import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionRequest;
 import dev.ulloasp.mlsuite.schema.application.port.in.WorkspacePredictionUseCase;
@@ -26,13 +24,13 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultStatus;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Runs one bound model of a bookmark's snapshot for a member and seals what came back, for one
- * record or for a batch of a bulk upload's records. The member chooses the values; the server
+ * Runs one bound model of a bookmark's snapshot for a member and seals what came back, or runs
+ * many records of it for a bulk job (PredictionJobWorker). The member chooses the values; the server
  * performs the run and shapes its answer as every run stores it (PublicRunReports), so a saved
  * run holds only results the server produced. As on public pages, a plugin report is the
  * runtime's explanation of the prediction, asked for in the same run. A record the runtime
- * refuses, or a runtime that fails, gives a failed result, sealed the same way; in a batch each
- * record succeeds or fails on its own.
+ * refuses, or a runtime that fails, gives a failed result, sealed the same way; among many records
+ * each succeeds or fails on its own.
  *
  * <p>This class is deliberately not transactional, and its endpoints are left out of open-in-view
  * (see OpenInViewConfig): the run first takes its member's place in the workspace share's queue,
@@ -61,16 +59,6 @@ public class WorkspacePredictionService implements WorkspacePredictionUseCase {
         }
     }
 
-    @Override
-    public WorkspacePredictionBatchDto predictBatch(Long userId, Long bookmarkId,
-            WorkspacePredictionBatchRequest request) {
-        try (RuntimeSlots.Admission admission = slots.admit(userId)) {
-            Plan plan = planner.plan(userId, bookmarkId, request.schemaVersionId(), request.modelId());
-            List<AttestedPrediction> predictions = admission.run(() -> performBatch(plan, request.rows()));
-            return new WorkspacePredictionBatchDto(predictions.stream().map(this::sealed).toList());
-        }
-    }
-
     private WorkspacePredictionDto sealed(AttestedPrediction prediction) {
         return new WorkspacePredictionDto(prediction.modelId(), prediction.modelInput(), prediction.output(),
                 prediction.status(), prediction.errorMessage(), prediction.errorJson(), attestations.seal(prediction));
@@ -84,8 +72,12 @@ public class WorkspacePredictionService implements WorkspacePredictionUseCase {
         }
     }
 
-    /** The runtime answers each record in order: its reports, or the error it alone got. */
-    private List<AttestedPrediction> performBatch(Plan plan, List<Map<String, Object>> inputs) {
+    /**
+     * Runs many records of one model in one runtime call (a bulk job's chunk), with no slot taken:
+     * the caller holds one. The runtime answers each record in order: its reports, or the error it
+     * alone got.
+     */
+    public List<AttestedPrediction> predictRows(Plan plan, List<Map<String, Object>> inputs) {
         List<?> answers;
         try {
             Object rows = runtime.run("/predict/batch", plan.artifact(), Map.of("data", json(inputs))).get("rows");

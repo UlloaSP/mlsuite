@@ -102,11 +102,7 @@ export function BookmarkWorkspace({ bookmarkId }: { bookmarkId: string }) {
                 ) : null}
               </Link>
               {version && canRun ? (
-                <SchemaRunBulkUploadButton
-                  bookmarkId={bookmarkId}
-                  version={version}
-                  onResults={session.addResults}
-                />
+                <SchemaRunBulkUploadButton bookmarkId={bookmarkId} version={version} />
               ) : null}
               {bookmark ? (
                 <Link

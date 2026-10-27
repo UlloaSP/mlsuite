@@ -50,6 +50,11 @@ public class WorkspacePredictionPlanner {
     /** The run of {@code modelId} for the bookmark, whose form was built from {@code schemaVersionId}. */
     public Plan plan(Long userId, Long bookmarkId, Long schemaVersionId, Long modelId) {
         Long organizationId = authorizationService.requireCurrent(userId, PermissionKey.RUN_PREDICTIONS).getId();
+        return planFor(organizationId, bookmarkId, schemaVersionId, modelId);
+    }
+
+    /** The same run in a given organization, for work whose member was authorized when it started. */
+    public Plan planFor(Long organizationId, Long bookmarkId, Long schemaVersionId, Long modelId) {
         SchemaBookmark bookmark = bookmarkRepository.findByIdAndOrganizationId(bookmarkId, organizationId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema bookmark not found"));
         SchemaVersion version = bookmark.getVersion();

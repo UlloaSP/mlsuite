@@ -3,9 +3,9 @@ title: Bulk upload
 description: Run up to 10,000 records from a CSV or XLSX file, the columns it needs, how values are read, and how errors are reported.
 ---
 
-**Bulk upload** on a bookmark's run page runs every record of a CSV or XLSX file through the form,
-100 records at a time, and adds each batch's results to the [session](/predictions/run/#the-session).
-Nothing is saved until you save the entries, so you can check them first.
+**Bulk upload** on a bookmark's run page runs every record of a CSV or XLSX file on the server, as
+a job, and saves each record as a run in the bookmark's history. The file is read in your browser and
+its records are sent once; the job then goes on if you close the tab or reload the page.
 
 ## The file
 
@@ -37,13 +37,16 @@ batch-applicant-02,24,18500,true,0,1,0
 
 ## Run and check
 
-Choose **Bulk upload** and pick the file. The button shows the progress ("Bulk 200/4000") and
-turns into **Stop** while it runs; Stop cancels the batch in flight and keeps the rows already run.
-When it ends it summarizes the outcome, for example "3800 uploaded, 100 failed, 100 skipped", and
-names the reasons once rather than per row. A record a model refuses still joins the session, as a
-failed result; a batch the server could not run counts its rows as failed. When the server is busy
-the upload waits and tries again on its own. **Save all** then saves the entries in the order they
-ran, a hundred at a time.
+Choose **Bulk upload**, then **Upload a file**. The dialog lists the bookmark's uploads, newest
+first, each with its progress ("1200 of 3000 saved", how many failed and how many are still to run),
+who started it and when; the button counts the uploads still running. Uploads run 100 records at a
+time through the same share of the runtime as your other runs, and wait their turn when it is busy.
+
+A record is saved only when every model answered it. A record any model refused, or that could not
+be saved (its name is already used, for example), fails and keeps the reasons: **Show failures**
+lists them. **Cancel** stops an upload that is still running; the records already saved stay.
+**Retry failed rows** runs a finished upload's failed records again. Each member may have 2 uploads
+running at once, and an organization 4.
 
 A problem with the file as a whole refuses it before anything runs:
 

@@ -27,7 +27,7 @@ Limits marked *configurable* are defaults that an operator changes in
 | Bundle archive | 512 MiB, 100,000 features and 1,024 outputs (MLbundle) |
 | Schema name, description | 180, 800 characters |
 | Bookmark name, description, publication note | 180, 800, 1000 characters |
-| Bulk upload | 10,000 records per CSV or XLSX file |
+| Bulk upload | 10,000 records per CSV or XLSX file; 2 running per member, 4 per organization |
 | Column conditions in the Inferences filters | 100 |
 | Review expiry | Default 30 days after creation |
 

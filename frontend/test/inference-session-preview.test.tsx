@@ -73,7 +73,6 @@ const renderPreview = (
         unsavedCount: entries.length,
         onRunningChange: vi.fn(),
         onResult: vi.fn(),
-        addResults: vi.fn(),
         detachForm: vi.fn(),
         save: vi.fn(),
         saveAll: vi.fn(),
