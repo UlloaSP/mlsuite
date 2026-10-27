@@ -381,6 +381,28 @@ or a `pending` count that grows continuously. Cleanup workers use database lease
 so several API instances process disjoint tasks and an expired worker cannot
 complete or fail work reclaimed by another instance.
 
+### Sign-in and sessions
+
+- **Session cookie.** The session cookie is HttpOnly, SameSite=Lax and, unless
+  `SESSION_COOKIE_SECURE=false`, Secure: browsers send it only over HTTPS. They
+  treat `http://localhost` as secure, so local development needs no change; set
+  `false` only to use plain HTTP on another address.
+- **Session lifetime.** Signing in always continues under a new session id. A
+  session lasts only while its account is as it was at sign-in: once a superadmin
+  disables or deletes the account, resets its password or changes its system role,
+  the session ends on its next request, which receives `401 Unauthorized`.
+  Workspace roles and permissions are read on every request and apply at once
+  without ending the session.
+- **Throttling.** One client network may fail to sign in `AUTH_MAX_LOGIN_FAILURES`
+  times (default `10`) and attempt to register `AUTH_MAX_REGISTRATIONS` times
+  (default `5`) in the 15 minutes after its first counted attempt. Past either
+  limit it receives `429 Too Many Requests` with `Retry-After` until that window
+  ends, even with the right password. Successful sign-ins are not counted and do
+  not reset the failures. The network is the client address as for public runs
+  (see [Client address behind a proxy](#client-address-behind-a-proxy)). Counts
+  live in the API process memory: they restart with the API and are correct only
+  with a single API instance.
+
 ## Public bookmarks
 
 Public bookmarks run on the same runtime as every workspace, for visitors without

@@ -10,22 +10,23 @@ import { AuthField } from "./AuthField";
 export function AuthFormPanel({
   mode,
   locked,
-  failed,
+  failure,
   onModeChange,
   onSubmit,
 }: {
   mode: AuthMode;
   locked: boolean;
-  failed: boolean;
+  /** What to tell the visitor about the attempt that just failed, or null. */
+  failure: string | null;
   onModeChange: (mode: AuthMode) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
   const copy = AUTH_COPY[mode];
   const errorId = useId();
-  const field = { required: true, readOnly: locked, invalid: failed, errorId };
-  const error = failed ? (
+  const field = { required: true, readOnly: locked, invalid: failure !== null, errorId };
+  const error = failure ? (
     <p id={errorId} role="alert" className="mt-1 text-sm leading-[18px] text-danger-fg">
-      {copy.error}
+      {failure}
     </p>
   ) : null;
 

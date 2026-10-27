@@ -85,6 +85,18 @@ The public run counts are kept in the API's memory: they restart with the API an
 single API instance. The client API limits are counted from the request log, so they hold across
 restarts and instances.
 
+## Sign-in and sessions
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `SESSION_COOKIE_SECURE` | `true` | Send the session cookie only over HTTPS. Browsers treat `http://localhost` as secure; set `false` only for plain HTTP on another address. |
+| `AUTH_MAX_LOGIN_FAILURES` | `10` | Failed sign-ins one network may make in 15 minutes; past it every sign-in from it receives `429` until the window ends. At least 1. |
+| `AUTH_MAX_REGISTRATIONS` | `5` | Registration attempts one network may make in 15 minutes; more receive `429`. At least 1. |
+
+Like the public run counts, these are kept in the API's memory and hold only with a single API
+instance. A session ends on its next request once its account is disabled or deleted, or its
+password or system role changes.
+
 ## Operations agent
 
 | Variable | Default | Meaning |

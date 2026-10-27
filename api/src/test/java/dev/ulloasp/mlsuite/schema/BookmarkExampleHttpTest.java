@@ -60,6 +60,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmarkExample;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.security.SecurityConfig;
+import dev.ulloasp.mlsuite.security.auth.SessionAccountCheck;
 import dev.ulloasp.mlsuite.security.auth.AuthenticatedUserPrincipal;
 import dev.ulloasp.mlsuite.support.TestFixtures;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
@@ -79,7 +80,7 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationS
 @Import({ SecurityConfig.class, SchemaBookmarkServiceImpl.class, SchemaBookmarkExampleService.class,
         PublicBookmarkService.class, BookmarkPublishability.class, WorkspaceAuthorizationService.class })
 @MockitoBean(types = { PredictBookmarkCatalogUseCase.class, PublicPredictionUseCase.class, PublicRunUseCase.class, RestTemplate.class,
-        UserDetailsService.class, SchemaRepository.class, SchemaModelBindingRepository.class,
+        UserDetailsService.class, SessionAccountCheck.class, SchemaRepository.class, SchemaModelBindingRepository.class,
         RoleDefinitionRepository.class, ListPluginRuntimeSourcesUseCase.class })
 class BookmarkExampleHttpTest {
 
