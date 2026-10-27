@@ -40,11 +40,10 @@ public class InvitationCatalogService {
 
     public InvitationCatalogDto list(Long userId, Long organizationId, CatalogRequest request) {
         authorization.require(userId, organizationId, PermissionKey.VIEW_INVITATIONS);
-        boolean includeTokens = authorization.has(userId, organizationId, PermissionKey.MANAGE_INVITATIONS);
         Page<Invitation> page = invitationRepository.findAll(matching(organizationId, request),
                 CatalogPages.pageable(request, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id"))));
         return new InvitationCatalogDto(
-                page.getContent().stream().map(invitation -> InvitationDto.from(invitation, includeTokens)).toList(),
+                page.getContent().stream().map(InvitationDto::from).toList(),
                 page.getNumber(), page.getSize(), page.getTotalElements(), page.hasNext(),
                 invitationRepository.countByOrganizationId(organizationId));
     }
@@ -70,9 +69,7 @@ public class InvitationCatalogService {
                                 CatalogPages.likeLiteral(request.search()), '!')));
         Page<Invitation> page = invitationRepository.findAll(matching,
                 CatalogPages.pageable(request, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id"))));
-        // The token is the invitation link: an invitee joins only through the link they were sent.
-        return PageDto.of(page,
-                page.getContent().stream().map(invitation -> InvitationDto.from(invitation, false)).toList());
+        return PageDto.of(page, page.getContent().stream().map(InvitationDto::from).toList());
     }
 
     private Specification<Invitation> matching(Long organizationId, CatalogRequest request) {

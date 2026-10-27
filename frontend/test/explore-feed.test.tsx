@@ -360,7 +360,7 @@ describe("entry routing", () => {
 
   test.each([
     ["/models?sort=name", "/login?returnTo=%2Fmodels%3Fsort%3Dname"],
-    ["/invite/abc123", "/login?returnTo=%2Finvite%2Fabc123"],
+    ["/notifications", "/login?returnTo=%2Fnotifications"],
   ])("an anonymous visitor who opens %s is sent to sign in and back", async (entry, expected) => {
     const { host, url } = await open(entry);
 

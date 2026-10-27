@@ -19,7 +19,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -28,22 +27,18 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name = "invitation", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_invitation_token", columnNames = "token")
-})
+@Table(name = "invitation")
 public class Invitation {
 
     public Invitation(
             Organization organization,
             String email,
             RoleDefinition roleDefinition,
-            String token,
             User invitedBy,
             OffsetDateTime expiresAt) {
         this.organization = organization;
         this.email = email;
         this.roleDefinition = roleDefinition;
-        this.token = token;
         this.status = InvitationStatus.PENDING;
         this.invitedBy = invitedBy;
         this.expiresAt = expiresAt;
@@ -63,9 +58,6 @@ public class Invitation {
     @ManyToOne(optional = false)
     @JoinColumn(name = "role_definition_id", nullable = false, foreignKey = @ForeignKey(name = "fk_invitation_role_definition"))
     private RoleDefinition roleDefinition;
-
-    @Column(name = "token", nullable = false, length = 120)
-    private String token;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 32)

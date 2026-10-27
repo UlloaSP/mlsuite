@@ -3,7 +3,6 @@ package dev.ulloasp.mlsuite.invitation.application.usecase;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
-import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,9 +52,8 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     @Override
     public List<InvitationDto> listInvitations(Long userId, Long organizationId) {
         workspaceAuthorizationService.require(userId, organizationId, PermissionKey.VIEW_INVITATIONS);
-        boolean includeTokens = workspaceAuthorizationService.has(userId, organizationId, PermissionKey.MANAGE_INVITATIONS);
         return invitationRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId).stream()
-                .map(invitation -> InvitationDto.from(invitation, includeTokens))
+                .map(InvitationDto::from)
                 .toList();
     }
 
@@ -83,7 +81,6 @@ public class InvitationManagementService implements InvitationManagementUseCase 
                 organization,
                 request.email().strip().toLowerCase(),
                 roleDefinition,
-                UUID.randomUUID().toString(),
                 user,
                 OffsetDateTime.now(ZoneOffset.UTC).plusDays(7));
         Invitation saved = invitationRepository.save(invitation);
@@ -104,7 +101,6 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         if (invitation.getStatus() == InvitationStatus.ACCEPTED) {
             throw new IllegalArgumentException("Accepted invitation cannot be resent.");
         }
-        invitation.setToken(UUID.randomUUID().toString());
         invitation.setStatus(InvitationStatus.PENDING);
         invitation.setExpiresAt(OffsetDateTime.now(ZoneOffset.UTC).plusDays(7));
         Invitation saved = invitationRepository.save(invitation);
@@ -116,7 +112,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     public void revokeInvitation(Long userId, Long organizationId, Long invitationId) {
         workspaceAuthorizationService.require(userId, organizationId, PermissionKey.MANAGE_INVITATIONS);
         Invitation invitation = invitationRepository.findById(invitationId)
-                .orElseThrow(() -> new InvitationNotFoundException(invitationId.toString()));
+                .orElseThrow(() -> new InvitationNotFoundException(invitationId));
         if (!invitation.getOrganization().getId().equals(organizationId)) {
             throw new IllegalArgumentException("Invitation does not belong to organization.");
         }
@@ -139,43 +135,40 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     }
 
     @Override
-    public InvitationDto acceptInvitation(Long userId, String token) {
+    public InvitationDto acceptInvitation(Long userId, Long invitationId) {
         User user = userLookupService.requireById(userId);
-        Invitation invitation = requireOwnPendingInvitation(user, token);
+        Invitation invitation = requireOwnPendingInvitation(user, invitationId);
         acceptPendingInvitation(invitation, user);
         return InvitationDto.from(invitation);
     }
 
     @Override
-    public void declineInvitation(Long userId, String token) {
+    public void declineInvitation(Long userId, Long invitationId) {
         User user = userLookupService.requireById(userId);
-        Invitation invitation = requireOwnPendingInvitation(user, token);
+        Invitation invitation = requireOwnPendingInvitation(user, invitationId);
         invitation.setStatus(InvitationStatus.REVOKED);
         invitationRepository.save(invitation);
     }
 
-    /**
-     * The invitations addressed to the user's email, without their links. MLsuite verifies no
-     * email address, so whoever registered an address first would otherwise read its invitations'
-     * tokens and join: an invitee joins only with the link the inviter sends them.
-     */
     @Override
     public List<InvitationDto> listPendingForUser(Long userId) {
         User user = userLookupService.requireById(userId);
         return invitationRepository.findByEmailAndStatusOrderByCreatedAtDesc(user.getEmail().toLowerCase(), InvitationStatus.PENDING)
                 .stream()
                 .filter(inv -> inv.getExpiresAt().isAfter(OffsetDateTime.now(ZoneOffset.UTC)))
-                .map(inv -> InvitationDto.from(inv, false))
+                .map(InvitationDto::from)
                 .toList();
     }
 
     /**
-     * Only the invitee may answer an invitation, holding its link (the token), and only while it
-     * is pending and unexpired.
+     * Only the account with the invited email may answer an invitation, and only while it is
+     * pending and unexpired. Anyone else's invitation does not exist for them, so its id reveals
+     * nothing.
      */
-    private Invitation requireOwnPendingInvitation(User user, String token) {
-        Invitation invitation = invitationRepository.findByToken(token)
-                .orElseThrow(() -> new InvitationNotFoundException(token));
+    private Invitation requireOwnPendingInvitation(User user, Long invitationId) {
+        Invitation invitation = invitationRepository.findById(invitationId)
+                .filter(found -> user.getEmail().equalsIgnoreCase(found.getEmail()))
+                .orElseThrow(() -> new InvitationNotFoundException(invitationId));
         if (invitation.getStatus() != InvitationStatus.PENDING) {
             throw new IllegalArgumentException("Invitation is not pending.");
         }
@@ -183,9 +176,6 @@ public class InvitationManagementService implements InvitationManagementUseCase 
             invitation.setStatus(InvitationStatus.EXPIRED);
             invitationRepository.save(invitation);
             throw new IllegalArgumentException("Invitation expired.");
-        }
-        if (!user.getEmail().equalsIgnoreCase(invitation.getEmail())) {
-            throw new IllegalArgumentException("Invitation email does not match current user.");
         }
         return invitation;
     }
@@ -213,7 +203,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
 
     private Invitation requireOrganizationInvitation(Long organizationId, Long invitationId) {
         Invitation invitation = invitationRepository.findById(invitationId)
-                .orElseThrow(() -> new InvitationNotFoundException(invitationId.toString()));
+                .orElseThrow(() -> new InvitationNotFoundException(invitationId));
         if (!invitation.getOrganization().getId().equals(organizationId)) {
             throw new IllegalArgumentException("Invitation does not belong to organization.");
         }

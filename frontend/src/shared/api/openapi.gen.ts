@@ -516,7 +516,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/invitations/{token}/accept": {
+    "/api/invitations/{invitationId}/accept": {
         parameters: {
             query?: never;
             header?: never;
@@ -532,7 +532,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/invitations/{token}/decline": {
+    "/api/invitations/{invitationId}/decline": {
         parameters: {
             query?: never;
             header?: never;
@@ -2967,7 +2967,6 @@ export interface components {
             roleDefinition: components["schemas"]["RoleSummaryDto"];
             /** @enum {string} */
             status: "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED";
-            token: string | null;
         };
         IssuedApiClientKeyDto: {
             key: components["schemas"]["ApiClientKeyDto"];
@@ -5384,7 +5383,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                token: string;
+                invitationId: number;
             };
             cookie?: never;
         };
@@ -5406,7 +5405,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                token: string;
+                invitationId: number;
             };
             cookie?: never;
         };

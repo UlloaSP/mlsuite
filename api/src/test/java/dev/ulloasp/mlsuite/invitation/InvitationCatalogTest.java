@@ -1,6 +1,5 @@
 package dev.ulloasp.mlsuite.invitation;
 
-import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -65,7 +64,7 @@ class InvitationCatalogTest extends PublicPredictionFixture {
                 .andExpect(jsonPath("$.items.length()").value(24))
                 .andExpect(jsonPath("$.hasNext").value(true))
                 .andExpect(jsonPath("$.items[0].email").value("guest-%s-00@test.example".formatted(mark)))
-                .andExpect(jsonPath("$.items[0].token").isString());
+                .andExpect(jsonPath("$.items[0].token").doesNotExist());
         mockMvc.perform(asOwner(get(path).param("size", "24").param("page", "1")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items.length()").value(6))
@@ -88,11 +87,8 @@ class InvitationCatalogTest extends PublicPredictionFixture {
         mockMvc.perform(asOwner(get(path).param("search", "%")))
                 .andExpect(jsonPath("$.totalItems").value(0));
 
-        // Reading invitations does not show the tokens that accept them; managing them does.
         grantOwner(PermissionKey.VIEW_INVITATIONS);
-        mockMvc.perform(asOwner(get(path)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.items[0].token").value(nullValue()));
+        mockMvc.perform(asOwner(get(path))).andExpect(status().isOk());
         grantOwner(PermissionKey.INVITE_MEMBERS);
         mockMvc.perform(asOwner(get(path))).andExpect(status().isForbidden());
     }
@@ -156,7 +152,7 @@ class InvitationCatalogTest extends PublicPredictionFixture {
         mockMvc.perform(asOwner(get(path)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalItems").value(2))
-                .andExpect(jsonPath("$.items[0].token").isEmpty());
+                .andExpect(jsonPath("$.items[0].token").doesNotExist());
         mockMvc.perform(asOwner(get(path).param("size", "1").param("page", "1")))
                 .andExpect(jsonPath("$.items.length()").value(1))
                 .andExpect(jsonPath("$.hasNext").value(false));
@@ -182,7 +178,7 @@ class InvitationCatalogTest extends PublicPredictionFixture {
     }
 
     private Invitation invitation(Organization target, String email) {
-        return new Invitation(target, email, ownerRole, UUID.randomUUID().toString(), owner, nextWeek);
+        return new Invitation(target, email, ownerRole, owner, nextWeek);
     }
 
     private void grantOwner(PermissionKey permission) {
