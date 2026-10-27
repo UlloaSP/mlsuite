@@ -75,5 +75,7 @@ or reports. To update a plugin, delete it and upload the new file.
 
 :::caution
 Plugin code runs in the browser of everyone who opens a form that uses it, including visitors of
-public pages. Give **Manage plugins** only to people you trust.
+public pages. MLsuite runs it inside a sandboxed frame with no access to your session, storage, or
+the API, so a hostile plugin cannot act as the viewer; but it still runs on their device and draws
+in their browser. Give **Manage plugins** only to people you trust.
 :::
