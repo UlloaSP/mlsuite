@@ -121,7 +121,9 @@ On Windows PowerShell, use `Set-Location mlsuite` and `Copy-Item .env.example .e
 
 Open `.env` and give every blank secret its own value, especially `DB_PASS`,
 `STORAGE_SECRET_KEY`, `OPS_AGENT_SHARED_SECRET` and `MLSUITE_SUPERADMIN_PASSWORD`.
-Keep `.env` private; commit only sanitized defaults to `.env.example`.
+The ops-agent controls the host's Docker and refuses to start without
+`OPS_AGENT_SHARED_SECRET`. Keep `.env` private; commit only sanitized defaults to
+`.env.example`.
 
 Start the development stack:
 

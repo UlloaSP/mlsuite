@@ -90,7 +90,7 @@ restarts and instances.
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `OPS_AGENT_BASE_URL` | `http://ops-agent:8091` | How the API reaches the agent. |
-| `OPS_AGENT_SHARED_SECRET` | | Shared by the API and the agent. Always set it. |
+| `OPS_AGENT_SHARED_SECRET` | | Shared by the API and the agent. Required: the agent refuses to start without it. |
 | `OPS_AGENT_HOST`, `OPS_AGENT_PORT` | `0.0.0.0`, `8091` | Agent bind address. |
 | `OPS_AGENT_DOCKER_BIN` | `docker` | Docker CLI. |
 | `OPS_AGENT_COMPOSE_PROJECT` | `mlsuite` | Must match the project the stack runs under. |
