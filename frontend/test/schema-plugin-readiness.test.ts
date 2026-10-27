@@ -9,6 +9,7 @@ import { createForm, executeFormPipeline } from "mlform/runtime";
 import { z } from "zod";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
+import { RUN_TARGET, workspacePrediction } from "./support/api-fixtures";
 
 const stringMeta = (value: unknown): string =>
   typeof value === "string" || typeof value === "number" ? String(value) : "";
@@ -63,6 +64,7 @@ describe("schema plugin readiness failures", () => {
   test("missing active catalog definition fails before submit", () => {
     expect(() =>
       createSchemaRunRuntime({
+        target: RUN_TARGET,
         schema: {
           fields: [],
           reports: [{ id: "crystal", kind: "Crystal Tree" }],
@@ -76,11 +78,12 @@ describe("schema plugin readiness failures", () => {
   test("schema without Crystal Tree report never calls explanations", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(
-        async () => new Response(JSON.stringify({ reports: [{ mappedTo: "risk", value: 1 }] })),
+      vi.fn(async (_url: string, init?: RequestInit) =>
+        workspacePrediction(init, [{ mappedTo: "risk", value: 1 }]),
       ),
     );
     const runtime = createSchemaRunRuntime({
+      target: RUN_TARGET,
       schema: {
         fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
@@ -106,10 +109,11 @@ describe("schema plugin readiness failures", () => {
   test("custom report without mappedTo fails before submit", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ reports: [] }))),
+      vi.fn(async (_url: string, init?: RequestInit) => workspacePrediction(init)),
     );
     expect(() =>
       createSchemaRunRuntime({
+        target: RUN_TARGET,
         schema: {
           fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
           reports: [{ id: "crystal", source: "crystal", kind: "Crystal Tree" }],
@@ -123,12 +127,13 @@ describe("schema plugin readiness failures", () => {
   test("normalized report ids still map and call explanations", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.includes("/predictions")) return workspacePrediction(init);
         return new Response(JSON.stringify({ reports: [{ explanation: "ok" }] }));
       }),
     );
     const runtime = createSchemaRunRuntime({
+      target: RUN_TARGET,
       schema: {
         fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
@@ -152,12 +157,13 @@ describe("schema plugin readiness failures", () => {
   test("numeric backend ids still call explanations with string modelId", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.includes("/predictions")) return workspacePrediction(init);
         return new Response(JSON.stringify({ reports: [{ explanation: "ok" }] }));
       }),
     );
     const runtime = createSchemaRunRuntime({
+      target: RUN_TARGET,
       schema: {
         fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [

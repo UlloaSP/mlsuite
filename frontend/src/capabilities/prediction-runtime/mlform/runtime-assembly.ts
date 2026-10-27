@@ -13,7 +13,10 @@ import type {
 } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 import { toMlformSchema } from "@/capabilities/prediction-runtime/mlform/schema-validation";
 import type { PredictionPayloadField } from "@/capabilities/prediction-runtime/mlform/shared";
-import { createSchemaRunTransport } from "@/capabilities/prediction-runtime/mlform/run-transport";
+import {
+  createSchemaRunTransport,
+  type SchemaRunTarget,
+} from "@/capabilities/prediction-runtime/mlform/run-transport";
 import { prepareRuntimeReports } from "@/capabilities/prediction-runtime/mlform/runtime-report-targets";
 
 type Binding = {
@@ -23,6 +26,8 @@ type Binding = {
 };
 
 type Options = {
+  /** The bookmark and snapshot whose models the transport runs. */
+  target: SchemaRunTarget;
   schema: unknown;
   bindings: readonly Binding[];
   customFieldDefinitions?: readonly CatalogFieldDefinition[];
@@ -56,6 +61,7 @@ export const createRunRegistries = (
 };
 
 export const createSchemaRunRuntime = ({
+  target,
   schema,
   bindings,
   customFieldDefinitions = [],
@@ -72,7 +78,7 @@ export const createSchemaRunRuntime = ({
     formSchema,
     registry: pack.registry,
     descriptorRegistry: pack.descriptorRegistry,
-    transport: createSchemaRunTransport(bindings, normalizedFields),
+    transport: createSchemaRunTransport(target, bindings, normalizedFields),
     normalizedFields,
   };
 };

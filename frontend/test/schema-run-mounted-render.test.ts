@@ -10,6 +10,7 @@ import { defineReportKind } from "mlform/view";
 import { z } from "zod";
 import { mountSchemaRunForm } from "@/capabilities/prediction-runtime/mlform/schema-run-mount";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
+import { RUN_TARGET, workspacePrediction } from "./support/api-fixtures";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -59,15 +60,15 @@ describe("schema run mounted render", () => {
   test("renders fields before reports and emits display inputs", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(
-        async () =>
-          new Response(JSON.stringify({ reports: [{ mappedTo: "prediction", value: 1 }] })),
+      vi.fn(async (_url: string, init?: RequestInit) =>
+        workspacePrediction(init, [{ mappedTo: "prediction", value: 1 }]),
       ),
     );
     const container = document.createElement("div");
     document.body.append(container);
     const submitted: Record<string, unknown>[] = [];
     const mounted = mountSchemaRunForm({
+      target: RUN_TARGET,
       container,
       schema: {
         fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
@@ -97,19 +98,17 @@ describe("schema run mounted render", () => {
   test("renders direct-target reports when binding model name is absent", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(
-        async () =>
-          new Response(
-            JSON.stringify({
-              reports: [{ mappedTo: "predicted", prediction: "0", probabilities: [0.25, 0.75] }],
-            }),
-          ),
+      vi.fn(async (_url: string, init?: RequestInit) =>
+        workspacePrediction(init, [
+          { mappedTo: "predicted", prediction: "0", probabilities: [0.25, 0.75] },
+        ]),
       ),
     );
     const container = document.createElement("div");
     document.body.append(container);
     const updates: Array<{ raw: Record<string, unknown>; pending: boolean }> = [];
     const mounted = mountSchemaRunForm({
+      target: RUN_TARGET,
       container,
       schema: {
         fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
@@ -131,7 +130,11 @@ describe("schema run mounted render", () => {
 
     expect(updates.at(-1)?.pending).toBe(false);
     expect(updates.at(-1)?.raw.reports).toMatchObject([
-      { mappedTo: "predicted", prediction: "0", probabilities: [0.25, 0.75] },
+      {
+        mappedTo: "predicted",
+        status: "ready",
+        payload: { prediction: "0", probabilities: [0.25, 0.75] },
+      },
     ]);
     mounted.unmount();
   });
@@ -139,8 +142,8 @@ describe("schema run mounted render", () => {
   test("mounted submit fetches schema plugin reports", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.includes("/predictions")) return workspacePrediction(init);
         return new Response(JSON.stringify({ explanation: "ok" }));
       }),
     );
@@ -148,6 +151,7 @@ describe("schema run mounted render", () => {
     document.body.append(container);
     const updates: Array<{ raw: Record<string, unknown>; pending: boolean }> = [];
     const mounted = mountSchemaRunForm({
+      target: RUN_TARGET,
       container,
       schema: {
         fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
@@ -171,8 +175,16 @@ describe("schema run mounted render", () => {
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
     expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=1"))).toBe(true);
     expect(updates.at(-1)?.pending).toBe(false);
-    expect(updates.at(-1)?.raw.reports).toMatchObject([
-      { id: "crystal", mappedTo: "crystal-tree", payload: { explanation: "ok" } },
+    // The browser's payload is only shown: the run keeps the server's result as sealed.
+    expect(mounted.form.state.reportStates).toMatchObject({
+      crystal: { status: "ready", payload: { explanation: "ok" } },
+    });
+    expect(updates.at(-1)?.raw.results).toEqual([
+      expect.objectContaining({
+        modelId: 1,
+        attestation: "seal-1",
+        output: expect.objectContaining({ reports: [] }),
+      }),
     ]);
     mounted.unmount();
   });
@@ -180,8 +192,8 @@ describe("schema run mounted render", () => {
   test("mounted submit fetches Crystal Tree when schema report id differs from plugin id", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.includes("/predictions")) return workspacePrediction(init);
         return new Response(JSON.stringify({ explanation: "ok" }));
       }),
     );
@@ -189,6 +201,7 @@ describe("schema run mounted render", () => {
     document.body.append(container);
     const updates: Array<{ raw: Record<string, unknown>; pending: boolean }> = [];
     const mounted = mountSchemaRunForm({
+      target: RUN_TARGET,
       container,
       schema: {
         fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
@@ -219,8 +232,16 @@ describe("schema run mounted render", () => {
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
     expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=1"))).toBe(true);
     expect(updates.at(-1)?.pending).toBe(false);
-    expect(updates.at(-1)?.raw.reports).toMatchObject([
-      { id: "report-2", mappedTo: "crystal-tree", payload: { explanation: "ok" } },
+    // The browser's payload is only shown: the run keeps the server's result as sealed.
+    expect(mounted.form.state.reportStates).toMatchObject({
+      "report-2": { status: "ready", payload: { explanation: "ok" } },
+    });
+    expect(updates.at(-1)?.raw.results).toEqual([
+      expect.objectContaining({
+        modelId: 1,
+        attestation: "seal-1",
+        output: expect.objectContaining({ reports: [] }),
+      }),
     ]);
     mounted.unmount();
   });
@@ -228,8 +249,8 @@ describe("schema run mounted render", () => {
   test("mounted submit passes numeric backend model ids to strict plugins as strings", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.includes("/predictions")) return workspacePrediction(init);
         return new Response(JSON.stringify({ explanation: "ok" }));
       }),
     );
@@ -237,6 +258,7 @@ describe("schema run mounted render", () => {
     document.body.append(container);
     const updates: Array<{ raw: Record<string, unknown>; pending: boolean }> = [];
     const mounted = mountSchemaRunForm({
+      target: RUN_TARGET,
       container,
       schema: {
         fields: [

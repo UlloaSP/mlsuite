@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { describe, expect, test, vi } from "vite-plus/test";
 import { createSchemaRunTransport } from "@/capabilities/prediction-runtime/mlform/run-transport";
 import { toSchemaRunFieldValues } from "@/features/schemas/lib/bulk-upload";
-import { binding, schemaVersion } from "./support/api-fixtures";
+import { binding, schemaVersion, RUN_TARGET, workspacePrediction } from "./support/api-fixtures";
 
 const version = schemaVersion({
   version: 1,
@@ -45,9 +45,10 @@ describe("schema one-hot select values", () => {
   test("submit expands selected value to mapped one-hot columns", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ reports: [] }))),
+      vi.fn(async (_url: string, init?: RequestInit) => workspacePrediction(init)),
     );
     const transport = createSchemaRunTransport(
+      RUN_TARGET,
       version.bindings,
       version.formSchema.fields as never,
     );

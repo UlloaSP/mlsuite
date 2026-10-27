@@ -54,7 +54,7 @@ class SchemaReadPermissionTest {
         schemaService = new SchemaServiceImpl(users, schemas, versions, bindings, runs,
                 mock(SchemaReviewRepository.class), auth, drafts, bookmarks);
         versionService = new SchemaVersionServiceImpl(users, schemas, versions, bindings,
-                mock(ModelRepository.class), drafts, auth);
+                mock(ModelRepository.class), auth);
         draftService = new SchemaDraftServiceImpl(users, schemas, versions, drafts,
                 mock(SchemaVersionUseCase.class), mock(SchemaDraftDiffService.class),
                 mock(SchemaDraftPublishedVersionResolver.class), auth);
@@ -62,8 +62,8 @@ class SchemaReadPermissionTest {
                 new BookmarkPublishability(bindings, 50));
         predictCatalog = new PredictBookmarkCatalogService(auth, bookmarks, versions, bindings, runs);
         runService = new PredictionRunServiceImpl(users, bookmarks, bindings, runs, results, feedback,
-                mock(ModelRepository.class), auth);
-        feedbackService = new PredictionResultFeedbackService(users, auth, results, feedback, runs);
+                mock(ModelRepository.class), auth, mock(PredictionAttestations.class));
+        feedbackService = new PredictionResultFeedbackService(auth, results, feedback, runs);
     }
 
     @ParameterizedTest

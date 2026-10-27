@@ -15,12 +15,10 @@ import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
-import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaDraftRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaModelBindingRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaVersionRequest;
-import dev.ulloasp.mlsuite.schema.application.dto.SchemaModelBindingDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaVersionUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
@@ -41,7 +39,6 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
     private final SchemaVersionRepository versionRepository;
     private final SchemaModelBindingRepository bindingRepository;
     private final ModelRepository modelRepository;
-    private final SchemaDraftRepository draftRepository;
     private final WorkspaceAuthorizationService authorizationService;
 
     @Override
@@ -70,20 +67,6 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
     public SchemaVersion getVersion(Long userId, Long versionId) {
         Long organizationId = requireRead(userId);
         return requireVersion(versionId, organizationId);
-    }
-
-    @Override
-    public SchemaModelBinding addBinding(Long userId, Long versionId, CreateSchemaModelBindingRequest request) {
-        User user = userLookupService.requireById(userId);
-        Long organizationId = requireOperate(userId);
-        SchemaVersion version = requireVersion(versionId, organizationId);
-        requireSchemaForUpdate(version.getSchema().getId(), organizationId);
-        if (bindingRepository.findBinding(versionId, request.modelId()).isPresent()) {
-            throw badRequest("Binding already exists");
-        }
-        freezeLegacyDraftBindings(versionId);
-        touch(version.getSchema(), user);
-        return saveBinding(organizationId, version, request);
     }
 
     @Override
@@ -116,13 +99,6 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
                 .orElseThrow(() -> badRequest("Model unavailable"));
         return bindingRepository.save(new SchemaModelBinding(version, model,
                 req.pluginPolicy() == null ? Map.of() : req.pluginPolicy()));
-    }
-
-    private void freezeLegacyDraftBindings(Long versionId) {
-        List<Map<String, Object>> snapshot =
-                SchemaModelBindingDto.toDraftBindings(bindingRepository.findBySchemaVersionId(versionId));
-        draftRepository.findByBaseVersionIdAndBaseBindingsIsNull(versionId)
-                .forEach(draft -> draft.setBaseBindings(snapshot));
     }
 
     private Schema requireSchemaForUpdate(Long schemaId, Long organizationId) {

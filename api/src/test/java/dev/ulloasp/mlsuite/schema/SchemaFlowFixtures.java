@@ -4,20 +4,11 @@ import java.util.List;
 import java.util.Map;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
-import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultRequest;
 import dev.ulloasp.mlsuite.schema.domain.model.*;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
 final class SchemaFlowFixtures {
     private SchemaFlowFixtures() {}
-    static CreatePredictionResultRequest result(Long modelId, PredictionResultStatus status) {
-        return new CreatePredictionResultRequest(modelId, Map.of("age", 52),
-                status == PredictionResultStatus.SUCCESS ? Map.of("reports", List.of()) : Map.of(),
-                status,
-                status == PredictionResultStatus.FAILED ? "failed" : null,
-                status == PredictionResultStatus.FAILED ? Map.of("status", 500) : null);
-    }
-
     static Map<String, Object> formSchema() {
         return Map.of("fields", List.of(Map.of("id", "age", "kind", "number", "label", "Age")));
     }

@@ -18,7 +18,10 @@ import dev.ulloasp.mlsuite.schema.application.dto.InferenceTableDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunCatalogItemDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunSequenceDto;
+import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionDto;
+import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionRequest;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionRunUseCase;
+import dev.ulloasp.mlsuite.schema.application.port.in.WorkspacePredictionUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import jakarta.validation.Valid;
@@ -30,7 +33,14 @@ import lombok.RequiredArgsConstructor;
 public class PredictionRunController {
 
     private final PredictionRunUseCase predictionRunUseCase;
+    private final WorkspacePredictionUseCase workspacePredictionUseCase;
     private final PredictionResultRepository resultRepository;
+
+    @PostMapping("/schema-bookmarks/{bookmarkId}/predictions")
+    public ResponseEntity<WorkspacePredictionDto> predictForBookmark(CurrentUser user,
+            @PathVariable Long bookmarkId, @Valid @RequestBody WorkspacePredictionRequest request) {
+        return ResponseEntity.ok(workspacePredictionUseCase.predict(user.userId(), bookmarkId, request));
+    }
 
     @PostMapping("/schema-bookmarks/{bookmarkId}/runs")
     public ResponseEntity<PredictionRunDto> createForBookmark(CurrentUser user,

@@ -1,9 +1,12 @@
+import type { SchemaRunTarget } from "@/capabilities/prediction-runtime/mlform/run-transport";
 import type {
   PredictionResultDto,
   PredictionResultFeedbackDto,
   PredictionRunDto,
   SchemaModelBindingDto,
   SchemaVersionDto,
+  WorkspacePredictionDto,
+  WorkspacePredictionRequest,
 } from "@/shared/api/openapi.gen";
 
 /** API DTO fixtures with every contract field present; tests override what they exercise. */
@@ -80,3 +83,34 @@ export const resultFeedback = (
   updatedAt: AT,
   ...overrides,
 });
+
+/** The bookmark and snapshot a test form runs; the API runs each model for them. */
+export const RUN_TARGET: SchemaRunTarget = { bookmarkId: 70, schemaVersionId: 1 };
+
+/** What the form asked the API to predict, read from `fetch`'s second argument. */
+export const predictionRequest = (request: RequestInit | undefined): WorkspacePredictionRequest =>
+  JSON.parse(typeof request?.body === "string" ? request.body : "{}") as WorkspacePredictionRequest;
+
+/**
+ * The API's answer to a workspace prediction (`fetch`'s second argument is the request): the
+ * model's reports as a run stores them, with the meta the server records, and a seal. With
+ * `refusal`, the model refused the record and the answer is a failed result.
+ */
+export const workspacePrediction = (
+  request: RequestInit | undefined,
+  reports: readonly unknown[] = [],
+  refusal?: string,
+): Response => {
+  const { modelId, modelInput } = predictionRequest(request);
+  const meta = { modelId: String(modelId), backendFieldValues: modelInput };
+  const prediction: WorkspacePredictionDto = {
+    modelId,
+    modelInput,
+    output: refusal === undefined ? { reports, meta } : { meta },
+    status: refusal === undefined ? "SUCCESS" : "FAILED",
+    errorMessage: refusal ?? null,
+    errorJson: refusal === undefined ? null : { status: 422, message: refusal },
+    attestation: `seal-${modelId}`,
+  };
+  return Response.json(prediction);
+};

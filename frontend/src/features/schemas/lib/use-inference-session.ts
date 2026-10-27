@@ -11,11 +11,11 @@ import { useUser } from "@/capabilities/workspace-context/session";
 import { useCreatePredictionRunForBookmarkMutation } from "@/features/schemas/api/schema-prediction-mutations";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
 import { inferenceSessionsAtom, type SessionEntry } from "./inference-session-store";
-import type { CreatePredictionRunRequest, PredictionRunDto } from "@/shared/api/openapi.gen";
+import type { PredictionRunDto, WorkspacePredictionDto } from "@/shared/api/openapi.gen";
 
 export type { SessionEntry } from "./inference-session-store";
 
-type Results = CreatePredictionRunRequest["results"];
+type Results = WorkspacePredictionDto[];
 
 const createRunName = () => `run-${new Date().toISOString()}`;
 
@@ -159,7 +159,7 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
           schemaVersionId: entry.schemaVersionId,
           name: entry.name.trim(),
           inputData: mergeSchemaRunInputs(entry.inputData, entry.results),
-          results: entry.results,
+          results: entry.results.map(({ attestation }) => ({ attestation })),
         });
         update(entry.key, { state: "saved", savedRunId: run.id });
         return true;

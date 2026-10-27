@@ -5,6 +5,7 @@ import { validateCustomFieldSource } from "@/capabilities/prediction-runtime/plu
 import { validateCustomReportSource } from "@/capabilities/prediction-runtime/plugins/custom-report-source-runtime";
 import { invalidatePluginRuntimeCache } from "@/capabilities/prediction-runtime/plugins/plugin-runtime-cache";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
+import { RUN_TARGET } from "./support/api-fixtures";
 
 let moduleSource = "";
 const revokeObjectURL = vi.fn<(url: string) => void>();
@@ -67,6 +68,7 @@ describe("MLForm plugin source runtime", () => {
       sizeBytes: 1,
     };
     const runtime = createSchemaRunRuntime({
+      target: RUN_TARGET,
       schema: {
         fields: [{ kind: field.kind, label: "Score", mappedTo: "score" }],
         reports: [{ kind: report.kind, mappedTo: "summary" }],

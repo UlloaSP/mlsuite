@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useEffect } from "react";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
-import type { CreatePredictionRunRequest } from "@/shared/api/openapi.gen";
+import type { WorkspacePredictionDto } from "@/shared/api/openapi.gen";
 
 /**
  * One execution of a bookmark's form. It stays local until saved; saving
@@ -19,7 +19,8 @@ export type SessionEntry = {
   name: string;
   state: "running" | "ready" | "saving" | "saved";
   inputData: JsonRecord;
-  results: CreatePredictionRunRequest["results"];
+  /** What the server predicted for each model; saving sends back only their seals. */
+  results: WorkspacePredictionDto[];
   /** Reports still resolving; the entry cannot be saved until they finish. */
   reportsPending: boolean;
   createdAt: string;

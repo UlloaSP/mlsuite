@@ -29,6 +29,7 @@ const INITIAL = {
 const MAX_RECORDS = 10000;
 
 export function useSchemaRunBulkUpload(
+  bookmarkId: string,
   version: SchemaVersionDto,
   onResult: ReturnType<typeof useInferenceSession>["addResult"],
 ) {
@@ -76,6 +77,7 @@ export function useSchemaRunBulkUpload(
         return;
       }
       const runtime = createSchemaRunRuntime({
+        target: { bookmarkId, schemaVersionId: version.id },
         schema: version.formSchema,
         bindings: version.bindings,
         customFieldDefinitions: catalog.fieldDefinitions,

@@ -56,16 +56,6 @@ class AnalyzerControllerTest {
     }
 
     @Test
-    void predict_UsesInternalUserId() {
-        when(analyzerUseCase.predict(5L, 11L, Map.of("x", 1))).thenReturn(Map.of("prediction", 1));
-
-        ResponseEntity<Map<String, Object>> response = controller.predict(user, 11L, Map.of("x", 1));
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(analyzerUseCase).predict(5L, 11L, Map.of("x", 1));
-    }
-
-    @Test
     void explain_PropagatesAnalyzerErrors() {
         ExplainRequest requestBody = new ExplainRequest(Map.of("feature", 1), null);
         when(analyzerUseCase.explain(5L, 11L, requestBody))
