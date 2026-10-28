@@ -57,6 +57,12 @@ export const restoreModel = ({ id, version }: ModelVersionRequest): Promise<Mode
     method: "POST",
   });
 
+/** Prepares again the environment of a model whose preparation failed; it answers PREPARING. */
+export const retryModelEnvironment = (id: number | string): Promise<ModelDto> =>
+  appFetch<ModelDto>(`/api/models/${encodeURIComponent(id)}/environment/retry`, {
+    method: "POST",
+  });
+
 export const deleteModel = async ({ id, version }: ModelVersionRequest): Promise<void> => {
   await appFetch(`/api/models/${encodeURIComponent(id)}?version=${version}`, { method: "DELETE" });
 };

@@ -62,6 +62,7 @@ const model = {
   fileName: "risk.mlbundle",
   updatedAt: "2026-10-13T12:00:00Z",
   updatedByName: "Owner",
+  runtimeState: "READY",
   inputSchema: {
     source: "training_data",
     fields: [
@@ -91,6 +92,13 @@ const details: ModelDetailsDto = {
   ],
   sizeBytes: 4096,
   sha256: "abc123",
+  environment: {
+    key: "py3.14-mlbundle0.2.1",
+    legacy: true,
+    pythonVersion: "3.14",
+    writerVersion: "0.2.1",
+    packages: [],
+  },
 };
 
 test("a pipeline is read as its steps, ending in the estimator that predicts", () => {

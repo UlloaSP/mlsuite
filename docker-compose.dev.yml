@@ -14,11 +14,13 @@ services:
     environment:
       OPS_AGENT_COMPOSE_FILES: /workspace/docker-compose.yml,/workspace/docker-compose.dev.yml
 
-  py-analyzer:
+  py-analyzer: &backend-dev
     image: mlsuite-sklearn-backend:dev
     build:
       context: ./backend
       dockerfile: ./Dockerfile
+
+  runtime-builder: *backend-dev
 
   db-migrate: *api-dev
   artifact-migrate: *api-dev

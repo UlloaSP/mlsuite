@@ -14,7 +14,7 @@ import dev.ulloasp.mlsuite.schema.application.service.PublicForm.ReportRoute;
 import dev.ulloasp.mlsuite.schema.domain.model.BoundModel;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
-import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
+import dev.ulloasp.mlsuite.model.application.runtime.RunnableModel;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import lombok.RequiredArgsConstructor;
 
@@ -34,11 +34,11 @@ public class WorkspacePredictionPlanner {
     private final ModelRepository modelRepository;
 
     /** One bound model's run for an organization's snapshot, with the snapshot's report routes. */
-    public record Plan(Long organizationId, Long schemaVersionId, ModelArtifactReference artifact,
+    public record Plan(Long organizationId, Long schemaVersionId, RunnableModel model,
             List<ReportRoute> routes) {
 
         public Long modelId() {
-            return artifact.modelId();
+            return model.modelId();
         }
 
         /** A plugin report of this model is the runtime's explanation, asked for in the same run. */
@@ -64,9 +64,9 @@ public class WorkspacePredictionPlanner {
         }
         List<BoundModel> models = publishability.models(version);
         if (models.stream().noneMatch(model -> model.id().equals(modelId))) throw notBound();
-        ModelArtifactReference artifact = modelRepository.findArtifactReference(modelId, organizationId)
+        RunnableModel model = modelRepository.findRunnableModel(modelId, organizationId)
                 .orElseThrow(WorkspacePredictionPlanner::notBound);
-        return new Plan(organizationId, version.getId(), artifact,
+        return new Plan(organizationId, version.getId(), model,
                 PublicForm.of(version.getFormSchema(), models).reportRoutes());
     }
 

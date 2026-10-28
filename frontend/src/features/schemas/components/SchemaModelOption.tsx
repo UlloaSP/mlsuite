@@ -9,6 +9,7 @@ import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { getModelAlgorithmLabel } from "@/capabilities/prediction-runtime/data/model-utils";
+import { ModelRuntimeBadge } from "@/capabilities/prediction-runtime/data/ModelRuntimeBadge";
 import type { SchemaSourceModel } from "@/features/schemas/lib/merge";
 
 /** One selectable model row: the row itself is the toggle. */
@@ -49,7 +50,12 @@ export function SchemaModelOption({
           {getModelAlgorithmLabel(model)}
         </span>
       </span>
-      {available ? null : <AppBadge tone="neutral">No input schema</AppBadge>}
+      {/* A model can be bound while its environment is prepared; it runs once that is done. */}
+      {available ? (
+        <ModelRuntimeBadge state={model.runtimeState} />
+      ) : (
+        <AppBadge tone="neutral">No input schema</AppBadge>
+      )}
     </button>
   );
 }

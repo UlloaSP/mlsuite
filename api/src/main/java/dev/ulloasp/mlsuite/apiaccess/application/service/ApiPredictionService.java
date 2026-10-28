@@ -14,6 +14,8 @@ import dev.ulloasp.mlsuite.apiaccess.application.port.in.ApiPredictionUseCase;
 import dev.ulloasp.mlsuite.apiaccess.domain.exception.ApiErrorCode;
 import dev.ulloasp.mlsuite.apiaccess.domain.exception.ApiProblem;
 import dev.ulloasp.mlsuite.apiaccess.domain.model.ApiCaller;
+import dev.ulloasp.mlsuite.model.application.runtime.ModelPreparingException;
+import dev.ulloasp.mlsuite.model.application.runtime.ModelUnavailableException;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.schema.application.service.PublicModelRuntime;
 import dev.ulloasp.mlsuite.schema.application.service.RuntimeSlots;
@@ -86,6 +88,10 @@ public class ApiPredictionService implements ApiPredictionUseCase {
     private Map<String, Object> perform(ApiRunPlan plan) {
         try {
             return runtime.predict("API client " + plan.caller().clientId(), plan.modelId(), plan.features());
+        } catch (ModelPreparingException preparing) {
+            throw new ApiProblem(ApiErrorCode.RUNTIME_BUSY, "The model is being prepared. Try again shortly.");
+        } catch (ModelUnavailableException unavailable) {
+            throw new ApiProblem(ApiErrorCode.BOOKMARK_NOT_RUNNABLE, "The model cannot run: its environment could not be prepared.");
         } catch (AnalyzerServiceException refused) {
             String detail = refused.getDetail() == null || refused.getDetail().isBlank() ? "" : ": " + refused.getDetail();
             throw new ApiProblem(ApiErrorCode.FEATURES_REJECTED, "The model could not use these features" + detail);

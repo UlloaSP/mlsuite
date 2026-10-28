@@ -55,6 +55,8 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
+import dev.ulloasp.mlsuite.model.application.runtime.RunnableModel;
+import dev.ulloasp.mlsuite.model.domain.model.ModelRuntimeState;
 import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
@@ -69,8 +71,9 @@ class WorkspacePredictionServiceTest {
     private static final Map<String, Object> INPUT = Map.of("age", 52);
     private static final Map<String, String> PREDICT = Map.of("data", "{\"age\":52}");
     private static final Map<String, String> EXPLAIN = Map.of("data", "{\"age\":52}", "traces", "[]");
-    private static final ModelArtifactReference FOREST = new ModelArtifactReference(11L, "forest.mlbundle",
-            "bucket", "key", null, 3L, "abc123");
+    private static final RunnableModel FOREST = new RunnableModel(new ModelArtifactReference(11L, "forest.mlbundle",
+            "bucket", "key", null, 3L, "abc123"),
+            "legacy", ModelRuntimeState.READY);
     private static final Map<String, Object> CLASSIFIER = Map.of("kind", "classifier", "output", 0,
             "mapping", List.of("low", "high"), "probabilities", List.of(List.of(0.2, 0.8)), "prediction", "high");
 
@@ -91,7 +94,7 @@ class WorkspacePredictionServiceTest {
         Organization organization = new Organization();
         organization.setId(41L);
         lenient().when(authorization.requireCurrent(7L, PermissionKey.RUN_PREDICTIONS)).thenReturn(organization);
-        lenient().when(models.findArtifactReference(11L, 41L)).thenReturn(Optional.of(FOREST));
+        lenient().when(models.findRunnableModel(11L, 41L)).thenReturn(Optional.of(FOREST));
         useReports(List.of(Map.of("id", "risk", "kind", "classifier", "label", "Risk", "mappedTo", Map.of("forest", 0))));
     }
 
@@ -178,7 +181,7 @@ class WorkspacePredictionServiceTest {
 
     @Test
     void refusesABoundModelOutsideTheOrganization() {
-        when(models.findArtifactReference(11L, 41L)).thenReturn(Optional.empty());
+        when(models.findRunnableModel(11L, 41L)).thenReturn(Optional.empty());
 
         assertRefused(400, () -> service.predict(7L, 70L, request(11L)));
     }

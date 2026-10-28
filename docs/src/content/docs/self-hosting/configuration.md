@@ -25,6 +25,7 @@ never commit `.env`.
 | `SPRING_PORT` | `8080` | API port inside the network. Keep 8080: nginx proxies to it. |
 | `PYTHON_HOST`, `PYTHON_PORT` | `0.0.0.0`, `8000` | Runtime bind address inside the network. |
 | `ANALYZER_BASE_URL` | `http://py-analyzer:8000` | How the API reaches the runtime. |
+| `RUNTIME_BUILDER_HOST`, `RUNTIME_BUILDER_PORT` | `0.0.0.0`, `8001` | Environment builder bind address inside the network. |
 | `CORS_ALLOW_ORIGINS` | `http://localhost:5173` | Origins the API and its WebSockets accept. Add your public origin. |
 | `SPRING_PROFILES_ACTIVE` | `prod` | Spring profile. |
 | `LOG_PATH` | `/tmp/mlsuite` | Directory of the API's log file. |
@@ -77,9 +78,12 @@ equivalent roles yourself; the migration role must be able to install `pg_trgm`.
 | `RUNTIME_QUEUE_MAX_WAITING` | `1000` | Runs that may wait in each share (workspace, public, client) for their turn, in arrival order. A run that finds every place taken receives `503` with `Retry-After`. |
 | `RUNTIME_QUEUE_MAX_PER_CALLER` | `16` | Places, running or waiting, one caller may hold in a share: a member, a public page's network or account, an API client. More receive `503` with `Retry-After`. At least 1. |
 | `RUNTIME_QUEUE_MAX_WAIT_MS` | `5000` | How long a run may wait for its turn before it receives `503` with `Retry-After`. |
-| `RUNTIME_WORKERS` | `2` | Processes the runtime serves in, about one per core it may use; each holds the bundles it loaded, so size them by memory too. |
-| `RUNTIME_MAX_CONCURRENT` | `1` | Threads each worker runs predictions and explanations on. One is fastest: threads of one process contend for its interpreter. Bundles load on a thread of their own. |
-| `RUNTIME_BUNDLE_CACHE_MB` | `512` | Total artifact size of the verified bundles each worker keeps loaded, and of the verified artifacts kept on disk for every worker; the newest is kept even when larger. A run sends its artifact only when no worker holds it. |
+| `RUNTIME_WORKERS` | `2` | Worker processes the runtime runs models in, in all, about one per core it may use; each runs one request at a time inside one model's environment and holds the bundles it loaded, so size them by memory too. |
+| `RUNTIME_BUNDLE_CACHE_MB` | `512` | Total artifact size of the bundles each worker keeps loaded, and of the artifacts the runtime keeps on disk; the newest is kept even when larger. A run sends its artifact only when the runtime lacks it. |
+| `RUNTIME_MEMORY_LIMIT` | `6g` | Memory the runtime, its workers included, may use. |
+| `RUNTIME_BUILDER_BASE_URL` | `http://runtime-builder:8001` | How the API reaches the environment builder. |
+| `RUNTIME_PACKAGE_INDEX_URL` | `https://pypi.org/simple` | The only index the builder installs from; a mirror works, since every file is checked against the lock's SHA-256 and the lock's URLs are never used. |
+| `RUNTIME_BUILDER_MEMORY_LIMIT` | `2g` | Memory the builder may use. |
 
 ## Public runs and the client API
 
@@ -119,7 +123,7 @@ password or system role changes.
 | `OPS_AGENT_HOST`, `OPS_AGENT_PORT` | `0.0.0.0`, `8091` | Agent bind address. |
 | `OPS_AGENT_DOCKER_BIN` | `docker` | Docker CLI. |
 | `OPS_AGENT_COMPOSE_PROJECT` | `mlsuite` | Must match the project the stack runs under. |
-| `OPS_AGENT_MANAGED_SERVICES` | `postgres,py-analyzer,minio,spring-app,frontend` | Services the Infrastructure page shows and controls. |
+| `OPS_AGENT_MANAGED_SERVICES` | `postgres,py-analyzer,runtime-builder,minio,spring-app,frontend` | Services the Infrastructure page shows and controls. |
 | `OPS_AGENT_SAMPLE_INTERVAL_SECONDS`, `OPS_AGENT_RETENTION_MINUTES` | `5`, `60` | Metric sampling and history. |
 | `OPS_AGENT_TERMINAL_SERVICES` | | Services that allow a shell. Blank: none. |
 | `OPS_AGENT_TERMINAL_IDLE_MINUTES`, `OPS_AGENT_TERMINAL_MAX_SESSIONS` | `15`, `5` | Idle timeout and concurrent shells. |

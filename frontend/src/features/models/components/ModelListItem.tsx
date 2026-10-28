@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { CalendarDays, Database, Rows3, ScrollText, TrendingUp } from "lucide-react";
 import { getModelAlgorithmLabel } from "@/capabilities/prediction-runtime/data/model-utils";
+import { ModelRuntimeBadge } from "@/capabilities/prediction-runtime/data/ModelRuntimeBadge";
 import { modifierName } from "@/shared/lib/relative-time";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
@@ -48,6 +49,7 @@ export function ModelListItem({
   return (
     <CatalogEntry
       title={item.name}
+      titleAccessory={<ModelRuntimeBadge state={item.runtimeState} />}
       icon={
         <div className="flex size-10 items-center justify-center rounded-control bg-surface-muted text-accent">
           <Icon size={18} />
@@ -61,6 +63,9 @@ export function ModelListItem({
             <CalendarDays size={14} />
             Updated <LiveRelativeTime value={item.updatedAt} />
           </span>
+          {item.runtimeState === "FAILED" && item.runtimeError ? (
+            <span className="text-danger-fg">{item.runtimeError}</span>
+          ) : null}
         </>
       }
       details={

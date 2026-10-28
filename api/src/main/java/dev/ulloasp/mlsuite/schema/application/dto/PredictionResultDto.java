@@ -18,7 +18,9 @@ public record PredictionResultDto(
         PredictionResultStatus status,
         @Nullable String errorMessage,
         @Nullable Map<String, Object> errorJson,
-        OffsetDateTime createdAt) {
+        OffsetDateTime createdAt,
+        // The runtime environment that computed it; none for results stored before environments.
+        @Nullable String environmentKey) {
 
     public static PredictionResultDto from(PredictionResult result) {
         return new PredictionResultDto(
@@ -30,7 +32,8 @@ public record PredictionResultDto(
                 result.getStatus(),
                 result.getErrorMessage(),
                 result.getErrorJson(),
-                result.getCreatedAt());
+                result.getCreatedAt(),
+                result.getEnvironmentKey());
     }
 
     public static List<PredictionResultDto> fromList(List<PredictionResult> results) {

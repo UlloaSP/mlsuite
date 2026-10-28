@@ -1,5 +1,8 @@
 """FastAPI application factory."""
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,10 +11,17 @@ from .routers.explain import router as explain_router
 from .routers.health import router as health_router
 from .routers.metadata import router as metadata_router
 from .routers.predict import router as predict_router
+from .services import runs
+
+
+@asynccontextmanager
+async def _lifespan(_: FastAPI) -> AsyncIterator[None]:
+    yield
+    await runs.pool.close()
 
 
 def create_app() -> FastAPI:
-    app = FastAPI()
+    app = FastAPI(lifespan=_lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=CORS_ALLOW_ORIGINS,

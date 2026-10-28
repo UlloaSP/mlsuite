@@ -59,6 +59,8 @@ python:
   script:
     - cd "$COMPONENT"
     - uv sync --locked --extra dev
+    # The runtime's tests run bundles without a lock in its frozen legacy environment.
+    - if [ "$COMPONENT" = backend ]; then uv sync --locked --directory legacy; fi
     - uv run --locked --extra dev pytest tests --junitxml=test-results.xml
   artifacts:
     when: always

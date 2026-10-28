@@ -262,8 +262,20 @@ describe("running a public bookmark", () => {
     [
       503,
       "Too many public runs are in progress. Try again in a moment.",
-      "The models are busy",
+      "The models are not available yet",
       "Try again in a moment.",
+    ],
+    [
+      503,
+      "The model's environment is being prepared. Try again shortly.",
+      "The models are not available yet",
+      "The model's environment is being prepared.",
+    ],
+    [
+      409,
+      "The model cannot run: its environment could not be prepared.",
+      "This form cannot be run right now",
+      "its environment could not be prepared.",
     ],
     [502, "Traceback: /srv/models/risk.mlbundle", "The run failed", "Try again later."],
     [500, "Unexpected error", "The run failed", "Try again later."],

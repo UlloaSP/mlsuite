@@ -1627,6 +1627,21 @@
         ],
         "type": "object"
       },
+      "EnvironmentPackageDto": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "version"
+        ],
+        "type": "object"
+      },
       "ErrorDto": {
         "properties": {
           "message": {
@@ -2144,6 +2159,9 @@
       },
       "ModelDetailsDto": {
         "properties": {
+          "environment": {
+            "$ref": "#/components/schemas/RuntimeEnvironmentDto"
+          },
           "featureImportances": {
             "items": {
               "$ref": "#/components/schemas/FeatureImportanceDto"
@@ -2172,6 +2190,7 @@
           }
         },
         "required": [
+          "environment",
           "featureImportances",
           "manifest",
           "sha256",
@@ -2214,6 +2233,20 @@
             "format": "int64",
             "type": "integer"
           },
+          "runtimeError": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "runtimeState": {
+            "enum": [
+              "PREPARING",
+              "READY",
+              "FAILED"
+            ],
+            "type": "string"
+          },
           "specificType": {
             "type": "string"
           },
@@ -2250,6 +2283,8 @@
           "inputSchema",
           "name",
           "reportCount",
+          "runtimeError",
+          "runtimeState",
           "specificType",
           "type",
           "updatedAt",
@@ -4139,6 +4174,12 @@
             "format": "date-time",
             "type": "string"
           },
+          "environmentKey": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "errorJson": {
             "additionalProperties": { },
             "type": [
@@ -4182,6 +4223,7 @@
         },
         "required": [
           "createdAt",
+          "environmentKey",
           "errorJson",
           "errorMessage",
           "id",
@@ -5304,6 +5346,36 @@
           "roles",
           "stats",
           "templates"
+        ],
+        "type": "object"
+      },
+      "RuntimeEnvironmentDto": {
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "legacy": {
+            "type": "boolean"
+          },
+          "packages": {
+            "items": {
+              "$ref": "#/components/schemas/EnvironmentPackageDto"
+            },
+            "type": "array"
+          },
+          "pythonVersion": {
+            "type": "string"
+          },
+          "writerVersion": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "legacy",
+          "packages",
+          "pythonVersion",
+          "writerVersion"
         ],
         "type": "object"
       },
@@ -8730,6 +8802,37 @@
         ]
       }
     },
+    "/api/models/{modelId}/environment/retry": {
+      "post": {
+        "operationId": "retryEnvironment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "modelId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "model-controller"
+        ]
+      }
+    },
     "/api/models/{modelId}/restore": {
       "post": {
         "operationId": "restore_1",
@@ -10644,7 +10747,7 @@
     },
     "/api/prediction-jobs/{jobId}": {
       "get": {
-        "operationId": "get_6",
+        "operationId": "get_7",
         "parameters": [
           {
             "in": "path",
@@ -11021,7 +11124,7 @@
         ]
       },
       "get": {
-        "operationId": "get_5",
+        "operationId": "get_6",
         "parameters": [
           {
             "in": "path",
@@ -11287,7 +11390,7 @@
     },
     "/api/public/bookmarks/{publicId}": {
       "get": {
-        "operationId": "get_4",
+        "operationId": "get_5",
         "parameters": [
           {
             "in": "path",
@@ -11651,6 +11754,36 @@
         },
         "tags": [
           "startup-readiness-controller"
+        ]
+      }
+    },
+    "/api/runtime-environments/{environmentKey}": {
+      "get": {
+        "operationId": "get_4",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "environmentKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuntimeEnvironmentDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "runtime-environment-controller"
         ]
       }
     },

@@ -29,6 +29,8 @@ const model = (archivedAt: string | null): ModelDto => ({
   inputSchema: { fields: [] },
   name: "Risk",
   reportCount: 1,
+  runtimeError: null,
+  runtimeState: "READY",
   specificType: "Pipeline",
   type: "classifier",
   updatedAt: "2026-10-02T10:00:00Z",

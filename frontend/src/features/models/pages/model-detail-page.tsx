@@ -17,7 +17,9 @@ import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
+import { ModelRuntimeBadge } from "@/capabilities/prediction-runtime/data/ModelRuntimeBadge";
 import { ModelDetailTabs } from "@/features/models/components/ModelDetailTabs";
+import { ModelEnvironmentFailure } from "@/features/models/components/ModelEnvironmentFailure";
 import { useModel, useModelDetails } from "@/features/models/api/model.queries";
 import { readModelManifest } from "@/features/models/lib/model-manifest";
 import { formatTimestamp } from "@/shared/lib/date-time";
@@ -70,6 +72,7 @@ export function ModelDetailPage() {
                       Archived
                     </AppBadge>
                   ) : null}
+                  <ModelRuntimeBadge state={model.runtimeState} className="ml-3 align-middle" />
                 </>
               }
               description={`${algorithm ?? model.specificType} · Created ${formatTimestamp(model.createdAt)}${
@@ -87,6 +90,10 @@ export function ModelDetailPage() {
                 ) : null
               }
             />
+
+            {model.runtimeState === "FAILED" ? (
+              <ModelEnvironmentFailure model={model} canRetry={canEditModels} />
+            ) : null}
 
             <ModelDetailTabs model={model} details={detailsQuery.data} />
           </>

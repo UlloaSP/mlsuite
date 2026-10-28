@@ -43,6 +43,8 @@ public class PredictionResult {
         this.status = status;
         this.errorMessage = errorMessage;
         this.errorJson = errorJson;
+        // The model ran in its environment; the result keeps which one for good.
+        this.environmentKey = model.getEnvironmentKey();
     }
 
     @Id
@@ -75,6 +77,10 @@ public class PredictionResult {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "error_json")
     private Map<String, Object> errorJson;
+
+    /** The runtime environment that computed this result; none for results stored before environments. */
+    @Column(name = "environment_key", length = 64, updatable = false)
+    private String environmentKey;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")

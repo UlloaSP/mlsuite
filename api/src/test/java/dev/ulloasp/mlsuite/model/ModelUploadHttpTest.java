@@ -53,7 +53,7 @@ class ModelUploadHttpTest extends PublicPredictionFixture {
     private static final byte[] BUNDLE = "a-bundle".getBytes();
     private static final Map<String, Object> INSPECTION = Map.of("type", "classifier", "specificType", "Forest",
             "fileName", "risk.mlbundle", "schema", Map.of("fields", List.of(), "reports", List.of()),
-            "manifest", Map.of("writer_version", "0.2.1"));
+            "manifest", Map.of("writer_version", "0.2.1"), "environment", Map.of("key", "legacy"));
 
     @MockitoBean ModelArtifactWriter artifactWriter;
     private final List<String> held = new ArrayList<>();

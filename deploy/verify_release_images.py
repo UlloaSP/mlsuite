@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APP_SERVICES = {
     "ops-agent",
     "py-analyzer",
+    "runtime-builder",
     "db-migrate",
     "artifact-migrate",
     "spring-app",
@@ -36,6 +37,8 @@ def validate_release_config(config: dict) -> None:
     )}
     if len(api_images) != 1:
         raise ValueError("database, artifact and API services must use the same image digest")
+    if services["py-analyzer"]["image"] != services["runtime-builder"]["image"]:
+        raise ValueError("the runtime and its environment builder must use the same image digest")
 
 
 def render(docker_bin: str, env_file: str, release_compose: str) -> dict:

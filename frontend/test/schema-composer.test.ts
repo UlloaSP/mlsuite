@@ -35,6 +35,8 @@ const model = (fields: unknown[], reports: unknown[] = [], id = 1): ModelDto => 
   version: 0,
   fieldCount: fields.length,
   reportCount: reports.length,
+  runtimeState: "READY",
+  runtimeError: null,
 });
 
 describe("composeSchemaVersion one-hot mapping", () => {
