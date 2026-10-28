@@ -8,5 +8,7 @@ export type Bundle = {
   modelFile: File;
   name: string;
   saved: boolean;
+  /** Saved, and the server is preparing the environment the model will run in. */
+  preparing: boolean;
   saving: boolean;
 };

@@ -25,7 +25,12 @@ import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelUploadUseCase;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
+import dev.ulloasp.mlsuite.model.application.dto.RuntimeEnvironmentDto;
+import dev.ulloasp.mlsuite.model.application.runtime.ModelPreparationService;
+import dev.ulloasp.mlsuite.model.application.runtime.RuntimeEnvironments;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.model.domain.model.ModelRuntimeState;
+import dev.ulloasp.mlsuite.model.domain.model.RuntimeEnvironment;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 
@@ -38,13 +43,24 @@ class ModelControllerTest {
     @Mock
     private ModelUploadUseCase modelUploadUseCase;
 
+    @Mock
+    private ModelPreparationService preparations;
+
+    @Mock
+    private RuntimeEnvironments environments;
+
     private CurrentUser user;
 
     private ModelController controller;
 
+    private static final RuntimeEnvironment LEGACY = new RuntimeEnvironment("legacy", null, "0.2.1", "3.14",
+            List.of(Map.of("name", "scikit-learn", "version", "1.9.1")), null);
+    private static final RuntimeEnvironmentDto LEGACY_DTO = new RuntimeEnvironmentDto("legacy", true, "3.14", "0.2.1",
+            List.of(new RuntimeEnvironmentDto.EnvironmentPackageDto("scikit-learn", "1.9.1")));
+
     @BeforeEach
     void setUp() {
-        controller = new ModelController(modelCatalogUseCase, modelUploadUseCase);
+        controller = new ModelController(modelCatalogUseCase, modelUploadUseCase, preparations, environments);
         user = new CurrentUser(4L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER);
     }
 
@@ -71,18 +87,32 @@ class ModelControllerTest {
         model.setModelSizeBytes(2048L);
         model.setArtifactSha256("abc");
         when(modelCatalogUseCase.getModel(4L, 11L)).thenReturn(model);
+        when(environments.find("legacy")).thenReturn(LEGACY);
 
         ModelDetailsDto details = controller.getModelDetails(user, 11L).getBody();
 
         assertEquals(new ModelDetailsDto(Map.of("writer_version", "0.1.0a3"),
-                List.of(new FeatureImportanceDto("age", 62.5)), 2048L, "abc"), details);
+                List.of(new FeatureImportanceDto("age", 62.5)), 2048L, "abc", LEGACY_DTO), details);
     }
 
     @Test
     void getModelDetails_HasNoImportancesForAModelWithoutStructure() {
         when(modelCatalogUseCase.getModel(4L, 11L)).thenReturn(new Model());
+        when(environments.find("legacy")).thenReturn(LEGACY);
 
-        assertEquals(new ModelDetailsDto(Map.of(), null, null, null), controller.getModelDetails(user, 11L).getBody());
+        assertEquals(new ModelDetailsDto(Map.of(), null, null, null, LEGACY_DTO),
+                controller.getModelDetails(user, 11L).getBody());
+    }
+
+    @Test
+    void retryEnvironment_AnswersTheModelPreparedAgain() {
+        Model model = new Model();
+        model.setId(11L);
+        model.setVersion(0L);
+        model.setRuntimeState(ModelRuntimeState.PREPARING);
+        when(preparations.retry(4L, 11L)).thenReturn(model);
+
+        assertEquals(ModelRuntimeState.PREPARING, controller.retryEnvironment(user, 11L).getBody().runtimeState());
     }
 
     @Test

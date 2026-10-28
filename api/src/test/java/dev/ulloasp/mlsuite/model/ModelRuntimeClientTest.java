@@ -32,6 +32,11 @@ import org.springframework.web.client.RestTemplate;
 
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.ModelRuntimeClient;
+import dev.ulloasp.mlsuite.model.application.runtime.ModelPreparationLedger;
+import dev.ulloasp.mlsuite.model.application.runtime.ModelPreparingException;
+import dev.ulloasp.mlsuite.model.application.runtime.ModelUnavailableException;
+import dev.ulloasp.mlsuite.model.application.runtime.RunnableModel;
+import dev.ulloasp.mlsuite.model.domain.model.ModelRuntimeState;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.storage.ArtifactHash;
 import dev.ulloasp.mlsuite.storage.ArtifactIntegrityException;
@@ -51,16 +56,18 @@ class ModelRuntimeClientTest {
     private static final byte[] BYTES = "forest-artifact".getBytes();
     private static final String SHA256 = ArtifactHash.sha256(BYTES);
     private static final Map<String, String> FIELDS = Map.of("data", "{\"age\":52}");
+    private static final String ENVIRONMENT = "e".repeat(64);
 
     private final RestTemplate restTemplate = mock(RestTemplate.class);
     private final ObjectStorageService storage = mock(ObjectStorageService.class);
     private final ModelArtifactInlineCopy inline = mock(ModelArtifactInlineCopy.class);
+    private final ModelPreparationLedger preparations = mock(ModelPreparationLedger.class);
     private ModelRuntimeClient client;
 
     @BeforeEach
     void setUp() {
         client = new ModelRuntimeClient(new AnalyzerClient(restTemplate, restTemplate, "http://runtime"),
-                new ModelArtifactContentReader(storage, inline));
+                new ModelArtifactContentReader(storage, inline), preparations);
     }
 
     @Test
@@ -72,6 +79,7 @@ class ModelRuntimeClientTest {
 
         List<MultiValueMap<String, HttpEntity<?>>> sent = sent(1);
         assertEquals(SHA256, sent.get(0).getFirst("artifact_sha256").getBody());
+        assertEquals(ENVIRONMENT, sent.get(0).getFirst("environment").getBody());
         assertEquals("{\"age\":52}", sent.get(0).getFirst("data").getBody());
         assertNull(sent.get(0).getFirst("model_file"));
         verify(storage, never()).open(any(), any(), any());
@@ -102,7 +110,7 @@ class ModelRuntimeClientTest {
     void aRunResentWithItsArtifactHasTheTimeOfABundleTransferNotOfARun() {
         RestTemplate bundles = mock(RestTemplate.class);
         ModelRuntimeClient timed = new ModelRuntimeClient(new AnalyzerClient(restTemplate, bundles, "http://runtime"),
-                new ModelArtifactContentReader(storage, inline));
+                new ModelArtifactContentReader(storage, inline), preparations);
         when(restTemplate.postForObject(eq("http://runtime/predict"), any(), eq(Map.class)))
                 .thenThrow(runtimeError(409, "Artifact is not loaded; send it with its SHA-256"));
         when(bundles.postForObject(eq("http://runtime/predict"), any(), eq(Map.class))).thenReturn(Map.of());
@@ -174,13 +182,45 @@ class ModelRuntimeClientTest {
         when(inline.size(7L)).thenReturn((long) BYTES.length);
         when(inline.open(7L)).thenAnswer(call -> new ByteArrayInputStream(BYTES));
         when(restTemplate.postForObject(eq("http://runtime/predict"), any(), eq(Map.class))).thenReturn(Map.of());
-        ModelArtifactReference legacy = new ModelArtifactReference(7L, "forest.mlbundle", null, null, null, null, null);
+        RunnableModel unhashed = new RunnableModel(
+                new ModelArtifactReference(7L, "forest.mlbundle", null, null, null, null, null),
+                "legacy", ModelRuntimeState.READY);
 
-        client.run("/predict", legacy, FIELDS);
+        client.run("/predict", unhashed, FIELDS);
 
         MultiValueMap<String, HttpEntity<?>> only = sent(1).get(0);
         assertEquals(SHA256, only.getFirst("artifact_sha256").getBody());
         assertArrayEquals(BYTES, read((Resource) only.getFirst("model_file").getBody()));
+    }
+
+    @Test
+    void aModelThatIsNotReadyNeverReachesTheRuntime() {
+        assertThrows(ModelPreparingException.class,
+                () -> client.run("/predict", stored(SHA256, ModelRuntimeState.PREPARING), FIELDS));
+        assertThrows(ModelUnavailableException.class,
+                () -> client.run("/predict", stored(SHA256, ModelRuntimeState.FAILED), FIELDS));
+
+        verify(restTemplate, never()).postForObject(any(String.class), any(), eq(Map.class));
+    }
+
+    @Test
+    void aRuntimeThatLacksTheEnvironmentHasTheModelPreparedAgain() {
+        when(restTemplate.postForObject(eq("http://runtime/predict"), any(), eq(Map.class)))
+                .thenThrow(runtimeError(424, "The model's environment is not prepared on this runtime"));
+
+        assertThrows(ModelPreparingException.class, () -> client.run("/predict", stored(SHA256), FIELDS));
+
+        verify(preparations).prepareAgain(7L);
+    }
+
+    @Test
+    void verifyingLoadsTheModelWhateverItsState() {
+        when(restTemplate.postForObject(eq("http://runtime/verify"), any(), eq(Map.class)))
+                .thenReturn(Map.of("featureImportances", List.of()));
+
+        assertEquals(Map.of("featureImportances", List.of()), client.verify(stored(SHA256, ModelRuntimeState.PREPARING)));
+
+        assertEquals(ENVIRONMENT, sent(1).get(0).getFirst("environment").getBody());
     }
 
     private static byte[] read(Resource body) throws IOException {
@@ -189,8 +229,14 @@ class ModelRuntimeClientTest {
         }
     }
 
-    private static ModelArtifactReference stored(String sha256) {
-        return new ModelArtifactReference(7L, "forest.mlbundle", "bucket", "key", "v1", (long) BYTES.length, sha256);
+    private static RunnableModel stored(String sha256) {
+        return stored(sha256, ModelRuntimeState.READY);
+    }
+
+    private static RunnableModel stored(String sha256, ModelRuntimeState state) {
+        return new RunnableModel(
+                new ModelArtifactReference(7L, "forest.mlbundle", "bucket", "key", "v1", (long) BYTES.length, sha256),
+                ENVIRONMENT, state);
     }
 
     @SuppressWarnings("unchecked")

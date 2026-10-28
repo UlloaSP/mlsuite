@@ -146,6 +146,26 @@ public class Model {
     @Column(name = "feature_importances")
     private List<Map<String, Object>> featureImportances;
 
+    /** The {@link RuntimeEnvironment} the model runs in. */
+    @Column(name = "environment_key", nullable = false, length = 64)
+    private String environmentKey = RuntimeEnvironment.LEGACY;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "runtime_state", nullable = false, length = 16)
+    private ModelRuntimeState runtimeState = ModelRuntimeState.READY;
+
+    @Column(name = "runtime_error", length = 2000)
+    private String runtimeError;
+
+    @Column(name = "runtime_attempts", nullable = false)
+    private int runtimeAttempts;
+
+    @Column(name = "runtime_lease_owner", length = 128)
+    private String runtimeLeaseOwner;
+
+    @Column(name = "runtime_lease_expires_at", columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime runtimeLeaseExpiresAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime createdAt;

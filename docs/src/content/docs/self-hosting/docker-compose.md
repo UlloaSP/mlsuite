@@ -58,7 +58,8 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml down
 | --- | --- | --- |
 | `frontend` | nginx serving the React app and proxying `/api` to the API | `WEB_PORT` (5173) |
 | `spring-app` | The Spring Boot API: accounts, organizations, permissions, persistence | none |
-| `py-analyzer` | The Python runtime: loads bundles and runs predictions | none |
+| `py-analyzer` | The Python runtime: runs each model in its own environment | none |
+| `runtime-builder` | Installs the environment each uploaded model's lock names | none |
 | `postgres` | PostgreSQL 18, application state | `DB_HOST_PORT` (5430), on `127.0.0.1` only |
 | `minio` | Object storage for model and plugin files, versioned | none |
 | `ops-agent` | Reads Docker Compose for the [Infrastructure](/admin/infrastructure/) page | none |
@@ -73,10 +74,13 @@ such as ufw; from another machine, reach it through an SSH tunnel.
 
 Each service joins only the networks of the services it calls. `edge` joins `frontend`, the API
 and `ops-agent`; `data` joins the API, its one-shot jobs, PostgreSQL and MinIO; `runtime` joins
-only the API and `py-analyzer`. `py-analyzer` parses uploaded models, so `runtime` is internal: the
-runtime cannot reach the agent, the stores or the internet.
+only the API and `py-analyzer`. `py-analyzer` runs uploaded models, so `runtime` is internal: the
+runtime cannot reach the agent, the stores or the internet. `runtime-builder` alone downloads
+packages (`egress`), and only the API reaches it (`build`, also internal). It writes environments to
+the `runtime_environments` volume, which the runtime mounts read-only; the volume is a cache rebuilt
+from the models' locks, so backups leave it out.
 
-The API starts once `py-analyzer` reports healthy on `/health`. Docker rotates each container's log
+The API starts once `py-analyzer` and `runtime-builder` report healthy on `/health`. Docker rotates each container's log
 at 10 MB and keeps five files, so `docker compose logs` shows at most that much history.
 
 ## Behind a reverse proxy

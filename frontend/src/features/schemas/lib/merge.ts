@@ -9,7 +9,7 @@ import type { CreateSchemaVersionRequest, ModelDto } from "@/shared/api/openapi.
 
 export type SchemaSourceModel = Pick<
   ModelDto,
-  "id" | "name" | "type" | "specificType" | "inputSchema"
+  "id" | "name" | "type" | "specificType" | "inputSchema" | "runtimeState"
 >;
 
 type CanonicalItem = {

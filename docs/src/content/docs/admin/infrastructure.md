@@ -17,7 +17,7 @@ service that reads `docker compose` from the host. It exists on self-hosted stac
 
 Stopping or restarting a service interrupts it and may disconnect users, including this page.
 
-The managed services default to `postgres`, `py-analyzer`, `minio`, `spring-app` and `frontend`
+The managed services default to `postgres`, `py-analyzer`, `runtime-builder`, `minio`, `spring-app` and `frontend`
 (`OPS_AGENT_MANAGED_SERVICES`). The terminal is **off** until services are listed in
 `OPS_AGENT_TERMINAL_SERVICES`; anything typed there can change files and stop services. Idle
 shells close after 15 minutes. See the [ops agent settings](/self-hosting/configuration/#operations-agent).

@@ -19,6 +19,8 @@ import dev.ulloasp.mlsuite.model.application.dto.ModelDto;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelUploadUseCase;
+import dev.ulloasp.mlsuite.model.application.runtime.ModelPreparationService;
+import dev.ulloasp.mlsuite.model.application.runtime.RuntimeEnvironments;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,8 @@ public class ModelController {
 
     private final ModelCatalogUseCase modelCatalogUseCase;
     private final ModelUploadUseCase modelUploadUseCase;
+    private final ModelPreparationService preparations;
+    private final RuntimeEnvironments environments;
 
     @PostMapping
     public ResponseEntity<CreateModelDto> createModel(
@@ -78,9 +82,8 @@ public class ModelController {
 
     @GetMapping("/{modelId}/details")
     public ResponseEntity<ModelDetailsDto> getModelDetails(CurrentUser user, @PathVariable Long modelId) {
-        return ResponseEntity.ok(ModelDetailsDto.toDto(modelCatalogUseCase.getModel(
-                user.userId(),
-                modelId)));
+        Model model = modelCatalogUseCase.getModel(user.userId(), modelId);
+        return ResponseEntity.ok(ModelDetailsDto.toDto(model, environments.find(model.getEnvironmentKey())));
     }
 
     @PatchMapping("/{modelId}")
@@ -113,6 +116,12 @@ public class ModelController {
             @PathVariable Long modelId,
             @RequestParam(required = false) Long version) {
         return ResponseEntity.ok(ModelDto.toDto(modelCatalogUseCase.restoreModel(user.userId(), modelId, version)));
+    }
+
+    /** Prepares again a model whose environment could not be prepared. */
+    @PostMapping("/{modelId}/environment/retry")
+    public ResponseEntity<ModelDto> retryEnvironment(CurrentUser user, @PathVariable Long modelId) {
+        return ResponseEntity.ok(ModelDto.toDto(preparations.retry(user.userId(), modelId)));
     }
 
     @PostMapping("/{modelId}/duplicate")

@@ -5,21 +5,27 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { formatBytes } from "@/shared/lib/format-bytes";
 import { formatTimestamp } from "@/shared/lib/date-time";
+import { ModelEnvironmentSection } from "@/features/models/components/ModelEnvironmentSection";
 import { ModelFacts, type ModelFact } from "@/features/models/components/ModelFacts";
 import { ModelSection } from "@/features/models/components/ModelSection";
 import type { ModelManifestView } from "@/features/models/lib/model-manifest";
+import type { RuntimeEnvironmentDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   manifest: ModelManifestView;
   fileName: string;
   sizeBytes: number | null;
   sha256: string | null;
+  environment: RuntimeEnvironmentDto;
 };
 
 const stated = (facts: ModelFact[]): ModelFact[] => facts.filter((fact) => Boolean(fact.value));
 
-/** Where the model came from: its bundle, the stored file, and the machine that trained it. */
-export function ModelProvenanceTab({ manifest, fileName, sizeBytes, sha256 }: Props) {
+/**
+ * Where the model came from (its bundle, the stored file, the machine that trained it) and the
+ * environment it runs in here.
+ */
+export function ModelProvenanceTab({ manifest, fileName, sizeBytes, sha256, environment }: Props) {
   return (
     <div className="grid gap-x-12 gap-y-8 xl:grid-cols-2">
       <div className="flex min-w-0 flex-col gap-8">
@@ -67,6 +73,8 @@ export function ModelProvenanceTab({ manifest, fileName, sizeBytes, sha256 }: Pr
       </div>
 
       <div className="flex min-w-0 flex-col gap-8">
+        <ModelEnvironmentSection environment={environment} />
+
         <ModelSection
           title="Training environment"
           note="Declared by whoever exported the bundle. It is not checked against the model."

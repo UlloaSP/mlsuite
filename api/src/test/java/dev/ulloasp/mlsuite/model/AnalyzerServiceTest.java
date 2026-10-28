@@ -35,6 +35,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.ModelRuntimeClient;
+import dev.ulloasp.mlsuite.model.application.runtime.ModelPreparationLedger;
+import dev.ulloasp.mlsuite.model.application.runtime.RunnableModel;
+import dev.ulloasp.mlsuite.model.domain.model.ModelRuntimeState;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.application.dto.ExplainRequest;
 import dev.ulloasp.mlsuite.model.application.service.AnalyzerServiceImpl;
@@ -84,7 +87,7 @@ class AnalyzerServiceTest {
 
     @Test
     void explain_SendsTheInstanceAndTracesForTheModelsArtifact() {
-        when(modelRepository.findArtifactReference(11L, 5L)).thenReturn(Optional.of(artifact()));
+        when(modelRepository.findRunnableModel(11L, 5L)).thenReturn(Optional.of(artifact()));
         when(restTemplate.postForObject(eq("http://py-analyzer:8000/explain"), any(), eq(Map.class)))
                 .thenReturn(Map.of("reports", List.of()));
 
@@ -112,7 +115,7 @@ class AnalyzerServiceTest {
     @Test
     void explain_ReturnsTheSlotHoweverTheRunEnds() {
         service = service(new WorkspaceRuntimeSlots(1, NO_WAITING));
-        when(modelRepository.findArtifactReference(11L, 5L)).thenReturn(Optional.of(artifact()));
+        when(modelRepository.findRunnableModel(11L, 5L)).thenReturn(Optional.of(artifact()));
         when(restTemplate.postForObject(eq("http://py-analyzer:8000/explain"), any(), eq(Map.class)))
                 .thenThrow(restError(400, "{\"detail\":\"Missing features\"}"))
                 .thenReturn(Map.of("reports", List.of()));
@@ -125,7 +128,7 @@ class AnalyzerServiceTest {
     @Test
     void explain_ThrowsWhenTheOrganizationHasNoSuchModel() {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
-        when(modelRepository.findArtifactReference(11L, 5L)).thenReturn(Optional.empty());
+        when(modelRepository.findRunnableModel(11L, 5L)).thenReturn(Optional.empty());
 
         assertThrows(ModelDoesNotExistsException.class, () -> service.explain(3L, 11L, request()));
         verifyNoInteractions(restTemplate);
@@ -144,7 +147,8 @@ class AnalyzerServiceTest {
     private AnalyzerServiceImpl service(WorkspaceRuntimeSlots slots) {
         AnalyzerClient analyzerClient = new AnalyzerClient(restTemplate, restTemplate, "http://py-analyzer:8000");
         ModelRuntimeClient modelRuntime = new ModelRuntimeClient(analyzerClient,
-                new ModelArtifactContentReader(objectStorageService, mock(ModelArtifactInlineCopy.class)));
+                new ModelArtifactContentReader(objectStorageService, mock(ModelArtifactInlineCopy.class)),
+                mock(ModelPreparationLedger.class));
         return new AnalyzerServiceImpl(modelRuntime, slots, modelRepository,
                 userLookupService, authorizationService, new ObjectMapper());
     }
@@ -162,8 +166,9 @@ class AnalyzerServiceTest {
         return new ExplainRequest(Map.of("x", 1), List.of());
     }
 
-    private ModelArtifactReference artifact() {
-        return new ModelArtifactReference(11L, "risk.mlbundle", "bucket", "key", null, 3L, "abc123");
+    private RunnableModel artifact() {
+        return new RunnableModel(new ModelArtifactReference(11L, "risk.mlbundle", "bucket", "key", null, 3L, "abc123"),
+                "legacy", ModelRuntimeState.READY);
     }
 
     private User user() {

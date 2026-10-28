@@ -1,7 +1,6 @@
 import pandas as pd
-from fastapi.testclient import TestClient
 
-from mlsuite_backend.main import app
+from tests.client import client
 from tests.helpers import (
     make_classifier,
     make_multi_output_classifier,
@@ -14,7 +13,6 @@ from tests.helpers import (
     serialize_bundle,
 )
 
-client = TestClient(app)
 
 
 def _schema(upload: tuple) -> dict:

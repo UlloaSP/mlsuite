@@ -40,7 +40,7 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
   "nav:Models": {
     title: "Models",
     description:
-      "Start here. Upload trained artifacts; MLsuite inspects and stores each one so every prediction traces back to the exact model that produced it.",
+      "Start here. Upload trained artifacts; MLsuite inspects and stores each one, then prepares the environment it runs in, so every prediction traces back to the exact model and environment that produced it.",
   },
   "nav:Schemas": {
     title: "Schemas",

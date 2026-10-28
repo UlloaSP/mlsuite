@@ -102,6 +102,7 @@ export function ModelDetailTabs({ model, details }: Props) {
                 outputs={outputs}
                 schemaSource={schemaSource}
                 importances={details.featureImportances}
+                runtimeState={model.runtimeState}
               />
             ) : tab === "inputs" ? (
               <ModelInputsTab inputs={inputs} />
@@ -115,6 +116,7 @@ export function ModelDetailTabs({ model, details }: Props) {
                 fileName={model.fileName}
                 sizeBytes={details.sizeBytes}
                 sha256={details.sha256}
+                environment={details.environment}
               />
             )}
           </AppTabPanel>

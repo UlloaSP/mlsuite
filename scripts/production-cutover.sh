@@ -209,7 +209,7 @@ stage "Artifact migration"
 confirm "Does final status contain no FAILED, RUNNING, INLINE_ONLY or UNVERIFIED rows?" || exit 1
 
 stage "Canary and readiness"
-"${COMPOSE[@]}" up -d ops-agent py-analyzer
+"${COMPOSE[@]}" up -d ops-agent py-analyzer runtime-builder
 "${COMPOSE[@]}" up -d --no-deps spring-app
 ask READINESS_URL "Externally reachable API base URL (for example https://api.example.com):"
 curl --fail --show-error --silent "$READINESS_URL/actuator/health/readiness"

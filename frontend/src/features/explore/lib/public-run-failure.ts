@@ -27,10 +27,8 @@ export const publicRunFailure = (error: unknown): PublicRunFailure => {
     case 409:
       return { title: "This form cannot be run right now", detail: message };
     case 503:
-      return {
-        title: "The models are busy",
-        detail: "Too many public runs are in progress. Try again in a moment.",
-      };
+      // Busy runtime slots, or a model whose environment is still being prepared.
+      return { title: "The models are not available yet", detail: message };
     case 0:
       return {
         title: "The run did not reach the server",

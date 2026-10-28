@@ -16,6 +16,7 @@ import {
 } from "@/features/schemas/api/schema-queries";
 import { AnswerHistory } from "@/features/schemas/components/AnswerHistory";
 import { SchemaRunInputsPanel } from "@/features/schemas/components/SchemaRunInputsPanel";
+import { PredictionRunEnvironments } from "@/features/schemas/components/PredictionRunEnvironments";
 import { SchemaRunMetadataRow } from "@/features/schemas/components/SchemaRunMetadataRow";
 import { SchemaRunReportsPanel } from "@/features/schemas/components/SchemaRunReportsPanel";
 import { schemaFeedbackStatus } from "@/capabilities/prediction-runtime/feedback/feedback-completion";
@@ -126,6 +127,7 @@ export function PredictionRunDetails({ runId, bookmarkName, reviews }: Props) {
           bookmarkName={bookmarkName ?? "None"}
         />
       </AppSkeletonScope>
+      <PredictionRunEnvironments results={run.results} bindings={executableVersion.bindings} />
       <AppTabs items={detailTabs} value={tab} onChange={setTab}>
         <AppTabPanel value={tab} className="flex min-h-0 flex-1 flex-col">
           {tab === "inputs" ? (

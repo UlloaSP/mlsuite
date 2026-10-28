@@ -1,15 +1,33 @@
+"""Crystal Tree explanations of a decision tree, read as data from the bundle's structure.
+
+The runtime never loads a model to explain it: the model's worker answers with the tree's arrays
+(structure.json) and the row a record becomes, and the explanation is composed here, where
+crystal-tree and clingo live, outside every model's environment.
+"""
+
+import math
 from decimal import Decimal
+from types import SimpleNamespace
 from typing import Any
 
+import numpy as np
 import pandas as pd
 from crystal_tree.crystal_tree import CrystalTreeContext
 from crystal_tree.adapters import ScikitLearnAdapter
 from dafact import Dafacter
 from pydantic import BaseModel, TypeAdapter, ValidationError
-from sklearn.tree import DecisionTreeClassifier
 from xclingo import XclingoControl
 
 from .errors import bad_request
+
+
+def tree_model(tree: dict[str, Any]) -> SimpleNamespace:
+    """The arrays crystal-tree reads from a scikit-learn tree (model.tree_), from structure.json."""
+    arrays = {
+        name: np.asarray(tree[name])
+        for name in ("children_left", "children_right", "feature", "threshold", "value")
+    }
+    return SimpleNamespace(tree_=SimpleNamespace(node_count=int(tree["node_count"]), **arrays))
 
 
 def format_tree_threshold(value: object) -> str:
@@ -19,34 +37,34 @@ def format_tree_threshold(value: object) -> str:
 
 
 def build_tree_path_explanation(
-    model: object,
-    instance_df: object,
+    tree: dict[str, Any],
+    row: list[float],
     feature_names: list[str],
+    class_labels: list[str] | None,
 ) -> str:
-    tree = model.tree_
-    instance = instance_df.iloc[0]
-    node_indicator = model.decision_path(instance_df)
-    leaf_id = model.apply(instance_df)[0]
-    node_indexes = node_indicator.indices[
-        node_indicator.indptr[0] : node_indicator.indptr[1]
-    ]
+    """The path the row takes from the root to its leaf, and what that leaf predicts."""
+    node = 0
     lines = ["Prediction path"]
-    for node_id in node_indexes:
-        if node_id == leaf_id:
-            continue
-        feature_index = tree.feature[node_id]
-        if feature_index < 0:
-            continue
-        feature_name = feature_names[feature_index]
-        threshold = tree.threshold[node_id]
-        value = instance.iloc[feature_index]
-        operator = "<=" if value <= threshold else ">"
-        lines.append(
-            f"|- {feature_name} {operator} {format_tree_threshold(threshold)} (value={value})"
-        )
-    predicted = model.predict(instance_df)[0]
-    label = "class" if isinstance(model, DecisionTreeClassifier) else "value"
-    lines.append(f"\\- {label} = {predicted}")
+    while tree["children_left"][node] != -1:
+        feature_index = tree["feature"][node]
+        threshold = tree["threshold"][node]
+        value = row[feature_index]
+        if math.isnan(value):
+            left = bool(tree.get("missing_go_to_left", [False] * len(tree["feature"]))[node])
+            operator = "missing, goes"
+            lines.append(f"|- {feature_names[feature_index]} {operator} {'left' if left else 'right'}")
+        else:
+            left = value <= threshold
+            operator = "<=" if left else ">"
+            lines.append(
+                f"|- {feature_names[feature_index]} {operator} {format_tree_threshold(threshold)} (value={value})"
+            )
+        node = tree["children_left"][node] if left else tree["children_right"][node]
+    leaf = tree["value"][node][0]
+    if class_labels is None:
+        lines.append(f"\\- value = {leaf[0]}")
+    else:
+        lines.append(f"\\- class = {class_labels[leaf.index(max(leaf))]}")
     return "\n".join(lines)
 
 
@@ -81,7 +99,7 @@ def decimal_places(frame: pd.DataFrame) -> int:
     return max((-int(exponent) for exponent in exponents), default=0)
 
 
-def explain_tree(model: object, frame: pd.DataFrame) -> list[str]:
+def explain_tree(tree: dict[str, Any], frame: pd.DataFrame) -> list[str]:
     # CrystalTree.explain in crystal-tree 0.3 renders thresholds with a fixed factor of 1,
     # so its public building blocks are composed here instead.
     factor = decimal_places(frame)
@@ -90,7 +108,7 @@ def explain_tree(model: object, frame: pd.DataFrame) -> list[str]:
     control.add(
         "base",
         [],
-        ScikitLearnAdapter(model).get_logic_program(
+        ScikitLearnAdapter(tree_model(tree)).get_logic_program(
             factor, prediction_traces="", feature_traces="", feature_names=list(frame.columns)
         ),
     )

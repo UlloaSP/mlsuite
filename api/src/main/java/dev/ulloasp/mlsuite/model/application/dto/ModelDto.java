@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.model.domain.model.ModelRuntimeState;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
 import jakarta.annotation.Nullable;
@@ -29,7 +30,9 @@ public record ModelDto(
         String updatedByEmail,
         @Nullable String updatedByAvatarUrl,
         long fieldCount,
-        long reportCount) {
+        long reportCount,
+        ModelRuntimeState runtimeState,
+        @Nullable String runtimeError) {
 
     public static final ModelDto toDto(Model model) {
         User modifier = model.getUpdatedBy() == null ? model.getUser() : model.getUpdatedBy();
@@ -48,7 +51,9 @@ public record ModelDto(
                 modifier == null ? null : modifier.getEmail(),
                 modifier == null ? null : modifier.getAvatarUrl(),
                 countVisibleFields(model.getInputSchema()),
-                countReports(model.getInputSchema()));
+                countReports(model.getInputSchema()),
+                model.getRuntimeState(),
+                model.getRuntimeError());
     }
 
     public static final List<ModelDto> toDtoList(List<Model> models) {

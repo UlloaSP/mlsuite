@@ -22,6 +22,7 @@ import { BundleCard } from "@/features/models/components/BundleCard";
 import { BundleDropZone } from "@/features/models/components/BundleDropZone";
 import { BundleSummaryPanel } from "@/features/models/components/BundleSummaryPanel";
 import { useCreateModelMutation } from "@/features/models/api/model.mutations";
+import type { ModelDto } from "@/shared/api/openapi.gen";
 
 export function CreateModelPage() {
   const [bundles, setBundles] = useState<Bundle[]>([]);
@@ -62,23 +63,47 @@ export function CreateModelPage() {
   const patchBundle = (id: number, changes: Partial<Bundle>) =>
     setBundles((prev) => prev.map((b) => (b.id === id ? { ...b, ...changes } : b)));
 
-  const saveBundle = async (id: number, options: { navigateWhenComplete?: boolean } = {}) => {
+  // A bundle that locks its packages is saved as a model whose environment the server still
+  // prepares: it can run only once that is done.
+  const saveBundle = async (id: number): Promise<ModelDto | null> => {
     const bundle = bundles.find((b) => b.id === id);
-    if (!bundle || !isBundleSaveable(bundle)) return false;
-    const hasOtherUnsaved = bundles.some((b) => b.id !== id && !b.saved);
+    if (!bundle || !isBundleSaveable(bundle)) return null;
 
     patchBundle(id, { saving: true });
     try {
-      await mutation.mutateAsync({ name: bundle.name.trim(), modelFile: bundle.modelFile });
-      patchBundle(id, { saved: true, saving: false });
-      if (options.navigateWhenComplete !== false && !hasOtherUnsaved) {
-        void navigate("/models");
-      }
-      return true;
+      const { model } = await mutation.mutateAsync({
+        name: bundle.name.trim(),
+        modelFile: bundle.modelFile,
+      });
+      patchBundle(id, {
+        saved: true,
+        preparing: model.runtimeState === "PREPARING",
+        saving: false,
+      });
+      return model;
     } catch {
       patchBundle(id, { saving: false });
-      return false;
+      return null;
     }
+  };
+
+  const finish = (saved: ModelDto[]) => {
+    const preparing = saved.filter((model) => model.runtimeState === "PREPARING").length;
+    if (preparing > 0) {
+      toast.success(saved.length === 1 ? "Model saved" : `${saved.length} models saved`, {
+        description:
+          preparing === 1
+            ? "MLsuite is preparing the environment of the new model; it can run once it is ready."
+            : `MLsuite is preparing the environments of ${preparing} new models; each can run once it is ready.`,
+      });
+    }
+    void navigate("/models");
+  };
+
+  const saveOne = async (id: number) => {
+    const hasOtherUnsaved = bundles.some((b) => b.id !== id && !b.saved);
+    const model = await saveBundle(id);
+    if (model && !hasOtherUnsaved) finish([model]);
   };
 
   const saveAll = async () => {
@@ -89,11 +114,16 @@ export function CreateModelPage() {
         `Name ${unnamed.length === 1 ? "this bundle" : "these bundles"} to save ${unnamed.length === 1 ? "it" : "them"}: ${unnamed.map((b) => b.modelFile.name).join(", ")}`,
       );
     }
+    const saved: ModelDto[] = [];
     const complete = await saveModelBundlesSequentially(
       unsaved.map((bundle) => bundle.id),
-      (id) => saveBundle(id, { navigateWhenComplete: false }),
+      async (id) => {
+        const model = await saveBundle(id);
+        if (model) saved.push(model);
+        return model !== null;
+      },
     );
-    if (complete) void navigate("/models");
+    if (complete) finish(saved);
   };
 
   // ── Derived stats ────────────────────────────────────────────────────────
@@ -144,7 +174,7 @@ export function CreateModelPage() {
                   <BundleCard
                     key={bundle.id}
                     bundle={bundle}
-                    onSave={() => saveBundle(bundle.id)}
+                    onSave={() => void saveOne(bundle.id)}
                     onRemove={() => removeBundle(bundle.id)}
                     onRename={(name) => patchBundle(bundle.id, { name })}
                   />

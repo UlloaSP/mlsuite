@@ -11,9 +11,8 @@ dependencies = [
     "fastapi>=0.120.3",
     "uvicorn[standard]>=0.38.0",
     "pandas>=3.0.3,<4.0.0",
-    # A bundle's skops state loads only with the scikit-learn version that wrote it.
-    "scikit-learn==1.9.1",
-    "mlbundle[sklearn,xgboost,catboost,onnx]==0.2.1",
+    # Reads uploads and locks without model libraries; models load in their own environments.
+    "mlbundle==0.3.1",
     "python-multipart>=0.0.31",
     "crystal-tree",
     "dafact==0.5",
@@ -21,7 +20,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["httpx>=0.28.1", "pytest>=8.4.1", "mlbundle[schema]==0.2.1"]
+# Tests export bundles with every library mlbundle supports and run them in this interpreter.
+dev = ["httpx>=0.28.1", "pytest>=8.4.1", "mlbundle[all]==0.3.1"]
 
 [tool.uv.sources]
 crystal-tree = { git = "https://github.com/bramucas/crystal-tree.git", rev = "0d4b5078040fbf05cbe602f82d6e93f221050d4d" }

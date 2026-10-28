@@ -9,12 +9,13 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   navigate: vi.fn(),
   error: vi.fn(),
+  success: vi.fn(),
 }));
 vi.mock("react-router", async (original) => ({
   ...(await original<typeof import("react-router")>()),
   useNavigate: () => mocks.navigate,
 }));
-vi.mock("sonner", () => ({ toast: { error: mocks.error } }));
+vi.mock("sonner", () => ({ toast: { error: mocks.error, success: mocks.success } }));
 vi.mock("@/capabilities/workspace-context/session", () => ({
   useUser: () => ({ data: { id: 1 } }),
 }));
@@ -29,7 +30,7 @@ let view: Mounted;
 let container: HTMLDivElement;
 beforeEach(async () => {
   vi.clearAllMocks();
-  mocks.create.mockResolvedValue({});
+  mocks.create.mockResolvedValue({ model: { runtimeState: "READY" } });
   view = await mount(<CreateModelPage />, { route: "/" });
   container = view.host;
 });
@@ -113,3 +114,26 @@ test.each(["model.joblib", "model.onnx", "data.csv"])(
     expect(container.textContent).toContain("No bundles yet");
   },
 );
+test("a saved bundle whose environment is being prepared says so", async () => {
+  mocks.create.mockResolvedValue({ model: { runtimeState: "PREPARING" } });
+  await upload("first.mlbundle", "second.mlbundle");
+  const save = [...container.querySelectorAll("button")].find(
+    (button) => button.textContent === "Save" && !button.disabled,
+  )!;
+  await click(save);
+  expect(container.textContent).toContain("Its environment is being prepared.");
+  expect(mocks.navigate).not.toHaveBeenCalled();
+
+  await saveAll();
+  expect(mocks.success).toHaveBeenCalledWith("Model saved", {
+    description:
+      "MLsuite is preparing the environment of the new model; it can run once it is ready.",
+  });
+  expect(mocks.navigate).toHaveBeenCalledWith("/models");
+});
+test("ready models are saved without a preparation notice", async () => {
+  await upload("first.mlbundle");
+  await saveAll();
+  expect(mocks.success).not.toHaveBeenCalled();
+  expect(mocks.navigate).toHaveBeenCalledWith("/models");
+});
