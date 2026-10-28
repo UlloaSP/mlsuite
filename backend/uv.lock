@@ -84,8 +84,8 @@ requires-dist = [
     { name = "dafact", specifier = "==0.5" },
     { name = "fastapi", specifier = ">=0.120.3" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28.1" },
-    { name = "mlbundle", specifier = "==0.3.0" },
-    { name = "mlbundle", extras = ["all"], marker = "extra == 'dev'", specifier = "==0.3.0" },
+    { name = "mlbundle", specifier = "==0.3.1" },
+    { name = "mlbundle", extras = ["all"], marker = "extra == 'dev'", specifier = "==0.3.1" },
     { name = "pandas", specifier = ">=3.0.3,<4.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4.1" },
     { name = "python-multipart", specifier = ">=0.0.31" },
@@ -783,14 +783,14 @@ wheels = [
 
 [[package]]
 name = "mlbundle"
-version = "0.3.0"
+version = "0.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b0/40/2e754b35f0e76b555296d5b955f8868216c2af41b59fd2ad641e5decede4/mlbundle-0.3.0.tar.gz", hash = "sha256:234424eede4c5570bc6d45cbc203407c3e09cc43dede37b735ca91049b59b524", size = 119916, upload-time = "2026-10-28T14:18:30.455Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/42/61/a5163a9bba11ec8a52872633b5fa6a4a8639c3631b9acc432433a8bf4ea4/mlbundle-0.3.1.tar.gz", hash = "sha256:9da0a8aafdab61fcfd5b977f01825795a3bcb658c71ccc494d5418ce242448ce", size = 120393, upload-time = "2026-10-28T16:30:48.974Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ca/12/77cd9c16afdb2932c9858fac0c4b9d7e6727d813c5cea6003f3952bd7ccc/mlbundle-0.3.0-py3-none-any.whl", hash = "sha256:1d4c6fcca08a6e0a13c2df98ff29b55a1d20f12d3a84cdea7f7b8bea1c62ee63", size = 161779, upload-time = "2026-10-28T14:18:29.163Z" },
+    { url = "https://files.pythonhosted.org/packages/00/97/2d2e72a228ef960f79503bc5350855b9dd29dcb83114dddaf5d548341f71/mlbundle-0.3.1-py3-none-any.whl", hash = "sha256:bbac96068763273505f6356c7144706d61b9c4a17886707772568a3a62cb9c25", size = 162366, upload-time = "2026-10-28T16:30:47.808Z" },
 ]
 
 [package.optional-dependencies]

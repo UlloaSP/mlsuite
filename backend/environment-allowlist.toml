@@ -16,9 +16,10 @@ python = [
 # by this hash.
 [mlbundle]
 "0.3.0" = "1d4c6fcca08a6e0a13c2df98ff29b55a1d20f12d3a84cdea7f7b8bea1c62ee63"
+"0.3.1" = "bbac96068763273505f6356c7144706d61b9c4a17886707772568a3a62cb9c25"
 
 # Every distribution the locks of the tested bundles name: scikit-learn 1.7.2 to 1.9.1, XGBoost,
-# CatBoost and ONNX models and pipelines exported with mlbundle 0.3.0 on CPython 3.14.7.
+# CatBoost and ONNX models and pipelines exported with mlbundle 0.3.0 and 0.3.1 on CPython 3.14.7.
 [packages]
 annotated-types = ["0.8.0"]
 catboost = ["1.2.10"]
