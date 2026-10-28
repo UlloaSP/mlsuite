@@ -75,9 +75,19 @@ public class InferenceCatalogReader {
         }
     }
 
+    /** Every run id of a scope, newest first and then by id: the table's own order. */
+    public List<Long> ids(Long userId, InferenceCatalogScope scope) {
+        return queries.ids(organization(userId), scope);
+    }
+
     /** The given runs of the organization, in the given order; one that is not there is left out. */
     public void selected(Long userId, List<Long> ids, Consumer<InferenceTableDto> consume) {
         deliver(organization(userId), ids, consume);
+    }
+
+    /** The given runs of an organization, read for no member: only the background row refresh does. */
+    void ofOrganization(Long organizationId, List<Long> ids, Consumer<InferenceTableDto> consume) {
+        deliver(organizationId, ids, consume);
     }
 
     /** The summaries of exactly the given runs, in the given order. */

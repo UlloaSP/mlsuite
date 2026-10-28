@@ -11,8 +11,8 @@ import dev.ulloasp.mlsuite.schema.catalog.InferenceRowProjector.Row;
 /**
  * Folds the rows of a schema and bookmark scope into its data columns: per schema, its inputs,
  * outputs, then feedback. Rows arrive newest first, so the newest schema leads and a field whose
- * label changed shows its newest label. Only definitions and a bounded list of distinct values are
- * kept, never the rows.
+ * label changed shows its newest label; of runs with the same columns only the newest needs to
+ * arrive. Only definitions and a bounded list of distinct values are kept, never the rows.
  */
 final class InferenceCatalogMetadata {
 
@@ -28,9 +28,19 @@ final class InferenceCatalogMetadata {
     }
 
     void accept(Row row) {
+        acceptColumns(row);
+        row.dto().values().forEach(this::acceptValue);
+    }
+
+    /** The row's columns alone, for a row whose values arrive by {@link #acceptValue}. */
+    void acceptColumns(Row row) {
         schemaOrder.putIfAbsent(row.dto().item().schemaId(), schemaOrder.size());
         row.columns().forEach(column -> columns.computeIfAbsent(column.id(), ignored -> new Column(column)));
-        row.dto().values().forEach((id, value) -> columns.get(id).add(value, row.dto().displayValues().get(id)));
+    }
+
+    /** A value a column holds, once it has been accepted; how often it occurs does not matter. */
+    void acceptValue(String column, Object value) {
+        columns.get(column).add(value, text.format(value));
     }
 
     List<InferenceCatalogColumnDto> finish() {

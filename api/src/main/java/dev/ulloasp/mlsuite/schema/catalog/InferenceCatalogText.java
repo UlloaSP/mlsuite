@@ -23,7 +23,6 @@ final class InferenceCatalogText {
     private final Collator cells;
     private final Collator choices;
     private final Collator options;
-    private final String sortKeyLocale;
 
     private InferenceCatalogText(ULocale locale) {
         numbers = NumberFormatter.withLocale(locale)
@@ -32,22 +31,12 @@ final class InferenceCatalogText {
         cells = collator(locale, Collator.PRIMARY, true);
         choices = collator(locale, Collator.TERTIARY, true);
         options = collator(locale, Collator.TERTIARY, false);
-        // Keyed by what decides the order (the collation data the locale resolved to and how it writes
-        // numbers), not by the tag a browser sent, so the tags a member can make up share a few keys.
-        sortKeyLocale = cells.getLocale(ULocale.ACTUAL_LOCALE).toLanguageTag() + "|"
-                + ((RuleBasedCollator) cells).getRules().hashCode() + "|" + format(-1234567.891) + "|"
-                + cells.getVersion() + "|" + InferenceSortKeys.PROJECTION_VERSION;
     }
 
     /**
-     * What stored sort keys are valid for: this locale, as this collator orders it, of rows as this
-     * version of the projection shows them. Keys made under another ICU or projection are not read.
+     * Language, script and region of the tag only: its extensions would pick another collation or
+     * numbering system, and the table orders and writes as a browser does by default for the language.
      */
-    String sortKeyLocale() {
-        return sortKeyLocale;
-    }
-
-    /** Language, script and region of the tag only: its extensions could reorder rows unseen by the key. */
     static InferenceCatalogText of(String locale) {
         ULocale tag = ULocale.forLanguageTag(locale);
         return new InferenceCatalogText(new ULocale(tag.getLanguage(), tag.getScript(), tag.getCountry()));
