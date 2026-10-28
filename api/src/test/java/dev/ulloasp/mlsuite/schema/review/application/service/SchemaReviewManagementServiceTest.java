@@ -29,6 +29,7 @@ import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRevisionRepository;
 import dev.ulloasp.mlsuite.schema.application.service.FeedbackHistory;
+import dev.ulloasp.mlsuite.schema.catalog.InferenceRows;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackChange;
@@ -61,6 +62,7 @@ class SchemaReviewManagementServiceTest {
     @Mock private PredictionRunRepository runs;
     @Mock private PredictionResultFeedbackRepository feedback;
     @Mock private PredictionResultFeedbackRevisionRepository revisions;
+    @Mock private InferenceRows inferenceRows;
     @Mock private WorkspaceAccessService workspaceAccess;
     @Mock private WorkspaceAuthorizationService authorization;
     private SchemaReviewManagementService service;
@@ -68,7 +70,7 @@ class SchemaReviewManagementServiceTest {
     @BeforeEach
     void setUp() {
         service = new SchemaReviewManagementService(reviews, reviewRuns, submissions, assignees,
-                runs, feedback, new FeedbackHistory(feedback, revisions), workspaceAccess, authorization);
+                runs, feedback, new FeedbackHistory(feedback, revisions, inferenceRows), workspaceAccess, authorization);
     }
 
     @Test
@@ -195,6 +197,7 @@ class SchemaReviewManagementServiceTest {
         verify(feedback).deleteAll(List.of(answer));
         verify(revisions).save(argThat(revision -> revision.getChange() == PredictionResultFeedbackChange.DELETED
                 && revision.getValue() == null && revision.getChangedByUserId() == 7L));
+        verify(inferenceRows).answersChanged(50L);
         verify(authorization).require(7L, 41L, PermissionKey.MANAGE_REVIEWS);
     }
 

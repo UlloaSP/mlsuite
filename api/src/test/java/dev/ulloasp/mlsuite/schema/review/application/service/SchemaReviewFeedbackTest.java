@@ -41,6 +41,7 @@ import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultFeedback
 import dev.ulloasp.mlsuite.schema.application.dto.UpdatePredictionResultFeedbackRequest;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.application.service.FeedbackHistory;
+import dev.ulloasp.mlsuite.schema.catalog.InferenceRows;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackChange;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackType;
@@ -81,6 +82,7 @@ class SchemaReviewFeedbackTest {
     @Mock private PredictionResultRepository results;
     @Mock private PredictionResultFeedbackRepository feedback;
     @Mock private PredictionResultFeedbackRevisionRepository revisions;
+    @Mock private InferenceRows inferenceRows;
 
     private SchemaReviewService service;
     private PredictionResult result;
@@ -92,7 +94,7 @@ class SchemaReviewFeedbackTest {
                 authorization, users, mock(SchemaRepository.class),
                 mock(SchemaVersionRepository.class),
                 mock(SchemaModelBindingRepository.class), runs, results, feedback,
-                new FeedbackHistory(feedback, revisions));
+                new FeedbackHistory(feedback, revisions, inferenceRows));
         Organization organization = new Organization();
         organization.setId(41L);
         Schema schema = new Schema(organization, "Risk", null);
@@ -125,6 +127,8 @@ class SchemaReviewFeedbackTest {
         verify(feedback).saveAndFlush(argThat(answer -> answer.getReview() != null && answer.getReview().getId() == 88L));
         verify(revisions).save(argThat(revision -> revision.getChange() == PredictionResultFeedbackChange.CREATED
                 && revision.getReviewId() == 88L && revision.getChangedByUserId() == 7L));
+        // The run's stored inferences row is no longer current.
+        verify(inferenceRows).answersChanged(50L);
     }
 
     @Test

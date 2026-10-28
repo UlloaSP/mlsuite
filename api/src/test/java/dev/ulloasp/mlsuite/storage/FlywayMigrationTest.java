@@ -31,9 +31,9 @@ class FlywayMigrationTest {
     void appliesCompleteHistoryToEmptyPostgresAndIsRepeatable() throws Exception {
         Flyway flyway = flyway("fresh", null);
 
-        assertEquals(22, flyway.migrate().migrationsExecuted);
+        assertEquals(23, flyway.migrate().migrationsExecuted);
         assertEquals(0, flyway.migrate().migrationsExecuted);
-        assertEquals("22", flyway.info().current().getVersion().toString());
+        assertEquals("23", flyway.info().current().getVersion().toString());
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
@@ -127,7 +127,7 @@ class FlywayMigrationTest {
                 .baselineOnMigrate(true)
                 .baselineVersion(MigrationVersion.fromVersion("1"))
                 .load();
-        assertEquals(21, upgraded.migrate().migrationsExecuted);
+        assertEquals(22, upgraded.migrate().migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());

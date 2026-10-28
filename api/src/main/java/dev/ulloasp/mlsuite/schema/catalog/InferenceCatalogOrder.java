@@ -18,6 +18,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunOrigin;
 final class InferenceCatalogOrder {
 
     private static final String CREATED_AT = "createdAt";
+    private static final String FEEDBACK_STATUS = "feedbackStatus";
     /** The columns a run's summary holds, so ranking by them reads no results or answers. */
     private static final Set<String> SUMMARY_COLUMNS = Set.of(CREATED_AT, "name", "status", "schema", "version",
             "bookmark", "author", "origin");
@@ -104,32 +105,35 @@ final class InferenceCatalogOrder {
         if (byCreation()) {
             return descending ? NEWEST_FIRST : Comparator.comparing(Ranked::createdAt).thenComparing(NEWEST_FIRST);
         }
-        Comparator<Ranked> byColumn = (left, right) -> {
-            // A row without the column goes last in either direction.
-            if (left.key() == null || right.key() == null) {
-                return left.key() == right.key() ? 0 : left.key() == null ? 1 : -1;
+        return Comparator.comparing(Ranked::key, keyOrder()).thenComparing(NEWEST_FIRST);
+    }
+
+    /** The order of keys in this direction; a row without the column goes last in either direction. */
+    Comparator<Key> keyOrder() {
+        return (left, right) -> {
+            if (left == null || right == null) {
+                return left == right ? 0 : left == null ? 1 : -1;
             }
-            int comparison = left.key().compareTo(right.key());
+            int comparison = left.compareTo(right);
             return descending ? -comparison : comparison;
         };
-        return byColumn.thenComparing(NEWEST_FIRST);
     }
 
     private Key key(Row row) {
-        return bySummary() ? summaryKey(row.dto().item()) : derivedKey(row.dto(), column, text);
+        return bySummary() ? summaryKey(row.dto().item())
+                : derivedKey(row.dto().values().get(column), row.dto().feedbackStatus());
     }
 
     /**
      * A row's key in a column derived from its payloads: a number by value, anything else by its
-     * displayed text; none when the row does not show the column. InferenceSortKeys stores these.
+     * displayed text; none when the row does not show the column.
      */
-    static Key derivedKey(InferenceCatalogRowDto row, String column, InferenceCatalogText text) {
-        return switch (column) {
-            case "feedbackStatus" -> text(row.feedbackStatus().name(), text);
-            default -> row.values().get(column) instanceof Number number
-                    ? new Key(true, number.doubleValue(), null)
-                    : text(row.displayValues().get(column), text);
-        };
+    Key derivedKey(Object value, InferenceFeedbackStatus status) {
+        if (column.equals(FEEDBACK_STATUS)) {
+            return text(status.name());
+        }
+        return value instanceof Number number ? new Key(true, number.doubleValue(), null)
+                : value == null ? null : text(text.format(value));
     }
 
     private Key summaryKey(PredictionRunCatalogItemDto item) {
@@ -150,10 +154,6 @@ final class InferenceCatalogOrder {
     }
 
     private Key text(String value) {
-        return text(value, text);
-    }
-
-    private static Key text(String value, InferenceCatalogText text) {
         return value == null ? null : new Key(false, 0, text.cellKey(text.format(value)));
     }
 
