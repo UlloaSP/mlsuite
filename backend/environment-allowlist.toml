@@ -20,6 +20,9 @@ python = [
 
 # Every distribution the locks of the tested bundles name: scikit-learn 1.7.2 to 1.9.1, XGBoost,
 # CatBoost and ONNX models and pipelines exported with mlbundle 0.3.0 and 0.3.1 on CPython 3.14.7.
+# Rebuilt and run on shelob, every model predicted what it predicted where it was trained: bit for
+# bit, or within the last digits of a float for MLP, naive Bayes, SGD (float64) and ONNX (float32),
+# whose sums take another order on a CPU without AVX.
 [packages]
 annotated-types = ["0.8.0"]
 catboost = ["1.2.10"]
