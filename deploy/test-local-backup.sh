@@ -34,7 +34,8 @@ if [[ "${1:-}" == compose ]]; then
     printf '"spring-app":{"image":"ghcr.io/example/mlsuite-api@%s"},' "$digest"
     printf '"frontend":{"image":"ghcr.io/example/mlsuite-frontend@%s"},' "$digest"
     printf '"ops-agent":{"image":"ghcr.io/example/mlsuite-ops-agent@%s"},' "$digest"
-    printf '"py-analyzer":{"image":"ghcr.io/example/mlsuite-sklearn-backend@%s"}}}' "$digest"
+    printf '"py-analyzer":{"image":"ghcr.io/example/mlsuite-sklearn-backend@%s"},' "$digest"
+    printf '"runtime-builder":{"image":"ghcr.io/example/mlsuite-sklearn-backend@%s"}}}' "$digest"
     exit 0
   fi
   for ((i=1; i<=$#; i++)); do

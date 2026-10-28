@@ -1,11 +1,9 @@
 import json
 
-from fastapi.testclient import TestClient
 
-from mlsuite_backend.main import app
+from tests.client import client
 from tests.helpers import make_classifier, run_request, serialize_bundle
 
-client = TestClient(app)
 
 
 def test_predict_accepts_all_model_features() -> None:

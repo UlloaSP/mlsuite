@@ -25,7 +25,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
+import dev.ulloasp.mlsuite.model.application.runtime.RuntimeEnvironments;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.model.domain.model.ModelRuntimeState;
 import dev.ulloasp.mlsuite.storage.ArtifactSource;
 import dev.ulloasp.mlsuite.storage.ModelArtifactInlineCopy;
 import dev.ulloasp.mlsuite.storage.StorageProperties;
@@ -57,6 +59,7 @@ class ModelServiceTest {
     @Mock private ModelArtifactContentReader artifactReader;
     @Mock private StorageDeletionQueue deletionQueue;
     @Mock private ModelArtifactInlineCopy inlineCopy;
+    @Mock private RuntimeEnvironments environments;
 
     private ModelServiceImpl service;
 
@@ -74,7 +77,9 @@ class ModelServiceTest {
                 deletionQueue,
                 inlineCopy,
                 new StorageProperties(),
+                environments,
                 false);
+        lenient().when(environments.register(any())).thenAnswer(call -> call.<BundleInspection.Environment>getArgument(0).key());
         lenient().when(workspaceAuthorizationService.requireCurrent(eq(3L), any(PermissionKey[].class))).thenReturn(organization());
     }
 
@@ -156,6 +161,7 @@ class ModelServiceTest {
         verify(deletionQueue).enqueue("models", model.getStorageObjectKey(), "version-7");
         verify(modelRepository).delete(model);
         verify(objectStorageService, never()).delete(anyString(), anyString(), any());
+        verify(environments).releaseWhenUnused(model.getEnvironmentKey());
     }
 
     @Test
@@ -235,6 +241,35 @@ class ModelServiceTest {
     }
 
     @Test
+    void createModel_RunsABundleWithoutALockAtOnceInTheLegacyEnvironment() {
+        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
+        when(modelRepository.saveAndFlush(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Model result = service.createModel(3L, "demo", inspection(null), ArtifactSource.of("x".getBytes()), "sha-x",
+                "application/octet-stream");
+
+        assertEquals("legacy", result.getEnvironmentKey());
+        assertEquals(ModelRuntimeState.READY, result.getRuntimeState());
+    }
+
+    @Test
+    void createModel_PreparesTheEnvironmentABundleWithALockNeeds() {
+        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
+        when(modelRepository.saveAndFlush(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        BundleInspection.Environment locked = new BundleInspection.Environment("e".repeat(64), "i".repeat(64), "0.3.0",
+                "3.14.7", List.of(Map.of("name", "scikit-learn", "version", "1.9.1")), "lock-version = \"1.0\"");
+        BundleInspection inspection = new BundleInspection("clf", "rf", "model.mlbundle",
+                Map.of("fields", List.of(), "reports", List.of()), Map.of("writer_version", "0.3.0"), null, locked);
+
+        Model result = service.createModel(3L, "demo", inspection, ArtifactSource.of("x".getBytes()), "sha-x",
+                "application/octet-stream");
+
+        verify(environments).register(locked);
+        assertEquals("e".repeat(64), result.getEnvironmentKey());
+        assertEquals(ModelRuntimeState.PREPARING, result.getRuntimeState());
+    }
+
+    @Test
     void createModel_DeletesStoredObjectWhenPersistFails() throws Exception {
         RuntimeException failure = new RuntimeException("persist failed");
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
@@ -249,8 +284,11 @@ class ModelServiceTest {
 
     private static BundleInspection inspection(List<Map<String, Object>> importances) {
         return new BundleInspection("clf", "rf", "model.mlbundle", Map.of("fields", List.of(), "reports", List.of()),
-                Map.of("writer_version", "0.1.0a3"), importances);
+                Map.of("writer_version", "0.1.0a3"), importances, LEGACY);
     }
+
+    private static final BundleInspection.Environment LEGACY =
+            new BundleInspection.Environment("legacy", null, null, null, List.of(), null);
 
     private User user() {
         User user = new User();

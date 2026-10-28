@@ -18,6 +18,7 @@ import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.model.application.dto.ModelDto;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
+import dev.ulloasp.mlsuite.model.application.runtime.RuntimeEnvironments;
 import dev.ulloasp.mlsuite.model.application.upload.BundleInspection;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelAlreadyExistsException;
@@ -57,6 +58,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
     private final StorageDeletionQueue deletionQueue;
     private final ModelArtifactInlineCopy inlineCopy;
     private final boolean retainInlineCopy;
+    private final RuntimeEnvironments environments;
     private final boolean requireMutationVersion;
 
     public ModelServiceImpl(
@@ -71,6 +73,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
             StorageDeletionQueue deletionQueue,
             ModelArtifactInlineCopy inlineCopy,
             StorageProperties storageProperties,
+            RuntimeEnvironments environments,
             @Value("${model.mutations.require-version:false}") boolean requireMutationVersion) {
         this.userLookupService = userLookupService;
         this.modelRepository = modelRepository;
@@ -83,6 +86,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         this.deletionQueue = deletionQueue;
         this.inlineCopy = inlineCopy;
         this.retainInlineCopy = storageProperties.isRetainInlineCopy();
+        this.environments = environments;
         this.requireMutationVersion = requireMutationVersion;
         this.catalogReader = new ModelCatalogReader(modelRepository, workspaceAuthorizationService);
     }
@@ -116,6 +120,8 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         model.setInputSchema(inspection.schema());
         model.setBundleManifest(inspection.manifest());
         model.setFeatureImportances(inspection.featureImportances());
+        model.setEnvironmentKey(environments.register(inspection.environment()));
+        model.setRuntimeState(RuntimeEnvironments.initialState(model.getEnvironmentKey()));
         model.setModelFile(new byte[0]);
         model.setModelSizeBytes(artifact.sizeBytes());
         model.setArtifactState(ModelArtifactState.INLINE_ONLY);
@@ -225,6 +231,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
             deletionQueue.enqueue(model.getStorageBucket(), model.getStorageObjectKey(), model.getStorageVersionId());
         }
         modelRepository.delete(model);
+        environments.releaseWhenUnused(model.getEnvironmentKey());
     }
 
     private Model requireModel(Long userId, Long organizationId, Long modelId) {
@@ -254,6 +261,10 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         copy.setInputSchema(source.getInputSchema());
         copy.setBundleManifest(source.getBundleManifest());
         copy.setFeatureImportances(source.getFeatureImportances());
+        // The same artifact in the same environment: whatever preparing it found holds for the copy.
+        copy.setEnvironmentKey(source.getEnvironmentKey());
+        copy.setRuntimeState(source.getRuntimeState());
+        copy.setRuntimeError(source.getRuntimeError());
         return copy;
     }
 

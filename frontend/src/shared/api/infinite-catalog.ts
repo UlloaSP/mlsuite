@@ -2,6 +2,7 @@ import {
   hashKey,
   infiniteQueryOptions,
   useInfiniteQuery,
+  type InfiniteData,
   type QueryKey,
 } from "@tanstack/react-query";
 
@@ -22,7 +23,8 @@ type CatalogOptions<TPage extends CatalogPage<unknown>> = {
   retry?: boolean;
   enabled?: boolean;
   staleTime?: number;
-  refetchInterval?: number;
+  /** A fixed interval, or one decided from the loaded pages (false stops polling). */
+  refetchInterval?: number | ((pages: readonly TPage[]) => number | false);
   meta?: Record<string, unknown>;
 };
 
@@ -35,11 +37,17 @@ const catalogRoot = (queryKey: QueryKey) =>
 export function infiniteCatalogOptions<TPage extends CatalogPage<unknown>>({
   queryFn,
   itemId = defaultItemId,
+  refetchInterval,
   ...options
 }: CatalogOptions<TPage>) {
   const root = catalogRoot(options.queryKey);
   return infiniteQueryOptions({
     ...options,
+    refetchInterval:
+      typeof refetchInterval === "function"
+        ? (query: { state: { data?: InfiniteData<TPage> } }) =>
+            refetchInterval(query.state.data?.pages ?? [])
+        : refetchInterval,
     initialPageParam: 0,
     queryFn: ({ pageParam, signal }) => queryFn(pageParam, signal),
     getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.page + 1 : undefined),

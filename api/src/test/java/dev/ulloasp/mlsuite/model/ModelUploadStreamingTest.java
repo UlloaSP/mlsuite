@@ -46,7 +46,7 @@ class ModelUploadStreamingTest extends PublicPredictionFixture {
     private static final int SIZE = 48 * 1024 * 1024;
     private static final Map<String, Object> INSPECTION = Map.of("type", "classifier", "specificType", "Forest",
             "fileName", "big.mlbundle", "schema", Map.of("fields", List.of(), "reports", List.of()),
-            "manifest", Map.of("writer_version", "0.2.1"));
+            "manifest", Map.of("writer_version", "0.2.1"), "environment", Map.of("key", "legacy"));
 
     @MockitoBean ObjectStorageService storage;
     @Autowired ModelUploadUseCase uploads;

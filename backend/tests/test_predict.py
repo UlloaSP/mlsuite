@@ -1,11 +1,9 @@
 import json
 
-import mlbundle
 import pandas as pd
 import pytest
-from fastapi.testclient import TestClient
 
-from mlsuite_backend.main import app
+from tests.client import client
 from tests.helpers import (
     make_catboost_pipeline,
     make_classifier,
@@ -20,7 +18,6 @@ from tests.helpers import (
     serialize_bundle,
 )
 
-client = TestClient(app)
 
 
 def _predict(model: object, record: dict[str, object], **export: object):
@@ -122,13 +119,3 @@ def test_predict_rejects_non_numeric_value() -> None:
     response = _predict(make_classifier(), {"age": "old", "income": 55_000})
     assert response.status_code == 400
     assert response.json()["detail"] == 'Feature "age": expected a decimal or true/false string.'
-
-
-def test_predict_answers_an_inference_failure_with_a_runtime_error(monkeypatch) -> None:
-    def failing(_bundle: object, _record: object) -> None:
-        raise RuntimeError("boom")
-
-    monkeypatch.setattr(mlbundle.LoadedBundle, "predict_record", failing)
-    response = _predict(make_regressor(), {"rooms": 3, "area": 60})
-    assert response.status_code == 500
-    assert response.json()["detail"] == "Error during inference: boom"

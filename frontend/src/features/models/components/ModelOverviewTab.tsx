@@ -12,7 +12,7 @@ import { ModelPipelineSteps } from "@/features/models/components/ModelPipelineSt
 import { ModelSection } from "@/features/models/components/ModelSection";
 import type { ModelManifestView } from "@/features/models/lib/model-manifest";
 import type { ModelOutputRow } from "@/features/models/lib/model-schema-rows";
-import type { FeatureImportanceDto } from "@/shared/api/openapi.gen";
+import type { FeatureImportanceDto, ModelDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   manifest: ModelManifestView;
@@ -20,6 +20,8 @@ type Props = {
   /** How the bundle's form fields were made: from the training data, or the default. */
   schemaSource: string | null;
   importances: FeatureImportanceDto[] | null;
+  /** Importances are read in the model's environment, so none exist until it is ready. */
+  runtimeState: ModelDto["runtimeState"];
 };
 
 const FEATURE_NAMES: Record<string, string> = {
@@ -34,7 +36,13 @@ const FORM_FIELDS: Record<string, string> = {
   default: "Default: every feature is a number",
 };
 
-export function ModelOverviewTab({ manifest, outputs, schemaSource, importances }: Props) {
+export function ModelOverviewTab({
+  manifest,
+  outputs,
+  schemaSource,
+  importances,
+  runtimeState,
+}: Props) {
   const facts: ModelFact[] = [
     { label: "Library", value: manifest.library },
     { label: "Feature names", value: FEATURE_NAMES[manifest.featureOrigin ?? ""] },
@@ -83,6 +91,12 @@ export function ModelOverviewTab({ manifest, outputs, schemaSource, importances 
       >
         {importances && importances.length > 0 ? (
           <FeatureImportanceChart importances={importances} />
+        ) : runtimeState !== "READY" ? (
+          <AppEmptyState
+            compact
+            title="Not read yet"
+            description="Feature importances appear once the model's environment is prepared."
+          />
         ) : (
           <AppEmptyState
             compact

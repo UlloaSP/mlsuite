@@ -14,6 +14,7 @@ const model: SchemaSourceModel = {
   type: "CLASSIFIER",
   specificType: "tree",
   inputSchema: { fields: [], reports: [] },
+  runtimeState: "READY",
 };
 
 test("selects requested available model only", () => {

@@ -17,7 +17,7 @@ import org.springframework.stereotype.Repository;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.domain.model.ModelArtifactState;
-import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
+import dev.ulloasp.mlsuite.model.application.runtime.RunnableModel;
 import dev.ulloasp.mlsuite.storage.StoredArtifactReference;
 
 @Repository
@@ -34,22 +34,24 @@ public interface ModelRepository extends JpaRepository<Model, Long> {
     Optional<byte[]> findModelFile(Long id);
 
     @Query("""
-            SELECT new dev.ulloasp.mlsuite.storage.ModelArtifactReference(
+            SELECT new dev.ulloasp.mlsuite.model.application.runtime.RunnableModel(
                 m.id, m.fileName, m.storageBucket, m.storageObjectKey, m.storageVersionId,
-                m.modelSizeBytes, m.artifactSha256)
+                m.modelSizeBytes, m.artifactSha256, m.environmentKey, m.runtimeState)
             FROM Model m
             WHERE m.id = :id
             """)
-    Optional<ModelArtifactReference> findArtifactReference(Long id);
+    Optional<RunnableModel> findRunnableModel(Long id);
 
     @Query("""
-            SELECT new dev.ulloasp.mlsuite.storage.ModelArtifactReference(
+            SELECT new dev.ulloasp.mlsuite.model.application.runtime.RunnableModel(
                 m.id, m.fileName, m.storageBucket, m.storageObjectKey, m.storageVersionId,
-                m.modelSizeBytes, m.artifactSha256)
+                m.modelSizeBytes, m.artifactSha256, m.environmentKey, m.runtimeState)
             FROM Model m
             WHERE m.id = :id AND m.organization.id = :organizationId
             """)
-    Optional<ModelArtifactReference> findArtifactReference(Long id, Long organizationId);
+    Optional<RunnableModel> findRunnableModel(Long id, Long organizationId);
+
+    boolean existsByEnvironmentKey(String environmentKey);
 
     List<Model> findByOrganizationIdAndArchivedAtIsNull(Long organizationId);
 

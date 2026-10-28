@@ -20,6 +20,7 @@ class ReleaseImageValidationTest(unittest.TestCase):
             "frontend": {"image": f"ghcr.io/example/frontend@{digest}"},
             "ops-agent": {"image": f"ghcr.io/example/ops-agent@{digest}"},
             "py-analyzer": {"image": f"ghcr.io/example/backend@{digest}"},
+            "runtime-builder": {"image": f"ghcr.io/example/backend@{digest}"},
         }}
 
     def test_accepts_complete_digest_pinned_release(self):
@@ -37,6 +38,12 @@ class ReleaseImageValidationTest(unittest.TestCase):
             "ghcr.io/example/mlsuite-api@sha256:" + "b" * 64
         )
         with self.assertRaisesRegex(ValueError, "same image digest"):
+            validate_release_config(config)
+
+    def test_rejects_a_builder_on_another_image_than_the_runtime(self):
+        config = copy.deepcopy(self.config)
+        config["services"]["runtime-builder"]["image"] = "ghcr.io/example/backend@sha256:" + "b" * 64
+        with self.assertRaisesRegex(ValueError, "runtime and its environment builder"):
             validate_release_config(config)
 
 

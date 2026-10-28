@@ -58,6 +58,8 @@ export function BundleCard({ bundle, onSave, onRemove, onRename }: Props) {
             <p id={`bundle-${bundle.id}-name`} className="text-2xs text-danger-fg">
               Name the model to save it.
             </p>
+          ) : bundle.preparing ? (
+            <p className="text-2xs text-fg-secondary">Its environment is being prepared.</p>
           ) : null}
 
           <div className="flex items-center justify-between gap-2">

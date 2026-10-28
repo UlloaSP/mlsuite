@@ -51,7 +51,7 @@ const AUTHENTICATION = [
 
 const LIMITS = [
   "Each client may make a limited number of calls a minute, and the organization's clients together a limited number of successful calls a calendar month (UTC). Past either limit a call is refused with 429 and a Retry-After header in seconds.",
-  "Runs of API clients share a few runtime slots. When none is free a call is refused with 503 and Retry-After; retry it then.",
+  "Runs of API clients share a few runtime slots. When none is free, or the model's environment is still being prepared after an upload, a call is refused with 503 and Retry-After; retry it then.",
 ];
 
 const ERRORS: ApiDocError[] = [
@@ -67,7 +67,7 @@ const ERRORS: ApiDocError[] = [
   {
     status: 409,
     code: "bookmark_not_runnable",
-    when: "The bookmark's snapshot does not bind exactly one model, or its model exceeds the size limit.",
+    when: "The bookmark's snapshot does not bind exactly one model, its model exceeds the size limit, or its model's environment could not be prepared.",
   },
   {
     status: 409,
@@ -87,7 +87,11 @@ const ERRORS: ApiDocError[] = [
   },
   { status: 500, code: "internal_error", when: "The call could not be completed." },
   { status: 502, code: "runtime_failed", when: "The prediction could not be completed." },
-  { status: 503, code: "runtime_busy", when: "Every runtime slot for clients is in use." },
+  {
+    status: 503,
+    code: "runtime_busy",
+    when: "Every runtime slot for clients is in use, or the model's environment is still being prepared.",
+  },
 ];
 
 type Output = { description: string; entry: JsonRecord };

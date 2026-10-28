@@ -30,6 +30,7 @@ export function appendBundleFiles(previous: Bundle[], files: File[], firstId: nu
       modelFile,
       name: slugToTitle(getStem(modelFile.name)),
       saved: false,
+      preparing: false,
       saving: false,
     });
   }

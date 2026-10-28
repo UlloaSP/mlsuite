@@ -26,18 +26,25 @@ x-logging: &logging
 
 # Each network joins only the services that call each other. The browser reaches nginx,
 # which proxies to the API and to the agent's boot-status endpoint; the API alone reaches
-# the stores and the runtime. The runtime parses untrusted uploaded models, so its network
-# is internal: it reaches neither the agent, the stores nor the internet.
+# the stores, the runtime and the builder. The runtime runs untrusted uploaded models, so its
+# network is internal: it reaches neither the agent, the stores nor the internet. The builder
+# alone downloads packages (egress), and only the API reaches it (build, internal).
 networks:
   edge:
   data:
   runtime:
     internal: true
+  build:
+    internal: true
+  egress:
 
 
 volumes:
   pg_data:
   minio_data:
+  # The environments the builder installs and the runtime runs models in. A cache: lost, it is
+  # rebuilt from the bundles' locks, so it is not backed up.
+  runtime_environments:
 
 
 services:
@@ -115,8 +122,10 @@ services:
       PYTHON_PORT: ${PYTHON_PORT}
       CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
       RUNTIME_WORKERS: ${RUNTIME_WORKERS:-2}
-      RUNTIME_MAX_CONCURRENT: ${RUNTIME_MAX_CONCURRENT:-1}
       RUNTIME_BUNDLE_CACHE_MB: ${RUNTIME_BUNDLE_CACHE_MB:-512}
+    volumes:
+      - runtime_environments:/var/lib/mlsuite/environments:ro
+    mem_limit: ${RUNTIME_MEMORY_LIMIT:-6g}
     healthcheck:
       test: [ "CMD", "/app/.venv/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:${PYTHON_PORT}/health', timeout=4)" ]
       interval: 15s
@@ -124,6 +133,25 @@ services:
       retries: 5
       start_period: 30s
     networks: [ runtime ]
+    restart: unless-stopped
+    logging: *logging
+
+  runtime-builder:
+    command: [ "mlsuite_backend.builder" ]
+    environment:
+      RUNTIME_BUILDER_HOST: ${RUNTIME_BUILDER_HOST}
+      RUNTIME_BUILDER_PORT: ${RUNTIME_BUILDER_PORT}
+      RUNTIME_PACKAGE_INDEX_URL: ${RUNTIME_PACKAGE_INDEX_URL:-https://pypi.org/simple}
+    volumes:
+      - runtime_environments:/var/lib/mlsuite/environments
+    mem_limit: ${RUNTIME_BUILDER_MEMORY_LIMIT:-2g}
+    healthcheck:
+      test: [ "CMD", "/app/.venv/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:${RUNTIME_BUILDER_PORT}/health', timeout=4)" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks: [ build, egress ]
     restart: unless-stopped
     logging: *logging
 
@@ -216,6 +244,7 @@ services:
       FLYWAY_ENABLED: "false"
       CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
       ANALYZER_BASE_URL: ${ANALYZER_BASE_URL}
+      RUNTIME_BUILDER_BASE_URL: ${RUNTIME_BUILDER_BASE_URL}
       STORAGE_ENABLED: ${STORAGE_ENABLED}
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
       STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
@@ -259,6 +288,8 @@ services:
         condition: service_healthy
       py-analyzer:
         condition: service_healthy
+      runtime-builder:
+        condition: service_healthy
       db-migrate:
         condition: service_completed_successfully
       minio-init:
@@ -269,7 +300,7 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
-    networks: [ edge, data, runtime ]
+    networks: [ edge, data, runtime, build ]
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped

@@ -57,9 +57,9 @@ class PostgresArtifactMigrationQueueTest {
         jdbc.update("""
                 INSERT INTO model
                     (user_id, name, type, specific_type, file_name, model_file, input_schema,
-                     artifact_state, created_at, updated_at, version)
+                     artifact_state, environment_key, runtime_state, created_at, updated_at, version)
                 VALUES (1, 'model', 'classifier', 'Test', 'model.bin', decode('01', 'hex'), '{}',
-                        'INLINE_ONLY', now(), now(), 0)
+                        'INLINE_ONLY', 'legacy', 'READY', now(), now(), 0)
                 """);
 
         var first = queue.claim(5, 300, "lease-a").orElseThrow();

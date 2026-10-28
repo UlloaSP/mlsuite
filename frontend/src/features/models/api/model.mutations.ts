@@ -12,9 +12,11 @@ import {
   duplicateModel,
   renameModel,
   restoreModel,
+  retryModelEnvironment,
 } from "./model.api";
 import { modelKeys } from "./model.keys";
 import type { CreateModelRequest } from "./model.types";
+import type { ModelDto } from "@/shared/api/openapi.gen";
 
 const useInvalidateModelQueries = () => {
   const queryClient = useQueryClient();
@@ -53,6 +55,22 @@ export const useDuplicateModelMutation = () => {
 export const useRenameModelMutation = () => {
   const invalidate = useInvalidateModelQueries();
   return useMutation(invalidatingMutationOptions(renameModel, invalidate));
+};
+
+/**
+ * The model answers PREPARING and its page polls from there. A refusal (409: it is no longer
+ * failed) still refreshes the model, so the page shows the state that refused it.
+ */
+export const useRetryModelEnvironmentMutation = () => {
+  const queryClient = useQueryClient();
+  const organizationId = useCurrentOrganizationId() ?? "none";
+  const invalidate = useInvalidateModelQueries();
+  return useMutation({
+    mutationFn: (modelId: number | string) => retryModelEnvironment(modelId),
+    onSuccess: (model: ModelDto) =>
+      queryClient.setQueryData(modelKeys.detail(organizationId, model.id), model),
+    onSettled: () => invalidate(),
+  });
 };
 
 export const useCreateModelMutation = () => {

@@ -1,0 +1,59 @@
+# What MLsuite installs to run an uploaded model, reviewed in pull requests.
+#
+# A bundle's pylock.toml names every distribution its model needs. Installing them runs their
+# code, so MLsuite accepts a bundle only when its Python version, the mlbundle release that wrote
+# it and every locked package (the model's libraries and all their dependencies) appear here with
+# that exact version. Add a version only once bundles that need it rebuild and reproduce their
+# predictions on the production host: shelob's CPUs lack AVX, so a wheel built for newer
+# processors stops its worker there (SIGILL), which preparing the model reports.
+
+python = [
+    "3.14.0", "3.14.1", "3.14.2", "3.14.3", "3.14.4",
+    "3.14.5", "3.14.6", "3.14.7", "3.14.8", "3.14.9",
+]
+
+# Each release's py3-none-any wheel digest: the lock omits mlbundle, so the builder installs it
+# by this hash.
+[mlbundle]
+"0.3.0" = "1d4c6fcca08a6e0a13c2df98ff29b55a1d20f12d3a84cdea7f7b8bea1c62ee63"
+
+# Every distribution the locks of the tested bundles name: scikit-learn 1.7.2 to 1.9.1, XGBoost,
+# CatBoost and ONNX models and pipelines exported with mlbundle 0.3.0 on CPython 3.14.7.
+[packages]
+annotated-types = ["0.8.0"]
+catboost = ["1.2.10"]
+cloudpickle = ["3.1.2"]
+contourpy = ["1.4.0"]
+cycler = ["0.12.1"]
+flatbuffers = ["25.12.19"]
+fonttools = ["4.68.0"]
+graphviz = ["0.21"]
+joblib = ["1.6.0"]
+kiwisolver = ["1.5.1"]
+matplotlib = ["3.11.2"]
+ml-dtypes = ["0.6.0"]
+narwhals = ["2.28.0"]
+numpy = ["2.5.4"]
+nvidia-nccl-cu13 = ["2.32.3"]
+onnx = ["1.23.2"]
+onnxruntime = ["1.31.1"]
+packaging = ["26.3"]
+pandas = ["3.1.0"]
+pillow = ["13.0.0"]
+plotly = ["7.1.0"]
+prettytable = ["3.18.0"]
+protobuf = ["7.36.2"]
+pydantic = ["2.14.1"]
+pydantic-core = ["2.50.1"]
+pyparsing = ["3.3.3"]
+python-dateutil = ["3.0.0"]
+scikit-learn = ["1.7.2", "1.8.0", "1.9.0", "1.9.1"]
+scipy = ["1.18.1"]
+six = ["1.17.0"]
+skops = ["0.16.0"]
+threadpoolctl = ["3.7.0"]
+typing-extensions = ["4.16.0"]
+typing-inspection = ["0.4.4"]
+tzdata = ["2026.6"]
+wcwidth = ["0.9.4"]
+xgboost = ["3.4.1"]

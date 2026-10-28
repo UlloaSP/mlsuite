@@ -1,8 +1,7 @@
 import json
 
-from fastapi.testclient import TestClient
 
-from mlsuite_backend.main import app
+from tests.client import client
 from tests.helpers import (
     make_classifier,
     make_decimal_tree,
@@ -12,7 +11,6 @@ from tests.helpers import (
     serialize_bundle,
 )
 
-client = TestClient(app)
 
 
 def _explain(model: object, record: dict[str, object], traces: str = "[]"):

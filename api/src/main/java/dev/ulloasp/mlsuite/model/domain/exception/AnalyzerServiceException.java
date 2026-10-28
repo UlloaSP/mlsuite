@@ -69,6 +69,15 @@ public class AnalyzerServiceException extends RuntimeException {
                 return "";
             if (detail.isTextual())
                 return detail.asText();
+            // An environment the allowlist refuses: {"message": "...", "refused": ["name==version", ...]}.
+            if (detail.isObject() && detail.path("message").isTextual() && detail.path("refused").isArray()) {
+                StringBuilder sb = new StringBuilder(detail.get("message").asText()).append(": ");
+                for (int index = 0; index < detail.get("refused").size(); index++) {
+                    if (index > 0) sb.append(", ");
+                    sb.append(detail.get("refused").get(index).asText());
+                }
+                return sb.toString();
+            }
             if (detail.isArray() && detail.size() > 0) {
                 // Join messages from validation error array
                 StringBuilder sb = new StringBuilder();

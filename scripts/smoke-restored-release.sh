@@ -70,7 +70,7 @@ STORAGE_ENV=(-e STORAGE_ENDPOINT="$storage_endpoint" -e STORAGE_ACCESS_KEY="$sto
 "${COMPOSE[@]}" run --rm --no-deps "${DB_ENV[@]}" "${STORAGE_ENV[@]}" \
   -e ARTIFACT_MIGRATION_COMMAND=verify artifact-migrate
 
-"${COMPOSE[@]}" up -d --no-deps py-analyzer
+"${COMPOSE[@]}" up -d --no-deps py-analyzer runtime-builder
 docker rm -f "$api_container" >/dev/null 2>&1 || true
 "${COMPOSE[@]}" run -d --no-deps --name "$api_container" \
   -p "127.0.0.1:${smoke_port}:${spring_port}" "${DB_ENV[@]}" "${STORAGE_ENV[@]}" \

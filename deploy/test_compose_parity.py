@@ -70,6 +70,7 @@ def main() -> None:
         "db-migrate": "mlsuite-api",
         "spring-app": "mlsuite-api",
         "py-analyzer": "mlsuite-sklearn-backend",
+        "runtime-builder": "mlsuite-sklearn-backend",
         "frontend": "mlsuite-frontend",
         "ops-agent": "mlsuite-ops-agent",
     }
@@ -132,6 +133,28 @@ def main() -> None:
     assert production["networks"]["runtime"].get("internal") is True, (
         "the runtime network must have no route to other networks or the internet"
     )
+    build_peers = {
+        name for name, service in production["services"].items()
+        if "build" in service.get("networks", {})
+    }
+    assert build_peers == {"runtime-builder", "spring-app"}, (
+        "only the API may ask the builder to install an environment"
+    )
+    assert production["networks"]["build"].get("internal") is True
+    egress_peers = {
+        name for name, service in production["services"].items()
+        if "egress" in service.get("networks", {})
+    }
+    assert egress_peers == {"runtime-builder"}, "only the builder may download packages"
+    environments = {
+        name: volume.get("read_only", False)
+        for name, service in production["services"].items()
+        for volume in service.get("volumes", [])
+        if volume.get("source") == "runtime_environments"
+    }
+    assert environments == {"py-analyzer": True, "runtime-builder": False}, (
+        "the builder alone writes environments; the runtime runs models in them read-only"
+    )
     for name, service in production["services"].items():
         options = service.get("logging", {}).get("options", {})
         assert options.get("max-size") and options.get("max-file"), (
@@ -141,6 +164,7 @@ def main() -> None:
     assert production["services"]["spring-app"]["depends_on"]["py-analyzer"]["condition"] == (
         "service_healthy"
     ), "the API must wait for a healthy runtime"
+    assert "healthcheck" in production["services"]["runtime-builder"], "the builder must report health"
     script_pins = (ROOT / "scripts/lib.sh").read_text().splitlines()
     assert f"POSTGRES_IMAGE={postgres_image}" in script_pins, (
         "operational scripts must use the Compose PostgreSQL image"

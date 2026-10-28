@@ -15,7 +15,7 @@ IMAGES = {
 }
 COMPOSE_SERVICES = {
     "api": ("artifact-migrate", "db-migrate", "spring-app"),
-    "backend": ("py-analyzer",),
+    "backend": ("py-analyzer", "runtime-builder"),
 }
 PLATFORM = "linux/amd64"
 MANIFEST_KEYS = {"schema_version", "repository", "commit", "release", "platform", "images"}

@@ -95,6 +95,19 @@ with its manifest and schema, and MLsuite uses that schema as it comes: export
 with `training_data=` to infer the fields from the training frame; otherwise
 every feature is a number field.
 
+Each model runs in its own environment. A bundle from mlbundle 0.3 or later carries
+`pylock.toml`, the exact Python and distributions it was trained with; MLsuite
+accepts it only when `backend/environment-allowlist.toml` names that Python, that
+mlbundle release and every locked package at its exact version, then installs the
+environment once (models needing the same files share it) and loads the model
+there before anyone runs it. Until then the model is *preparing*; a bundle that
+cannot load or predict its samples there is *failed* with the reason, and a member
+who may edit models can have it prepared again. Bundles written before locks run in
+the runtime's frozen legacy environment (mlbundle 0.2.1, scikit-learn 1.9.1). Every
+stored result keeps the environment that computed it. To allow a new version, add
+it to the allowlist once bundles needing it reproduce their predictions on the
+production host.
+
 Fields map to the model's own feature names; a model without them takes its
 features by position, so its fields map to `0`, `1`, …. One-hot columns are
 grouped with the separator the bundle was exported with. Every model output has
@@ -166,8 +179,11 @@ drift.
 Services share a network only with the services they call: `edge` joins the
 frontend, the API and the ops-agent; `data` joins the API, its one-shot jobs,
 PostgreSQL and MinIO; `runtime` joins only the API and `py-analyzer`. The runtime
-parses uploaded models, so its network is internal and reaches neither the
-ops-agent, the stores nor the internet. Only the frontend is published on every
+runs uploaded models, so its network is internal and reaches neither the
+ops-agent, the stores nor the internet. `runtime-builder` installs model
+environments into the `runtime_environments` volume, which the runtime mounts
+read-only; it alone reaches the package index (`egress`), and only the API reaches
+it (`build`, internal). Only the frontend is published on every
 interface; PostgreSQL is published on `127.0.0.1` alone, because Docker-published
 ports bypass host firewalls such as ufw. The API starts once `py-analyzer` reports
 healthy on `/health`. Docker rotates every container's log at 10 MB and keeps five
@@ -400,17 +416,16 @@ most `PREDICTION_JOBS_MAX_OPEN_PER_MEMBER` uploads per member (default `2`) and
 queued or running at once. A call
 names its model's artifact by SHA-256; the API sends the artifact only when the
 runtime answers that it does not hold it, and the runtime checks the bytes against
-that hash. The runtime serves in `RUNTIME_WORKERS` processes (default `2`; about
-one per core it may use), since one Python process runs model code on one core at
-a time. Each worker runs predictions and explanations on `RUNTIME_MAX_CONCURRENT`
-threads (default `1`, the fastest: more threads of one process only contend for
-it) and loads bundles on a thread of its own, so a slow upload never delays a
-prediction, and its health check stays answered while models run. A worker keeps
-the verified bundles it loaded while their artifacts total at most
-`RUNTIME_BUNDLE_CACHE_MB` (default `512`; the newest bundle is kept even when
-larger), and keeps the verified bytes once on disk for every worker under the same
-bound, so the API sends an artifact once whichever worker it reaches. Size the
-workers by memory as well as cores: each holds its own bundles.
+that hash. The runtime is one asynchronous process that runs models in at most
+`RUNTIME_WORKERS` worker processes in all (default `2`; about one per core it may
+use), each running one request at a time inside one model's environment; a busy
+environment takes several, and an idle worker gives way to another environment's.
+Its health check stays answered while models run. A worker keeps the bundles it
+loaded while their artifacts total at most `RUNTIME_BUNDLE_CACHE_MB` (default
+`512`; the newest is kept even when larger), and the runtime keeps received
+artifacts on disk under the same bound, so the API sends an artifact once. Size
+the workers by memory as well as cores, and bound the runtime with
+`RUNTIME_MEMORY_LIMIT` (default `6g`) on a shared host.
 
 Monitor `storageDeletionQueue` on `/actuator/info` and alert on any `failed` row
 or a `pending` count that grows continuously. Cleanup workers use database leases,

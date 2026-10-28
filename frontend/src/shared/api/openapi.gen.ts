@@ -644,6 +644,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/models/{modelId}/environment/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["retryEnvironment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/models/{modelId}/restore": {
         parameters: {
             query?: never;
@@ -1163,7 +1179,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_6"];
+        get: operations["get_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1339,7 +1355,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_5"];
+        get: operations["get_6"];
         put?: never;
         post?: never;
         delete: operations["delete_5"];
@@ -1419,7 +1435,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_4"];
+        get: operations["get_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1580,6 +1596,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["readiness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/runtime-environments/{environmentKey}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2930,6 +2962,10 @@ export interface components {
         DuplicateRoleRequest: {
             name: string;
         };
+        EnvironmentPackageDto: {
+            name: string;
+            version: string;
+        };
         ErrorDto: {
             message?: string;
             path?: string;
@@ -3077,6 +3113,7 @@ export interface components {
             canRemove: boolean;
         };
         ModelDetailsDto: {
+            environment: components["schemas"]["RuntimeEnvironmentDto"];
             featureImportances: components["schemas"]["FeatureImportanceDto"][] | null;
             manifest: {
                 [key: string]: unknown;
@@ -3101,6 +3138,9 @@ export interface components {
             name: string;
             /** Format: int64 */
             reportCount: number;
+            runtimeError: string | null;
+            /** @enum {string} */
+            runtimeState: "PREPARING" | "READY" | "FAILED";
             specificType: string;
             type: string;
             /** Format: date-time */
@@ -3661,6 +3701,7 @@ export interface components {
         PredictionResultDto: {
             /** Format: date-time */
             createdAt: string;
+            environmentKey: string | null;
             errorJson: {
                 [key: string]: unknown;
             } | null;
@@ -3982,6 +4023,13 @@ export interface components {
             roles: components["schemas"]["RoleDefinitionDto"][];
             stats: components["schemas"]["RoleStatsDto"];
             templates: components["schemas"]["RoleTemplateDto"][];
+        };
+        RuntimeEnvironmentDto: {
+            key: string;
+            legacy: boolean;
+            packages: components["schemas"]["EnvironmentPackageDto"][];
+            pythonVersion: string;
+            writerVersion: string;
         };
         SchemaBookmarkDto: {
             /** Format: date-time */
@@ -4457,6 +4505,7 @@ export type CreateSchemaWithInitialVersionRequest = components['schemas']['Creat
 export type CreatedPredictionRunsDto = components['schemas']['CreatedPredictionRunsDto'];
 export type Dependency = components['schemas']['Dependency'];
 export type DuplicateRoleRequest = components['schemas']['DuplicateRoleRequest'];
+export type EnvironmentPackageDto = components['schemas']['EnvironmentPackageDto'];
 export type ErrorDto = components['schemas']['ErrorDto'];
 export type ExplainRequest = components['schemas']['ExplainRequest'];
 export type FeatureImportanceDto = components['schemas']['FeatureImportanceDto'];
@@ -4555,6 +4604,7 @@ export type RoleStatsDto = components['schemas']['RoleStatsDto'];
 export type RoleSummaryDto = components['schemas']['RoleSummaryDto'];
 export type RoleTemplateDto = components['schemas']['RoleTemplateDto'];
 export type RolesResponseDto = components['schemas']['RolesResponseDto'];
+export type RuntimeEnvironmentDto = components['schemas']['RuntimeEnvironmentDto'];
 export type SchemaBookmarkDto = components['schemas']['SchemaBookmarkDto'];
 export type SchemaBookmarkExampleDto = components['schemas']['SchemaBookmarkExampleDto'];
 export type SchemaCatalogItemDto = components['schemas']['SchemaCatalogItemDto'];
@@ -5764,6 +5814,28 @@ export interface operations {
             };
         };
     };
+    retryEnvironment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                modelId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelDto"];
+                };
+            };
+        };
+    };
     restore_1: {
         parameters: {
             query?: {
@@ -6799,7 +6871,7 @@ export interface operations {
             };
         };
     };
-    get_6: {
+    get_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -7049,7 +7121,7 @@ export interface operations {
             };
         };
     };
-    get_5: {
+    get_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -7194,7 +7266,7 @@ export interface operations {
             };
         };
     };
-    get_4: {
+    get_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -7440,6 +7512,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StartupReadinessDto"];
+                };
+            };
+        };
+    };
+    get_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                environmentKey: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuntimeEnvironmentDto"];
                 };
             };
         };

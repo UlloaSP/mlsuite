@@ -66,7 +66,7 @@ public class WorkspacePredictionService implements WorkspacePredictionUseCase {
 
     private AttestedPrediction perform(Plan plan, Map<String, Object> input) {
         try {
-            return succeeded(plan, input, runtime.run("/predict", plan.artifact(), Map.of("data", json(input))));
+            return succeeded(plan, input, runtime.run("/predict", plan.model(), Map.of("data", json(input))));
         } catch (AnalyzerServiceException refused) {
             return failed(plan, input, refused.getStatus(), refused.getDetail());
         }
@@ -80,7 +80,7 @@ public class WorkspacePredictionService implements WorkspacePredictionUseCase {
     public List<AttestedPrediction> predictRows(Plan plan, List<Map<String, Object>> inputs) {
         List<?> answers;
         try {
-            Object rows = runtime.run("/predict/batch", plan.artifact(), Map.of("data", json(inputs))).get("rows");
+            Object rows = runtime.run("/predict/batch", plan.model(), Map.of("data", json(inputs))).get("rows");
             answers = rows instanceof List<?> items ? items : List.of();
         } catch (AnalyzerServiceException refused) {
             return inputs.stream().map(input -> failed(plan, input, refused.getStatus(), refused.getDetail())).toList();
@@ -131,7 +131,7 @@ public class WorkspacePredictionService implements WorkspacePredictionUseCase {
     /** A model the runtime cannot explain gives no explanation, and the prediction stands. */
     private List<?> explain(Plan plan, String data) {
         try {
-            Object reports = runtime.run("/explain", plan.artifact(), Map.of("data", data, "traces", "[]"))
+            Object reports = runtime.run("/explain", plan.model(), Map.of("data", data, "traces", "[]"))
                     .get("reports");
             return reports instanceof List<?> items ? items : List.of();
         } catch (RuntimeException ex) {

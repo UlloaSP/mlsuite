@@ -123,7 +123,7 @@ class InferenceCatalogQueries {
         return entities.createQuery("SELECT new " + DTO + """
                 PredictionResultDto(
                     r.id, r.run.id, r.model.id, r.modelInput, r.output, r.status, r.errorMessage, r.errorJson,
-                    r.createdAt)
+                    r.createdAt, r.environmentKey)
                 FROM PredictionResult r
                 WHERE r.run.id IN :runIds
                 ORDER BY r.run.id ASC, r.id ASC

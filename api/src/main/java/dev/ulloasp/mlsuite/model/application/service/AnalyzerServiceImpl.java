@@ -19,7 +19,7 @@ import dev.ulloasp.mlsuite.model.application.port.in.AnalyzerUseCase;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.application.service.RuntimeSlots;
-import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
+import dev.ulloasp.mlsuite.model.application.runtime.RunnableModel;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import lombok.RequiredArgsConstructor;
@@ -44,9 +44,9 @@ public class AnalyzerServiceImpl implements AnalyzerUseCase {
     @Override
     public Map<String, Object> explain(Long userId, Long modelId, ExplainRequest request) {
         try (RuntimeSlots.Admission admission = slots.admit(userId)) {
-            ModelArtifactReference artifact = requireRunnableModel(userId, modelId);
+            RunnableModel model = requireRunnableModel(userId, modelId);
             Map<String, String> fields = Map.of("data", json(request.instance()), "traces", json(request.traces()));
-            return admission.run(() -> modelRuntime.run("/explain", artifact, fields));
+            return admission.run(() -> modelRuntime.run("/explain", model, fields));
         }
     }
 
@@ -59,9 +59,9 @@ public class AnalyzerServiceImpl implements AnalyzerUseCase {
     }
 
     /** Explaining a model executes it, which requires permission to run predictions. */
-    private ModelArtifactReference requireRunnableModel(Long userId, Long modelId) {
+    private RunnableModel requireRunnableModel(Long userId, Long modelId) {
         Long organizationId = authorizationService.requireCurrent(userId, PermissionKey.RUN_PREDICTIONS).getId();
-        return modelRepository.findArtifactReference(modelId, organizationId)
+        return modelRepository.findRunnableModel(modelId, organizationId)
                 .orElseThrow(() -> new ModelDoesNotExistsException(modelId, userLookupService.requireById(userId).getUsername()));
     }
 }

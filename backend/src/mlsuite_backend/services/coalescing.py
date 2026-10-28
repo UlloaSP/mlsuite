@@ -1,22 +1,21 @@
 """Concurrent single-record predictions of one artifact run together.
 
-A prediction waits for a model-work thread anyway; the records of the same artifact that arrive
-while it waits join it, and the thread predicts them in one call (see row_prediction). Nothing
-waits to be joined: a record that finds the thread free runs at once, alone. Each record still
-gets its own answer, and a record the model refuses fails alone.
+A prediction waits for a worker of its environment anyway; the records of the same artifact that
+arrive while it waits join it, and the worker predicts them in one call (see mlsuite_worker.rows).
+Nothing waits to be joined: a record that finds a worker free runs at once, alone. Each record
+still gets its own answer, and a record the model refuses fails alone.
 """
 
 import asyncio
-import threading
 from dataclasses import dataclass, field
+from pathlib import Path
 
-import mlbundle
-
-from ..execution import run_model_work
-from .row_prediction import RowAnswer, predict_rows
+from . import runs
 
 # The most records predicted in one call; more start the next batch.
 MAX_COALESCED = 64
+
+type RowAnswer = dict[str, object]
 
 
 @dataclass
@@ -29,26 +28,33 @@ class _Batch:
 class Coalescer:
     def __init__(self, max_records: int = MAX_COALESCED) -> None:
         self._max_records = max_records
-        self._open: dict[str, _Batch] = {}
-        self._lock = threading.Lock()
+        self._open: dict[tuple[str, str], _Batch] = {}
 
-    async def predict(self, key: str, bundle: mlbundle.LoadedBundle, record: object) -> RowAnswer:
+    async def predict(self, environment: str, path: Path, sha256: str, record: object) -> RowAnswer:
+        key = (environment, sha256)
         answer: asyncio.Future[RowAnswer] = asyncio.get_running_loop().create_future()
-        with self._lock:
-            batch = self._open.get(key)
-            starts = batch is None or batch.taken or len(batch.records) >= self._max_records
-            if starts:
-                batch = self._open[key] = _Batch()
-            batch.records.append(record)
-            batch.answers.append(answer)
+        batch = self._open.get(key)
+        starts = batch is None or batch.taken or len(batch.records) >= self._max_records
         if starts:
-            asyncio.get_running_loop().create_task(self._run(key, bundle, batch))
+            batch = self._open[key] = _Batch()
+        batch.records.append(record)
+        batch.answers.append(answer)
+        if starts:
+            asyncio.get_running_loop().create_task(self._run(key, path, batch))
         return await answer
 
-    async def _run(self, key: str, bundle: mlbundle.LoadedBundle, batch: _Batch) -> None:
+    async def _run(self, key: tuple[str, str], path: Path, batch: _Batch) -> None:
+        environment, sha256 = key
         try:
-            answers = await run_model_work(self._predict, key, bundle, batch)
+            async with runs.worker(environment) as worker:
+                # The worker is free: the batch closes to newcomers and runs what it gathered.
+                batch.taken = True
+                if self._open.get(key) is batch:
+                    del self._open[key]
+                answers = await runs.call(worker, "predict", path, sha256, records=list(batch.records))
         except BaseException as error:  # noqa: BLE001 - every waiting caller gets the failure
+            if self._open.get(key) is batch:
+                del self._open[key]
             for waiting in batch.answers:
                 if not waiting.done():
                     waiting.set_exception(error)
@@ -56,12 +62,3 @@ class Coalescer:
         for waiting, answer in zip(batch.answers, answers, strict=True):
             if not waiting.done():
                 waiting.set_result(answer)
-
-    def _predict(self, key: str, bundle: mlbundle.LoadedBundle, batch: _Batch) -> list[RowAnswer]:
-        """On the thread: closes the batch to newcomers, then predicts what it gathered."""
-        with self._lock:
-            batch.taken = True
-            if self._open.get(key) is batch:
-                del self._open[key]
-            records = list(batch.records)
-        return predict_rows(bundle, records)

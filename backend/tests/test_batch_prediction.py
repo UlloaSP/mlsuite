@@ -1,21 +1,23 @@
 """Records of one artifact are predicted together, each answered exactly as if predicted alone."""
 
 import asyncio
+import contextlib
 import json
-import threading
+import sys
+from pathlib import Path
 
 import httpx
 import mlbundle
 import pytest
-from fastapi.testclient import TestClient
-from mlbundle.results import LoadedBundle
 
+from mlsuite_backend.config import RUNTIME_WORKERS
+from mlsuite_backend.environments import Environment
 from mlsuite_backend.main import app
-from mlsuite_backend.services import coalescing, row_prediction
+from mlsuite_backend.services import runs
 from tests import helpers
-from tests.helpers import make_classifier, make_tree, run_request, serialize_bundle, sha256_of
+from tests.client import client, run_async
+from tests.helpers import make_classifier, make_tree, run_fields, run_request, serialize_bundle
 
-client = TestClient(app)
 UNKNOWN = "0" * 64
 
 
@@ -73,29 +75,6 @@ def test_a_record_the_model_cannot_use_fails_alone() -> None:
     assert _without_time(rows[2]) == _without_time(_alone(upload, records[2]))
 
 
-def test_a_record_that_breaks_the_model_fails_alone(monkeypatch) -> None:
-    upload = serialize_bundle(make_tree())
-    records = [{"age": 30 + age, "income": 40_000} for age in range(4)]
-    alone = [_alone(upload, record) for record in records]
-    predict_record = LoadedBundle.predict_record
-
-    def together(*_args: object) -> object:
-        raise RuntimeError("the vectorized call failed")
-
-    def breaks_on_age_32(bundle: LoadedBundle, record: object) -> object:
-        if record["age"] == 32:
-            raise RuntimeError("model blew up")
-        return predict_record(bundle, record)
-
-    monkeypatch.setattr(row_prediction, "_predict_together", together)
-    monkeypatch.setattr(LoadedBundle, "predict_record", breaks_on_age_32)
-
-    rows = client.post("/predict/batch", **run_request(upload, data=json.dumps(records))).json()["rows"]
-
-    assert rows[2] == {"error": {"status": 500, "detail": "Error during inference: model blew up"}}
-    assert [_without_time(rows[index]) for index in (0, 1, 3)] == [_without_time(alone[index]) for index in (0, 1, 3)]
-
-
 @pytest.mark.parametrize("data", ["{}", "[]", json.dumps([{}] * 1001), "not json"])
 def test_a_batch_must_be_an_array_of_one_to_a_thousand_records(data: str) -> None:
     response = client.post("/predict/batch", **run_request(serialize_bundle(make_classifier()), data=data))
@@ -105,44 +84,47 @@ def test_a_batch_must_be_an_array_of_one_to_a_thousand_records(data: str) -> Non
 
 
 def test_a_batch_names_its_artifact_by_hash_like_a_run() -> None:
-    response = client.post("/predict/batch", data={"artifact_sha256": UNKNOWN, "data": "[{}]"})
-
+    upload = serialize_bundle(make_classifier())
+    response = client.post("/predict/batch", data=run_fields(upload, data="[{}]", artifact_sha256=UNKNOWN))
     assert response.status_code == 409
 
 
-def test_single_records_arriving_while_the_thread_is_busy_are_predicted_in_one_call(monkeypatch) -> None:
+def test_single_records_arriving_while_a_worker_is_busy_are_predicted_in_one_call(monkeypatch) -> None:
     upload = serialize_bundle(make_tree())
-    sha256 = sha256_of(upload)
     records = [{"age": 20 + age, "income": 30_000 + age * 9_000} for age in range(6)] + [{"age": 1}]
     alone = [_alone(upload, record) for record in records[:-1]]
-    started, release = threading.Event(), threading.Event()
+    form = run_fields(upload)
     calls = []
-    predict_rows = coalescing.predict_rows
-
-    def counted(bundle: object, batch: list[object]) -> object:
-        calls.append(len(batch))
-        if len(calls) == 1:
-            started.set()
-            release.wait(timeout=5)
-        return predict_rows(bundle, batch)
-
-    monkeypatch.setattr(coalescing, "predict_rows", counted)
+    call = runs.call
 
     async def scenario():
+        started, release = asyncio.Event(), asyncio.Event()
+
+        async def counted(worker, op, path, sha256, **fields):
+            calls.append(len(fields["records"]))
+            if len(calls) == 1:
+                started.set()
+                await release.wait()
+            return await call(worker, op, path, sha256, **fields)
+
+        monkeypatch.setattr(runs, "call", counted)
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(transport=transport, base_url="http://runtime") as runtime:
             def send(record):
-                return runtime.post("/predict", data={"artifact_sha256": sha256, "data": json.dumps(record)})
+                return runtime.post("/predict", data={**form, "data": json.dumps(record)})
 
-            first = asyncio.create_task(send(records[0]))
-            while not started.is_set():
-                await asyncio.sleep(0.01)
-            joined = [asyncio.create_task(send(record)) for record in records[1:]]
-            await asyncio.sleep(0.2)
-            release.set()
-            return [await first, *[await task for task in joined]]
+            # Every worker taken, so the records wait for the one predicting the first.
+            async with contextlib.AsyncExitStack() as held:
+                for _ in range(RUNTIME_WORKERS - 1):
+                    await held.enter_async_context(runs.pool.worker(Environment("busy", Path(sys.executable), False)))
+                first = asyncio.create_task(send(records[0]))
+                await started.wait()
+                joined = [asyncio.create_task(send(record)) for record in records[1:]]
+                await asyncio.sleep(0.2)
+                release.set()
+                return [await first, *[await task for task in joined]]
 
-    responses = asyncio.run(scenario())
+    responses = run_async(scenario)
 
     assert calls == [1, 6]
     assert [_without_time(response.json()) for response in responses[:-1]] == [_without_time(answer) for answer in alone]

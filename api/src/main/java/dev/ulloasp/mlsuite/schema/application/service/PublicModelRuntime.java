@@ -16,7 +16,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.ModelRuntimeClient;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
-import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
+import dev.ulloasp.mlsuite.model.application.runtime.ModelPreparingException;
+import dev.ulloasp.mlsuite.model.application.runtime.ModelUnavailableException;
+import dev.ulloasp.mlsuite.model.application.runtime.RunnableModel;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -45,6 +47,8 @@ public class PublicModelRuntime {
             modelRuntime.run("/predict", artifact(modelId), Map.of("data", json(input)))
                     .forEach((key, value) -> answer.put(String.valueOf(key), value));
             return answer;
+        } catch (ModelPreparingException | ModelUnavailableException notReady) {
+            throw notReady;
         } catch (AnalyzerServiceException ex) {
             log.warn("{}: the runtime answered {} for model {}: {}", caller, ex.getStatus(), modelId, ex.getDetail());
             if (ex.getStatus() >= 400 && ex.getStatus() < 500) throw ex;
@@ -71,8 +75,8 @@ public class PublicModelRuntime {
         }
     }
 
-    private ModelArtifactReference artifact(Long modelId) {
-        return modelRepository.findArtifactReference(modelId).orElseThrow();
+    private RunnableModel artifact(Long modelId) {
+        return modelRepository.findRunnableModel(modelId).orElseThrow();
     }
 
     private String json(Map<String, Object> input) throws JsonProcessingException {
