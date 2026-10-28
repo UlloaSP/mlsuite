@@ -23,10 +23,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import dev.ulloasp.mlsuite.security.auth.SessionAccountCheck;
+import dev.ulloasp.mlsuite.security.auth.StaleSessionFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -40,13 +44,16 @@ public class SecurityConfig {
         }
 
         @Bean
-        protected SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        protected SecurityFilterChain securityFilterChain(HttpSecurity http, SessionAccountCheck sessionAccountCheck)
+                        throws Exception {
 
                 http
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(csrf -> csrf.disable())
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                                .addFilterAfter(new StaleSessionFilter(sessionAccountCheck),
+                                                SecurityContextHolderFilter.class)
                                 .authorizeHttpRequests(authorize -> authorize
                                                 .requestMatchers("/actuator/**").permitAll()
                                                 .requestMatchers("/api/readiness").permitAll()
@@ -95,6 +102,8 @@ public class SecurityConfig {
                 config.setAllowCredentials(true);
                 config.setAllowedOrigins(allowedOrigins);
                 config.addAllowedHeader("*");
+                // The app waits what a busy or limited answer asks, also when served from another origin.
+                config.addExposedHeader("Retry-After");
                 config.addAllowedMethod("OPTIONS");
                 config.addAllowedMethod("GET");
                 config.addAllowedMethod("POST");

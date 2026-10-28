@@ -4,9 +4,8 @@ description: Invite existing accounts into an organization, accept or decline in
 ---
 
 People join an organization by invitation. MLsuite sends no email: the invited person finds the
-invitation under **Notifications**, or opens a link you copy to them. Only accounts that already
-exist on the instance can be invited, so ask the person to [create an
-account](/start/account/) first.
+invitation under **Notifications** when they sign in. Only accounts that already exist on the
+instance can be invited, so ask the person to [create an account](/start/account/) first.
 
 ## Invite someone
 
@@ -26,16 +25,15 @@ Expired or Revoked. Members with **Manage invitations** can act on each invitati
 
 | Action | Effect |
 | --- | --- |
-| Resend | Issues a new link and another 7 days. Not offered for accepted invitations. |
-| Copy link | Copies `/invite/<token>` for you to send yourself. |
+| Resend | Makes the invitation pending again for another 7 days. Not offered for accepted invitations. |
 | Revoke | Cancels the invitation. Tick several and choose **Bulk revoke** to cancel them together. |
 
 ## Accept or decline
 
 Pending invitations appear in **Notifications** (the account menu shows how many) with
-**Accept** and **Decline**. An invitation link opens the **Join workspace** page with the same two
-choices. Accepting needs the account whose email was invited; an expired or already answered
-invitation cannot be accepted. After accepting, the organization becomes your current one.
+**Accept** and **Decline**. Only the account whose email was invited can answer an invitation, and
+an expired or already answered invitation can be neither accepted nor declined. After accepting,
+the organization becomes your current one.
 
 ## Members
 

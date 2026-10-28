@@ -20,9 +20,9 @@ public interface InvitationManagementUseCase {
 
     void bulkRevokeInvitations(Long userId, Long organizationId, List<Long> invitationIds);
 
-    InvitationDto acceptInvitation(Long userId, String token);
+    InvitationDto acceptInvitation(Long userId, Long invitationId);
 
-    void declineInvitation(Long userId, String token);
+    void declineInvitation(Long userId, Long invitationId);
 
     List<InvitationDto> listPendingForUser(Long userId);
 }

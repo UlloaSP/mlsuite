@@ -3,10 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Archive, Copy, Pencil, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, Copy, Pencil, Trash2 } from "lucide-react";
 import { AppActionsMenu, type AppMenuAction } from "@/shared/ui/AppActionsMenu";
 
-export type ModelAction = "archive" | "delete" | "duplicate" | "edit";
+export type ModelAction = "archive" | "delete" | "duplicate" | "edit" | "restore";
 
 const ACTIONS: Array<{
   value: ModelAction;
@@ -16,6 +16,7 @@ const ACTIONS: Array<{
   { value: "edit", label: "Edit", icon: Pencil },
   { value: "duplicate", label: "Duplicate", icon: Copy },
   { value: "archive", label: "Archive", icon: Archive },
+  { value: "restore", label: "Restore", icon: ArchiveRestore },
   { value: "delete", label: "Delete", icon: Trash2 },
 ];
 
@@ -39,6 +40,7 @@ export function ModelActionsMenu({
 }: ModelActionsMenuProps) {
   const permitted: Record<ModelAction, boolean> = {
     archive: canEdit && !archived,
+    restore: canEdit && archived,
     delete: canDelete,
     duplicate: canDuplicate,
     edit: canEdit,

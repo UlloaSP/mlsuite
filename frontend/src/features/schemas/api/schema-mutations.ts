@@ -7,6 +7,7 @@ import {
   deleteSchema,
   duplicateSchema,
   renameSchema,
+  restoreSchema,
 } from "./schema-api";
 import {
   createSchemaBookmark,
@@ -46,6 +47,15 @@ export const useArchiveSchemaMutation = () => {
   return useMutation({
     meta: { errorHandledLocally: true },
     mutationFn: archiveSchema,
+    onSuccess: () => void invalidate(),
+  });
+};
+
+export const useRestoreSchemaMutation = () => {
+  const invalidate = useInvalidateSchemaQueries();
+  return useMutation({
+    meta: { errorHandledLocally: true },
+    mutationFn: restoreSchema,
     onSuccess: () => void invalidate(),
   });
 };

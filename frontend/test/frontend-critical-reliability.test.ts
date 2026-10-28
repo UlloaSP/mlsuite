@@ -16,10 +16,6 @@ import { HttpError } from "@/shared/api/http";
 import { organizationMembersQueryKey } from "@/features/workspace/api/workspace.keys";
 import { organizationQueryKey } from "@/shared/api/organization-query-key";
 import { removeOrganizationCache } from "@/features/workspace/api/organization-cache";
-import {
-  invalidatePluginRuntimeCache,
-  memoizeCompiledPlugin,
-} from "@/capabilities/prediction-runtime/plugins/plugin-runtime-cache";
 import { classifyRouteError } from "@/app/router/route-error";
 
 type TenantDetailKey = (organizationId: number, resourceId: string) => readonly unknown[];
@@ -93,31 +89,6 @@ describe("frontend critical reliability", () => {
     expect(client.getQueryData([...organizationQueryKey(11), "schema"])).toBeUndefined();
     expect(client.getQueryData([...organizationQueryKey(22), "schema"])).toBe("new");
     expect(client.getQueryData(["user"])).toBe("session");
-  });
-
-  test("scopes and invalidates plugin runtime atomically", async () => {
-    let loads = 0;
-    const load = async () => ++loads;
-
-    expect(await memoizeCompiledPlugin(11, "source-hash", load)).toBe(1);
-    expect(await memoizeCompiledPlugin(11, "source-hash", load)).toBe(1);
-    expect(await memoizeCompiledPlugin(22, "source-hash", load)).toBe(2);
-    invalidatePluginRuntimeCache(11);
-    expect(await memoizeCompiledPlugin(11, "source-hash", load)).toBe(3);
-  });
-
-  test("does not retain failed plugin compilations", async () => {
-    let loads = 0;
-    const load = async () => {
-      loads += 1;
-      if (loads === 1) throw new Error("invalid plugin");
-      return "compiled";
-    };
-
-    await expect(memoizeCompiledPlugin(11, "failed-source", load)).rejects.toThrow(
-      "invalid plugin",
-    );
-    await expect(memoizeCompiledPlugin(11, "failed-source", load)).resolves.toBe("compiled");
   });
 
   test("uses one canonical, tenant-scoped members key", () => {

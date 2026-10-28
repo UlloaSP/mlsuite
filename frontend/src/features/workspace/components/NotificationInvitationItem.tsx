@@ -6,13 +6,11 @@ import {
 import { AppButton } from "@/shared/ui/AppButton";
 import type { InvitationDto } from "@/shared/api/openapi.gen";
 
+/** An invitation addressed to this account's email, answered here by the invitee. */
 export function NotificationInvitationItem({ invitation }: { invitation: InvitationDto }) {
   const accept = useAcceptInvitation();
   const decline = useDeclineInvitation();
   const busy = accept.isPending || decline.isPending;
-  // Invitations addressed to the caller always carry their token; only admin listings omit it.
-  const token = invitation.token;
-  if (!token) return null;
 
   return (
     <article className="flex items-start justify-between gap-4 border-t border-line px-5 py-4 first:border-t-0">
@@ -28,7 +26,7 @@ export function NotificationInvitationItem({ invitation }: { invitation: Invitat
         </div>
       </div>
       <div className="flex shrink-0 gap-2">
-        <AppButton size="sm" disabled={busy} onClick={() => accept.mutate(token)}>
+        <AppButton size="sm" disabled={busy} onClick={() => accept.mutate(invitation.id)}>
           <Check size={14} />
           Accept
         </AppButton>
@@ -36,7 +34,7 @@ export function NotificationInvitationItem({ invitation }: { invitation: Invitat
           size="sm"
           variant="secondary"
           disabled={busy}
-          onClick={() => decline.mutate(token)}
+          onClick={() => decline.mutate(invitation.id)}
         >
           <X size={14} />
           Decline

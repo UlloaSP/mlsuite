@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { getCatalogDefinitions } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
+import { inspectPluginCatalog } from "@/capabilities/prediction-runtime/sandbox/plugin-sandbox-services";
 import type { PluginRuntimeSourceDto } from "@/shared/api/openapi.gen";
 import { queryOptions } from "@tanstack/react-query";
 import { appFetch, isHttpError, json } from "@/shared/api/http";
@@ -71,15 +71,15 @@ export const publicBookmarkQueryOptions = (publicId: string) =>
   });
 
 /**
- * The plugin fields and reports a published form is made of, compiled once per bookmark. Using
- * a plugin in a schema is its organization's alone; running a form that has one is anyone's.
+ * The plugin fields and reports a published form is made of, checked in the plugin sandbox once
+ * per bookmark. Using a plugin in a schema is its organization's alone; running a form that has
+ * one is anyone's, and its code runs only in the sandbox.
  */
 export const publicPluginCatalogQueryOptions = (publicId: string) =>
   queryOptions({
     queryKey: ["public", "bookmark", publicId, "plugins"] as const,
     queryFn: async ({ signal }) =>
-      getCatalogDefinitions(
-        `public:${publicId}`,
+      inspectPluginCatalog(
         await appFetch<PluginRuntimeSourceDto[]>(`${publicBookmarkPath(publicId)}/plugins`, {
           signal,
         }),

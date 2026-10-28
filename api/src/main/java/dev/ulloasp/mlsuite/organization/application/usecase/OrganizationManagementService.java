@@ -105,8 +105,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
                         : List.of(),
                 permissions.canViewInvitations() ? invitationRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId).stream()
                         .limit(5)
-                        .map(invitation -> dev.ulloasp.mlsuite.invitation.application.dto.InvitationDto.from(
-                                invitation, permissions.canManageInvitations()))
+                        .map(dev.ulloasp.mlsuite.invitation.application.dto.InvitationDto::from)
                         .toList() : List.of());
     }
 

@@ -18,6 +18,9 @@ export const archiveSchema = (id: number | string): Promise<SchemaDto> => {
   });
 };
 
+export const restoreSchema = (id: number | string): Promise<SchemaDto> =>
+  appFetch<SchemaDto>(`/api/schemas/${encodeURIComponent(id)}/restore`, { method: "POST" });
+
 export const deleteSchema = async (id: number | string): Promise<void> => {
   await appFetch(`/api/schemas/${encodeURIComponent(id)}`, { method: "DELETE" });
 };

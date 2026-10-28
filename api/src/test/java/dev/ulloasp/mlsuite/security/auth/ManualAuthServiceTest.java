@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import dev.ulloasp.mlsuite.admin.AdminCreateUserRequest;
@@ -35,6 +37,9 @@ class ManualAuthServiceTest {
     @Mock
     private WorkspaceBootstrapService workspaceBootstrapService;
 
+    @Mock
+    private AuthenticationManager authenticationManager;
+
     private AuthService authService;
     private AdminUserService adminUserService;
 
@@ -43,7 +48,9 @@ class ManualAuthServiceTest {
         authService = new AuthService(
                 userRepository,
                 passwordEncoder,
-                workspaceBootstrapService);
+                workspaceBootstrapService,
+                authenticationManager,
+                new AuthAttemptLimiter(10, 5, Clock.systemUTC()));
         adminUserService = new AdminUserService(
                 userRepository,
                 passwordEncoder,
@@ -55,13 +62,15 @@ class ManualAuthServiceTest {
         when(userRepository.existsByEmailIgnoreCase("alice@example.com")).thenReturn(false);
         when(passwordEncoder.encode("very-secret")).thenReturn("hash");
 
-        authService.register(new AuthRequest("Alice@Example.com", "very-secret", "Alice", ""));
+        authService.register(new AuthRequest("Alice@Example.com", "very-secret", "Alice", ""), "address:test");
 
         verify(userRepository).save(org.mockito.ArgumentMatchers.argThat(user ->
                 user.getEmail().equals("alice@example.com")
                         && user.getPasswordHash().equals("hash")
                         && user.getSystemRole() == SystemRole.USER));
         verify(workspaceBootstrapService).ensureCurrentOrganization(org.mockito.ArgumentMatchers.any(User.class));
+        verify(authenticationManager).authenticate(org.mockito.ArgumentMatchers.argThat(token ->
+                token.getName().equals("alice@example.com")));
     }
 
     @Test
@@ -69,7 +78,8 @@ class ManualAuthServiceTest {
         when(userRepository.existsByEmailIgnoreCase("alice@example.com")).thenReturn(true);
 
         assertThrows(UserAlreadyExistsException.class,
-                () -> authService.register(new AuthRequest("alice@example.com", "very-secret", "Alice", null)));
+                () -> authService.register(new AuthRequest("alice@example.com", "very-secret", "Alice", null),
+                        "address:test"));
     }
 
     @Test

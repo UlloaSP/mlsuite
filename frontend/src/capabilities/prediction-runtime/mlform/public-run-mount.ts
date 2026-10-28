@@ -10,6 +10,7 @@ import { normalizeSchema, validateSchema, type ReportResult } from "mlform/schem
 import { toPublicReportPayload } from "@/capabilities/prediction-runtime/data/report-normalization";
 import { withResolvedDisplayKeys } from "@/capabilities/prediction-runtime/mlform/display-key";
 import type { PredictionCatalogDefinitions } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
+import type { PublicRunReport } from "@/capabilities/prediction-runtime/sandbox/sandbox-protocol";
 import { createRunRegistries } from "./runtime-assembly";
 import { withSeriesColumns } from "./series-schema";
 import {
@@ -28,9 +29,6 @@ import {
   showRunResults,
 } from "@/capabilities/prediction-runtime/mlform/run-tabs-layout";
 import { adoptShadowRules } from "@/capabilities/prediction-runtime/mlform/shadow-rules";
-
-/** What the runtime returned for the report of the public form that carries this key. */
-export type PublicRunReport = { key: string; payload: JsonRecord };
 
 type Options = {
   container: HTMLElement;

@@ -24,7 +24,10 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Test;
@@ -65,8 +68,10 @@ class InferenceCatalogTest {
         var olderThanForty = request(0, "", "createdAt.desc", new Condition(AGE, "gt", "40"));
         assertEquals(1, service.page(MEMBER, olderThanForty).totalItems());
         assertEquals(2L, service.selection(MEMBER, olderThanForty).getFirst().id());
-        assertEquals(1L, service.page(MEMBER, request(0, "", AGE + ".asc")).items().getFirst().item().id());
-        var youngestSecond = service.page(MEMBER, request(1, "", AGE + ".asc"));
+        // With a derived filter the scope is ranked in memory; without one, by stored rows (InferenceRowsTest).
+        var anyAge = new Condition(AGE, "notEmpty", "");
+        assertEquals(1L, service.page(MEMBER, request(0, "", AGE + ".asc", anyAge)).items().getFirst().item().id());
+        var youngestSecond = service.page(MEMBER, request(1, "", AGE + ".asc", anyAge));
         assertEquals(2L, youngestSecond.items().getFirst().item().id());
         assertEquals(2, youngestSecond.totalItems());
         assertFalse(youngestSecond.hasNext());
@@ -96,6 +101,15 @@ class InferenceCatalogTest {
         assertThrows(ResponseStatusException.class,
                 () -> request(0, "", "createdAt.desc", Collections.nCopies(101, new Condition("age", "eq", "1"))));
         assertEquals(0, request(-4, "", "createdAt.desc").page());
+    }
+
+    @Test
+    void readsOnlyTheLanguageScriptAndRegionOfALocaleTag() {
+        // German phonebook order reads Ä as AE, which would put "Ärger" before "Affe".
+        assertTrue(InferenceCatalogText.of("de-DE-u-co-phonebk").cellOrder().compare("Ärger", "Affe") > 0);
+        assertTrue(InferenceCatalogText.of("de-DE").cellOrder().compare("Ärger", "Affe") > 0);
+        assertEquals("1,235", InferenceCatalogText.of("es-ES-u-nu-arab").format(1.2345));
+        assertEquals(TEXT.format(-1234567.891), InferenceCatalogText.of("en-US-x-made-up").format(-1234567.891));
     }
 
     @Test
@@ -201,10 +215,26 @@ class InferenceCatalogTest {
                 .map(row -> row.dto().item().id()).toList());
     }
 
-    /** A service over a reader that holds exactly the given table and refuses the outsider. */
+    /**
+     * A service over a reader that holds exactly the given table and refuses the outsider, with no
+     * run's row stored yet: every run a derived order or the columns need is projected.
+     */
     private static InferenceCatalogService serving(InferenceTableDto data) {
         InferenceCatalogReader reader = mock(InferenceCatalogReader.class);
+        Comparator<PredictionRunCatalogItemDto> tableOrder = Comparator
+                .comparing(PredictionRunCatalogItemDto::createdAt).reversed()
+                .thenComparing(PredictionRunCatalogItemDto::id);
+        List<PredictionRunCatalogItemDto> summaries = data.runs().stream().map(InferenceTableRunDto::summary)
+                .sorted(tableOrder).toList();
+        when(reader.ids(eq(MEMBER), any())).thenReturn(summaries.stream().map(PredictionRunCatalogItemDto::id).toList());
+        when(reader.summaries(eq(MEMBER), any())).thenAnswer(call -> call.<List<Long>>getArgument(1).stream()
+                .map(id -> summaries.stream().filter(item -> item.id().equals(id)).findFirst().orElseThrow()).toList());
         doAnswer(call -> deliver(call, 2, data)).when(reader).scan(eq(MEMBER), any(), any());
+        doAnswer(call -> {
+            call.<Consumer<List<PredictionRunCatalogItemDto>>>getArgument(2)
+                    .accept(data.runs().stream().map(InferenceTableRunDto::summary).toList());
+            return null;
+        }).when(reader).scanSummaries(eq(MEMBER), any(), any());
         doAnswer(call -> deliver(call, 2, only(data, call.getArgument(1))))
                 .when(reader).selected(eq(MEMBER), any(), any());
         when(reader.page(eq(MEMBER), any(), anyBoolean(), anyInt(), anyInt(), any())).thenAnswer(call -> {
@@ -223,8 +253,14 @@ class InferenceCatalogTest {
                 .thenReturn(new InferenceCatalogReader.Choices(data.runs().size(), List.of(), List.of()));
         ResponseStatusException forbidden = new ResponseStatusException(HttpStatus.FORBIDDEN);
         doThrow(forbidden).when(reader).scan(eq(OUTSIDER), any(), any());
+        doThrow(forbidden).when(reader).scanSummaries(eq(OUTSIDER), any(), any());
         when(reader.page(eq(OUTSIDER), any(), anyBoolean(), anyInt(), anyInt(), any())).thenThrow(forbidden);
-        return new InferenceCatalogService(reader);
+        when(reader.ids(eq(OUTSIDER), any())).thenThrow(forbidden);
+        InferenceRows rows = mock(InferenceRows.class);
+        when(rows.stale(any())).thenAnswer(call -> new HashSet<>(call.<List<Long>>getArgument(0)));
+        when(rows.column(any(), any())).thenAnswer(call -> new InferenceRows.Column(new HashMap<>(), new HashMap<>(),
+                Set.copyOf(call.<List<Long>>getArgument(0))));
+        return new InferenceCatalogService(reader, rows);
     }
 
     private static Object deliver(InvocationOnMock call, int consumer, InferenceTableDto table) {

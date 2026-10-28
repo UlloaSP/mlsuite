@@ -92,6 +92,15 @@ export const PREDICTION_RESULT_FEEDBACK_QUERY_KEY = (
     "result",
     { resultId: String(resultId) },
   ] as const;
+export const PREDICTION_RESULT_FEEDBACK_HISTORY_QUERY_KEY = (
+  organizationId: number | string,
+  resultId: number | string,
+) =>
+  [
+    ...PREDICTION_FEEDBACK_QUERY_KEY(organizationId),
+    "history",
+    { resultId: String(resultId) },
+  ] as const;
 export const PREDICTION_RUNS_FEEDBACK_QUERY_KEY = (
   organizationId: number | string,
   runIds: readonly string[],

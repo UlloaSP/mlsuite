@@ -12,6 +12,7 @@ const { getPredictionRunsFeedback } = vi.hoisted(() => ({
 
 vi.mock("@/features/schemas/api/schema-prediction-api", () => ({
   getPredictionResultFeedback: vi.fn(),
+  getPredictionResultFeedbackHistory: vi.fn(),
   getPredictionRun: vi.fn(),
   getPredictionRunsFeedback,
 }));
@@ -82,7 +83,7 @@ describe("TanStack Query resource contracts", () => {
     );
   });
 
-  test("compiles the plugin catalog under the tenant sources key", async () => {
+  test("inspects the plugin catalog under the tenant sources key", async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValue(new Response("[]", { headers: { "content-type": "application/json" } }));
@@ -90,12 +91,9 @@ describe("TanStack Query resource contracts", () => {
     const queryClient = client();
     const options = predictionCatalogQueryOptions(7);
 
-    await expect(queryClient.fetchQuery(options)).resolves.toEqual({
-      fieldDefinitions: [],
-      reportDefinitions: [],
-    });
+    await expect(queryClient.fetchQuery(options)).resolves.toEqual({ fields: [], reports: [] });
 
-    expect(options.queryKey).toEqual(["org", 7, "pluginRuntimeSources", "definitions"]);
+    expect(options.queryKey).toEqual(["org", 7, "pluginRuntimeSources", "catalog"]);
     expect(queryClient.getQueryData(pluginRuntimeSourcesQueryOptions(7).queryKey)).toEqual([]);
     expect(fetchMock).toHaveBeenCalledOnce();
   });

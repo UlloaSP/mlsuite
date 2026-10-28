@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { createForm } from "mlform/runtime";
-import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
+import { schemaRunRuntime } from "./support/schema-run-runtime";
 import { validateMlformSchema } from "@/capabilities/prediction-runtime/mlform/schema-validation";
 import {
   getModelInputBulkSchema,
   toSchemaRunFieldValues,
 } from "@/features/schemas/lib/bulk-upload";
 import { parseCsvPredictionFile } from "@/capabilities/prediction-runtime/data/parse-csv-prediction-file";
-import { schemaVersion } from "./support/api-fixtures";
+import { schemaVersion, workspacePrediction } from "./support/api-fixtures";
 import { withSeriesColumns } from "@/capabilities/prediction-runtime/mlform/series-schema";
 
 afterEach(() => {
@@ -59,7 +59,7 @@ describe("series runtime contract", () => {
                 ],
                 reports: [],
               };
-      const runtime = createSchemaRunRuntime({ schema, bindings: [] });
+      const runtime = schemaRunRuntime({ schema, bindings: [] });
       const form = createForm({
         schema: runtime.formSchema,
         registry: runtime.registry,
@@ -103,7 +103,7 @@ describe("series runtime contract", () => {
     async ({ defaultValue }) => {
       const schema = { fields: [{ ...pair, defaultValue }], reports: [] };
       const original = structuredClone(schema);
-      const runtime = createSchemaRunRuntime({ schema, bindings: [] });
+      const runtime = schemaRunRuntime({ schema, bindings: [] });
       const form = createForm({
         schema: runtime.formSchema,
         registry: runtime.registry,
@@ -135,7 +135,7 @@ describe("series runtime contract", () => {
     async (raw) => {
       vi.stubGlobal(
         "fetch",
-        vi.fn(async () => new Response(JSON.stringify({ reports: [] }))),
+        vi.fn(async (_url: string, init?: RequestInit) => workspacePrediction(init)),
       );
       const field = {
         id: "history",
@@ -160,7 +160,7 @@ describe("series runtime contract", () => {
           { time: 3, value: 4, note: "last" },
         ],
       };
-      const runtime = createSchemaRunRuntime({
+      const runtime = schemaRunRuntime({
         schema: { fields: [field], reports: [] },
         bindings: [
           { modelId: 1, modelName: "Model A" },

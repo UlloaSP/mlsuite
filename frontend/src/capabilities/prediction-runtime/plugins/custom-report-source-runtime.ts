@@ -9,21 +9,15 @@ import { compilePluginSource } from "@/capabilities/prediction-runtime/plugins/p
 // Catalog kinds have different config types; each definition validates its own Zod contract.
 export type CustomReportKind = DefinedReportKind<any, unknown>;
 
-export const resolveCustomReportDefinition = (
-  organizationId: number | string,
-  source: string,
-): Promise<CustomReportKind> =>
-  compilePluginSource(organizationId, source, {
+export const resolveCustomReportDefinition = (source: string): Promise<CustomReportKind> =>
+  compilePluginSource(source, {
     plugin: "report",
     defineName: "defineReportKind",
     define: defineReportKind,
   }) as Promise<CustomReportKind>;
 
-export const validateCustomReportSource = async (
-  organizationId: number | string,
-  source: string,
-): Promise<CustomReportKind> => {
-  const definition = await resolveCustomReportDefinition(organizationId, source);
+export const validateCustomReportSource = async (source: string): Promise<CustomReportKind> => {
+  const definition = await resolveCustomReportDefinition(source);
   const probe = definition.definition.schema.safeParse({
     kind: definition.kind,
     label: "Preview report",

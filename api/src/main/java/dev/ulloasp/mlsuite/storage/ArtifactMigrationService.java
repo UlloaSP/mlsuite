@@ -91,12 +91,14 @@ public class ArtifactMigrationService {
             String previousVersion = model.getStorageVersionId();
             try (ArtifactMigrationLease lease = new ArtifactMigrationLease(
                     queue, id, workerId, staleAfterSeconds)) {
-                byte[] bytes = model.getModelFile();
-                if (bytes != null && bytes.length > 0) {
+                // The inline copy does not load with the model; it is carried on it as the writer leaves it.
+                byte[] bytes = models.findModelFile(id).orElse(new byte[0]);
+                model.setModelFile(bytes);
+                if (bytes.length > 0) {
                     String sha256 = ArtifactHash.sha256(bytes);
                     if (!verifyExisting(model, bytes, sha256)) {
                         if (!writer.attachExisting(model, bytes)) {
-                            writer.storeAndAttach(model, bytes, "application/octet-stream");
+                            writer.storeAndAttach(model, ArtifactSource.of(bytes), ArtifactHash.sha256(bytes), "application/octet-stream");
                         }
                     }
                 } else if (model.hasStoredObject()) {
@@ -195,7 +197,7 @@ public class ArtifactMigrationService {
             }
         }
         if (metadata.versionId() == null || metadata.versionId().isBlank()) {
-            writer.storeAndAttach(model, stored, "application/octet-stream");
+            writer.storeAndAttach(model, ArtifactSource.of(stored), ArtifactHash.sha256(stored), "application/octet-stream");
             return;
         }
         model.setArtifactSha256(ArtifactHash.sha256(stored));

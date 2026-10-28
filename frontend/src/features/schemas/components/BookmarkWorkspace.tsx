@@ -102,7 +102,7 @@ export function BookmarkWorkspace({ bookmarkId }: { bookmarkId: string }) {
                 ) : null}
               </Link>
               {version && canRun ? (
-                <SchemaRunBulkUploadButton version={version} onResult={session.addResult} />
+                <SchemaRunBulkUploadButton bookmarkId={bookmarkId} version={version} />
               ) : null}
               {bookmark ? (
                 <Link
@@ -139,7 +139,12 @@ export function BookmarkWorkspace({ bookmarkId }: { bookmarkId: string }) {
           </AppInlineAlert>
         ) : null}
         {version && canRun ? (
-          <BookmarkPredictPanel version={version} session={session} fromRunId={formSource} />
+          <BookmarkPredictPanel
+            bookmarkId={bookmarkId}
+            version={version}
+            session={session}
+            fromRunId={formSource}
+          />
         ) : versionQuery.isError ? (
           <AppEmptyState
             compact

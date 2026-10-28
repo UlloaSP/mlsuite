@@ -7,8 +7,9 @@ import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/view";
 import { createForm, executeFormPipeline } from "mlform/runtime";
 import { z } from "zod";
-import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
+import { schemaRunRuntime } from "./support/schema-run-runtime";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
+import { workspacePrediction } from "./support/api-fixtures";
 
 const stringMeta = (value: unknown): string => (typeof value === "string" ? value : "");
 
@@ -16,13 +17,8 @@ const requestBody = (request: RequestInit | undefined): string =>
   typeof request?.body === "string" ? request.body : "";
 
 const crystalTreeDefinition = (): CatalogReportDefinition => ({
-  id: "crystal-plugin",
   fileName: "crystal.ts",
   source: "",
-  updatedAt: "",
-  createdAt: "",
-  contentType: "text/typescript",
-  sizeBytes: 1,
   kind: "Crystal Tree",
   definition: defineReportKind({
     kind: "Crystal Tree",
@@ -63,17 +59,15 @@ describe("schema plugin transport", () => {
   test("fetches multi-model custom reports and keeps successful payloads", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) {
-          return new Response(JSON.stringify({ reports: [] }));
-        }
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.includes("/predictions")) return workspacePrediction(init);
         if (url.includes("modelId=1")) {
           return new Response(JSON.stringify({ explanation: "tree-1" }));
         }
         return new Response("unsupported", { status: 400 });
       }),
     );
-    const runtime = createSchemaRunRuntime({
+    const runtime = schemaRunRuntime({
       schema: {
         fields: [
           {
@@ -144,17 +138,15 @@ describe("schema plugin transport", () => {
     expect(result.reportFetchResults["crystal_2"]).toBeUndefined();
   });
 
-  test("skips mapped custom report when its model result failed before context exists", async () => {
+  test("skips mapped custom report when its model refused the record", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) {
-          return new Response(JSON.stringify({ message: "prediction failed" }), { status: 400 });
-        }
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.includes("/predictions")) return workspacePrediction(init, [], "prediction failed");
         return new Response(JSON.stringify({ explanation: "should-not-run" }));
       }),
     );
-    const runtime = createSchemaRunRuntime({
+    const runtime = schemaRunRuntime({
       schema: {
         fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
@@ -198,12 +190,12 @@ describe("schema plugin transport", () => {
   test("fetches mapped custom report even when binding policy lacks report kind", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.includes("/predictions")) return workspacePrediction(init);
         return new Response(JSON.stringify({ explanation: "tree" }));
       }),
     );
-    const runtime = createSchemaRunRuntime({
+    const runtime = schemaRunRuntime({
       schema: {
         fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [

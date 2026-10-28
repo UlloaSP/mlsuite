@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.review.application.service;
 
+import static org.mockito.ArgumentMatchers.argThat;
 import static dev.ulloasp.mlsuite.support.TestFixtures.organization;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -10,6 +11,8 @@ import static org.mockito.Mockito.when;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -22,7 +25,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRevisionRepository;
+import dev.ulloasp.mlsuite.schema.application.service.FeedbackHistory;
+import dev.ulloasp.mlsuite.schema.catalog.InferenceRows;
+import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
+import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
+import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackChange;
+import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackType;
+import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultStatus;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
@@ -49,6 +61,8 @@ class SchemaReviewManagementServiceTest {
     @Mock private SchemaReviewAssigneeRepository assignees;
     @Mock private PredictionRunRepository runs;
     @Mock private PredictionResultFeedbackRepository feedback;
+    @Mock private PredictionResultFeedbackRevisionRepository revisions;
+    @Mock private InferenceRows inferenceRows;
     @Mock private WorkspaceAccessService workspaceAccess;
     @Mock private WorkspaceAuthorizationService authorization;
     private SchemaReviewManagementService service;
@@ -56,7 +70,7 @@ class SchemaReviewManagementServiceTest {
     @BeforeEach
     void setUp() {
         service = new SchemaReviewManagementService(reviews, reviewRuns, submissions, assignees,
-                runs, feedback, workspaceAccess, authorization);
+                runs, feedback, new FeedbackHistory(feedback, revisions, inferenceRows), workspaceAccess, authorization);
     }
 
     @Test
@@ -170,11 +184,20 @@ class SchemaReviewManagementServiceTest {
                 reviewRun, reviewer, OffsetDateTime.now());
         stubReopen(organization, review, reviewRun, reviewer.getId());
         when(submissions.findByReviewRunIdAndUserId(null, 12L)).thenReturn(Optional.of(submission));
+        PredictionResult result = new PredictionResult(run, new Model(), Map.of(), Map.of(),
+                PredictionResultStatus.SUCCESS, null, null);
+        PredictionResultFeedback answer = new PredictionResultFeedback(result, reviewer, review,
+                PredictionResultFeedbackType.OUTPUT, 0, JsonNodeFactory.instance.objectNode().put("correct", true));
+        when(feedback.findByResultRunIdAndUserIdAndReviewId(50L, 12L, review.getId())).thenReturn(List.of(answer));
 
         service.deleteResponse(7L, review.getPublicId(), reviewRun.getPublicId(), 12L);
 
         verify(submissions).delete(submission);
-        verify(feedback).deleteByResultRunIdAndUserId(50L, 12L);
+        // Only this review's answers go, and their removal is kept in their history.
+        verify(feedback).deleteAll(List.of(answer));
+        verify(revisions).save(argThat(revision -> revision.getChange() == PredictionResultFeedbackChange.DELETED
+                && revision.getValue() == null && revision.getChangedByUserId() == 7L));
+        verify(inferenceRows).answersChanged(50L);
         verify(authorization).require(7L, 41L, PermissionKey.MANAGE_REVIEWS);
     }
 
@@ -186,7 +209,7 @@ class SchemaReviewManagementServiceTest {
         SchemaReviewRun reviewRun = new SchemaReviewRun(review, run);
         stubReopen(organization, review, reviewRun, 12L);
         when(submissions.findByReviewRunIdAndUserId(null, 12L)).thenReturn(Optional.empty());
-        when(feedback.existsByResultRunIdAndUserId(50L, 12L)).thenReturn(false);
+        when(feedback.findByResultRunIdAndUserIdAndReviewId(50L, 12L, review.getId())).thenReturn(List.of());
 
         ResponseStatusException error = assertThrows(ResponseStatusException.class,
                 () -> service.deleteResponse(7L, review.getPublicId(), reviewRun.getPublicId(), 12L));

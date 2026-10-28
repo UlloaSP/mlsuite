@@ -20,6 +20,8 @@ public interface SchemaCatalogUseCase {
 
     Schema archiveSchema(Long userId, Long schemaId);
 
+    Schema restoreSchema(Long userId, Long schemaId);
+
     Schema duplicateSchema(Long userId, Long schemaId, Long sourceVersionId, String name);
 
     void deleteSchema(Long userId, Long schemaId);

@@ -14,17 +14,19 @@ import {
   usePredictionRun,
   useSchemaVersion,
 } from "@/features/schemas/api/schema-queries";
+import { ReviewerAnswerHistoryButton } from "@/features/schemas/components/ReviewerAnswerHistoryButton";
 import { SchemaRunFeedbackSummary } from "@/features/schemas/components/SchemaRunFeedbackSummary";
 
 type Props = {
   runId: string;
   reviewerId: number | string;
+  reviewerName?: string;
   /** Answers arrive while the page is open; how often to look for them. */
   pollMs?: number;
 };
 
 /** One reviewer's answers on an inference, per questionnaire step. */
-export function ReviewerFeedbackAnswers({ runId, reviewerId, pollMs }: Props) {
+export function ReviewerFeedbackAnswers({ runId, reviewerId, reviewerName, pollMs }: Props) {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const { data: run, isError } = usePredictionRun(runId);
   const { data: version } = useSchemaVersion(run?.schemaVersionId);
@@ -55,16 +57,30 @@ export function ReviewerFeedbackAnswers({ runId, reviewerId, pollMs }: Props) {
     );
   if (!run || !executableVersion || feedbackQueries.some((query) => query.isLoading))
     return <AppLoadingState compact label="Loading answers…" />;
-  if (reviewerFeedback.length === 0)
-    return (
-      <AppEmptyState
-        compact
-        title="No answers yet"
-        description="They appear here as soon as the reviewer saves them."
-      />
-    );
 
   return (
-    <SchemaRunFeedbackSummary run={run} version={executableVersion} feedback={reviewerFeedback} />
+    <div className="flex flex-col gap-4">
+      <div className="flex justify-end">
+        <ReviewerAnswerHistoryButton
+          run={run}
+          version={executableVersion}
+          reviewerId={reviewerId}
+          reviewerName={reviewerName}
+        />
+      </div>
+      {reviewerFeedback.length === 0 ? (
+        <AppEmptyState
+          compact
+          title="No answers yet"
+          description="They appear here as soon as the reviewer saves them."
+        />
+      ) : (
+        <SchemaRunFeedbackSummary
+          run={run}
+          version={executableVersion}
+          feedback={reviewerFeedback}
+        />
+      )}
+    </div>
   );
 }

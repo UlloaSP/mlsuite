@@ -3,6 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { isHttpError } from "@/shared/api/http";
+
 export const PASSWORD_MIN_LENGTH = 10;
 
 export const AUTH_MODES = ["login", "register"] as const;
@@ -24,6 +26,11 @@ export const AUTH_COPY = {
     passwordAutoComplete: "new-password",
   },
 } as const;
+
+/** A throttled attempt (429) says why and that waiting helps; any other failure keeps the form's copy. */
+export function authFailureMessage(mode: AuthMode, error: unknown) {
+  return isHttpError(error) && error.status === 429 ? error.message : AUTH_COPY[mode].error;
+}
 
 export function greetingFor(mode: AuthMode, now: Date) {
   if (mode === "register") return { lead: "Nice to", emphasis: "meet you." };

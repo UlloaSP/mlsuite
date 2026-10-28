@@ -93,6 +93,32 @@ class PublicRunSessionTest extends PublicPredictionFixture {
     }
 
     @Test
+    void aRunWritesItsVisitorOnlyWhenTheVisitorWasLastSeenLongAgo() throws Exception {
+        Cookie visitor = cookie(mockMvc.perform(runRequest(bookmark.getPublicId())).andReturn().getResponse()
+                .getHeader(HttpHeaders.SET_COOKIE));
+        UUID id = UUID.fromString(visitor.getValue());
+        OffsetDateTime issued = lastSeen(id);
+
+        // Seen moments ago: concurrent runs of one visitor do not each lock and rewrite its row.
+        mockMvc.perform(runRequest(bookmark.getPublicId()).cookie(visitor)).andExpect(status().isOk());
+        assertEquals(issued, lastSeen(id));
+
+        OffsetDateTime longAgo = OffsetDateTime.now().minusHours(2);
+        inTransaction(() -> entityManager.find(Visitor.class, id).setLastSeenAt(longAgo));
+        mockMvc.perform(runRequest(bookmark.getPublicId()).cookie(visitor)).andExpect(status().isOk());
+        assertTrue(lastSeen(id).isAfter(longAgo.plusHours(1)), lastSeen(id).toString());
+    }
+
+    private OffsetDateTime lastSeen(UUID visitorId) {
+        OffsetDateTime[] seen = new OffsetDateTime[1];
+        inTransaction(() -> {
+            entityManager.clear();
+            seen[0] = entityManager.find(Visitor.class, visitorId).getLastSeenAt();
+        });
+        return seen[0];
+    }
+
+    @Test
     void aCookieNamingNoKnownVisitorIsReplaced() throws Exception {
         Cookie stale = new Cookie(VisitorCookie.NAME, UUID.randomUUID().toString());
         mockMvc.perform(get("/api/public/bookmarks/{publicId}/runs", bookmark.getPublicId()).cookie(stale))

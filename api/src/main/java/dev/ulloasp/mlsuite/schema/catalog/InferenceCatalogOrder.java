@@ -2,6 +2,7 @@ package dev.ulloasp.mlsuite.schema.catalog;
 
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.Set;
 
 import com.ibm.icu.text.CollationKey;
 
@@ -17,6 +18,10 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunOrigin;
 final class InferenceCatalogOrder {
 
     private static final String CREATED_AT = "createdAt";
+    private static final String FEEDBACK_STATUS = "feedbackStatus";
+    /** The columns a run's summary holds, so ranking by them reads no results or answers. */
+    private static final Set<String> SUMMARY_COLUMNS = Set.of(CREATED_AT, "name", "status", "schema", "version",
+            "bookmark", "author", "origin");
     private static final Comparator<Ranked> NEWEST_FIRST = Comparator
             .comparing((Ranked ranked) -> ranked.createdAt()).reversed()
             .thenComparing(ranked -> ranked.item().id());
@@ -73,6 +78,16 @@ final class InferenceCatalogOrder {
         return column.equals(CREATED_AT);
     }
 
+    /** Whether the order reads only a run's summary, so a scope is ranked without its payloads. */
+    boolean bySummary() {
+        return SUMMARY_COLUMNS.contains(column);
+    }
+
+    /** The column a derived order is by: a data column or the feedback status. */
+    String column() {
+        return column;
+    }
+
     boolean descending() {
         return descending;
     }
@@ -81,27 +96,50 @@ final class InferenceCatalogOrder {
         return new Ranked(row.dto().item(), byCreation() ? null : key(row));
     }
 
+    /** A run ranked by a {@link #bySummary() summary column}. */
+    Ranked rank(PredictionRunCatalogItemDto item) {
+        return new Ranked(item, byCreation() ? null : summaryKey(item));
+    }
+
     Comparator<Ranked> comparator() {
         if (byCreation()) {
             return descending ? NEWEST_FIRST : Comparator.comparing(Ranked::createdAt).thenComparing(NEWEST_FIRST);
         }
-        Comparator<Ranked> byColumn = (left, right) -> {
-            // A row without the column goes last in either direction.
-            if (left.key() == null || right.key() == null) {
-                return left.key() == right.key() ? 0 : left.key() == null ? 1 : -1;
+        return Comparator.comparing(Ranked::key, keyOrder()).thenComparing(NEWEST_FIRST);
+    }
+
+    /** The order of keys in this direction; a row without the column goes last in either direction. */
+    Comparator<Key> keyOrder() {
+        return (left, right) -> {
+            if (left == null || right == null) {
+                return left == right ? 0 : left == null ? 1 : -1;
             }
-            int comparison = left.key().compareTo(right.key());
+            int comparison = left.compareTo(right);
             return descending ? -comparison : comparison;
         };
-        return byColumn.thenComparing(NEWEST_FIRST);
     }
 
     private Key key(Row row) {
-        PredictionRunCatalogItemDto item = row.dto().item();
+        return bySummary() ? summaryKey(row.dto().item())
+                : derivedKey(row.dto().values().get(column), row.dto().feedbackStatus());
+    }
+
+    /**
+     * A row's key in a column derived from its payloads: a number by value, anything else by its
+     * displayed text; none when the row does not show the column.
+     */
+    Key derivedKey(Object value, InferenceFeedbackStatus status) {
+        if (column.equals(FEEDBACK_STATUS)) {
+            return text(status.name());
+        }
+        return value instanceof Number number ? new Key(true, number.doubleValue(), null)
+                : value == null ? null : text(text.format(value));
+    }
+
+    private Key summaryKey(PredictionRunCatalogItemDto item) {
         return switch (column) {
             case "name" -> text(item.name());
             case "status" -> text(item.status().name());
-            case "feedbackStatus" -> text(row.dto().feedbackStatus().name());
             case "schema" -> text(item.schemaName());
             case "version" -> new Key(true, item.schemaVersion(), null);
             case "bookmark" -> text(item.bookmarkName());
@@ -111,9 +149,7 @@ final class InferenceCatalogOrder {
                 case PUBLIC -> "Public page";
                 case API -> "API";
             });
-            default -> row.dto().values().get(column) instanceof Number number
-                    ? new Key(true, number.doubleValue(), null)
-                    : text(row.dto().displayValues().get(column));
+            default -> throw new IllegalStateException("Not a summary column: " + column);
         };
     }
 

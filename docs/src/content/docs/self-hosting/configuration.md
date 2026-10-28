@@ -21,7 +21,7 @@ never commit `.env`.
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `WEB_PORT` | `5173` | Host port of the web app. |
-| `DB_HOST_PORT` | `5430` | Host port of PostgreSQL. |
+| `DB_HOST_PORT` | `5430` | Host port of PostgreSQL, bound to `127.0.0.1` only. |
 | `SPRING_PORT` | `8080` | API port inside the network. Keep 8080: nginx proxies to it. |
 | `PYTHON_HOST`, `PYTHON_PORT` | `0.0.0.0`, `8000` | Runtime bind address inside the network. |
 | `ANALYZER_BASE_URL` | `http://py-analyzer:8000` | How the API reaches the runtime. |
@@ -67,16 +67,29 @@ equivalent roles yourself; the migration role must be able to install `pg_trgm`.
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `MODEL_MUTATIONS_REQUIRE_VERSION` | `true` | Refuse model changes that do not send the model's version (`428`), so stale pages cannot overwrite each other. Keep `true`. |
+| `PREDICTION_ATTESTATION_SECRET` | | Signs the predictions the API runs for workspace inferences; an inference can only be saved with results signed by it, within 24 hours. Required: at least 32 random characters, the same on every API instance. Changing it invalidates unsaved results. |
+
+## Runtime capacity
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `WORKSPACE_PREDICTION_MAX_CONCURRENT` | `4` | Workspace predictions, explanations and artifact inspections at once, apart from public and client runs; more wait their turn. |
+| `RUNTIME_QUEUE_MAX_WAITING` | `1000` | Runs that may wait in each share (workspace, public, client) for their turn, in arrival order. A run that finds every place taken receives `503` with `Retry-After`. |
+| `RUNTIME_QUEUE_MAX_PER_CALLER` | `16` | Places, running or waiting, one caller may hold in a share: a member, a public page's network or account, an API client. More receive `503` with `Retry-After`. At least 1. |
+| `RUNTIME_QUEUE_MAX_WAIT_MS` | `5000` | How long a run may wait for its turn before it receives `503` with `Retry-After`. |
+| `RUNTIME_WORKERS` | `2` | Processes the runtime serves in, about one per core it may use; each holds the bundles it loaded, so size them by memory too. |
+| `RUNTIME_MAX_CONCURRENT` | `1` | Threads each worker runs predictions and explanations on. One is fastest: threads of one process contend for its interpreter. Bundles load on a thread of their own. |
+| `RUNTIME_BUNDLE_CACHE_MB` | `512` | Total artifact size of the verified bundles each worker keeps loaded, and of the verified artifacts kept on disk for every worker; the newest is kept even when larger. A run sends its artifact only when no worker holds it. |
 
 ## Public runs and the client API
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `PUBLIC_PREDICTION_MAX_MODEL_SIZE_MB` | `50` | Largest model a public bookmark or an API client may run. |
-| `PUBLIC_PREDICTION_MAX_CONCURRENT` | `2` | Public runs at once; more receive `503`. |
+| `PUBLIC_PREDICTION_MAX_CONCURRENT` | `2` | Public runs at once; more wait their turn (see `RUNTIME_QUEUE_*`). |
 | `PUBLIC_PREDICTION_ANONYMOUS_RUNS_PER_DAY` | `50` | Runs of one bookmark per network address without a session in 24 hours (an IPv6 address counts as its /64). |
 | `PUBLIC_PREDICTION_SIGNED_IN_RUNS_PER_DAY` | `500` | The same, per signed-in account. |
-| `API_ACCESS_MAX_CONCURRENT` | `2` | API client runs at once, apart from public runs. |
+| `API_ACCESS_MAX_CONCURRENT` | `2` | API client runs at once, apart from public runs; more wait their turn (see `RUNTIME_QUEUE_*`). |
 | `API_ACCESS_REQUESTS_PER_MINUTE` | `60` | Calls one client may make per clock minute. At least 1. |
 | `API_ACCESS_MONTHLY_CALLS` | `10000` | Succeeded calls an organization's clients may make per UTC month, unless a superadmin sets another limit. |
 | `API_ACCESS_REQUEST_RETENTION_DAYS` | `90` | How long the request log is kept. At least 31. |
@@ -85,12 +98,24 @@ The public run counts are kept in the API's memory: they restart with the API an
 single API instance. The client API limits are counted from the request log, so they hold across
 restarts and instances.
 
+## Sign-in and sessions
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `SESSION_COOKIE_SECURE` | `true` | Send the session cookie only over HTTPS. Browsers treat `http://localhost` as secure; set `false` only for plain HTTP on another address. |
+| `AUTH_MAX_LOGIN_FAILURES` | `10` | Failed sign-ins one network may make in 15 minutes; past it every sign-in from it receives `429` until the window ends. At least 1. |
+| `AUTH_MAX_REGISTRATIONS` | `5` | Registration attempts one network may make in 15 minutes; more receive `429`. At least 1. |
+
+Like the public run counts, these are kept in the API's memory and hold only with a single API
+instance. A session ends on its next request once its account is disabled or deleted, or its
+password or system role changes.
+
 ## Operations agent
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `OPS_AGENT_BASE_URL` | `http://ops-agent:8091` | How the API reaches the agent. |
-| `OPS_AGENT_SHARED_SECRET` | | Shared by the API and the agent. Always set it. |
+| `OPS_AGENT_SHARED_SECRET` | | Shared by the API and the agent. Required: the agent refuses to start without it. |
 | `OPS_AGENT_HOST`, `OPS_AGENT_PORT` | `0.0.0.0`, `8091` | Agent bind address. |
 | `OPS_AGENT_DOCKER_BIN` | `docker` | Docker CLI. |
 | `OPS_AGENT_COMPOSE_PROJECT` | `mlsuite` | Must match the project the stack runs under. |

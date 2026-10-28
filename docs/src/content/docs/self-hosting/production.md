@@ -67,7 +67,8 @@ ENV_FILE=.env bash ./scripts/verify-backup-rpo.sh                 # check the ne
 ```
 
 A backup briefly stops the frontend and API, dumps PostgreSQL, archives MinIO cold with its object
-versions, checksums both and applies `LOCAL_BACKUP_RETENTION_COUNT`. It refuses to start without
+versions, checksums both and only then prunes the oldest backups to `LOCAL_BACKUP_RETENTION_COUNT`,
+so a failed run never removes an existing backup. It refuses to start without
 room for roughly 2.5 times the live data plus the `LOCAL_BACKUP_MIN_FREE_PERCENT` reserve. The
 documented objective is a 24-hour recovery point (`RECOVERY_RPO_MINUTES`) and an 8-hour restore
 (`RECOVERY_RTO_MINUTES`), for logical recovery only.

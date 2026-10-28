@@ -44,8 +44,11 @@ public class WorkspaceContextService implements WorkspaceContextUseCase {
 
     @Override
     public WorkspaceContextDto getContext(Long userId) {
+        return context(userId, workspaceAccessService.requireCurrentOrganization(userId));
+    }
+
+    private WorkspaceContextDto context(Long userId, Organization currentOrganization) {
         User user = workspaceAccessService.requireUser(userId);
-        Organization currentOrganization = workspaceAccessService.requireCurrentOrganization(userId);
         if (workspaceAccessService.isSuperadmin(userId)) {
             OrganizationMembership currentMembership = ownerMembership(user, currentOrganization);
             return new WorkspaceContextDto(
@@ -72,14 +75,16 @@ public class WorkspaceContextService implements WorkspaceContextUseCase {
 
     @Override
     public WorkspaceContextDto selectOrganization(Long userId, SelectOrganizationRequest request) {
-        select(userId, request.organizationId());
-        return getContext(userId);
+        return context(userId, select(userId, request.organizationId()));
     }
 
     @Override
     public WorkspaceCurrentContextDto getCurrentContext(Long userId) {
+        return currentContext(userId, workspaceAccessService.requireCurrentOrganization(userId));
+    }
+
+    private WorkspaceCurrentContextDto currentContext(Long userId, Organization currentOrganization) {
         User user = workspaceAccessService.requireUser(userId);
-        Organization currentOrganization = workspaceAccessService.requireCurrentOrganization(userId);
         boolean superadmin = workspaceAccessService.isSuperadmin(userId);
         OrganizationMembership currentMembership = superadmin
                 ? ownerMembership(user, currentOrganization)
@@ -93,9 +98,9 @@ public class WorkspaceContextService implements WorkspaceContextUseCase {
     }
 
     @Override
+    /** Answers for the organization selected, whichever one the request itself names. */
     public WorkspaceCurrentContextDto selectCurrentOrganization(Long userId, SelectOrganizationRequest request) {
-        select(userId, request.organizationId());
-        return getCurrentContext(userId);
+        return currentContext(userId, select(userId, request.organizationId()));
     }
 
     @Override
@@ -107,11 +112,13 @@ public class WorkspaceContextService implements WorkspaceContextUseCase {
         return PageDto.of(page, page.getContent().stream().map(OrganizationDto::from).toList());
     }
 
-    private void select(Long userId, Long organizationId) {
+    /** Stores the organization the user selected, which a request naming none acts in. */
+    private Organization select(Long userId, Long organizationId) {
         User user = workspaceAccessService.requireUser(userId);
         OrganizationMembership membership = workspaceAccessService.requireMembership(userId, organizationId);
         user.setCurrentOrganization(membership.getOrganization());
         userRepository.save(user);
+        return membership.getOrganization();
     }
 
     /** A superadmin has no stored membership and acts as the owner of the organization they select. */

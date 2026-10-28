@@ -117,6 +117,21 @@ MLForm is a capability, not the MLsuite plugin catalog.
 - Schema bindings and output mappings remain the execution source of truth.
 - Theme changes update mounted runtimes without discarding their state.
 
+Plugin code is untrusted and runs only in the plugin sandbox, never in the app's origin.
+
+- The sandbox is a separate Vite entry (`plugin-sandbox.html` + `app/plugin-sandbox-main.ts`),
+  embedded as an opaque-origin `<iframe sandbox>`; it alone bundles the plugin compiler, the
+  TypeScript package, and MLForm's plugin execution. The app entry graph must not import
+  `typescript` or build Blob-URL modules; `frontend-architecture.test.ts` enforces this.
+- `capabilities/prediction-runtime/sandbox/` owns the host (`openPluginSandbox`), the typed
+  `postMessage` channel and its zod protocol, the app-side services that open a sandbox to
+  inspect or run plugins, and the guest that runs inside the sandbox document.
+- Every mount site (workspace run, bulk run, schema preview, run/review report rendering,
+  feedback questionnaires with plugin kinds, public pages, and the plugin editor's validation
+  and type detection) reaches plugins through those services, not by compiling sources itself.
+- The parent is the only party that calls the API; the sandbox receives schema, sources, data,
+  and theme, and returns form values and results. It is given no credentials.
+
 ## Errors
 
 - Transport converts protocol and network failures into typed errors.

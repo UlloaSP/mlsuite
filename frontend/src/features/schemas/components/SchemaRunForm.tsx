@@ -3,22 +3,15 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtom } from "jotai";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
-import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppButton } from "@/shared/ui/AppButton";
 import { applyPredictionInputsToSchema } from "@/capabilities/prediction-runtime/mlform/schema-inputs";
-import { mountSchemaRunForm } from "@/capabilities/prediction-runtime/mlform/schema-run-mount";
-import {
-  buildSchemaRunRawFromSubmitResult,
-  reportStatesFromSnapshot,
-} from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
-import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
+import { mountSandboxedSchemaRunForm } from "@/capabilities/prediction-runtime/sandbox/sandboxed-forms";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
 import { getSchemaRunPrefillInputs } from "@/capabilities/prediction-runtime/data/input-display";
 import { useSchemaPluginCatalog } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
@@ -26,6 +19,7 @@ import { useCurrentOrganizationId } from "@/capabilities/workspace-context/works
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type Props = {
+  bookmarkId: string;
   version: SchemaVersionDto;
   initialInputs?: JsonRecord;
   onSubmit: (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => void;
@@ -33,7 +27,11 @@ type Props = {
   onRunningChange?: (running: boolean) => void;
 };
 
+const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+/** A schema version's run form, drawn in the plugin sandbox with the organization's plugins. */
 export function SchemaRunForm({
+  bookmarkId,
   version,
   initialInputs,
   onSubmit,
@@ -41,12 +39,9 @@ export function SchemaRunForm({
   onRunningChange,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mountedRef = useRef<ReturnType<typeof mountSchemaRunForm> | null>(null);
   const onSubmitRef = useRef(onSubmit);
   const onResultUpdateRef = useRef(onResultUpdate);
   const onRunningChangeRef = useRef(onRunningChange);
-  const [theme] = useAtom(themeWithHtmlAtom);
-  const [initialTheme] = useState(theme);
   const formSchema = useMemo(
     () =>
       initialInputs && Object.keys(initialInputs).length > 0
@@ -69,70 +64,30 @@ export function SchemaRunForm({
 
   useEffect(() => {
     if (showCatalogLoading || !containerRef.current || (needsPlugins && status !== "ready")) return;
-    try {
-      const mounted = mountSchemaRunForm({
-        container: containerRef.current,
-        schema: formSchema,
-        bindings: version.bindings,
-        theme: initialTheme,
-        customFieldDefinitions: data.fieldDefinitions,
-        customReportDefinitions: data.reportDefinitions,
-        onSubmit(inputData, raw, reportsPending) {
-          onSubmitRef.current(inputData, raw, reportsPending);
-        },
-        onSubmitError(error) {
-          toast.error("Schema run failed", {
-            description: error instanceof Error ? error.message : String(error),
-          });
-        },
-        onRunningChange(running) {
-          onRunningChangeRef.current?.(running);
-        },
-      });
-      mountedRef.current = mounted;
-      const unsubscribe = mounted.form.subscribe((state) => {
-        if (!state.lastResult || !onResultUpdateRef.current) return;
-        const raw = isRecord(state.lastResult.raw)
-          ? state.lastResult.raw
-          : { raw: state.lastResult.raw };
-        const next = buildSchemaRunRawFromSubmitResult(
-          raw,
-          mounted.form.reports,
-          reportStatesFromSnapshot(state.reportStates),
-          version.bindings,
-          state.lastResult.reportContexts,
-        );
-        onResultUpdateRef.current(
-          isRecord(next.raw.inputData) ? next.raw.inputData : {},
-          next.raw,
-          next.reportsPending,
-        );
-      });
-      return () => {
-        unsubscribe();
-        mounted.unmount();
-        if (mountedRef.current === mounted) mountedRef.current = null;
-      };
-    } catch (error) {
-      toast.error("Schema incompatible", {
-        description: error instanceof Error ? error.message : String(error),
-      });
-    }
+    const mounted = mountSandboxedSchemaRunForm({
+      container: containerRef.current,
+      target: { bookmarkId, schemaVersionId: version.id },
+      schema: formSchema,
+      bindings: version.bindings,
+      plugins: data,
+      onSubmit: (...result) => onSubmitRef.current(...result),
+      onResultUpdate: (...result) => onResultUpdateRef.current?.(...result),
+      onSubmitError: (error) => toast.error("Schema run failed", { description: errorText(error) }),
+      onRunningChange: (running) => onRunningChangeRef.current?.(running),
+      onMountError: (error) =>
+        toast.error("Schema incompatible", { description: errorText(error) }),
+    });
+    return () => mounted.unmount();
   }, [
-    data.fieldDefinitions,
-    data.reportDefinitions,
+    bookmarkId,
+    data,
     formSchema,
-    initialTheme,
     needsPlugins,
     showCatalogLoading,
     status,
     version.bindings,
     version.id,
   ]);
-
-  useEffect(() => {
-    mountedRef.current?.updateTheme(theme);
-  }, [theme]);
 
   return version.bindings.length === 0 ? (
     <AppPanel>
@@ -149,6 +104,6 @@ export function SchemaRunForm({
       </AppButton>
     </AppPanel>
   ) : (
-    <div className="size-full min-h-0 overflow-auto" ref={containerRef} />
+    <div className="size-full min-h-0" ref={containerRef} />
   );
 }

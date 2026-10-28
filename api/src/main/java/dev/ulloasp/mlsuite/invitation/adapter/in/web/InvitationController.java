@@ -88,14 +88,14 @@ public class InvitationController {
         return ResponseEntity.ok(invitationManagementUseCase.listPendingForUser(user.userId()));
     }
 
-    @PostMapping("/api/invitations/{token}/accept")
-    public ResponseEntity<InvitationDto> acceptInvitation(CurrentUser user, @PathVariable String token) {
-        return ResponseEntity.ok(invitationManagementUseCase.acceptInvitation(user.userId(), token));
+    @PostMapping("/api/invitations/{invitationId}/accept")
+    public ResponseEntity<InvitationDto> acceptInvitation(CurrentUser user, @PathVariable Long invitationId) {
+        return ResponseEntity.ok(invitationManagementUseCase.acceptInvitation(user.userId(), invitationId));
     }
 
-    @PostMapping("/api/invitations/{token}/decline")
-    public ResponseEntity<Void> declineInvitation(CurrentUser user, @PathVariable String token) {
-        invitationManagementUseCase.declineInvitation(user.userId(), token);
+    @PostMapping("/api/invitations/{invitationId}/decline")
+    public ResponseEntity<Void> declineInvitation(CurrentUser user, @PathVariable Long invitationId) {
+        invitationManagementUseCase.declineInvitation(user.userId(), invitationId);
         return ResponseEntity.noContent().build();
     }
 }

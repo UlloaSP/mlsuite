@@ -8,19 +8,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/view";
 import { z } from "zod";
-import { mountSchemaRunForm } from "@/capabilities/prediction-runtime/mlform/schema-run-mount";
+import { mountRunForm } from "./support/schema-run-runtime";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
+import { workspacePrediction, predictionRequest } from "./support/api-fixtures";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 const crystal = (): CatalogReportDefinition => ({
-  id: "crystal-tree",
   fileName: "crystal.ts",
   source: "",
-  updatedAt: "",
-  createdAt: "",
-  contentType: "text/typescript",
-  sizeBytes: 1,
   kind: "Crystal Tree",
   definition: defineReportKind({
     kind: "Crystal Tree",
@@ -49,18 +45,26 @@ describe("schema run multi-model plugin reports", () => {
     document.body.innerHTML = "";
   });
 
-  test("expands one plugin report mapped to several models before modal persistence", async () => {
+  test("shows each model's server explanation for one plugin report mapped to several", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
-        return new Response(JSON.stringify({ explanation: url }));
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (!url.includes("/predictions")) throw new Error(`unexpected ${url}`);
+        const { modelId } = predictionRequest(init);
+        return workspacePrediction(init, [
+          {
+            id: "crystal",
+            kind: "Crystal Tree",
+            mappedTo: "crystal-tree",
+            explanation: `tree ${modelId}`,
+          },
+        ]);
       }),
     );
     const container = document.createElement("div");
     document.body.append(container);
     const updates: Array<{ raw: Record<string, unknown>; pending: boolean }> = [];
-    const mounted = mountSchemaRunForm({
+    const mounted = mountRunForm({
       container,
       schema: {
         fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
@@ -96,6 +100,10 @@ describe("schema run multi-model plugin reports", () => {
     const results = updates.at(-1)?.raw.results as Array<{ output: { reports: unknown[] } }>;
     expect(updates.at(-1)?.pending).toBe(false);
     expect(results.map((result) => result.output.reports.length)).toEqual([1, 1]);
+    expect(mounted.form.state.reportStates).toMatchObject({
+      "crystal-1": { status: "ready", payload: { explanation: "tree 1" } },
+      "crystal-2": { status: "ready", payload: { explanation: "tree 2" } },
+    });
     mounted.unmount();
   });
 });

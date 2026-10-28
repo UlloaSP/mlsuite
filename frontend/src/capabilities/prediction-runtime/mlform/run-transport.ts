@@ -6,8 +6,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { ReportConfig, Transport } from "mlform/runtime";
 import type { ReportResult } from "mlform/schema";
 import { createFanoutTransport } from "mlform/transport";
+import { appFetch, json } from "@/shared/api/http";
+import { retryWhileBusy } from "@/shared/api/busy-retry";
+import type { WorkspacePredictionDto, WorkspacePredictionRequest } from "@/shared/api/openapi.gen";
 import { getBackendBaseUrl } from "@/shared/config/runtime";
-import { normalizeAnalyzerPredictionResult } from "@/capabilities/prediction-runtime/data/analyzer-result-normalization";
 import { applySchemaRunInputMapping } from "@/capabilities/prediction-runtime/mlform/model-input-mapping";
 import { reportTargetForBinding } from "@/capabilities/prediction-runtime/mlform/schema-run-report-mapping";
 import {
@@ -16,91 +18,43 @@ import {
   isRecord,
 } from "@/capabilities/prediction-runtime/mlform/shared";
 
-type SchemaRunBinding = {
+export type SchemaRunBinding = {
   modelId: number;
   modelName?: string;
   pluginPolicy?: JsonRecord | null;
 };
 
-type BindingResult = {
-  modelId: number;
-  modelInput: JsonRecord;
-  output: JsonRecord;
-  status: "SUCCESS" | "FAILED";
-  errorMessage?: string;
-  errorJson?: JsonRecord;
+/** The bookmark whose snapshot the form runs; the server runs each model for it. */
+export type SchemaRunTarget = {
+  bookmarkId: number | string;
+  schemaVersionId: number;
 };
 
-const parseResponse = async (response: Response): Promise<unknown> => {
-  const contentType = response.headers.get("content-type") ?? "";
-  if (contentType.includes("application/json")) return response.json();
-  const body = await response.text();
-  if (!body) return null;
-  try {
-    return JSON.parse(body);
-  } catch {
-    return body;
-  }
-};
-
-const failureOutput = (modelId: number, modelInput: JsonRecord): JsonRecord => ({
-  meta: { modelId, backendUrl: getBackendBaseUrl(), backendFieldValues: modelInput },
-});
-
-const runBinding = async (
+/**
+ * The server runs the model and answers with the result as a saved run will store it, sealed;
+ * a record the model refuses comes back as a failed result. A run the server's queue could not
+ * take is sent again as its Retry-After asks; any other refusal fails the run.
+ */
+const runBinding = (
+  target: SchemaRunTarget,
   binding: SchemaRunBinding,
   modelValues: JsonRecord,
   fields: readonly PredictionPayloadField[],
-  reports: readonly ReportConfig[],
-): Promise<BindingResult> => {
-  const modelInput = applySchemaRunInputMapping(modelValues, fields, binding);
-  const formData = new FormData();
-  formData.set(
-    "data",
-    new File([JSON.stringify(modelInput)], "data.json", { type: "application/json" }),
+  signal?: AbortSignal,
+): Promise<WorkspacePredictionDto> => {
+  const request: WorkspacePredictionRequest = {
+    schemaVersionId: target.schemaVersionId,
+    modelId: binding.modelId,
+    modelInput: applySchemaRunInputMapping(modelValues, fields, binding),
+  };
+  return retryWhileBusy(
+    () =>
+      appFetch<WorkspacePredictionDto>(
+        `/api/schema-bookmarks/${encodeURIComponent(target.bookmarkId)}/predictions`,
+        { ...json("POST", request), signal },
+      ),
+    signal,
   );
-  try {
-    const response = await fetch(
-      `${getBackendBaseUrl()}/api/analyzer/predictions?modelId=${binding.modelId}`,
-      { method: "POST", body: formData, credentials: "include" },
-    );
-    const parsed = await parseResponse(response);
-    if (response.ok) {
-      const normalized = normalizeAnalyzerPredictionResult({
-        parsed,
-        modelId: binding.modelId,
-        modelName: binding.modelName,
-        modelInput,
-        reports,
-      });
-      return {
-        modelId: binding.modelId,
-        modelInput,
-        output: normalized.raw,
-        status: "SUCCESS",
-      };
-    }
-    return {
-      modelId: binding.modelId,
-      modelInput,
-      output: failureOutput(binding.modelId, modelInput),
-      status: "FAILED",
-      errorMessage:
-        isRecord(parsed) && typeof parsed.message === "string"
-          ? parsed.message
-          : response.statusText,
-      errorJson: isRecord(parsed) ? parsed : { raw: parsed },
-    };
-  } catch (error) {
-    return {
-      modelId: binding.modelId,
-      modelInput,
-      output: failureOutput(binding.modelId, modelInput),
-      status: "FAILED",
-      errorMessage: error instanceof Error ? error.message : String(error),
-      errorJson: {},
-    };
-  }
 };
 
 const findReportPayload = (target: string, output: JsonRecord): JsonRecord | undefined =>
@@ -118,7 +72,7 @@ const payloadValue = (report: JsonRecord): unknown => {
 };
 
 const reportResults = (
-  results: readonly BindingResult[],
+  results: readonly WorkspacePredictionDto[],
   bindings: readonly SchemaRunBinding[],
   reports: readonly ReportConfig[],
 ): ReportResult[] =>
@@ -144,16 +98,15 @@ const reportResults = (
 const requestRecord = (value: unknown): JsonRecord => (isRecord(value) ? value : {});
 
 export const createSchemaRunTransport = (
+  target: SchemaRunTarget,
   bindings: readonly SchemaRunBinding[],
   fields: readonly PredictionPayloadField[],
 ): Transport =>
   createFanoutTransport({
     targets: bindings,
     failurePolicy: "fail-fast",
-    submit: (binding, request) => {
-      const reports = request.reports as readonly ReportConfig[];
-      return runBinding(binding, requestRecord(request.modelValues), fields, reports);
-    },
+    submit: (binding, request) =>
+      runBinding(target, binding, requestRecord(request.modelValues), fields, request.signal),
     merge: (outcomes, request) => {
       const reports = request.reports as readonly ReportConfig[];
       const canonical = requestRecord(request.modelValues);

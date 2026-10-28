@@ -88,8 +88,8 @@ public class SchemaReviewCatalogService implements SchemaReviewCatalogUseCase {
                 .filter(found -> !submissions.existsByReviewRunIdAndUserId(found.getId(), userId))
                 .orElseThrow(SchemaReviewUnavailableException::new);
         PredictionRun run = reviewRun.getRun();
-        Set<Long> started = feedback.existsByResultRunIdAndUserId(run.getId(), userId)
-                ? Set.of(run.getId())
+        Set<Long> started = feedback.existsByResultRunIdAndUserIdAndReviewId(run.getId(), userId, review.getId())
+                ? Set.of(reviewRun.getId())
                 : Set.of();
         return inboxItem(review,
                 item(reviewRun, run, null, results.findByRunIdOrderByIdAsc(run.getId()), started));
@@ -128,7 +128,8 @@ public class SchemaReviewCatalogService implements SchemaReviewCatalogUseCase {
         List<Long> runIds = rows.stream().map(row -> row.getRun().getId()).toList();
         Map<Long, List<PredictionResult>> runResults = results.findByRunIdInOrderByRunIdAscIdAsc(runIds).stream()
                 .collect(Collectors.groupingBy(result -> result.getRun().getId()));
-        Set<Long> started = feedback.findRunIdsAnsweredBy(runIds, userId);
+        Set<Long> started = feedback.findReviewRunIdsAnsweredBy(
+                rows.stream().map(row -> row.getReviewRun().getId()).toList(), userId);
         return rows.stream()
                 .map(row -> item(row.getReviewRun(), row.getRun(), row.getSubmission(),
                         runResults.getOrDefault(row.getRun().getId(), List.of()), started))
@@ -138,7 +139,7 @@ public class SchemaReviewCatalogService implements SchemaReviewCatalogUseCase {
     private SchemaReviewRunListItemDto item(SchemaReviewRun reviewRun, PredictionRun run,
             SchemaReviewRunSubmission submission, List<PredictionResult> runResults, Set<Long> started) {
         SchemaReviewState state = submission != null ? SchemaReviewState.COMPLETED
-                : started.contains(run.getId()) ? SchemaReviewState.IN_PROGRESS : SchemaReviewState.PENDING;
+                : started.contains(reviewRun.getId()) ? SchemaReviewState.IN_PROGRESS : SchemaReviewState.PENDING;
         return new SchemaReviewRunListItemDto(reviewRun.getPublicId(), PredictionRunDto.from(run, runResults),
                 state,
                 submission == null ? run.getCreatedAt() : submission.getSubmittedAt(),

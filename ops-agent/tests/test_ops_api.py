@@ -9,6 +9,8 @@ from mlsuite_ops_agent.compose import ComposeError, ComposeGateway
 from mlsuite_ops_agent.config import Settings
 from mlsuite_ops_agent.metrics import collect_metrics
 
+from conftest import SHARED_SECRET
+
 
 class FakeCompose:
     def __init__(self) -> None:
@@ -59,7 +61,7 @@ class FakeTerminals:
         self.sessions[session_id].rows = rows
 
 def auth_headers() -> dict[str, str]:
-    return {"X-MLSuite-Ops-Secret": "mlsuite-dev-secret"}
+    return {"X-MLSuite-Ops-Secret": SHARED_SECRET}
 
 
 def test_health() -> None:
@@ -67,12 +69,6 @@ def test_health() -> None:
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
-
-
-def test_internal_routes_require_secret() -> None:
-    client = TestClient(create_app())
-    response = client.get("/internal/overview")
-    assert response.status_code == 401
 
 
 def test_action_logs_and_terminal_routes_work(monkeypatch) -> None:

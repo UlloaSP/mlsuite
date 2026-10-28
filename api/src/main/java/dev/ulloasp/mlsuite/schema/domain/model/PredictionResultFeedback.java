@@ -9,6 +9,7 @@ import org.hibernate.type.SqlTypes;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReview;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.visitor.domain.model.Visitor;
 import jakarta.persistence.Column;
@@ -16,6 +17,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.ForeignKey;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -28,8 +30,11 @@ import lombok.Setter;
 
 /**
  * One answer about one result, by a member or by a visitor of a public page: exactly one of
- * {@code user} and {@code visitor} is set. Each author gives one answer per result, type and
- * order; the database holds that uniqueness in one partial index per kind of author.
+ * {@code user} and {@code visitor} is set. An answer given in a review belongs to that review
+ * ({@code review}); one given on a public page belongs to none. Each author gives one answer per
+ * result, type and order in each review and once outside reviews; the database holds that
+ * uniqueness in one partial index per kind of author. Every change is kept in its history
+ * (PredictionResultFeedbackRevision).
  */
 @Entity
 @Getter
@@ -45,6 +50,13 @@ public class PredictionResultFeedback {
         this.type = type;
         this.order = order;
         this.value = value;
+    }
+
+    /** A reviewer's answer in a review. */
+    public PredictionResultFeedback(PredictionResult result, User user, SchemaReview review,
+            PredictionResultFeedbackType type, int order, JsonNode value) {
+        this(result, user, type, order, value);
+        this.review = review;
     }
 
     public PredictionResultFeedback(PredictionResult result, Visitor visitor, PredictionResultFeedbackType type,
@@ -72,6 +84,11 @@ public class PredictionResultFeedback {
     @ManyToOne
     @JoinColumn(name = "visitor_id", updatable = false, foreignKey = @ForeignKey(name = "fk_result_feedback_visitor"))
     private Visitor visitor;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "schema_review_id", updatable = false,
+            foreignKey = @ForeignKey(name = "fk_result_feedback_review"))
+    private SchemaReview review;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "feedback_type", nullable = false, length = 32)

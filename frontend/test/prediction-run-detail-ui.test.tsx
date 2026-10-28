@@ -80,7 +80,7 @@ vi.mock("@/features/schemas/api/schema-queries", () => ({
 }));
 
 vi.mock("@/capabilities/prediction-runtime/plugins/schema-plugin-catalog", () => ({
-  useSchemaPluginCatalog: () => ({ data: { reportDefinitions: [] } }),
+  useSchemaPluginCatalog: () => ({ data: { fields: [], reports: [] } }),
 }));
 
 vi.mock("@/capabilities/prediction-runtime/feedback/feedback-steps", () => ({

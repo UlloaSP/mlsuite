@@ -6,8 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { createForm, executeFormPipeline } from "mlform/runtime";
 import { resolveMappedReportPayload } from "mlform/schema";
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
-import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
-import { buildSchemaRunRawFromSubmitResult } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
+import { schemaRunRuntime } from "./support/schema-run-runtime";
+import { workspacePrediction, predictionRequest } from "./support/api-fixtures";
 
 describe("schema run report regressions", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -15,16 +15,15 @@ describe("schema run report regressions", () => {
   test("keeps model report payloads distinct when mappedTo labels collide", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string) => {
-        const modelId = new URL(url).searchParams.get("modelId");
-        return new Response(
-          JSON.stringify({
-            reports: [{ mappedTo: "classifier9", prediction: modelId }],
-          }),
-        );
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (!url.includes("/predictions")) throw new Error(`unexpected ${url}`);
+        const { modelId } = predictionRequest(init);
+        return workspacePrediction(init, [
+          { mappedTo: "classifier9", prediction: String(modelId) },
+        ]);
       }),
     );
-    const runtime = createSchemaRunRuntime({
+    const runtime = schemaRunRuntime({
       schema: {
         fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
@@ -76,59 +75,5 @@ describe("schema run report regressions", () => {
       [{ mappedTo: "classifier9", prediction: "1" }],
       [{ mappedTo: "classifier9", prediction: "2" }],
     ]);
-  });
-
-  test("merges fetched CrystalTree payload into modal and persistence results", () => {
-    const raw = {
-      reports: [],
-      results: [{ modelId: 1, output: { reports: [] } }],
-    };
-    const reports = [
-      {
-        id: "crystal",
-        kind: "CrystalTree",
-        mappedTo: { "model-1": "crystal-tree" },
-      },
-    ];
-    const states = {
-      crystal: { status: "ready" as const, payload: { explanation: "root||leaf" } },
-    };
-
-    const built = buildSchemaRunRawFromSubmitResult(
-      raw,
-      reports,
-      states,
-      [{ modelId: 1, modelName: "model-1" }],
-      {
-        crystal: {
-          reportId: "crystal",
-          kind: "CrystalTree",
-          target: "crystal-tree",
-          backend: "model-1",
-          displayValues: {},
-          modelValues: {},
-          reports: [],
-          meta: { modelId: "1" },
-          raw: {},
-        },
-      },
-    );
-
-    expect(built.raw.results).toEqual([
-      {
-        modelId: 1,
-        output: {
-          reports: [
-            {
-              id: "crystal",
-              kind: "CrystalTree",
-              mappedTo: "crystal-tree",
-              payload: { explanation: "root||leaf" },
-            },
-          ],
-        },
-      },
-    ]);
-    expect(built.reportsPending).toBe(false);
   });
 });

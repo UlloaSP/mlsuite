@@ -5,32 +5,20 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { describe, expect, test, vi } from "vite-plus/test";
 import { createSchemaRunTransport } from "@/capabilities/prediction-runtime/mlform/run-transport";
+import { RUN_TARGET, workspacePrediction, predictionRequest } from "./support/api-fixtures";
 
 describe("schema run transport mapping", () => {
   test("runs every binding when labels changed but mappedTo keeps model keys", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string, init?: RequestInit) => {
-        const data = init?.body instanceof FormData ? init.body.get("data") : null;
-        const text = data instanceof File ? await data.text() : "{}";
-        const input = JSON.parse(text) as Record<string, unknown>;
-        if (Object.keys(input).length === 0) {
-          return new Response(JSON.stringify({ message: "missing features" }), { status: 400 });
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        const { modelInput } = predictionRequest(init);
+        if (Object.keys(modelInput).length === 0) {
+          return workspacePrediction(init, [], "missing features");
         }
-        const modelId = new URL(url).searchParams.get("modelId") ?? "";
-        return new Response(
-          JSON.stringify({
-            reports: [
-              {
-                kind: "classifier",
-                output: 0,
-                prediction: 0,
-                probabilities: [0.8, 0.2],
-              },
-            ],
-            meta: { modelId },
-          }),
-        );
+        return workspacePrediction(init, [
+          { kind: "classifier", mappedTo: "0", prediction: 0, probabilities: [0.8, 0.2] },
+        ]);
       }),
     );
     const bindings = Array.from({ length: 6 }, (_, index) => ({
@@ -57,7 +45,7 @@ describe("schema run transport mapping", () => {
         },
       ];
     });
-    const transport = createSchemaRunTransport(bindings, [
+    const transport = createSchemaRunTransport(RUN_TARGET, bindings, [
       {
         id: "rec_uci_hours",
         label: "TOTAL HORAS UCI",
@@ -86,66 +74,10 @@ describe("schema run transport mapping", () => {
     expect(reportPayloads.every((item) => item.status === "ready")).toBe(true);
   });
 
-  test("routes each output of a model to the report mapped to its position", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(
-        async () =>
-          new Response(
-            JSON.stringify({
-              reports: [
-                { kind: "regressor", output: 0, values: [220] },
-                { kind: "regressor", output: 1, values: [3] },
-              ],
-            }),
-          ),
-      ),
-    );
-    const transport = createSchemaRunTransport([{ modelId: 1, modelName: "homes" }], [
-      { id: "rooms", label: "Rooms", kind: "number", mappedTo: 0 },
-    ] as never);
-
-    const result = await transport.submit({
-      modelValues: { 0: 3 },
-      displayValues: { rooms: 3 },
-      inputs: [],
-      reports: [
-        { id: "area", label: "Area", kind: "regressor", mappedTo: { homes: 1 } },
-        { id: "price", label: "Price", kind: "regressor", mappedTo: { homes: 0 } },
-        { id: "none", label: "None", kind: "regressor", mappedTo: { homes: 2 } },
-      ],
-    } as never);
-
-    const stored = (
-      result as { raw: { results: Array<{ output: { reports: Array<Record<string, unknown>> } }> } }
-    ).raw.results[0].output.reports.filter((report) => "id" in report);
-    expect(stored.map(({ id, mappedTo, values }) => ({ id, mappedTo, values }))).toEqual([
-      { id: "area", mappedTo: "1", values: [3] },
-      { id: "price", mappedTo: "0", values: [220] },
-    ]);
-  });
-
-  test("stores the class the model decides, not the most probable one", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(
-        async () =>
-          new Response(
-            JSON.stringify({
-              reports: [
-                {
-                  kind: "classifier",
-                  output: 0,
-                  mapping: ["0", "1"],
-                  probabilities: [0.263, 0.737],
-                  prediction: "0",
-                },
-              ],
-            }),
-          ),
-      ),
-    );
-    const transport = createSchemaRunTransport([{ modelId: 1, modelName: "risk" }], [
+  test("asks the API to run each model for the bookmark's snapshot", async () => {
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => workspacePrediction(init));
+    vi.stubGlobal("fetch", fetchMock);
+    const transport = createSchemaRunTransport(RUN_TARGET, [{ modelId: 1, modelName: "risk" }], [
       { id: "age", label: "Age", kind: "number", mappedTo: "age" },
     ] as never);
 
@@ -153,12 +85,48 @@ describe("schema run transport mapping", () => {
       modelValues: { age: 52 },
       displayValues: { age: 52 },
       inputs: [],
-      reports: [{ id: "risk", label: "Risk", kind: "classifier", mappedTo: { risk: 0 } }],
+      reports: [],
     } as never);
 
-    const stored = (
-      result as { raw: { results: Array<{ output: { reports: Array<Record<string, unknown>> } }> } }
-    ).raw.results[0].output.reports.find((report) => report.id === "risk");
-    expect(stored).toMatchObject({ prediction: "0", labels: ["0", "1"] });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(new URL(url).pathname).toBe("/api/schema-bookmarks/70/predictions");
+    expect(init?.method).toBe("POST");
+    expect(predictionRequest(init)).toEqual({
+      schemaVersionId: 1,
+      modelId: 1,
+      modelInput: { age: 52 },
+    });
+    expect((result as { raw: { results: unknown[] } }).raw.results).toEqual([
+      expect.objectContaining({ modelId: 1, status: "SUCCESS", attestation: "seal-1" }),
+    ]);
+  });
+
+  test("a prediction the API refuses fails the run instead of becoming a result", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json(
+          {
+            timestamp: "",
+            status: 409,
+            message: "The bookmark moved to another snapshot",
+            path: "",
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+    const transport = createSchemaRunTransport(RUN_TARGET, [{ modelId: 1, modelName: "risk" }], [
+      { id: "age", label: "Age", kind: "number", mappedTo: "age" },
+    ] as never);
+
+    await expect(
+      transport.submit({
+        modelValues: { age: 52 },
+        displayValues: { age: 52 },
+        inputs: [],
+        reports: [],
+      } as never),
+    ).rejects.toThrow("The bookmark moved to another snapshot");
   });
 });

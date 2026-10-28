@@ -15,15 +15,15 @@ import { BookmarkPredictPanel } from "@/features/schemas/components/BookmarkPred
 import { useInferenceSession } from "@/features/schemas/lib/use-inference-session";
 import { buttonByText, changeValue, click, mount } from "./support/dom";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
-import { binding, schemaVersion } from "./support/api-fixtures";
+import { binding, schemaVersion, workspacePrediction } from "./support/api-fixtures";
+import { mountRunForm } from "./support/schema-run-runtime";
 
 const mountState = vi.hoisted(() => ({
   mount: vi.fn(),
   unmount: vi.fn(),
-  updateTheme: vi.fn(),
 }));
 const catalogState = vi.hoisted(() => ({
-  data: { fieldDefinitions: [], reportDefinitions: [] },
+  data: { fields: [], reports: [] },
   error: "",
   needsPlugins: false,
   retry: vi.fn(),
@@ -31,6 +31,7 @@ const catalogState = vi.hoisted(() => ({
 }));
 const pageState = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
+  saveMany: vi.fn(),
   version: null as SchemaVersionDto | null,
 }));
 
@@ -38,8 +39,8 @@ const sessionUser = vi.hoisted(() => ({ id: "user-1" }));
 vi.mock("@/capabilities/workspace-context/session", () => ({
   useUser: () => ({ data: { id: sessionUser.id } }),
 }));
-vi.mock("@/capabilities/prediction-runtime/mlform/schema-run-mount", () => ({
-  mountSchemaRunForm: mountState.mount,
+vi.mock("@/capabilities/prediction-runtime/sandbox/sandboxed-forms", () => ({
+  mountSandboxedSchemaRunForm: mountState.mount,
 }));
 
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
@@ -59,6 +60,7 @@ vi.mock("@/features/schemas/api/schema-prediction-mutations", () => ({
     isPending: false,
     mutateAsync: pageState.mutateAsync,
   }),
+  useCreatePredictionRunsForBookmarkMutation: () => ({ mutateAsync: pageState.saveMany }),
 }));
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -88,6 +90,9 @@ const completedRaw = {
       modelInput: { age: 42 },
       output: { reports: [{ mappedTo: "score", value: 0.8 }] },
       status: "SUCCESS",
+      errorMessage: null,
+      errorJson: null,
+      attestation: "seal-1",
     },
   ],
 };
@@ -96,20 +101,24 @@ describe("schema run creation UI", () => {
   beforeEach(() => {
     mountState.mount.mockReset();
     mountState.unmount.mockReset();
-    mountState.updateTheme.mockReset();
     pageState.mutateAsync.mockReset();
     pageState.mutateAsync.mockResolvedValue({ id: 1 });
+    pageState.saveMany.mockReset();
+    pageState.saveMany.mockImplementation(
+      async ({
+        runs,
+        onSaved,
+      }: {
+        runs: unknown[];
+        onSaved: (from: number, ids: number[]) => void;
+      }) =>
+        onSaved(
+          0,
+          runs.map((_, index) => index + 1),
+        ),
+    );
     pageState.version = version;
-    mountState.mount.mockImplementation(() => ({
-      form: {
-        reports: [],
-        state: { reportStates: {} },
-        subscribe: () => () => {},
-      },
-      host: document.createElement("div"),
-      unmount: mountState.unmount,
-      updateTheme: mountState.updateTheme,
-    }));
+    mountState.mount.mockImplementation(() => ({ unmount: mountState.unmount }));
   });
 
   afterEach(() => {
@@ -118,17 +127,22 @@ describe("schema run creation UI", () => {
     vi.clearAllMocks();
   });
 
-  test("updates mounted form theme without remounting resolved reports", async () => {
+  test("draws the version's form in the plugin sandbox and keeps it across theme changes", async () => {
     const store = createStore();
     store.set(themeWithHtmlAtom, "light");
     await mount(
       <Provider store={store}>
-        <SchemaRunForm version={version} onSubmit={vi.fn()} />
+        <SchemaRunForm bookmarkId="bookmark-1" version={version} onSubmit={vi.fn()} />
       </Provider>,
     );
     await act(flush);
     expect(mountState.mount).toHaveBeenCalledTimes(1);
-    mountState.updateTheme.mockClear();
+    expect(mountState.mount.mock.calls[0][0]).toMatchObject({
+      target: { bookmarkId: "bookmark-1", schemaVersionId: version.id },
+      schema: version.formSchema,
+      bindings: version.bindings,
+      plugins: { fields: [], reports: [] },
+    });
 
     await act(async () => {
       store.set(themeWithHtmlAtom, "dark");
@@ -137,21 +151,17 @@ describe("schema run creation UI", () => {
 
     expect(mountState.mount).toHaveBeenCalledTimes(1);
     expect(mountState.unmount).not.toHaveBeenCalled();
-    expect(mountState.updateTheme).toHaveBeenCalledWith("dark");
   });
 
   test("enters running only after MLForm validation succeeds", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ reports: [] }))),
+      vi.fn(async (_url: string, init?: RequestInit) => workspacePrediction(init)),
     );
     const container = document.createElement("div");
     document.body.append(container);
-    const actual = await vi.importActual<
-      typeof import("@/capabilities/prediction-runtime/mlform/schema-run-mount")
-    >("@/capabilities/prediction-runtime/mlform/schema-run-mount");
     const runningChanges: boolean[] = [];
-    const mounted = actual.mountSchemaRunForm({
+    const mounted = mountRunForm({
       container,
       schema: {
         fields: [
@@ -224,9 +234,13 @@ describe("schema run creation UI", () => {
       saveButton(rows()[0]).click();
       await vi.runAllTimersAsync();
     });
-    expect(pageState.mutateAsync).toHaveBeenLastCalledWith(
-      expect.objectContaining({ name: "Reviewed case", schemaVersionId: 1 }),
-    );
+    // Saving sends back only the server's seal of each result, never an output of its own.
+    expect(pageState.mutateAsync).toHaveBeenLastCalledWith({
+      name: "Reviewed case",
+      schemaVersionId: 1,
+      inputData: { age: 42 },
+      results: [{ attestation: "seal-1" }],
+    });
     expect(rows()[0].textContent).toContain("Saved");
     expect(rows()[0].querySelector("a")?.getAttribute("href")).toBe("/inferences/1");
     expect(nameInputs()[0].disabled).toBe(true);
@@ -259,10 +273,10 @@ describe("schema run creation UI", () => {
       buttonByText("Save all (2)", container)!.click();
       await vi.runAllTimersAsync();
     });
-    expect(pageState.mutateAsync.mock.calls.map(([request]) => request.name)).toEqual([
-      "run-2026-08-24T14:51:00.000Z",
-      "run-2026-08-24T14:52:00.000Z",
-    ]);
+    expect(pageState.saveMany).toHaveBeenCalledTimes(1);
+    expect(
+      pageState.saveMany.mock.calls[0]![0].runs.map((request: { name: string }) => request.name),
+    ).toEqual(["run-2026-08-24T14:51:00.000Z", "run-2026-08-24T14:52:00.000Z"]);
     expect(container.textContent).toContain("All saved");
 
     await act(async () => {
@@ -346,7 +360,7 @@ function SessionHarness() {
   const session = useInferenceSession("bookmark-1", version.id);
   return (
     <MemoryRouter>
-      <BookmarkPredictPanel version={version} session={session} />
+      <BookmarkPredictPanel bookmarkId="bookmark-1" version={version} session={session} />
     </MemoryRouter>
   );
 }

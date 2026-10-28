@@ -48,7 +48,7 @@ export function InferenceSessionEntryRow({
   const locked = entry.state === "saving" || entry.state === "saved";
 
   return (
-    <li
+    <div
       className={cx(
         "flex flex-col gap-2 rounded-card border bg-surface p-3 transition-colors",
         selected ? "border-accent" : "border-line hover:border-line-strong",
@@ -111,6 +111,6 @@ export function InferenceSessionEntryRow({
           </AppButton>
         )}
       </div>
-    </li>
+    </div>
   );
 }

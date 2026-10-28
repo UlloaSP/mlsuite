@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.storage;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
@@ -34,7 +35,17 @@ public interface ObjectStorageService {
                 ArtifactHash.sha256(bytes));
     }
 
-    byte[] load(String bucket, String objectKey, String versionId);
+    /** Reads an object as a stream; the caller closes it. */
+    InputStream open(String bucket, String objectKey, String versionId);
+
+    /** Reads a whole object into memory: for small objects and the offline artifact migration. */
+    default byte[] load(String bucket, String objectKey, String versionId) {
+        try (InputStream in = open(bucket, objectKey, versionId)) {
+            return in.readAllBytes();
+        } catch (IOException ex) {
+            throw new ObjectStorageException("The object could not be read", ex);
+        }
+    }
 
     Optional<byte[]> loadOptional(String bucket, String objectKey, String versionId);
 

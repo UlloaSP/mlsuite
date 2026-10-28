@@ -18,7 +18,7 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   useCurrentOrganizationId: () => 1,
 }));
 vi.mock("@/capabilities/prediction-runtime/plugins/schema-plugin-catalog", () => ({
-  useSchemaPluginCatalog: () => ({ data: { fieldDefinitions: [], reportDefinitions: [] } }),
+  useSchemaPluginCatalog: () => ({ data: { fields: [], reports: [] } }),
 }));
 vi.mock("@/features/schemas/components/SchemaRunForm", () => ({
   SchemaRunForm: () => <input aria-label="Live form input" defaultValue="keep me" />,
@@ -45,7 +45,17 @@ const entry = (key: string, age: number, versionId = 23): SessionEntry => ({
   name: `Case ${key}`,
   state: "ready",
   inputData: {},
-  results: [{ modelId: 1, modelInput: { "0": age }, output: {}, status: "SUCCESS" }],
+  results: [
+    {
+      modelId: 1,
+      modelInput: { "0": age },
+      output: {},
+      status: "SUCCESS",
+      errorMessage: null,
+      errorJson: null,
+      attestation: "seal-1",
+    },
+  ],
   reportsPending: false,
   createdAt: "2026-09-30T10:00:00Z",
 });
@@ -55,6 +65,7 @@ const renderPreview = (
 ) =>
   mount(
     <BookmarkPredictPanel
+      bookmarkId="bookmark-1"
       version={version}
       session={{
         entries,
@@ -62,7 +73,6 @@ const renderPreview = (
         unsavedCount: entries.length,
         onRunningChange: vi.fn(),
         onResult: vi.fn(),
-        addResult: vi.fn(),
         detachForm: vi.fn(),
         save: vi.fn(),
         saveAll: vi.fn(),

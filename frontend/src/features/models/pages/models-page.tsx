@@ -8,6 +8,7 @@ import { Link } from "react-router";
 import { toast } from "sonner";
 import {
   useArchiveModelMutation,
+  useRestoreModelMutation,
   useDeleteModelMutation,
   useDuplicateModelMutation,
   useRenameModelMutation,
@@ -51,6 +52,7 @@ export function ModelsPage() {
   });
   const renameMutation = useRenameModelMutation();
   const archiveMutation = useArchiveModelMutation();
+  const restoreMutation = useRestoreModelMutation();
   const deleteMutation = useDeleteModelMutation();
   const duplicateMutation = useDuplicateModelMutation();
   const pageQuery = useModelCatalogPageQuery(
@@ -96,13 +98,20 @@ export function ModelsPage() {
       action === "archive" &&
       (await actionDialog.confirm({
         title: `Archive ${model.name}?`,
-        description: "Archived models stay readable and can be filtered from the catalog.",
+        description:
+          "New schemas can no longer bind it; schemas that bind it keep running. It stays readable under Archived, where you can restore it.",
         confirmLabel: "Archive",
       }))
     ) {
       archiveMutation.mutate(
         { id: model.id, version: model.version },
         { onSuccess: () => toast.success("Model archived.") },
+      );
+    }
+    if (action === "restore") {
+      restoreMutation.mutate(
+        { id: model.id, version: model.version },
+        { onSuccess: () => toast.success("Model restored.") },
       );
     }
     if (
@@ -124,6 +133,7 @@ export function ModelsPage() {
   const isActionPending =
     renameMutation.isPending ||
     archiveMutation.isPending ||
+    restoreMutation.isPending ||
     deleteMutation.isPending ||
     duplicateMutation.isPending;
 

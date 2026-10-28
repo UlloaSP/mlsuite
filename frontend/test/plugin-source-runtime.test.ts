@@ -3,8 +3,7 @@ import { createForm } from "mlform/runtime";
 import { detectPluginType } from "@/capabilities/prediction-runtime/plugins/plugin-catalog-loader";
 import { validateCustomFieldSource } from "@/capabilities/prediction-runtime/plugins/custom-field-source-runtime";
 import { validateCustomReportSource } from "@/capabilities/prediction-runtime/plugins/custom-report-source-runtime";
-import { invalidatePluginRuntimeCache } from "@/capabilities/prediction-runtime/plugins/plugin-runtime-cache";
-import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
+import { schemaRunRuntime } from "./support/schema-run-runtime";
 
 let moduleSource = "";
 const revokeObjectURL = vi.fn<(url: string) => void>();
@@ -27,7 +26,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  invalidatePluginRuntimeCache();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
@@ -47,26 +45,18 @@ const reportSource = `export default defineReportKind({
 
 describe("MLForm plugin source runtime", () => {
   test("compiles field and report sources and registers both runtime definitions and presenters", async () => {
-    const field = await validateCustomFieldSource(7, fieldSource);
-    const report = await validateCustomReportSource(7, reportSource);
-    expect(await detectPluginType(7, fieldSource)).toEqual({
+    const field = await validateCustomFieldSource(fieldSource);
+    const report = await validateCustomReportSource(reportSource);
+    expect(await detectPluginType(fieldSource)).toEqual({
       pluginType: "field",
       kind: field.kind,
     });
-    expect(await detectPluginType(7, reportSource)).toEqual({
+    expect(await detectPluginType(reportSource)).toEqual({
       pluginType: "report",
       kind: report.kind,
     });
-    const metadata = {
-      id: "plugin",
-      fileName: "plugin.ts",
-      source: "",
-      updatedAt: "",
-      createdAt: "",
-      contentType: "text/typescript",
-      sizeBytes: 1,
-    };
-    const runtime = createSchemaRunRuntime({
+    const metadata = { fileName: "plugin.ts", source: "" };
+    const runtime = schemaRunRuntime({
       schema: {
         fields: [{ kind: field.kind, label: "Score", mappedTo: "score" }],
         reports: [{ kind: report.kind, mappedTo: "summary" }],
@@ -83,7 +73,7 @@ describe("MLForm plugin source runtime", () => {
     expect(form.fields[0].state.value).toBe(0);
     expect(runtime.descriptorRegistry.getField(field.kind)).toBeDefined();
     expect(runtime.descriptorRegistry.getReport(report.kind)).toBeDefined();
-    expect(await validateCustomFieldSource(7, fieldSource)).toBe(field);
+    expect(await validateCustomFieldSource(fieldSource)).toBe(field);
     expect(revokeObjectURL).toHaveBeenCalledTimes(2);
     form.dispose();
   });
@@ -104,7 +94,7 @@ describe("MLForm plugin source runtime", () => {
     [reportSource, "defineReportKind is not defined"],
     ["export default defineFieldKind({", "TypeScript"],
   ])("rejects invalid field plugin source %s", async (source, message) => {
-    await expect(validateCustomFieldSource(7, source)).rejects.toThrow(
+    await expect(validateCustomFieldSource(source)).rejects.toThrow(
       message === "TypeScript" ? /L\d+:C\d+ / : message,
     );
     expect(revokeObjectURL).toHaveBeenCalledTimes(message === "TypeScript" ? 0 : 1);

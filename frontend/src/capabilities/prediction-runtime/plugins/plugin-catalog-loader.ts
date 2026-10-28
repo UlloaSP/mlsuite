@@ -27,37 +27,33 @@ const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
 const validateByType = async (
-  organizationId: number | string,
   source: string,
   pluginType: DetectedPluginType,
 ): Promise<DetectionResult> => {
   if (pluginType === "field") {
-    const definition = await validateCustomFieldSource(organizationId, source);
+    const definition = await validateCustomFieldSource(source);
     return { pluginType, kind: definition.kind };
   }
   if (pluginType === "report") {
-    const definition = await validateCustomReportSource(organizationId, source);
+    const definition = await validateCustomReportSource(source);
     return { pluginType, kind: definition.kind };
   }
   throw new Error("Unsupported plugin type.");
 };
 
-export const detectPluginType = async (
-  organizationId: number | string,
-  source: string,
-): Promise<DetectionResult> => {
+export const detectPluginType = async (source: string): Promise<DetectionResult> => {
   const declaredType = detectDeclaredPluginType(source);
   if (declaredType) {
     try {
-      return await validateByType(organizationId, source, declaredType);
+      return await validateByType(source, declaredType);
     } catch (error: unknown) {
       throw new Error(`Plugin validation failed for ${declaredType}: ${getErrorMessage(error)}`);
     }
   }
 
   const attempts = await Promise.allSettled([
-    validateCustomFieldSource(organizationId, source),
-    validateCustomReportSource(organizationId, source),
+    validateCustomFieldSource(source),
+    validateCustomReportSource(source),
   ]);
   if (attempts[0].status === "fulfilled") {
     return { pluginType: "field", kind: attempts[0].value.kind };

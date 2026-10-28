@@ -30,7 +30,6 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
@@ -52,6 +51,7 @@ import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.security.SecurityConfig;
+import dev.ulloasp.mlsuite.security.auth.SessionAccountCheck;
 import dev.ulloasp.mlsuite.security.auth.AuthenticatedUserPrincipal;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 
@@ -62,8 +62,8 @@ import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
         "server.port=0",
         "cors.allow-origins=http://localhost:5173" })
 @Import(SecurityConfig.class)
-@MockitoBean(types = { PredictBookmarkCatalogUseCase.class, PublicRunUseCase.class, RestTemplate.class,
-        SchemaBookmarkExampleUseCase.class, UserDetailsService.class })
+@MockitoBean(types = { PredictBookmarkCatalogUseCase.class, PublicRunUseCase.class,
+        SchemaBookmarkExampleUseCase.class, UserDetailsService.class, SessionAccountCheck.class })
 class BookmarkPublishingHttpTest {
 
     private static final long USER_ID = 7L;

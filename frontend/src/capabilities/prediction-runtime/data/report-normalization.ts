@@ -6,11 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { ReportConfig } from "mlform/runtime";
 import { type JsonRecord, isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 
-const getAnalyzerReports = (value: unknown): JsonRecord[] => {
-  if (!isRecord(value) || !Array.isArray(value.reports)) return [];
-  return value.reports.filter(isRecord);
-};
-
 const toNumericArray = (value: unknown): number[] => {
   if (!Array.isArray(value)) return [];
   return value.reduce<number[]>((items, item) => {
@@ -74,21 +69,6 @@ export const builtinPrediction = (payload: JsonRecord): unknown =>
   payload.prediction ??
   payload.value ??
   (Array.isArray(payload.values) ? payload.values[0] : undefined);
-
-/**
- * The runtime answers one report per model output and names the output's position on each;
- * a schema report reads the answer of its kind for the output it maps to.
- */
-export const toAnalyzerReportPayload = (
-  report: ReportConfig,
-  parsed: unknown,
-  target: string,
-): JsonRecord | undefined => {
-  const analyzerReport = getAnalyzerReports(parsed).find(
-    (output) => output.kind === report.kind && String(output.output) === target,
-  );
-  return analyzerReport && toStoredBuiltinPayload(report.kind, analyzerReport);
-};
 
 /**
  * What a public run answered for a report. The server made the whole run, a plugin report's

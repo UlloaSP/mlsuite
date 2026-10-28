@@ -4,10 +4,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { PluginCatalogSort, PluginCatalogType } from "@/features/plugins/api/plugin.types";
-import type { DetectedPluginType } from "@/capabilities/prediction-runtime/plugins/plugin-catalog-loader";
+import type { PluginType } from "@/capabilities/prediction-runtime/sandbox/sandbox-protocol";
 
 export type SortMode = PluginCatalogSort;
-export type PluginViewType = DetectedPluginType | "invalid";
+export type PluginViewType = PluginType | "invalid";
 export type TypeFilter = PluginCatalogType;
 
 export type TypeMeta = {

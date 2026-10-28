@@ -15,6 +15,7 @@ import type { useInferenceSession } from "@/features/schemas/lib/use-inference-s
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type Props = {
+  bookmarkId: string;
   /** The pinned, executable snapshot the form runs. */
   version: SchemaVersionDto;
   session: ReturnType<typeof useInferenceSession>;
@@ -27,7 +28,7 @@ type Props = {
  * run lives in the form; choosing an earlier one shows its captured results in
  * the form's place until the user goes back.
  */
-export function BookmarkPredictPanel({ version, session, fromRunId }: Props) {
+export function BookmarkPredictPanel({ bookmarkId, version, session, fromRunId }: Props) {
   const { data: sourceRun } = usePredictionRun(fromRunId);
   const [viewingKey, setViewingKey] = useState<string | null>(null);
   const { onResult } = session;
@@ -67,6 +68,7 @@ export function BookmarkPredictPanel({ version, session, fromRunId }: Props) {
           <SchemaRunForm
             // A new source run restarts the form with its inputs.
             key={fromRunId ?? "blank"}
+            bookmarkId={bookmarkId}
             version={version}
             initialInputs={sourceRun?.inputData}
             onSubmit={handleSubmit}

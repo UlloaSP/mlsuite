@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.review.application.service;
 
+import static org.mockito.Mockito.mock;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -30,6 +31,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
+import dev.ulloasp.mlsuite.schema.application.service.FeedbackHistory;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
@@ -76,7 +78,8 @@ class SchemaReviewServiceTest {
     @BeforeEach
     void setUp() {
         service = new SchemaReviewService(reviewRepository, reviewRunRepository, submissionRepository,
-                assignments, workspaceAccess, authorization, users, schemas, versions, bindings, runs, results, feedback);
+                assignments, workspaceAccess, authorization, users, schemas, versions, bindings, runs, results, feedback,
+                mock(FeedbackHistory.class));
     }
 
     @Test

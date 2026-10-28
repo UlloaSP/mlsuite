@@ -13,6 +13,8 @@ import org.springframework.web.server.ResponseStatusException;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
+import dev.ulloasp.mlsuite.schema.application.service.FeedbackHistory;
+import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewAssigneeRepository;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRunRepository;
@@ -40,6 +42,7 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
     private final SchemaReviewAssigneeRepository assignees;
     private final PredictionRunRepository runs;
     private final PredictionResultFeedbackRepository feedback;
+    private final FeedbackHistory history;
     private final WorkspaceAccessService workspaceAccess;
     private final WorkspaceAuthorizationService authorization;
 
@@ -101,10 +104,12 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
         }
         Optional<SchemaReviewRunSubmission> submission = submissions
                 .findByReviewRunIdAndUserId(reviewRun.getId(), reviewerId);
-        boolean hasFeedback = feedback.existsByResultRunIdAndUserId(reviewRun.getRun().getId(), reviewerId);
-        if (submission.isEmpty() && !hasFeedback) throw conflict("Review response is already empty");
+        // Only this review's answers: the reviewer's answers in other reviews, and on public pages, stay.
+        List<PredictionResultFeedback> answers = feedback.findByResultRunIdAndUserIdAndReviewId(
+                reviewRun.getRun().getId(), reviewerId, review.getId());
+        if (submission.isEmpty() && answers.isEmpty()) throw conflict("Review response is already empty");
         submission.ifPresent(submissions::delete);
-        feedback.deleteByResultRunIdAndUserId(reviewRun.getRun().getId(), reviewerId);
+        history.delete(answers, userId);
     }
 
     private SchemaReviewAssignmentStatusDto status(SchemaReviewRun reviewRun,
@@ -114,7 +119,8 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
         SchemaReviewRunSubmission submission = submissions
                 .findByReviewRunIdAndUserId(reviewRun.getId(), reviewerId).orElse(null);
         SchemaReviewState state = submission != null ? SchemaReviewState.COMPLETED
-                : feedback.existsByResultRunIdAndUserId(reviewRun.getRun().getId(), reviewerId)
+                : feedback.existsByResultRunIdAndUserIdAndReviewId(reviewRun.getRun().getId(), reviewerId,
+                        review.getId())
                         ? SchemaReviewState.IN_PROGRESS
                         : SchemaReviewState.PENDING;
         return new SchemaReviewAssignmentStatusDto(

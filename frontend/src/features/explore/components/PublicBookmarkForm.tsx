@@ -4,15 +4,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAtom } from "jotai";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  mountPublicRunForm,
-  type MountedPublicRunForm,
-} from "@/capabilities/prediction-runtime/mlform/public-run-mount";
 import { applyPredictionInputsToSchema } from "@/capabilities/prediction-runtime/mlform/schema-inputs";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
-import { MLFORM_SPLIT_CONTAINER_CLASS } from "@/capabilities/prediction-runtime/mlform/split-layout";
+import {
+  mountSandboxedPublicRunForm,
+  type MountedSandboxedPublicForm,
+} from "@/capabilities/prediction-runtime/sandbox/sandboxed-forms";
+import type { SandboxSizing } from "@/capabilities/prediction-runtime/sandbox/sandbox-protocol";
 import { useAccountEntry } from "@/capabilities/workspace-context/account-entry";
 import {
   publicRunQuotaQueryOptions,
@@ -23,12 +22,12 @@ import { PublicRunQuota } from "@/features/explore/components/PublicRunQuota";
 import { publicRunFailure, type PublicRunFailure } from "@/features/explore/lib/public-run-failure";
 import { publicRunLimitQuota } from "@/features/explore/lib/public-run-limit";
 import { usePublicPluginCatalog } from "@/features/explore/lib/use-public-plugin-catalog";
-import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
 import { cx } from "@/shared/ui/cx";
+import { useMediaQuery } from "@/shared/ui/use-media-query";
 import type {
   PublicBookmarkDto,
   PublicBookmarkExampleDto,
@@ -49,7 +48,8 @@ const hasFields = (schema: PublicBookmarkDto["formSchema"]) =>
  * the server routes to the bookmark's models and keeps as this browser's; its result shows in
  * the form until the next run, and stays in the page's runs. A form made with plugin fields or
  * reports loads them first: only a schema of the owning organization may use a plugin, but
- * whoever can open the form runs it.
+ * whoever can open the form runs it. The form is drawn in the plugin sandbox, so plugin code runs
+ * without the visitor's session.
  *
  * A form that can be shown offers the bookmark's curated examples above it. Loading one starts
  * the form again with the example's inputs as the fields' starting values, as a saved run's are
@@ -63,9 +63,11 @@ export function PublicBookmarkForm({ publicId, version, formSchema, onRun }: Pro
   const containerRef = useRef<HTMLDivElement>(null);
   const onRunRef = useRef(onRun);
   onRunRef.current = onRun;
-  const mountedRef = useRef<MountedPublicRunForm | null>(null);
-  const [theme] = useAtom(themeWithHtmlAtom);
-  const [initialTheme] = useState(theme);
+  const mountedRef = useRef<MountedSandboxedPublicForm | null>(null);
+  // Wide, the form takes the height the page leaves and scrolls inside; narrow, the page scrolls.
+  const sizing: SandboxSizing = useMediaQuery("(min-width: 64rem)") ? "fill" : "content";
+  const sizingRef = useRef(sizing);
+  sizingRef.current = sizing;
   const [mountError, setMountError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [failure, setFailure] = useState<PublicRunFailure | null>(null);
@@ -90,49 +92,46 @@ export function PublicBookmarkForm({ publicId, version, formSchema, onRun }: Pro
     if (!mountable || !containerRef.current) return;
     setMountError(null);
     setFailure(null);
-    try {
-      const mounted = mountPublicRunForm({
-        container: containerRef.current,
-        schema,
-        plugins,
-        theme: initialTheme,
-        run: async (values, signal) => {
-          const { queryKey } = publicRunQuotaQueryOptions(publicId, caller);
-          if (queryClient.getQueryData(queryKey)?.remaining === 0) return null;
-          try {
-            const result = await runPublicBookmark(publicId, { version, values }, signal);
-            queryClient.setQueryData(queryKey, result.quota);
-            onRunRef.current(result.run);
-            return result.run.reports.map((report) => ({
-              key: report.key,
-              payload: isRecord(report.payload) ? report.payload : {},
-            }));
-          } catch (error) {
-            const used = publicRunLimitQuota(error);
-            if (used) {
-              queryClient.setQueryData(queryKey, used);
-              return null;
-            }
-            // Some refused runs count and some do not, so the server is asked again.
-            void queryClient.invalidateQueries({ queryKey });
-            throw error;
+    const mounted = mountSandboxedPublicRunForm({
+      container: containerRef.current,
+      schema,
+      plugins,
+      sizing: sizingRef.current,
+      run: async (values) => {
+        const { queryKey } = publicRunQuotaQueryOptions(publicId, caller);
+        if (queryClient.getQueryData(queryKey)?.remaining === 0) return null;
+        try {
+          const result = await runPublicBookmark(publicId, { version, values });
+          queryClient.setQueryData(queryKey, result.quota);
+          onRunRef.current(result.run);
+          return result.run.reports.map((report) => ({
+            key: report.key,
+            payload: isRecord(report.payload) ? report.payload : {},
+          }));
+        } catch (error) {
+          const used = publicRunLimitQuota(error);
+          if (used) {
+            queryClient.setQueryData(queryKey, used);
+            return null;
           }
-        },
-        onRunningChange: (next) => {
-          setRunning(next);
-          if (next) setFailure(null);
-        },
-        onRunError: (error) => setFailure(publicRunFailure(error)),
-      });
-      mountedRef.current = mounted;
-      return () => {
-        mounted.unmount();
-        if (mountedRef.current === mounted) mountedRef.current = null;
-      };
-    } catch (error) {
-      setMountError(error instanceof Error ? error.message : String(error));
-    }
-  }, [caller, initialTheme, mountable, plugins, publicId, queryClient, schema, version]);
+          // Some refused runs count and some do not, so the server is asked again.
+          void queryClient.invalidateQueries({ queryKey });
+          throw error;
+        }
+      },
+      onRunningChange: (next) => {
+        setRunning(next);
+        if (next) setFailure(null);
+      },
+      onRunError: (error) => setFailure(publicRunFailure(error)),
+      onMountError: (error) => setMountError(error.message),
+    });
+    mountedRef.current = mounted;
+    return () => {
+      mounted.unmount();
+      if (mountedRef.current === mounted) mountedRef.current = null;
+    };
+  }, [caller, mountable, plugins, publicId, queryClient, schema, version]);
 
   // After every render, because loading an example mounts a new form that must be told too.
   useEffect(() => {
@@ -140,8 +139,8 @@ export function PublicBookmarkForm({ publicId, version, formSchema, onRun }: Pro
   });
 
   useEffect(() => {
-    mountedRef.current?.updateTheme(theme);
-  }, [theme]);
+    mountedRef.current?.setSizing(sizing);
+  }, [sizing]);
 
   if (empty) {
     return (
@@ -187,7 +186,7 @@ export function PublicBookmarkForm({ publicId, version, formSchema, onRun }: Pro
         <div
           ref={containerRef}
           aria-busy={running}
-          className={cx("size-full", MLFORM_SPLIT_CONTAINER_CLASS, running && "cursor-progress")}
+          className={cx("size-full", running && "cursor-progress")}
         />
       </div>
       <div className="flex shrink-0 flex-col gap-2">

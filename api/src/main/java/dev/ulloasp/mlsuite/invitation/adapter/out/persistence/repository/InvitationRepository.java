@@ -1,7 +1,6 @@
 package dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -15,9 +14,6 @@ public interface InvitationRepository
         extends JpaRepository<Invitation, Long>, JpaSpecificationExecutor<Invitation> {
 
     List<Invitation> findByOrganizationIdOrderByCreatedAtDesc(Long organizationId);
-
-    Optional<Invitation> findByToken(String token);
-
 
     List<Invitation> findByEmailAndStatusOrderByCreatedAtDesc(String email, InvitationStatus status);
 

@@ -14,6 +14,7 @@ import {
   usePredictionRunFeedback,
   useSchemaVersion,
 } from "@/features/schemas/api/schema-queries";
+import { AnswerHistory } from "@/features/schemas/components/AnswerHistory";
 import { SchemaRunInputsPanel } from "@/features/schemas/components/SchemaRunInputsPanel";
 import { SchemaRunMetadataRow } from "@/features/schemas/components/SchemaRunMetadataRow";
 import { SchemaRunReportsPanel } from "@/features/schemas/components/SchemaRunReportsPanel";
@@ -22,11 +23,14 @@ import { buildSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feed
 import { getVisibleSchemaInputs } from "@/capabilities/prediction-runtime/data/input-display";
 import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
 import { useSchemaPluginCatalog } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
-import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
+import {
+  useCan,
+  useCurrentOrganizationId,
+} from "@/capabilities/workspace-context/workspace-context";
 import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
 import { questionnaireConfigError } from "@/capabilities/prediction-runtime/feedback/questionnaire-config";
 
-const DETAIL_TABS = ["inputs", "outputs", "reviews"] as const;
+const DETAIL_TABS = ["inputs", "outputs", "reviews", "history"] as const;
 
 /** A tab's own scroll area inside the fixed-height page. */
 function ScrollPanel({ children }: { children: ReactNode }) {
@@ -67,6 +71,7 @@ export function PredictionRunDetails({ runId, bookmarkName, reviews }: Props) {
     useCurrentOrganizationId() ?? "none",
   );
   const questionnaireError = questionnaireConfigError(executableVersion?.formSchema);
+  const canReadHistory = useCan("canViewModels");
   const feedbackSteps = useMemo(() => {
     if (!run || !executableVersion || questionnaireError) return [];
     return buildSchemaFeedbackSteps(executableVersion, run.results, runFeedback.data);
@@ -107,6 +112,9 @@ export function PredictionRunDetails({ runId, bookmarkName, reviews }: Props) {
         .length,
     },
     ...(reviews ? [{ label: "Reviews", value: "reviews" as const, count: reviews.count }] : []),
+    ...(canReadHistory && feedbackSteps.length > 0
+      ? [{ label: "Answer history", value: "history" as const, count: undefined }]
+      : []),
   ];
 
   return (
@@ -133,11 +141,16 @@ export function PredictionRunDetails({ runId, bookmarkName, reviews }: Props) {
               <SchemaRunReportsPanel
                 version={executableVersion}
                 results={run.results}
-                customReportDefinitions={catalog.data.reportDefinitions}
+                reportPlugins={catalog.data.reports}
               />
             </ScrollPanel>
           ) : null}
           {tab === "reviews" ? reviews?.content : null}
+          {tab === "history" && canReadHistory ? (
+            <ScrollPanel>
+              <AnswerHistory version={executableVersion} steps={feedbackSteps} />
+            </ScrollPanel>
+          ) : null}
         </AppTabPanel>
       </AppTabs>
     </>

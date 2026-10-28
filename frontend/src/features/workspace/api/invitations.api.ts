@@ -10,10 +10,8 @@ import type {
   InvitationDto,
 } from "@/shared/api/openapi.gen";
 
-export const acceptInvitation = (token: string): Promise<InvitationDto> =>
-  appFetch<InvitationDto>(`/api/invitations/${encodeURIComponent(token)}/accept`, {
-    method: "POST",
-  });
+export const acceptInvitation = (invitationId: number): Promise<InvitationDto> =>
+  appFetch<InvitationDto>(`/api/invitations/${invitationId}/accept`, { method: "POST" });
 
 export const bulkRevokeInvitations = (
   organizationId: number,
@@ -33,8 +31,8 @@ export const createInvitation = (
     json("POST", payload),
   );
 
-export const declineInvitation = (token: string): Promise<void> =>
-  appFetch<void>(`/api/invitations/${encodeURIComponent(token)}/decline`, { method: "POST" });
+export const declineInvitation = (invitationId: number): Promise<void> =>
+  appFetch<void>(`/api/invitations/${invitationId}/decline`, { method: "POST" });
 
 export const resendInvitation = (
   organizationId: number,

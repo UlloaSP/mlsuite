@@ -28,8 +28,8 @@ cp .env.example .env
 On Windows PowerShell, use `Copy-Item .env.example .env`.
 
 Open `.env` and give every blank secret its own random value, at least `DB_ADMIN_PASS`, `DB_PASS`,
-`DB_MIGRATION_PASS`, `MINIO_ROOT_PASSWORD`, `STORAGE_SECRET_KEY`, `OPS_AGENT_SHARED_SECRET` and
-`MLSUITE_SUPERADMIN_PASSWORD`, and set `MLSUITE_SUPERADMIN_EMAIL` to your address. Keep `.env`
+`DB_MIGRATION_PASS`, `MINIO_ROOT_PASSWORD`, `STORAGE_SECRET_KEY`, `OPS_AGENT_SHARED_SECRET`,
+`PREDICTION_ATTESTATION_SECRET` and `MLSUITE_SUPERADMIN_PASSWORD`, and set `MLSUITE_SUPERADMIN_EMAIL` to your address. Keep `.env`
 private. Every variable is described in [Configuration](/self-hosting/configuration/).
 
 ## Start
@@ -59,7 +59,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml down
 | `frontend` | nginx serving the React app and proxying `/api` to the API | `WEB_PORT` (5173) |
 | `spring-app` | The Spring Boot API: accounts, organizations, permissions, persistence | none |
 | `py-analyzer` | The Python runtime: loads bundles and runs predictions | none |
-| `postgres` | PostgreSQL 18, application state | `DB_HOST_PORT` (5430), on all interfaces |
+| `postgres` | PostgreSQL 18, application state | `DB_HOST_PORT` (5430), on `127.0.0.1` only |
 | `minio` | Object storage for model and plugin files, versioned | none |
 | `ops-agent` | Reads Docker Compose for the [Infrastructure](/admin/infrastructure/) page | none |
 | `db-provision`, `minio-init` | One-shot: create database roles, the bucket and its policy | none |
@@ -67,8 +67,17 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml down
 | `artifact-migrate` | One-shot, profile `operations`: move stored models into object storage | none |
 
 The browser talks only to `frontend`. Keep the API reachable only through it: nginx passes the
-client's address to the API in a header that the API trusts for the public run limits. If PostgreSQL
-should not be reachable from other hosts, bind or firewall `DB_HOST_PORT`.
+client's address to the API in a header that the API trusts for the public run limits. PostgreSQL is
+published on the host's loopback address only, because Docker-published ports bypass host firewalls
+such as ufw; from another machine, reach it through an SSH tunnel.
+
+Each service joins only the networks of the services it calls. `edge` joins `frontend`, the API
+and `ops-agent`; `data` joins the API, its one-shot jobs, PostgreSQL and MinIO; `runtime` joins
+only the API and `py-analyzer`. `py-analyzer` parses uploaded models, so `runtime` is internal: the
+runtime cannot reach the agent, the stores or the internet.
+
+The API starts once `py-analyzer` reports healthy on `/health`. Docker rotates each container's log
+at 10 MB and keeps five files, so `docker compose logs` shows at most that much history.
 
 ## Behind a reverse proxy
 

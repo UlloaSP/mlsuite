@@ -27,6 +27,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.AbstractMockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -55,6 +56,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.security.auth.AuthenticatedUserPrincipal;
+import dev.ulloasp.mlsuite.security.auth.SessionAccountCheck;
 import dev.ulloasp.mlsuite.security.identity.PublicCaller;
 import dev.ulloasp.mlsuite.storage.ArtifactHash;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
@@ -64,7 +66,9 @@ import jakarta.persistence.EntityManager;
 /**
  * The whole application for the public prediction tests and for the catalog tests of every
  * feature: the real web configuration, security chain and migrated PostgreSQL schema, with one
- * published bookmark stored as rows before each test. Only the runtime is a stand-in.
+ * published bookmark stored as rows before each test. Only the runtime is a stand-in, and the check
+ * that a session's account is unchanged since sign-in: the sessions here are built by
+ * {@link #signedIn}, not signed in.
  */
 @SpringBootTest(properties = {
         "spring.profiles.active=test",
@@ -79,7 +83,13 @@ import jakarta.persistence.EntityManager;
         "storage.auto-create-bucket=false",
         "storage.deletion.enabled=false",
         "mlsuite.public-prediction.max-model-size-mb=1",
-        "mlsuite.public-prediction.max-concurrent=1"
+        "mlsuite.public-prediction.max-concurrent=1",
+        "mlsuite.workspace-prediction.max-concurrent=1",
+        // No run waits here, so a run finding its share in use is answered at once (RuntimeSlotsTest covers waiting).
+        "mlsuite.runtime-queue.max-waiting=0",
+        // Stored inference rows are refreshed only when a test asks (InferenceRowsTest), never in the background.
+        "mlsuite.inference-rows.refresh-ms=86400000",
+        "spring.jpa.properties.hibernate.session_factory.statement_inspector=dev.ulloasp.mlsuite.model.RecordedSql"
 })
 @AutoConfigureMockMvc
 @Testcontainers(disabledWithoutDocker = true)
@@ -111,6 +121,8 @@ public abstract class PublicPredictionFixture {
     protected static final long MB = 1024L * 1024L;
     protected static final byte[] FOREST_BYTES = "forest-artifact".getBytes();
     static final byte[] NET_BYTES = "net-artifact".getBytes();
+    protected static final String FOREST_SHA256 = ArtifactHash.sha256(FOREST_BYTES);
+    static final String NET_SHA256 = ArtifactHash.sha256(NET_BYTES);
     protected static final Map<String, Object> CLASSIFIER = Map.of("kind", "classifier", "label", "Predicted class",
             "mapping", List.of("low", "high"), "probabilities", List.of(List.of(0.2, 0.8)));
     /** The classifier's answer as a run keeps it: the instance's own row, its labels and its class. */
@@ -128,6 +140,7 @@ public abstract class PublicPredictionFixture {
     @Autowired protected ObjectMapper objectMapper;
     @Autowired protected MockMvc mockMvc;
     @MockitoBean protected AnalyzerClient analyzer;
+    @MockitoBean SessionAccountCheck sessionAccountCheck;
     @Autowired PublicBookmarkService publicBookmarks;
     @Autowired PublicPredictionService service;
 
@@ -179,7 +192,7 @@ public abstract class PublicPredictionFixture {
             entityManager.persist(bookmark);
         });
         when(analyzer.post(eq("/predict"), any())).thenAnswer(call -> Map.of("reports",
-                fileName(call.getArgument(1)).startsWith("net") ? List.of(CLASSIFIER, REGRESSOR) : List.of(CLASSIFIER)));
+                NET_SHA256.equals(artifact(call.getArgument(1))) ? List.of(CLASSIFIER, REGRESSOR) : List.of(CLASSIFIER)));
     }
 
     private Model model(User owner, String name, String fileName, byte[] bytes) {
@@ -211,11 +224,11 @@ public abstract class PublicPredictionFixture {
     }
 
     /** The same request with a logged-in session, as the login endpoint leaves it for the filter chain. */
-    protected static MockHttpServletRequestBuilder signedIn(MockHttpServletRequestBuilder request, long userId) {
+    protected static <B extends AbstractMockHttpServletRequestBuilder<B>> B signedIn(B request, long userId) {
         return signedIn(request, userId, SystemRole.USER);
     }
 
-    protected static MockHttpServletRequestBuilder signedIn(MockHttpServletRequestBuilder request, long userId,
+    protected static <B extends AbstractMockHttpServletRequestBuilder<B>> B signedIn(B request, long userId,
             SystemRole role) {
         var principal = new AuthenticatedUserPrincipal(userId, "member@example.test", "hash", role, true);
         var authentication = UsernamePasswordAuthenticationToken.authenticated(
@@ -243,12 +256,13 @@ public abstract class PublicPredictionFixture {
         new TransactionTemplate(transactionManager).executeWithoutResult(status -> work.run());
     }
 
-    long count(String entity) {
+    protected long count(String entity) {
         return entityManager.createQuery("select count(x) from " + entity + " x", Long.class).getSingleResult();
     }
 
-    protected static String fileName(MultiValueMap<String, HttpEntity<?>> parts) {
-        return parts.getFirst("model_file").getHeaders().getContentDisposition().getFilename();
+    /** The artifact a runtime call names: its SHA-256, sent without the artifact while the runtime holds it. */
+    protected static String artifact(MultiValueMap<String, HttpEntity<?>> parts) {
+        return (String) parts.getFirst("artifact_sha256").getBody();
     }
 
     protected static String data(MultiValueMap<String, HttpEntity<?>> parts) {

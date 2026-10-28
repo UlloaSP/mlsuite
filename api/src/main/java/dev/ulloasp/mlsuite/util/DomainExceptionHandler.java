@@ -14,15 +14,20 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
+import org.springframework.web.ErrorResponse;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelAlreadyExistsException;
@@ -35,7 +40,10 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundExc
 import dev.ulloasp.mlsuite.admin.infrastructure.OpsAgentException;
 import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicRunLimitDto;
+import dev.ulloasp.mlsuite.schema.application.dto.SchemaMappingErrorDto;
 import dev.ulloasp.mlsuite.schema.domain.exception.PublicRunLimitException;
+import dev.ulloasp.mlsuite.schema.domain.exception.SchemaMappingException;
+import dev.ulloasp.mlsuite.security.auth.AuthAttemptLimitException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -113,7 +121,32 @@ public class DomainExceptionHandler {
                 .body(PublicRunLimitDto.of(ex, HttpStatus.TOO_MANY_REQUESTS.value(), req.getRequestURI()));
     }
 
+    @ExceptionHandler(AuthAttemptLimitException.class)
+    public ResponseEntity<ErrorDto> handleAuthAttemptLimit(AuthAttemptLimitException ex, HttpServletRequest req) {
+        long retryAfterSeconds = ex.getRetryAfter().plusMillis(999).toSeconds();
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds))
+                .body(ErrorDto.of(HttpStatus.TOO_MANY_REQUESTS.value(), ex.getMessage(), req.getRequestURI()));
+    }
+
+    // ---- 413 CONTENT TOO LARGE ----
+
+    /** An upload above the multipart limit (a model bundle above 512 MB) is refused before it is read. */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorDto> handleUploadTooLarge(MaxUploadSizeExceededException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE)
+                .body(ErrorDto.of(HttpStatus.CONTENT_TOO_LARGE.value(),
+                        "The file is too large: a model bundle can be at most 512 MB.", req.getRequestURI()));
+    }
+
     // ---- 400 BAD REQUEST ----
+
+    /** A schema whose mappings name nothing its models have, with each such mapping located. */
+    @ExceptionHandler(SchemaMappingException.class)
+    public ResponseEntity<SchemaMappingErrorDto> handleSchemaMapping(SchemaMappingException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(SchemaMappingErrorDto.of(ex, HttpStatus.BAD_REQUEST.value(), req.getRequestURI()));
+    }
 
     @ExceptionHandler({
             IllegalArgumentException.class
@@ -128,6 +161,14 @@ public class DomainExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ErrorDto.of(HttpStatus.BAD_REQUEST.value(), "The request body is not valid JSON for this endpoint.",
                         req.getRequestURI()));
+    }
+
+    /** A route or method the API does not serve is answered as such, not as a server failure. */
+    @ExceptionHandler({ NoResourceFoundException.class, HttpRequestMethodNotSupportedException.class })
+    public ResponseEntity<ErrorDto> handleUnservedRoute(ErrorResponse ex, HttpServletRequest req) {
+        HttpStatusCode status = ex.getStatusCode();
+        return ResponseEntity.status(status)
+                .body(ErrorDto.of(status.value(), "This endpoint does not accept this request.", req.getRequestURI()));
     }
 
     // ---- Analyzer (dynamic status) ----
@@ -153,6 +194,7 @@ public class DomainExceptionHandler {
                 ? ex.getStatusCode().toString()
                 : ex.getReason();
         return ResponseEntity.status(ex.getStatusCode())
+                .headers(ex.getHeaders())
                 .body(ErrorDto.of(ex.getStatusCode().value(), message, req.getRequestURI()));
     }
 

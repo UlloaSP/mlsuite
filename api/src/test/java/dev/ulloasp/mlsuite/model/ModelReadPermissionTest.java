@@ -13,7 +13,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.application.service.ModelServiceImpl;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
@@ -29,7 +28,9 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModel
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
 import dev.ulloasp.mlsuite.storage.ModelArtifactWriter;
+import dev.ulloasp.mlsuite.storage.ModelArtifactInlineCopy;
 import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
+import dev.ulloasp.mlsuite.storage.StorageProperties;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
@@ -51,7 +52,7 @@ class ModelReadPermissionTest {
         service = new ModelServiceImpl(users, models, mock(ObjectStorageService.class),
                 mock(SchemaModelBindingRepository.class), mock(PredictionResultRepository.class), authorization,
                 mock(ModelArtifactWriter.class), mock(ModelArtifactContentReader.class),
-                mock(StorageDeletionQueue.class), mock(AnalyzerClient.class), false);
+                mock(StorageDeletionQueue.class), mock(ModelArtifactInlineCopy.class), new StorageProperties(), false);
     }
 
     @ParameterizedTest

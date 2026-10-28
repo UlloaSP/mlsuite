@@ -6,18 +6,34 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { queryOptions, useQuery } from "@tanstack/react-query";
-import { appFetch } from "@/shared/api/http";
+import { actInOrganization, appFetch, isHttpError, tabOrganization } from "@/shared/api/http";
 import type { WorkspaceCurrentContextDto, WorkspacePermissionsDto } from "@/shared/api/openapi.gen";
 
 export type WorkspacePermissionKey = keyof WorkspacePermissionsDto;
 
 export const WORKSPACE_CONTEXT_QUERY_KEY = ["workspaceContext"] as const;
 
+const fetchContext = (signal: AbortSignal) =>
+  appFetch<WorkspaceCurrentContextDto>("/api/workspace/context/current", { signal });
+
+/**
+ * The organization this tab works in, which every request then names. A tab opens on the one the
+ * account last selected; a tab whose organization the member no longer belongs to (or that is
+ * gone) returns to it as well.
+ */
 export const workspaceContextQueryOptions = () =>
   queryOptions({
     queryKey: WORKSPACE_CONTEXT_QUERY_KEY,
-    queryFn: ({ signal }) =>
-      appFetch<WorkspaceCurrentContextDto>("/api/workspace/context/current", { signal }),
+    queryFn: async ({ signal }) => {
+      const context = await fetchContext(signal).catch((error: unknown) => {
+        if (tabOrganization() === null || !isHttpError(error) || ![403, 404].includes(error.status))
+          throw error;
+        actInOrganization(null);
+        return fetchContext(signal);
+      });
+      actInOrganization(context.currentOrganization.id);
+      return context;
+    },
     staleTime: 60_000,
   });
 

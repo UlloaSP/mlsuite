@@ -21,7 +21,7 @@ import { AppPageHeader } from "@/shared/ui/PageHeader";
 
 type Props = {
   /** The reviewer's answers on this inference, owned by the schemas feature. */
-  renderAnswers: (inferenceId: string, reviewerId: number) => ReactNode;
+  renderAnswers: (inferenceId: string, reviewerId: number, reviewerName: string) => ReactNode;
 };
 
 /** One reviewer's assignment on an inference: its state and dates, their answers, and its actions. */
@@ -113,7 +113,7 @@ export function InferenceReviewPage({ renderAnswers }: Props) {
         </AppPanel>
         <section aria-label="Answers" className="flex flex-col gap-4">
           <AppSectionTitle>Answers</AppSectionTitle>
-          {renderAnswers(inferenceId, assignment.reviewer.id)}
+          {renderAnswers(inferenceId, assignment.reviewer.id, assignment.reviewer.fullName)}
         </section>
       </AppSurface>
     </AppPage>

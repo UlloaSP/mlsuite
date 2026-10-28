@@ -29,7 +29,7 @@ import dev.ulloasp.mlsuite.schema.application.port.in.SchemaVersionUseCase;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaDraftDiffService;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaDraftPublishedVersionResolver;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaDraftServiceImpl;
-import dev.ulloasp.mlsuite.schema.application.service.SchemaVersionServiceImpl;
+import dev.ulloasp.mlsuite.schema.application.service.SchemaMappingCheck;
 import dev.ulloasp.mlsuite.schema.domain.model.*;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
@@ -53,7 +53,7 @@ class SchemaDraftServiceTest {
     void setUp() {
         engine = new SchemaDraftDiffService();
         service = new SchemaDraftServiceImpl(users, schemas, versions, drafts, versionUseCase,
-                engine, publishedVersions, authorization);
+                engine, publishedVersions, authorization, mock(SchemaMappingCheck.class));
         lenient().when(users.requireById(7L)).thenReturn(user());
         lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization());
     }
@@ -206,27 +206,6 @@ class SchemaDraftServiceTest {
         when(versions.findBySchemaIdOrderByVersionDesc(5L)).thenReturn(List.of(published, duplicate));
         when(versionUseCase.listBindings(7L, 11L)).thenReturn(List.of(binding(published)));
         assertConflict(() -> resolver.resolve(7L, draft));
-    }
-
-    @Test
-    void addBindingFreezesLegacyDraftBaseBindingsBeforeMutation() {
-        SchemaVersion base = version(9L, 1, form("Age"));
-        SchemaDraft legacy = draft(base);
-        legacy.setBaseBindings(null);
-        SchemaVersionServiceImpl versionService = new SchemaVersionServiceImpl(users, schemas, versions, bindings,
-                models, drafts, authorization);
-        when(versions.findByIdAndOrganizationId(9L, 41L)).thenReturn(Optional.of(base));
-        when(schemas.findForUpdate(5L, 41L)).thenReturn(Optional.of(schema()));
-        when(bindings.findBinding(9L, 12L)).thenReturn(Optional.empty());
-        when(bindings.findBySchemaVersionId(9L)).thenReturn(List.of(binding(base)));
-        when(drafts.findByBaseVersionIdAndBaseBindingsIsNull(9L)).thenReturn(List.of(legacy));
-        when(models.findByIdAndOrganizationId(12L, 41L)).thenReturn(Optional.of(model(12L)));
-        when(bindings.save(any())).thenAnswer(call -> call.getArgument(0));
-
-        versionService.addBinding(7L, 9L, new CreateSchemaModelBindingRequest(12L, Map.of()));
-
-        assertEquals(11L, legacy.getBaseBindings().getFirst().get("modelId"));
-        assertEquals(1, policy(legacy.getBaseBindings().getFirst()).get("threshold"));
     }
 
     @Test

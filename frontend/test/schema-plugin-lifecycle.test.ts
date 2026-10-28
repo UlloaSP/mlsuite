@@ -7,23 +7,19 @@ import { describe, expect, test, vi, afterEach } from "vite-plus/test";
 import { createForm, executeFormPipeline } from "mlform/runtime";
 import { defineReportKind } from "mlform/view";
 import { z } from "zod";
-import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
+import { schemaRunRuntime } from "./support/schema-run-runtime";
 import {
-  buildSchemaRunRawFromSubmitResult,
   reportStatesFromSnapshot,
+  schemaRunReportsPending,
 } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
+import { workspacePrediction } from "./support/api-fixtures";
 
 const stringMeta = (value: unknown): string => (typeof value === "string" ? value : "");
 
 const crystal = (): CatalogReportDefinition => ({
-  id: "crystal",
   fileName: "crystal.ts",
   source: "",
-  updatedAt: "",
-  createdAt: "",
-  contentType: "text/typescript",
-  sizeBytes: 1,
   kind: "Crystal Tree",
   definition: defineReportKind({
     kind: "Crystal Tree",
@@ -63,12 +59,12 @@ describe("schema plugin real mlform lifecycle", () => {
   test("expands one mapped custom report into one fetchable controller per model", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.includes("/predictions")) return workspacePrediction(init);
         return new Response(JSON.stringify({ explanation: url }));
       }),
     );
-    const runtime = createSchemaRunRuntime({
+    const runtime = schemaRunRuntime({
       schema: {
         fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
@@ -113,33 +109,20 @@ describe("schema plugin real mlform lifecycle", () => {
     expect(result.reportFetchResults["crystal-1"]).toEqual({
       explanation: "/api/analyzer/explanations?modelId=1",
     });
-    const built = buildSchemaRunRawFromSubmitResult(
-      result.submitResult.raw as Record<string, unknown>,
-      form.reports,
-      reportStatesFromSnapshot(form.state.reportStates),
-      [
-        { modelId: 1, modelName: "model-1" },
-        { modelId: 2, modelName: "model-2" },
-        { modelId: 3, modelName: "model-3" },
-      ],
-      result.submitResult.reportContexts,
-    );
     expect(
-      (built.raw.results as Array<{ output: { reports: unknown[] } }>).map(
-        (item) => item.output.reports.length,
-      ),
-    ).toEqual([1, 1, 1]);
+      schemaRunReportsPending(form.reports, reportStatesFromSnapshot(form.state.reportStates)),
+    ).toBe(false);
   });
 
   test("fetches custom reports through upstream form pipeline", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.includes("/predictions")) return workspacePrediction(init);
         return new Response(JSON.stringify({ explanation: url }));
       }),
     );
-    const runtime = createSchemaRunRuntime({
+    const runtime = schemaRunRuntime({
       schema: {
         fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
@@ -181,15 +164,15 @@ describe("schema plugin real mlform lifecycle", () => {
   test("pipeline stores fetched custom report states", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.includes("/predictions")) return workspacePrediction(init);
         if (url.includes("modelId=2")) {
           return new Response("unsupported", { status: 400 });
         }
         return new Response(JSON.stringify({ explanation: url }));
       }),
     );
-    const runtime = createSchemaRunRuntime({
+    const runtime = schemaRunRuntime({
       schema: {
         fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
@@ -217,7 +200,7 @@ describe("schema plugin real mlform lifecycle", () => {
       transport: runtime.transport,
     });
     form.setValues({ age: 42 });
-    const result = await executeFormPipeline({ form });
+    await executeFormPipeline({ form });
 
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
     expect(calls.filter((url) => url.includes("/api/analyzer/explanations"))).toEqual([
@@ -230,24 +213,16 @@ describe("schema plugin real mlform lifecycle", () => {
     });
     expect(form.reports[1]?.state.status).toBe("error");
     expect(form.reports[1]?.state.error).toBe("unsupported");
-    const built = buildSchemaRunRawFromSubmitResult(
-      result.submitResult.raw as Record<string, unknown>,
-      form.reports,
-      reportStatesFromSnapshot(form.state.reportStates),
-      [
-        { modelId: 1, modelName: "model-1" },
-        { modelId: 2, modelName: "model-2" },
-      ],
-      result.submitResult.reportContexts,
-    );
-    expect(built.reportsPending).toBe(false);
+    expect(
+      schemaRunReportsPending(form.reports, reportStatesFromSnapshot(form.state.reportStates)),
+    ).toBe(false);
   });
 
   test("submits no-id schema with all normal and one-hot features plus report", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.includes("/predictions")) return workspacePrediction(init);
         return new Response(JSON.stringify({ explanation: url }));
       }),
     );
@@ -262,7 +237,7 @@ describe("schema plugin real mlform lifecycle", () => {
       value: String(index + 1),
       mappedTo: { "Model One": `category__${index + 1}` },
     }));
-    const runtime = createSchemaRunRuntime({
+    const runtime = schemaRunRuntime({
       schema: {
         fields: [
           ...normalFields,

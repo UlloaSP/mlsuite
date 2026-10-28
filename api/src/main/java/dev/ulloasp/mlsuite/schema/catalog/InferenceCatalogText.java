@@ -33,8 +33,13 @@ final class InferenceCatalogText {
         options = collator(locale, Collator.TERTIARY, false);
     }
 
+    /**
+     * Language, script and region of the tag only: its extensions would pick another collation or
+     * numbering system, and the table orders and writes as a browser does by default for the language.
+     */
     static InferenceCatalogText of(String locale) {
-        return new InferenceCatalogText(ULocale.forLanguageTag(locale));
+        ULocale tag = ULocale.forLanguageTag(locale);
+        return new InferenceCatalogText(new ULocale(tag.getLanguage(), tag.getScript(), tag.getCountry()));
     }
 
     /** What a cell shows: a number in the locale's digits, Yes or No, text as written, or compact JSON. */

@@ -6,8 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { mountForm } from "mlform/kit";
 import { connectStoredStatusConditions } from "./stored-status-conditions";
 import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
-import type { AfterSubmitContext, SubmitErrorContext } from "mlform/runtime";
-import { normalizeSchema, type ReportContext } from "mlform/schema";
+import type { AfterSubmitContext, FormState, SubmitErrorContext, Transport } from "mlform/runtime";
+import { normalizeSchema } from "mlform/schema";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
 import { getPredictionDesignSystem } from "./headless-prediction";
 import {
@@ -18,6 +18,7 @@ import {
 import {
   type JsonRecord,
   type MountedPredictionForm,
+  type PredictionPayloadField,
   type PredictionTheme,
   isRecord,
 } from "@/capabilities/prediction-runtime/mlform/shared";
@@ -26,9 +27,11 @@ import type {
   CatalogReportDefinition,
 } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 import {
-  buildSchemaRunRawFromSubmitResult,
   reportStatesFromSnapshot,
+  schemaRunReportsPending,
 } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
+
+type RunResultCallback = (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => void;
 
 type Options = {
   container: HTMLElement;
@@ -41,7 +44,12 @@ type Options = {
   theme: PredictionTheme;
   customFieldDefinitions?: readonly CatalogFieldDefinition[];
   customReportDefinitions?: readonly CatalogReportDefinition[];
-  onSubmit?: (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => void;
+  /** Runs the form's values against its models, given the fields the schema normalized to. */
+  transport: (fields: readonly PredictionPayloadField[]) => Transport;
+  /** The run, once every report it asked for has settled. */
+  onSubmit?: RunResultCallback;
+  /** The last run, each time its result or a report's state changes. */
+  onResultUpdate?: RunResultCallback;
   onSubmitError?: (error: unknown) => void;
   onRunningChange?: (running: boolean) => void;
 };
@@ -53,7 +61,9 @@ export const mountSchemaRunForm = ({
   theme,
   customFieldDefinitions = [],
   customReportDefinitions = [],
+  transport,
   onSubmit,
+  onResultUpdate,
   onSubmitError,
   onRunningChange,
 }: Options): MountedPredictionForm => {
@@ -68,26 +78,18 @@ export const mountSchemaRunForm = ({
   let mounted: ReturnType<typeof mountForm> | undefined;
   // The submitted result waits here while "all" report fetching finishes; the run
   // completes once every report has settled, as the split layout's success event did.
-  let submitted: { raw: JsonRecord; contexts: Record<string, ReportContext> } | null = null;
+  let submitted: JsonRecord | null = null;
   const completeWhenSettled = () => {
     if (!mounted || !submitted) return;
-    const next = buildSchemaRunRawFromSubmitResult(
-      submitted.raw,
-      mounted.form.reports,
-      reportStatesFromSnapshot(mounted.form.state.reportStates),
-      bindings,
-      submitted.contexts,
-    );
-    if (next.reportsPending) return;
+    const reportStates = reportStatesFromSnapshot(mounted.form.state.reportStates);
+    if (schemaRunReportsPending(mounted.form.reports, reportStates)) return;
+    const raw = submitted;
     submitted = null;
     onRunningChange?.(false);
-    onSubmit?.(isRecord(next.raw.inputData) ? next.raw.inputData : {}, next.raw, false);
+    onSubmit?.(isRecord(raw.inputData) ? raw.inputData : {}, raw, false);
   };
   const handleSubmitted = async ({ result }: AfterSubmitContext) => {
-    submitted = {
-      raw: isRecord(result.raw) ? result.raw : { raw: result.raw },
-      contexts: (result.reportContexts ?? {}) as Record<string, ReportContext>,
-    };
+    submitted = isRecord(result.raw) ? result.raw : { raw: result.raw };
     if (mounted && normalized.reports.length > 0) await showRunResults(mounted.host);
     completeWhenSettled();
   };
@@ -96,7 +98,7 @@ export const mountSchemaRunForm = ({
     registry: runtime.registry,
     descriptorRegistry: runtime.descriptorRegistry,
     primitiveRegistry: createBuiltinPrimitiveRegistry(),
-    transport: runtime.transport,
+    transport: transport(runtime.normalizedFields),
     hooks: {
       beforeSubmit() {
         onRunningChange?.(true);
@@ -123,7 +125,23 @@ export const mountSchemaRunForm = ({
   const form = mounted;
   connectStoredStatusConditions(form.form);
   hideRunTabTitles(form.host);
-  const unsubscribe = form.form.subscribe(completeWhenSettled);
+  let reported: Pick<FormState, "lastResult" | "reportStates"> | null = null;
+  const reportUpdate = (state: FormState) => {
+    const { lastResult, reportStates } = state;
+    if (!lastResult || !onResultUpdate) return;
+    if (reported?.lastResult === lastResult && reported.reportStates === reportStates) return;
+    reported = { lastResult, reportStates };
+    const raw = isRecord(lastResult.raw) ? lastResult.raw : { raw: lastResult.raw };
+    onResultUpdate(
+      isRecord(raw.inputData) ? raw.inputData : {},
+      raw,
+      schemaRunReportsPending(form.form.reports, reportStatesFromSnapshot(reportStates)),
+    );
+  };
+  const unsubscribe = form.form.subscribe((state) => {
+    completeWhenSettled();
+    reportUpdate(state);
+  });
   return {
     form: form.form,
     host: form.host,

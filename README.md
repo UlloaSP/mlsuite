@@ -120,8 +120,11 @@ cp .env.example .env
 On Windows PowerShell, use `Set-Location mlsuite` and `Copy-Item .env.example .env`.
 
 Open `.env` and give every blank secret its own value, especially `DB_PASS`,
-`STORAGE_SECRET_KEY`, `OPS_AGENT_SHARED_SECRET` and `MLSUITE_SUPERADMIN_PASSWORD`.
-Keep `.env` private; commit only sanitized defaults to `.env.example`.
+`STORAGE_SECRET_KEY`, `OPS_AGENT_SHARED_SECRET`, `PREDICTION_ATTESTATION_SECRET` and
+`MLSUITE_SUPERADMIN_PASSWORD`.
+The ops-agent controls the host's Docker and refuses to start without
+`OPS_AGENT_SHARED_SECRET`. Keep `.env` private; commit only sanitized defaults to
+`.env.example`.
 
 Start the development stack:
 
@@ -159,6 +162,16 @@ production-only operational metadata and has no image defaults: its mandatory
 release override, `docker-compose.release.yml`, supplies every application image
 pinned by digest. CI compares the fully rendered models and rejects any other
 drift.
+
+Services share a network only with the services they call: `edge` joins the
+frontend, the API and the ops-agent; `data` joins the API, its one-shot jobs,
+PostgreSQL and MinIO; `runtime` joins only the API and `py-analyzer`. The runtime
+parses uploaded models, so its network is internal and reaches neither the
+ops-agent, the stores nor the internet. Only the frontend is published on every
+interface; PostgreSQL is published on `127.0.0.1` alone, because Docker-published
+ports bypass host firewalls such as ufw. The API starts once `py-analyzer` reports
+healthy on `/health`. Docker rotates every container's log at 10 MB and keeps five
+files per container.
 
 Successful publications from `main` create immutable `build-<commit>` releases
 with digest-pinned images and a Compose override; MLsuite does not update
@@ -217,9 +230,11 @@ failed rehearsal stops the cutover and stays visible instead of leaving a stale
 successful result.
 
 The backup command pauses the frontend and API, dumps PostgreSQL, takes a cold
-archive of MinIO that preserves version IDs, verifies checksums, applies
-`LOCAL_BACKUP_RETENTION_COUNT`, checks the remaining disk space, and restarts only
-the application services that were running. Backups live under
+archive of MinIO that preserves version IDs, verifies checksums, and only then
+prunes the oldest backups down to `LOCAL_BACKUP_RETENTION_COUNT`; a refused or
+failed run never removes an existing backup, so the disk briefly holds one backup
+more than the retention count. It then checks the remaining disk space and
+restarts only the application services that were running. Backups live under
 `LOCAL_BACKUP_ROOT`, outside the Docker data volumes but currently on the same
 physical disk. Keep at least 15% free with `LOCAL_BACKUP_MIN_FREE_PERCENT`. Before
 stopping writes, the command requires headroom for both the archive and the
@@ -362,10 +377,72 @@ bounds database concurrency with `DB_POOL_MAX_SIZE`, `DB_POOL_MIN_IDLE` and
 budget, leaving capacity for the migration job and operations, rather than
 matching it to the HTTP thread count.
 
+Runtime calls hold no database connection: a prediction or explanation resolves
+its model in short reads and waits for the runtime outside any transaction. Each
+kind of caller has its own share of the runtime: `WORKSPACE_PREDICTION_MAX_CONCURRENT`
+(default `4`) for workspace members' predictions, explanations and artifact
+inspections, and the public and client shares below. A call that finds its share in
+use waits its turn in arrival order. It takes its place in the queue before any
+database work, and receives `503 Service Unavailable` with `Retry-After` only when
+`RUNTIME_QUEUE_MAX_WAITING` calls (default `1000`) already wait in its share, when
+its caller (a member, a public page's network or account, an API client) already
+holds `RUNTIME_QUEUE_MAX_PER_CALLER` places in the share, running or waiting
+(default `16`), or when its turn does not come within `RUNTIME_QUEUE_MAX_WAIT_MS`
+(default `5000`). Once admitted, a prediction or explanation must be answered by the
+runtime within 10 seconds and an artifact inspection within 50, below the 60 seconds
+nginx waits for the API. The API keeps its connections to the runtime open for
+reuse, and serves requests on virtual threads, so calls waiting for the runtime do
+not delay unrelated requests. Bulk uploads run on the server as jobs through the
+same workspace share, 100 records at a time, as the member who started them; an
+upload holds at most `PREDICTION_JOBS_MAX_ROWS` records (default `10000`), and at
+most `PREDICTION_JOBS_MAX_OPEN_PER_MEMBER` uploads per member (default `2`) and
+`PREDICTION_JOBS_MAX_OPEN_PER_ORGANIZATION` per organization (default `4`) are
+queued or running at once. A call
+names its model's artifact by SHA-256; the API sends the artifact only when the
+runtime answers that it does not hold it, and the runtime checks the bytes against
+that hash. The runtime serves in `RUNTIME_WORKERS` processes (default `2`; about
+one per core it may use), since one Python process runs model code on one core at
+a time. Each worker runs predictions and explanations on `RUNTIME_MAX_CONCURRENT`
+threads (default `1`, the fastest: more threads of one process only contend for
+it) and loads bundles on a thread of its own, so a slow upload never delays a
+prediction, and its health check stays answered while models run. A worker keeps
+the verified bundles it loaded while their artifacts total at most
+`RUNTIME_BUNDLE_CACHE_MB` (default `512`; the newest bundle is kept even when
+larger), and keeps the verified bytes once on disk for every worker under the same
+bound, so the API sends an artifact once whichever worker it reaches. Size the
+workers by memory as well as cores: each holds its own bundles.
+
 Monitor `storageDeletionQueue` on `/actuator/info` and alert on any `failed` row
 or a `pending` count that grows continuously. Cleanup workers use database leases,
 so several API instances process disjoint tasks and an expired worker cannot
 complete or fail work reclaimed by another instance.
+
+### Sign-in and sessions
+
+- **Session cookie.** The session cookie is HttpOnly, SameSite=Lax and, unless
+  `SESSION_COOKIE_SECURE=false`, Secure: browsers send it only over HTTPS. They
+  treat `http://localhost` as secure, so local development needs no change; set
+  `false` only to use plain HTTP on another address.
+- **Session lifetime.** Signing in always continues under a new session id. A
+  session lasts only while its account is as it was at sign-in: once a superadmin
+  disables or deletes the account, resets its password or changes its system role,
+  the session ends on its next request, which receives `401 Unauthorized`.
+  Workspace roles and permissions are read on every request and apply at once
+  without ending the session.
+- **Organization per request.** The app names its tab's organization on every
+  request in the `X-MLSuite-Organization` header, and the API checks the account's
+  membership in it each time (a superadmin may name any). A request that names none
+  acts in the organization the account last selected, which is also where a new tab
+  opens. Two tabs on two organizations therefore each read and write their own.
+- **Throttling.** One client network may fail to sign in `AUTH_MAX_LOGIN_FAILURES`
+  times (default `10`) and attempt to register `AUTH_MAX_REGISTRATIONS` times
+  (default `5`) in the 15 minutes after its first counted attempt. Past either
+  limit it receives `429 Too Many Requests` with `Retry-After` until that window
+  ends, even with the right password. Successful sign-ins are not counted and do
+  not reset the failures. The network is the client address as for public runs
+  (see [Client address behind a proxy](#client-address-behind-a-proxy)). Counts
+  live in the API process memory: they restart with the API and are correct only
+  with a single API instance.
 
 ## Public bookmarks
 
@@ -375,11 +452,13 @@ an account.
 - **Model size.** `PUBLIC_PREDICTION_MAX_MODEL_SIZE_MB` (default `50`) is the
   largest model artifact a public bookmark may bind. Publishing, moving a public
   bookmark to another snapshot and each public run are refused above it, because
-  every run ships the artifact to the runtime. The same limit applies to API
-  client runs.
+  the runtime must load the artifact of every model it runs. The same limit
+  applies to API client runs.
 - **Concurrency.** `PUBLIC_PREDICTION_MAX_CONCURRENT` (default `2`) public runs may
-  execute at once; further ones receive `503 Service Unavailable` until a slot
-  frees. API clients have a share of their own, so neither can take the other's.
+  execute at once; further ones wait their turn as described in
+  [Concurrency and monitoring](#concurrency-and-monitoring), each network or account
+  holding at most `RUNTIME_QUEUE_MAX_PER_CALLER` places. API clients have a share of
+  their own, so neither can take the other's.
 - **Quota.** Each caller may run one public bookmark a limited number of times in
   24 hours, counted from their first run of it:
   `PUBLIC_PREDICTION_ANONYMOUS_RUNS_PER_DAY` (default `50`) per client address
@@ -490,7 +569,7 @@ set an organization's monthly limit, both audited.
 | --- | --- | --- |
 | `API_ACCESS_REQUESTS_PER_MINUTE` | `60` | Calls one client may make in a clock minute. |
 | `API_ACCESS_MONTHLY_CALLS` | `10000` | Succeeded calls an organization's clients may make together in a calendar month (UTC), unless a superadmin set its own limit. |
-| `API_ACCESS_MAX_CONCURRENT` | `2` | Client runs executing at once. |
+| `API_ACCESS_MAX_CONCURRENT` | `2` | Client runs executing at once; more wait their turn, as workspace runs do. |
 | `API_ACCESS_REQUEST_RETENTION_DAYS` | `90` (at least `31`) | How long calls are kept. |
 
 The limits are counted from the log, so they hold across restarts and API
@@ -567,7 +646,7 @@ The Python runtime requires Python 3.14+ and `uv`:
 ```bash
 cd backend
 uv sync --extra dev
-uv run pytest tests/test_runtime_api.py
+uv run pytest tests
 ```
 
 ## Documentation and community

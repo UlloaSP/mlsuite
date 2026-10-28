@@ -18,7 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.schema.adapter.in.web.PublicBookmarkController;
@@ -27,6 +26,7 @@ import dev.ulloasp.mlsuite.schema.application.port.in.PublicBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicPredictionUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicRunUseCase;
 import dev.ulloasp.mlsuite.security.SecurityConfig;
+import dev.ulloasp.mlsuite.security.auth.SessionAccountCheck;
 
 /** The page a crawler unfurls a public bookmark's link into. */
 @WebMvcTest(controllers = PublicBookmarkController.class, properties = {
@@ -35,8 +35,8 @@ import dev.ulloasp.mlsuite.security.SecurityConfig;
         "server.port=0",
         "cors.allow-origins=http://localhost:5173" })
 @Import(SecurityConfig.class)
-@MockitoBean(types = { PublicPredictionUseCase.class, PublicRunUseCase.class, RestTemplate.class,
-        UserDetailsService.class })
+@MockitoBean(types = { PublicPredictionUseCase.class, PublicRunUseCase.class,
+        UserDetailsService.class, SessionAccountCheck.class })
 class PublicBookmarkPreviewHttpTest {
 
     private static final String PUBLIC_ID = "8f6f3c0e-58a2-4c0b-9d0c-0d5c1f6e2a11";

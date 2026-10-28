@@ -1,3 +1,4 @@
+import hashlib
 import io
 import tempfile
 from pathlib import Path
@@ -26,6 +27,15 @@ def serialize_bundle(
         )
         content = path.read_bytes()
     return (Path(filename).name, io.BytesIO(content), "application/octet-stream")
+
+
+def sha256_of(upload: tuple[str, io.BytesIO, str]) -> str:
+    return hashlib.sha256(upload[1].getvalue()).hexdigest()
+
+
+def run_request(upload: tuple[str, io.BytesIO, str], **fields: str) -> dict[str, dict[str, object]]:
+    """A run's form sending the artifact with its SHA-256, as a caller does after a 409."""
+    return {"files": {"model_file": upload}, "data": {"artifact_sha256": sha256_of(upload), **fields}}
 
 
 def make_classifier() -> LogisticRegression:

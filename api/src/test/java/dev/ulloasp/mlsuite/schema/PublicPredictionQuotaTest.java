@@ -44,6 +44,7 @@ import dev.ulloasp.mlsuite.schema.domain.exception.PublicRunLimitException;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.security.identity.PublicCaller;
+import dev.ulloasp.mlsuite.security.identity.ClientNetworks;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.security.identity.PublicCallerArgumentResolver;
@@ -60,7 +61,7 @@ class PublicPredictionQuotaTest extends PublicPredictionFixture {
     private static final Instant START = Instant.parse("2026-10-06T10:00:00Z");
     private static final PublicCaller OTHER_VISITOR = PublicCaller.anonymous("address:other", null);
     private static final PublicCaller MEMBER = PublicCaller.signedIn(7L, null);
-    private static final String CLIENT_ADDRESS = PublicCallerArgumentResolver.CLIENT_ADDRESS_HEADER;
+    private static final String CLIENT_ADDRESS = ClientNetworks.CLIENT_ADDRESS_HEADER;
 
     private final Clock clock = mock(Clock.class);
     private Instant now = START;

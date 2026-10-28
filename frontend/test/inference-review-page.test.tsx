@@ -24,6 +24,7 @@ const state = vi.hoisted(() => ({
 
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   useCurrentOrganizationId: () => 7,
+  useCan: () => true,
   useWorkspaceContext: () => ({ data: { permissions: { canManageReviews: true } } }),
 }));
 vi.mock("@/features/inferences/api/inference-api", () => ({
