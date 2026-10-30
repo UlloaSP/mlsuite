@@ -28,7 +28,7 @@ cp .env.example .env
 On Windows PowerShell, use `Copy-Item .env.example .env`.
 
 Open `.env` and give every blank secret its own random value, at least `DB_ADMIN_PASS`, `DB_PASS`,
-`DB_MIGRATION_PASS`, `MINIO_ROOT_PASSWORD`, `STORAGE_SECRET_KEY`, `OPS_AGENT_SHARED_SECRET`,
+`DB_MIGRATION_PASS`, `RUSTFS_SECRET_KEY`, `STORAGE_SECRET_KEY`, `OPS_AGENT_SHARED_SECRET`,
 `PREDICTION_ATTESTATION_SECRET` and `MLSUITE_SUPERADMIN_PASSWORD`, and set `MLSUITE_SUPERADMIN_EMAIL` to your address. Keep `.env`
 private. Every variable is described in [Configuration](/self-hosting/configuration/).
 
@@ -61,9 +61,9 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml down
 | `py-analyzer` | The Python runtime: runs each model in its own environment | none |
 | `runtime-builder` | Installs the environment each uploaded model's lock names | none |
 | `postgres` | PostgreSQL 18, application state | `DB_HOST_PORT` (5430), on `127.0.0.1` only |
-| `minio` | Object storage for model and plugin files, versioned | none |
+| `rustfs` | Object storage for model and plugin files, versioned | none |
 | `ops-agent` | Reads Docker Compose for the [Infrastructure](/admin/infrastructure/) page | none |
-| `db-provision`, `minio-init` | One-shot: create database roles, the bucket and its policy | none |
+| `db-provision`, `rustfs-init` | One-shot: create database roles, the bucket and its policy | none |
 | `db-migrate` | One-shot: apply the Flyway database migrations before the API starts | none |
 | `artifact-migrate` | One-shot, profile `operations`: move stored models into object storage | none |
 
@@ -73,7 +73,7 @@ published on the host's loopback address only, because Docker-published ports by
 such as ufw; from another machine, reach it through an SSH tunnel.
 
 Each service joins only the networks of the services it calls. `edge` joins `frontend`, the API
-and `ops-agent`; `data` joins the API, its one-shot jobs, PostgreSQL and MinIO; `runtime` joins
+and `ops-agent`; `data` joins the API, its one-shot jobs, PostgreSQL and RustFS; `runtime` joins
 only the API and `py-analyzer`. `py-analyzer` runs uploaded models, so `runtime` is internal: the
 runtime cannot reach the agent, the stores or the internet. `runtime-builder` alone downloads
 packages (`egress`), and only the API reaches it (`build`, also internal). It writes environments to

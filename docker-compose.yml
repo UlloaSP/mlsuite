@@ -41,7 +41,7 @@ networks:
 
 volumes:
   pg_data:
-  minio_data:
+  rustfs_data:
   # The environments the builder installs and the runtime runs models in. A cache: lost, it is
   # rebuilt from the bundles' locks, so it is not backed up.
   runtime_environments:
@@ -155,16 +155,17 @@ services:
     restart: unless-stopped
     logging: *logging
 
-  minio:
-    image: ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
-    command: server /data --console-address "${MINIO_CONSOLE_ADDRESS}"
+  rustfs:
+    image: rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY}
+      RUSTFS_CONSOLE_ENABLE: "false"
+      RUSTFS_OBS_LOG_DIRECTORY: ""
     volumes:
-      - minio_data:/data
+      - rustfs_data:/data
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/ready" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/health/ready" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -172,20 +173,20 @@ services:
     restart: unless-stopped
     logging: *logging
 
-  minio-init:
-    image: ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
+  rustfs-init:
+    image: rustfs/rc:v0.1.36@sha256:ab024bfebee49a750ce886b4c70963ccd9ddaa03f491704a90710641d7a26699
     entrypoint: [ "/bin/sh", "/config/provision.sh" ]
     environment:
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY}
       STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
       STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
       STORAGE_BUCKET: ${STORAGE_BUCKET}
     volumes:
-      - ./deploy/minio/provision.sh:/config/provision.sh:ro
+      - ./deploy/rustfs/provision.sh:/config/provision.sh:ro
     depends_on:
-      minio:
+      rustfs:
         condition: service_healthy
     networks: [ data ]
     restart: "no"
@@ -229,7 +230,7 @@ services:
     depends_on:
       db-migrate:
         condition: service_completed_successfully
-      minio-init:
+      rustfs-init:
         condition: service_completed_successfully
     networks: [ data ]
     extra_hosts:
@@ -292,7 +293,7 @@ services:
         condition: service_healthy
       db-migrate:
         condition: service_completed_successfully
-      minio-init:
+      rustfs-init:
         condition: service_completed_successfully
     healthcheck:
       test: [ "CMD-SHELL", "wget -q -O - http://localhost:${SPRING_PORT}/actuator/health/readiness >/dev/null" ]

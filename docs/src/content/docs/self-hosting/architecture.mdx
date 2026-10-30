@@ -6,7 +6,7 @@ description: The services of an MLsuite instance, which one owns what, and how a
 import Architecture from "../../../components/Architecture.astro";
 
 MLsuite is three applications run as one product: a React client, a Spring Boot API and a Python
-runtime, with PostgreSQL for state and MinIO for files.
+runtime, with PostgreSQL for state and RustFS for files.
 
 <Architecture />
 
@@ -18,7 +18,7 @@ runtime, with PostgreSQL for state and MinIO for files.
 | Spring API (`api/`) | Accounts, sessions, organizations and permissions; models, schemas, bookmarks, inferences, reviews, plugins and API clients; public pages and the client API. It is the only service that stores anything. |
 | Python runtime (`backend/`) | Loading and verifying `.mlbundle` files, coercing inputs, predicting and explaining. It keeps no state besides a small cache of verified bundles. |
 | PostgreSQL | All application state. Flyway migrations own its schema. |
-| MinIO | Model and plugin files in a versioned bucket; models are stored under their hash. |
+| RustFS | Model and plugin files in a versioned bucket; models are stored under their hash. |
 | Operations agent (`ops-agent/`) | Service health, logs, controls and shells for the Infrastructure page, read from Docker Compose. |
 
 ## A prediction, step by step

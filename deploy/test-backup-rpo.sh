@@ -9,7 +9,7 @@ backup="$work/backups/production-test"
 mkdir -p "$backup"
 printf 'payload\n' > "$backup/postgres.dump"
 printf 'bucket\n' > "$backup/storage.bucket"
-printf 'archive\n' > "$backup/minio-data.tar.gz"
+printf 'archive\n' > "$backup/rustfs-data.tar.gz"
 cat > "$work/test.env" <<EOF
 LOCAL_BACKUP_ROOT=$work/backups
 RECOVERY_RPO_MINUTES=60
@@ -21,7 +21,7 @@ mode=local-single-disk
 physical_disk_failure_covered=false
 created_epoch=$1
 EOF
-  (cd "$backup" && sha256sum postgres.dump storage.bucket minio-data.tar.gz recovery.scope > backup.manifest)
+  (cd "$backup" && sha256sum postgres.dump storage.bucket rustfs-data.tar.gz recovery.scope > backup.manifest)
 }
 
 write_scope "$(date -u +%s)"

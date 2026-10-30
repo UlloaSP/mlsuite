@@ -71,7 +71,7 @@ class ModelUploadStreamingTest extends PublicPredictionFixture {
         }
         sha256 = HexFormat.of().formatHex(digest.digest());
         when(analyzer.inspect(any())).thenReturn(INSPECTION);
-        // The store reads what it is given as MinIO does, a buffer at a time, and remembers its hash.
+        // The store reads what it is given as an S3 client does, a buffer at a time, and remembers its hash.
         when(storage.store(anyString(), anyString(), anyString(), any(InputStream.class), anyLong(), anyString()))
                 .thenAnswer(call -> {
                     StoredObjectVerification read = drain(call.getArgument(3));

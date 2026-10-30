@@ -23,7 +23,7 @@ OPS_COMPOSE_FILES = {
 }
 
 
-IMAGE_DIGEST = re.compile(r"^ghcr\.io/.+@sha256:[0-9a-f]{64}$")
+IMAGE_DIGEST = re.compile(r"^.+:[^:/@]+@sha256:[0-9a-f]{64}$")
 
 
 def render(*overrides: str) -> dict:
@@ -108,10 +108,13 @@ def main() -> None:
     assert production["services"]["db-provision"]["image"] == postgres_image, (
         "database provisioner must use the server's PostgreSQL version"
     )
-    minio_image = production["services"]["minio"]["image"]
-    assert IMAGE_DIGEST.fullmatch(minio_image), "object storage image must be pinned by digest"
-    assert production["services"]["minio-init"]["image"] == minio_image, (
-        "object storage provisioner must use the same pinned image"
+    rustfs_image = production["services"]["rustfs"]["image"]
+    rc_image = production["services"]["rustfs-init"]["image"]
+    assert IMAGE_DIGEST.fullmatch(rustfs_image), "object storage image must be pinned by digest"
+    assert IMAGE_DIGEST.fullmatch(rc_image), "object storage client image must be pinned by digest"
+    storage_test = ROOT / "api/src/test/java/dev/ulloasp/mlsuite/storage/S3ObjectStorageServiceTest.java"
+    assert rustfs_image in storage_test.read_text(), (
+        "the storage contract test must run against the Compose object storage image"
     )
     validate_release_config(production)
     published = {
@@ -169,20 +172,23 @@ def main() -> None:
     assert f"POSTGRES_IMAGE={postgres_image}" in script_pins, (
         "operational scripts must use the Compose PostgreSQL image"
     )
-    assert f"MINIO_IMAGE={minio_image}" in script_pins, (
+    assert f"RUSTFS_IMAGE={rustfs_image}" in script_pins, (
         "operational scripts must use the Compose object storage image"
     )
-    root_user = development["services"]["minio"]["environment"]["MINIO_ROOT_USER"]
+    assert f"RC_IMAGE={rc_image}" in script_pins, (
+        "operational scripts must use the Compose object storage client image"
+    )
+    root_user = development["services"]["rustfs"]["environment"]["RUSTFS_ACCESS_KEY"]
     app_user = development["services"]["spring-app"]["environment"]["STORAGE_ACCESS_KEY"]
     assert root_user and app_user and root_user != app_user, (
-        "MinIO root and application identities must be distinct"
+        "RustFS root and application identities must be distinct"
     )
-    provisioner = (ROOT / "deploy/minio/provision.sh").read_text()
+    provisioner = (ROOT / "deploy/rustfs/provision.sh").read_text()
     assert '"s3:' in provisioner and '"admin:' not in provisioner, (
-        "MinIO application policy must contain only S3 actions"
+        "RustFS application policy must contain only S3 actions"
     )
     assert 'arn:aws:s3:::%s' in provisioner, (
-        "MinIO application policy must be restricted to the configured bucket"
+        "RustFS application policy must be restricted to the configured bucket"
     )
     print("Development and production Compose parity verified.")
 
