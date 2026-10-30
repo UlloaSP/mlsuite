@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.storage;
 
 import java.net.URI;
+import java.time.Duration;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -17,6 +18,10 @@ import software.amazon.awssdk.services.s3.S3Client;
 @Configuration
 @EnableConfigurationProperties(StorageProperties.class)
 public class ObjectStorageConfig {
+
+    private static final Duration CONNECTION_TIMEOUT = Duration.ofSeconds(10);
+    // The server answers a large PUT only once it has persisted it; the client default of 30s is too short.
+    private static final Duration SOCKET_TIMEOUT = Duration.ofMinutes(5);
 
     @Bean
     ObjectStorageService objectStorageService(StorageProperties properties) {
@@ -37,7 +42,10 @@ public class ObjectStorageConfig {
                 .forcePathStyle(true)
                 .requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED)
                 .responseChecksumValidation(ResponseChecksumValidation.WHEN_REQUIRED)
-                .httpClient(UrlConnectionHttpClient.create())
+                .httpClient(UrlConnectionHttpClient.builder()
+                        .connectionTimeout(CONNECTION_TIMEOUT)
+                        .socketTimeout(SOCKET_TIMEOUT)
+                        .build())
                 .build();
     }
 }
