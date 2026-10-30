@@ -27,7 +27,7 @@ generated from its schema, collect human reviews and corrections, and export
 everything for evaluation or retraining.
 
 It is a deployed product, not a library: a React frontend, a Spring Boot API and
-a Python ML runtime, with PostgreSQL for application state and MinIO for
+a Python ML runtime, with PostgreSQL for application state and RustFS for
 artifacts, all run by Docker Compose. Try the [live deployment](https://mlsuite.irlab.org)
 or self-host your own.
 
@@ -178,7 +178,7 @@ drift.
 
 Services share a network only with the services they call: `edge` joins the
 frontend, the API and the ops-agent; `data` joins the API, its one-shot jobs,
-PostgreSQL and MinIO; `runtime` joins only the API and `py-analyzer`. The runtime
+PostgreSQL and RustFS; `runtime` joins only the API and `py-analyzer`. The runtime
 runs uploaded models, so its network is internal and reaches neither the
 ops-agent, the stores nor the internet. `runtime-builder` installs model
 environments into the `runtime_environments` volume, which the runtime mounts
@@ -220,7 +220,7 @@ operational restarts use the same release.
 ### Backups and recovery
 
 The initial supported on-premise topology is explicitly `local-single-disk`. The
-wizard creates a coordinated PostgreSQL plus MinIO recovery point, checksums it,
+wizard creates a coordinated PostgreSQL plus RustFS recovery point, checksums it,
 restores it in an isolated environment, and requires an explicit acknowledgement
 that physical disk loss is not covered. These local backups protect against a bad
 deployment or logical deletion; they are not PITR or disaster recovery. The
@@ -246,7 +246,7 @@ failed rehearsal stops the cutover and stays visible instead of leaving a stale
 successful result.
 
 The backup command pauses the frontend and API, dumps PostgreSQL, takes a cold
-archive of MinIO that preserves version IDs, verifies checksums, and only then
+archive of RustFS that preserves version IDs, verifies checksums, and only then
 prunes the oldest backups down to `LOCAL_BACKUP_RETENTION_COUNT`; a refused or
 failed run never removes an existing backup, so the disk briefly holds one backup
 more than the retention count. It then checks the remaining disk space and
@@ -254,7 +254,7 @@ restarts only the application services that were running. Backups live under
 `LOCAL_BACKUP_ROOT`, outside the Docker data volumes but currently on the same
 physical disk. Keep at least 15% free with `LOCAL_BACKUP_MIN_FREE_PERCENT`. Before
 stopping writes, the command requires headroom for both the archive and the
-restore rehearsal: roughly 2.5 times the live PostgreSQL plus MinIO data, on top
+restore rehearsal: roughly 2.5 times the live PostgreSQL plus RustFS data, on top
 of that reserve.
 
 ### Database and storage
@@ -265,11 +265,11 @@ one-shot `db-migrate` service before the API may start.
 
 Before the first Flyway-managed release:
 
-1. Stop the frontend and API so PostgreSQL and MinIO are captured at one
+1. Stop the frontend and API so PostgreSQL and RustFS are captured at one
    write-consistent point.
-2. Create the coordinated local PostgreSQL and MinIO backup. The cold MinIO
+2. Create the coordinated local PostgreSQL and RustFS backup. The cold RustFS
    archive preserves object versions, delete markers and the version IDs that
-   PostgreSQL references; keep the MinIO image pinned when restoring it. Until
+   PostgreSQL references; keep the RustFS image pinned when restoring it. Until
    another physical device exists, record disk or host loss as an accepted,
    unrecoverable risk.
 3. Enable and verify bucket versioning. Do not configure lifecycle expiry inside
@@ -301,8 +301,8 @@ PostgreSQL cannot demote its bootstrap superuser, revokes that legacy role's log
 once the new administrator is verified. The migration role must be allowed to
 install `pg_trgm`, or a database administrator must install it first.
 
-MinIO follows the same separation. `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` are
-used only by MinIO and its one-shot initializer. `STORAGE_ACCESS_KEY` and
+RustFS follows the same separation. `RUSTFS_ACCESS_KEY` and `RUSTFS_SECRET_KEY` are
+used only by RustFS and its one-shot initializer. `STORAGE_ACCESS_KEY` and
 `STORAGE_SECRET_KEY` identify a separate application user whose generated policy
 is restricted to the configured bucket. The API and artifact migrator never
 receive the root credentials.
@@ -337,7 +337,7 @@ docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml 
 The job claims rows with `FOR UPDATE SKIP LOCKED`, records attempts and failures,
 uploads to immutable model/hash keys, reads each upload back and compares its
 SHA-256 before marking it verified. Normal reads and verification use the exact
-MinIO version ID persisted in PostgreSQL, not whichever version is latest.
+RustFS version ID persisted in PostgreSQL, not whichever version is latest.
 
 Stopping the job is safe: each claimed artifact renews its lease, and expired
 `RUNNING` leases are reclaimed on the next execution. A worker that loses
@@ -368,7 +368,7 @@ Production promotion gates are:
   rows before the backfill is declared complete;
 - artifact `verify` succeeds with no missing, truncated or hash-mismatched object;
 - `/actuator/health/readiness` is healthy on the canary API;
-- a PostgreSQL plus MinIO restore has been exercised in an isolated environment.
+- a PostgreSQL plus RustFS restore has been exercised in an isolated environment.
 
 `MODEL_MUTATIONS_REQUIRE_VERSION=false` exists only for a controlled
 compatibility window before promotion, so an already-open older frontend can
@@ -379,7 +379,7 @@ the version and keep stale-write protection.
 
 Deploy backward-compatible API instances gradually. On application failure, roll
 back the image while the inline copies remain. On an incompatible persistent
-state, prefer roll-forward or restore PostgreSQL and MinIO together. Clearing
+state, prefer roll-forward or restore PostgreSQL and RustFS together. Clearing
 `model_file` and dropping it are deferred to later releases, after the retention
 window and a successful restore drill.
 
@@ -602,7 +602,7 @@ whether or not they are public. Consumers must move to the new path and body.
 flowchart LR
     UI[React + MLForm] --> API[Spring Boot API]
     API --> DB[(PostgreSQL)]
-    API --> STORE[(MinIO)]
+    API --> STORE[(RustFS)]
     API --> ML[Python ML runtime]
     ML --> API
 ```

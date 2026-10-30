@@ -51,11 +51,10 @@ equivalent roles yourself; the migration role must be able to install `pg_trgm`.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` | `mlsuite-root` | MinIO administrator, used only by MinIO and its initializer. |
-| `MINIO_CONSOLE_ADDRESS` | `:9001` | MinIO console address inside the network; not published. |
-| `STORAGE_ENABLED` | `true` | Store models and plugins in MinIO. |
-| `STORAGE_ENDPOINT` | `http://minio:9000` | S3 endpoint. |
-| `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | `mlsuite-app` | The application's MinIO user, limited to the bucket. Must differ from the root user. |
+| `RUSTFS_ACCESS_KEY`, `RUSTFS_SECRET_KEY` | `mlsuite-root` | RustFS administrator, used only by RustFS and its initializer. |
+| `STORAGE_ENABLED` | `true` | Store models and plugins in RustFS. |
+| `STORAGE_ENDPOINT` | `http://rustfs:9000` | S3 endpoint. |
+| `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | `mlsuite-app` | The application's RustFS user, limited to the bucket. Must differ from the root user. |
 | `STORAGE_BUCKET` | `mlsuite` | Bucket name. Versioning is enabled on it. |
 | `STORAGE_AUTO_CREATE_BUCKET` | `true` | Let the API create the bucket. |
 | `STORAGE_RETAIN_INLINE_COPY` | `true` | Keep the database copy of each model during the rollback window. |
@@ -123,7 +122,7 @@ password or system role changes.
 | `OPS_AGENT_HOST`, `OPS_AGENT_PORT` | `0.0.0.0`, `8091` | Agent bind address. |
 | `OPS_AGENT_DOCKER_BIN` | `docker` | Docker CLI. |
 | `OPS_AGENT_COMPOSE_PROJECT` | `mlsuite` | Must match the project the stack runs under. |
-| `OPS_AGENT_MANAGED_SERVICES` | `postgres,py-analyzer,runtime-builder,minio,spring-app,frontend` | Services the Infrastructure page shows and controls. |
+| `OPS_AGENT_MANAGED_SERVICES` | `postgres,py-analyzer,runtime-builder,rustfs,spring-app,frontend` | Services the Infrastructure page shows and controls. |
 | `OPS_AGENT_SAMPLE_INTERVAL_SECONDS`, `OPS_AGENT_RETENTION_MINUTES` | `5`, `60` | Metric sampling and history. |
 | `OPS_AGENT_TERMINAL_SERVICES` | | Services that allow a shell. Blank: none. |
 | `OPS_AGENT_TERMINAL_IDLE_MINUTES`, `OPS_AGENT_TERMINAL_MAX_SESSIONS` | `15`, `5` | Idle timeout and concurrent shells. |

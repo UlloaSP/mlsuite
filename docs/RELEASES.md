@@ -57,7 +57,7 @@ base production override deliberately contains no fallback application images. T
 single API image is reused by `db-migrate`, `artifact-migrate`, and `spring-app`
 so migrations always run from the exact digest being promoted.
 It is intended to accompany `docker-compose.yml` and `docker-compose.prod.yml`;
-PostgreSQL, MinIO, secrets,
+PostgreSQL, RustFS, secrets,
 volumes, networking and host requirements are outside this application manifest.
 You can inspect the selected images without starting services:
 
@@ -74,7 +74,7 @@ and deep readiness checks. The operator must still provide environment-specific
 backup, restore, promotion and rollback orchestration; follow the production
 database and artifact rollout in `README.md` before starting the release.
 The initial on-premise contract is `local-single-disk`. The cutover wizard creates
-a coordinated local PostgreSQL plus MinIO backup, verifies it through an isolated
+a coordinated local PostgreSQL plus RustFS backup, verifies it through an isolated
 restore rehearsal, rejects a rehearsal that exceeds `RECOVERY_RTO_MINUTES`, and
 requires explicit acceptance that loss of the only disk is unrecoverable. Its
 RPO/RTO apply only to logical recovery; this is not PITR or disaster recovery. Add

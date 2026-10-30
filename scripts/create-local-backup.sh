@@ -47,7 +47,7 @@ destination="$backup_root/production-$timestamp-$$"
 mkdir "$partial"
 
 was_running() { grep -Fxq "$1" <<<"$running"; }
-minio_stopped=false
+rustfs_stopped=false
 apps_restored=false
 restore_apps() {
   $leave_app_stopped && return 0
@@ -73,8 +73,8 @@ restore_apps() {
 cleanup() {
   status=$?
   trap - EXIT INT TERM
-  if $minio_stopped && ! "${compose[@]}" up -d minio minio-init >/dev/null 2>&1; then
-    echo "CRITICAL: MinIO could not be restarted" >&2
+  if $rustfs_stopped && ! "${compose[@]}" up -d rustfs rustfs-init >/dev/null 2>&1; then
+    echo "CRITICAL: RustFS could not be restarted" >&2
     status=1
   fi
   if ! $leave_app_stopped && ! $apps_restored && ! restore_apps; then
@@ -104,8 +104,8 @@ project=${project:-mlsuite}
 bucket=$(env_value STORAGE_BUCKET)
 [[ "$bucket" =~ ^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$ ]] || { echo "invalid STORAGE_BUCKET" >&2; exit 1; }
 pg_volume="${project}_pg_data"
-minio_volume="${project}_minio_data"
-"$DOCKER_BIN" volume inspect "$pg_volume" "$minio_volume" >/dev/null
+rustfs_volume="${project}_rustfs_data"
+"$DOCKER_BIN" volume inspect "$pg_volume" "$rustfs_volume" >/dev/null
 
 # Existing backups are pruned only after the new one is verified, so a failed run
 # never costs a good backup. On the only disk, reserve 125% of live data for the
@@ -113,15 +113,15 @@ minio_volume="${project}_minio_data"
 # The single-quoted program must expand inside the measurement container.
 # shellcheck disable=SC2016
 volume_stats=$(MSYS_NO_PATHCONV=1 "$DOCKER_BIN" run --rm \
-  -v "$pg_volume:/pg:ro" -v "$minio_volume:/minio:ro" "$POSTGRES_IMAGE" \
+  -v "$pg_volume:/pg:ro" -v "$rustfs_volume:/rustfs:ro" "$POSTGRES_IMAGE" \
   sh -c '
-    source_kib=$(du -sk /pg /minio | awk "{total += \$1} END {print total}")
+    source_kib=$(du -sk /pg /rustfs | awk "{total += \$1} END {print total}")
     pg_total=$(df -Pk /pg | awk "NR==2 {print \$2}")
     pg_available=$(df -Pk /pg | awk "NR==2 {print \$4}")
-    minio_total=$(df -Pk /minio | awk "NR==2 {print \$2}")
-    minio_available=$(df -Pk /minio | awk "NR==2 {print \$4}")
-    [ "$pg_available" -le "$minio_available" ] || pg_available=$minio_available
-    [ "$pg_total" -le "$minio_total" ] || pg_total=$minio_total
+    rustfs_total=$(df -Pk /rustfs | awk "NR==2 {print \$2}")
+    rustfs_available=$(df -Pk /rustfs | awk "NR==2 {print \$4}")
+    [ "$pg_available" -le "$rustfs_available" ] || pg_available=$rustfs_available
+    [ "$pg_total" -le "$rustfs_total" ] || pg_total=$rustfs_total
     printf "%s %s %s\n" "$source_kib" "$pg_available" "$pg_total"
   ')
 read -r source_kib docker_available_kib docker_total_kib <<<"$volume_stats"
@@ -146,7 +146,7 @@ fi
 
 echo "Stopping application writes for a coordinated local backup." >&2
 "${compose[@]}" stop frontend spring-app >/dev/null
-"${compose[@]}" up -d postgres minio >/dev/null
+"${compose[@]}" up -d postgres rustfs >/dev/null
 
 db_user=$(env_value DB_ADMIN_USER)
 legacy_user=$(env_value DB_LEGACY_OWNER)
@@ -156,11 +156,11 @@ if ! "${compose[@]}" exec -T postgres pg_dump -U "$db_user" -d "$db_name" -Fc > 
 fi
 [[ -s "$partial/postgres.dump" ]] || { echo "PostgreSQL backup is empty" >&2; exit 1; }
 
-"${compose[@]}" stop minio >/dev/null
-minio_stopped=true
-MSYS_NO_PATHCONV=1 "$DOCKER_BIN" run --rm -v "$minio_volume:/data:ro" "$POSTGRES_IMAGE" \
-  tar -C /data -czf - . > "$partial/minio-data.tar.gz"
-[[ -s "$partial/minio-data.tar.gz" ]] || { echo "MinIO backup is empty" >&2; exit 1; }
+"${compose[@]}" stop rustfs >/dev/null
+rustfs_stopped=true
+MSYS_NO_PATHCONV=1 "$DOCKER_BIN" run --rm -v "$rustfs_volume:/data:ro" "$POSTGRES_IMAGE" \
+  tar -C /data -czf - . > "$partial/rustfs-data.tar.gz"
+[[ -s "$partial/rustfs-data.tar.gz" ]] || { echo "RustFS backup is empty" >&2; exit 1; }
 printf '%s\n' "$bucket" > "$partial/storage.bucket"
 cat > "$partial/recovery.scope" <<EOF
 mode=local-single-disk
@@ -168,10 +168,10 @@ physical_disk_failure_covered=false
 created_utc=$timestamp
 created_epoch=$created_epoch
 EOF
-(cd "$partial" && sha256sum postgres.dump minio-data.tar.gz storage.bucket recovery.scope > backup.manifest)
+(cd "$partial" && sha256sum postgres.dump rustfs-data.tar.gz storage.bucket recovery.scope > backup.manifest)
 (cd "$partial" && sha256sum --check backup.manifest >/dev/null)
-"${compose[@]}" up -d minio minio-init >/dev/null
-minio_stopped=false
+"${compose[@]}" up -d rustfs rustfs-init >/dev/null
+rustfs_stopped=false
 mv -T "$partial" "$destination"
 
 prune_backups "$retention"

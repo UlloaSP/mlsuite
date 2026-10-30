@@ -217,7 +217,7 @@ class ModelArtifactStorageTest {
         }
     }
 
-    /** What the store answers once it has read the whole stream, as MinIO reads it. */
+    /** What the store answers once it has read the whole stream, as an S3 client reads it. */
     private static StoredObject stored(InputStream in, String sha256) {
         try {
             byte[] read = in.readAllBytes();

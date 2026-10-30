@@ -28,7 +28,7 @@ class Settings:
     docker_bin: str = _env("OPS_AGENT_DOCKER_BIN", "docker")
     managed_services: tuple[str, ...] = _env_list(
         "OPS_AGENT_MANAGED_SERVICES",
-        "postgres,py-analyzer,runtime-builder,minio,spring-app,frontend",
+        "postgres,py-analyzer,runtime-builder,rustfs,spring-app,frontend",
     )
     sample_interval_seconds: int = int(_env("OPS_AGENT_SAMPLE_INTERVAL_SECONDS", "1"))
     retention_minutes: int = int(_env("OPS_AGENT_RETENTION_MINUTES", "60"))

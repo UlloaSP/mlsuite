@@ -2,26 +2,26 @@
 set -eu
 
 : "${STORAGE_ENDPOINT:?STORAGE_ENDPOINT is required}"
-: "${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}"
-: "${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}"
+: "${RUSTFS_ACCESS_KEY:?RUSTFS_ACCESS_KEY is required}"
+: "${RUSTFS_SECRET_KEY:?RUSTFS_SECRET_KEY is required}"
 : "${STORAGE_ACCESS_KEY:?STORAGE_ACCESS_KEY is required}"
 : "${STORAGE_SECRET_KEY:?STORAGE_SECRET_KEY is required}"
 : "${STORAGE_BUCKET:?STORAGE_BUCKET is required}"
 
-[ "$MINIO_ROOT_USER" != "$STORAGE_ACCESS_KEY" ] || {
-  echo "MinIO root and application users must differ" >&2
+[ "$RUSTFS_ACCESS_KEY" != "$STORAGE_ACCESS_KEY" ] || {
+  echo "RustFS root and application users must differ" >&2
   exit 1
 }
 case "$STORAGE_BUCKET" in
   *[!a-z0-9.-]*|'') echo "Invalid storage bucket" >&2; exit 1 ;;
 esac
 
-mc alias set local "$STORAGE_ENDPOINT" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
-mc mb --ignore-existing "local/$STORAGE_BUCKET"
-mc version enable "local/$STORAGE_BUCKET"
-version_info=$(mc version info "local/$STORAGE_BUCKET")
+rc alias set local "$STORAGE_ENDPOINT" "$RUSTFS_ACCESS_KEY" "$RUSTFS_SECRET_KEY" --bucket-lookup path
+rc bucket create --ignore-existing "local/$STORAGE_BUCKET"
+rc bucket version enable "local/$STORAGE_BUCKET"
+version_info=$(rc bucket version info "local/$STORAGE_BUCKET")
 case "$version_info" in
-  *[Ee]nabled*) printf '%s\n' "$version_info" ;;
+  *Enabled*) printf '%s\n' "$version_info" ;;
   *) printf '%s\n' "$version_info" >&2; exit 1 ;;
 esac
 
@@ -41,6 +41,6 @@ printf '{
   ]
 }\n' "$STORAGE_BUCKET" "$STORAGE_BUCKET" > /tmp/mlsuite-app-policy.json
 
-mc admin policy create local mlsuite-app /tmp/mlsuite-app-policy.json
-mc admin user add local "$STORAGE_ACCESS_KEY" "$STORAGE_SECRET_KEY"
-mc admin policy attach local mlsuite-app --user "$STORAGE_ACCESS_KEY"
+rc admin policy create local mlsuite-app /tmp/mlsuite-app-policy.json
+rc admin user add local "$STORAGE_ACCESS_KEY" "$STORAGE_SECRET_KEY"
+rc admin policy attach local mlsuite-app --user "$STORAGE_ACCESS_KEY"

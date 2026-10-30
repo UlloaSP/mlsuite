@@ -117,14 +117,14 @@ banner "MLsuite production cutover"
 stage "Preflight"
 [[ -f "$ENV_FILE" ]] || { warn "$ENV_FILE does not exist; copy .env.example and fill it first"; exit 1; }
 for command in docker curl find python3 sha256sum sort systemctl; do command -v "$command" >/dev/null || { warn "missing command: $command"; exit 1; }; done
-for key in DB_ADMIN_USER DB_ADMIN_PASS DB_LEGACY_OWNER DB_LEGACY_PASS DB_USER DB_PASS DB_MIGRATION_USER DB_MIGRATION_PASS MINIO_ROOT_USER MINIO_ROOT_PASSWORD STORAGE_ACCESS_KEY STORAGE_SECRET_KEY OPS_AGENT_SHARED_SECRET PREDICTION_ATTESTATION_SECRET; do
+for key in DB_ADMIN_USER DB_ADMIN_PASS DB_LEGACY_OWNER DB_LEGACY_PASS DB_USER DB_PASS DB_MIGRATION_USER DB_MIGRATION_PASS RUSTFS_ACCESS_KEY RUSTFS_SECRET_KEY STORAGE_ACCESS_KEY STORAGE_SECRET_KEY OPS_AGENT_SHARED_SECRET PREDICTION_ATTESTATION_SECRET; do
   [[ -n "$(env_value "$key" || true)" ]] || { warn "$key must be set in $ENV_FILE"; exit 1; }
 done
 attestation_secret="$(env_value PREDICTION_ATTESTATION_SECRET)"
 (( ${#attestation_secret} >= 32 )) || { warn "PREDICTION_ATTESTATION_SECRET must be at least 32 random characters"; exit 1; }
 unset attestation_secret
-[[ "$(env_value MINIO_ROOT_USER)" != "$(env_value STORAGE_ACCESS_KEY)" ]] || {
-  warn "MINIO_ROOT_USER and STORAGE_ACCESS_KEY must be different"; exit 1;
+[[ "$(env_value RUSTFS_ACCESS_KEY)" != "$(env_value STORAGE_ACCESS_KEY)" ]] || {
+  warn "RUSTFS_ACCESS_KEY and STORAGE_ACCESS_KEY must be different"; exit 1;
 }
 for key in RECOVERY_MODE SINGLE_DISK_RISK_ACCEPTED LOCAL_BACKUP_ROOT LOCAL_BACKUP_RETENTION_COUNT LOCAL_BACKUP_MIN_FREE_PERCENT RECOVERY_RPO_MINUTES RECOVERY_RTO_MINUTES; do
   [[ -n "$(env_value "$key" || true)" ]] || { warn "$key must be set in $ENV_FILE"; exit 1; }
@@ -159,7 +159,7 @@ stage "Write freeze"
 warn "Pause traffic before the final backups; the API will remain offline through canary validation."
 confirm "Are new uploads, edits, predictions, feedback and administrative writes stopped?" || exit 1
 "${COMPOSE[@]}" stop frontend spring-app
-say "Frontend and API are stopped so PostgreSQL and MinIO are captured at one write-consistent point."
+say "Frontend and API are stopped so PostgreSQL and RustFS are captured at one write-consistent point."
 
 stage "Coordinated local backup"
 backup_dir=$(ENV_FILE="$ENV_FILE" ./scripts/create-local-backup.sh --leave-app-stopped)
@@ -219,7 +219,7 @@ confirm "Did readiness and all smoke tests pass?" || exit 1
 stage "Promotion and rollback record"
 say "Promote traffic gradually, then start frontend with: docker compose ... up -d frontend"
 say "Application rollback: restore the previous immutable image while inline model_file copies remain."
-say "State rollback: stop writes and restore PostgreSQL plus MinIO from the same backup point together."
+say "State rollback: stop writes and restore PostgreSQL plus RustFS from the same backup point together."
 confirm "Is the previous image digest, backup path and rollback owner recorded in the release ticket?" || exit 1
 "${COMPOSE[@]}" up -d frontend
 

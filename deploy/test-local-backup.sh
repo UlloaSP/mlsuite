@@ -41,19 +41,19 @@ if [[ "${1:-}" == compose ]]; then
   for ((i=1; i<=$#; i++)); do
     arg=${!i}
     if [[ "$arg" == ps && "$*" == *' -q '* ]]; then printf 'fake-container'; exit 0; fi
-    if [[ "$arg" == ps ]]; then printf '%s\n' postgres minio spring-app frontend; exit 0; fi
+    if [[ "$arg" == ps ]]; then printf '%s\n' postgres rustfs spring-app frontend; exit 0; fi
     if [[ "$arg" == exec ]]; then printf 'postgres-backup'; exit 0; fi
   done
   exit 0
 fi
 if [[ "${1:-}" == run ]]; then
-  if [[ "$*" == *'du -sk /pg /minio'* ]]; then
+  if [[ "$*" == *'du -sk /pg /rustfs'* ]]; then
     sleep "${FAKE_SIZE_SLEEP:-0}"
     printf '%s %s %s' "${FAKE_SOURCE_KIB:-1}" "${FAKE_DOCKER_AVAILABLE_KIB:-90000}" "${FAKE_DOCKER_TOTAL_KIB:-100000}"
     exit 0
   fi
   [[ "${FAKE_FAIL_RUN:-false}" != true ]] || exit 9
-  printf 'minio-volume-backup'
+  printf 'rustfs-volume-backup'
 fi
 if [[ "${1:-}" == inspect ]]; then printf 'healthy'; fi
 EOF
@@ -79,14 +79,14 @@ export PATH="$fake_bin:$PATH"
 destination=$(cd "$root" && ENV_FILE="$env_file" DOCKER_BIN="$fake_docker" \
   ./scripts/create-local-backup.sh --leave-app-stopped)
 [[ -d "$destination" ]]
-[[ -s "$destination/postgres.dump" && -s "$destination/minio-data.tar.gz" ]]
+[[ -s "$destination/postgres.dump" && -s "$destination/rustfs-data.tar.gz" ]]
 grep -Fxq 'mode=local-single-disk' "$destination/recovery.scope"
 grep -Fxq 'physical_disk_failure_covered=false' "$destination/recovery.scope"
 (cd "$destination" && sha256sum --check backup.manifest >/dev/null)
 [[ $(find "$backup_root" -mindepth 1 -maxdepth 1 -type d -name 'production-*' | wc -l) -eq 2 ]]
 [[ -f "$backup_root/.backup.lock" ]]
 grep -q 'stop frontend spring-app' "$calls"
-grep -q 'stop minio' "$calls"
+grep -q 'stop rustfs' "$calls"
 if grep -q 'up -d --no-deps spring-app' "$calls"; then exit 1; fi
 
 : > "$calls"
@@ -129,7 +129,7 @@ fi
 [[ "$(list_backups)" == "$kept_backups" ]] || { echo "a failed backup pruned an existing one" >&2; exit 1; }
 [[ -f "$backup_root/.backup.lock" ]]
 if find "$backup_root" -mindepth 1 -maxdepth 1 -type d -name '.partial-*' | grep -q .; then exit 1; fi
-grep -q 'up -d minio minio-init' "$calls"
+grep -q 'up -d rustfs rustfs-init' "$calls"
 grep -q 'up -d --no-deps spring-app frontend' "$calls"
 
 echo "Single-disk local backup contract verified."

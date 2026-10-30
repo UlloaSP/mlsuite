@@ -49,7 +49,7 @@ setting enabled.
 
 ## Model artifacts
 
-Models stored in the database by earlier versions are moved to MinIO by the resumable
+Models stored in the database by earlier versions are moved to RustFS by the resumable
 `artifact-migrate` job (profile `operations`), run with `ARTIFACT_MIGRATION_COMMAND` set to
 `status`, `migrate`, `verify` and finally `prune-orphans`. Each upload is read back and checked
 against its SHA-256 before it counts as migrated. Keep `STORAGE_RETAIN_INLINE_COPY=true` during the
@@ -66,7 +66,7 @@ ENV_FILE=.env ./scripts/create-local-backup.sh                    # take one now
 ENV_FILE=.env bash ./scripts/verify-backup-rpo.sh                 # check the newest one
 ```
 
-A backup briefly stops the frontend and API, dumps PostgreSQL, archives MinIO cold with its object
+A backup briefly stops the frontend and API, dumps PostgreSQL, archives RustFS cold with its object
 versions, checksums both and only then prunes the oldest backups to `LOCAL_BACKUP_RETENTION_COUNT`,
 so a failed run never removes an existing backup. It refuses to start without
 room for roughly 2.5 times the live data plus the `LOCAL_BACKUP_MIN_FREE_PERCENT` reserve. The
@@ -81,10 +81,10 @@ Promote a release only when:
 - the artifact `status` shows no failed, running, inline-only or unverified rows, and `verify`
   finds no missing or mismatched object;
 - `/actuator/health/readiness` is healthy on the canary API;
-- a PostgreSQL and MinIO restore has been rehearsed in isolation.
+- a PostgreSQL and RustFS restore has been rehearsed in isolation.
 
 ## Rollback
 
 On an application failure, roll the images back while the inline model copies remain. When
-persistent state is incompatible, prefer rolling forward, or restore PostgreSQL and MinIO together
+persistent state is incompatible, prefer rolling forward, or restore PostgreSQL and RustFS together
 from the same backup.
