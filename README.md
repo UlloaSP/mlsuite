@@ -160,10 +160,8 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f
 docker compose -f docker-compose.yml -f docker-compose.dev.yml down
 ```
 
-An old disposable development volume can be recreated with `down -v`. To keep an
-existing pre-Flyway development database, audit it against the baseline first
-and set `FLYWAY_BASELINE_ON_MIGRATE=true` for exactly one startup; return it to
-`false` immediately afterwards.
+A database or bucket created before the current baseline cannot be upgraded;
+recreate them with `down -v`.
 
 ## Deploying
 
@@ -211,7 +209,7 @@ limited to `main`, followed by an HTTPS check of the homepage title. Pull reques
 
 For a real cutover, run the repeatable, gated operator wizard from the repository
 root: `./scripts/production-cutover.sh`. It creates coordinated backups, requires
-an isolated restore rehearsal, runs both migrations, checks readiness and records
+an isolated restore rehearsal, runs the database migration, checks readiness and records
 the rollback prerequisites. Review the procedure first; it changes the configured
 production environment only after explicit confirmations. It records the base,
 production and digest-pinned release files in `OPS_AGENT_COMPOSE_FILES` so
@@ -263,110 +261,59 @@ Flyway is the only schema owner; Hibernate validates the result and never create
 or updates production tables. The release runs the same immutable API image in a
 one-shot `db-migrate` service before the API may start.
 
-Before the first Flyway-managed release:
+An installation starts from an empty database and an empty bucket:
+`api/src/main/resources/db/migration/V1__baseline.sql` creates the whole schema. A
+database created before that baseline cannot be upgraded and Flyway refuses it, so
+wipe the PostgreSQL and RustFS volumes before starting this release.
 
-1. Stop the frontend and API so PostgreSQL and RustFS are captured at one
-   write-consistent point.
-2. Create the coordinated local PostgreSQL and RustFS backup. The cold RustFS
-   archive preserves object versions, delete markers and the version IDs that
-   PostgreSQL references; keep the RustFS image pinned when restoring it. Until
-   another physical device exists, record disk or host loss as an accepted,
-   unrecoverable risk.
-3. Enable and verify bucket versioning. Do not configure lifecycle expiry inside
-   the rollback window.
-4. Compare the existing schema with
-   `api/src/main/resources/db/migration/V1__baseline.sql`.
-5. If and only if it represents that schema, baseline and migrate it explicitly:
-
-```bash
-docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml \
-  -f docker-compose.release.yml \
-  run --rm \
-  -e FLYWAY_BASELINE_ON_MIGRATE=true \
-  -e FLYWAY_BASELINE_VERSION=1 \
-  db-migrate
-```
-
-Never leave `FLYWAY_BASELINE_ON_MIGRATE` enabled. An empty installation needs no
-baseline; run `db-migrate` normally.
+The coordinated local backup archives RustFS cold, preserving object versions,
+delete markers and the version IDs that PostgreSQL references; keep the RustFS
+image pinned when restoring it. Until another physical device exists, record disk
+or host loss as an accepted, unrecoverable risk. Do not configure lifecycle expiry
+on the bucket inside the rollback window.
 
 Compose provisions three PostgreSQL roles idempotently: `DB_ADMIN_USER` owns the
 service, `DB_MIGRATION_USER` owns DDL and Flyway objects, and `DB_USER` receives
 only the DML privileges the application needs. Use distinct credentials in
 production; on an externally managed database, create equivalent roles before
-running Compose. For a volume created by an older MLsuite Compose, set
-`DB_LEGACY_OWNER` and `DB_LEGACY_PASS` to its original `DB_USER` credentials: the
-provisioner transfers table and sequence ownership before Flyway runs and, since
-PostgreSQL cannot demote its bootstrap superuser, revokes that legacy role's login
-once the new administrator is verified. The migration role must be allowed to
-install `pg_trgm`, or a database administrator must install it first.
+running Compose. The migration role must be allowed to install `pg_trgm`, or a
+database administrator must install it first.
 
 RustFS follows the same separation. `RUSTFS_ACCESS_KEY` and `RUSTFS_SECRET_KEY` are
 used only by RustFS and its one-shot initializer. `STORAGE_ACCESS_KEY` and
 `STORAGE_SECRET_KEY` identify a separate application user whose generated policy
-is restricted to the configured bucket. The API and artifact migrator never
+is restricted to the configured bucket. The API and the `artifact-prune` job never
 receive the root credentials.
 
-### Artifact migration
+### Model artifacts
 
-After the schema migration and before artifact cutover, inspect status and run the
-resumable backfill, then verify it and prune orphans:
+Object storage is the only home of model artifacts, so the API needs RustFS to
+store and run models. An upload is streamed into RustFS under a key of its own,
+read back and compared with its SHA-256, and only then is the model's row written.
+Reads and runs use the exact RustFS version ID persisted in PostgreSQL, not
+whichever version is latest, and verify the SHA-256 as they stream.
+
+A crash between storing the object and committing the row leaves an object nothing
+refers to. The one-shot `artifact-prune` job removes those:
 
 ```bash
 docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml \
   -f docker-compose.release.yml \
-  --profile operations run --rm \
-  -e ARTIFACT_MIGRATION_COMMAND=status artifact-migrate
-
-docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml \
-  -f docker-compose.release.yml \
-  --profile operations run --rm \
-  -e ARTIFACT_MIGRATION_COMMAND=migrate artifact-migrate
-
-docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml \
-  -f docker-compose.release.yml \
-  --profile operations run --rm \
-  -e ARTIFACT_MIGRATION_COMMAND=verify artifact-migrate
-
-docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml \
-  -f docker-compose.release.yml \
-  --profile operations run --rm \
-  -e ARTIFACT_MIGRATION_COMMAND=prune-orphans artifact-migrate
+  --profile operations run --rm artifact-prune
 ```
 
-The job claims rows with `FOR UPDATE SKIP LOCKED`, records attempts and failures,
-uploads to immutable model/hash keys, reads each upload back and compares its
-SHA-256 before marking it verified. Normal reads and verification use the exact
-RustFS version ID persisted in PostgreSQL, not whichever version is latest.
-
-Stopping the job is safe: each claimed artifact renews its lease, and expired
-`RUNNING` leases are reclaimed on the next execution. A worker that loses
-ownership leaves its content-addressed version in place, and the next owner
-verifies and attaches that exact version instead of risking deletion. A corrupt
-version is never attached; its exact failed version is removed and a retry writes
-and verifies a new version at the same key. After correcting an operational
-cause, reset exhausted rows with `ARTIFACT_MIGRATION_COMMAND=retry-failed` and run
-`migrate` again.
-
-`prune-orphans` removes only unreferenced content-addressed model objects older
-than `ARTIFACT_MIGRATION_ORPHAN_GRACE_SECONDS` (24 hours by default). It rechecks
-the database immediately before deleting the exact current object version; plugin
-objects and unknown key layouts are outside its scope. Run it only while
-application writes and other artifact migration workers are stopped; the
-production cutover enforces that ordering.
-
-The migration never clears `model_file`. Keep `STORAGE_RETAIN_INLINE_COPY=true`
-for this release so the previous application can still read every model during
-the rollback window.
+It removes only unreferenced model objects older than
+`ARTIFACT_ORPHAN_GRACE_SECONDS` (24 hours by default), rechecking the database
+immediately before deleting the exact current object version; plugin objects and
+unknown key layouts are outside its scope. It is an operator's job, never
+scheduled: run it only against the database that owns the bucket, since an object
+unknown to any other database looks like an orphan.
 
 ### Promotion and rollback
 
 Production promotion gates are:
 
 - `db-migrate` completed and Flyway validation has no drift;
-- artifact `status` reports no `FAILED`, `RUNNING`, `INLINE_ONLY` or `UNVERIFIED`
-  rows before the backfill is declared complete;
-- artifact `verify` succeeds with no missing, truncated or hash-mismatched object;
 - `/actuator/health/readiness` is healthy on the canary API;
 - a PostgreSQL plus RustFS restore has been exercised in an isolated environment.
 
@@ -378,10 +325,8 @@ Required`, and mismatched versions receive `409 Conflict`. New clients always se
 the version and keep stale-write protection.
 
 Deploy backward-compatible API instances gradually. On application failure, roll
-back the image while the inline copies remain. On an incompatible persistent
-state, prefer roll-forward or restore PostgreSQL and RustFS together. Clearing
-`model_file` and dropping it are deferred to later releases, after the retention
-window and a successful restore drill.
+back the image. On an incompatible persistent state, prefer roll-forward or restore
+PostgreSQL and RustFS together.
 
 ### Concurrency and monitoring
 
@@ -619,9 +564,8 @@ feedback identities remain traceable.
 
 Persistence is abstracted by capability, not by a generic database wrapper.
 Spring Data repository interfaces isolate aggregate persistence, while
-`ArtifactMigrationQueue` hides the PostgreSQL-specific claiming implementation and
-`StorageDeletionWorkQueue` provides the same boundary for asynchronous cleanup.
-Both use per-claim fencing tokens, leases and `FOR UPDATE SKIP LOCKED`, so
+`StorageDeletionWorkQueue` hides the PostgreSQL-specific claiming of asynchronous
+cleanup. It uses per-claim fencing tokens, leases and `FOR UPDATE SKIP LOCKED`, so
 concurrent workers claim disjoint rows and late workers cannot finalize reclaimed
 work. Object storage remains a separate port because it is a genuinely external
 system with different failure and consistency modes.

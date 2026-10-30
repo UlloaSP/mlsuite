@@ -101,7 +101,7 @@ finish() {
   printf '\n'
 }
 
-TOTAL_STAGES=9
+TOTAL_STAGES=8
 COMPOSE=(docker compose --env-file "$ENV_FILE" -f docker-compose.yml -f docker-compose.prod.yml)
 umask 077
 restore_state=
@@ -117,7 +117,7 @@ banner "MLsuite production cutover"
 stage "Preflight"
 [[ -f "$ENV_FILE" ]] || { warn "$ENV_FILE does not exist; copy .env.example and fill it first"; exit 1; }
 for command in docker curl find python3 sha256sum sort systemctl; do command -v "$command" >/dev/null || { warn "missing command: $command"; exit 1; }; done
-for key in DB_ADMIN_USER DB_ADMIN_PASS DB_LEGACY_OWNER DB_LEGACY_PASS DB_USER DB_PASS DB_MIGRATION_USER DB_MIGRATION_PASS RUSTFS_ACCESS_KEY RUSTFS_SECRET_KEY STORAGE_ACCESS_KEY STORAGE_SECRET_KEY OPS_AGENT_SHARED_SECRET PREDICTION_ATTESTATION_SECRET; do
+for key in DB_ADMIN_USER DB_ADMIN_PASS DB_USER DB_PASS DB_MIGRATION_USER DB_MIGRATION_PASS RUSTFS_ACCESS_KEY RUSTFS_SECRET_KEY STORAGE_ACCESS_KEY STORAGE_SECRET_KEY OPS_AGENT_SHARED_SECRET PREDICTION_ATTESTATION_SECRET; do
   [[ -n "$(env_value "$key" || true)" ]] || { warn "$key must be set in $ENV_FILE"; exit 1; }
 done
 attestation_secret="$(env_value PREDICTION_ATTESTATION_SECRET)"
@@ -168,13 +168,10 @@ say "Created and checksummed $backup_dir on the local disk."
 warn "This recovery point will be lost if the physical disk is lost."
 
 stage "Restore rehearsal"
-baseline_flag=
 restore_started_epoch=$(date -u +%s)
-say "Existing pre-Flyway databases may be baselined only after comparing them with V1__baseline.sql."
-confirm "Is this a verified pre-Flyway schema that exactly matches V1 and requires the one-time baseline?" && baseline_flag=--baseline
 ./scripts/verify-production-backup.sh "$backup_dir" --keep
 restore_state="$backup_dir/restore.env"
-./scripts/smoke-restored-release.sh start "$restore_state" "$ENV_FILE" "$RELEASE_COMPOSE" "$baseline_flag"
+./scripts/smoke-restored-release.sh start "$restore_state" "$ENV_FILE" "$RELEASE_COMPOSE"
 restore_smoke_port=$(env_value RESTORE_SMOKE_PORT || true); restore_smoke_port=${restore_smoke_port:-18080}
 step "Against http://127.0.0.1:${restore_smoke_port}, exercise login, model download, prediction, review and export."
 if ! confirm "Did every restored-release smoke test pass?"; then
@@ -194,19 +191,7 @@ cleanup_restore
 restore_state=
 
 stage "Database migration"
-if [[ "$baseline_flag" == --baseline ]]; then
-  "${COMPOSE[@]}" run --rm -e FLYWAY_BASELINE_ON_MIGRATE=true -e FLYWAY_BASELINE_VERSION=1 db-migrate
-else
-  "${COMPOSE[@]}" run --rm db-migrate
-fi
-
-stage "Artifact migration"
-"${COMPOSE[@]}" --profile operations run --rm -e ARTIFACT_MIGRATION_COMMAND=status artifact-migrate
-"${COMPOSE[@]}" --profile operations run --rm -e ARTIFACT_MIGRATION_COMMAND=migrate artifact-migrate
-"${COMPOSE[@]}" --profile operations run --rm -e ARTIFACT_MIGRATION_COMMAND=verify artifact-migrate
-"${COMPOSE[@]}" --profile operations run --rm -e ARTIFACT_MIGRATION_COMMAND=prune-orphans artifact-migrate
-"${COMPOSE[@]}" --profile operations run --rm -e ARTIFACT_MIGRATION_COMMAND=status artifact-migrate
-confirm "Does final status contain no FAILED, RUNNING, INLINE_ONLY or UNVERIFIED rows?" || exit 1
+"${COMPOSE[@]}" run --rm db-migrate
 
 stage "Canary and readiness"
 "${COMPOSE[@]}" up -d ops-agent py-analyzer runtime-builder
@@ -218,7 +203,7 @@ confirm "Did readiness and all smoke tests pass?" || exit 1
 
 stage "Promotion and rollback record"
 say "Promote traffic gradually, then start frontend with: docker compose ... up -d frontend"
-say "Application rollback: restore the previous immutable image while inline model_file copies remain."
+say "Application rollback: restore the previous immutable image if its schema still matches."
 say "State rollback: stop writes and restore PostgreSQL plus RustFS from the same backup point together."
 confirm "Is the previous image digest, backup path and rollback owner recorded in the release ticket?" || exit 1
 "${COMPOSE[@]}" up -d frontend

@@ -14,20 +14,11 @@ public class ObjectStorageHealthIndicator implements HealthIndicator {
 
     @Override
     public Health health() {
-        if (!properties.isEnabled()) {
-            return Health.up().withDetail("enabled", false).build();
-        }
         try {
             objectStorage.list("__mlsuite_healthcheck__/");
-            return Health.up()
-                    .withDetail("enabled", true)
-                    .withDetail("bucket", properties.getBucket())
-                    .build();
+            return Health.up().withDetail("bucket", properties.getBucket()).build();
         } catch (RuntimeException ex) {
-            return Health.down(ex)
-                    .withDetail("enabled", true)
-                    .withDetail("bucket", properties.getBucket())
-                    .build();
+            return Health.down(ex).withDetail("bucket", properties.getBucket()).build();
         }
     }
 }

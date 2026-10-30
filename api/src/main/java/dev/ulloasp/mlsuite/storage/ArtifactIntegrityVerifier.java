@@ -22,15 +22,4 @@ public final class ArtifactIntegrityVerifier {
             throw new ArtifactIntegrityException("SHA-256 mismatch for " + artifact);
         }
     }
-
-    public static void verifyRequired(
-            String artifact,
-            Long expectedSize,
-            String expectedSha256,
-            StoredObjectVerification actual) {
-        if (expectedSize == null || expectedSha256 == null) {
-            throw new ArtifactIntegrityException("Missing persisted identity for " + artifact);
-        }
-        verify(artifact, expectedSize, expectedSha256, actual);
-    }
 }

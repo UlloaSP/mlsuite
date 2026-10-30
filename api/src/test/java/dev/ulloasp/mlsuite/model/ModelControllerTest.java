@@ -97,10 +97,13 @@ class ModelControllerTest {
 
     @Test
     void getModelDetails_HasNoImportancesForAModelWithoutStructure() {
-        when(modelCatalogUseCase.getModel(4L, 11L)).thenReturn(new Model());
+        Model model = new Model();
+        model.setModelSizeBytes(2048L);
+        model.setArtifactSha256("abc");
+        when(modelCatalogUseCase.getModel(4L, 11L)).thenReturn(model);
         when(environments.find("legacy")).thenReturn(LEGACY);
 
-        assertEquals(new ModelDetailsDto(Map.of(), null, null, null, LEGACY_DTO),
+        assertEquals(new ModelDetailsDto(Map.of(), null, 2048L, "abc", LEGACY_DTO),
                 controller.getModelDetails(user, 11L).getBody());
     }
 

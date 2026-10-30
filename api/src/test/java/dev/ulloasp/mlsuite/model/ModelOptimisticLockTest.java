@@ -21,6 +21,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.EntityManager;
@@ -99,9 +101,12 @@ class ModelOptimisticLockTest {
             entityManager.getTransaction().begin();
             User owner = new User("owner", "owner@example.test", "hash", "Owner", SystemRole.USER);
             entityManager.persist(owner);
-            Model model = new Model(owner, "original", "classifier", "test", "model.bin", new byte[] {1});
+            Organization organization = new Organization("owner-org", "Owner", null, owner);
+            entityManager.persist(organization);
+            Model model = new Model(owner, "original", "classifier", "test", "model.bin");
+            model.setOrganization(organization);
             model.setInputSchema(Map.of());
-            entityManager.persist(model);
+            entityManager.persist(TestFixtures.storedArtifact(model, new byte[] {1}));
             entityManager.getTransaction().commit();
             return model.getId();
         } finally {

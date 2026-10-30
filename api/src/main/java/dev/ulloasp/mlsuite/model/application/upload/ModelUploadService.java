@@ -24,8 +24,8 @@ import lombok.RequiredArgsConstructor;
  * right to create it is checked in a short read, the runtime reads the bundle in a slot of the
  * workspace share, streamed from the upload's temporary file, and the model is then stored in a
  * transaction of its own. The bundle is never held in memory: it is read as a stream from the
- * upload's temporary file to hash it, then again into the object store and the database's copy,
- * each checked against that hash as it streams.
+ * upload's temporary file to hash it, then again into the object store, checked against that
+ * hash as it streams.
  */
 @Service
 @RequiredArgsConstructor

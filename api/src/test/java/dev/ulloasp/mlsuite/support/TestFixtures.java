@@ -1,8 +1,13 @@
 package dev.ulloasp.mlsuite.support;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.EnumSet;
 import java.util.Set;
 
+import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
@@ -10,6 +15,8 @@ import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
+import dev.ulloasp.mlsuite.storage.ArtifactHash;
+import dev.ulloasp.mlsuite.storage.ArtifactSource;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
@@ -30,6 +37,34 @@ public final class TestFixtures {
         user.setFullName("User " + id);
         user.setSystemRole(SystemRole.USER);
         return user;
+    }
+
+    /** Gives a model the stored artifact every persisted model names. */
+    public static Model storedArtifact(Model model, byte[] bytes) {
+        String sha256 = ArtifactHash.sha256(bytes);
+        model.setStorageBucket("test");
+        model.setStorageObjectKey("organizations/1/models/" + model.getName() + "/artifacts/" + sha256 + "/model.bin");
+        model.setStorageVersionId("v1");
+        model.setStorageEtag("etag");
+        model.setModelSizeBytes((long) bytes.length);
+        model.setArtifactSha256(sha256);
+        model.setArtifactVerifiedAt(OffsetDateTime.now(ZoneOffset.UTC));
+        return model;
+    }
+
+    /** An artifact already in memory, read as uploads and stored objects are. */
+    public static ArtifactSource artifact(byte[] bytes) {
+        return new ArtifactSource() {
+            @Override
+            public long sizeBytes() {
+                return bytes.length;
+            }
+
+            @Override
+            public InputStream open() {
+                return new ByteArrayInputStream(bytes);
+            }
+        };
     }
 
     public static CurrentUser currentUser(Long id) {

@@ -62,7 +62,7 @@ export function ModelDetailTabs({ model, details }: Props) {
         </span>
         <span>
           <span className="text-fg-muted">File</span> {model.fileName}
-          {typeof details?.sizeBytes === "number" ? ` (${formatBytes(details.sizeBytes)})` : ""}
+          {details ? ` (${formatBytes(details.sizeBytes)})` : ""}
         </span>
         <span>
           <span className="text-fg-muted">Updated</span> {formatTimestamp(model.updatedAt)} by{" "}

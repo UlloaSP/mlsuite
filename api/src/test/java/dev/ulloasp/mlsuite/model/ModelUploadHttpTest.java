@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -40,6 +41,7 @@ import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.storage.ArtifactHash;
 import dev.ulloasp.mlsuite.storage.ArtifactSource;
 import dev.ulloasp.mlsuite.storage.ModelArtifactWriter;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
@@ -61,6 +63,10 @@ class ModelUploadHttpTest extends PublicPredictionFixture {
     @BeforeEach
     void signInTheOwner() {
         authorizeOwner();
+        doAnswer(call -> {
+            TestFixtures.storedArtifact(call.getArgument(0), BUNDLE);
+            return null;
+        }).when(artifactWriter).storeAndAttach(any(), any(), any(), any());
         when(analyzer.inspect(any())).thenAnswer(call -> {
             MultiValueMap<String, ?> parts = call.getArgument(0);
             assertEquals("risk.mlbundle", ((Resource) parts.getFirst("model_file")).getFilename());

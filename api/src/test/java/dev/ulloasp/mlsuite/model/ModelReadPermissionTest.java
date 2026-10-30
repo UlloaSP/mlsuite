@@ -29,9 +29,7 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModel
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
 import dev.ulloasp.mlsuite.storage.ModelArtifactWriter;
-import dev.ulloasp.mlsuite.storage.ModelArtifactInlineCopy;
 import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
-import dev.ulloasp.mlsuite.storage.StorageProperties;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
@@ -53,7 +51,7 @@ class ModelReadPermissionTest {
         service = new ModelServiceImpl(users, models, mock(ObjectStorageService.class),
                 mock(SchemaModelBindingRepository.class), mock(PredictionResultRepository.class), authorization,
                 mock(ModelArtifactWriter.class), mock(ModelArtifactContentReader.class),
-                mock(StorageDeletionQueue.class), mock(ModelArtifactInlineCopy.class), new StorageProperties(),
+                mock(StorageDeletionQueue.class),
                 mock(RuntimeEnvironments.class), false);
     }
 

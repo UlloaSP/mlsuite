@@ -5,6 +5,7 @@ import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationDeletion
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
 import dev.ulloasp.mlsuite.organization.domain.model.*;
 import dev.ulloasp.mlsuite.role.domain.model.*;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import dev.ulloasp.mlsuite.user.domain.model.*;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import jakarta.persistence.EntityManager;
@@ -82,8 +83,7 @@ class OrganizationDeletionServiceTest {
         model.setSpecificType("DecisionTreeClassifier");
         model.setUser(owner);
         model.setOrganization(org);
-        model.setModelFile(new byte[0]);
-        entityManager.persist(model);
+        entityManager.persist(TestFixtures.storedArtifact(model, new byte[] { 1 }));
         entityManager.flush();
 
         var error = assertThrows(ResponseStatusException.class, () -> service.delete(org.getId()));

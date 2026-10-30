@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -38,5 +39,28 @@ class ArtifactOrphanReconciliationServiceTest {
         assertEquals(0, report.failed());
         verify(storage).delete("bucket", orphan, "orphan-v1");
         verify(storage, never()).inspectOptional("bucket", referenced, null);
+    }
+
+    @Test
+    void leavesObjectsYoungerThanTheGraceAlone() {
+        ObjectStorageService storage = mock(ObjectStorageService.class);
+        String recent = "organizations/41/models/7/artifacts/hash/model.mlbundle";
+        when(storage.list("organizations/")).thenReturn(List.of(
+                new StoredObjectItem("bucket", recent, 5, "etag", OffsetDateTime.now(ZoneOffset.UTC))));
+
+        ArtifactOrphanReport report = new ArtifactOrphanReconciliationService(storage, mock(ModelRepository.class))
+                .prune(86400);
+
+        assertEquals(0, report.examined());
+        verify(storage, never()).delete("bucket", recent, null);
+    }
+
+    @Test
+    void theJobFailsWhenAnOrphanCouldNotBeRemoved() {
+        ArtifactOrphanReconciliationService reconciliation = mock(ArtifactOrphanReconciliationService.class);
+        when(reconciliation.prune(60)).thenReturn(new ArtifactOrphanReport(1, 0, 1));
+
+        assertThrows(IllegalStateException.class,
+                () -> new ArtifactOrphanPruneCommand(reconciliation, 60).run(null));
     }
 }

@@ -43,6 +43,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.util.PageDto;
@@ -97,9 +98,9 @@ class PublicBookmarkFeedServiceTest {
                         Map.of("kind", "number", "label", "Site", "hidden", true, "mappedTo", "site")),
                 "reports", List.of(Map.of("kind", "classifier", "label", "Risk", "mappedTo", "prediction"))));
         for (String name : List.of("risk-model", "risk-net")) {
-            Model model = new Model(owner, name, "classifier", "Estimator", name + ".bin", new byte[] { 1 });
+            Model model = new Model(owner, name, "classifier", "Estimator", name + ".bin");
             model.setOrganization(acme);
-            entityManager.persist(model);
+            entityManager.persist(TestFixtures.storedArtifact(model, new byte[] { 1 }));
             entityManager.persist(new SchemaModelBinding(cardio.getVersion(), model, Map.of()));
         }
         entityManager.flush();

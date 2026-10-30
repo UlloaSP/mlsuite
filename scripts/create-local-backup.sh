@@ -149,11 +149,8 @@ echo "Stopping application writes for a coordinated local backup." >&2
 "${compose[@]}" up -d postgres rustfs >/dev/null
 
 db_user=$(env_value DB_ADMIN_USER)
-legacy_user=$(env_value DB_LEGACY_OWNER)
 db_name=$(env_value DB_PROD)
-if ! "${compose[@]}" exec -T postgres pg_dump -U "$db_user" -d "$db_name" -Fc > "$partial/postgres.dump"; then
-  "${compose[@]}" exec -T postgres pg_dump -U "$legacy_user" -d "$db_name" -Fc > "$partial/postgres.dump"
-fi
+"${compose[@]}" exec -T postgres pg_dump -U "$db_user" -d "$db_name" -Fc > "$partial/postgres.dump"
 [[ -s "$partial/postgres.dump" ]] || { echo "PostgreSQL backup is empty" >&2; exit 1; }
 
 "${compose[@]}" stop rustfs >/dev/null

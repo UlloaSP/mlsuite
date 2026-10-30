@@ -27,7 +27,7 @@ final class SearchWorkspaceCandidateFactory {
         return candidate(
                 "model", model.getId(), model.getName(), model.getType() + " / " + model.getSpecificType(),
                 "/models/" + model.getId(),
-                model.getOrganization() == null ? null : model.getOrganization().getId(),
+                model.getOrganization().getId(),
                 model.getId(), model.getUpdatedAt(),
                 model.getName(), model.getType(), model.getSpecificType(), model.getFileName());
     }

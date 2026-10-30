@@ -14,6 +14,7 @@ import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReview;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import dev.ulloasp.mlsuite.user.domain.model.*;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.*;
@@ -76,8 +77,8 @@ class SchemaDeletionServiceTest {
         var model = new Model();
         model.setName("QA model"); model.setFileName("qa.mlbundle");
         model.setType("classifier"); model.setSpecificType("DecisionTreeClassifier");
-        model.setUser(owner); model.setOrganization(org); model.setModelFile(new byte[0]);
-        entityManager.persist(model);
+        model.setUser(owner); model.setOrganization(org);
+        entityManager.persist(TestFixtures.storedArtifact(model, new byte[] { 1 }));
         entityManager.persist(new SchemaModelBinding(version, model, Map.of()));
         entityManager.persist(new SchemaBookmark(schema, version, "QA bookmark"));
         var draft = new SchemaDraft(schema, version, "QA draft", Map.of(), List.of());

@@ -205,8 +205,8 @@ async function openFailedModel() {
       : {
           manifest: {},
           featureImportances: null,
-          sizeBytes: null,
-          sha256: null,
+          sizeBytes: 4096,
+          sha256: "abc123",
           environment: locked,
         },
   );

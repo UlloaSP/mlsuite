@@ -14,7 +14,7 @@ class ReleaseImageValidationTest(unittest.TestCase):
         digest = "sha256:" + "a" * 64
         api = f"ghcr.io/example/mlsuite-api@{digest}"
         self.config = {"services": {
-            "artifact-migrate": {"image": api},
+            "artifact-prune": {"image": api},
             "db-migrate": {"image": api},
             "spring-app": {"image": api},
             "frontend": {"image": f"ghcr.io/example/frontend@{digest}"},
