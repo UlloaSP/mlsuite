@@ -117,12 +117,7 @@ banner "MLsuite production cutover"
 stage "Preflight"
 [[ -f "$ENV_FILE" ]] || { warn "$ENV_FILE does not exist; copy .env.example and fill it first"; exit 1; }
 for command in docker curl find python3 sha256sum sort systemctl; do command -v "$command" >/dev/null || { warn "missing command: $command"; exit 1; }; done
-for key in DB_ADMIN_USER DB_ADMIN_PASS DB_USER DB_PASS DB_MIGRATION_USER DB_MIGRATION_PASS RUSTFS_ACCESS_KEY RUSTFS_SECRET_KEY STORAGE_ACCESS_KEY STORAGE_SECRET_KEY OPS_AGENT_SHARED_SECRET PREDICTION_ATTESTATION_SECRET; do
-  [[ -n "$(env_value "$key" || true)" ]] || { warn "$key must be set in $ENV_FILE"; exit 1; }
-done
-attestation_secret="$(env_value PREDICTION_ATTESTATION_SECRET)"
-(( ${#attestation_secret} >= 32 )) || { warn "PREDICTION_ATTESTATION_SECRET must be at least 32 random characters"; exit 1; }
-unset attestation_secret
+python3 deploy/check_env.py --env-file "$ENV_FILE" || exit 1
 [[ "$(env_value RUSTFS_ACCESS_KEY)" != "$(env_value STORAGE_ACCESS_KEY)" ]] || {
   warn "RUSTFS_ACCESS_KEY and STORAGE_ACCESS_KEY must be different"; exit 1;
 }

@@ -4,7 +4,8 @@
 # code, so MLsuite accepts a bundle only when its Python version, the mlbundle release that wrote
 # it and every locked package (the model's libraries and all their dependencies) appear here with
 # that exact version. Add a version only once bundles that need it rebuild and reproduce their
-# predictions on the production host: shelob's CPUs lack AVX, so a wheel built for newer
+# predictions on the production host, with the manual allowlist:corpus and allowlist:shelob
+# GitLab jobs (deploy/allowlist-matrix): shelob's CPUs lack AVX, so a wheel built for newer
 # processors stops its worker there (SIGILL), which preparing the model reports.
 
 python = [

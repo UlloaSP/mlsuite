@@ -111,6 +111,39 @@ is scoped by service. Package repositories and build metadata can still change;
 this does not claim byte-for-byte reproducible rebuilding. Promotion must reuse
 the manifest digests rather than rebuild from the same source commit.
 
+## Automatic deployment
+
+The `deploy:shelob` GitLab job runs `scripts/deploy-release.sh` on the server after each
+push to `main`. What runs there is the published release of that commit, never a build
+of its source:
+
+1. `deploy/check_env.py` refuses an `.env` missing what the Compose files use without a
+   default, naming the variables and never their values.
+2. `deploy/fetch_release.py` waits up to 30 minutes for the release. One that is never
+   published stops the deployment: the commit failed its tests or its image scans. The
+   release of the running commit is fetched too, to roll back to.
+3. Every image, of both releases, is pulled.
+4. The running release is backed up with `scripts/create-local-backup.sh`, which stops the
+   application while it copies PostgreSQL and RustFS. A backup that fails stops the deployment.
+5. The stack is replaced and must report ready within five minutes.
+
+A failure in the first three steps leaves the running release untouched, and a failed backup
+restarts it. A release that does not become ready is replaced by the previous one, and the job
+still fails.
+
+On a host where nothing of the Compose project runs, there is nothing to return to: the previous
+commit's release is neither fetched nor needed, and the backup runs only if the PostgreSQL volume
+exists. A release that does not become ready there is stopped with `docker compose down`, which
+keeps the volumes, and the job fails. Migrations do not roll back: a release that migrated the database and left a schema
+the previous one cannot run on needs the backup, whose path the job prints.
+
+Each deployment therefore takes a backup, under the limits of `LOCAL_BACKUP_*`: it covers a
+deployment that goes wrong, not the data written between deployments or the loss of the disk, and
+the newest `LOCAL_BACKUP_RETENTION_COUNT` are kept, so frequent deployments shorten how far back
+they reach.
+
+The images are public, so the server needs no registry credentials.
+
 ## Verification limits for the introducing PR
 
 Contract/lifecycle tests exercise complete releases, malformed or missing records,
