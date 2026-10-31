@@ -28,6 +28,7 @@ import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.Sche
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRunRepository;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRunRepository.ReviewerRun;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRunSubmissionRepository;
+import dev.ulloasp.mlsuite.schema.review.application.dto.ManagedReviewDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.ReviewCatalogSummaryDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.ReviewInboxCatalogDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.ReviewInboxItemDto;
@@ -118,6 +119,15 @@ public class SchemaReviewCatalogService implements SchemaReviewCatalogUseCase {
     public PageDto<SchemaReviewAssignmentStatusDto> assignments(Long userId, Long predictionRunId,
             CatalogRequest request) {
         return assignmentCatalog.page(userId, predictionRunId, request);
+    }
+
+    @Override
+    public PageDto<ManagedReviewDto> managed(Long userId, CatalogRequest request) {
+        Long organizationId = workspaceAccess.requireCurrentOrganization(userId).getId();
+        authorization.require(userId, organizationId, PermissionKey.MANAGE_REVIEWS);
+        Page<SchemaReviewRepository.ManagedReview> page = reviews.findManagedPage(organizationId,
+                CatalogPages.likeLiteral(request.search()), request.filter(), now(), unsorted(request));
+        return PageDto.of(page, page.getContent().stream().map(ManagedReviewDto::from).toList());
     }
 
     /** Results and the reviewer's progress for exactly these runs, in two reads. */

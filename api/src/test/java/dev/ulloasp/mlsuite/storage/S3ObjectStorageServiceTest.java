@@ -44,6 +44,33 @@ class S3ObjectStorageServiceTest {
     private S3Client client;
     private S3ObjectStorageService storage;
 
+    @Test
+    void deletingAVersionRemovesExactlyThatVersionWithoutAMarker() {
+        StoredObject first = storage.store("models/a", "a", "application/octet-stream", new byte[] { 1 });
+        StoredObject second = storage.store("models/a", "a", "application/octet-stream", new byte[] { 2 });
+
+        storage.delete(properties.getBucket(), "models/a", first.versionId());
+
+        var listed = client.listObjectVersions(request -> request.bucket(properties.getBucket()).prefix("models/a"));
+        assertEquals(List.of(second.versionId()), listed.versions().stream().map(version -> version.versionId()).toList());
+        assertTrue(listed.deleteMarkers().isEmpty());
+        assertEquals(1, storage.list("models/").size());
+    }
+
+    @Test
+    void deletingEveryVersionLeavesNothingToRestoreAndSparesTheNeighbours() {
+        storage.store("plugins/p.json", "p", "application/json", new byte[] { 1 });
+        storage.store("plugins/p.json", "p", "application/json", new byte[] { 2 });
+        StoredObject neighbour = storage.store("plugins/p.json.bak", "p", "application/json", new byte[] { 3 });
+        storage.delete(properties.getBucket(), "plugins/p.json", null);
+
+        storage.deleteAllVersions(properties.getBucket(), "plugins/p.json");
+
+        var listed = client.listObjectVersions(request -> request.bucket(properties.getBucket()).prefix("plugins/"));
+        assertEquals(List.of(neighbour.versionId()), listed.versions().stream().map(version -> version.versionId()).toList());
+        assertTrue(listed.deleteMarkers().isEmpty());
+    }
+
     @BeforeEach
     void versionedBucket() {
         properties = properties("artifacts-" + UUID.randomUUID());

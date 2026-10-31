@@ -42,7 +42,8 @@ import dev.ulloasp.mlsuite.workspace.application.service.PersonalAccountService;
         "mlsuite.auth.max-registrations=2" })
 @Import({ SecurityConfig.class, AuthService.class, PasswordChangeService.class, AuthAttemptLimiter.class,
         DatabaseUserDetailsService.class, SessionAccountCheck.class })
-@MockitoBean(types = { PersonalAccountService.class, AuditLogService.class, UserProfileUseCase.class })
+@MockitoBean(types = { PersonalAccountService.class, AuditLogService.class, UserProfileUseCase.class,
+        dev.ulloasp.mlsuite.user.application.port.in.DeleteAccountUseCase.class })
 abstract class AuthHttpFixture {
 
     static final String PASSWORD = "correct-horse-battery";

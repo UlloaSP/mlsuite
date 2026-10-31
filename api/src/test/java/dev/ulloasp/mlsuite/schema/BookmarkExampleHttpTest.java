@@ -79,7 +79,8 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationS
                 "cors.allow-origins=http://localhost:5173" })
 @Import({ SecurityConfig.class, SchemaBookmarkServiceImpl.class, SchemaBookmarkExampleService.class,
         PublicBookmarkService.class, BookmarkPublishability.class, WorkspaceAuthorizationService.class })
-@MockitoBean(types = { PredictBookmarkCatalogUseCase.class, PublicPredictionUseCase.class, PublicRunUseCase.class,
+@MockitoBean(types = { dev.ulloasp.mlsuite.schema.application.service.SnapshotRunGuard.class,
+        PredictBookmarkCatalogUseCase.class, PublicPredictionUseCase.class, PublicRunUseCase.class,
         UserDetailsService.class, SessionAccountCheck.class, SchemaRepository.class, SchemaModelBindingRepository.class,
         RoleDefinitionRepository.class, ListPluginRuntimeSourcesUseCase.class, AuditLogService.class })
 class BookmarkExampleHttpTest {

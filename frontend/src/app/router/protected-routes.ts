@@ -64,6 +64,9 @@ export const protectedPages: RouteObject[] = [
     page("admin/users/create", () =>
       import("@/features/admin/pages/create-admin-user-page").then((m) => m.CreateAdminUserPage),
     ),
+    page("admin/purges", () =>
+      import("@/features/admin/pages/admin-purges-page").then((m) => m.AdminPurgesPage),
+    ),
     page("admin/public-bookmarks", () =>
       import("@/features/admin/pages/admin-public-bookmarks-page").then(
         (m) => m.AdminPublicBookmarksPage,
@@ -166,6 +169,9 @@ export const protectedPages: RouteObject[] = [
     ),
   ]),
   workspace("canManageReviews", [
+    page("review/manage", () =>
+      import("@/features/reviews/pages/review-manage-page").then((m) => m.ReviewManagePage),
+    ),
     page("inferences/:inferenceId/reviews/:reviewRunId/reviewers/:reviewerId", () =>
       import("@/app/pages/InferenceReviewRoutePage").then((m) => m.InferenceReviewRoutePage),
     ),

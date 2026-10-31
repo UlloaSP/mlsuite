@@ -29,8 +29,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * One answer about one result, by a member or by a visitor of a public page: exactly one of
- * {@code user} and {@code visitor} is set. An answer given in a review belongs to that review
+ * One answer about one result, by a member or by a visitor of a public page: one of
+ * {@code user} and {@code visitor} is set, and neither once the member is gone. An answer given in a review belongs to that review
  * ({@code review}); one given on a public page belongs to none. Each author gives one answer per
  * result, type and order in each review and once outside reviews; the database holds that
  * uniqueness in one partial index per kind of author. Every change is kept in its history

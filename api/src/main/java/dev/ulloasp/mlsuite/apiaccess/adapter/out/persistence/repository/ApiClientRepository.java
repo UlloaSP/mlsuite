@@ -28,6 +28,7 @@ public interface ApiClientRepository extends JpaRepository<ApiClient, Long> {
     @Query("""
             SELECT b FROM ApiClient c JOIN c.bookmarks b
             WHERE c.id = :clientId AND b.publicId = :apiId AND b.schema.archivedAt IS NULL
+            AND b.schema.purgingAt IS NULL AND b.schema.organization.purgingAt IS NULL
             """)
     Optional<SchemaBookmark> findGrantedBookmark(Long clientId, String apiId);
 

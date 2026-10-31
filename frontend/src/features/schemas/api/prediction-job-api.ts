@@ -28,6 +28,9 @@ export const getPredictionJobs = (
     { signal },
   );
 
+export const deletePredictionJob = (jobId: number): Promise<void> =>
+  appFetch<void>(`/api/prediction-jobs/${jobId}`, { method: "DELETE" });
+
 export const getPredictionJobFailures = (
   jobId: number,
   signal?: AbortSignal,

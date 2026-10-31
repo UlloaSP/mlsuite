@@ -126,6 +126,7 @@ describe("navigation bar", () => {
       "nav:Users",
       "nav:Moderation",
       "nav:API traffic",
+      "nav:Purges",
       "nav:Audit log",
       "nav:Infra",
     ]);
@@ -206,6 +207,7 @@ describe("navigation bar", () => {
       "nav:Users",
       "nav:Moderation",
       "nav:API traffic",
+      "nav:Purges",
       "nav:Audit log",
       "nav:Infra",
     ]);

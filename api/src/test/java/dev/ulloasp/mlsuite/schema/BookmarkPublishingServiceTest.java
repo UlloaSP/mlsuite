@@ -49,6 +49,7 @@ import dev.ulloasp.mlsuite.schema.application.dto.MoveSchemaBookmarkRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkDto;
 import dev.ulloasp.mlsuite.schema.application.service.BookmarkPublishability;
 import dev.ulloasp.mlsuite.schema.application.service.PublicBookmarkService;
+import dev.ulloasp.mlsuite.schema.application.service.SnapshotRunGuard;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaBookmarkServiceImpl;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.BoundModel;
@@ -85,7 +86,7 @@ class BookmarkPublishingServiceTest {
         service = new SchemaBookmarkServiceImpl(schemas, versions, bookmarks,
                 new WorkspaceAuthorizationService(access, roles), publishability, mock(AuditLogService.class));
         publicService = new PublicBookmarkService(bookmarks, mock(SchemaBookmarkExampleRepository.class),
-                publishability,
+                publishability, mock(SnapshotRunGuard.class),
                 mock(ListPluginRuntimeSourcesUseCase.class));
     }
 

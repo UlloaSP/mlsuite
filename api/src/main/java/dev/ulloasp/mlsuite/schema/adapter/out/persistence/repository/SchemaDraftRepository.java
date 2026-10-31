@@ -15,6 +15,11 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaDraftStatus;
 public interface SchemaDraftRepository
         extends JpaRepository<SchemaDraft, Long>, JpaSpecificationExecutor<SchemaDraft> {
     void deleteBySchemaId(Long schemaId);
+
+    /** The drafts that started from a snapshot or became it, published ones included. */
+    @Query("SELECT d FROM SchemaDraft d WHERE d.baseVersion.id = :versionId OR d.publishedVersion.id = :versionId")
+    List<SchemaDraft> findByVersion(Long versionId);
+
     List<SchemaDraft> findBySchemaIdAndStatusNotOrderByUpdatedAtDesc(
             Long schemaId, SchemaDraftStatus status);
 

@@ -7,5 +7,6 @@ public enum NotificationTargetType {
     INVITATION,
     ORGANIZATION,
     REVIEW,
+    PURGE_JOB,
     SYSTEM_ALERT
 }

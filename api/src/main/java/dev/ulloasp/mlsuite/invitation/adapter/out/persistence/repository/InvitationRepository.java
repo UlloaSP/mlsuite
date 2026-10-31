@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,6 +21,9 @@ public interface InvitationRepository
     long countByOrganizationIdAndStatus(Long organizationId, InvitationStatus status);
 
     long countByOrganizationId(Long organizationId);
+
+    long countByOrganizationIdAndStatusAndExpiresAtAfter(Long organizationId, InvitationStatus status,
+            OffsetDateTime expiresAt);
 
     List<Invitation> findByRoleDefinitionId(Long roleDefinitionId);
 }

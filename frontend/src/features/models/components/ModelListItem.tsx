@@ -28,6 +28,7 @@ type ModelListItemProps = {
   canDelete: boolean;
   canDuplicate: boolean;
   canEdit: boolean;
+  canPurge?: boolean;
   item: ModelDto;
   schemaCount: number;
   /** The detail page this row opens. */
@@ -39,6 +40,7 @@ export function ModelListItem({
   canDelete,
   canDuplicate,
   canEdit,
+  canPurge = false,
   item,
   to,
   onAction,
@@ -76,12 +78,13 @@ export function ModelListItem({
       }
       to={to}
       actions={
-        canDelete || canDuplicate || canEdit ? (
+        canDelete || canDuplicate || canEdit || canPurge ? (
           <ModelActionsMenu
             archived={Boolean(item.archivedAt)}
             canDelete={canDelete}
             canDuplicate={canDuplicate}
             canEdit={canEdit}
+            canPurge={canPurge}
             modelName={item.name}
             onAction={(action) => onAction(action, item)}
           />

@@ -105,7 +105,8 @@ class PredictionJobWorker {
                 outcomes.complete(job.id(), worker);
                 return;
             }
-            if (!authorization.has(job.userId(), job.organizationId(), PermissionKey.RUN_PREDICTIONS)) {
+            if (job.userId() == null
+                    || !authorization.has(job.userId(), job.organizationId(), PermissionKey.RUN_PREDICTIONS)) {
                 outcomes.stop(job.id(), worker, "The member who started the upload may no longer run predictions");
                 return;
             }

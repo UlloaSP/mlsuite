@@ -1,10 +1,14 @@
 package dev.ulloasp.mlsuite.organization.application.usecase;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
+import dev.ulloasp.mlsuite.invitation.domain.model.InvitationStatus;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
@@ -34,20 +38,23 @@ public class OrganizationDeletionService {
         var organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
         organization.requireTeam("A personal account lasts as long as its owner's account.");
-        assertEmpty(organizationId);
+        if (hasContent(organizationId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Only empty organizations can be deleted.");
+        }
         membershipRepository.deleteAll(membershipRepository.findByOrganizationId(organizationId));
+        invitationRepository.deleteAll(invitationRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId));
         roleRepository.deleteAll(roleRepository.findByOrganizationId(organizationId));
         userRepository.clearCurrentOrganization(organizationId);
         organizationRepository.delete(organization);
     }
 
-    private void assertEmpty(Long organizationId) {
-        if (modelRepository.countByOrganizationId(organizationId) > 0
+    /** What makes an organization worth keeping: an answered, revoked or expired invitation is not. */
+    public boolean hasContent(Long organizationId) {
+        return modelRepository.countByOrganizationId(organizationId) > 0
                 || schemaRepository.countByOrganizationId(organizationId) > 0
                 || pluginRepository.countByOrganizationId(organizationId) > 0
-                || invitationRepository.countByOrganizationId(organizationId) > 0
-                || reviewRepository.countByOrganizationId(organizationId) > 0) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Only empty organizations can be deleted.");
-        }
+                || invitationRepository.countByOrganizationIdAndStatusAndExpiresAtAfter(organizationId,
+                        InvitationStatus.PENDING, OffsetDateTime.now(ZoneOffset.UTC)) > 0
+                || reviewRepository.countByOrganizationId(organizationId) > 0;
     }
 }

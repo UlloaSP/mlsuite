@@ -219,7 +219,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_11"];
+        get: operations["list_12"];
         put?: never;
         post?: never;
         delete?: never;
@@ -238,6 +238,54 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["unpublish_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/purges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_7"];
+        put?: never;
+        post: operations["request"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/purges/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["preview_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/purges/{jobId}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["retry_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -286,7 +334,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["delete_4"];
+        delete?: never;
         options?: never;
         head?: never;
         patch: operations["update_3"];
@@ -782,7 +830,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["delete_6"];
+        delete: operations["delete_7"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1275,7 +1323,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_10"];
+        get: operations["list_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1310,7 +1358,7 @@ export interface paths {
         get: operations["get_7"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["delete_5"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1371,7 +1419,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1406,6 +1454,22 @@ export interface paths {
         get: operations["history"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/prediction-runs/batch-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["deleteMany"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1486,7 +1550,7 @@ export interface paths {
         get: operations["get_6"];
         put?: never;
         post?: never;
-        delete: operations["delete_5"];
+        delete: operations["delete_4"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1515,7 +1579,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_9"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1854,7 +1918,7 @@ export interface paths {
         get: operations["get_1"];
         put: operations["move"];
         post?: never;
-        delete?: never;
+        delete: operations["deleteBookmark"];
         options?: never;
         head?: never;
         patch: operations["update_1"];
@@ -1867,7 +1931,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2046,7 +2110,7 @@ export interface paths {
         get: operations["get"];
         put: operations["update"];
         post?: never;
-        delete?: never;
+        delete: operations["deleteDraft"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2292,6 +2356,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/schema-reviews/managed/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["managedCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schema-reviews/{reviewId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["delete_6"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/schema-reviews/{reviewId}/runs/{reviewRunId}": {
         parameters: {
             query?: never;
@@ -2382,7 +2478,7 @@ export interface paths {
         get: operations["get_3"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["deleteVersion"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2638,7 +2734,7 @@ export interface paths {
         get: operations["getProfile"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["deleteAccount"];
         options?: never;
         head?: never;
         patch: operations["updateProfile"];
@@ -3047,7 +3143,7 @@ export interface components {
         };
         AuditEventDto: {
             /** @enum {string} */
-            action: "ORGANIZATION_CREATE" | "ORGANIZATION_UPDATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_LOGO_REPLACE" | "ORGANIZATION_LOGO_REMOVE" | "OWNERSHIP_TRANSFER" | "MEMBER_ROLE_CHANGE" | "MEMBER_REMOVE" | "INVITATION_CREATE" | "INVITATION_RESEND" | "INVITATION_REVOKE" | "INVITATION_ACCEPT" | "INVITATION_DECLINE" | "ROLE_CREATE" | "ROLE_FROM_TEMPLATE" | "ROLE_DUPLICATE" | "ROLE_UPDATE" | "ROLE_DELETE" | "API_CLIENT_CREATE" | "API_CLIENT_UPDATE" | "API_CLIENT_DELETE" | "API_KEY_ISSUE" | "API_KEY_REVOKE" | "API_ACCESS_GRANT" | "API_ACCESS_REVOKE" | "API_CLIENT_SUSPEND" | "API_CLIENT_REINSTATE" | "API_CALL_LIMIT_SET" | "MODEL_UPLOAD" | "MODEL_RENAME" | "MODEL_ARCHIVE" | "MODEL_RESTORE" | "MODEL_ENVIRONMENT_RETRY" | "MODEL_DUPLICATE" | "MODEL_DELETE" | "MODEL_EXPLAIN" | "MODEL_PREPARATION_READY" | "MODEL_PREPARATION_FAILED" | "SCHEMA_CREATE" | "SCHEMA_RENAME" | "SCHEMA_ARCHIVE" | "SCHEMA_RESTORE" | "SCHEMA_DUPLICATE" | "SCHEMA_DELETE" | "SCHEMA_VERSION_CREATE" | "SCHEMA_DRAFT_CREATE" | "SCHEMA_DRAFT_UPDATE" | "SCHEMA_DRAFT_MERGE" | "SCHEMA_DRAFT_PUBLISH" | "BOOKMARK_CREATE" | "BOOKMARK_MOVE" | "BOOKMARK_UPDATE" | "BOOKMARK_PUBLISH" | "BOOKMARK_UNPUBLISH" | "BOOKMARK_EXAMPLE_MARK" | "BOOKMARK_EXAMPLE_UNMARK" | "BOOKMARK_MODERATION_UNPUBLISH" | "PREDICTION_RUN" | "PREDICTION_RUN_SAVE" | "PREDICTION_RUN_BATCH_CREATE" | "PREDICTION_RUN_DELETE" | "PREDICTION_JOB_START" | "PREDICTION_JOB_CANCEL" | "PREDICTION_JOB_RETRY" | "PREDICTION_JOB_CLAIMED" | "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_CANCELLED" | "REVIEW_CREATE" | "REVIEW_FEEDBACK_CREATE" | "REVIEW_FEEDBACK_UPDATE" | "REVIEW_SUBMIT" | "REVIEW_SUBMIT_PENDING" | "REVIEW_REOPEN" | "REVIEW_RESPONSE_DELETE" | "PUBLIC_FEEDBACK_SAVE" | "PLUGIN_UPLOAD" | "PLUGIN_DELETE" | "USER_CREATE" | "USER_UPDATE" | "USER_PASSWORD_RESET" | "USER_DELETE" | "USER_PROFILE_UPDATE" | "USER_HANDLE_CHANGE" | "USER_AVATAR_REPLACE" | "USER_AVATAR_REMOVE" | "USER_PASSWORD_CHANGE" | "INFRASTRUCTURE_SERVICE_ACTION" | "TERMINAL_SESSION_OPEN" | "TERMINAL_SESSION_CLOSE" | "AUTH_LOGIN" | "AUTH_LOGIN_FAILED" | "AUTH_LOGOUT" | "AUTH_REGISTER" | "STORAGE_DELETION_FAILED" | "API_REQUEST_RETENTION_PRUNE" | "AUDIT_RETENTION_PRUNE" | "NOTIFICATION_RETENTION_PRUNE" | "SYSTEM_ALERT_RAISED" | "SYSTEM_ALERT_ESCALATED" | "SYSTEM_ALERT_RESOLVED" | "SYSTEM_ALERT_RETENTION_PRUNE";
+            action: "ORGANIZATION_CREATE" | "ORGANIZATION_UPDATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_LOGO_REPLACE" | "ORGANIZATION_LOGO_REMOVE" | "OWNERSHIP_TRANSFER" | "MEMBER_ROLE_CHANGE" | "MEMBER_REMOVE" | "INVITATION_CREATE" | "INVITATION_RESEND" | "INVITATION_REVOKE" | "INVITATION_ACCEPT" | "INVITATION_DECLINE" | "ROLE_CREATE" | "ROLE_FROM_TEMPLATE" | "ROLE_DUPLICATE" | "ROLE_UPDATE" | "ROLE_DELETE" | "API_CLIENT_CREATE" | "API_CLIENT_UPDATE" | "API_CLIENT_DELETE" | "API_KEY_ISSUE" | "API_KEY_REVOKE" | "API_ACCESS_GRANT" | "API_ACCESS_REVOKE" | "API_CLIENT_SUSPEND" | "API_CLIENT_REINSTATE" | "API_CALL_LIMIT_SET" | "MODEL_UPLOAD" | "MODEL_RENAME" | "MODEL_ARCHIVE" | "MODEL_RESTORE" | "MODEL_ENVIRONMENT_RETRY" | "MODEL_DUPLICATE" | "MODEL_DELETE" | "MODEL_EXPLAIN" | "MODEL_PREPARATION_READY" | "MODEL_PREPARATION_FAILED" | "SCHEMA_CREATE" | "SCHEMA_RENAME" | "SCHEMA_ARCHIVE" | "SCHEMA_RESTORE" | "SCHEMA_DUPLICATE" | "SCHEMA_DELETE" | "SCHEMA_VERSION_CREATE" | "SCHEMA_VERSION_DELETE" | "SCHEMA_DRAFT_CREATE" | "SCHEMA_DRAFT_UPDATE" | "SCHEMA_DRAFT_MERGE" | "SCHEMA_DRAFT_PUBLISH" | "SCHEMA_DRAFT_DELETE" | "BOOKMARK_CREATE" | "BOOKMARK_MOVE" | "BOOKMARK_UPDATE" | "BOOKMARK_PUBLISH" | "BOOKMARK_UNPUBLISH" | "BOOKMARK_EXAMPLE_MARK" | "BOOKMARK_EXAMPLE_UNMARK" | "BOOKMARK_MODERATION_UNPUBLISH" | "BOOKMARK_DELETE" | "PREDICTION_RUN" | "PREDICTION_RUN_SAVE" | "PREDICTION_RUN_BATCH_CREATE" | "PREDICTION_RUN_DELETE" | "PREDICTION_RUN_BATCH_DELETE" | "PREDICTION_JOB_START" | "PREDICTION_JOB_CANCEL" | "PREDICTION_JOB_RETRY" | "PREDICTION_JOB_DELETE" | "PREDICTION_JOB_CLAIMED" | "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_CANCELLED" | "REVIEW_CREATE" | "REVIEW_FEEDBACK_CREATE" | "REVIEW_FEEDBACK_UPDATE" | "REVIEW_SUBMIT" | "REVIEW_SUBMIT_PENDING" | "REVIEW_REOPEN" | "REVIEW_RESPONSE_DELETE" | "REVIEW_DELETE" | "PUBLIC_FEEDBACK_SAVE" | "PLUGIN_UPLOAD" | "PLUGIN_DELETE" | "USER_CREATE" | "USER_UPDATE" | "USER_PASSWORD_RESET" | "USER_DELETE" | "USER_PROFILE_UPDATE" | "USER_HANDLE_CHANGE" | "USER_AVATAR_REPLACE" | "USER_AVATAR_REMOVE" | "USER_PASSWORD_CHANGE" | "INFRASTRUCTURE_SERVICE_ACTION" | "TERMINAL_SESSION_OPEN" | "TERMINAL_SESSION_CLOSE" | "AUTH_LOGIN" | "AUTH_LOGIN_FAILED" | "AUTH_LOGOUT" | "AUTH_REGISTER" | "PURGE_REQUEST" | "PURGE_RETRY" | "PURGE_COMPLETED" | "PURGE_FAILED" | "STORAGE_DELETION_FAILED" | "STORAGE_DELETION_RETENTION_PRUNE" | "API_REQUEST_RETENTION_PRUNE" | "AUDIT_RETENTION_PRUNE" | "NOTIFICATION_RETENTION_PRUNE" | "SYSTEM_ALERT_RAISED" | "SYSTEM_ALERT_ESCALATED" | "SYSTEM_ALERT_RESOLVED" | "SYSTEM_ALERT_RETENTION_PRUNE";
             actor: components["schemas"]["AuditActorDto"];
             /** Format: date-time */
             createdAt: string;
@@ -3064,7 +3160,7 @@ export interface components {
             requestId: string | null;
             targetId: string | null;
             /** @enum {string} */
-            targetType: "API_CLIENT" | "API_CLIENT_KEY" | "API_REQUEST_LOG" | "AUDIT_LOG" | "INFRASTRUCTURE_SERVICE" | "INVITATION" | "MODEL" | "NOTIFICATION_LOG" | "ORGANIZATION" | "ORGANIZATION_MEMBER" | "PLUGIN" | "PREDICTION_JOB" | "PREDICTION_RUN" | "REVIEW" | "ROLE" | "SCHEMA" | "SCHEMA_BOOKMARK" | "SCHEMA_DRAFT" | "SCHEMA_VERSION" | "STORAGE_OBJECT" | "SYSTEM_ALERT" | "TERMINAL_SESSION" | "USER";
+            targetType: "API_CLIENT" | "API_CLIENT_KEY" | "API_REQUEST_LOG" | "AUDIT_LOG" | "INFRASTRUCTURE_SERVICE" | "INVITATION" | "MODEL" | "NOTIFICATION_LOG" | "ORGANIZATION" | "ORGANIZATION_MEMBER" | "PLUGIN" | "PREDICTION_JOB" | "PREDICTION_RUN" | "PURGE_JOB" | "REVIEW" | "ROLE" | "SCHEMA" | "SCHEMA_BOOKMARK" | "SCHEMA_DRAFT" | "SCHEMA_VERSION" | "STORAGE_OBJECT" | "SYSTEM_ALERT" | "TERMINAL_SESSION" | "USER";
         };
         AuthRequest: {
             /** Format: email */
@@ -3230,6 +3326,16 @@ export interface components {
         CreatedPredictionRunsDto: {
             runIds: number[];
         };
+        DeleteAccountRequest: {
+            password: string;
+        };
+        DeletePredictionRunsRequest: {
+            runIds: number[];
+        };
+        DeletedPredictionRunsDto: {
+            /** Format: int32 */
+            deleted: number;
+        };
         Dependency: {
             message: string;
             name: string;
@@ -3264,7 +3370,7 @@ export interface components {
         FeedbackRevisionReviewDto: {
             /** Format: date-time */
             createdAt: string;
-            createdByName: string | null;
+            createdByName: string;
             publicId: string;
         };
         InferenceCatalogColumnDto: {
@@ -3371,6 +3477,22 @@ export interface components {
             email: string;
             password: string;
         };
+        ManagedReviewDto: {
+            /** Format: date-time */
+            createdAt: string;
+            createdByName: string;
+            /** Format: date-time */
+            expiresAt: string;
+            id: string;
+            /** Format: int64 */
+            reviewers: number;
+            /** Format: int64 */
+            runs: number;
+            schemaName: string;
+            /** Format: int32 */
+            schemaVersion: number;
+            schemaVersionName: string | null;
+        };
         MemberCatalogDto: {
             hasNext: boolean;
             items: components["schemas"]["OrganizationMembershipRowDto"][];
@@ -3422,7 +3544,7 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             updatedByAvatarUrl: string | null;
-            updatedByEmail: string;
+            updatedByEmail: string | null;
             updatedByName: string;
             /** Format: int64 */
             version: number;
@@ -3454,7 +3576,7 @@ export interface components {
             /** Format: int64 */
             id: number;
             /** @enum {string} */
-            kind: "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_COMPLETED_WITH_FAILURES" | "PREDICTION_JOB_STOPPED" | "PREDICTION_JOB_CANCELLED" | "MODEL_READY" | "MODEL_FAILED" | "INVITATION_RECEIVED" | "INVITATION_ACCEPTED" | "INVITATION_DECLINED" | "ORGANIZATION_JOINED" | "REVIEW_ASSIGNED" | "SYSTEM_ALERT_RAISED" | "SYSTEM_ALERT_ESCALATED" | "SYSTEM_ALERT_RESOLVED";
+            kind: "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_COMPLETED_WITH_FAILURES" | "PREDICTION_JOB_STOPPED" | "PREDICTION_JOB_CANCELLED" | "MODEL_READY" | "MODEL_FAILED" | "INVITATION_RECEIVED" | "INVITATION_ACCEPTED" | "INVITATION_DECLINED" | "ORGANIZATION_JOINED" | "REVIEW_ASSIGNED" | "ORGANIZATION_PURGED" | "PURGE_COMPLETED" | "PURGE_FAILED" | "SYSTEM_ALERT_RAISED" | "SYSTEM_ALERT_ESCALATED" | "SYSTEM_ALERT_RESOLVED";
             /** Format: int64 */
             organizationId: number | null;
             payload: {
@@ -3464,7 +3586,7 @@ export interface components {
             readAt: string | null;
             targetId: string;
             /** @enum {string} */
-            targetType: "PREDICTION_JOB" | "MODEL" | "INVITATION" | "ORGANIZATION" | "REVIEW" | "SYSTEM_ALERT";
+            targetType: "PREDICTION_JOB" | "MODEL" | "INVITATION" | "ORGANIZATION" | "REVIEW" | "PURGE_JOB" | "SYSTEM_ALERT";
         };
         Option: {
             label: string;
@@ -3518,7 +3640,7 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             updatedByAvatarUrl: string | null;
-            updatedByEmail: string;
+            updatedByEmail: string | null;
             updatedByName: string;
         };
         OrganizationDto: {
@@ -3671,6 +3793,16 @@ export interface components {
             /** Format: int64 */
             totalItems: number;
         };
+        PageDtoManagedReviewDto: {
+            hasNext: boolean;
+            items: components["schemas"]["ManagedReviewDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
         PageDtoModelDto: {
             hasNext: boolean;
             items: components["schemas"]["ModelDto"][];
@@ -3794,6 +3926,16 @@ export interface components {
         PageDtoPublicRunDto: {
             hasNext: boolean;
             items: components["schemas"]["PublicRunDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoPurgeJobDto: {
+            hasNext: boolean;
+            items: components["schemas"]["PurgeJobDto"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -4262,6 +4404,53 @@ export interface components {
             /** Format: int64 */
             expectedDraftRevision: number;
         };
+        PurgeJobDto: {
+            counts: {
+                [key: string]: number;
+            };
+            /** Format: date-time */
+            createdAt: string;
+            error: string | null;
+            /** Format: date-time */
+            finishedAt: string | null;
+            /** Format: int64 */
+            id: number;
+            /** @enum {string} */
+            phase: "PREPARE" | "JOBS" | "FEEDBACK" | "REVIEWS" | "RESULTS" | "RUNS" | "SCHEMA_CONTENT" | "VERSIONS" | "MODELS" | "PLUGINS" | "MEMBERS" | "ACCOUNT" | "FINISH";
+            /** Format: int32 */
+            phaseCount: number;
+            /** Format: int32 */
+            phaseNumber: number;
+            requestedByLabel: string;
+            /** @enum {string} */
+            scope: "ORGANIZATION" | "USER" | "SCHEMA" | "MODEL";
+            /** @enum {string} */
+            status: "QUEUED" | "RUNNING" | "COMPLETED" | "FAILED";
+            /** Format: int64 */
+            targetId: number;
+            targetLabel: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        PurgePreviewDto: {
+            confirmation: string;
+            counts: {
+                [key: string]: number;
+            };
+            refusal: string | null;
+            /** @enum {string} */
+            scope: "ORGANIZATION" | "USER" | "SCHEMA" | "MODEL";
+            /** Format: int64 */
+            targetId: number;
+            targetLabel: string;
+        };
+        RequestPurgeRequest: {
+            confirmation: string;
+            /** @enum {string} */
+            scope: "ORGANIZATION" | "USER" | "SCHEMA" | "MODEL";
+            /** Format: int64 */
+            targetId: number;
+        };
         ReviewAssignmentCountsDto: {
             /** Format: int64 */
             completed: number;
@@ -4432,7 +4621,7 @@ export interface components {
             updatedAt: string;
             updatedByAvatarUrl: string | null;
             updatedByEmail: string | null;
-            updatedByName: string | null;
+            updatedByName: string;
         };
         SchemaChangeCatalogItemDto: {
             baseSnapshotName: string | null;
@@ -4548,7 +4737,7 @@ export interface components {
         SchemaReviewAssignmentStatusDto: {
             /** Format: date-time */
             createdAt: string;
-            createdBy: components["schemas"]["SchemaReviewReviewerDto"];
+            createdBy: components["schemas"]["SchemaReviewCreatorDto"];
             expired: boolean;
             /** Format: date-time */
             expiresAt: string;
@@ -4567,6 +4756,10 @@ export interface components {
             runs: components["schemas"]["SchemaReviewRunListItemDto"][];
             schema: components["schemas"]["SchemaDto"];
             schemaVersion: components["schemas"]["SchemaVersionDto"];
+        };
+        SchemaReviewCreatorDto: {
+            email: string | null;
+            fullName: string;
         };
         SchemaReviewReviewerDto: {
             avatarUrl: string | null;
@@ -4916,6 +5109,9 @@ export type CreateSchemaReviewRequest = components['schemas']['CreateSchemaRevie
 export type CreateSchemaVersionRequest = components['schemas']['CreateSchemaVersionRequest'];
 export type CreateSchemaWithInitialVersionRequest = components['schemas']['CreateSchemaWithInitialVersionRequest'];
 export type CreatedPredictionRunsDto = components['schemas']['CreatedPredictionRunsDto'];
+export type DeleteAccountRequest = components['schemas']['DeleteAccountRequest'];
+export type DeletePredictionRunsRequest = components['schemas']['DeletePredictionRunsRequest'];
+export type DeletedPredictionRunsDto = components['schemas']['DeletedPredictionRunsDto'];
 export type Dependency = components['schemas']['Dependency'];
 export type DuplicateRoleRequest = components['schemas']['DuplicateRoleRequest'];
 export type EnvironmentPackageDto = components['schemas']['EnvironmentPackageDto'];
@@ -4935,6 +5131,7 @@ export type IssuedApiClientKeyDto = components['schemas']['IssuedApiClientKeyDto
 export type Item = components['schemas']['Item'];
 export type JsonNode = components['schemas']['JsonNode'];
 export type LoginRequest = components['schemas']['LoginRequest'];
+export type ManagedReviewDto = components['schemas']['ManagedReviewDto'];
 export type MemberCatalogDto = components['schemas']['MemberCatalogDto'];
 export type MembershipActionsDto = components['schemas']['MembershipActionsDto'];
 export type ModelDetailsDto = components['schemas']['ModelDetailsDto'];
@@ -4959,6 +5156,7 @@ export type PageDtoAuditEventDto = components['schemas']['PageDtoAuditEventDto']
 export type PageDtoInferenceCatalogRowDto = components['schemas']['PageDtoInferenceCatalogRowDto'];
 export type PageDtoInvitationCandidateDto = components['schemas']['PageDtoInvitationCandidateDto'];
 export type PageDtoInvitationDto = components['schemas']['PageDtoInvitationDto'];
+export type PageDtoManagedReviewDto = components['schemas']['PageDtoManagedReviewDto'];
 export type PageDtoModelDto = components['schemas']['PageDtoModelDto'];
 export type PageDtoModeratedBookmarkDto = components['schemas']['PageDtoModeratedBookmarkDto'];
 export type PageDtoNotificationDto = components['schemas']['PageDtoNotificationDto'];
@@ -4972,6 +5170,7 @@ export type PageDtoPredictBookmarkDto = components['schemas']['PageDtoPredictBoo
 export type PageDtoPublicBookmarkExampleDto = components['schemas']['PageDtoPublicBookmarkExampleDto'];
 export type PageDtoPublicBookmarkSummaryDto = components['schemas']['PageDtoPublicBookmarkSummaryDto'];
 export type PageDtoPublicRunDto = components['schemas']['PageDtoPublicRunDto'];
+export type PageDtoPurgeJobDto = components['schemas']['PageDtoPurgeJobDto'];
 export type PageDtoRoleDefinitionDto = components['schemas']['PageDtoRoleDefinitionDto'];
 export type PageDtoRoleSummaryDto = components['schemas']['PageDtoRoleSummaryDto'];
 export type PageDtoRoleTemplateDto = components['schemas']['PageDtoRoleTemplateDto'];
@@ -5011,6 +5210,9 @@ export type PublicRunFeedbackRequest = components['schemas']['PublicRunFeedbackR
 export type PublicRunLimitDto = components['schemas']['PublicRunLimitDto'];
 export type PublicRunQuotaDto = components['schemas']['PublicRunQuotaDto'];
 export type PublishSchemaDraftRequest = components['schemas']['PublishSchemaDraftRequest'];
+export type PurgeJobDto = components['schemas']['PurgeJobDto'];
+export type PurgePreviewDto = components['schemas']['PurgePreviewDto'];
+export type RequestPurgeRequest = components['schemas']['RequestPurgeRequest'];
 export type ReviewAssignmentCountsDto = components['schemas']['ReviewAssignmentCountsDto'];
 export type ReviewCatalogSummaryDto = components['schemas']['ReviewCatalogSummaryDto'];
 export type ReviewInboxCatalogDto = components['schemas']['ReviewInboxCatalogDto'];
@@ -5040,6 +5242,7 @@ export type SchemaMappingIssueDto = components['schemas']['SchemaMappingIssueDto
 export type SchemaModelBindingDto = components['schemas']['SchemaModelBindingDto'];
 export type SchemaReviewAssignmentStatusDto = components['schemas']['SchemaReviewAssignmentStatusDto'];
 export type SchemaReviewContextDto = components['schemas']['SchemaReviewContextDto'];
+export type SchemaReviewCreatorDto = components['schemas']['SchemaReviewCreatorDto'];
 export type SchemaReviewReviewerDto = components['schemas']['SchemaReviewReviewerDto'];
 export type SchemaReviewRunDetailDto = components['schemas']['SchemaReviewRunDetailDto'];
 export type SchemaReviewRunListItemDto = components['schemas']['SchemaReviewRunListItemDto'];
@@ -5258,7 +5461,7 @@ export interface operations {
                 to?: string | null;
                 actorKind?: "USER" | "SYSTEM" | "API_CLIENT" | "VISITOR" | null;
                 actor?: string | null;
-                targetType?: "API_CLIENT" | "API_CLIENT_KEY" | "API_REQUEST_LOG" | "AUDIT_LOG" | "INFRASTRUCTURE_SERVICE" | "INVITATION" | "MODEL" | "NOTIFICATION_LOG" | "ORGANIZATION" | "ORGANIZATION_MEMBER" | "PLUGIN" | "PREDICTION_JOB" | "PREDICTION_RUN" | "REVIEW" | "ROLE" | "SCHEMA" | "SCHEMA_BOOKMARK" | "SCHEMA_DRAFT" | "SCHEMA_VERSION" | "STORAGE_OBJECT" | "SYSTEM_ALERT" | "TERMINAL_SESSION" | "USER" | null;
+                targetType?: "API_CLIENT" | "API_CLIENT_KEY" | "API_REQUEST_LOG" | "AUDIT_LOG" | "INFRASTRUCTURE_SERVICE" | "INVITATION" | "MODEL" | "NOTIFICATION_LOG" | "ORGANIZATION" | "ORGANIZATION_MEMBER" | "PLUGIN" | "PREDICTION_JOB" | "PREDICTION_RUN" | "PURGE_JOB" | "REVIEW" | "ROLE" | "SCHEMA" | "SCHEMA_BOOKMARK" | "SCHEMA_DRAFT" | "SCHEMA_VERSION" | "STORAGE_OBJECT" | "SYSTEM_ALERT" | "TERMINAL_SESSION" | "USER" | null;
                 organization?: string;
             };
             header?: never;
@@ -5390,7 +5593,7 @@ export interface operations {
             };
         };
     };
-    list_11: {
+    list_12: {
         parameters: {
             query?: {
                 page?: number;
@@ -5433,6 +5636,101 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SchemaBookmarkDto"];
+                };
+            };
+        };
+    };
+    list_7: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoPurgeJobDto"];
+                };
+            };
+        };
+    };
+    request: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestPurgeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurgeJobDto"];
+                };
+            };
+        };
+    };
+    preview_1: {
+        parameters: {
+            query: {
+                scope: "ORGANIZATION" | "USER" | "SCHEMA" | "MODEL";
+                targetId: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurgePreviewDto"];
+                };
+            };
+        };
+    };
+    retry_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurgeJobDto"];
                 };
             };
         };
@@ -5510,26 +5808,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PageDtoAdminUserDto"];
                 };
-            };
-        };
-    };
-    delete_4: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
@@ -6418,7 +6696,7 @@ export interface operations {
             };
         };
     };
-    delete_6: {
+    delete_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -6629,7 +6907,7 @@ export interface operations {
                 to?: string | null;
                 actorKind?: "USER" | "SYSTEM" | "API_CLIENT" | "VISITOR" | null;
                 actor?: string | null;
-                targetType?: "API_CLIENT" | "API_CLIENT_KEY" | "API_REQUEST_LOG" | "AUDIT_LOG" | "INFRASTRUCTURE_SERVICE" | "INVITATION" | "MODEL" | "NOTIFICATION_LOG" | "ORGANIZATION" | "ORGANIZATION_MEMBER" | "PLUGIN" | "PREDICTION_JOB" | "PREDICTION_RUN" | "REVIEW" | "ROLE" | "SCHEMA" | "SCHEMA_BOOKMARK" | "SCHEMA_DRAFT" | "SCHEMA_VERSION" | "STORAGE_OBJECT" | "SYSTEM_ALERT" | "TERMINAL_SESSION" | "USER" | null;
+                targetType?: "API_CLIENT" | "API_CLIENT_KEY" | "API_REQUEST_LOG" | "AUDIT_LOG" | "INFRASTRUCTURE_SERVICE" | "INVITATION" | "MODEL" | "NOTIFICATION_LOG" | "ORGANIZATION" | "ORGANIZATION_MEMBER" | "PLUGIN" | "PREDICTION_JOB" | "PREDICTION_RUN" | "PURGE_JOB" | "REVIEW" | "ROLE" | "SCHEMA" | "SCHEMA_BOOKMARK" | "SCHEMA_DRAFT" | "SCHEMA_VERSION" | "STORAGE_OBJECT" | "SYSTEM_ALERT" | "TERMINAL_SESSION" | "USER" | null;
             };
             header?: never;
             path: {
@@ -7434,7 +7712,7 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -7493,6 +7771,26 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PredictionJobDto"];
                 };
+            };
+        };
+    };
+    delete_5: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -7562,7 +7860,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_10: {
         parameters: {
             query: {
                 resultId: number;
@@ -7624,6 +7922,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PredictionResultFeedbackRevisionDto"][];
+                };
+            };
+        };
+    };
+    deleteMany: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeletePredictionRunsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletedPredictionRunsDto"];
                 };
             };
         };
@@ -7746,7 +8068,7 @@ export interface operations {
             };
         };
     };
-    delete_5: {
+    delete_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -7788,7 +8110,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_9: {
         parameters: {
             query?: {
                 page?: number;
@@ -8326,6 +8648,26 @@ export interface operations {
             };
         };
     };
+    deleteBookmark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     update_1: {
         parameters: {
             query?: never;
@@ -8352,7 +8694,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -8709,6 +9051,26 @@ export interface operations {
             };
         };
     };
+    deleteDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                draftId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     diff: {
         parameters: {
             query?: never;
@@ -9058,6 +9420,52 @@ export interface operations {
             };
         };
     };
+    managedCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoManagedReviewDto"];
+                };
+            };
+        };
+    };
+    delete_6: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reviewId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     detail: {
         parameters: {
             query?: never;
@@ -9222,6 +9630,26 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SchemaVersionDto"];
                 };
+            };
+        };
+    };
+    deleteVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                versionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -9743,6 +10171,28 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["UserDto"];
                 };
+            };
+        };
+    };
+    deleteAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

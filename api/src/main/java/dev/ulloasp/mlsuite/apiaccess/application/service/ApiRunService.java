@@ -28,6 +28,7 @@ import dev.ulloasp.mlsuite.schema.application.service.BookmarkPublishability;
 import dev.ulloasp.mlsuite.schema.application.service.PublicBookmarkService;
 import dev.ulloasp.mlsuite.schema.application.service.PublicForm;
 import dev.ulloasp.mlsuite.schema.application.service.PublicRunReports;
+import dev.ulloasp.mlsuite.schema.application.service.SnapshotRunGuard;
 import dev.ulloasp.mlsuite.schema.domain.model.BoundModel;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultStatus;
@@ -59,6 +60,7 @@ public class ApiRunService {
     private final PredictionResultRepository resultRepository;
     private final ModelRepository modelRepository;
     private final BookmarkPublishability publishability;
+    private final SnapshotRunGuard guard;
     private final AuditLogService auditLog;
 
     /** The key's holder; a missing key is answered like a wrong one. */
@@ -87,6 +89,9 @@ public class ApiRunService {
                 .orElseThrow(() -> new ApiProblem(ApiErrorCode.BOOKMARK_NOT_FOUND,
                         "This client was not given a bookmark with this id."));
         SchemaVersion version = bookmark.getVersion();
+        if (guard.purging(version.getId())) {
+            throw new ApiProblem(ApiErrorCode.BOOKMARK_NOT_RUNNABLE, "This bookmark's model is being deleted.");
+        }
         List<BoundModel> models = publishability.models(version);
         if (models.size() != 1) {
             throw new ApiProblem(ApiErrorCode.BOOKMARK_NOT_RUNNABLE,

@@ -100,6 +100,12 @@ public class SchemaReviewController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/{reviewId}")
+    public ResponseEntity<Void> delete(CurrentUser user, @PathVariable String reviewId) {
+        management.delete(user.userId(), reviewId);
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/{reviewId}/runs/{reviewRunId}/reviewers/{reviewerId}/response")
     public ResponseEntity<Void> deleteResponse(CurrentUser user,
             @PathVariable String reviewId, @PathVariable String reviewRunId,

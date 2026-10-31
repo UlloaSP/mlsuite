@@ -58,7 +58,8 @@ import jakarta.persistence.EntityManager;
         "spring.jpa.hibernate.ddl-auto=create-drop", "spring.flyway.enabled=false"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({ PublicBookmarkService.class, BookmarkPublishability.class })
+@Import({ PublicBookmarkService.class, BookmarkPublishability.class,
+        dev.ulloasp.mlsuite.schema.application.service.SnapshotRunGuard.class })
 @ContextConfiguration(classes = PublicBookmarkFeedServiceTest.PersistenceConfig.class)
 class PublicBookmarkFeedServiceTest {
 

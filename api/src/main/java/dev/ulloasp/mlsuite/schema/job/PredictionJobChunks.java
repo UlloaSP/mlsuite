@@ -46,7 +46,7 @@ class PredictionJobChunks {
     boolean store(Claim job, String worker, List<PendingRow> rows, Map<Long, List<AttestedPrediction>> byModel) {
         if (!ledger.holds(job.id(), worker)) return false;
         SchemaBookmark bookmark = bookmarks.findByIdAndOrganizationId(job.bookmarkId(), job.organizationId()).orElse(null);
-        User author = users.findById(job.userId()).orElse(null);
+        User author = job.userId() == null ? null : users.findById(job.userId()).orElse(null);
         Map<Long, String> names = new HashMap<>();
         bindings.findBySchemaVersionId(job.schemaVersionId())
                 .forEach(binding -> names.put(binding.getModel().getId(), binding.getModel().getName()));

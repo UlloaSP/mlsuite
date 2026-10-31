@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.user;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -19,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.user.adapter.in.web.UserController;
+import dev.ulloasp.mlsuite.user.application.port.in.DeleteAccountUseCase;
 import dev.ulloasp.mlsuite.user.application.port.in.GetCurrentUserProfileUseCase;
 import dev.ulloasp.mlsuite.user.application.port.in.UserProfileUseCase;
 import dev.ulloasp.mlsuite.user.application.dto.UserDto;
@@ -38,7 +40,8 @@ class UserControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new UserController(getCurrentUserProfileUseCase, userProfiles);
+        controller = new UserController(getCurrentUserProfileUseCase, userProfiles,
+                mock(DeleteAccountUseCase.class));
     }
 
     @Test

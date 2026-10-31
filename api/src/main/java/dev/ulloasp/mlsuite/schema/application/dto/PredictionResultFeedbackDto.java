@@ -9,12 +9,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackType;
+import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
 public record PredictionResultFeedbackDto(
         Long id,
         Long resultId,
-        /** Null when a visitor of the public page gave the feedback: they have no account. */
+        /** Null when a visitor of the public page gave the feedback, or its member is gone. */
         @Nullable Long userId,
         @Nullable String userName,
         @Nullable String userEmail,
@@ -30,7 +31,7 @@ public record PredictionResultFeedbackDto(
                 feedback.getId(),
                 feedback.getResult().getId(),
                 user == null ? null : user.getId(),
-                user == null ? null : user.getFullName(),
+                user == null && feedback.getVisitor() != null ? null : DeletedUser.nameOf(user),
                 user == null ? null : user.getEmail(),
                 feedback.getType(),
                 feedback.getOrder(),

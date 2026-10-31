@@ -228,7 +228,7 @@ class WorkspacePredictionServiceTest {
         when(runtime.run("/explain", FOREST, EXPLAIN)).thenReturn(Map.of("reports", List.of(Map.of("kind", "Crystal Tree"))));
 
         WorkspacePredictionPlanner planner = new WorkspacePredictionPlanner(authorization, bookmarks,
-                new BookmarkPublishability(bindings, 50), models);
+                new BookmarkPublishability(bindings, 50), models, mock(SnapshotRunGuard.class));
 
         List<AttestedPrediction> results = service.predictRows(planner.planFor(41L, 70L, 9L, 11L),
                 List.of(INPUT, Map.of("age", 61)));
@@ -268,7 +268,7 @@ class WorkspacePredictionServiceTest {
 
     private WorkspacePredictionService service(WorkspaceRuntimeSlots slots) {
         WorkspacePredictionPlanner planner = new WorkspacePredictionPlanner(authorization, bookmarks,
-                new BookmarkPublishability(bindings, 50), models);
+                new BookmarkPublishability(bindings, 50), models, mock(SnapshotRunGuard.class));
         return new WorkspacePredictionService(planner, slots, runtime, attestations, new ObjectMapper(), mock(AuditLogService.class));
     }
 

@@ -21,8 +21,10 @@ import { AppButton } from "@/shared/ui/AppButton";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
-import type { SchemaAction } from "@/features/schemas/components/SchemaActionsMenu";
+import type { SchemaDialogAction } from "@/features/schemas/components/SchemaActionsMenu";
 import { SchemaActionDialog } from "@/features/schemas/components/SchemaActionDialog";
+import { PurgeDialog } from "@/capabilities/purge/PurgeDialog";
+import { useCurrentUserIsSuperadmin } from "@/capabilities/workspace-context/session";
 import { SchemaListItem } from "@/features/schemas/components/SchemaListItem";
 import type { SchemaCatalogItemDto } from "@/shared/api/openapi.gen";
 
@@ -64,10 +66,12 @@ export function SchemasPage() {
     controls.filter,
   );
   const [dialog, setDialog] = useState<{
-    action: SchemaAction;
+    action: SchemaDialogAction;
     schema: SchemaCatalogItemDto;
   } | null>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
+  const [purgeTarget, setPurgeTarget] = useState<number | null>(null);
+  const canPurge = useCurrentUserIsSuperadmin();
 
   const canCreateSchemas = workspace?.permissions.canCreateModels ?? false;
   const canDeleteSchemas = workspace?.permissions.canDeleteModels ?? false;
@@ -156,12 +160,18 @@ export function SchemasPage() {
             key={schema.id}
             canDelete={canDeleteSchemas}
             canEdit={canEditSchemas}
+            canPurge={canPurge}
             item={schema}
             to={`/schemas/${schema.id}`}
-            onAction={(action) => setDialog({ action, schema })}
+            onAction={(action) =>
+              action === "purge" ? setPurgeTarget(schema.id) : setDialog({ action, schema })
+            }
           />
         )}
       />
+      {purgeTarget === null ? null : (
+        <PurgeDialog scope="SCHEMA" targetId={purgeTarget} onClose={() => setPurgeTarget(null)} />
+      )}
       {dialog ? (
         <SchemaActionDialog
           key={`${dialog.action}-${dialog.schema.id}`}

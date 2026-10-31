@@ -47,4 +47,7 @@ public interface ObjectStorageService {
     List<StoredObjectItem> list(String prefix);
 
     void delete(String bucket, String objectKey, String versionId);
+
+    /** Removes every stored version of the key and its delete markers, leaving nothing to restore. */
+    void deleteAllVersions(String bucket, String objectKey);
 }

@@ -27,6 +27,12 @@ public enum NotificationKind {
     ORGANIZATION_JOINED(NotificationTargetType.ORGANIZATION),
     /** schemaName, assignerName. */
     REVIEW_ASSIGNED(NotificationTargetType.REVIEW),
+    /** organizationName: a superadmin deleted the organization, which is gone. */
+    ORGANIZATION_PURGED(NotificationTargetType.ORGANIZATION),
+    /** scope, targetLabel. */
+    PURGE_COMPLETED(NotificationTargetType.PURGE_JOB),
+    /** scope, targetLabel, reason. */
+    PURGE_FAILED(NotificationTargetType.PURGE_JOB),
     /** label, unit, severity, value, threshold: about the platform, sent to every enabled superadmin. */
     SYSTEM_ALERT_RAISED(NotificationTargetType.SYSTEM_ALERT),
     /** As SYSTEM_ALERT_RAISED, at its critical threshold. */

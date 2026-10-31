@@ -15,6 +15,7 @@ public enum AuditTargetType {
     PLUGIN,
     PREDICTION_JOB,
     PREDICTION_RUN,
+    PURGE_JOB,
     REVIEW,
     ROLE,
     SCHEMA,

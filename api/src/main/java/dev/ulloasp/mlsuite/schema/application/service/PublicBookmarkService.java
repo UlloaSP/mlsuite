@@ -54,6 +54,7 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
     private final SchemaBookmarkRepository bookmarkRepository;
     private final SchemaBookmarkExampleRepository exampleRepository;
     private final BookmarkPublishability publishability;
+    private final SnapshotRunGuard guard;
     private final ListPluginRuntimeSourcesUseCase plugins;
 
     @Override
@@ -145,6 +146,9 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
         }
         List<BoundModel> models = publishability.models(version);
         Optional<String> refusal = publishability.refusal(models);
+        if (guard.purging(version.getId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This bookmark cannot be run publicly.");
+        }
         if (refusal.isPresent()) {
             log.warn("Public bookmark {} was not run: {}", publicId, refusal.get());
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This bookmark cannot be run publicly.");

@@ -19,6 +19,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -106,8 +107,12 @@ public class User {
     @Column(name = "enabled", nullable = false)
     private boolean enabled = true;
 
-    /** The organization the user last selected; null leaves them in their personal account. */
-    @ManyToOne
+    /**
+     * The organization the user last selected; null leaves them in their personal account. Lazy
+     * because an organization names users: eager, the cycle joins a user dozens of times into every
+     * statement that reaches one, past what PostgreSQL allows in a select list.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "current_organization_id")
     private Organization currentOrganization;
 

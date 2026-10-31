@@ -68,4 +68,8 @@ public class Schema {
 
     @Column(name = "archived_at", columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime archivedAt;
+
+    /** When a purge of it was asked for; written only by the purge, so saving this row never clears it. */
+    @Column(name = "purging_at", insertable = false, updatable = false, columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime purgingAt;
 }

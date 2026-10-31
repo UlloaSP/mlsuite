@@ -347,6 +347,17 @@ describe("what a notification says", () => {
       "Ada asked you to review runs of Risk.",
     ],
     [
+      "ORGANIZATION_PURGED",
+      { organizationName: "Lab" },
+      "A platform administrator deleted this organization and everything in it.",
+    ],
+    [
+      "PURGE_COMPLETED",
+      { targetLabel: "Lab", scope: "ORGANIZATION" },
+      "Lab and everything that depended on it are gone.",
+    ],
+    ["PURGE_FAILED", { targetLabel: "Lab", reason: "No storage" }, "Lab: No storage"],
+    [
       "SYSTEM_ALERT_RAISED",
       { label: "CPU", unit: "%", severity: "WARNING", value: 91.5, threshold: 85 },
       "At 91.5%, past the 85% threshold.",

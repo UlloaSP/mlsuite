@@ -143,6 +143,19 @@ class ProfilePinTest extends ProfileFixture {
     }
 
     @Test
+    void deletingABookmarkRemovesItsPin() throws Exception {
+        User ada = registered(unique("ada"));
+        SchemaBookmark shown = published(ada, "shown");
+        pin(ada, shown.getPublicId()).andExpect(status().isOk());
+
+        mockMvc.perform(as(ada, delete("/api/schema-bookmarks/{id}", shown.getId())))
+                .andExpect(status().is2xxSuccessful());
+
+        assertEquals(0, pins(ada));
+        profile(ada).andExpect(jsonPath("$.pinned.length()").value(0));
+    }
+
+    @Test
     void aChangeOfPinsIsAudited() throws Exception {
         User ada = registered(unique("ada"));
         SchemaBookmark shown = published(ada, "shown");

@@ -55,7 +55,7 @@ class PredictionJobOutcomes {
 
     /** Runs in the transaction that cancelled the job; a member cancelling their own is not told. */
     void cancelled(FinishedJob job, Long actorUserId, String actorName) {
-        if (job.userId().equals(actorUserId)) return;
+        if (actorUserId.equals(job.userId())) return;
         tell(job, NotificationKind.PREDICTION_JOB_CANCELLED, Map.of("actorName", actorName));
     }
 
@@ -65,6 +65,7 @@ class PredictionJobOutcomes {
     }
 
     private void tell(FinishedJob job, NotificationKind kind, Map<String, Object> details) {
+        if (job.userId() == null) return;
         Map<String, Object> payload = new LinkedHashMap<>(details);
         payload.put("organizationName", job.organizationName());
         payload.put("bookmarkId", job.bookmarkId());

@@ -16,18 +16,20 @@ import { AppTabPanel, AppTabs } from "@/shared/ui/AppTabs";
 import { cx } from "@/shared/ui/cx";
 import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
 import { useSearchParams } from "react-router";
+import { SettingsAccountSection } from "@/features/user/components/SettingsAccountSection";
 import { SettingsAppearanceSection } from "@/features/user/components/SettingsAppearanceSection";
 import { SettingsKeybindingsSection } from "@/features/user/components/SettingsKeybindingsSection";
 import { SettingsLayoutSection } from "@/features/user/components/SettingsLayoutSection";
 import { SettingsTypographySection } from "@/features/user/components/SettingsTypographySection";
 
-type SettingsSection = "appearance" | "typography" | "keybindings" | "layout";
+type SettingsSection = "appearance" | "typography" | "keybindings" | "layout" | "account";
 
 const SECTIONS = [
   { label: "Appearance", value: "appearance" },
   { label: "Typography", value: "typography" },
   { label: "Keybindings", value: "keybindings" },
   { label: "Layout", value: "layout" },
+  { label: "Account", value: "account" },
 ] satisfies { label: string; value: SettingsSection }[];
 
 const isSettingsSection = (value: string | null): value is SettingsSection =>
@@ -73,9 +75,13 @@ export function SettingsPage() {
               {section === "typography" ? <SettingsTypographySection /> : null}
               {section === "keybindings" ? <SettingsKeybindingsSection /> : null}
               {section === "layout" ? <SettingsLayoutSection /> : null}
-              <p className="mt-10 border-t border-line pt-5 text-xs text-fg-muted">
-                Preferences are saved in this browser and apply immediately.
-              </p>
+              {section === "account" ? (
+                <SettingsAccountSection />
+              ) : (
+                <p className="mt-10 border-t border-line pt-5 text-xs text-fg-muted">
+                  Preferences are saved in this browser and apply immediately.
+                </p>
+              )}
             </main>
           </AppTabPanel>
         </AppTabs>

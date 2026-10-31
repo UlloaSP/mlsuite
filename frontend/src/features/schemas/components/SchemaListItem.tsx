@@ -16,6 +16,7 @@ import type { SchemaCatalogItemDto } from "@/shared/api/openapi.gen";
 type SchemaListItemProps = {
   canDelete: boolean;
   canEdit: boolean;
+  canPurge?: boolean;
   item: SchemaCatalogItemDto;
   onAction: (action: SchemaAction) => void;
   /** The detail page this row opens. */
@@ -28,7 +29,14 @@ const metrics = [
   { key: "reportCount", label: "Reports", icon: ScrollText },
 ] as const;
 
-export function SchemaListItem({ canDelete, canEdit, item, onAction, to }: SchemaListItemProps) {
+export function SchemaListItem({
+  canDelete,
+  canEdit,
+  canPurge,
+  item,
+  onAction,
+  to,
+}: SchemaListItemProps) {
   const modifier = modifierName(item.updatedByName, item.updatedByEmail);
   return (
     <CatalogEntry
@@ -68,6 +76,7 @@ export function SchemaListItem({ canDelete, canEdit, item, onAction, to }: Schem
           archived={Boolean(item.archivedAt)}
           canDelete={canDelete}
           canEdit={canEdit}
+          canPurge={canPurge}
           onAction={onAction}
           schemaName={item.name}
         />

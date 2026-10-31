@@ -20,8 +20,8 @@ import { toast } from "sonner";
 import { PersonAvatar } from "@/shared/ui/PersonAvatar";
 import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
+import { PurgeDialog } from "@/capabilities/purge/PurgeDialog";
 import { ChangeRoleDialog } from "./ChangeRoleDialog";
-import { DeleteUserDialog } from "./DeleteUserDialog";
 import { UserInfoBadge } from "./UserInfoBadge";
 import type { AdminUserDto } from "@/shared/api/openapi.gen";
 
@@ -30,13 +30,11 @@ type Role = AdminUserDto["systemRole"];
 export function UserCatalogTile({
   disabled,
   item,
-  onDelete,
   onResetPassword,
   onUpdate,
 }: {
   disabled: boolean;
   item: AdminUserDto;
-  onDelete: () => Promise<void>;
   onResetPassword: () => void;
   onUpdate: (payload: { enabled?: boolean; systemRole?: Role }) => Promise<void>;
 }) {
@@ -109,8 +107,8 @@ export function UserCatalogTile({
                   ),
               },
               {
-                key: "delete",
-                label: "Delete",
+                key: "purge",
+                label: "Purge",
                 icon: Trash2,
                 tone: "danger",
                 onSelect: () => setDeleteOpen(true),
@@ -119,15 +117,7 @@ export function UserCatalogTile({
           />
         }
       />
-      {deleteOpen ? (
-        <DeleteUserDialog
-          disabled={disabled}
-          error={dialogError}
-          user={item}
-          onCancel={closeDialogs}
-          onConfirm={() => runInDialog(onDelete)}
-        />
-      ) : null}
+      {deleteOpen ? <PurgeDialog scope="USER" targetId={item.id} onClose={closeDialogs} /> : null}
       {roleOpen ? (
         <ChangeRoleDialog
           disabled={disabled}

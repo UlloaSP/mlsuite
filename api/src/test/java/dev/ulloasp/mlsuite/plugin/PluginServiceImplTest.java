@@ -125,6 +125,7 @@ class PluginServiceImplTest {
         List<PluginMetadata> rows = Arrays.stream(ids).map(id -> {
             PluginMetadata row = new PluginMetadata();
             row.setId(id);
+            row.setUpdatedBy(new User());
             return row;
         }).toList();
         when(pluginMetadataRepository.findCatalogPage(eq(41L), anyString(), anyString(), anyString(), any()))

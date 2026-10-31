@@ -179,6 +179,24 @@ class S3ObjectStorageService implements ObjectStorageService {
         }
     }
 
+    @Override
+    public void deleteAllVersions(String bucket, String objectKey) {
+        ensureBucketExists();
+
+        try {
+            for (var page : client.listObjectVersionsPaginator(request -> request.bucket(bucket).prefix(objectKey))) {
+                page.versions().stream().filter(version -> objectKey.equals(version.key()))
+                        .forEach(version -> delete(bucket, objectKey, version.versionId()));
+                page.deleteMarkers().stream().filter(marker -> objectKey.equals(marker.key()))
+                        .forEach(marker -> delete(bucket, objectKey, marker.versionId()));
+            }
+        } catch (ObjectStorageException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new ObjectStorageException("No se pudo eliminar el objeto", ex);
+        }
+    }
+
     private void ensureBucketExists() {
         if (bucketEnsured.get()) {
             return;

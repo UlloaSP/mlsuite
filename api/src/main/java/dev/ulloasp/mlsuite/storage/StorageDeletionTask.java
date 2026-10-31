@@ -19,7 +19,7 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "storage_deletion_task", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_storage_deletion_object", columnNames = {"bucket", "object_key"})
+        @UniqueConstraint(name = "uq_storage_deletion_object", columnNames = {"bucket", "object_key", "object_version_id"})
 })
 @Getter
 @Setter

@@ -7,6 +7,7 @@ import { click, mount } from "./support/dom";
 
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   useCurrentOrganizationId: () => 7,
+  useCan: () => false,
 }));
 vi.mock("@/capabilities/prediction-runtime/mlform/executable-schema", () => ({
   toExecutableSchemaVersion: (version: unknown) => version,

@@ -4,7 +4,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { appFetch, json } from "@/shared/api/http";
-import type { AuthRequest, LoginRequest, UserDto } from "@/shared/api/openapi.gen";
+import type {
+  AuthRequest,
+  DeleteAccountRequest,
+  LoginRequest,
+  UserDto,
+} from "@/shared/api/openapi.gen";
 
 export const getProfile = (signal?: AbortSignal): Promise<UserDto> =>
   appFetch<UserDto>("/api/users/me", { signal });
@@ -16,6 +21,9 @@ export const register = (payload: AuthRequest): Promise<UserDto> =>
   appFetch<UserDto>("/api/auth/register", json("POST", payload));
 
 export const logout = (): Promise<void> => appFetch<void>("/api/logout", { method: "POST" });
+
+export const deleteAccount = (password: string): Promise<void> =>
+  appFetch<void>("/api/users/me", json("DELETE", { password } satisfies DeleteAccountRequest));
 
 /** Replaces the app with a newly loaded document at `path`; nothing in memory survives it. */
 export const openDocument = (path: string): void => window.location.replace(path);
