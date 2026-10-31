@@ -19,8 +19,8 @@ organization's [audit log](/organizations/audit-log/), and members who may publi
 outcomes and latency, never their content.
 
 **Overview**
-: The [usage panel](/api/usage/#overview) for the whole instance, with an **Organizations** tile
-  counting the organizations whose clients called and the calls turned away because the runtime was
+: The [usage panel](/api/usage/#overview) for the whole instance, with an **Accounts** tile
+  counting the accounts whose clients called and the calls turned away because the runtime was
   busy.
 
 **Clients**
@@ -32,8 +32,8 @@ outcomes and latency, never their content.
     on the client's page.
   - **Reinstate** lets its keys work again.
 
-**Organizations**
-: Each organization with clients, its calls this month against its limit, and whether that limit
+**Accounts**
+: Personal accounts, marked as such, and organizations. Each organization with clients, its calls this month against its limit, and whether that limit
   is its own or the instance default. **Set monthly limit…** sets the number of succeeded calls its
   clients may make together per calendar month (UTC), or **Follow the instance default**. A limit
   of 0 refuses every call.
