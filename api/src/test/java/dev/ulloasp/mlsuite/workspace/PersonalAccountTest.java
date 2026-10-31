@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -14,11 +15,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 
 import dev.ulloasp.mlsuite.admin.AdminCreateUserRequest;
 import dev.ulloasp.mlsuite.admin.AdminUpdateUserRequest;
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationKind;
@@ -28,6 +37,8 @@ import dev.ulloasp.mlsuite.user.domain.model.User;
 
 /** Personal accounts and a user's way back to their own account, on the whole application. */
 class PersonalAccountTest extends PersonalAccountFixture {
+
+    @Autowired AuditLogService auditLog;
 
     private void joined(User user, long organizationId) {
         inTransaction(() -> {
@@ -67,13 +78,13 @@ class PersonalAccountTest extends PersonalAccountFixture {
     @Test
     void adminCreatedUsersOpenTheirAccountAndARenameCarriesItsSlugAndName() {
         String handle = unique("grace");
-        var created = adminUsers.create(new AdminCreateUserRequest(unique("grace") + "@example.test", PASSWORD,
+        var created = adminUsers.create(owner.getId(), new AdminCreateUserRequest(unique("grace") + "@example.test", PASSWORD,
                 "Grace Hopper", handle, "USER", true));
         Organization personal = organizations.findByOwnerUserId(created.id()).orElseThrow();
         assertEquals(handle, personal.getSlug());
 
         String renamed = unique("rear-admiral");
-        adminUsers.update(created.id(), new AdminUpdateUserRequest("Grace B. Hopper", renamed, null, null));
+        adminUsers.update(owner.getId(), created.id(), new AdminUpdateUserRequest("Grace B. Hopper", renamed, null, null));
 
         Organization after = organizations.findById(personal.getId()).orElseThrow();
         assertEquals(renamed, after.getSlug());
@@ -104,6 +115,73 @@ class PersonalAccountTest extends PersonalAccountFixture {
                         .andExpect(jsonPath("$.message", containsString("personal account")));
             }
         }
+    }
+
+    @Test
+    void aPersonalAccountHasNoLogoToReplaceOrRemove() throws Exception {
+        User user = registered(unique("logo"));
+        String logo = ORGANIZATIONS + "/" + personalOf(user).getId() + "/logo";
+        MockMultipartHttpServletRequestBuilder replace = multipart(HttpMethod.PUT, logo)
+                .file(new MockMultipartFile("logo", "logo.png", "image/png", new byte[] { 1 }));
+
+        mockMvc.perform(signedIn(replace, user.getId()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message", containsString("personal account")));
+        mockMvc.perform(as(user, delete(logo)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message", containsString("personal account")));
+    }
+
+    /** Opening an account is the user's creation, not an organization anybody created. */
+    @Test
+    void signingUpAuditsTheAccountAndNoOrganization() throws Exception {
+        long before = auditRows("action = 'ORGANIZATION_CREATE'");
+        String handle = unique("audited");
+        User user = registered(handle);
+
+        assertEquals(1, auditRows("action = 'AUTH_REGISTER' AND organization_id IS NULL AND target_id = '"
+                + user.getId() + "' AND metadata ->> 'username' = '" + handle + "'"));
+        assertEquals(before, auditRows("action = 'ORGANIZATION_CREATE'"));
+        assertEquals(0, auditRows("organization_id = " + personalOf(user).getId()));
+
+        long team = createdOrganization(user, "Team", unique("team"));
+
+        assertEquals(1, auditRows("action = 'ORGANIZATION_CREATE' AND organization_id = " + team));
+    }
+
+    @Test
+    void theOwnerReadsWhatHappenedInTheirAccount() throws Exception {
+        User user = registered(unique("working"));
+        Organization personal = personalOf(user);
+        auditLog.record(AuditActor.user(user.getId()), personal.getId(), AuditAction.PLUGIN_UPLOAD, "plugin");
+
+        mockMvc.perform(as(user, get(ORGANIZATIONS + "/" + personal.getId() + "/audit-events/catalog")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalItems").value(1))
+                .andExpect(jsonPath("$.items[0].action").value("PLUGIN_UPLOAD"))
+                .andExpect(jsonPath("$.items[0].organizationName").value(personal.getName()))
+                .andExpect(jsonPath("$.items[0].actor.name").value(user.getFullName()));
+    }
+
+    @Test
+    void removingAMemberKeepsItsAuditEntry() throws Exception {
+        User creator = registered(unique("creator"));
+        User member = registered(unique("member"));
+        long team = createdOrganization(creator, "Team", unique("team"));
+        joined(member, team);
+        long membership = memberships.findActiveByOrganizationIdAndUserId(team, member.getId()).orElseThrow().getId();
+
+        mockMvc.perform(as(creator, delete(ORGANIZATIONS + "/" + team + "/members/" + membership)))
+                .andExpect(status().isNoContent());
+
+        assertEquals(1, auditRows("action = 'MEMBER_REMOVE' AND organization_id = " + team
+                + " AND target_id = '" + membership + "'"));
+    }
+
+    private long auditRows(String condition) {
+        Long rows = new JdbcTemplate(dataSource).queryForObject(
+                "SELECT count(*) FROM audit_event WHERE " + condition, Long.class);
+        return rows == null ? 0 : rows;
     }
 
     private List<MockHttpServletRequestBuilder> refusedOnPersonal(Organization personal, User user) {

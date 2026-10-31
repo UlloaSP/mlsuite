@@ -7,7 +7,7 @@ import { ChevronsUpDown } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { useLocation } from "react-router";
 import { useUser } from "@/capabilities/workspace-context/session";
-import { usePendingInvitationCatalog } from "@/features/workspace/api/workspace-catalog-queries";
+import { useUnreadNotificationCount } from "@/features/notifications/api/notification.queries";
 import type { SidebarPosition } from "@/shared/ui/sidebar-preferences";
 import { SidebarLabel } from "./app-sidebar/SidebarLabel";
 import { SidebarMenuButton } from "./app-sidebar/SidebarMenuButton";
@@ -21,7 +21,7 @@ export function SidebarUserFooter({ side }: { side: SidebarPosition }) {
   const location = useLocation();
   const { collapsed } = useSidebar();
   const { data: user } = useUser();
-  const { data: notifications } = usePendingInvitationCatalog("");
+  const { data: unreadNotifications = 0 } = useUnreadNotificationCount();
 
   if (!user) {
     return null;
@@ -42,7 +42,7 @@ export function SidebarUserFooter({ side }: { side: SidebarPosition }) {
             >
               <AccountAvatar
                 displayName={displayName}
-                notificationCount={notifications?.totalItems ?? 0}
+                notificationCount={unreadNotifications}
                 user={user}
               />
               <SidebarLabel className={collapsed ? "w-0 flex-none text-left" : "flex-1 text-left"}>
@@ -57,7 +57,7 @@ export function SidebarUserFooter({ side }: { side: SidebarPosition }) {
           <AccountMenuContent
             align={collapsed ? (side === "right" ? "end" : "start") : "center"}
             side="top"
-            notificationCount={notifications?.totalItems ?? 0}
+            notificationCount={unreadNotifications}
             className={sidebarMenuContent(collapsed)}
           />
         </DropdownMenu.Root>

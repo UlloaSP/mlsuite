@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationLogoUrl;
+import dev.ulloasp.mlsuite.organization.domain.model.OrganizationKind;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 
 import jakarta.annotation.Nullable;
@@ -26,6 +27,7 @@ public record PublicBookmarkDto(
         int reportCount,
         String organizationName,
         @Nullable String organizationLogoUrl,
+        OrganizationKind organizationKind,
         Map<String, Object> formSchema,
         OffsetDateTime updatedAt) {
 
@@ -41,6 +43,7 @@ public record PublicBookmarkDto(
                 reportCount,
                 bookmark.getSchema().getOrganization().getName(),
                 OrganizationLogoUrl.of(bookmark.getSchema().getOrganization()),
+                bookmark.getSchema().getOrganization().getKind(),
                 publicFormSchema,
                 bookmark.getUpdatedAt());
     }

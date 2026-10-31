@@ -106,6 +106,7 @@ describe("navigation bar", () => {
       "nav:Users",
       "nav:Moderation",
       "nav:API traffic",
+      "nav:Audit log",
       "nav:Infra",
     ]);
     expect(entries[1].previousElementSibling?.getAttribute("aria-hidden")).toBe("true");
@@ -185,6 +186,7 @@ describe("navigation bar", () => {
       "nav:Users",
       "nav:Moderation",
       "nav:API traffic",
+      "nav:Audit log",
       "nav:Infra",
     ]);
     expect(

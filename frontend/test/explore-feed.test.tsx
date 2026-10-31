@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { HttpError } from "@/shared/api/http";
+import { LOADING_MIN_VISIBLE_MS } from "@/shared/ui/useStableLoading";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, type PropsWithChildren } from "react";
 import { createMemoryRouter, Route, RouterProvider, Routes, useLocation } from "react-router";
@@ -78,6 +79,7 @@ const CARDIO: PublicBookmarkSummaryDto = {
   reportCount: 2,
   organizationName: "Acme Health",
   organizationLogoUrl: null,
+  organizationKind: "TEAM",
   updatedAt: AT,
 };
 const CHURN: PublicBookmarkSummaryDto = {
@@ -88,6 +90,7 @@ const CHURN: PublicBookmarkSummaryDto = {
   reportCount: 1,
   organizationName: "Bob Other",
   organizationLogoUrl: null,
+  organizationKind: "TEAM",
   updatedAt: AT,
 };
 
@@ -101,8 +104,16 @@ const feed = (...items: PublicBookmarkSummaryDto[]): PageDtoPublicBookmarkSummar
 const json = (body: unknown) =>
   new Response(JSON.stringify(body), { headers: { "content-type": "application/json" } });
 const flush = () => act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
+/**
+ * Past its reveal delay a loading state holds itself on screen for its minimum time, so on a busy
+ * machine four turns can end while the loader is still up, however fast the answer came.
+ */
 const settle = async () => {
   for (let turn = 0; turn < 4; turn += 1) await flush();
+  const deadline = Date.now() + 4 * LOADING_MIN_VISIBLE_MS;
+  while (document.body.textContent?.includes("Loading public bookmarks") && Date.now() < deadline) {
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 10)));
+  }
 };
 const newClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false, retryDelay: 0 } } });

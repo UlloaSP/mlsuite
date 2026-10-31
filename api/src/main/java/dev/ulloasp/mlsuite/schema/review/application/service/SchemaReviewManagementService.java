@@ -10,6 +10,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
@@ -45,6 +49,7 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
     private final FeedbackHistory history;
     private final WorkspaceAccessService workspaceAccess;
     private final WorkspaceAuthorizationService authorization;
+    private final AuditLogService auditLog;
 
     @Transactional(readOnly = true)
     public List<SchemaReviewAssignmentStatusDto> assignmentStatus(Long userId, Long predictionRunId) {
@@ -90,6 +95,8 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
                 .findByReviewRunIdAndUserId(reviewRun.getId(), reviewerId)
                 .orElseThrow(() -> conflict("Review submission is not completed"));
         submissions.delete(submission);
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.REVIEW_REOPEN, reviewId,
+                AuditDetails.of("reviewRun", reviewRunId, "reviewerId", reviewerId));
     }
 
     public void deleteResponse(Long userId, String reviewId, String reviewRunId, Long reviewerId) {
@@ -110,6 +117,8 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
         if (submission.isEmpty() && answers.isEmpty()) throw conflict("Review response is already empty");
         submission.ifPresent(submissions::delete);
         history.delete(answers, userId);
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.REVIEW_RESPONSE_DELETE, reviewId,
+                AuditDetails.of("reviewRun", reviewRunId, "reviewerId", reviewerId, "answers", answers.size()));
     }
 
     private SchemaReviewAssignmentStatusDto status(SchemaReviewRun reviewRun,

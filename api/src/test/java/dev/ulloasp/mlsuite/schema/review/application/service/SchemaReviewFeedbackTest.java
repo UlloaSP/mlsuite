@@ -26,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
@@ -94,7 +95,7 @@ class SchemaReviewFeedbackTest {
                 authorization, users, mock(SchemaRepository.class),
                 mock(SchemaVersionRepository.class),
                 mock(SchemaModelBindingRepository.class), runs, results, feedback,
-                new FeedbackHistory(feedback, revisions, inferenceRows));
+                new FeedbackHistory(feedback, revisions, inferenceRows), mock(AuditLogService.class));
         Organization organization = new Organization();
         organization.setId(41L);
         Schema schema = new Schema(organization, "Risk", null);

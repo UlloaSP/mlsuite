@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -70,7 +72,7 @@ class SchemaReviewManagementServiceTest {
     @BeforeEach
     void setUp() {
         service = new SchemaReviewManagementService(reviews, reviewRuns, submissions, assignees,
-                runs, feedback, new FeedbackHistory(feedback, revisions, inferenceRows), workspaceAccess, authorization);
+                runs, feedback, new FeedbackHistory(feedback, revisions, inferenceRows), workspaceAccess, authorization, mock(AuditLogService.class));
     }
 
     @Test

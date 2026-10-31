@@ -25,6 +25,13 @@
             "format": "int64",
             "type": "integer"
           },
+          "organizationKind": {
+            "enum": [
+              "PERSONAL",
+              "TEAM"
+            ],
+            "type": "string"
+          },
           "organizationLogoUrl": {
             "type": [
               "string",
@@ -69,6 +76,7 @@
           "lastUsedAt",
           "name",
           "organizationId",
+          "organizationKind",
           "organizationLogoUrl",
           "organizationName",
           "status",
@@ -87,6 +95,13 @@
           },
           "customLimit": {
             "type": "boolean"
+          },
+          "kind": {
+            "enum": [
+              "PERSONAL",
+              "TEAM"
+            ],
+            "type": "string"
           },
           "logoUrl": {
             "type": [
@@ -113,6 +128,7 @@
         "required": [
           "clientCount",
           "customLimit",
+          "kind",
           "logoUrl",
           "monthCalls",
           "monthlyLimit",
@@ -886,7 +902,19 @@
         "properties": {
           "id": {
             "format": "int64",
-            "type": "integer"
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "kind": {
+            "enum": [
+              "USER",
+              "SYSTEM",
+              "API_CLIENT",
+              "VISITOR"
+            ],
+            "type": "string"
           },
           "name": {
             "type": "string"
@@ -894,6 +922,7 @@
         },
         "required": [
           "id",
+          "kind",
           "name"
         ],
         "type": "object"
@@ -901,6 +930,100 @@
       "AuditEventDto": {
         "properties": {
           "action": {
+            "enum": [
+              "ORGANIZATION_CREATE",
+              "ORGANIZATION_UPDATE",
+              "ORGANIZATION_DELETE",
+              "ORGANIZATION_LOGO_REPLACE",
+              "ORGANIZATION_LOGO_REMOVE",
+              "OWNERSHIP_TRANSFER",
+              "MEMBER_ROLE_CHANGE",
+              "MEMBER_REMOVE",
+              "INVITATION_CREATE",
+              "INVITATION_RESEND",
+              "INVITATION_REVOKE",
+              "INVITATION_ACCEPT",
+              "INVITATION_DECLINE",
+              "ROLE_CREATE",
+              "ROLE_FROM_TEMPLATE",
+              "ROLE_DUPLICATE",
+              "ROLE_UPDATE",
+              "ROLE_DELETE",
+              "API_CLIENT_CREATE",
+              "API_CLIENT_UPDATE",
+              "API_CLIENT_DELETE",
+              "API_KEY_ISSUE",
+              "API_KEY_REVOKE",
+              "API_ACCESS_GRANT",
+              "API_ACCESS_REVOKE",
+              "API_CLIENT_SUSPEND",
+              "API_CLIENT_REINSTATE",
+              "API_CALL_LIMIT_SET",
+              "MODEL_UPLOAD",
+              "MODEL_RENAME",
+              "MODEL_ARCHIVE",
+              "MODEL_RESTORE",
+              "MODEL_ENVIRONMENT_RETRY",
+              "MODEL_DUPLICATE",
+              "MODEL_DELETE",
+              "MODEL_EXPLAIN",
+              "MODEL_PREPARATION_READY",
+              "MODEL_PREPARATION_FAILED",
+              "SCHEMA_CREATE",
+              "SCHEMA_RENAME",
+              "SCHEMA_ARCHIVE",
+              "SCHEMA_RESTORE",
+              "SCHEMA_DUPLICATE",
+              "SCHEMA_DELETE",
+              "SCHEMA_VERSION_CREATE",
+              "SCHEMA_DRAFT_CREATE",
+              "SCHEMA_DRAFT_UPDATE",
+              "SCHEMA_DRAFT_MERGE",
+              "SCHEMA_DRAFT_PUBLISH",
+              "BOOKMARK_CREATE",
+              "BOOKMARK_MOVE",
+              "BOOKMARK_UPDATE",
+              "BOOKMARK_PUBLISH",
+              "BOOKMARK_UNPUBLISH",
+              "BOOKMARK_EXAMPLE_MARK",
+              "BOOKMARK_EXAMPLE_UNMARK",
+              "BOOKMARK_MODERATION_UNPUBLISH",
+              "PREDICTION_RUN",
+              "PREDICTION_RUN_SAVE",
+              "PREDICTION_RUN_BATCH_CREATE",
+              "PREDICTION_RUN_DELETE",
+              "PREDICTION_JOB_START",
+              "PREDICTION_JOB_CANCEL",
+              "PREDICTION_JOB_RETRY",
+              "PREDICTION_JOB_CLAIMED",
+              "PREDICTION_JOB_COMPLETED",
+              "PREDICTION_JOB_CANCELLED",
+              "REVIEW_CREATE",
+              "REVIEW_FEEDBACK_CREATE",
+              "REVIEW_FEEDBACK_UPDATE",
+              "REVIEW_SUBMIT",
+              "REVIEW_SUBMIT_PENDING",
+              "REVIEW_REOPEN",
+              "REVIEW_RESPONSE_DELETE",
+              "PUBLIC_FEEDBACK_SAVE",
+              "PLUGIN_UPLOAD",
+              "PLUGIN_DELETE",
+              "USER_CREATE",
+              "USER_UPDATE",
+              "USER_PASSWORD_RESET",
+              "USER_DELETE",
+              "INFRASTRUCTURE_SERVICE_ACTION",
+              "TERMINAL_SESSION_OPEN",
+              "TERMINAL_SESSION_CLOSE",
+              "AUTH_LOGIN",
+              "AUTH_LOGIN_FAILED",
+              "AUTH_LOGOUT",
+              "AUTH_REGISTER",
+              "STORAGE_DELETION_FAILED",
+              "API_REQUEST_RETENTION_PRUNE",
+              "AUDIT_RETENTION_PRUNE",
+              "NOTIFICATION_RETENTION_PRUNE"
+            ],
             "type": "string"
           },
           "actor": {
@@ -914,7 +1037,34 @@
             "format": "int64",
             "type": "integer"
           },
+          "ip": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "metadata": {
+            "additionalProperties": { },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "organizationId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "organizationName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "requestId": {
+            "format": "uuid",
             "type": [
               "string",
               "null"
@@ -927,6 +1077,30 @@
             ]
           },
           "targetType": {
+            "enum": [
+              "API_CLIENT",
+              "API_CLIENT_KEY",
+              "API_REQUEST_LOG",
+              "AUDIT_LOG",
+              "INFRASTRUCTURE_SERVICE",
+              "INVITATION",
+              "MODEL",
+              "NOTIFICATION_LOG",
+              "ORGANIZATION",
+              "ORGANIZATION_MEMBER",
+              "PLUGIN",
+              "PREDICTION_JOB",
+              "PREDICTION_RUN",
+              "REVIEW",
+              "ROLE",
+              "SCHEMA",
+              "SCHEMA_BOOKMARK",
+              "SCHEMA_DRAFT",
+              "SCHEMA_VERSION",
+              "STORAGE_OBJECT",
+              "TERMINAL_SESSION",
+              "USER"
+            ],
             "type": "string"
           }
         },
@@ -935,7 +1109,11 @@
           "actor",
           "createdAt",
           "id",
+          "ip",
           "metadata",
+          "organizationId",
+          "organizationName",
+          "requestId",
           "targetId",
           "targetType"
         ],
@@ -2291,6 +2469,13 @@
           "name": {
             "type": "string"
           },
+          "organizationKind": {
+            "enum": [
+              "PERSONAL",
+              "TEAM"
+            ],
+            "type": "string"
+          },
           "organizationLogoUrl": {
             "type": [
               "string",
@@ -2327,6 +2512,7 @@
         "required": [
           "id",
           "name",
+          "organizationKind",
           "organizationLogoUrl",
           "organizationName",
           "publicId",
@@ -2347,6 +2533,76 @@
         },
         "required": [
           "versionId"
+        ],
+        "type": "object"
+      },
+      "NotificationDto": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "PREDICTION_JOB_COMPLETED",
+              "PREDICTION_JOB_COMPLETED_WITH_FAILURES",
+              "PREDICTION_JOB_STOPPED",
+              "PREDICTION_JOB_CANCELLED",
+              "MODEL_READY",
+              "MODEL_FAILED",
+              "INVITATION_RECEIVED",
+              "INVITATION_ACCEPTED",
+              "INVITATION_DECLINED",
+              "ORGANIZATION_JOINED",
+              "REVIEW_ASSIGNED"
+            ],
+            "type": "string"
+          },
+          "organizationId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "payload": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "readAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "targetId": {
+            "type": "string"
+          },
+          "targetType": {
+            "enum": [
+              "PREDICTION_JOB",
+              "MODEL",
+              "INVITATION",
+              "ORGANIZATION",
+              "REVIEW"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "kind",
+          "organizationId",
+          "payload",
+          "readAt",
+          "targetId",
+          "targetType"
         ],
         "type": "object"
       },
@@ -3055,6 +3311,39 @@
           "items": {
             "items": {
               "$ref": "#/components/schemas/ModeratedBookmarkDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoNotificationDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationDto"
             },
             "type": "array"
           },
@@ -4614,6 +4903,13 @@
           "name": {
             "type": "string"
           },
+          "organizationKind": {
+            "enum": [
+              "PERSONAL",
+              "TEAM"
+            ],
+            "type": "string"
+          },
           "organizationLogoUrl": {
             "type": [
               "string",
@@ -4650,6 +4946,7 @@
           "formSchema",
           "inputCount",
           "name",
+          "organizationKind",
           "organizationLogoUrl",
           "organizationName",
           "publicId",
@@ -4695,6 +4992,13 @@
           "name": {
             "type": "string"
           },
+          "organizationKind": {
+            "enum": [
+              "PERSONAL",
+              "TEAM"
+            ],
+            "type": "string"
+          },
           "organizationLogoUrl": {
             "type": [
               "string",
@@ -4720,6 +5024,7 @@
           "description",
           "inputCount",
           "name",
+          "organizationKind",
           "organizationLogoUrl",
           "organizationName",
           "publicId",
@@ -6406,6 +6711,18 @@
         ],
         "type": "object"
       },
+      "UnreadNotificationCountDto": {
+        "properties": {
+          "count": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count"
+        ],
+        "type": "object"
+      },
       "UpdateApiClientRequest": {
         "properties": {
           "description": {
@@ -7164,6 +7481,165 @@
         },
         "tags": [
           "admin-api-traffic-controller"
+        ]
+      }
+    },
+    "/api/admin/audit-events/catalog": {
+      "get": {
+        "operationId": "platformAuditEventCatalog",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "actorKind",
+            "required": false,
+            "schema": {
+              "enum": [
+                "USER",
+                "SYSTEM",
+                "API_CLIENT",
+                "VISITOR"
+              ],
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "actor",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "targetType",
+            "required": false,
+            "schema": {
+              "enum": [
+                "API_CLIENT",
+                "API_CLIENT_KEY",
+                "API_REQUEST_LOG",
+                "AUDIT_LOG",
+                "INFRASTRUCTURE_SERVICE",
+                "INVITATION",
+                "MODEL",
+                "NOTIFICATION_LOG",
+                "ORGANIZATION",
+                "ORGANIZATION_MEMBER",
+                "PLUGIN",
+                "PREDICTION_JOB",
+                "PREDICTION_RUN",
+                "REVIEW",
+                "ROLE",
+                "SCHEMA",
+                "SCHEMA_BOOKMARK",
+                "SCHEMA_DRAFT",
+                "SCHEMA_VERSION",
+                "STORAGE_OBJECT",
+                "TERMINAL_SESSION",
+                "USER"
+              ],
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "organization",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoAuditEventDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "audit-log-controller"
         ]
       }
     },
@@ -8868,6 +9344,164 @@
         ]
       }
     },
+    "/api/notifications/catalog": {
+      "get": {
+        "operationId": "catalog",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoNotificationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "notification-controller"
+        ]
+      }
+    },
+    "/api/notifications/read": {
+      "delete": {
+        "operationId": "deleteRead",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "notification-controller"
+        ]
+      }
+    },
+    "/api/notifications/read-all": {
+      "post": {
+        "operationId": "markAllRead",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "notification-controller"
+        ]
+      }
+    },
+    "/api/notifications/unread-count": {
+      "get": {
+        "operationId": "unreadCount",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadNotificationCountDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "notification-controller"
+        ]
+      }
+    },
+    "/api/notifications/{notificationId}": {
+      "delete": {
+        "operationId": "delete_6",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notificationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "notification-controller"
+        ]
+      }
+    },
+    "/api/notifications/{notificationId}/read": {
+      "post": {
+        "operationId": "markRead",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notificationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "notification-controller"
+        ]
+      }
+    },
     "/api/organizations": {
       "get": {
         "operationId": "listOrganizations",
@@ -9155,6 +9789,93 @@
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "actorKind",
+            "required": false,
+            "schema": {
+              "enum": [
+                "USER",
+                "SYSTEM",
+                "API_CLIENT",
+                "VISITOR"
+              ],
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "actor",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "targetType",
+            "required": false,
+            "schema": {
+              "enum": [
+                "API_CLIENT",
+                "API_CLIENT_KEY",
+                "API_REQUEST_LOG",
+                "AUDIT_LOG",
+                "INFRASTRUCTURE_SERVICE",
+                "INVITATION",
+                "MODEL",
+                "NOTIFICATION_LOG",
+                "ORGANIZATION",
+                "ORGANIZATION_MEMBER",
+                "PLUGIN",
+                "PREDICTION_JOB",
+                "PREDICTION_RUN",
+                "REVIEW",
+                "ROLE",
+                "SCHEMA",
+                "SCHEMA_BOOKMARK",
+                "SCHEMA_DRAFT",
+                "SCHEMA_VERSION",
+                "STORAGE_OBJECT",
+                "TERMINAL_SESSION",
+                "USER"
+              ],
+              "type": [
+                "string",
+                "null"
+              ]
             }
           }
         ],

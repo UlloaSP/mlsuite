@@ -15,7 +15,7 @@ organization's [audit log](/organizations/audit-log/), and members who may publi
 
 ## API traffic
 
-**API traffic** shows the calls of every organization's [API clients](/api/clients/): counts,
+**API traffic** shows the calls of every account's [API clients](/api/clients/): counts,
 outcomes and latency, never their content.
 
 **Overview**

@@ -38,6 +38,7 @@ const summary = (overrides: Partial<PublicBookmarkSummaryDto> = {}): PublicBookm
   reportCount: 1,
   organizationName: "Acme Health",
   organizationLogoUrl: LOGO,
+  organizationKind: "TEAM",
   updatedAt: AT,
   ...overrides,
 });

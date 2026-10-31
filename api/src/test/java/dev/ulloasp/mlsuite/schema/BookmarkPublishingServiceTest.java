@@ -27,6 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
@@ -82,7 +83,7 @@ class BookmarkPublishingServiceTest {
         when(access.requireCurrentOrganization(USER_ID)).thenReturn(organization);
         BookmarkPublishability publishability = new BookmarkPublishability(bindings, CEILING_MB);
         service = new SchemaBookmarkServiceImpl(schemas, versions, bookmarks,
-                new WorkspaceAuthorizationService(access, roles), publishability);
+                new WorkspaceAuthorizationService(access, roles), publishability, mock(AuditLogService.class));
         publicService = new PublicBookmarkService(bookmarks, mock(SchemaBookmarkExampleRepository.class),
                 publishability,
                 mock(ListPluginRuntimeSourcesUseCase.class));
@@ -175,7 +176,8 @@ class BookmarkPublishingServiceTest {
                 view.formSchema());
         ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
         assertEquals(Set.of("publicId", "name", "description", "publicationNote", "version", "inputCount",
-                "reportCount", "organizationName", "organizationLogoUrl", "formSchema", "updatedAt"),
+                "reportCount", "organizationName", "organizationLogoUrl", "organizationKind", "formSchema",
+                "updatedAt"),
                 mapper.convertValue(view, Map.class).keySet());
         String json = mapper.writeValueAsString(view);
         for (String secret : List.of("model-11", "model-99", "smoker__1", "gone", "site", "Site", "cohort")) {

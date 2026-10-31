@@ -27,7 +27,9 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
 import dev.ulloasp.mlsuite.apiaccess.domain.model.ApiClient;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
 import dev.ulloasp.mlsuite.apiaccess.domain.model.ApiClientKey;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
@@ -236,7 +238,8 @@ class ApiClientManagementTest extends ApiAccessFixture {
 
     private long auditEvents(String action) {
         return entityManager.createQuery(
-                "select count(e) from AuditEvent e where e.organization.id = :id and e.action = :action", Long.class)
-                .setParameter("id", organization.getId()).setParameter("action", action).getSingleResult();
+                "select count(e) from AuditEvent e where e.organizationId = :id and e.action = :action", Long.class)
+                .setParameter("id", organization.getId()).setParameter("action", AuditAction.valueOf(action))
+                .getSingleResult();
     }
 }

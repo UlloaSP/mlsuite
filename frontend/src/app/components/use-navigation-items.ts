@@ -124,6 +124,7 @@ export function useNavigationItems() {
           label: "API traffic",
           children: API_TRAFFIC_CHILDREN,
         },
+        { root: "/admin/audit", to: "/admin/audit", icon: SECTION_ICONS.audit, label: "Audit log" },
         {
           root: "/admin/infrastructure",
           to: "/admin/infrastructure",

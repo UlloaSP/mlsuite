@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
@@ -59,7 +60,7 @@ class BookmarkDetailsServiceTest {
         when(access.requireCurrentOrganization(USER_ID)).thenReturn(organization);
         service = new SchemaBookmarkServiceImpl(schemas, versions, bookmarks,
                 new WorkspaceAuthorizationService(access, mock(RoleDefinitionRepository.class)),
-                new BookmarkPublishability(mock(SchemaModelBindingRepository.class), 50L));
+                new BookmarkPublishability(mock(SchemaModelBindingRepository.class), 50L), mock(AuditLogService.class));
         when(bookmarks.save(any(SchemaBookmark.class))).thenAnswer(call -> call.getArgument(0));
     }
 

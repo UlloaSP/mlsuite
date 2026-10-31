@@ -20,7 +20,7 @@ import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { cx } from "@/shared/ui/cx";
-import { OrganizationMark } from "@/shared/ui/OrganizationMark";
+import { PublisherMark } from "@/shared/ui/PublisherMark";
 import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 
@@ -80,10 +80,12 @@ export function PublicBookmarkPage() {
         <dl className="flex shrink-0 flex-wrap items-center gap-x-5 gap-y-2 text-sm text-fg-secondary">
           <div className={FACT}>
             <dt className="sr-only">Published by</dt>
-            <OrganizationMark
+            <PublisherMark
               className="size-5 rounded-sm"
               iconSize={14}
+              kind={bookmark.organizationKind}
               logoUrl={bookmark.organizationLogoUrl}
+              name={bookmark.organizationName}
             />
             <dd>{bookmark.organizationName}</dd>
           </div>

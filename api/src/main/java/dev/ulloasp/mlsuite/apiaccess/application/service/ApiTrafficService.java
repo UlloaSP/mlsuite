@@ -27,11 +27,13 @@ import dev.ulloasp.mlsuite.apiaccess.application.dto.SuspendApiClientRequest;
 import dev.ulloasp.mlsuite.apiaccess.application.port.in.ApiTrafficUseCase;
 import dev.ulloasp.mlsuite.apiaccess.domain.model.ApiClient;
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationLogoUrl;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
-import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
 import dev.ulloasp.mlsuite.util.PageDto;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +50,6 @@ public class ApiTrafficService implements ApiTrafficUseCase {
     private final OrganizationRepository organizationRepository;
     private final ApiUsageReader reader;
     private final ApiAccessSettings settings;
-    private final UserLookupService userLookup;
     private final AuditLogService auditLog;
 
     @Override
@@ -79,8 +80,8 @@ public class ApiTrafficService implements ApiTrafficUseCase {
                             ApiClient.SUSPENSION_REASON_MAX_LENGTH));
         }
         client.suspend(reason, OffsetDateTime.now());
-        audit(client.getOrganization(), actorId, "API_CLIENT_SUSPEND", "API_CLIENT", clientId,
-                "%s: %s".formatted(client.getName(), reason));
+        audit(client.getOrganization(), actorId, AuditAction.API_CLIENT_SUSPEND, clientId,
+                AuditDetails.of("client", client.getName(), "reason", reason));
         return describe(List.of(clientRepository.saveAndFlush(client))).get(0);
     }
 
@@ -90,7 +91,8 @@ public class ApiTrafficService implements ApiTrafficUseCase {
         ApiClient client = requireClient(clientId);
         if (client.isSuspended()) {
             client.reinstate();
-            audit(client.getOrganization(), actorId, "API_CLIENT_REINSTATE", "API_CLIENT", clientId, client.getName());
+            audit(client.getOrganization(), actorId, AuditAction.API_CLIENT_REINSTATE, clientId,
+                    AuditDetails.of("client", client.getName()));
             client = clientRepository.saveAndFlush(client);
         }
         return describe(List.of(client)).get(0);
@@ -113,9 +115,10 @@ public class ApiTrafficService implements ApiTrafficUseCase {
         if (limit != null && limit < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A monthly limit cannot be negative.");
         }
+        audit(organization, actorId, AuditAction.API_CALL_LIMIT_SET, organizationId,
+                AuditDetails.of("monthlyCalls", AuditDetails.changed(
+                        callLimit(organization.getApiMonthlyCallLimit()), callLimit(limit))));
         organization.setApiMonthlyCallLimit(limit);
-        audit(organization, actorId, "API_CALL_LIMIT_SET", "ORGANIZATION", organizationId,
-                limit == null ? "instance default" : limit + " calls a month");
         return describeOrganizations(List.of(organizationRepository.saveAndFlush(organization))).get(0);
     }
 
@@ -138,7 +141,7 @@ public class ApiTrafficService implements ApiTrafficUseCase {
             Organization organization = client.getOrganization();
             return new AdminApiClientDto(client.getId(), client.getName(), client.getStatus(),
                     client.getSuspensionReason(), client.getSuspendedAt(), organization.getId(), organization.getName(),
-                    OrganizationLogoUrl.of(organization), usage == null ? 0 : usage.keyCount(),
+                    OrganizationLogoUrl.of(organization), organization.getKind(), usage == null ? 0 : usage.keyCount(),
                     usage == null ? null : usage.lastUsedAt(), calls[0], calls[1]);
         }).toList();
     }
@@ -152,16 +155,19 @@ public class ApiTrafficService implements ApiTrafficUseCase {
                 .countSucceededByOrganization(ids, ApiCallLimits.monthStart(Instant.now())).stream()
                 .collect(Collectors.toMap(row -> (Long) row[0], row -> ((Number) row[1]).longValue()));
         return organizations.stream().map(organization -> new AdminApiOrganizationDto(organization.getId(),
-                organization.getName(), OrganizationLogoUrl.of(organization),
+                organization.getName(), OrganizationLogoUrl.of(organization), organization.getKind(),
                 clientCounts.getOrDefault(organization.getId(), 0L), monthCalls.getOrDefault(organization.getId(), 0L),
                 settings.monthlyLimit(organization.getApiMonthlyCallLimit()),
                 organization.getApiMonthlyCallLimit() != null)).toList();
     }
 
-    private void audit(Organization organization, Long actorId, String action, String targetType, Long targetId,
-            String metadata) {
-        auditLog.record(organization, userLookup.requireById(actorId), action, targetType, targetId.toString(),
-                metadata);
+    private void audit(Organization organization, Long actorId, AuditAction action, Long targetId,
+            Map<String, Object> details) {
+        auditLog.record(AuditActor.user(actorId), organization.getId(), action, targetId, details);
+    }
+
+    private static String callLimit(Integer limit) {
+        return limit == null ? "instance default" : limit.toString();
     }
 
     private static Sort clientSort(String mode) {

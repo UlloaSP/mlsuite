@@ -67,7 +67,7 @@ class HandleTest extends PersonalAccountFixture {
         mockMvc.perform(registration(slug.toUpperCase()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message", containsString("already taken")));
-        assertThrows(HandleTakenException.class, () -> adminUsers.update(user.getId(),
+        assertThrows(HandleTakenException.class, () -> adminUsers.update(owner.getId(), user.getId(),
                 new AdminUpdateUserRequest(null, slug, null, null)));
     }
 

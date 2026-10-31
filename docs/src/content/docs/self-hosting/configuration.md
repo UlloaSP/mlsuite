@@ -91,6 +91,8 @@ equivalent roles yourself; the migration role must be able to install `pg_trgm`.
 | `API_ACCESS_REQUESTS_PER_MINUTE` | `60` | Calls one client may make per clock minute. At least 1. |
 | `API_ACCESS_MONTHLY_CALLS` | `10000` | Succeeded calls an organization's clients may make per UTC month, unless a superadmin sets another limit. |
 | `API_ACCESS_REQUEST_RETENTION_DAYS` | `90` | How long the request log is kept. At least 31. |
+| `NOTIFICATIONS_RETENTION_DAYS` | `30` | How long a notification is kept once read; unread ones stay. At least 1. |
+| `AUDIT_RETENTION_DAYS` | `7` | How long audit log entries are kept. At least 1. |
 
 The public run counts are kept in the API's memory: they restart with the API and hold only with a
 single API instance. The client API limits are counted from the request log, so they hold across

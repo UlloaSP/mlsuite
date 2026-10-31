@@ -16,7 +16,7 @@ export const protectedPages: RouteObject[] = [
   page("profile", () => import("@/features/user/pages/profilePage").then((m) => m.ProfilePage)),
   page("settings", () => import("@/features/user/pages/SettingsPage").then((m) => m.SettingsPage)),
   page("notifications", () =>
-    import("@/features/workspace/pages/notifications-page").then((m) => m.NotificationsPage),
+    import("@/app/pages/NotificationsRoutePage").then((m) => m.NotificationsRoutePage),
   ),
   page("workspace/organizations", () =>
     import("@/features/workspace/pages/organizations-route-page").then(
@@ -71,6 +71,9 @@ export const protectedPages: RouteObject[] = [
       import("@/features/api-access/pages/admin-api-traffic-page").then(
         (m) => m.AdminApiTrafficPage,
       ),
+    ),
+    page("admin/audit", () =>
+      import("@/features/workspace/pages/admin-audit-log-page").then((m) => m.AdminAuditLogPage),
     ),
     page("admin/infrastructure", () =>
       import("@/features/infrastructure/pages/admin-infrastructure-page").then(

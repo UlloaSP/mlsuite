@@ -100,6 +100,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/audit-events/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["platformAuditEventCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/infrastructure/overview": {
         parameters: {
             query?: never;
@@ -670,6 +686,102 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["restore_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["catalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["deleteRead"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["markAllRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["unreadCount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/{notificationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["delete_6"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/{notificationId}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["markRead"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2546,6 +2658,8 @@ export interface components {
             name: string;
             /** Format: int64 */
             organizationId: number;
+            /** @enum {string} */
+            organizationKind: "PERSONAL" | "TEAM";
             organizationLogoUrl: string | null;
             organizationName: string;
             /** @enum {string} */
@@ -2562,6 +2676,8 @@ export interface components {
             /** Format: int64 */
             clientCount: number;
             customLimit: boolean;
+            /** @enum {string} */
+            kind: "PERSONAL" | "TEAM";
             logoUrl: string | null;
             /** Format: int64 */
             monthCalls: number;
@@ -2780,19 +2896,31 @@ export interface components {
         };
         AuditActorDto: {
             /** Format: int64 */
-            id: number;
+            id: number | null;
+            /** @enum {string} */
+            kind: "USER" | "SYSTEM" | "API_CLIENT" | "VISITOR";
             name: string;
         };
         AuditEventDto: {
-            action: string;
+            /** @enum {string} */
+            action: "ORGANIZATION_CREATE" | "ORGANIZATION_UPDATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_LOGO_REPLACE" | "ORGANIZATION_LOGO_REMOVE" | "OWNERSHIP_TRANSFER" | "MEMBER_ROLE_CHANGE" | "MEMBER_REMOVE" | "INVITATION_CREATE" | "INVITATION_RESEND" | "INVITATION_REVOKE" | "INVITATION_ACCEPT" | "INVITATION_DECLINE" | "ROLE_CREATE" | "ROLE_FROM_TEMPLATE" | "ROLE_DUPLICATE" | "ROLE_UPDATE" | "ROLE_DELETE" | "API_CLIENT_CREATE" | "API_CLIENT_UPDATE" | "API_CLIENT_DELETE" | "API_KEY_ISSUE" | "API_KEY_REVOKE" | "API_ACCESS_GRANT" | "API_ACCESS_REVOKE" | "API_CLIENT_SUSPEND" | "API_CLIENT_REINSTATE" | "API_CALL_LIMIT_SET" | "MODEL_UPLOAD" | "MODEL_RENAME" | "MODEL_ARCHIVE" | "MODEL_RESTORE" | "MODEL_ENVIRONMENT_RETRY" | "MODEL_DUPLICATE" | "MODEL_DELETE" | "MODEL_EXPLAIN" | "MODEL_PREPARATION_READY" | "MODEL_PREPARATION_FAILED" | "SCHEMA_CREATE" | "SCHEMA_RENAME" | "SCHEMA_ARCHIVE" | "SCHEMA_RESTORE" | "SCHEMA_DUPLICATE" | "SCHEMA_DELETE" | "SCHEMA_VERSION_CREATE" | "SCHEMA_DRAFT_CREATE" | "SCHEMA_DRAFT_UPDATE" | "SCHEMA_DRAFT_MERGE" | "SCHEMA_DRAFT_PUBLISH" | "BOOKMARK_CREATE" | "BOOKMARK_MOVE" | "BOOKMARK_UPDATE" | "BOOKMARK_PUBLISH" | "BOOKMARK_UNPUBLISH" | "BOOKMARK_EXAMPLE_MARK" | "BOOKMARK_EXAMPLE_UNMARK" | "BOOKMARK_MODERATION_UNPUBLISH" | "PREDICTION_RUN" | "PREDICTION_RUN_SAVE" | "PREDICTION_RUN_BATCH_CREATE" | "PREDICTION_RUN_DELETE" | "PREDICTION_JOB_START" | "PREDICTION_JOB_CANCEL" | "PREDICTION_JOB_RETRY" | "PREDICTION_JOB_CLAIMED" | "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_CANCELLED" | "REVIEW_CREATE" | "REVIEW_FEEDBACK_CREATE" | "REVIEW_FEEDBACK_UPDATE" | "REVIEW_SUBMIT" | "REVIEW_SUBMIT_PENDING" | "REVIEW_REOPEN" | "REVIEW_RESPONSE_DELETE" | "PUBLIC_FEEDBACK_SAVE" | "PLUGIN_UPLOAD" | "PLUGIN_DELETE" | "USER_CREATE" | "USER_UPDATE" | "USER_PASSWORD_RESET" | "USER_DELETE" | "INFRASTRUCTURE_SERVICE_ACTION" | "TERMINAL_SESSION_OPEN" | "TERMINAL_SESSION_CLOSE" | "AUTH_LOGIN" | "AUTH_LOGIN_FAILED" | "AUTH_LOGOUT" | "AUTH_REGISTER" | "STORAGE_DELETION_FAILED" | "API_REQUEST_RETENTION_PRUNE" | "AUDIT_RETENTION_PRUNE" | "NOTIFICATION_RETENTION_PRUNE";
             actor: components["schemas"]["AuditActorDto"];
             /** Format: date-time */
             createdAt: string;
             /** Format: int64 */
             id: number;
-            metadata: string | null;
+            ip: string | null;
+            metadata: {
+                [key: string]: unknown;
+            } | null;
+            /** Format: int64 */
+            organizationId: number | null;
+            organizationName: string | null;
+            /** Format: uuid */
+            requestId: string | null;
             targetId: string | null;
-            targetType: string;
+            /** @enum {string} */
+            targetType: "API_CLIENT" | "API_CLIENT_KEY" | "API_REQUEST_LOG" | "AUDIT_LOG" | "INFRASTRUCTURE_SERVICE" | "INVITATION" | "MODEL" | "NOTIFICATION_LOG" | "ORGANIZATION" | "ORGANIZATION_MEMBER" | "PLUGIN" | "PREDICTION_JOB" | "PREDICTION_RUN" | "REVIEW" | "ROLE" | "SCHEMA" | "SCHEMA_BOOKMARK" | "SCHEMA_DRAFT" | "SCHEMA_VERSION" | "STORAGE_OBJECT" | "TERMINAL_SESSION" | "USER";
         };
         AuthRequest: {
             /** Format: email */
@@ -3155,6 +3283,8 @@ export interface components {
             /** Format: int64 */
             id: number;
             name: string;
+            /** @enum {string} */
+            organizationKind: "PERSONAL" | "TEAM";
             organizationLogoUrl: string | null;
             organizationName: string;
             publicId: string;
@@ -3169,6 +3299,24 @@ export interface components {
         MoveSchemaBookmarkRequest: {
             /** Format: int64 */
             versionId: number;
+        };
+        NotificationDto: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: int64 */
+            id: number;
+            /** @enum {string} */
+            kind: "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_COMPLETED_WITH_FAILURES" | "PREDICTION_JOB_STOPPED" | "PREDICTION_JOB_CANCELLED" | "MODEL_READY" | "MODEL_FAILED" | "INVITATION_RECEIVED" | "INVITATION_ACCEPTED" | "INVITATION_DECLINED" | "ORGANIZATION_JOINED" | "REVIEW_ASSIGNED";
+            /** Format: int64 */
+            organizationId: number | null;
+            payload: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            readAt: string | null;
+            targetId: string;
+            /** @enum {string} */
+            targetType: "PREDICTION_JOB" | "MODEL" | "INVITATION" | "ORGANIZATION" | "REVIEW";
         };
         Option: {
             label: string;
@@ -3375,6 +3523,16 @@ export interface components {
         PageDtoModeratedBookmarkDto: {
             hasNext: boolean;
             items: components["schemas"]["ModeratedBookmarkDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoNotificationDto: {
+            hasNext: boolean;
+            items: components["schemas"]["NotificationDto"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -3827,6 +3985,8 @@ export interface components {
             /** Format: int32 */
             inputCount: number;
             name: string;
+            /** @enum {string} */
+            organizationKind: "PERSONAL" | "TEAM";
             organizationLogoUrl: string | null;
             organizationName: string;
             publicId: string;
@@ -3850,6 +4010,8 @@ export interface components {
             /** Format: int32 */
             inputCount: number;
             name: string;
+            /** @enum {string} */
+            organizationKind: "PERSONAL" | "TEAM";
             organizationLogoUrl: string | null;
             organizationName: string;
             publicId: string;
@@ -4318,6 +4480,10 @@ export interface components {
             /** Format: int64 */
             nextOwnerMembershipId: number;
         };
+        UnreadNotificationCountDto: {
+            /** Format: int64 */
+            count: number;
+        };
         UpdateApiClientRequest: {
             description?: string | null;
             name: string;
@@ -4530,6 +4696,7 @@ export type ModelDetailsDto = components['schemas']['ModelDetailsDto'];
 export type ModelDto = components['schemas']['ModelDto'];
 export type ModeratedBookmarkDto = components['schemas']['ModeratedBookmarkDto'];
 export type MoveSchemaBookmarkRequest = components['schemas']['MoveSchemaBookmarkRequest'];
+export type NotificationDto = components['schemas']['NotificationDto'];
 export type Option = components['schemas']['Option'];
 export type OrganizationAdminDashboardDto = components['schemas']['OrganizationAdminDashboardDto'];
 export type OrganizationAdminStatsDto = components['schemas']['OrganizationAdminStatsDto'];
@@ -4548,6 +4715,7 @@ export type PageDtoInvitationCandidateDto = components['schemas']['PageDtoInvita
 export type PageDtoInvitationDto = components['schemas']['PageDtoInvitationDto'];
 export type PageDtoModelDto = components['schemas']['PageDtoModelDto'];
 export type PageDtoModeratedBookmarkDto = components['schemas']['PageDtoModeratedBookmarkDto'];
+export type PageDtoNotificationDto = components['schemas']['PageDtoNotificationDto'];
 export type PageDtoOption = components['schemas']['PageDtoOption'];
 export type PageDtoOrganizationCatalogItemDto = components['schemas']['PageDtoOrganizationCatalogItemDto'];
 export type PageDtoOrganizationDto = components['schemas']['PageDtoOrganizationDto'];
@@ -4640,6 +4808,7 @@ export type TerminalSessionRequest = components['schemas']['TerminalSessionReque
 export type TerminalSessionResponse = components['schemas']['TerminalSessionResponse'];
 export type TraceRequest = components['schemas']['TraceRequest'];
 export type TransferOrganizationOwnershipRequest = components['schemas']['TransferOrganizationOwnershipRequest'];
+export type UnreadNotificationCountDto = components['schemas']['UnreadNotificationCountDto'];
 export type UpdateApiClientRequest = components['schemas']['UpdateApiClientRequest'];
 export type UpdateOrganizationMembershipRoleRequest = components['schemas']['UpdateOrganizationMembershipRoleRequest'];
 export type UpdateOrganizationRequest = components['schemas']['UpdateOrganizationRequest'];
@@ -4800,6 +4969,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiUsageDto"];
+                };
+            };
+        };
+    };
+    platformAuditEventCatalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+                from?: string | null;
+                to?: string | null;
+                actorKind?: "USER" | "SYSTEM" | "API_CLIENT" | "VISITOR" | null;
+                actor?: string | null;
+                targetType?: "API_CLIENT" | "API_CLIENT_KEY" | "API_REQUEST_LOG" | "AUDIT_LOG" | "INFRASTRUCTURE_SERVICE" | "INVITATION" | "MODEL" | "NOTIFICATION_LOG" | "ORGANIZATION" | "ORGANIZATION_MEMBER" | "PLUGIN" | "PREDICTION_JOB" | "PREDICTION_RUN" | "REVIEW" | "ROLE" | "SCHEMA" | "SCHEMA_BOOKMARK" | "SCHEMA_DRAFT" | "SCHEMA_VERSION" | "STORAGE_OBJECT" | "TERMINAL_SESSION" | "USER" | null;
+                organization?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoAuditEventDto"];
                 };
             };
         };
@@ -5862,6 +6063,128 @@ export interface operations {
             };
         };
     };
+    catalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoNotificationDto"];
+                };
+            };
+        };
+    };
+    deleteRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    markAllRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unreadCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadNotificationCountDto"];
+                };
+            };
+        };
+    };
+    delete_6: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notificationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    markRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notificationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     listOrganizations: {
         parameters: {
             query?: never;
@@ -6029,6 +6352,11 @@ export interface operations {
                 search?: string;
                 filter?: string;
                 sort?: string;
+                from?: string | null;
+                to?: string | null;
+                actorKind?: "USER" | "SYSTEM" | "API_CLIENT" | "VISITOR" | null;
+                actor?: string | null;
+                targetType?: "API_CLIENT" | "API_CLIENT_KEY" | "API_REQUEST_LOG" | "AUDIT_LOG" | "INFRASTRUCTURE_SERVICE" | "INVITATION" | "MODEL" | "NOTIFICATION_LOG" | "ORGANIZATION" | "ORGANIZATION_MEMBER" | "PLUGIN" | "PREDICTION_JOB" | "PREDICTION_RUN" | "REVIEW" | "ROLE" | "SCHEMA" | "SCHEMA_BOOKMARK" | "SCHEMA_DRAFT" | "SCHEMA_VERSION" | "STORAGE_OBJECT" | "TERMINAL_SESSION" | "USER" | null;
             };
             header?: never;
             path: {

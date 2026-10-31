@@ -11,6 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
@@ -47,6 +51,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     private final WorkspaceAuthorizationService authorizationService;
     private final SchemaDraftRepository draftRepository;
     private final SchemaBookmarkRepository bookmarkRepository;
+    private final AuditLogService auditLog;
 
     @Override
     public Schema createSchema(Long userId, CreateSchemaRequest request) {
@@ -59,7 +64,10 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
         Schema schema = new Schema(organization, name, normalizeDescription(request.description()));
         schema.setCreatedBy(user);
         schema.setUpdatedBy(user);
-        return schemaRepository.save(schema);
+        Schema saved = schemaRepository.save(schema);
+        auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.SCHEMA_CREATE, saved.getId(),
+                AuditDetails.of("name", name));
+        return saved;
     }
 
     /** Returns an archived schema to the active catalog, where it runs and may be published again. */
@@ -68,6 +76,10 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
         User user = userLookupService.requireById(userId);
         Organization organization = authorizationService.requireCurrent(userId, PermissionKey.EDIT_MODELS);
         Schema schema = requireSchema(schemaId, organization.getId());
+        if (schema.getArchivedAt() != null) {
+            auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.SCHEMA_RESTORE, schemaId,
+                    AuditDetails.of("name", schema.getName()));
+        }
         schema.setArchivedAt(null);
         schema.setUpdatedBy(user);
         return schemaRepository.save(schema);
@@ -106,6 +118,8 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
         if (schemaRepository.existsByNameAndOrganizationIdAndIdNot(nextName, organization.getId(), schemaId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Schema name already exists");
         }
+        auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.SCHEMA_RENAME, schemaId,
+                AuditDetails.of("name", AuditDetails.changed(schema.getName(), nextName)));
         schema.setName(nextName);
         schema.setUpdatedBy(user);
         return schemaRepository.save(schema);
@@ -118,6 +132,8 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
         Schema schema = requireSchema(schemaId, organization.getId());
         if (schema.getArchivedAt() == null) {
             schema.setArchivedAt(OffsetDateTime.now(ZoneOffset.UTC));
+            auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.SCHEMA_ARCHIVE, schemaId,
+                    AuditDetails.of("name", schema.getName()));
         }
         schema.setUpdatedBy(user);
         return schemaRepository.save(schema);
@@ -138,6 +154,8 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
         SchemaVersion sourceVersion = resolveSourceVersion(schemaId, organization.getId(), sourceVersionId);
         Schema savedCopy = schemaRepository.save(copy);
         if (sourceVersion != null) copyVersion(savedCopy, sourceVersion);
+        auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.SCHEMA_DUPLICATE, savedCopy.getId(),
+                AuditDetails.of("name", nextName, "source", source.getName(), "sourceSchemaId", schemaId));
         return savedCopy;
     }
 
@@ -156,6 +174,8 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
             versionRepository.delete(version);
         });
         schemaRepository.delete(schema);
+        auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.SCHEMA_DELETE, schemaId,
+                AuditDetails.of("name", schema.getName()));
     }
 
     private void copyVersion(Schema copy, SchemaVersion source) {

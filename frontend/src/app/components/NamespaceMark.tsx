@@ -25,17 +25,7 @@ export function NamespaceMark({
   iconSize: number;
   organization: Pick<OrganizationDto, "kind" | "logoUrl" | "name">;
 }) {
-  if (organization.kind === "TEAM") {
-    return (
-      <OrganizationMark
-        className={className}
-        fallbackClassName={fallbackClassName}
-        iconSize={iconSize}
-        logoUrl={organization.logoUrl}
-      />
-    );
-  }
-  if (avatarUrl) {
+  if (organization.kind === "PERSONAL" && avatarUrl) {
     return (
       <img
         src={avatarUrl}
@@ -46,15 +36,12 @@ export function NamespaceMark({
     );
   }
   return (
-    <span
-      aria-hidden="true"
-      className={cx(
-        "grid shrink-0 place-items-center text-xs font-semibold",
-        className,
-        fallbackClassName,
-      )}
-    >
-      {organization.name.slice(0, 2).toUpperCase()}
-    </span>
+    <OrganizationMark
+      className={className}
+      fallbackClassName={cx("text-xs", fallbackClassName)}
+      iconSize={iconSize}
+      logoUrl={organization.logoUrl}
+      personalName={organization.kind === "PERSONAL" ? organization.name : undefined}
+    />
   );
 }

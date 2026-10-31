@@ -79,7 +79,7 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
   "nav:API traffic": {
     title: "API traffic",
     description:
-      "See how much every organization's API clients call and fail, suspend a client, and set each organization's monthly limit.",
+      "See how much every account's API clients call and fail, suspend a client, and set each account's monthly limit.",
   },
   "nav:Infra": {
     title: "Infrastructure",

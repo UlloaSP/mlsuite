@@ -106,6 +106,7 @@ class PublicBookmarkPreviewHttpTest {
 
     private static PublicBookmarkDto bookmark(String description, String note, String logoUrl) {
         return new PublicBookmarkDto(PUBLIC_ID, "production", description, note, 1, 1, 0, "Acme & Co", logoUrl,
+                dev.ulloasp.mlsuite.organization.domain.model.OrganizationKind.TEAM,
                 Map.of(), OffsetDateTime.parse("2026-10-01T10:00:00Z"));
     }
 }

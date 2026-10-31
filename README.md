@@ -66,10 +66,12 @@ the full stack is here to inspect, change and fork.
 - Let outside software run an organization's bookmarks through the
   [client API](#client-api) with keys, usage metering and limits.
 - Manage organizations, teams, roles, invitations and workspace permissions, and
-  read who changed invitations, roles and API access in the organization's
-  audit log (roles with `VIEW_AUDIT_LOG`).
+  read who did what in the organization's audit log (roles with
+  `VIEW_AUDIT_LOG`): every action by members, API clients, public visitors and
+  the system, kept 7 days by default.
 - Let superadmins review every public bookmark on the instance and unpublish any
-  of them, and watch every organization's API traffic.
+  of them, watch every organization's API traffic, and read one audit log across
+  every organization and the platform's own events.
 - Monitor the local Compose stack through the operations service.
 
 ## Where it fits
@@ -532,6 +534,7 @@ set an organization's monthly limit, both audited.
 | `API_ACCESS_MONTHLY_CALLS` | `10000` | Succeeded calls an organization's clients may make together in a calendar month (UTC), unless a superadmin set its own limit. |
 | `API_ACCESS_MAX_CONCURRENT` | `2` | Client runs executing at once; more wait their turn, as workspace runs do. |
 | `API_ACCESS_REQUEST_RETENTION_DAYS` | `90` (at least `31`) | How long calls are kept. |
+| `AUDIT_RETENTION_DAYS` | `7` (at least `1`) | How long audit log entries are kept. |
 
 The limits are counted from the log, so they hold across restarts and API
 instances; calls still running are counted once they end.

@@ -7,6 +7,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
@@ -19,6 +23,7 @@ public class SuperadminSeeder implements ApplicationRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final PersonalAccountService personalAccountService;
+    private final AuditLogService auditLog;
     private final String email;
     private final String password;
     private final String fullName;
@@ -28,6 +33,7 @@ public class SuperadminSeeder implements ApplicationRunner {
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             PersonalAccountService personalAccountService,
+            AuditLogService auditLog,
             @Value("${mlsuite.superadmin.email:}") String email,
             @Value("${mlsuite.superadmin.password:}") String password,
             @Value("${mlsuite.superadmin.full-name:}") String fullName,
@@ -35,6 +41,7 @@ public class SuperadminSeeder implements ApplicationRunner {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.personalAccountService = personalAccountService;
+        this.auditLog = auditLog;
         this.email = email;
         this.password = password;
         this.fullName = fullName;
@@ -69,6 +76,9 @@ public class SuperadminSeeder implements ApplicationRunner {
         userRepository.save(user);
         if (created) {
             personalAccountService.open(user);
+            auditLog.record(AuditActor.SYSTEM, null, AuditAction.USER_CREATE, user.getId(),
+                    AuditDetails.of("email", normalizedEmail, "username", user.getUsername(),
+                            "role", user.getSystemRole(), "enabled", true));
         }
     }
 

@@ -32,14 +32,14 @@ export function AdminApiTrafficPage() {
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
           title="API traffic"
-          description="Calls of every organization's API clients: counts, outcomes and latency, never their content."
+          description="Calls of every account's API clients: counts, outcomes and latency, never their content."
         />
         <AppTabs
           aria-label="API traffic"
           items={[
             { label: "Overview", value: "overview" },
             { label: "Clients", value: "clients" },
-            { label: "Organizations", value: "organizations" },
+            { label: "Accounts", value: "organizations" },
           ]}
           value={tab}
           onChange={setTab}

@@ -13,6 +13,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.model.application.service.WorkspaceRuntimeSlots;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
@@ -42,26 +46,31 @@ class PredictionJobWorker {
     private final String worker = "api-" + UUID.randomUUID();
     private final PredictionJobLedger ledger;
     private final PredictionJobChunks chunks;
+    private final PredictionJobOutcomes outcomes;
     private final WorkspacePredictionPlanner planner;
     private final WorkspacePredictionService predictions;
     private final WorkspaceRuntimeSlots slots;
     private final WorkspaceAuthorizationService authorization;
     private final SchemaModelBindingRepository bindings;
+    private final AuditLogService auditLog;
     private final int chunkRows;
     private final int leaseSeconds;
 
-    PredictionJobWorker(PredictionJobLedger ledger, PredictionJobChunks chunks, WorkspacePredictionPlanner planner,
-            WorkspacePredictionService predictions, WorkspaceRuntimeSlots slots,
+    PredictionJobWorker(PredictionJobLedger ledger, PredictionJobChunks chunks, PredictionJobOutcomes outcomes,
+            WorkspacePredictionPlanner planner, WorkspacePredictionService predictions, WorkspaceRuntimeSlots slots,
             WorkspaceAuthorizationService authorization, SchemaModelBindingRepository bindings,
+            AuditLogService auditLog,
             @Value("${mlsuite.prediction-jobs.chunk-rows}") int chunkRows,
             @Value("${mlsuite.prediction-jobs.lease-seconds}") int leaseSeconds) {
         this.ledger = ledger;
         this.chunks = chunks;
+        this.outcomes = outcomes;
         this.planner = planner;
         this.predictions = predictions;
         this.slots = slots;
         this.authorization = authorization;
         this.bindings = bindings;
+        this.auditLog = auditLog;
         this.chunkRows = chunkRows;
         this.leaseSeconds = leaseSeconds;
     }
@@ -71,6 +80,10 @@ class PredictionJobWorker {
         Optional<Claim> claimed;
         while ((claimed = ledger.claim(worker, leaseSeconds)).isPresent()) {
             Claim job = claimed.get();
+            if (job.started()) {
+                auditLog.record(AuditActor.SYSTEM, job.organizationId(), AuditAction.PREDICTION_JOB_CLAIMED, job.id(),
+                        AuditDetails.of("bookmarkId", job.bookmarkId()));
+            }
             try {
                 run(job);
             } catch (RuntimeBusyException busy) {
@@ -89,11 +102,11 @@ class PredictionJobWorker {
         while (true) {
             List<PendingRow> rows = ledger.pending(job.id(), chunkRows);
             if (rows.isEmpty()) {
-                ledger.complete(job.id(), worker);
+                outcomes.complete(job.id(), worker);
                 return;
             }
             if (!authorization.has(job.userId(), job.organizationId(), PermissionKey.RUN_PREDICTIONS)) {
-                stop(job, "The member who started the upload may no longer run predictions");
+                outcomes.stop(job.id(), worker, "The member who started the upload may no longer run predictions");
                 return;
             }
             Map<Long, List<AttestedPrediction>> byModel = new LinkedHashMap<>();
@@ -109,20 +122,21 @@ class PredictionJobWorker {
             } catch (RuntimeBusyException busy) {
                 throw busy;
             } catch (ResponseStatusException unplannable) {
-                stop(job, unplannable.getReason());
+                outcomes.stop(job.id(), worker, unplannable.getReason());
                 return;
             }
-            if (!chunks.store(job, worker, rows, byModel)) return;
+            if (!chunks.store(job, worker, rows, byModel)) {
+                if (ledger.cancelled(job.id())) {
+                    auditLog.record(AuditActor.SYSTEM, job.organizationId(), AuditAction.PREDICTION_JOB_CANCELLED,
+                            job.id());
+                }
+                return;
+            }
         }
     }
 
     private List<Long> boundModels(Claim job) {
         return bindings.findBySchemaVersionId(job.schemaVersionId()).stream()
                 .map(binding -> binding.getModel().getId()).toList();
-    }
-
-    private void stop(Claim job, String reason) {
-        ledger.failPending(job.id(), reason);
-        ledger.complete(job.id(), worker);
     }
 }

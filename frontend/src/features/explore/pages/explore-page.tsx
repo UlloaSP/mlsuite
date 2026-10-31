@@ -40,7 +40,7 @@ export function ExplorePage() {
       controls={controls}
       header={{
         title: "Explore",
-        description: "Bookmarks that organizations have published for anyone to open.",
+        description: "Bookmarks published for anyone to open.",
         breadcrumbs: [{ label: "Explore" }],
       }}
       navigation={<ExploreVisitorIntro />}

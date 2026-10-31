@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.notification.application.service.NotificationService;
+import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
@@ -25,6 +27,7 @@ public class SchemaReviewAssignmentService {
     private final OrganizationMembershipRepository memberships;
     private final SchemaReviewAssigneeRepository assignees;
     private final WorkspaceAuthorizationService authorization;
+    private final NotificationService notifications;
 
     public List<SchemaReviewReviewerDto> eligibleReviewers(Long actorUserId, Long organizationId) {
         authorization.require(actorUserId, organizationId, PermissionKey.MANAGE_REVIEWS);
@@ -42,7 +45,15 @@ public class SchemaReviewAssignmentService {
         if (selected.isEmpty() || selected.size() != reviewerIds.size() || !eligible.keySet().containsAll(selected)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reviewer selection invalid");
         }
-        selected.forEach(id -> assignees.save(new SchemaReviewAssignee(review, eligible.get(id))));
+        selected.forEach(id -> {
+            assignees.save(new SchemaReviewAssignee(review, eligible.get(id)));
+            if (!id.equals(review.getCreatedBy().getId())) {
+                notifications.notify(id, review.getOrganization().getId(), NotificationKind.REVIEW_ASSIGNED,
+                        review.getPublicId(), Map.of("organizationName", review.getOrganization().getName(),
+                                "schemaName", review.getSchema().getName(),
+                                "assignerName", review.getCreatedBy().getFullName()));
+            }
+        });
     }
 
     public boolean isAssigned(Long reviewId, Long userId) {

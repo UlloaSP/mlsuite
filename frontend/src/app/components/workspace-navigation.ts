@@ -3,7 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { History, KeyRound, LayoutGrid, Mail, Settings, Users } from "lucide-react";
+import { KeyRound, LayoutGrid, Mail, Settings, Users } from "lucide-react";
+import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import type { NavigationChild } from "./sidebar-navigation-support";
 import type { OrganizationDto, WorkspacePermissionsDto } from "@/shared/api/openapi.gen";
 
@@ -19,7 +20,7 @@ export function getWorkspaceLinks(
   const organizationPath = `/workspace/organizations/${organization.id}`;
   const overview = { to: "/workspace", icon: LayoutGrid, label: "Overview", exact: true };
   const auditLog = permissions.canViewAuditLog
-    ? [{ to: `${organizationPath}/audit-log`, icon: History, label: "Audit log" }]
+    ? [{ to: `${organizationPath}/audit-log`, icon: SECTION_ICONS.audit, label: "Audit log" }]
     : [];
   if (organization.kind === "PERSONAL") return [overview, ...auditLog];
 

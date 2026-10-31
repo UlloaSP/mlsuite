@@ -14,6 +14,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.model.application.dto.ModelDto;
 import dev.ulloasp.mlsuite.util.PageDto;
@@ -53,6 +57,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
     private final ModelArtifactContentReader artifactReader;
     private final StorageDeletionQueue deletionQueue;
     private final RuntimeEnvironments environments;
+    private final AuditLogService auditLog;
     private final boolean requireMutationVersion;
 
     public ModelServiceImpl(
@@ -66,6 +71,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
             ModelArtifactContentReader artifactReader,
             StorageDeletionQueue deletionQueue,
             RuntimeEnvironments environments,
+            AuditLogService auditLog,
             @Value("${model.mutations.require-version:false}") boolean requireMutationVersion) {
         this.userLookupService = userLookupService;
         this.modelRepository = modelRepository;
@@ -77,6 +83,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         this.artifactReader = artifactReader;
         this.deletionQueue = deletionQueue;
         this.environments = environments;
+        this.auditLog = auditLog;
         this.requireMutationVersion = requireMutationVersion;
         this.catalogReader = new ModelCatalogReader(modelRepository, workspaceAuthorizationService);
     }
@@ -112,7 +119,10 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         model.setFeatureImportances(inspection.featureImportances());
         model.setEnvironmentKey(environments.register(inspection.environment()));
         model.setRuntimeState(RuntimeEnvironments.initialState(model.getEnvironmentKey()));
-        return storeArtifact(model, artifact, sha256, contentType);
+        Model saved = storeArtifact(model, artifact, sha256, contentType);
+        auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.MODEL_UPLOAD, saved.getId(),
+                AuditDetails.of("name", name, "file", saved.getFileName(), "sha256", sha256));
+        return saved;
     }
 
     /**
@@ -154,6 +164,8 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         if (modelRepository.existsByNameAndOrganizationIdAndIdNot(nextName, organization.getId(), modelId)) {
             throw new ModelAlreadyExistsException(nextName, organization.getName());
         }
+        auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.MODEL_RENAME, modelId,
+                AuditDetails.of("name", AuditDetails.changed(model.getName(), nextName)));
         model.setName(nextName);
         model.setUpdatedBy(userLookupService.requireById(userId));
         return modelRepository.save(model);
@@ -166,6 +178,8 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         ModelVersionGuard.requireCurrent(model, expectedVersion, requireMutationVersion);
         if (model.getArchivedAt() == null) {
             model.setArchivedAt(OffsetDateTime.now(ZoneOffset.UTC));
+            auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.MODEL_ARCHIVE, modelId,
+                    AuditDetails.of("name", model.getName()));
         }
         model.setUpdatedBy(userLookupService.requireById(userId));
         return modelRepository.save(model);
@@ -177,6 +191,10 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.EDIT_MODELS);
         Model model = requireModel(userId, organization.getId(), modelId);
         ModelVersionGuard.requireCurrent(model, expectedVersion, requireMutationVersion);
+        if (model.getArchivedAt() != null) {
+            auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.MODEL_RESTORE, modelId,
+                    AuditDetails.of("name", model.getName()));
+        }
         model.setArchivedAt(null);
         model.setUpdatedBy(userLookupService.requireById(userId));
         return modelRepository.save(model);
@@ -193,8 +211,11 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         }
 
         ArtifactSource artifact = artifactReader.source(ModelArtifactReference.of(source));
-        Model copy = copyModel(user, organization, source, nextName);
-        return storeArtifact(copy, artifact, source.getArtifactSha256(), "application/octet-stream");
+        Model copy = storeArtifact(copyModel(user, organization, source, nextName), artifact,
+                source.getArtifactSha256(), "application/octet-stream");
+        auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.MODEL_DUPLICATE, copy.getId(),
+                AuditDetails.of("name", nextName, "source", source.getName(), "sourceModelId", modelId));
+        return copy;
     }
 
     @Override
@@ -205,7 +226,10 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         if (bindingRepository.existsByModelId(modelId) || resultRepository.existsByModelId(modelId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Model is used by schemas or prediction runs. Archive it instead.");
         }
-        deletionQueue.enqueue(model.getStorageBucket(), model.getStorageObjectKey(), model.getStorageVersionId());
+        deletionQueue.enqueue(organization.getId(), model.getStorageBucket(), model.getStorageObjectKey(),
+                model.getStorageVersionId());
+        auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.MODEL_DELETE, modelId,
+                AuditDetails.of("name", model.getName()));
         modelRepository.delete(model);
         environments.releaseWhenUnused(model.getEnvironmentKey());
     }

@@ -17,6 +17,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.security.SecurityConfig;
 import dev.ulloasp.mlsuite.security.identity.ClientNetworks;
 import dev.ulloasp.mlsuite.user.adapter.in.web.UserController;
@@ -40,7 +41,7 @@ import dev.ulloasp.mlsuite.workspace.application.service.PersonalAccountService;
         "mlsuite.auth.max-registrations=2" })
 @Import({ SecurityConfig.class, AuthService.class, AuthAttemptLimiter.class, DatabaseUserDetailsService.class,
         SessionAccountCheck.class })
-@MockitoBean(types = { PersonalAccountService.class })
+@MockitoBean(types = { PersonalAccountService.class, AuditLogService.class })
 abstract class AuthHttpFixture {
 
     static final String PASSWORD = "correct-horse-battery";

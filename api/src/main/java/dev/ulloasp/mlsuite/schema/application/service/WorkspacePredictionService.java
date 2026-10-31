@@ -13,6 +13,10 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.ModelRuntimeClient;
 import dev.ulloasp.mlsuite.model.application.service.WorkspaceRuntimeSlots;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
@@ -49,14 +53,20 @@ public class WorkspacePredictionService implements WorkspacePredictionUseCase {
     private final ModelRuntimeClient runtime;
     private final PredictionAttestations attestations;
     private final ObjectMapper objectMapper;
+    private final AuditLogService auditLog;
 
     @Override
     public WorkspacePredictionDto predict(Long userId, Long bookmarkId, WorkspacePredictionRequest request) {
+        AttestedPrediction prediction;
         try (RuntimeSlots.Admission admission = slots.admit(userId)) {
             Plan plan = planner.plan(userId, bookmarkId, request.schemaVersionId(), request.modelId());
             // The explanation shares the prediction's slot.
-            return sealed(admission.run(() -> perform(plan, request.modelInput())));
+            prediction = admission.run(() -> perform(plan, request.modelInput()));
         }
+        auditLog.record(AuditActor.user(userId), prediction.organizationId(), AuditAction.PREDICTION_RUN, bookmarkId,
+                AuditDetails.of("modelId", prediction.modelId(), "schemaVersionId", prediction.schemaVersionId(),
+                        "status", prediction.status()));
+        return sealed(prediction);
     }
 
     private WorkspacePredictionDto sealed(AttestedPrediction prediction) {

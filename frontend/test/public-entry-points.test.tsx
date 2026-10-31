@@ -51,6 +51,7 @@ const SUMMARY: PublicBookmarkSummaryDto = {
   reportCount: 0,
   organizationName: "Acme Health",
   organizationLogoUrl: null,
+  organizationKind: "TEAM",
   updatedAt: "2026-10-01T10:00:00Z",
 };
 const BOOKMARK: PublicBookmarkDto = {

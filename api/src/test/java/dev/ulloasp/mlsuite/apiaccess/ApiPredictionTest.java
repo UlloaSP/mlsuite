@@ -17,6 +17,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.MultiValueMap;
 
@@ -50,8 +52,41 @@ import dev.ulloasp.mlsuite.storage.ArtifactHash;
  */
 class ApiPredictionTest extends ApiAccessFixture {
 
+    @Test
+    void aClientsRunIsOneAuditEntryUnderTheClientWithTheCallsRequestId() throws Exception {
+        long before = auditedRuns();
+
+        JsonNode answer = objectMapper.readTree(mockMvc.perform(predicting(secret, FEATURES))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+
+        assertEquals(before + 1, auditedRuns());
+        Map<String, Object> row = jdbc.queryForMap(
+                "SELECT * FROM audit_event WHERE action = 'PREDICTION_RUN' ORDER BY id DESC LIMIT 1");
+        assertEquals("API_CLIENT", row.get("actor_kind"));
+        assertEquals("Lab2Pressure", row.get("actor_label"));
+        assertEquals(null, row.get("actor_user_id"));
+        assertEquals(organization.getId(), row.get("organization_id"));
+        assertEquals(single.getId().toString(), row.get("target_id"));
+        assertEquals(UUID.fromString(answer.get("requestId").asText()), row.get("request_id"));
+        assertEquals(false, row.get("metadata").toString().contains(secret));
+    }
+
+    @Test
+    void aCallThatRanNothingLeavesNoAuditEntry() throws Exception {
+        long before = auditedRuns();
+
+        mockMvc.perform(predicting("wrong-key", FEATURES)).andExpect(status().isUnauthorized());
+
+        assertEquals(before, auditedRuns());
+    }
+
+    private long auditedRuns() {
+        return jdbc.queryForObject("SELECT count(*) FROM audit_event WHERE action = 'PREDICTION_RUN'", Long.class);
+    }
+
     @Autowired ApiClientKeyRepository keyRepository;
     @Autowired ApiPredictionUseCase predictions;
+    @Autowired JdbcTemplate jdbc;
 
     @Test
     void aClientRunsAPrivateBookmarkAndLearnsWhatRanWhileTheRunIsKeptAndLogged() throws Exception {

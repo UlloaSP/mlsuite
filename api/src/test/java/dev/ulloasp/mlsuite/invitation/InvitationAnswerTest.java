@@ -14,6 +14,8 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import dev.ulloasp.mlsuite.invitation.domain.model.Invitation;
@@ -31,6 +33,7 @@ import dev.ulloasp.mlsuite.user.domain.model.User;
 class InvitationAnswerTest extends PublicPredictionFixture {
 
     private final OffsetDateTime nextWeek = OffsetDateTime.now(ZoneOffset.UTC).plusDays(7);
+    @Autowired JdbcTemplate jdbc;
     private RoleDefinition ownerRole;
     private User invitee;
 
@@ -81,6 +84,41 @@ class InvitationAnswerTest extends PublicPredictionFixture {
 
         assertEquals(InvitationStatus.REVOKED, statusOf(invitation));
         assertTrue(membership(invitee).isEmpty());
+    }
+
+    @Test
+    void whoInvitedIsToldTheAnswerAndTheInviteeStopsCountingItAsUnread() throws Exception {
+        Invitation accepted = stored(invitee.getEmail(), InvitationStatus.PENDING, nextWeek);
+        Invitation declined = stored(invitee.getEmail(), InvitationStatus.PENDING, nextWeek);
+        for (Invitation invitation : new Invitation[] { accepted, declined }) {
+            jdbc.update("""
+                    INSERT INTO notification (recipient_user_id, organization_id, kind, target_type, target_id, payload, created_at)
+                    VALUES (?, ?, 'INVITATION_RECEIVED', 'INVITATION', ?, '{}', now())""", invitee.getId(),
+                    organization.getId(), invitation.getId().toString());
+        }
+
+        mockMvc.perform(answer(accepted, "accept", invitee)).andExpect(status().isOk());
+        mockMvc.perform(answer(declined, "decline", invitee)).andExpect(status().isNoContent());
+
+        assertEquals("INVITATION_ACCEPTED", toldTheInviter(accepted));
+        assertEquals("INVITATION_DECLINED", toldTheInviter(declined));
+        assertEquals(invitee.getFullName(), jdbc.queryForObject("SELECT payload ->> 'inviteeName' FROM notification"
+                + " WHERE recipient_user_id = ? AND target_id = ?", String.class, owner.getId(), accepted.getId().toString()));
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM notification WHERE recipient_user_id = ?"
+                + " AND read_at IS NULL", Integer.class, invitee.getId()));
+        assertEquals(1, entries(accepted, "INVITATION_ACCEPT"));
+        assertEquals(1, entries(declined, "INVITATION_DECLINE"));
+    }
+
+    @Test
+    void anAnswerThatFailsTellsNobody() throws Exception {
+        Invitation expired = stored(invitee.getEmail(), InvitationStatus.PENDING, nextWeek.minusDays(8));
+
+        mockMvc.perform(answer(expired, "accept", invitee)).andExpect(status().isBadRequest());
+
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM notification WHERE target_type = 'INVITATION'"
+                + " AND target_id = ?", Integer.class, expired.getId().toString()));
+        assertEquals(0, entries(expired, "INVITATION_ACCEPT"));
     }
 
     @Test
@@ -150,6 +188,16 @@ class InvitationAnswerTest extends PublicPredictionFixture {
 
     private MockHttpServletRequestBuilder answer(Invitation invitation, String verb, User user) {
         return signedIn(post("/api/invitations/{id}/" + verb, invitation.getId()), user.getId());
+    }
+
+    private int entries(Invitation invitation, String action) {
+        return jdbc.queryForObject("SELECT count(*) FROM audit_event WHERE action = ? AND target_id = ?", Integer.class,
+                action, invitation.getId().toString());
+    }
+
+    private String toldTheInviter(Invitation invitation) {
+        return jdbc.queryForObject("SELECT kind FROM notification WHERE recipient_user_id = ? AND target_type = 'INVITATION'"
+                + " AND target_id = ?", String.class, owner.getId(), invitation.getId().toString());
     }
 
     private InvitationStatus statusOf(Invitation invitation) {

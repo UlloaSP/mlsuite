@@ -28,6 +28,7 @@ import {
 } from "@/features/schemas/lib/inference-session-store";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useNavigationItems } from "@/app/components/use-navigation-items";
+import { useNotificationToasts } from "@/features/notifications/lib/use-notification-toasts";
 
 export function AppShellFrame({ children }: PropsWithChildren) {
   const [collapsed, setCollapsed] = useAtom(sidebarCollapsedAtom);
@@ -39,6 +40,7 @@ export function AppShellFrame({ children }: PropsWithChildren) {
   useWarnOnUnsavedInferences();
   useScopeInferenceSessionsToUser(useUser().data?.id);
   useRecordSectionLocation(useNavigationItems().activeRoot);
+  useNotificationToasts();
 
   return (
     <BreadcrumbProvider>

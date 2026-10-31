@@ -9,7 +9,7 @@ import { PublicFormSize } from "@/features/explore/components/PublicFormSize";
 import { formatDate } from "@/shared/lib/date-time";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
-import { OrganizationMark } from "@/shared/ui/OrganizationMark";
+import { PublisherMark } from "@/shared/ui/PublisherMark";
 import type { PublicBookmarkSummaryDto } from "@/shared/api/openapi.gen";
 
 /**
@@ -48,10 +48,12 @@ export function PublicBookmarkCard({ bookmark }: { bookmark: PublicBookmarkSumma
         {/* The publisher keeps its own line: on a narrow card the date would squeeze it out. */}
         <div className="grid min-w-0 gap-1">
           <span className="inline-flex min-w-0 items-center gap-1.5 text-fg-secondary">
-            <OrganizationMark
+            <PublisherMark
               className="size-5 rounded-sm"
               iconSize={14}
+              kind={bookmark.organizationKind}
               logoUrl={bookmark.organizationLogoUrl}
+              name={bookmark.organizationName}
             />
             <span className="truncate">{bookmark.organizationName}</span>
           </span>
