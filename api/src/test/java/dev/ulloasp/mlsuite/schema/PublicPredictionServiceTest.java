@@ -184,7 +184,7 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
                 view.formSchema().get("fields"));
         assertEquals(1, view.inputCount());
         String json = objectMapper.writeValueAsString(view);
-        for (String kept : List.of("Cholesterol", "190", "Smoker", "Site code", "north", "hidden")) {
+        for (String kept : List.of("Cholesterol", "defaultValue", "Smoker", "Site code", "north", "hidden")) {
             assertFalse(json.contains(kept), kept);
         }
 
