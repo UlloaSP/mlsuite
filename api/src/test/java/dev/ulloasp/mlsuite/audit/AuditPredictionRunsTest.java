@@ -73,7 +73,7 @@ class AuditPredictionRunsTest extends PublicPredictionFixture {
         assertEquals(organization.getId(), row.get("organization_id"));
         assertEquals(bookmark.getId().toString(), row.get("target_id"));
         assertTrue(row.get("metadata").toString().contains("runId"));
-        assertFalse(row.get("metadata").toString().contains("52"));
+        assertFalse(row.get("metadata").toString().contains("in0"));
     }
 
     @Test
