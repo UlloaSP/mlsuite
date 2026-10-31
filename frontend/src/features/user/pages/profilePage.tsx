@@ -19,6 +19,8 @@ export function ProfilePage() {
 
   if (!user || isError) return <NotFoundError />;
 
+  const personal = workspace?.currentOrganization.kind === "PERSONAL";
+
   return (
     <AppPage>
       <AppSurface className="app-scroll flex flex-1 flex-col gap-6 overflow-auto">
@@ -32,17 +34,20 @@ export function ProfilePage() {
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary">
-                  Current workspace
+                  {personal ? "Working in your personal account" : "Working in"}
                 </p>
                 <p className="mt-2 text-2xl font-semibold text-fg">
                   {workspace.currentOrganization.name}
                 </p>
                 <p className="mt-1 text-sm text-fg-secondary">
-                  {workspace.membershipCount} organization{" "}
-                  {workspace.membershipCount === 1 ? "membership" : "memberships"}
+                  {workspace.membershipCount === 0
+                    ? "Not a member of any organization"
+                    : `Member of ${workspace.membershipCount} ${workspace.membershipCount === 1 ? "organization" : "organizations"}`}
                 </p>
               </div>
-              <AppBadge tone="accent">{workspace.currentMembership.roleDefinition.name}</AppBadge>
+              {personal ? null : (
+                <AppBadge tone="accent">{workspace.currentMembership.roleDefinition.name}</AppBadge>
+              )}
             </div>
           </AppPanel>
         ) : null}

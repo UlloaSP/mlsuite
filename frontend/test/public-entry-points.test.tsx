@@ -61,8 +61,8 @@ const BOOKMARK: PublicBookmarkDto = {
 };
 const USER = { id: 9, fullName: "Ada Lovelace", email: "ada@acme.test", systemRole: "USER" };
 const WORKSPACE = {
-  currentOrganization: { id: 3, name: "Ada Lovelace Personal", slug: "ada" },
-  organizations: [{ id: 3, name: "Ada Lovelace Personal", slug: "ada" }],
+  currentOrganization: { id: 3, name: "Ada Lovelace", kind: "PERSONAL", slug: "ada" },
+  organizations: [{ id: 3, name: "Ada Lovelace", kind: "PERSONAL", slug: "ada" }],
   permissions: {},
 };
 
@@ -149,6 +149,7 @@ const registerHref = (returnTo: string) => `${signInHref(returnTo)}&mode=registe
 const authenticate = async (host: ParentNode) => {
   for (const [name, value] of [
     ["fullName", USER.fullName],
+    ["username", "ada"],
     ["email", USER.email],
     ["password", "correct-horse-battery"],
   ]) {
@@ -240,7 +241,7 @@ describe("auth screen", () => {
 
     const register = await open(registerHref("/explore"));
     expect(authForm(register.host)).toEqual({
-      fields: ["fullName", "email", "password"],
+      fields: ["fullName", "username", "email", "password"],
       submit: "Create account",
     });
   });
@@ -330,7 +331,12 @@ describe("coming back after authenticating", () => {
     expect(api.posts).toEqual([
       {
         path: "/api/auth/register",
-        body: { email: USER.email, password: "correct-horse-battery", fullName: USER.fullName },
+        body: {
+          email: USER.email,
+          password: "correct-horse-battery",
+          fullName: USER.fullName,
+          username: "ada",
+        },
       },
     ]);
   });

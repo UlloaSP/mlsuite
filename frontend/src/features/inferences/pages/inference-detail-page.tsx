@@ -78,7 +78,7 @@ export function InferenceDetailPage({ renderData }: Props) {
           content: (
             <AppEmptyState
               title="Review management unavailable"
-              description="You do not have permission to manage reviews in this organization."
+              description="You do not have permission to manage reviews in this workspace."
             />
           ),
         }

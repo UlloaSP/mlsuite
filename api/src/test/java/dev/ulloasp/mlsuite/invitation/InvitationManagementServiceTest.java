@@ -185,6 +185,7 @@ class InvitationManagementServiceTest {
         User candidate = user(8L);
         candidate.setEmail("user@example.com");
         candidate.setFullName("User Example");
+        when(organizationRepository.findById(41L)).thenReturn(Optional.of(organization()));
         when(userRepository.findEnabledUsersOutsideActiveOrganization(41L))
                 .thenReturn(List.of(candidate));
 

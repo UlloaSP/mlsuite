@@ -168,7 +168,7 @@ export function ModelsPage() {
         emptyIcon={<Search size={22} />}
         emptyTitle="No models yet"
         filteredEmptyTitle="No matching models"
-        emptyDescription="Create your first model to start building schemas."
+        emptyDescription="Upload your first model to start building schemas."
         filteredEmptyDescription="Try another search term or status."
         emptyAction={
           canCreateModels ? (

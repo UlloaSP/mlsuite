@@ -16,8 +16,18 @@ describe("authFailureMessage", () => {
     expect(authFailureMessage("login", refusal(401, "Bad credentials"))).toBe(
       AUTH_COPY.login.error,
     );
-    expect(authFailureMessage("register", refusal(409, "User exists"))).toBe(
-      AUTH_COPY.register.error,
+    expect(authFailureMessage("register", refusal(500, "Failed"))).toBe(AUTH_COPY.register.error);
+  });
+
+  test("a refused registration says what to change", () => {
+    const message = "The handle 'ada' is already taken.";
+
+    expect(authFailureMessage("register", refusal(409, message))).toBe(message);
+    expect(authFailureMessage("register", refusal(400, "The handle 'admin' is reserved."))).toBe(
+      "The handle 'admin' is reserved.",
+    );
+    expect(authFailureMessage("login", refusal(400, "email: must be set"))).toBe(
+      AUTH_COPY.login.error,
     );
   });
 

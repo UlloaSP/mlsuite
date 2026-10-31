@@ -4,7 +4,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Hash } from "lucide-react";
+import { AtSign } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -16,7 +16,10 @@ import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppTextArea } from "@/shared/ui/AppTextArea";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import { AppFieldLabel } from "@/shared/ui/AppFieldLabel";
-import { useCreateOrganizationMutation } from "@/features/workspace/api/workspace.mutations";
+import {
+  useCreateOrganizationMutation,
+  useSelectOrganization,
+} from "@/features/workspace/api/workspace.mutations";
 import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
 import { cx } from "@/shared/ui/cx";
 import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
@@ -30,14 +33,20 @@ type OrganizationOwnerCandidate = {
 };
 
 type Props = {
-  initialOwner?: OrganizationOwnerCandidate;
-  users: OrganizationOwnerCandidate[];
-  remote: RemoteComboboxProps<number>;
+  /** Who may own it, for a superadmin; anyone else owns what they create. */
+  ownerChoice?: {
+    initialOwner?: OrganizationOwnerCandidate;
+    users: OrganizationOwnerCandidate[];
+    remote: RemoteComboboxProps<number>;
+  };
 };
 
-export function CreateOrganizationPage({ initialOwner, users, remote }: Props) {
+export function CreateOrganizationPage({ ownerChoice }: Props) {
   const navigate = useNavigate();
   const createOrganization = useCreateOrganizationMutation();
+  const selectOrganization = useSelectOrganization();
+  const initialOwner = ownerChoice?.initialOwner;
+  const users = ownerChoice?.users ?? [];
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
@@ -61,20 +70,34 @@ export function CreateOrganizationPage({ initialOwner, users, remote }: Props) {
   async function submit() {
     setSubmitError(undefined);
     const trimmedName = name.trim();
-    if (!trimmedName || !owner || createOrganization.isPending) return;
+    if (!canSubmit) return;
     try {
-      await createOrganization.mutateAsync({
+      const created = await createOrganization.mutateAsync({
         name: trimmedName,
         slug: slug.trim() || undefined,
         description: description.trim() || undefined,
-        ownerUserId: owner.id,
+        ownerUserId: owner?.id,
       });
-      toast.success("Organization created.");
+      // The creator stays where they were until they choose otherwise.
+      toast.success("Organization created.", {
+        duration: 10_000,
+        action: {
+          label: "Switch to it",
+          onClick: () => {
+            void selectOrganization.mutateAsync(created.id).then(() => {
+              void navigate("/home");
+            });
+          },
+        },
+      });
       void navigate("/workspace/organizations");
     } catch (error: unknown) {
       setSubmitError(error instanceof Error ? error.message : String(error));
     }
   }
+
+  const canSubmit =
+    name.trim() !== "" && (!ownerChoice || owner !== null) && !createOrganization.isPending;
 
   const updateName = (value: string) => {
     setName(value);
@@ -92,7 +115,11 @@ export function CreateOrganizationPage({ initialOwner, users, remote }: Props) {
         <AppPageHeader
           className={FORM_MAX_WIDTH}
           title="Create organization"
-          description="Create an organization and assign its first owner."
+          description={
+            ownerChoice
+              ? "Create an organization and assign its first owner."
+              : "Share models, schemas, plugins and inferences with other people. You will be its owner."
+          }
           breadcrumbs={[
             { label: "Organizations", to: "/workspace/organizations" },
             { label: "Create organization" },
@@ -107,36 +134,38 @@ export function CreateOrganizationPage({ initialOwner, users, remote }: Props) {
               autoFocus
             />
           </AppFieldLabel>
-          <AppFieldLabel label="Slug">
+          <AppFieldLabel label="Handle">
             <AppTextField
               value={slug}
               onChange={(event) => updateSlug(event.target.value)}
               placeholder="northwind-ai"
-              prefix={<Hash size={15} className="text-fg-muted" />}
+              prefix={<AtSign size={15} className="text-fg-muted" />}
             />
           </AppFieldLabel>
-          <AppFieldLabel label="Owner">
-            <AppCombobox
-              {...remote}
-              selectedItem={
-                owner
-                  ? {
-                      id: owner.id,
-                      label: owner.fullName,
-                      description: owner.email,
-                      avatarUrl: owner.avatarUrl ?? null,
-                    }
-                  : undefined
-              }
-              value={owner?.id ?? null}
-              items={ownerItems}
-              placeholder="Search owner"
-              emptyLabel="No users found"
-              onChange={(item) =>
-                setOwner(users.find((candidate) => candidate.id === item?.id) ?? null)
-              }
-            />
-          </AppFieldLabel>
+          {ownerChoice ? (
+            <AppFieldLabel label="Owner">
+              <AppCombobox
+                {...ownerChoice.remote}
+                selectedItem={
+                  owner
+                    ? {
+                        id: owner.id,
+                        label: owner.fullName,
+                        description: owner.email,
+                        avatarUrl: owner.avatarUrl ?? null,
+                      }
+                    : undefined
+                }
+                value={owner?.id ?? null}
+                items={ownerItems}
+                placeholder="Search owner"
+                emptyLabel="No users found"
+                onChange={(item) =>
+                  setOwner(users.find((candidate) => candidate.id === item?.id) ?? null)
+                }
+              />
+            </AppFieldLabel>
+          ) : null}
           <AppFieldLabel label="Description">
             <AppTextArea
               value={description}
@@ -154,11 +183,7 @@ export function CreateOrganizationPage({ initialOwner, users, remote }: Props) {
             >
               Cancel
             </AppButton>
-            <AppButton
-              type="button"
-              onClick={() => void submit()}
-              disabled={!name.trim() || !owner || createOrganization.isPending}
-            >
+            <AppButton type="button" onClick={() => void submit()} disabled={!canSubmit}>
               {createOrganization.isPending ? "Creating…" : "Create organization"}
             </AppButton>
           </div>

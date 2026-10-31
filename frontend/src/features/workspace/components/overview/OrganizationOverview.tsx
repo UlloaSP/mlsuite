@@ -60,7 +60,8 @@ export function OrganizationOverview({
   const basePath = `/workspace/organizations/${organization.id}`;
   const data = dashboard.data;
   const stages = lifecycleStages(permissions, data?.stats, { linked: isCurrent });
-  const showPeople = permissions.canViewMembers || permissions.canViewInvitations;
+  const personal = organization.kind === "PERSONAL";
+  const showPeople = !personal && (permissions.canViewMembers || permissions.canViewInvitations);
 
   return (
     <AppPage>
@@ -70,22 +71,24 @@ export function OrganizationOverview({
           title={organization.name}
           description={
             organization.description ||
-            `Everything ${organization.slug} runs, from uploaded models to reviewed predictions.`
+            `Everything ${personal ? "you run" : `${organization.slug} runs`}, from uploaded models to reviewed predictions.`
           }
           actions={
-            <>
-              {permissions.canViewOrganization ? (
-                <Link
-                  to={`${basePath}/settings`}
-                  viewTransition
-                  className={appButtonClass({ variant: "secondary" })}
-                >
-                  <Settings size={15} />
-                  Settings
-                </Link>
-              ) : null}
-              {role ? <RoleBadge value={role} /> : null}
-            </>
+            personal ? null : (
+              <>
+                {permissions.canViewOrganization ? (
+                  <Link
+                    to={`${basePath}/settings`}
+                    viewTransition
+                    className={appButtonClass({ variant: "secondary" })}
+                  >
+                    <Settings size={15} />
+                    Settings
+                  </Link>
+                ) : null}
+                {role ? <RoleBadge value={role} /> : null}
+              </>
+            )
           }
         />
 
@@ -156,7 +159,7 @@ export function OrganizationOverview({
               <span className="block text-xs text-fg-secondary">
                 {data === undefined
                   ? "Extensions for forms and reports."
-                  : `${data.stats.totalPlugins} in this organization, extending forms and reports.`}
+                  : `${data.stats.totalPlugins} here, extending forms and reports.`}
               </span>
             </span>
             <ArrowRight

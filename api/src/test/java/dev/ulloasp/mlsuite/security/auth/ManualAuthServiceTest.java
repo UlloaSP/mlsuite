@@ -23,7 +23,7 @@ import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepositor
 import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceBootstrapService;
+import dev.ulloasp.mlsuite.workspace.application.service.PersonalAccountService;
 
 @ExtendWith(MockitoExtension.class)
 class ManualAuthServiceTest {
@@ -35,7 +35,7 @@ class ManualAuthServiceTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private WorkspaceBootstrapService workspaceBootstrapService;
+    private PersonalAccountService personalAccountService;
 
     @Mock
     private AuthenticationManager authenticationManager;
@@ -48,27 +48,29 @@ class ManualAuthServiceTest {
         authService = new AuthService(
                 userRepository,
                 passwordEncoder,
-                workspaceBootstrapService,
+                personalAccountService,
                 authenticationManager,
                 new AuthAttemptLimiter(10, 5, Clock.systemUTC()));
         adminUserService = new AdminUserService(
                 userRepository,
                 passwordEncoder,
-                workspaceBootstrapService);
+                personalAccountService);
     }
 
     @Test
-    void register_CreatesNormalUserAndBootstrapsWorkspace() {
+    void register_CreatesNormalUserAndOpensTheirPersonalAccount() {
         when(userRepository.existsByEmailIgnoreCase("alice@example.com")).thenReturn(false);
         when(passwordEncoder.encode("very-secret")).thenReturn("hash");
+        when(personalAccountService.claimHandle("Alice")).thenReturn("alice");
 
-        authService.register(new AuthRequest("Alice@Example.com", "very-secret", "Alice", ""), "address:test");
+        authService.register(new AuthRequest("Alice@Example.com", "very-secret", "Alice", "Alice"), "address:test");
 
         verify(userRepository).save(org.mockito.ArgumentMatchers.argThat(user ->
                 user.getEmail().equals("alice@example.com")
+                        && user.getUsername().equals("alice")
                         && user.getPasswordHash().equals("hash")
                         && user.getSystemRole() == SystemRole.USER));
-        verify(workspaceBootstrapService).ensureCurrentOrganization(org.mockito.ArgumentMatchers.any(User.class));
+        verify(personalAccountService).open(org.mockito.ArgumentMatchers.any(User.class));
         verify(authenticationManager).authenticate(org.mockito.ArgumentMatchers.argThat(token ->
                 token.getName().equals("alice@example.com")));
     }
@@ -78,7 +80,7 @@ class ManualAuthServiceTest {
         when(userRepository.existsByEmailIgnoreCase("alice@example.com")).thenReturn(true);
 
         assertThrows(UserAlreadyExistsException.class,
-                () -> authService.register(new AuthRequest("alice@example.com", "very-secret", "Alice", null),
+                () -> authService.register(new AuthRequest("alice@example.com", "very-secret", "Alice", "alice"),
                         "address:test"));
     }
 
@@ -96,7 +98,7 @@ class ManualAuthServiceTest {
                 true));
 
         assertEquals(SystemRole.SUPERADMIN, dto.systemRole());
-        verify(workspaceBootstrapService).ensureCurrentOrganization(org.mockito.ArgumentMatchers.any(User.class));
+        verify(personalAccountService).open(org.mockito.ArgumentMatchers.any(User.class));
     }
 
     @Test

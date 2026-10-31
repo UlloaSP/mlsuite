@@ -29,6 +29,7 @@ export function CreateAdminUserPage() {
   const createUser = useCreateAdminUser();
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<SystemRole>("USER");
   const [visible, setVisible] = useState(false);
@@ -39,7 +40,7 @@ export function CreateAdminUserPage() {
   const submit = (event: FormEvent) => {
     event.preventDefault();
     createUser.mutate(
-      { email, fullName, password, systemRole: role },
+      { email, fullName, password, systemRole: role, username },
       {
         onSuccess: () => {
           toast.success("User created.");
@@ -75,6 +76,16 @@ export function CreateAdminUserPage() {
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
               placeholder="Ada Lovelace"
+            />
+          </AppFieldLabel>
+          <AppFieldLabel label="Username">
+            <AppTextField
+              required
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              placeholder="ada-lovelace"
+              autoCapitalize="none"
+              spellCheck={false}
             />
           </AppFieldLabel>
           <AppFieldLabel label="Password">

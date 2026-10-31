@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { HttpError } from "@/shared/api/http";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, type PropsWithChildren } from "react";
 import { createMemoryRouter, Route, RouterProvider, Routes, useLocation } from "react-router";
@@ -30,7 +31,11 @@ vi.mock("@/capabilities/workspace-context/session", async (original) => ({
           error: null,
           isLoading: false,
         }
-      : { data: undefined, error: new Error("Unauthorized"), isLoading: false },
+      : {
+          data: undefined,
+          error: new HttpError({ timestamp: AT, status: 401, message: "Unauthorized", path: "/" }),
+          isLoading: false,
+        },
   useLogout: () => ({ mutate: vi.fn() }),
 }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
@@ -42,8 +47,9 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
     data:
       enabled && session.signedIn
         ? {
-            currentOrganization: { id: 3, name: "Ada Personal", slug: "ada" },
-            organizations: [{ id: 3, name: "Ada Personal", slug: "ada" }],
+            currentOrganization: { id: 3, name: "Ada Lovelace", kind: "PERSONAL", slug: "ada" },
+            user: { avatarUrl: null },
+            organizations: [{ id: 3, name: "Ada Lovelace", kind: "PERSONAL", slug: "ada" }],
             permissions: session.permissions,
           }
         : undefined,
@@ -80,7 +86,7 @@ const CHURN: PublicBookmarkSummaryDto = {
   description: null,
   inputCount: 1,
   reportCount: 1,
-  organizationName: "Bob Other Personal",
+  organizationName: "Bob Other",
   organizationLogoUrl: null,
   updatedAt: AT,
 };
@@ -168,7 +174,7 @@ describe("public feed page", () => {
     expect(cardio.querySelector("footer")?.textContent).toContain("Updated");
     // The publisher is the organization as it is named, personal or not. Without a description
     // the card keeps the empty lines, so every card of a row lines up.
-    expect(churn.textContent).toContain("Bob Other Personal");
+    expect(churn.textContent).toContain("Bob Other");
     expect(churn.querySelector("p")?.textContent).toBe("");
     expect(size(churn)).toEqual(["1 input", "1 report"]);
     expect(host.textContent).toContain("2 results");

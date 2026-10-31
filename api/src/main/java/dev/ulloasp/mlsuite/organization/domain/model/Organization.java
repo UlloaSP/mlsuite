@@ -5,9 +5,12 @@ import java.time.OffsetDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import dev.ulloasp.mlsuite.organization.domain.exception.PersonalAccountException;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -36,6 +39,25 @@ public class Organization {
         this.createdBy = createdBy;
     }
 
+    /** The namespace {@code owner} works in on their own, named after them. */
+    public static Organization personal(User owner) {
+        Organization organization = new Organization(owner.getUsername(), owner.getFullName(), null, owner);
+        organization.kind = OrganizationKind.PERSONAL;
+        organization.ownerUser = owner;
+        return organization;
+    }
+
+    public boolean isPersonal() {
+        return kind == OrganizationKind.PERSONAL;
+    }
+
+    /** Refuses, with {@code refusal} as the reason, what a personal account cannot do. */
+    public void requireTeam(String refusal) {
+        if (isPersonal()) {
+            throw new PersonalAccountException(refusal);
+        }
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -48,6 +70,15 @@ public class Organization {
 
     @Column(name = "description", length = 600)
     private String description;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "kind", nullable = false, length = 16)
+    private OrganizationKind kind = OrganizationKind.TEAM;
+
+    /** Whose personal account this is; null for a team, whose owner is a membership. */
+    @ManyToOne
+    @JoinColumn(name = "owner_user_id", foreignKey = @ForeignKey(name = "fk_organization_owner_user"))
+    private User ownerUser;
 
     /** When the logo in {@code organization_logo} was last replaced; null while there is none. */
     @Column(name = "logo_updated_at", columnDefinition = "TIMESTAMPTZ")

@@ -18,8 +18,8 @@ import dev.ulloasp.mlsuite.organization.application.dto.TransferOrganizationOwne
 import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationMembershipRoleRequest;
 import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationRequest;
 import dev.ulloasp.mlsuite.organization.application.port.in.OrganizationManagementUseCase;
-import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAlreadyExistsException;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
+import dev.ulloasp.mlsuite.organization.domain.model.Handle;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
@@ -37,6 +37,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OrganizationManagementService implements OrganizationManagementUseCase {
 
+    private static final String NO_MEMBERS = "A personal account has no members to manage.";
+
     private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final OrganizationRepository organizationRepository;
@@ -51,7 +53,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
     public List<OrganizationDto> listOrganizations(Long userId) {
         workspaceAccessService.requireUser(userId);
         if (workspaceAccessService.isSuperadmin(userId)) {
-            return organizationRepository.findAll().stream().map(OrganizationDto::from).toList();
+            return organizationRepository.findAdministeredBy(userId).stream().map(OrganizationDto::from).toList();
         }
         return membershipRepository.findActiveByUserId(userId).stream()
                 .map(OrganizationMembership::getOrganization)
@@ -63,12 +65,9 @@ public class OrganizationManagementService implements OrganizationManagementUseC
     public OrganizationDto createOrganization(Long userId, CreateOrganizationRequest request) {
         User actor = workspaceAccessService.requireUser(userId);
         User owner = resolveOwner(actor, request.ownerUserId());
-        String slug = normalizeSlug(request.slug(), request.name());
-        if (organizationRepository.existsBySlug(slug)) {
-            throw new OrganizationAlreadyExistsException(slug);
-        }
+        boolean named = request.slug() != null && !request.slug().isBlank();
         Organization organization = organizationRepository.save(new Organization(
-                slug,
+                Handle.claim(named ? request.slug() : Handle.fromName(request.name()), organizationRepository::existsBySlug),
                 request.name().strip(),
                 request.description(),
                 actor));
@@ -77,7 +76,6 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         roleSeedService.reviewerRole(organization);
         membershipRepository.save(new OrganizationMembership(
                 organization, owner, roleSeedService.orgRole(organization, OrganizationRole.OWNER), MembershipStatus.ACTIVE));
-        owner.setCurrentOrganization(organization);
         return OrganizationDto.from(organization);
     }
 
@@ -114,14 +112,12 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         workspaceAuthorizationService.require(userId, organizationId, PermissionKey.EDIT_ORGANIZATION);
         Organization organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
-        String slug = request.slug() == null || request.slug().isBlank()
-                ? organization.getSlug()
-                : normalizeSlug(request.slug(), request.name());
-        if (!slug.equals(organization.getSlug()) && organizationRepository.existsBySlug(slug)) {
-            throw new OrganizationAlreadyExistsException(slug);
+        organization.requireTeam("A personal account takes its name from its owner's profile.");
+        if (request.slug() != null && !request.slug().isBlank()
+                && !Handle.parse(request.slug()).equals(organization.getSlug())) {
+            organization.setSlug(Handle.claim(request.slug(), organizationRepository::existsBySlug));
         }
         organization.setName(request.name().strip());
-        organization.setSlug(slug);
         organization.setDescription(request.description());
         organization.setUpdatedBy(workspaceAccessService.requireUser(userId));
         return OrganizationDto.from(organizationRepository.save(organization));
@@ -155,6 +151,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         workspaceAuthorizationService.require(userId, organizationId, PermissionKey.VIEW_MEMBERS);
         OrganizationMembership membership = membershipRepository.findActiveByIdAndOrganizationId(membershipId, organizationId)
                 .orElseThrow(() -> new IllegalArgumentException("Membership does not exist."));
+        membership.getOrganization().requireTeam(NO_MEMBERS);
         var actions = workspaceAuthorizationService.organizationMemberActions(userId, organizationId, membership);
         Long nextRoleId = request.roleDefinitionId();
         boolean assignable = actions.assignableRoles().stream().anyMatch(role -> role.id().equals(nextRoleId));
@@ -172,12 +169,17 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         workspaceAuthorizationService.require(userId, organizationId, PermissionKey.VIEW_MEMBERS);
         OrganizationMembership membership = membershipRepository.findActiveByIdAndOrganizationId(membershipId, organizationId)
                 .orElseThrow(() -> new IllegalArgumentException("Membership does not exist."));
+        membership.getOrganization().requireTeam(NO_MEMBERS);
         if (!workspaceAuthorizationService.organizationMemberActions(userId, organizationId, membership).canRemove()
                 || membership.isOwner()) {
             throw new IllegalArgumentException("Cannot remove organization owner.");
         }
         membership.setStatus(MembershipStatus.REMOVED);
         membershipRepository.save(membership);
+        User removed = membership.getUser();
+        if (removed.getCurrentOrganization() != null && organizationId.equals(removed.getCurrentOrganization().getId())) {
+            removed.setCurrentOrganization(null);
+        }
     }
 
     @Override
@@ -189,6 +191,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         OrganizationMembership nextOwner = membershipRepository.findActiveByIdAndOrganizationId(
                 request.nextOwnerMembershipId(), organizationId)
                 .orElseThrow(() -> new IllegalArgumentException("Membership does not exist."));
+        nextOwner.getOrganization().requireTeam("A personal account keeps the owner it was opened for.");
         OrganizationMembership currentOwner = membershipRepository
                 .findActiveByOrganizationIdOrderByCreatedAtAsc(organizationId)
                 .stream()
@@ -204,14 +207,6 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         nextOwner.getOrganization().setUpdatedBy(workspaceAccessService.requireUser(userId));
         membershipRepository.save(currentOwner);
         return OrganizationMembershipDto.from(membershipRepository.save(nextOwner));
-    }
-
-    private String normalizeSlug(String rawSlug, String rawName) {
-        String base = (rawSlug != null && !rawSlug.isBlank() ? rawSlug : rawName)
-                .toLowerCase()
-                .replaceAll("[^a-z0-9]+", "-")
-                .replaceAll("(^-|-$)", "");
-        return base.isBlank() ? "workspace" : base;
     }
 
     private User resolveOwner(User actor, Long ownerUserId) {

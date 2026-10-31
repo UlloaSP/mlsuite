@@ -82,7 +82,7 @@ export function ApiClientSettingsTab({ client }: { client: ApiClientDto }) {
       </section>
       <ApiClientFormDialog
         title="Edit client"
-        summary="The name is unique in this organization whatever its case."
+        summary="The name is unique in this workspace whatever its case."
         defaults={{ name: client.client.name, description: client.client.description }}
         open={editing}
         pending={update.isPending}

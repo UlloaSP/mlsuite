@@ -29,9 +29,9 @@ class FlywayMigrationTest {
     void appliesTheBaselineToAnEmptyDatabaseAndIsRepeatable() throws Exception {
         Flyway flyway = flyway("fresh");
 
-        assertEquals(1, flyway.migrate().migrationsExecuted);
+        assertEquals(flyway.info().pending().length, flyway.migrate().migrationsExecuted);
         assertEquals(0, flyway.migrate().migrationsExecuted);
-        assertEquals("1", flyway.info().current().getVersion().toString());
+        assertEquals("4", flyway.info().current().getVersion().toString());
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());

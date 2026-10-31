@@ -60,6 +60,9 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     @Override
     public List<InvitationCandidateDto> listInvitationCandidates(Long userId, Long organizationId) {
         workspaceAuthorizationService.require(userId, organizationId, PermissionKey.INVITE_MEMBERS);
+        organizationRepository.findById(organizationId)
+                .orElseThrow(() -> new OrganizationNotFoundException(organizationId))
+                .requireTeam(InvitationCatalogService.NO_INVITATIONS);
         return userRepository.findEnabledUsersOutsideActiveOrganization(organizationId)
                 .stream()
                 .map(InvitationCandidateDto::from)
@@ -72,6 +75,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         workspaceAuthorizationService.require(userId, organizationId, PermissionKey.INVITE_MEMBERS);
         var organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
+        organization.requireTeam(InvitationCatalogService.NO_INVITATIONS);
         RoleDefinition roleDefinition = resolveRoleDefinition(organization, request);
         if (OrganizationRole.OWNER.name().equals(roleDefinition.getSystemKey())
                 && !workspaceAuthorizationService.has(userId, organizationId, PermissionKey.TRANSFER_OWNERSHIP)) {

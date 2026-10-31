@@ -10,7 +10,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 
 @Repository
@@ -43,6 +42,7 @@ public interface OrganizationMembershipRepository
             SELECT m FROM OrganizationMembership m
             WHERE m.user.id = :userId
             AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE
+            AND m.organization.kind = dev.ulloasp.mlsuite.organization.domain.model.OrganizationKind.TEAM
             AND (
                 lower(m.organization.name) LIKE lower(concat('%', :search, '%'))
                 OR lower(m.organization.slug) LIKE lower(concat('%', :search, '%'))
@@ -69,5 +69,12 @@ public interface OrganizationMembershipRepository
 
     List<OrganizationMembership> findByOrganizationId(Long organizationId);
 
-    long countByUserIdAndStatus(Long userId, MembershipStatus status);
+    /** How many organizations the user belongs to; their personal account is not one. */
+    @Query("""
+            SELECT COUNT(m) FROM OrganizationMembership m
+            WHERE m.user.id = :userId
+            AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE
+            AND m.organization.kind = dev.ulloasp.mlsuite.organization.domain.model.OrganizationKind.TEAM
+            """)
+    long countActiveTeamsByUserId(Long userId);
 }

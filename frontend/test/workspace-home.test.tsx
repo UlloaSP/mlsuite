@@ -37,7 +37,7 @@ const fullAccess = {
 };
 
 const context = (permissions: Record<string, boolean> = fullAccess) => ({
-  currentOrganization: { id: 7, name: "Acme", slug: "acme", description: null },
+  currentOrganization: { id: 7, name: "Acme", kind: "TEAM", slug: "acme", description: null },
   currentMembership: { roleDefinition: { name: "Admin" } },
   memberships: Array.from({ length: 99 }, (_, id) => ({ id })),
   permissions,
@@ -112,7 +112,7 @@ describe("workspace overview", () => {
     expect(container.textContent).toContain("12 active");
     expect(container.textContent).toContain("grace@acme.test");
     expect(container.textContent).toContain("3 pending");
-    expect(container.textContent).toContain("2 in this organization");
+    expect(container.textContent).toContain("2 here");
     expect(container.querySelector('a[href="/workspace/organizations/7/settings"]')).not.toBeNull();
     expect(container.textContent).not.toContain("99");
   });

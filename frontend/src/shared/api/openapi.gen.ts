@@ -2578,7 +2578,7 @@ export interface components {
             fullName: string;
             password: string;
             systemRole?: string | null;
-            username?: string | null;
+            username: string;
         };
         AdminPasswordRequest: {
             password: string;
@@ -2799,7 +2799,7 @@ export interface components {
             email: string;
             fullName?: string | null;
             password: string;
-            username?: string | null;
+            username: string;
         };
         BookmarkExampleStateDto: {
             example: components["schemas"]["SchemaBookmarkExampleDto"] | null;
@@ -3231,6 +3231,8 @@ export interface components {
             description: string | null;
             /** Format: int64 */
             id: number;
+            /** @enum {string} */
+            kind: "PERSONAL" | "TEAM";
             logoUrl: string | null;
             name: string;
             slug: string;

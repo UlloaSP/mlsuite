@@ -13,7 +13,7 @@ import dev.ulloasp.mlsuite.user.application.dto.UserDto;
 import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceBootstrapService;
+import dev.ulloasp.mlsuite.workspace.application.service.PersonalAccountService;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -23,7 +23,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final WorkspaceBootstrapService workspaceBootstrapService;
+    private final PersonalAccountService personalAccountService;
     private final AuthenticationManager authenticationManager;
     private final AuthAttemptLimiter attemptLimiter;
 
@@ -34,14 +34,15 @@ public class AuthService {
         if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new UserAlreadyExistsException(email);
         }
+        String handle = personalAccountService.claimHandle(request.username());
         User user = new User(
-                username(request.username(), email),
+                handle,
                 email,
                 passwordEncoder.encode(request.password()),
-                fullName(request.fullName(), email),
+                request.fullName() == null || request.fullName().isBlank() ? handle : request.fullName().trim(),
                 SystemRole.USER);
         userRepository.save(user);
-        workspaceBootstrapService.ensureCurrentOrganization(user);
+        personalAccountService.open(user);
         return authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, request.password()));
     }
 
@@ -58,22 +59,6 @@ public class AuthService {
     }
 
     public UserDto profile(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow();
-        workspaceBootstrapService.ensureCurrentOrganization(user);
-        return UserDto.toDto(user);
-    }
-
-    private String username(String username, String email) {
-        if (username != null && !username.isBlank()) {
-            return username.trim();
-        }
-        return email.substring(0, email.indexOf("@"));
-    }
-
-    private String fullName(String fullName, String email) {
-        if (fullName != null && !fullName.isBlank()) {
-            return fullName.trim();
-        }
-        return username(null, email);
+        return UserDto.toDto(userRepository.findById(userId).orElseThrow());
     }
 }

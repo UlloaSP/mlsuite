@@ -33,25 +33,33 @@ public class WorkspaceAccessService {
     public static final String ORGANIZATION_HEADER = "X-MLSuite-Organization";
 
     private final UserLookupService userLookupService;
-    private final WorkspaceBootstrapService workspaceBootstrapService;
     private final OrganizationRepository organizationRepository;
     private final OrganizationMembershipRepository membershipRepository;
 
     public User requireUser(Long userId) {
-        User user = userLookupService.requireById(userId);
-        workspaceBootstrapService.ensureCurrentOrganization(user);
-        return user;
+        return userLookupService.requireById(userId);
     }
 
     /**
      * The organization the request acts in: the one it names in {@value #ORGANIZATION_HEADER},
      * which the user must belong to (any, for a superadmin), checked on every request; without
-     * the header, the one the user last selected.
+     * the header, the one the user last selected, or their personal account once there is none
+     * they can still act in. So every user always has a current organization.
      */
     public Organization requireCurrentOrganization(Long userId) {
-        User user = requireUser(userId);
         Long requested = requestedOrganizationId();
-        return requested == null ? user.getCurrentOrganization() : requireMembership(userId, requested).getOrganization();
+        return requested == null
+                ? selectedOrPersonal(requireUser(userId))
+                : requireMembership(userId, requested).getOrganization();
+    }
+
+    private Organization selectedOrPersonal(User user) {
+        Organization selected = user.getCurrentOrganization();
+        if (selected != null && (isSuperadmin(user)
+                || membershipRepository.findActiveByOrganizationIdAndUserId(selected.getId(), user.getId()).isPresent())) {
+            return selected;
+        }
+        return organizationRepository.findByOwnerUserId(user.getId()).orElseThrow();
     }
 
     private static Long requestedOrganizationId() {

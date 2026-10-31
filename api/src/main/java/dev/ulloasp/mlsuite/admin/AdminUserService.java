@@ -15,7 +15,7 @@ import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceBootstrapService;
+import dev.ulloasp.mlsuite.workspace.application.service.PersonalAccountService;
 import jakarta.persistence.criteria.Predicate;
 import dev.ulloasp.mlsuite.util.PageDto;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ public class AdminUserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final WorkspaceBootstrapService workspaceBootstrapService;
+    private final PersonalAccountService personalAccountService;
 
     public AdminUserPageDto list(int page, int size, String search, String sort, String role) {
         Page<User> users = userRepository.findAll(
@@ -45,14 +45,14 @@ public class AdminUserService {
             throw new UserAlreadyExistsException(email);
         }
         User user = new User(
-                username(request.username(), email),
+                personalAccountService.claimHandle(request.username()),
                 email,
                 passwordEncoder.encode(request.password()),
                 request.fullName().trim(),
                 role(request.systemRole()));
         user.setEnabled(request.enabled() == null || request.enabled());
         userRepository.save(user);
-        workspaceBootstrapService.ensureCurrentOrganization(user);
+        personalAccountService.open(user);
         return AdminUserDto.from(user);
     }
 
@@ -65,8 +65,9 @@ public class AdminUserService {
             user.setFullName(request.fullName().trim());
         }
         if (request.username() != null && !request.username().isBlank()) {
-            user.setUsername(request.username().trim());
+            personalAccountService.renameHandle(user, request.username());
         }
+        personalAccountService.followOwner(user);
         user.setSystemRole(nextRole);
         user.setEnabled(nextEnabled);
         return AdminUserDto.from(user);
@@ -105,10 +106,6 @@ public class AdminUserService {
             return SystemRole.USER;
         }
         return SystemRole.valueOf(role.trim().toUpperCase());
-    }
-
-    private String username(String username, String email) {
-        return username == null || username.isBlank() ? email.substring(0, email.indexOf("@")) : username.trim();
     }
 
     private Specification<User> filter(String search, String role) {

@@ -5,18 +5,26 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { History, KeyRound, LayoutGrid, Mail, Settings, Users } from "lucide-react";
 import type { NavigationChild } from "./sidebar-navigation-support";
-import type { WorkspacePermissionsDto } from "@/shared/api/openapi.gen";
+import type { OrganizationDto, WorkspacePermissionsDto } from "@/shared/api/openapi.gen";
 
-/** Pages of the active organization, offered from the organization switcher. */
+/**
+ * Pages of the active organization, offered from the organization switcher. A personal account
+ * has no members to manage, so it keeps only what stays true of one person.
+ */
 export function getWorkspaceLinks(
   permissions: WorkspacePermissionsDto,
-  organizationId: number,
+  organization: Pick<OrganizationDto, "id" | "kind">,
 ): NavigationChild[] {
   if (!permissions.canViewWorkspace) return [];
-  const organizationPath = `/workspace/organizations/${organizationId}`;
+  const organizationPath = `/workspace/organizations/${organization.id}`;
+  const overview = { to: "/workspace", icon: LayoutGrid, label: "Overview", exact: true };
+  const auditLog = permissions.canViewAuditLog
+    ? [{ to: `${organizationPath}/audit-log`, icon: History, label: "Audit log" }]
+    : [];
+  if (organization.kind === "PERSONAL") return [overview, ...auditLog];
 
   return [
-    { to: "/workspace", icon: LayoutGrid, label: "Overview", exact: true },
+    overview,
     ...(permissions.canViewMembers
       ? [{ to: `${organizationPath}/members`, icon: Users, label: "Members" }]
       : []),
@@ -28,9 +36,7 @@ export function getWorkspaceLinks(
     permissions.canManageMemberRoles
       ? [{ to: `${organizationPath}/roles`, icon: KeyRound, label: "Roles & templates" }]
       : []),
-    ...(permissions.canViewAuditLog
-      ? [{ to: `${organizationPath}/audit-log`, icon: History, label: "Audit log" }]
-      : []),
+    ...auditLog,
     ...(permissions.canViewOrganization
       ? [{ to: `${organizationPath}/settings`, icon: Settings, label: "Settings" }]
       : []),

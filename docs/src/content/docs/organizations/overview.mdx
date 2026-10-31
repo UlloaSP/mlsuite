@@ -1,23 +1,30 @@
 ---
 title: Organizations
-description: "Personal and shared organizations, the overview page, and organization settings: identity, logo, ownership and deletion."
+description: "Personal accounts and organizations, the overview page, and organization settings: identity, logo, ownership and deletion."
 ---
 
 import Capture from "../../../components/Capture.astro";
 
-An organization is the boundary of everything you do in MLsuite. Its models, schemas, bookmarks,
-inferences, reviews, plugins and API clients are visible only to its members, according to their
-[role](/organizations/roles/).
+Everything you do in MLsuite belongs to an account. Its models, schemas, bookmarks, inferences,
+reviews, plugins and API clients are visible only to the people in it.
 
-- **Personal organization.** Every account gets one when it is created, named "&lt;Full name&gt;
-  Personal", with the account as Owner.
-- **Shared organizations.** Created by a [superadmin](/admin/users/), who chooses the first Owner.
-  Members join them by [invitation](/organizations/members/).
+- **Personal account.** Every user has one from the moment they sign up, under their username. It
+  is theirs alone: it has no members, invitations, roles or settings, takes its name from their
+  profile, and lasts as long as they do.
+- **Organizations.** Anyone can create one from **New organization** in the switcher and becomes its
+  Owner; a [superadmin](/admin/users/) may choose another Owner. Members join by
+  [invitation](/organizations/members/), and each has a [role](/organizations/roles/).
 
-Switch organization from the switcher at the top of the navigation. The switch applies to that
-browser tab: another tab stays in its own organization, so two tabs can work in two organizations
-side by side. Your latest choice is remembered and a new tab opens there; accepting an invitation
-switches you to the organization that invited you.
+Usernames and organization handles share one namespace, as on GitHub: a handle has 1 to 39 letters,
+digits or single hyphens, is stored in lowercase, cannot start or end with a hyphen, and cannot be
+one that is already taken or that collides with a page of the app, such as `admin` or `settings`.
+
+Switch from the switcher at the top of the navigation: your personal account comes first, then your
+organizations. The switch applies to that browser tab: another tab stays where it is, so two tabs
+can work in two accounts side by side. Your latest choice is remembered and a new tab opens there;
+accepting an invitation switches you to the organization that invited you. Creating an organization
+leaves you where you are and offers to switch to it. If you are removed from the organization you
+work in, or it is deleted, your next page opens in your personal account.
 
 ## Overview
 
@@ -26,8 +33,8 @@ switches you to the organization that invited you.
   alt="An organization overview: model lifecycle counts for models, schemas, inferences and reviews, newest members, latest invitations and plugins."
 />
 
-The overview opens from the switcher, or as the home page of members with **View workspace**. It
-shows your role badge, a **Model lifecycle** row counting Models, Schemas, Inferences and Reviews
+The overview opens from the switcher, or as the home page of members with **View workspace**. In an
+organization it shows your role badge, a **Model lifecycle** row counting Models, Schemas, Inferences and Reviews
 (each with a link and a hint when empty), the newest members, the latest invitations and the
 plugin count.
 
@@ -42,7 +49,7 @@ organization**; the page itself needs **View organization**.
 />
 
 **Identity**
-: Name (up to 150 characters), slug (up to 120, unique on the instance) and description (up to
+: Name (up to 150 characters), handle (up to 39, unique among users and organizations) and description (up to
   600). Choose **Save changes**.
 
 **Logo**

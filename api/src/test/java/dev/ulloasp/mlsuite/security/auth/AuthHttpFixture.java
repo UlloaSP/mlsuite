@@ -24,7 +24,7 @@ import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepositor
 import dev.ulloasp.mlsuite.user.application.port.in.GetCurrentUserProfileUseCase;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceBootstrapService;
+import dev.ulloasp.mlsuite.workspace.application.service.PersonalAccountService;
 
 /**
  * Sign-in and registration behind the real security chain, password encoder, account lookup and
@@ -40,7 +40,7 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceBootstrapServi
         "mlsuite.auth.max-registrations=2" })
 @Import({ SecurityConfig.class, AuthService.class, AuthAttemptLimiter.class, DatabaseUserDetailsService.class,
         SessionAccountCheck.class })
-@MockitoBean(types = { WorkspaceBootstrapService.class })
+@MockitoBean(types = { PersonalAccountService.class })
 abstract class AuthHttpFixture {
 
     static final String PASSWORD = "correct-horse-battery";

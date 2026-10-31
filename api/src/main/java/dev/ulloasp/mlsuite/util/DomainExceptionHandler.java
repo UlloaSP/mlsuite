@@ -6,8 +6,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 package dev.ulloasp.mlsuite.util;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -34,9 +36,10 @@ import dev.ulloasp.mlsuite.model.domain.exception.ModelAlreadyExistsException;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelNotFromUserException;
 import dev.ulloasp.mlsuite.invitation.domain.exception.InvitationNotFoundException;
+import dev.ulloasp.mlsuite.organization.domain.exception.HandleTakenException;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
-import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAlreadyExistsException;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
+import dev.ulloasp.mlsuite.organization.domain.exception.PersonalAccountException;
 import dev.ulloasp.mlsuite.admin.infrastructure.OpsAgentException;
 import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicRunLimitDto;
@@ -51,6 +54,8 @@ import jakarta.servlet.http.HttpServletRequest;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice
 public class DomainExceptionHandler {
+
+    private static final Set<String> HANDLE_CONSTRAINTS = Set.of("uq_app_user_username", "uq_organization_slug");
 
     // ---- 404 NOT FOUND ----
 
@@ -70,7 +75,8 @@ public class DomainExceptionHandler {
     @ExceptionHandler({
             ModelAlreadyExistsException.class,
             UserAlreadyExistsException.class,
-            OrganizationAlreadyExistsException.class,
+            HandleTakenException.class,
+            PersonalAccountException.class,
             OptimisticLockingFailureException.class
     })
     public ResponseEntity<ErrorDto> handleConflict(RuntimeException ex, HttpServletRequest req) {
@@ -82,10 +88,16 @@ public class DomainExceptionHandler {
             DataIntegrityViolationException ex,
             HttpServletRequest req) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ErrorDto.of(
-                        HttpStatus.CONFLICT.value(),
-                        "Request conflicts with the current persisted state.",
-                        req.getRequestURI()));
+                .body(ErrorDto.of(HttpStatus.CONFLICT.value(), dataConflictMessage(ex), req.getRequestURI()));
+    }
+
+    /** Two requests can pass the check for a free handle at once; the database then decides between them. */
+    private static String dataConflictMessage(DataIntegrityViolationException ex) {
+        if (ex.getCause() instanceof ConstraintViolationException violation
+                && HANDLE_CONSTRAINTS.contains(String.valueOf(violation.getConstraintName()))) {
+            return "That handle was just taken.";
+        }
+        return "Request conflicts with the current persisted state.";
     }
 
     // ---- 403 FORBIDDEN ----

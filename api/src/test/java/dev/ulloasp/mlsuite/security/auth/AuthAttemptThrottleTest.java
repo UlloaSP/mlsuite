@@ -111,7 +111,7 @@ class AuthAttemptThrottleTest extends AuthHttpFixture {
         return post("/api/auth/register")
                 .header(ClientNetworks.CLIENT_ADDRESS_HEADER, network)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"taken@example.com\",\"password\":\"long-enough-password\"}");
+                .content("{\"email\":\"taken@example.com\",\"password\":\"long-enough-password\",\"username\":\"taken\"}");
     }
 
     private static final class MutableClock extends Clock {

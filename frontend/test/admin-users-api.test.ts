@@ -59,7 +59,12 @@ describe("admin users API", () => {
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    await createUser({ email: user.email, fullName: user.fullName, password: "secret" });
+    await createUser({
+      email: user.email,
+      fullName: user.fullName,
+      password: "secret",
+      username: "ada",
+    });
     await updateUser(user.id, { enabled: false });
     await resetPassword(user.id, "replacement");
     await deleteUser(user.id);

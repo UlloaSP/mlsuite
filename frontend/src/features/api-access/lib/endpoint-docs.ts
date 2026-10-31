@@ -50,7 +50,7 @@ const AUTHENTICATION = [
 ];
 
 const LIMITS = [
-  "Each client may make a limited number of calls a minute, and the organization's clients together a limited number of successful calls a calendar month (UTC). Past either limit a call is refused with 429 and a Retry-After header in seconds.",
+  "Each client may make a limited number of calls a minute, and all of a workspace's clients together a limited number of successful calls a calendar month (UTC). Past either limit a call is refused with 429 and a Retry-After header in seconds.",
   "Runs of API clients share a few runtime slots. When none is free, or the model's environment is still being prepared after an upload, a call is refused with 503 and Retry-After; retry it then.",
 ];
 
@@ -188,9 +188,9 @@ export function buildApiDocs({ url, bookmark, model }: Input): ApiDocs {
     response: {
       outputs: outputs.map((output) => output.description),
       notes: [
-        "requestId names the call in the organization's request log and is also sent as the X-Request-Id header. bookmark, snapshot and model say what ran.",
+        "requestId names the call in the workspace's request log and is also sent as the X-Request-Id header. bookmark, snapshot and model say what ran.",
         "outputs holds one entry per model output, in output order.",
-        "Each call is saved as an inference of this organization, with origin API and the client's name as its author.",
+        "Each call is saved as an inference of this workspace, with origin API and the client's name as its author.",
       ],
       example: JSON.stringify(response, null, 2),
     },

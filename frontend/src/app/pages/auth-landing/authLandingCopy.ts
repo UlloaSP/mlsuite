@@ -27,9 +27,15 @@ export const AUTH_COPY = {
   },
 } as const;
 
-/** A throttled attempt (429) says why and that waiting helps; any other failure keeps the form's copy. */
+/**
+ * A throttled attempt (429) says why and that waiting helps, and a refused registration (a handle
+ * that is taken, reserved or malformed) what to change; any other failure keeps the form's copy.
+ */
 export function authFailureMessage(mode: AuthMode, error: unknown) {
-  return isHttpError(error) && error.status === 429 ? error.message : AUTH_COPY[mode].error;
+  if (!isHttpError(error)) return AUTH_COPY[mode].error;
+  const explained =
+    error.status === 429 || (mode === "register" && [400, 409].includes(error.status));
+  return explained ? error.message : AUTH_COPY[mode].error;
 }
 
 export function greetingFor(mode: AuthMode, now: Date) {

@@ -10,14 +10,15 @@ import org.springframework.transaction.annotation.Transactional;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceBootstrapService;
+import dev.ulloasp.mlsuite.organization.domain.model.Handle;
+import dev.ulloasp.mlsuite.workspace.application.service.PersonalAccountService;
 
 @Component
 public class SuperadminSeeder implements ApplicationRunner {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final WorkspaceBootstrapService workspaceBootstrapService;
+    private final PersonalAccountService personalAccountService;
     private final String email;
     private final String password;
     private final String fullName;
@@ -26,14 +27,14 @@ public class SuperadminSeeder implements ApplicationRunner {
     public SuperadminSeeder(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            WorkspaceBootstrapService workspaceBootstrapService,
+            PersonalAccountService personalAccountService,
             @Value("${mlsuite.superadmin.email:}") String email,
             @Value("${mlsuite.superadmin.password:}") String password,
             @Value("${mlsuite.superadmin.full-name:}") String fullName,
             @Value("${mlsuite.superadmin.username:}") String username) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.workspaceBootstrapService = workspaceBootstrapService;
+        this.personalAccountService = personalAccountService;
         this.email = email;
         this.password = password;
         this.fullName = fullName;
@@ -48,12 +49,14 @@ public class SuperadminSeeder implements ApplicationRunner {
         }
         String normalizedEmail = email.trim().toLowerCase();
         User user = userRepository.findByEmailIgnoreCase(normalizedEmail).orElse(null);
-        if (user == null) {
+        boolean created = user == null;
+        if (created) {
             if (password == null || password.isBlank()) {
                 throw new IllegalStateException("MLSUITE_SUPERADMIN_PASSWORD is required for initial superadmin.");
             }
+            // The operator names this account, so a reserved handle such as "admin" is theirs to use.
             user = new User(
-                    username(normalizedEmail),
+                    Handle.parse(username(normalizedEmail)),
                     normalizedEmail,
                     passwordEncoder.encode(password),
                     fullName(normalizedEmail),
@@ -64,7 +67,9 @@ public class SuperadminSeeder implements ApplicationRunner {
         user.setSystemRole(SystemRole.SUPERADMIN);
         user.setEnabled(true);
         userRepository.save(user);
-        workspaceBootstrapService.ensureCurrentOrganization(user);
+        if (created) {
+            personalAccountService.open(user);
+        }
     }
 
     private String username(String email) {

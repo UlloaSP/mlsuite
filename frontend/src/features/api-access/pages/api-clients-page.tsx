@@ -52,7 +52,7 @@ export function ApiClientsPage() {
       controls={controls}
       header={{
         title: "Clients",
-        description: "Outside software that runs this organization's bookmarks with its own keys.",
+        description: "Outside software that runs this workspace's bookmarks with its own keys.",
         breadcrumbs: [{ label: "API", to: "/api-access" }, { label: "Clients" }],
         actions: canManage ? <CreateApiClientButton /> : undefined,
       }}

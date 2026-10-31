@@ -79,6 +79,7 @@ export function AuthLandingPage() {
       email,
       password,
       fullName: readFormValue(formData, "fullName"),
+      username: readFormValue(formData, "username"),
     };
     register.mutate(request, callbacks);
   };

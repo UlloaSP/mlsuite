@@ -40,8 +40,9 @@ export const adminUserCatalogOptions = (
 export const useAdminUserCatalog = (request: Partial<AdminUserPageRequest> = {}, enabled = true) =>
   useInfiniteQuery(adminUserCatalogOptions(request, enabled));
 
-export function useOwnerCandidateCatalog(search: string) {
+export function useOwnerCandidateCatalog(search: string, enabled: boolean) {
   return useInfiniteCatalog({
+    enabled,
     queryKey: [...adminUserKeys.all, "owner-candidates", "infinite", search],
     queryFn: (page, signal) =>
       appFetch<CatalogPage<AdminUserDto>>(

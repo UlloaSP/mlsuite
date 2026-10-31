@@ -7,7 +7,7 @@ import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.user.domain.model.*;
 import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceBootstrapService;
+import dev.ulloasp.mlsuite.workspace.application.service.PersonalAccountService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +36,7 @@ class AdminUserDeletionTest {
     @EnableJpaRepositories("dev.ulloasp.mlsuite")
     static class PersistenceConfig {
         @Bean PasswordEncoder passwordEncoder() { return mock(PasswordEncoder.class); }
-        @Bean WorkspaceBootstrapService bootstrapService() { return mock(WorkspaceBootstrapService.class); }
+        @Bean PersonalAccountService personalAccountService() { return mock(PersonalAccountService.class); }
     }
     @Autowired EntityManager entityManager;
     @Autowired AdminUserService service;
@@ -51,9 +51,9 @@ class AdminUserDeletionTest {
     }
 
     @Test
-    void personalOrganizationReturnsConflictInsteadOfUnexpectedError() {
+    void personalAccountReturnsConflictInsteadOfUnexpectedError() {
         var target = user(SystemRole.USER);
-        var org = new Organization("qa-personal", "QA", null, target);
+        var org = Organization.personal(target);
         entityManager.persist(org);
         target.setCurrentOrganization(org);
         var owner = new RoleDefinition(org, RoleScope.ORGANIZATION, "Owner", "owner", "OWNER");

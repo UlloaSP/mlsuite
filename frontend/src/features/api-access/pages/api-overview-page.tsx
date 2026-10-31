@@ -34,7 +34,7 @@ export function ApiOverviewPage() {
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
           title="API"
-          description="Outside software runs this organization's bookmarks through the client API with its own keys."
+          description="Outside software runs this workspace's bookmarks through the client API with its own keys."
           actions={canManage ? <CreateApiClientButton /> : undefined}
         />
         {clients.isLoading ? (
