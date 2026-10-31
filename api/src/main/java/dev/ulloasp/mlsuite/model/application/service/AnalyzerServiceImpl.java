@@ -12,6 +12,9 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.ModelRuntimeClient;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.application.dto.ExplainRequest;
@@ -40,14 +43,20 @@ public class AnalyzerServiceImpl implements AnalyzerUseCase {
     private final UserLookupService userLookupService;
     private final WorkspaceAuthorizationService authorizationService;
     private final ObjectMapper objectMapper;
+    private final AuditLogService auditLog;
 
     @Override
     public Map<String, Object> explain(Long userId, Long modelId, ExplainRequest request) {
+        Long organizationId;
+        Map<String, Object> explanation;
         try (RuntimeSlots.Admission admission = slots.admit(userId)) {
-            RunnableModel model = requireRunnableModel(userId, modelId);
+            organizationId = authorizationService.requireCurrent(userId, PermissionKey.RUN_PREDICTIONS).getId();
+            RunnableModel model = requireRunnableModel(userId, organizationId, modelId);
             Map<String, String> fields = Map.of("data", json(request.instance()), "traces", json(request.traces()));
-            return admission.run(() -> modelRuntime.run("/explain", model, fields));
+            explanation = admission.run(() -> modelRuntime.run("/explain", model, fields));
         }
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.MODEL_EXPLAIN, modelId);
+        return explanation;
     }
 
     private String json(Object value) {
@@ -59,8 +68,7 @@ public class AnalyzerServiceImpl implements AnalyzerUseCase {
     }
 
     /** Explaining a model executes it, which requires permission to run predictions. */
-    private RunnableModel requireRunnableModel(Long userId, Long modelId) {
-        Long organizationId = authorizationService.requireCurrent(userId, PermissionKey.RUN_PREDICTIONS).getId();
+    private RunnableModel requireRunnableModel(Long userId, Long organizationId, Long modelId) {
         return modelRepository.findRunnableModel(modelId, organizationId)
                 .orElseThrow(() -> new ModelDoesNotExistsException(modelId, userLookupService.requireById(userId).getUsername()));
     }

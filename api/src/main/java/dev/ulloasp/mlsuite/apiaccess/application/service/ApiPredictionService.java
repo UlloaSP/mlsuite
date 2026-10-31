@@ -19,6 +19,7 @@ import dev.ulloasp.mlsuite.model.application.runtime.ModelUnavailableException;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.schema.application.service.PublicModelRuntime;
 import dev.ulloasp.mlsuite.schema.application.service.RuntimeSlots;
+import dev.ulloasp.mlsuite.security.identity.RequestOrigin;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -45,7 +46,7 @@ public class ApiPredictionService implements ApiPredictionUseCase {
 
     @Override
     public ApiPredictionDto predict(String secret, String bookmarkId, ApiPredictionRequest request) {
-        UUID requestId = UUID.randomUUID();
+        UUID requestId = RequestOrigin.currentRequestId();
         long started = System.nanoTime();
         ApiCaller caller = runs.authenticate(secret);
         ApiTarget target = null;

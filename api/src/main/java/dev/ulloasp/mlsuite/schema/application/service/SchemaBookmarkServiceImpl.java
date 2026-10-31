@@ -7,6 +7,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
@@ -33,6 +37,7 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
     private final SchemaBookmarkRepository bookmarkRepository;
     private final WorkspaceAuthorizationService authorizationService;
     private final BookmarkPublishability publishability;
+    private final AuditLogService auditLog;
 
     @Override
     public List<SchemaBookmark> listBookmarks(Long userId, Long schemaId) {
@@ -67,7 +72,10 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
         if (description != null) bookmark.setDescription(description);
         String note = cleanText(request.publicationNote());
         if (note != null) bookmark.setPublicationNote(note);
-        return bookmarkRepository.save(bookmark);
+        SchemaBookmark saved = bookmarkRepository.save(bookmark);
+        auditLog.record(AuditActor.user(userId), orgId, AuditAction.BOOKMARK_CREATE, saved.getId(),
+                AuditDetails.of("name", name, "schemaVersionId", version.getId()));
+        return saved;
     }
 
     @Override
@@ -78,6 +86,9 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
         if (!version.getSchema().getId().equals(bookmark.getSchema().getId())) {
             throw badRequest("Bookmark version outside schema");
         }
+        auditLog.record(AuditActor.user(userId), orgId, AuditAction.BOOKMARK_MOVE, bookmarkId,
+                AuditDetails.of("bookmark", bookmark.getName(),
+                        "schemaVersionId", AuditDetails.changed(bookmark.getVersion().getId(), version.getId())));
         point(bookmark, version);
         return bookmark;
     }
@@ -94,6 +105,11 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "This schema already has a bookmark named \"%s\".".formatted(name));
         }
+        auditLog.record(AuditActor.user(userId), orgId, AuditAction.BOOKMARK_UPDATE, bookmarkId,
+                AuditDetails.of("bookmark", name, "name", AuditDetails.changed(bookmark.getName(), name),
+                        "description", AuditDetails.changed(bookmark.getDescription(), cleanText(request.description())),
+                        "publicationNote", AuditDetails.changed(bookmark.getPublicationNote(),
+                                cleanText(request.publicationNote()))));
         bookmark.setName(name);
         bookmark.setDescription(cleanText(request.description()));
         bookmark.setPublicationNote(cleanText(request.publicationNote()));
@@ -102,16 +118,26 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
 
     @Override
     public SchemaBookmark publishBookmark(Long userId, Long bookmarkId) {
-        SchemaBookmark bookmark = requireBookmark(bookmarkId, requirePublish(userId));
+        Long orgId = requirePublish(userId);
+        SchemaBookmark bookmark = requireBookmark(bookmarkId, orgId);
         requirePublishable(bookmark.getVersion(), "This bookmark cannot be published. ");
         if (bookmark.getPublicId() == null) bookmark.setPublicId(UUID.randomUUID().toString());
+        if (bookmark.getVisibility() != BookmarkVisibility.PUBLIC) {
+            auditLog.record(AuditActor.user(userId), orgId, AuditAction.BOOKMARK_PUBLISH, bookmarkId,
+                    AuditDetails.of("bookmark", bookmark.getName()));
+        }
         bookmark.setVisibility(BookmarkVisibility.PUBLIC);
         return bookmark;
     }
 
     @Override
     public SchemaBookmark unpublishBookmark(Long userId, Long bookmarkId) {
-        SchemaBookmark bookmark = requireBookmark(bookmarkId, requirePublish(userId));
+        Long orgId = requirePublish(userId);
+        SchemaBookmark bookmark = requireBookmark(bookmarkId, orgId);
+        if (bookmark.getVisibility() == BookmarkVisibility.PUBLIC) {
+            auditLog.record(AuditActor.user(userId), orgId, AuditAction.BOOKMARK_UNPUBLISH, bookmarkId,
+                    AuditDetails.of("bookmark", bookmark.getName()));
+        }
         bookmark.unpublish();
         return bookmark;
     }

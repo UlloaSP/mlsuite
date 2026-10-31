@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -21,20 +23,21 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.admin.moderation.ModeratedBookmarkDto;
 import dev.ulloasp.mlsuite.admin.moderation.PublicBookmarkModerationService;
-import dev.ulloasp.mlsuite.audit.adapter.out.persistence.repository.AuditEventRepository;
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
-import dev.ulloasp.mlsuite.audit.domain.model.AuditEvent;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
-import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.util.PageDto;
@@ -51,7 +54,7 @@ import jakarta.persistence.EntityManager;
         "spring.jpa.hibernate.ddl-auto=create-drop", "spring.flyway.enabled=false"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({ PublicBookmarkModerationService.class, AuditLogService.class, UserLookupService.class })
+@Import(PublicBookmarkModerationService.class)
 @ContextConfiguration(classes = PublicBookmarkModerationServiceTest.PersistenceConfig.class)
 class PublicBookmarkModerationServiceTest {
 
@@ -76,8 +79,8 @@ class PublicBookmarkModerationServiceTest {
     private PublicBookmarkModerationService service;
     @Autowired
     private SchemaBookmarkRepository bookmarks;
-    @Autowired
-    private AuditEventRepository auditEvents;
+    @MockitoBean
+    private AuditLogService auditLog;
 
     private User moderator;
     private Organization acme;
@@ -143,14 +146,8 @@ class PublicBookmarkModerationServiceTest {
         assertTrue(bookmarks.findPublishedByPublicId("acme-public").isEmpty());
         assertEquals(List.of("legacy", "live"), names(service.list(0, 8, "", "name")));
 
-        List<AuditEvent> events = recorded(acme);
-        assertEquals(1, events.size());
-        AuditEvent event = events.get(0);
-        assertEquals("BOOKMARK_MODERATION_UNPUBLISH", event.getAction());
-        assertEquals("SCHEMA_BOOKMARK", event.getTargetType());
-        assertEquals(acmePublic.getId().toString(), event.getTargetId());
-        assertEquals("production", event.getMetadata());
-        assertEquals(moderator.getId(), event.getActor().getId());
+        verify(auditLog).record(AuditActor.user(moderator.getId()), acme.getId(),
+                AuditAction.BOOKMARK_MODERATION_UNPUBLISH, acmePublic.getId(), AuditDetails.of("bookmark", "production"));
     }
 
     @Test
@@ -159,7 +156,7 @@ class PublicBookmarkModerationServiceTest {
         entityManager.flush();
 
         assertEquals(BookmarkVisibility.PRIVATE, result.getVisibility());
-        assertTrue(recorded(acme).isEmpty());
+        verifyNoInteractions(auditLog);
         assertEquals(3, service.list(0, 8, "", "name").totalItems());
     }
 
@@ -182,12 +179,6 @@ class PublicBookmarkModerationServiceTest {
 
     private static List<String> names(PageDto<ModeratedBookmarkDto> page) {
         return page.items().stream().map(ModeratedBookmarkDto::name).toList();
-    }
-
-    private List<AuditEvent> recorded(Organization organization) {
-        return auditEvents.findAll().stream()
-                .filter(event -> event.getOrganization().getId().equals(organization.getId()))
-                .toList();
     }
 
     private User user(String name, SystemRole role) {

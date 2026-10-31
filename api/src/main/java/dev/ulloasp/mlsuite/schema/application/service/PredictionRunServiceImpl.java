@@ -6,6 +6,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
@@ -34,13 +38,17 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
     private final WorkspaceAuthorizationService authorizationService;
     private final PredictionAttestations attestations;
     private final PredictionRunStore runStore;
+    private final AuditLogService auditLog;
 
     @Override
     public PredictionRun createRunForBookmark(Long userId, Long schemaBookmarkId, CreatePredictionRunRequest request) {
         User user = userLookupService.requireById(userId);
         Long organizationId = requireRunPredictions(userId);
         SchemaBookmark bookmark = requireBookmark(schemaBookmarkId, organizationId);
-        return createRun(organizationId, user, bookmark, request);
+        PredictionRun run = createRun(organizationId, user, bookmark, request);
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.PREDICTION_RUN_SAVE, run.getId(),
+                AuditDetails.of("name", run.getName(), "bookmarkId", schemaBookmarkId, "status", run.getStatus()));
+        return run;
     }
 
     @Override
@@ -49,7 +57,11 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
         User user = userLookupService.requireById(userId);
         Long organizationId = requireRunPredictions(userId);
         SchemaBookmark bookmark = requireBookmark(schemaBookmarkId, organizationId);
-        return requests.stream().map(request -> createRun(organizationId, user, bookmark, request).getId()).toList();
+        List<Long> runIds = requests.stream()
+                .map(request -> createRun(organizationId, user, bookmark, request).getId()).toList();
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.PREDICTION_RUN_BATCH_CREATE,
+                schemaBookmarkId, AuditDetails.of("runs", runIds.size()));
+        return runIds;
     }
 
     @Override
@@ -71,6 +83,8 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
         feedbackRepository.deleteByResult_Run_Id(runId);
         resultRepository.deleteByRun_Id(runId);
         runRepository.delete(run);
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.PREDICTION_RUN_DELETE, runId,
+                AuditDetails.of("name", run.getName()));
     }
 
     private Long requireRead(Long userId) {

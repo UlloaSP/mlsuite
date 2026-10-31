@@ -19,6 +19,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 
 @DataJpaTest(properties = {
     "spring.profiles.active=test", "logging.file.name=target/user-delete-test.log",
@@ -38,14 +41,17 @@ class AdminUserDeletionTest {
         @Bean PasswordEncoder passwordEncoder() { return mock(PasswordEncoder.class); }
         @Bean WorkspaceBootstrapService bootstrapService() { return mock(WorkspaceBootstrapService.class); }
     }
+    @MockitoBean AuditLogService auditLog;
     @Autowired EntityManager entityManager;
+    private static final Long ACTOR = 1L;
+
     @Autowired AdminUserService service;
 
     @Test
     void deletesUnreferencedUser() {
         var target = user(SystemRole.USER);
         Long id = target.getId();
-        service.delete(id);
+        service.delete(ACTOR, id);
         entityManager.clear();
         assertNull(entityManager.find(User.class, id));
     }
@@ -60,20 +66,20 @@ class AdminUserDeletionTest {
         entityManager.persist(owner);
         entityManager.persist(new OrganizationMembership(org, target, owner, MembershipStatus.ACTIVE));
         entityManager.flush();
-        var error = assertThrows(ResponseStatusException.class, () -> service.delete(target.getId()));
+        var error = assertThrows(ResponseStatusException.class, () -> service.delete(ACTOR, target.getId()));
         assertEquals(409, error.getStatusCode().value());
         assertTrue(error.getReason().contains("protected records"));
     }
 
     @Test
     void missingUserIsNotFound() {
-        assertThrows(UserDoesNotExistException.class, () -> service.delete(999999L));
+        assertThrows(UserDoesNotExistException.class, () -> service.delete(ACTOR, 999999L));
     }
 
     @Test
     void lastEnabledSuperadminIsPreserved() {
         var target = user(SystemRole.SUPERADMIN);
-        assertThrows(IllegalArgumentException.class, () -> service.delete(target.getId()));
+        assertThrows(IllegalArgumentException.class, () -> service.delete(ACTOR, target.getId()));
         assertNotNull(entityManager.find(User.class, target.getId()));
     }
 

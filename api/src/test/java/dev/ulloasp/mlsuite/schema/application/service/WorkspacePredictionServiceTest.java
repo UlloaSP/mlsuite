@@ -14,6 +14,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -38,6 +39,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.ModelRuntimeClient;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.application.service.WorkspaceRuntimeSlots;
@@ -267,7 +269,7 @@ class WorkspacePredictionServiceTest {
     private WorkspacePredictionService service(WorkspaceRuntimeSlots slots) {
         WorkspacePredictionPlanner planner = new WorkspacePredictionPlanner(authorization, bookmarks,
                 new BookmarkPublishability(bindings, 50), models);
-        return new WorkspacePredictionService(planner, slots, runtime, attestations, new ObjectMapper());
+        return new WorkspacePredictionService(planner, slots, runtime, attestations, new ObjectMapper(), mock(AuditLogService.class));
     }
 
     private void assertRefused(int status, Executable call) {

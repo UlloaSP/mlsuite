@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -31,9 +32,10 @@ public class InfrastructureController {
 
     @PostMapping("/services/{serviceName}/actions")
     public ResponseEntity<Void> action(
+            CurrentUser actor,
             @PathVariable String serviceName,
             @Valid @RequestBody ServiceActionRequest request) {
-        infrastructureService.action(serviceName, request);
+        infrastructureService.action(actor.userId(), serviceName, request);
         return ResponseEntity.noContent().build();
     }
 
@@ -46,13 +48,14 @@ public class InfrastructureController {
 
     @PostMapping("/terminal/sessions")
     public ResponseEntity<TerminalSessionResponse> createTerminalSession(
+            CurrentUser actor,
             @Valid @RequestBody TerminalSessionRequest request) {
-        return ResponseEntity.ok(infrastructureService.createTerminalSession(request));
+        return ResponseEntity.ok(infrastructureService.createTerminalSession(actor.userId(), request));
     }
 
     @DeleteMapping("/terminal/sessions/{sessionId}")
-    public ResponseEntity<Void> closeTerminalSession(@PathVariable String sessionId) {
-        infrastructureService.closeTerminalSession(sessionId);
+    public ResponseEntity<Void> closeTerminalSession(CurrentUser actor, @PathVariable String sessionId) {
+        infrastructureService.closeTerminalSession(actor.userId(), sessionId);
         return ResponseEntity.noContent().build();
     }
 }

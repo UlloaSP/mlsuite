@@ -12,6 +12,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.ModelRuntimeClient;
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.RuntimeBuilderClient;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
@@ -41,11 +45,13 @@ class ModelPreparationWorker {
     private final RuntimeEnvironmentRepository environments;
     private final RuntimeBuilderClient builder;
     private final ModelRuntimeClient runtime;
+    private final AuditLogService auditLog;
     private final int leaseSeconds;
     private final int maxAttempts;
 
     ModelPreparationWorker(ModelPreparationLedger ledger, ModelRepository models,
             RuntimeEnvironmentRepository environments, RuntimeBuilderClient builder, ModelRuntimeClient runtime,
+            AuditLogService auditLog,
             @Value("${mlsuite.model-preparation.lease-seconds}") int leaseSeconds,
             @Value("${mlsuite.model-preparation.max-attempts}") int maxAttempts) {
         this.ledger = ledger;
@@ -53,6 +59,7 @@ class ModelPreparationWorker {
         this.environments = environments;
         this.builder = builder;
         this.runtime = runtime;
+        this.auditLog = auditLog;
         this.leaseSeconds = leaseSeconds;
         this.maxAttempts = maxAttempts;
     }
@@ -73,12 +80,16 @@ class ModelPreparationWorker {
             RuntimeEnvironment environment = environments.findById(model.environmentKey()).orElseThrow();
             if (!environment.isLegacy()) builder.build(environment);
             Map<String, Object> answer = runtime.verify(model);
-            ledger.ready(modelId, worker, importances(answer.get("featureImportances")));
+            ledger.ready(modelId, worker, importances(answer.get("featureImportances")))
+                    .ifPresent(organizationId -> auditLog.record(AuditActor.SYSTEM, organizationId,
+                            AuditAction.MODEL_PREPARATION_READY, modelId,
+                            AuditDetails.of("environment", model.environmentKey())));
             log.info("Model {} is ready in environment {}", modelId, model.environmentKey());
         } catch (AnalyzerServiceException ex) {
             if (ex.getStatus() == 400 || ex.getStatus() == 422) {
                 log.warn("Model {} cannot run: {}", modelId, ex.getDetail());
-                ledger.fail(modelId, worker, ex.getDetail());
+                ledger.fail(modelId, worker, ex.getDetail())
+                        .ifPresent(organizationId -> recordFailure(organizationId, modelId, ex.getDetail()));
             } else {
                 later(modelId, ex.getDetail());
             }
@@ -89,11 +100,19 @@ class ModelPreparationWorker {
     }
 
     private void later(Long modelId, String reason) {
-        if (ledger.retryOrFail(modelId, worker, reason, maxAttempts, FIRST_DELAY_SECONDS, MAX_DELAY_SECONDS)) {
+        Optional<Long> failed = ledger.retryOrFail(modelId, worker, reason, maxAttempts, FIRST_DELAY_SECONDS,
+                MAX_DELAY_SECONDS);
+        if (failed.isPresent()) {
             log.warn("Model {} failed after {} attempts: {}", modelId, maxAttempts, reason);
+            recordFailure(failed.get(), modelId, reason);
         } else {
             log.info("Model {} is tried again later: {}", modelId, reason);
         }
+    }
+
+    private void recordFailure(Long organizationId, Long modelId, String reason) {
+        auditLog.record(AuditActor.SYSTEM, organizationId, AuditAction.MODEL_PREPARATION_FAILED, modelId,
+                AuditDetails.of("reason", reason));
     }
 
     private static List<Map<String, Object>> importances(Object value) {

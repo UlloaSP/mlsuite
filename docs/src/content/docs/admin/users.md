@@ -11,7 +11,7 @@ A superadmin:
 
 - acts as Owner in every organization, without being a member, and sees every organization in the
   switcher;
-- sees the **Administration** group: Organizations, Users, Moderation, API traffic and Infra;
+- sees the **Administration** group: Organizations, Users, Moderation, API traffic, Audit log and Infra;
 - has invitations accepted on the spot.
 
 Other accounts that open these pages get "Not found".

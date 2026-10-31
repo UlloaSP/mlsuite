@@ -13,6 +13,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.application.runtime.RuntimeEnvironments;
 import dev.ulloasp.mlsuite.model.application.service.ModelServiceImpl;
@@ -52,7 +53,8 @@ class ModelReadPermissionTest {
                 mock(SchemaModelBindingRepository.class), mock(PredictionResultRepository.class), authorization,
                 mock(ModelArtifactWriter.class), mock(ModelArtifactContentReader.class),
                 mock(StorageDeletionQueue.class),
-                mock(RuntimeEnvironments.class), false);
+                mock(RuntimeEnvironments.class),
+                mock(AuditLogService.class), false);
     }
 
     @ParameterizedTest

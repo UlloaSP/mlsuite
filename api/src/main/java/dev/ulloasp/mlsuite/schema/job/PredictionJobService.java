@@ -10,6 +10,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
@@ -32,12 +36,13 @@ public class PredictionJobService {
     private final WorkspaceAuthorizationService authorization;
     private final SchemaBookmarkRepository bookmarks;
     private final SchemaModelBindingRepository bindings;
+    private final AuditLogService auditLog;
     private final int maxRows;
     private final int maxOpenPerOrganization;
     private final int maxOpenPerMember;
 
     PredictionJobService(PredictionJobLedger ledger, WorkspaceAuthorizationService authorization,
-            SchemaBookmarkRepository bookmarks, SchemaModelBindingRepository bindings,
+            SchemaBookmarkRepository bookmarks, SchemaModelBindingRepository bindings, AuditLogService auditLog,
             @Value("${mlsuite.prediction-jobs.max-rows}") int maxRows,
             @Value("${mlsuite.prediction-jobs.max-open-per-organization}") int maxOpenPerOrganization,
             @Value("${mlsuite.prediction-jobs.max-open-per-member}") int maxOpenPerMember) {
@@ -45,6 +50,7 @@ public class PredictionJobService {
         this.authorization = authorization;
         this.bookmarks = bookmarks;
         this.bindings = bindings;
+        this.auditLog = auditLog;
         this.maxRows = maxRows;
         this.maxOpenPerOrganization = maxOpenPerOrganization;
         this.maxOpenPerMember = maxOpenPerMember;
@@ -70,6 +76,8 @@ public class PredictionJobService {
                     + " bulk uploads running; wait for one to finish");
         }
         long id = ledger.insert(organizationId, bookmarkId, request.schemaVersionId(), userId, request.rows());
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.PREDICTION_JOB_START, id,
+                AuditDetails.of("bookmarkId", bookmarkId, "rows", request.rows().size()));
         return ledger.find(organizationId, id).orElseThrow();
     }
 
@@ -94,6 +102,8 @@ public class PredictionJobService {
         if (!ledger.cancel(organizationId, job.id())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "The bulk upload has already finished");
         }
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.PREDICTION_JOB_CANCEL, jobId,
+                AuditDetails.of("rowsLeft", job.pendingRows()));
         return require(organizationId, jobId);
     }
 
@@ -103,6 +113,8 @@ public class PredictionJobService {
         if (job.failedRows() == 0 || !ledger.retry(organizationId, job.id())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Only a finished bulk upload's failed rows run again");
         }
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.PREDICTION_JOB_RETRY, jobId,
+                AuditDetails.of("rows", job.failedRows()));
         return require(organizationId, jobId);
     }
 

@@ -22,6 +22,10 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
@@ -77,6 +81,7 @@ public class PublicRunService implements PublicRunUseCase {
     private final VisitorRepository visitorRepository;
     private final UserLookupService userLookupService;
     private final PublicRunCatalogSearch catalogSearch;
+    private final AuditLogService auditLog;
 
     /**
      * How stale a visitor's last-seen time may be. Concurrent runs of one visitor would otherwise
@@ -118,6 +123,9 @@ public class PublicRunService implements PublicRunUseCase {
             results.add(resultRepository.save(new PredictionResult(run, modelRepository.findById(call.modelId()).orElseThrow(),
                     call.input(), output, PredictionResultStatus.SUCCESS, null, null)));
         }
+        auditLog.record(actor(caller), bookmark.getSchema().getOrganization().getId(), AuditAction.PREDICTION_RUN,
+                bookmark.getId(), AuditDetails.of("runId", run.getId(), "schemaVersionId", plan.versionId(),
+                        "status", run.getStatus()));
         PublicForm form = publicBookmarks.formOf(run.getSchemaVersion());
         return new Recorded(dto(run, form, results, List.of()), visitor.getId(), known.isEmpty(),
                 visitor.getLastSeenAt());
@@ -220,7 +228,14 @@ public class PublicRunService implements PublicRunUseCase {
             feedback.setValue(item.value());
             history.save(feedback, user == null ? null : user.getId());
         }
+        auditLog.record(actor(caller), run.getSchemaBookmark().getSchema().getOrganization().getId(),
+                AuditAction.PUBLIC_FEEDBACK_SAVE, runId, AuditDetails.of("answers", request.items().size()));
         return dto(run, form, results, ownFeedback(List.of(runId), caller));
+    }
+
+    /** An account signed in acts as itself on a public page; only a browser alone is a visitor. */
+    private static AuditActor actor(PublicCaller caller) {
+        return caller.signedIn() ? AuditActor.user(caller.userId()) : AuditActor.VISITOR;
     }
 
     private PredictionRun ownRun(String publicId, Long runId, PublicCaller caller) {

@@ -14,6 +14,7 @@ import {
   Gavel,
   GitCommitHorizontal,
   GitCompareArrows,
+  History,
   Play,
   MessageSquareText,
   ServerCog,
@@ -45,6 +46,7 @@ export const SECTION_ICONS = {
   users: ShieldCheck,
   moderation: Gavel,
   apiTraffic: Gauge,
+  audit: History,
   infrastructure: ServerCog,
   explore: Compass,
 } as const satisfies Record<string, LucideIcon>;

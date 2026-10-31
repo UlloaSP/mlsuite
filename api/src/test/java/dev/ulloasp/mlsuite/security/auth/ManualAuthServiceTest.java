@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 import java.time.Clock;
 import java.util.Optional;
@@ -16,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.admin.AdminCreateUserRequest;
 import dev.ulloasp.mlsuite.admin.AdminUpdateUserRequest;
 import dev.ulloasp.mlsuite.admin.AdminUserService;
@@ -50,11 +52,11 @@ class ManualAuthServiceTest {
                 passwordEncoder,
                 workspaceBootstrapService,
                 authenticationManager,
-                new AuthAttemptLimiter(10, 5, Clock.systemUTC()));
+                new AuthAttemptLimiter(10, 5, Clock.systemUTC()), mock(AuditLogService.class));
         adminUserService = new AdminUserService(
                 userRepository,
                 passwordEncoder,
-                workspaceBootstrapService);
+                workspaceBootstrapService, mock(AuditLogService.class));
     }
 
     @Test
@@ -87,7 +89,7 @@ class ManualAuthServiceTest {
         when(userRepository.existsByEmailIgnoreCase("root@example.com")).thenReturn(false);
         when(passwordEncoder.encode("very-secret")).thenReturn("hash");
 
-        var dto = adminUserService.create(new AdminCreateUserRequest(
+        var dto = adminUserService.create(9L, new AdminCreateUserRequest(
                 "root@example.com",
                 "very-secret",
                 "Root",
@@ -107,7 +109,7 @@ class ManualAuthServiceTest {
         when(userRepository.countBySystemRoleAndEnabledTrue(SystemRole.SUPERADMIN)).thenReturn(1L);
 
         assertThrows(IllegalArgumentException.class,
-                () -> adminUserService.update(1L, new AdminUpdateUserRequest(null, null, "USER", true)));
+                () -> adminUserService.update(9L, 1L, new AdminUpdateUserRequest(null, null, "USER", true)));
     }
 
     @Test
@@ -116,7 +118,7 @@ class ManualAuthServiceTest {
         target.setId(2L);
         when(userRepository.findById(2L)).thenReturn(Optional.of(target));
 
-        adminUserService.delete(2L);
+        adminUserService.delete(9L, 2L);
 
         verify(userRepository).deleteAllByIdInBatch(java.util.List.of(target.getId()));
     }
@@ -128,6 +130,6 @@ class ManualAuthServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(root));
         when(userRepository.countBySystemRoleAndEnabledTrue(SystemRole.SUPERADMIN)).thenReturn(1L);
 
-        assertThrows(IllegalArgumentException.class, () -> adminUserService.delete(1L));
+        assertThrows(IllegalArgumentException.class, () -> adminUserService.delete(9L, 1L));
     }
 }

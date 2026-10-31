@@ -8,6 +8,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -28,6 +29,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
@@ -79,7 +81,7 @@ class PredictionRunCreationTest {
     @BeforeEach
     void setUp() {
         service = new PredictionRunServiceImpl(users, bookmarks, runs, results, feedback, authorization, attestations,
-                new PredictionRunStore(bindings, runs, results, models));
+                new PredictionRunStore(bindings, runs, results, models), mock(AuditLogService.class));
         Organization organization = new Organization();
         organization.setId(ORG);
         User user = new User();

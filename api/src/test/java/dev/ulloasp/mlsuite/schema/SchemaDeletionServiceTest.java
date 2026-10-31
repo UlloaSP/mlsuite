@@ -29,6 +29,9 @@ import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 
 @DataJpaTest(properties = {
     "spring.profiles.active=test", "logging.file.name=target/schema-delete-test.log",
@@ -41,6 +44,8 @@ import org.springframework.web.server.ResponseStatusException;
 @Import(SchemaServiceImpl.class)
 @ContextConfiguration(classes = SchemaDeletionServiceTest.PersistenceConfig.class)
 class SchemaDeletionServiceTest {
+
+    @MockitoBean AuditLogService auditLog;
     @Configuration
     @EntityScan("dev.ulloasp.mlsuite")
     @EnableJpaRepositories("dev.ulloasp.mlsuite")
