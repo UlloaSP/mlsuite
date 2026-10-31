@@ -2,6 +2,7 @@
 import { act } from "react";
 import { Routes, Route } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
+import { auditDetails } from "@/features/workspace/lib/audit-actions";
 import { AdminAuditLogPage } from "@/features/workspace/pages/admin-audit-log-page";
 import { AuditLogPage } from "@/features/workspace/pages/audit-log-page";
 import { click, mount } from "./support/dom";
@@ -145,6 +146,12 @@ test("shows what changed and never a blank actor, whoever acted", async () => {
   expect(host.textContent).toContain("Audit entries pruned");
   expect(host.textContent).toContain("System");
   expect(host.textContent).toContain("API client · Lab2Pressure");
+});
+
+test("reads recorded counts as they are, never as an object", () => {
+  expect(auditDetails({ scope: "USER", counts: { runs: 3, apiCalls: 1 } })).toBe(
+    "Scope: USER · Counts: Runs 3, Api calls 1",
+  );
 });
 
 test("a visitor reads as one, with the email a failed sign-in tried", async () => {

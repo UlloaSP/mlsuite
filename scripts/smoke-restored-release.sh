@@ -61,6 +61,10 @@ STORAGE_ENV=(-e STORAGE_ENDPOINT="$storage_endpoint" -e STORAGE_ACCESS_KEY="$sto
   -e STORAGE_SECRET_KEY="$storage_secret" -e STORAGE_BUCKET="$storage_bucket" \
   -e STORAGE_AUTO_CREATE_BUCKET=false)
 
+# Every model's stored artifact must still match the hash its row persists.
+"${COMPOSE[@]}" run --rm --no-deps "${DB_ENV[@]}" "${STORAGE_ENV[@]}" \
+  -e ARTIFACT_JOB=verify artifact-prune
+
 "${COMPOSE[@]}" up -d --no-deps py-analyzer runtime-builder
 docker rm -f "$api_container" >/dev/null 2>&1 || true
 "${COMPOSE[@]}" run -d --no-deps --name "$api_container" \

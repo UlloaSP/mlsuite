@@ -23,12 +23,15 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.ErrorResponse;
+import org.springframework.web.HttpMediaTypeException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
@@ -57,6 +60,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public class DomainExceptionHandler {
 
     private static final Set<String> HANDLE_CONSTRAINTS = Set.of("uq_app_user_username", "uq_organization_slug");
+    private static final String UNSERVED_REQUEST = "This endpoint does not accept this request.";
 
     // ---- 404 NOT FOUND ----
 
@@ -177,12 +181,24 @@ public class DomainExceptionHandler {
                         req.getRequestURI()));
     }
 
-    /** A route or method the API does not serve is answered as such, not as a server failure. */
-    @ExceptionHandler({ NoResourceFoundException.class, HttpRequestMethodNotSupportedException.class })
-    public ResponseEntity<ErrorDto> handleUnservedRoute(ErrorResponse ex, HttpServletRequest req) {
+    /** A request no endpoint can take (route, method, media type, a missing part) is not a server failure. */
+    @ExceptionHandler({
+            NoResourceFoundException.class,
+            HttpRequestMethodNotSupportedException.class,
+            HttpMediaTypeException.class,
+            ServletRequestBindingException.class
+    })
+    public ResponseEntity<ErrorDto> handleUnservedRequest(ErrorResponse ex, HttpServletRequest req) {
         HttpStatusCode status = ex.getStatusCode();
         return ResponseEntity.status(status)
-                .body(ErrorDto.of(status.value(), "This endpoint does not accept this request.", req.getRequestURI()));
+                .body(ErrorDto.of(status.value(), UNSERVED_REQUEST, req.getRequestURI()));
+    }
+
+    /** Multipart parsing failed, or the request is not multipart at all; a size limit has its own handler. */
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<ErrorDto> handleUnreadableMultipart(MultipartException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorDto.of(HttpStatus.BAD_REQUEST.value(), UNSERVED_REQUEST, req.getRequestURI()));
     }
 
     // ---- Analyzer (dynamic status) ----

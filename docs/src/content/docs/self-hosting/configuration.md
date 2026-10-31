@@ -58,6 +58,7 @@ equivalent roles yourself; the migration role must be able to install `pg_trgm`.
 | `STORAGE_DELETION_RETENTION_DAYS` | `7` | How long a finished file deletion is remembered. At least 1. |
 | `PURGE_BATCH_SIZE` | `1000` | How many rows of a table a purge deletes in each transaction. |
 | `ARTIFACT_ORPHAN_GRACE_SECONDS` | `86400` | The minimum age before the `artifact-prune` job removes a model object nothing refers to. |
+| `ARTIFACT_JOB` | `prune` | What the `artifact-prune` job does: `prune`, or `verify` to only check every model artifact against its SHA-256. |
 
 ## Models
 

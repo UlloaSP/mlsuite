@@ -216,6 +216,7 @@ services:
       STORAGE_BUCKET: ${STORAGE_BUCKET}
       STORAGE_AUTO_CREATE_BUCKET: "false"
       ARTIFACT_ORPHAN_GRACE_SECONDS: ${ARTIFACT_ORPHAN_GRACE_SECONDS:-86400}
+      ARTIFACT_JOB: ${ARTIFACT_JOB:-prune}
     depends_on:
       db-migrate:
         condition: service_completed_successfully

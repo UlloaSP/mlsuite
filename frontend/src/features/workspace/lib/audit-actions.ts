@@ -187,8 +187,13 @@ const detailLabel = (key: string) => {
 const isChange = (value: unknown): value is { from?: unknown; to?: unknown } =>
   typeof value === "object" && value !== null && ("from" in value || "to" in value);
 
-const detailValue = (value: unknown) =>
-  isChange(value) ? `${String(value.from ?? "—")} → ${String(value.to ?? "—")}` : String(value);
+const detailValue = (value: unknown): string => {
+  if (isChange(value)) return `${String(value.from ?? "—")} → ${String(value.to ?? "—")}`;
+  if (typeof value !== "object" || value === null) return String(value);
+  return Object.entries(value)
+    .map(([key, entry]) => `${detailLabel(key)} ${detailValue(entry)}`)
+    .join(", ");
+};
 
 /** What an entry recorded, as it reads: an entry written before details had names shows its text. */
 export const auditDetails = (metadata: AuditEventDto["metadata"]) =>

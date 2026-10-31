@@ -24,9 +24,8 @@ import lombok.RequiredArgsConstructor;
  * for the clear period. The time a condition began is this instance's own, so a restart starts it
  * again; the time it last held is on the alert, shared by every instance (see the ledger).
  *
- * <p>It has a thread of its own rather than {@code @Scheduled}: every fixed-delay scheduled task
- * shares one thread, and the prediction job worker holds that thread for a whole job, which is the
- * very load this has to report.
+ * <p>It has a thread of its own rather than {@code @Scheduled}, so a scheduler short of threads
+ * under the very load this has to report cannot delay it.
  */
 @Component
 @RequiredArgsConstructor
