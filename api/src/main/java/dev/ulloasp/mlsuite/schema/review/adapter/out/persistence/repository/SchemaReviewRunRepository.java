@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
@@ -85,6 +86,10 @@ public interface SchemaReviewRunRepository extends JpaRepository<SchemaReviewRun
     String BY_STATE_ENTERED = "ORDER BY coalesce(submission.submittedAt, run.createdAt) DESC, rr.publicId ASC";
 
     List<SchemaReviewRun> findByReviewIdOrderByIdAsc(Long reviewId);
+
+    @Modifying
+    @Query("DELETE FROM SchemaReviewRun rr WHERE rr.review.id = :reviewId")
+    void deleteByReview(Long reviewId);
 
     List<SchemaReviewRun> findByRunIdOrderByIdAsc(Long runId);
 

@@ -105,6 +105,7 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
 
     private SchemaModelBinding saveBinding(Long orgId, SchemaVersion version, CreateSchemaModelBindingRequest req) {
         Model model = modelRepository.findByIdAndOrganizationId(req.modelId(), orgId)
+                .filter(found -> found.getPurgingAt() == null)
                 .orElseThrow(() -> badRequest("Model unavailable"));
         return bindingRepository.save(new SchemaModelBinding(version, model,
                 req.pluginPolicy() == null ? Map.of() : req.pluginPolicy()));
@@ -112,6 +113,7 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
 
     private Schema requireSchemaForUpdate(Long schemaId, Long organizationId) {
         return schemaRepository.findForUpdate(schemaId, organizationId)
+                .filter(schema -> schema.getPurgingAt() == null)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema not found"));
     }
 

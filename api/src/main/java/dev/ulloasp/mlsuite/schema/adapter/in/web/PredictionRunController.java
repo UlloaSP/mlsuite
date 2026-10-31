@@ -14,6 +14,8 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionR
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionRunRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionRunsRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatedPredictionRunsDto;
+import dev.ulloasp.mlsuite.schema.application.dto.DeletePredictionRunsRequest;
+import dev.ulloasp.mlsuite.schema.application.dto.DeletedPredictionRunsDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunCatalogItemDto;
 import dev.ulloasp.mlsuite.schema.application.dto.WorkspacePredictionDto;
@@ -68,6 +70,13 @@ public class PredictionRunController {
     public ResponseEntity<Void> delete(CurrentUser user, @PathVariable Long runId) {
         predictionRunUseCase.deleteRun(user.userId(), runId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/prediction-runs/batch-delete")
+    public ResponseEntity<DeletedPredictionRunsDto> deleteMany(CurrentUser user,
+            @Valid @RequestBody DeletePredictionRunsRequest request) {
+        return ResponseEntity.ok(new DeletedPredictionRunsDto(
+                predictionRunUseCase.deleteRuns(user.userId(), request.runIds())));
     }
 
     private PredictionRunDto toDto(PredictionRun run) {

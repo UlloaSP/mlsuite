@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.storage;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 public interface StorageDeletionWorkQueue {
@@ -10,4 +11,7 @@ public interface StorageDeletionWorkQueue {
 
     /** Counts a failed attempt; true when it was the last the task gets. */
     boolean fail(Long id, String claimToken, String error, int maxAttempts);
+
+    /** Forgets up to {@code batchSize} tasks that completed before the cutoff; returns how many. */
+    int pruneCompleted(OffsetDateTime before, int batchSize);
 }

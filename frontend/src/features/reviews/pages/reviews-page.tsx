@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from "react";
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
 import { useSubmitSchemaReviewInboxMutation } from "@/features/reviews/api/review-mutations";
 import {
@@ -10,7 +10,10 @@ import {
   useReviewFirstRun,
 } from "@/features/reviews/api/review-catalog";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
+import {
+  useCan,
+  useCurrentOrganizationId,
+} from "@/capabilities/workspace-context/workspace-context";
 import { SCHEMA_REVIEW_INBOX_QUERY_KEY } from "@/features/reviews/api/review-keys";
 import { ReviewStepContextPanel } from "@/features/reviews/components/ReviewStepContextPanel";
 import { ReviewUnavailable } from "@/features/reviews/components/ReviewUnavailable";
@@ -20,6 +23,7 @@ import {
   type ReviewRailItem,
 } from "@/features/reviews/components/SchemaReviewRunRail";
 import { HttpError } from "@/shared/api/http";
+import { appButtonClass } from "@/shared/ui/button-styles";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
@@ -33,6 +37,7 @@ const gone = (error: unknown) => error instanceof HttpError && error.status === 
 export function ReviewsPage() {
   const { reviewId, reviewRunId } = useParams<{ reviewId?: string; reviewRunId?: string }>();
   const navigate = useNavigate();
+  const canManage = useCan("canManageReviews");
   const inbox = useReviewInboxCatalog();
   const requested = useReviewInboxItem(reviewId, reviewRunId);
   const first = useReviewFirstRun(reviewId, Boolean(reviewId && !reviewRunId));
@@ -93,6 +98,13 @@ export function ReviewsPage() {
         <AppPageHeader
           title="Review inbox"
           description="Review the inferences assigned to you across every schema."
+          actions={
+            canManage ? (
+              <Link to="/review/manage" className={appButtonClass({ variant: "secondary" })}>
+                Manage reviews
+              </Link>
+            ) : null
+          }
         />
         {showLoader ? (
           <AppLoadingState label="Loading review inbox…" rows={3} />

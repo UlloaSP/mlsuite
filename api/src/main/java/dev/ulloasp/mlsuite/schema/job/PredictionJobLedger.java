@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -29,7 +30,7 @@ import lombok.RequiredArgsConstructor;
 class PredictionJobLedger {
 
     private static final String JOB_COLUMNS = "j.id, j.schema_bookmark_id, j.schema_version_id, j.status, j.total_rows, "
-            + "j.done_rows, j.failed_rows, u.full_name, j.created_at, j.updated_at, j.finished_at";
+            + "j.done_rows, j.failed_rows, COALESCE(u.full_name, '" + DeletedUser.NAME + "'), j.created_at, j.updated_at, j.finished_at";
     private static final String OPEN = "('QUEUED', 'RUNNING')";
     private static final String FINISHED = " RETURNING id, organization_id, schema_bookmark_id,"
             + " (SELECT b.name FROM schema_bookmark b WHERE b.id = schema_bookmark_id), created_by_user_id,"
@@ -39,8 +40,9 @@ class PredictionJobLedger {
     private final ObjectMapper objectMapper;
 
     /**
-     * A claimed job: what its worker needs to run it as the member who started it. {@code started}
-     * tells a job's first claim from one that came back after a busy runtime or a lost lease.
+     * A claimed job: what its worker needs to run it as the member who started it, null once they
+     * are gone. {@code started} tells a job's first claim from one that came back after a busy
+     * runtime or a lost lease.
      */
     record Claim(Long id, Long organizationId, Long bookmarkId, Long schemaVersionId, Long userId, boolean started) {
     }
@@ -83,13 +85,13 @@ class PredictionJobLedger {
     }
 
     List<PredictionJobDto> list(Long organizationId, Long bookmarkId, int limit) {
-        return jdbc.query("SELECT " + JOB_COLUMNS + " FROM prediction_job j JOIN app_user u ON u.id = j.created_by_user_id"
+        return jdbc.query("SELECT " + JOB_COLUMNS + " FROM prediction_job j LEFT JOIN app_user u ON u.id = j.created_by_user_id"
                 + " WHERE j.organization_id = ? AND j.schema_bookmark_id = ? ORDER BY j.id DESC LIMIT ?",
                 PredictionJobLedger::job, organizationId, bookmarkId, limit);
     }
 
     Optional<PredictionJobDto> find(Long organizationId, Long jobId) {
-        return jdbc.query("SELECT " + JOB_COLUMNS + " FROM prediction_job j JOIN app_user u ON u.id = j.created_by_user_id"
+        return jdbc.query("SELECT " + JOB_COLUMNS + " FROM prediction_job j LEFT JOIN app_user u ON u.id = j.created_by_user_id"
                 + " WHERE j.organization_id = ? AND j.id = ?", PredictionJobLedger::job, organizationId, jobId)
                 .stream().findFirst();
     }
@@ -105,6 +107,12 @@ class PredictionJobLedger {
         return jdbc.query("UPDATE prediction_job SET status = 'CANCELLED', lease_owner = NULL, lease_expires_at = NULL,"
                 + " finished_at = now(), updated_at = now() WHERE id = ? AND organization_id = ? AND status IN " + OPEN
                 + FINISHED, PredictionJobLedger::finished, jobId, organizationId).stream().findFirst();
+    }
+
+    /** Removes a finished job and its rows; false while it is open. */
+    boolean delete(Long organizationId, Long jobId) {
+        return jdbc.update("DELETE FROM prediction_job WHERE id = ? AND organization_id = ? AND status NOT IN " + OPEN,
+                jobId, organizationId) == 1;
     }
 
     /** Puts a finished job's failed rows back to run; false when the job is still open. */
@@ -128,8 +136,8 @@ class PredictionJobLedger {
                 FROM next WHERE j.id = next.id
                 RETURNING j.id, j.organization_id, j.schema_bookmark_id, j.schema_version_id, j.created_by_user_id,
                     next.status = 'QUEUED'""",
-                (rs, n) -> new Claim(rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getLong(4), rs.getLong(5),
-                        rs.getBoolean(6)),
+                (rs, n) -> new Claim(rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getLong(4),
+                        rs.getObject(5, Long.class), rs.getBoolean(6)),
                 worker, leaseSeconds).stream().findFirst();
     }
 
@@ -202,8 +210,8 @@ class PredictionJobLedger {
     }
 
     private static FinishedJob finished(ResultSet rs, int rowNumber) throws SQLException {
-        return new FinishedJob(rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getString(4), rs.getLong(5),
-                rs.getInt(6), rs.getInt(7), rs.getInt(8), rs.getString(9));
+        return new FinishedJob(rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getString(4),
+                rs.getObject(5, Long.class), rs.getInt(6), rs.getInt(7), rs.getInt(8), rs.getString(9));
     }
 
     private PendingRow pendingRow(ResultSet rs, int rowNumber) throws SQLException {

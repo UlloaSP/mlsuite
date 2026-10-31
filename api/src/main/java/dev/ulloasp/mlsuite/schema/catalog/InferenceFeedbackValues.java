@@ -130,7 +130,7 @@ final class InferenceFeedbackValues {
         return answers;
     }
 
-    /** A member by address or name; feedback with no user was given by a visitor of the public page. */
+    /** A member by address or name, "Deleted user" once gone; no name at all is a visitor of the public page. */
     private static String reviewer(PredictionResultFeedbackDto entry) {
         if (entry.userEmail() != null && !entry.userEmail().isEmpty()) {
             return entry.userEmail();

@@ -10,7 +10,7 @@ public record SchemaReviewAssignmentStatusDto(
         String reviewId,
         String reviewRunId,
         SchemaReviewReviewerDto reviewer,
-        SchemaReviewReviewerDto createdBy,
+        SchemaReviewCreatorDto createdBy,
         SchemaReviewState reviewState,
         @Nullable OffsetDateTime submittedAt,
         OffsetDateTime createdAt,

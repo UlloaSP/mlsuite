@@ -43,6 +43,7 @@ import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkExampleDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaBookmarkExampleDto;
 import dev.ulloasp.mlsuite.schema.application.service.BookmarkPublishability;
 import dev.ulloasp.mlsuite.schema.application.service.PublicBookmarkService;
+import dev.ulloasp.mlsuite.schema.application.service.SnapshotRunGuard;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaBookmarkExampleService;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaBookmarkServiceImpl;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkExampleStatus;
@@ -87,7 +88,7 @@ class BookmarkExampleServiceTest {
         bookmarkService = new SchemaBookmarkServiceImpl(mock(SchemaRepository.class), versions, bookmarks,
                 authorization, publishability, mock(AuditLogService.class));
         publicService = new PublicBookmarkService(bookmarks, examples, publishability,
-                mock(ListPluginRuntimeSourcesUseCase.class));
+                mock(SnapshotRunGuard.class), mock(ListPluginRuntimeSourcesUseCase.class));
         bookmark.setPublicId(PUBLIC_ID);
         when(bookmarks.findByIdAndOrganizationId(BOOKMARK_ID, ORG_ID)).thenReturn(Optional.of(bookmark));
         // The public lookup answers only while the bookmark is published, as the query does.

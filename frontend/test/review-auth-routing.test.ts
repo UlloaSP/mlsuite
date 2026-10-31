@@ -46,6 +46,7 @@ describe("integrated review authentication and routes", () => {
       "review",
       "review/:reviewId",
       "review/:reviewId/runs/:reviewRunId",
+      "review/manage",
     ]);
   });
 

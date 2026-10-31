@@ -3,10 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Archive, ArchiveRestore, Copy, Pencil, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, Copy, Eraser, Pencil, Trash2 } from "lucide-react";
 import { AppActionsMenu, type AppMenuAction } from "@/shared/ui/AppActionsMenu";
 
-export type ModelAction = "archive" | "delete" | "duplicate" | "edit" | "restore";
+export type ModelAction = "archive" | "delete" | "duplicate" | "edit" | "purge" | "restore";
 
 const ACTIONS: Array<{
   value: ModelAction;
@@ -18,6 +18,7 @@ const ACTIONS: Array<{
   { value: "archive", label: "Archive", icon: Archive },
   { value: "restore", label: "Restore", icon: ArchiveRestore },
   { value: "delete", label: "Delete", icon: Trash2 },
+  { value: "purge", label: "Purge", icon: Eraser },
 ];
 
 type ModelActionsMenuProps = {
@@ -26,6 +27,8 @@ type ModelActionsMenuProps = {
   /** Duplicating creates a model, so it follows the create-models permission. */
   canDuplicate: boolean;
   canEdit: boolean;
+  /** Superadmins only: a purge overrides what keeps a model from being deleted. */
+  canPurge?: boolean;
   modelName: string;
   onAction: (action: ModelAction) => void;
 };
@@ -35,6 +38,7 @@ export function ModelActionsMenu({
   canDelete,
   canDuplicate,
   canEdit,
+  canPurge = false,
   modelName,
   onAction,
 }: ModelActionsMenuProps) {
@@ -44,6 +48,7 @@ export function ModelActionsMenu({
     delete: canDelete,
     duplicate: canDuplicate,
     edit: canEdit,
+    purge: canPurge,
   };
   const actions = ACTIONS.filter(({ value }) => permitted[value]).map<AppMenuAction>(
     ({ value, label, icon }) => ({
@@ -51,7 +56,7 @@ export function ModelActionsMenu({
       label,
       icon,
       onSelect: () => onAction(value),
-      tone: value === "delete" ? "danger" : undefined,
+      tone: value === "delete" || value === "purge" ? "danger" : undefined,
     }),
   );
 

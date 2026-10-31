@@ -72,7 +72,8 @@ class SchemaReviewManagementServiceTest {
     @BeforeEach
     void setUp() {
         service = new SchemaReviewManagementService(reviews, reviewRuns, submissions, assignees,
-                runs, feedback, new FeedbackHistory(feedback, revisions, inferenceRows), workspaceAccess, authorization, mock(AuditLogService.class));
+                runs, feedback, new FeedbackHistory(feedback, revisions, inferenceRows), inferenceRows, workspaceAccess,
+                authorization, mock(AuditLogService.class));
     }
 
     @Test
@@ -95,7 +96,7 @@ class SchemaReviewManagementServiceTest {
 
         assertEquals(SchemaReviewState.COMPLETED, status.reviewState());
         assertEquals(12L, status.reviewer().id());
-        assertEquals(12L, status.createdBy().id());
+        assertEquals(status.reviewer().fullName(), status.createdBy().fullName());
         assertEquals(submission.getSubmittedAt(), status.submittedAt());
         verify(authorization).require(7L, 41L, PermissionKey.MANAGE_REVIEWS);
     }

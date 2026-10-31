@@ -260,6 +260,6 @@ describe("a bookmark's way to the client API", () => {
     member.permissions = ["canCreateModels"];
     const items = await openActions();
 
-    expect(items.map((item) => item.textContent)).toEqual(["Edit name and description"]);
+    expect(items.map((item) => item.textContent)).toEqual(["Edit name and description", "Delete"]);
   });
 });

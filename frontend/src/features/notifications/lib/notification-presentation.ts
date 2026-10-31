@@ -92,6 +92,24 @@ const PRESENT: Record<NotificationKind, (labels: Labels) => Presentation> = {
     icon: SECTION_ICONS.reviews,
     tone: "info",
   }),
+  ORGANIZATION_PURGED: (labels) => ({
+    title: `${labels.organizationName} was deleted`,
+    description: "A platform administrator deleted this organization and everything in it.",
+    icon: SECTION_ICONS.organizations,
+    tone: "warning",
+  }),
+  PURGE_COMPLETED: (labels) => ({
+    title: "Purge completed",
+    description: `${labels.targetLabel} and everything that depended on it are gone.`,
+    icon: SECTION_ICONS.purges,
+    tone: "success",
+  }),
+  PURGE_FAILED: (labels) => ({
+    title: "Purge failed",
+    description: `${labels.targetLabel}: ${labels.reason}`,
+    icon: CircleX,
+    tone: "danger",
+  }),
 };
 
 export const presentNotification = (notification: NotificationDto) =>
@@ -108,6 +126,8 @@ export const notificationLink = (notification: NotificationDto): string | null =
       return `/review/${notification.targetId}`;
     case "ORGANIZATION":
       return "/home";
+    case "PURGE_JOB":
+      return "/admin/purges";
     case "INVITATION":
       return notification.kind === "INVITATION_RECEIVED"
         ? null

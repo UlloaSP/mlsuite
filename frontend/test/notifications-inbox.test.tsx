@@ -337,6 +337,17 @@ describe("what a notification says", () => {
       { assignerName: "Ada", schemaName: "Risk" },
       "Ada asked you to review runs of Risk.",
     ],
+    [
+      "ORGANIZATION_PURGED",
+      { organizationName: "Lab" },
+      "A platform administrator deleted this organization and everything in it.",
+    ],
+    [
+      "PURGE_COMPLETED",
+      { targetLabel: "Lab", scope: "ORGANIZATION" },
+      "Lab and everything that depended on it are gone.",
+    ],
+    ["PURGE_FAILED", { targetLabel: "Lab", reason: "No storage" }, "Lab: No storage"],
   ])("%s", (kind, payload, description) => {
     expect(presentNotification(notification({ kind, payload })).description).toBe(description);
   });

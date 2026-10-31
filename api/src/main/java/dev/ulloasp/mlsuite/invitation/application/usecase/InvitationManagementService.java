@@ -35,6 +35,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
+import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
@@ -228,6 +229,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     private void notifyAnswered(Invitation invitation, User invitee, NotificationKind answer) {
         String id = invitation.getId().toString();
         notificationService.markTargetRead(invitee.getId(), NotificationTargetType.INVITATION, id);
+        if (invitation.getInvitedBy() == null) return;
         notificationService.notify(invitation.getInvitedBy().getId(), invitation.getOrganization().getId(), answer, id,
                 Map.of("organizationName", invitation.getOrganization().getName(),
                         "inviteeName", invitee.getFullName()));
@@ -235,7 +237,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
 
     private static Map<String, Object> invited(Invitation invitation) {
         return Map.of("organizationName", invitation.getOrganization().getName(),
-                "inviterName", invitation.getInvitedBy().getFullName(),
+                "inviterName", DeletedUser.nameOf(invitation.getInvitedBy()),
                 "roleName", invitation.getRoleDefinition().getName());
     }
 

@@ -26,7 +26,13 @@ public enum NotificationKind {
     /** inviterName, roleName: a superadmin's invitation is accepted on the spot. */
     ORGANIZATION_JOINED(NotificationTargetType.ORGANIZATION),
     /** schemaName, assignerName. */
-    REVIEW_ASSIGNED(NotificationTargetType.REVIEW);
+    REVIEW_ASSIGNED(NotificationTargetType.REVIEW),
+    /** organizationName: a superadmin deleted the organization, which is gone. */
+    ORGANIZATION_PURGED(NotificationTargetType.ORGANIZATION),
+    /** scope, targetLabel. */
+    PURGE_COMPLETED(NotificationTargetType.PURGE_JOB),
+    /** scope, targetLabel, reason. */
+    PURGE_FAILED(NotificationTargetType.PURGE_JOB);
 
     private final NotificationTargetType targetType;
 

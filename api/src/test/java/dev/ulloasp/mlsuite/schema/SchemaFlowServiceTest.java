@@ -44,6 +44,8 @@ import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaVersionRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaCatalogItemDto;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.schema.application.service.PredictionAttestations;
+import dev.ulloasp.mlsuite.schema.application.service.PredictionRunDeletion;
+import dev.ulloasp.mlsuite.schema.application.service.SnapshotRunGuard;
 import dev.ulloasp.mlsuite.schema.application.service.PredictionRunServiceImpl;
 import dev.ulloasp.mlsuite.schema.application.service.PredictionRunStore;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaServiceImpl;
@@ -82,7 +84,8 @@ class SchemaFlowServiceTest {
         versionService = new SchemaVersionServiceImpl(userLookupService, schemaRepository, versionRepository,
                 bindingRepository, modelRepository, authorizationService, new SchemaMappingCheck(modelRepository), mock(AuditLogService.class));
         runService = new PredictionRunServiceImpl(userLookupService, bookmarkRepository, runRepository,
-                resultRepository, feedbackRepository, authorizationService, mock(PredictionAttestations.class),
+                mock(PredictionRunDeletion.class), mock(SnapshotRunGuard.class), authorizationService,
+                mock(PredictionAttestations.class),
                 new PredictionRunStore(bindingRepository, runRepository, resultRepository, modelRepository), mock(AuditLogService.class));
         lenient().when(userLookupService.requireById(7L)).thenReturn(user());
         lenient().when(authorizationService.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization());

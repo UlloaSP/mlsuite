@@ -113,6 +113,18 @@ public class PredictionJobService {
         return require(organizationId, jobId);
     }
 
+    /** A finished job goes with the raw rows it kept; the runs it stored stay. */
+    public void delete(Long userId, Long jobId) {
+        Long organizationId = requireRun(userId);
+        PredictionJobDto job = require(organizationId, jobId);
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.PREDICTION_JOB_DELETE, jobId,
+                AuditDetails.of("bookmarkId", job.bookmarkId(), "rows", job.totalRows()));
+        if (!ledger.delete(organizationId, job.id())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "This bulk upload is still running; cancel it before deleting it");
+        }
+    }
+
     public PredictionJobDto retry(Long userId, Long jobId) {
         Long organizationId = requireRun(userId);
         PredictionJobDto job = require(organizationId, jobId);

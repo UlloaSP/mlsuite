@@ -115,8 +115,8 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
                 CatalogPages.likeLiteral(search == null ? "" : search.strip()), sort == null ? "updated" : sort,
                 PageDto.request(page, size, Sort.unsorted()));
         return PageDto.of(result, result.getContent().stream()
-                .flatMap(item -> stored(organization.getId(), item.getId()).stream())
-                .map(PluginCatalogValues::toDto)
+                .flatMap(item -> stored(organization.getId(), item.getId()).stream()
+                        .map(plugin -> toDto(plugin, item)))
                 .toList());
     }
 
@@ -163,11 +163,9 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
         // Loading proves the plugin exists and is intact before deletion is queued.
         pluginObjects.load(organization.getId(), id);
         Optional<PluginMetadata> metadata = pluginMetadataRepository.findByIdAndOrganizationId(id, organization.getId());
-        deletionQueue.enqueue(
-                organization.getId(),
-                storageProperties.getBucket(),
-                itemObjectKey(organization.getId(), id),
-                metadata.map(PluginMetadata::getStorageVersionId).orElse(null));
+        // Every revision of the key: a plugin's id is never used again.
+        deletionQueue.enqueue(organization.getId(), storageProperties.getBucket(),
+                itemObjectKey(organization.getId(), id), null);
         metadata.ifPresent(pluginMetadataRepository::delete);
         auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.PLUGIN_DELETE, id,
                 metadata.map(plugin -> AuditDetails.of("file", plugin.getFileName())).orElse(Map.of()));

@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Repository;
 
 import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewAssignmentStatusDto;
+import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
 import dev.ulloasp.mlsuite.util.CatalogPages;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
 import dev.ulloasp.mlsuite.util.PageDto;
@@ -29,7 +30,7 @@ public class SchemaReviewAssignmentCatalogReader {
     private static final String SOURCE = """
             FROM SchemaReviewRun rr JOIN rr.review review
             JOIN SchemaReviewAssignee assignee ON assignee.review = review
-            JOIN assignee.user reviewer JOIN review.createdBy creator
+            JOIN assignee.user reviewer LEFT JOIN review.createdBy creator
             LEFT JOIN SchemaReviewRunSubmission submission
                 ON submission.reviewRun = rr AND submission.user = reviewer
             WHERE rr.run.id = :runId
@@ -64,12 +65,12 @@ public class SchemaReviewAssignmentCatalogReader {
         String select = "SELECT new " + DTO + "SchemaReviewAssignmentStatusDto("
                 + "review.publicId, rr.publicId, new " + DTO
                 + "SchemaReviewReviewerDto(reviewer.id, reviewer.fullName, reviewer.email), new " + DTO
-                + "SchemaReviewReviewerDto(creator.id, creator.fullName, creator.email), " + STATE
+                + "SchemaReviewCreatorDto(coalesce(creator.fullName, :deletedUser), creator.email), " + STATE
                 + ", submission.submittedAt, review.createdAt, review.updatedAt, review.expiresAt, "
                 + "review.expiresAt <= :now) ";
         var query = entities.createQuery(select + SOURCE + " ORDER BY " + order
                 + ", review.publicId ASC, rr.publicId ASC, reviewer.id ASC", SchemaReviewAssignmentStatusDto.class);
-        bind(query, runId, request).setParameter("now", now);
+        bind(query, runId, request).setParameter("now", now).setParameter("deletedUser", DeletedUser.NAME);
         return new PageDto<>(query.setFirstResult((int) offset).setMaxResults(request.size()).getResultList(),
                 request.page(), request.size(), total, offset + request.size() < total);
     }

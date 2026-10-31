@@ -23,7 +23,7 @@ public interface SchemaBookmarkRepository
 
     String PREDICT_SCOPE = """
             FROM SchemaBookmark b WHERE b.schema.organization.id = :organizationId
-            AND b.schema.archivedAt IS NULL
+            AND b.schema.archivedAt IS NULL AND b.schema.purgingAt IS NULL
             AND (:filter = 'all' OR b.version.version <
                 (SELECT MAX(v.version) FROM SchemaVersion v WHERE v.schema = b.schema))
             AND (lower(b.name) LIKE :search ESCAPE '!'
@@ -56,10 +56,13 @@ public interface SchemaBookmarkRepository
     String PUBLISHED = """
             b.visibility = dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility.PUBLIC
             AND b.schema.archivedAt IS NULL
+            AND b.schema.purgingAt IS NULL AND b.schema.organization.purgingAt IS NULL
             """;
 
     void deleteBySchemaId(Long schemaId);
     List<SchemaBookmark> findBySchemaIdOrderByNameAsc(Long schemaId);
+
+    List<SchemaBookmark> findByVersionId(Long schemaVersionId);
 
     @Query("""
             SELECT b FROM SchemaBookmark b

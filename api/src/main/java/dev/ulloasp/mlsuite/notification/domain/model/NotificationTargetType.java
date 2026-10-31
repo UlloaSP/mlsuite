@@ -6,5 +6,6 @@ public enum NotificationTargetType {
     MODEL,
     INVITATION,
     ORGANIZATION,
-    REVIEW
+    REVIEW,
+    PURGE_JOB
 }

@@ -91,13 +91,18 @@ public class Organization {
     @Column(name = "api_monthly_call_limit")
     private Integer apiMonthlyCallLimit;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "created_by_user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_organization_creator"))
+    /** Null once the person who created it is gone. */
+    @ManyToOne
+    @JoinColumn(name = "created_by_user_id", foreignKey = @ForeignKey(name = "fk_organization_creator"))
     private User createdBy;
 
     @ManyToOne
     @JoinColumn(name = "updated_by_user_id", foreignKey = @ForeignKey(name = "fk_organization_updated_by"))
     private User updatedBy;
+
+    /** When a purge of it was asked for; written only by the purge, so saving this row never clears it. */
+    @Column(name = "purging_at", insertable = false, updatable = false, columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime purgingAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")

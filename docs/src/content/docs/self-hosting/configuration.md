@@ -55,6 +55,8 @@ equivalent roles yourself; the migration role must be able to install `pg_trgm`.
 | `STORAGE_BUCKET` | `mlsuite` | Bucket name. Versioning is enabled on it. |
 | `STORAGE_AUTO_CREATE_BUCKET` | `true` | Let the API create the bucket. |
 | `STORAGE_DELETION_ENABLED`, `STORAGE_DELETION_BATCH_SIZE`, `STORAGE_DELETION_STALE_AFTER_SECONDS` | `true`, `20`, `300` | Background removal of deleted files. |
+| `STORAGE_DELETION_RETENTION_DAYS` | `7` | How long a finished file deletion is remembered. At least 1. |
+| `PURGE_BATCH_SIZE` | `1000` | How many rows of a table a purge deletes in each transaction. |
 | `ARTIFACT_ORPHAN_GRACE_SECONDS` | `86400` | The minimum age before the `artifact-prune` job removes a model object nothing refers to. |
 
 ## Models

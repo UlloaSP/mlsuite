@@ -80,7 +80,8 @@ class PredictionRunCreationTest {
 
     @BeforeEach
     void setUp() {
-        service = new PredictionRunServiceImpl(users, bookmarks, runs, results, feedback, authorization, attestations,
+        service = new PredictionRunServiceImpl(users, bookmarks, runs, mock(PredictionRunDeletion.class),
+                mock(SnapshotRunGuard.class), authorization, attestations,
                 new PredictionRunStore(bindings, runs, results, models), mock(AuditLogService.class));
         Organization organization = new Organization();
         organization.setId(ORG);

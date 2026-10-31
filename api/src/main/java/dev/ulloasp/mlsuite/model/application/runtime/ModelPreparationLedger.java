@@ -68,8 +68,7 @@ public class ModelPreparationLedger {
                 json(featureImportances), modelId, worker).forEach(model -> {
                     auditLog.record(AuditActor.SYSTEM, model.organizationId(), AuditAction.MODEL_PREPARATION_READY,
                             model.id(), AuditDetails.of("environment", model.environmentKey()));
-                    notifications.notify(model.userId(), model.organizationId(), NotificationKind.MODEL_READY,
-                            model.id().toString(),
+                    tell(model, NotificationKind.MODEL_READY,
                             Map.of("modelName", model.name(), "organizationName", model.organizationName()));
                 });
     }
@@ -123,13 +122,19 @@ public class ModelPreparationLedger {
     private void reportFailure(Settled model, String reason) {
         auditLog.record(AuditActor.SYSTEM, model.organizationId(), AuditAction.MODEL_PREPARATION_FAILED, model.id(),
                 AuditDetails.of("reason", reason));
-        notifications.notify(model.userId(), model.organizationId(), NotificationKind.MODEL_FAILED,
-                model.id().toString(), Map.of("modelName", model.name(), "reason", bounded(reason),
-                        "organizationName", model.organizationName()));
+        tell(model, NotificationKind.MODEL_FAILED, Map.of("modelName", model.name(), "reason", bounded(reason),
+                "organizationName", model.organizationName()));
+    }
+
+    /** Nobody is told once the member who uploaded the model is gone. */
+    private void tell(Settled model, NotificationKind kind, Map<String, Object> payload) {
+        if (model.userId() != null) {
+            notifications.notify(model.userId(), model.organizationId(), kind, model.id().toString(), payload);
+        }
     }
 
     private static Settled settled(ResultSet rs, int rowNumber) throws SQLException {
-        return new Settled(rs.getLong(1), rs.getString(2), rs.getLong(3), rs.getLong(4), rs.getString(5),
+        return new Settled(rs.getLong(1), rs.getString(2), rs.getLong(3), rs.getObject(4, Long.class), rs.getString(5),
                 rs.getString(6), rs.getString(7));
     }
 

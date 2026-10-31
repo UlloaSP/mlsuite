@@ -19,27 +19,38 @@ class StorageDeletionProcessorTest {
     private final StorageDeletionWorkQueue queue = mock(StorageDeletionWorkQueue.class);
     private final ObjectStorageService storage = mock(ObjectStorageService.class);
     private final AuditLogService auditLog = mock(AuditLogService.class);
-    private final StorageDeletionProcessor processor = new StorageDeletionProcessor(queue, storage, auditLog, 5, 20, 300);
+    private final StorageDeletionProcessor processor = new StorageDeletionProcessor(queue, storage, auditLog, 5, 20, 300, 30000);
 
     @Test
     void completesAClaimOnlyAfterObjectDeletionSucceeds() {
-        StorageDeletionWorkItem item = new StorageDeletionWorkItem(7L, 41L, "models", "immutable/key");
+        StorageDeletionWorkItem item = new StorageDeletionWorkItem(7L, 41L, "models", "immutable/key", "version-1");
         when(queue.claim(org.mockito.ArgumentMatchers.eq(20), org.mockito.ArgumentMatchers.eq(300L), anyString()))
                 .thenReturn(List.of(item));
 
         processor.processPending();
 
-        verify(storage).delete("models", "immutable/key", null);
+        verify(storage).delete("models", "immutable/key", "version-1");
         verify(queue).complete(org.mockito.ArgumentMatchers.eq(7L), anyString());
     }
 
     @Test
+    void aTaskWithoutAVersionRemovesEveryVersionOfItsKey() {
+        when(queue.claim(org.mockito.ArgumentMatchers.eq(20), org.mockito.ArgumentMatchers.eq(300L), anyString()))
+                .thenReturn(List.of(new StorageDeletionWorkItem(8L, 41L, "models", "plugin/key", null)));
+
+        processor.processPending();
+
+        verify(storage).deleteAllVersions("models", "plugin/key");
+        verify(queue).complete(org.mockito.ArgumentMatchers.eq(8L), anyString());
+    }
+
+    @Test
     void releasesAClaimForRetryWhenObjectDeletionFails() {
-        StorageDeletionWorkItem item = new StorageDeletionWorkItem(9L, 41L, "models", "immutable/key");
+        StorageDeletionWorkItem item = new StorageDeletionWorkItem(9L, 41L, "models", "immutable/key", "version-1");
         when(queue.claim(org.mockito.ArgumentMatchers.eq(20), org.mockito.ArgumentMatchers.eq(300L), anyString()))
                 .thenReturn(List.of(item));
         org.mockito.Mockito.doThrow(new ObjectStorageException("storage unavailable"))
-                .when(storage).delete("models", "immutable/key", null);
+                .when(storage).delete("models", "immutable/key", "version-1");
 
         processor.processPending();
 
@@ -50,11 +61,11 @@ class StorageDeletionProcessorTest {
 
     @Test
     void aDeletionFailingForGoodIsRecordedForItsOrganization() {
-        StorageDeletionWorkItem item = new StorageDeletionWorkItem(9L, 41L, "models", "immutable/key");
+        StorageDeletionWorkItem item = new StorageDeletionWorkItem(9L, 41L, "models", "immutable/key", "version-1");
         when(queue.claim(org.mockito.ArgumentMatchers.eq(20), org.mockito.ArgumentMatchers.eq(300L), anyString()))
                 .thenReturn(List.of(item));
         org.mockito.Mockito.doThrow(new ObjectStorageException("storage unavailable"))
-                .when(storage).delete("models", "immutable/key", null);
+                .when(storage).delete("models", "immutable/key", "version-1");
         when(queue.fail(org.mockito.ArgumentMatchers.eq(9L), anyString(), anyString(), org.mockito.ArgumentMatchers.eq(5)))
                 .thenReturn(true);
 

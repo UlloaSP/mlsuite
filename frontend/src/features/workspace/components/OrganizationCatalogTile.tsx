@@ -3,7 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { CalendarDays, Pencil, Share2, Trash2 } from "lucide-react";
+import { CalendarDays, Eraser, Pencil, Share2, Trash2 } from "lucide-react";
+import { PurgeDialog } from "@/capabilities/purge/PurgeDialog";
 import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { useState } from "react";
@@ -40,6 +41,7 @@ export function OrganizationCatalogTile({
   onTransferOwner,
 }: OrganizationCatalogTileProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [purgeOpen, setPurgeOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [editingField, setEditingField] = useState<keyof OrganizationPatch | null>(null);
   const modifier = modifierName(item.updatedByName, item.updatedByEmail);
@@ -146,6 +148,13 @@ export function OrganizationCatalogTile({
               tone: "danger",
               onSelect: () => setConfirmOpen(true),
             },
+            {
+              key: "purge",
+              label: "Purge",
+              icon: Eraser,
+              tone: "danger",
+              onSelect: () => setPurgeOpen(true),
+            },
           ]}
         />
       </div>
@@ -160,6 +169,9 @@ export function OrganizationCatalogTile({
             setConfirmOpen(false);
           }}
         />
+      ) : null}
+      {purgeOpen ? (
+        <PurgeDialog scope="ORGANIZATION" targetId={item.id} onClose={() => setPurgeOpen(false)} />
       ) : null}
       {transferOpen ? (
         <TransferOrganizationOwnerDialog

@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Search, Plus } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 import {
@@ -21,6 +22,8 @@ import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import type { ModelAction } from "@/features/models/components/ModelActionsMenu";
+import { PurgeDialog } from "@/capabilities/purge/PurgeDialog";
+import { useCurrentUserIsSuperadmin } from "@/capabilities/workspace-context/session";
 import { ModelListItem } from "@/features/models/components/ModelListItem";
 import { useActionDialog } from "@/shared/ui/use-action-dialog";
 import type { ModelDto } from "@/shared/api/openapi.gen";
@@ -67,8 +70,11 @@ export function ModelsPage() {
   const canEditModels = workspace?.permissions.canEditModels ?? false;
 
   const actionDialog = useActionDialog();
+  const [purgeTarget, setPurgeTarget] = useState<number | null>(null);
+  const canPurge = useCurrentUserIsSuperadmin();
   // Mutation failures are reported by the global mutation error handler.
   const handleAction = async (action: ModelAction, model: ModelDto) => {
+    if (action === "purge") setPurgeTarget(model.id);
     if (action === "edit") {
       const name = await actionDialog.prompt({
         title: "Rename model",
@@ -183,6 +189,7 @@ export function ModelsPage() {
             canDelete={canDeleteModels}
             canDuplicate={canCreateModels}
             canEdit={canEditModels}
+            canPurge={canPurge}
             item={model}
             schemaCount={hasSchema(model) ? 1 : 0}
             to={`/models/${model.id}`}
@@ -193,6 +200,9 @@ export function ModelsPage() {
         )}
       />
       {actionDialog.dialog}
+      {purgeTarget === null ? null : (
+        <PurgeDialog scope="MODEL" targetId={purgeTarget} onClose={() => setPurgeTarget(null)} />
+      )}
     </>
   );
 }
