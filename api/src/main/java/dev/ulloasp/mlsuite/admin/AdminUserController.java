@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -35,28 +36,30 @@ public class AdminUserController {
     }
 
     @PostMapping
-    public ResponseEntity<AdminUserDto> create(@Valid @RequestBody AdminCreateUserRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(adminUserService.create(request));
+    public ResponseEntity<AdminUserDto> create(CurrentUser actor, @Valid @RequestBody AdminCreateUserRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(adminUserService.create(actor.userId(), request));
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<AdminUserDto> update(
+            CurrentUser actor,
             @PathVariable Long id,
             @Valid @RequestBody AdminUpdateUserRequest request) {
-        return ResponseEntity.ok(adminUserService.update(id, request));
+        return ResponseEntity.ok(adminUserService.update(actor.userId(), id, request));
     }
 
     @PostMapping("/{id}/password")
     public ResponseEntity<Void> resetPassword(
+            CurrentUser actor,
             @PathVariable Long id,
             @Valid @RequestBody AdminPasswordRequest request) {
-        adminUserService.resetPassword(id, request);
+        adminUserService.resetPassword(actor.userId(), id, request);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        adminUserService.delete(id);
+    public ResponseEntity<Void> delete(CurrentUser actor, @PathVariable Long id) {
+        adminUserService.delete(actor.userId(), id);
         return ResponseEntity.noContent().build();
     }
 }

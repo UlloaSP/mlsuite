@@ -68,6 +68,7 @@ class ModelPreparationTest extends PublicPredictionFixture {
 
         verify(builder).build(any(RuntimeEnvironment.class));
         assertEquals("READY", state());
+        assertEquals("SYSTEM MODEL_PREPARATION_READY", lastEntry());
         assertEquals("age", jdbc.queryForObject(
                 "SELECT feature_importances -> 0 ->> 'feature' FROM model WHERE id = ?", String.class, forestModel.getId()));
     }
@@ -82,6 +83,7 @@ class ModelPreparationTest extends PublicPredictionFixture {
 
         assertEquals("FAILED", state());
         assertEquals("The environment needs packages MLsuite does not install: numpy==9.9.9", error());
+        assertEquals("SYSTEM MODEL_PREPARATION_FAILED", lastEntry());
         verify(analyzer, never()).post(eq("/verify"), any());
     }
 
@@ -105,6 +107,7 @@ class ModelPreparationTest extends PublicPredictionFixture {
         assertEquals("PREPARING", state());
         assertEquals(1, jdbc.queryForObject("SELECT runtime_attempts FROM model WHERE id = ?", Integer.class,
                 forestModel.getId()));
+        assertEquals("none", lastEntry());
         assertTrue(jdbc.queryForObject("SELECT runtime_lease_expires_at > now() FROM model WHERE id = ?",
                 Boolean.class, forestModel.getId()), "not claimed again before its delay");
         jdbc.update("UPDATE model SET runtime_lease_expires_at = now() - interval '1 second' WHERE id = ?",
@@ -179,5 +182,12 @@ class ModelPreparationTest extends PublicPredictionFixture {
 
     private String error() {
         return jdbc.queryForObject("SELECT runtime_error FROM model WHERE id = ?", String.class, forestModel.getId());
+    }
+
+    /** The latest system entry about the forest, as actor and action. */
+    private String lastEntry() {
+        return jdbc.queryForList("SELECT actor_kind || ' ' || action FROM audit_event WHERE target_type = 'MODEL'"
+                + " AND target_id = ? AND actor_kind = 'SYSTEM' AND organization_id = ? ORDER BY id DESC LIMIT 1",
+                String.class, forestModel.getId().toString(), organization.getId()).stream().findFirst().orElse("none");
     }
 }

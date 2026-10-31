@@ -8,10 +8,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
-import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.util.PageDto;
 import lombok.RequiredArgsConstructor;
 
@@ -25,7 +27,6 @@ import lombok.RequiredArgsConstructor;
 public class PublicBookmarkModerationService {
 
     private final SchemaBookmarkRepository bookmarkRepository;
-    private final UserLookupService userLookupService;
     private final AuditLogService auditLogService;
 
     @Transactional(readOnly = true)
@@ -42,13 +43,8 @@ public class PublicBookmarkModerationService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema bookmark not found"));
         if (bookmark.getVisibility() == BookmarkVisibility.PUBLIC) {
             bookmark.unpublish();
-            auditLogService.record(
-                    bookmark.getSchema().getOrganization(),
-                    userLookupService.requireById(moderatorId),
-                    "BOOKMARK_MODERATION_UNPUBLISH",
-                    "SCHEMA_BOOKMARK",
-                    bookmarkId.toString(),
-                    bookmark.getName());
+            auditLogService.record(AuditActor.user(moderatorId), bookmark.getSchema().getOrganization().getId(),
+                    AuditAction.BOOKMARK_MODERATION_UNPUBLISH, bookmarkId, AuditDetails.of("bookmark", bookmark.getName()));
         }
         return bookmark;
     }

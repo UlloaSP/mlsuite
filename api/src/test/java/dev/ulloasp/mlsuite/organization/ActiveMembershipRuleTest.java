@@ -73,7 +73,7 @@ class ActiveMembershipRuleTest {
         OrganizationMembershipRepository memberships = mock();
         UserRepository users = mock();
         WorkspaceBootstrapService bootstrap = new WorkspaceBootstrapService(
-                organizations, memberships, users, mock(RoleSeedService.class));
+                organizations, memberships, users, mock(RoleSeedService.class), mock(AuditLogService.class));
         when(memberships.findActiveByUserId(7L)).thenReturn(List.of(active));
 
         assertSame(activeOrganization, bootstrap.ensureCurrentOrganization(user));

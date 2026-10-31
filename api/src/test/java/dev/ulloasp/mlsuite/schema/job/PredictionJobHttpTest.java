@@ -1,6 +1,8 @@
 package dev.ulloasp.mlsuite.schema.job;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -15,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -75,6 +78,55 @@ class PredictionJobHttpTest extends PublicPredictionFixture {
                 + " WHERE p.name = 'job-row-0' AND r.model_id = ?", String.class, forestModel.getId()));
         // Two chunks of two rows at most, one runtime call per model each.
         verify(analyzer, times(4)).post(eq("/predict/batch"), any());
+    }
+
+    @Test
+    void aJobLeavesOneEntryPerActionAndNonePerRow() throws Exception {
+        JsonNode job = json(start(rows(3)).andReturn().getResponse().getContentAsString());
+        worker.work();
+
+        String id = job.get("id").asText();
+        assertEquals(List.of("USER PREDICTION_JOB_START", "SYSTEM PREDICTION_JOB_CLAIMED",
+                "SYSTEM PREDICTION_JOB_COMPLETED"), trail(id));
+        assertEquals("{\"doneRows\": 3, \"failedRows\": 0}", jdbc.queryForObject("SELECT metadata::text FROM audit_event"
+                + " WHERE action = 'PREDICTION_JOB_COMPLETED' AND target_id = ?", String.class, id));
+    }
+
+    @Test
+    void aJobThatComesBackIsNotClaimedAgainOnTheRecord() throws Exception {
+        worker.work();
+        JsonNode job = json(start(rows(1)).andReturn().getResponse().getContentAsString());
+        String id = job.get("id").asText();
+        var claim = ledger.claim("a-worker-that-dies", 120).orElseThrow();
+        assertEquals(job.get("id").asLong(), claim.id());
+        assertTrue(claim.started());
+        jdbc.update("UPDATE prediction_job SET lease_expires_at = now() - interval '1 second' WHERE id = ?", claim.id());
+
+        var again = ledger.claim("another-worker", 120).orElseThrow();
+
+        assertFalse(again.started());
+        ledger.release(again.id(), "another-worker");
+        worker.work();
+        assertEquals(List.of("USER PREDICTION_JOB_START", "SYSTEM PREDICTION_JOB_COMPLETED"), trail(id));
+    }
+
+    @Test
+    void aMemberCancellingAJobInFlightIsSeenByItsWorker() throws Exception {
+        JsonNode job = json(start(rows(1)).andReturn().getResponse().getContentAsString());
+        String id = job.get("id").asText();
+        AtomicBoolean cancelled = new AtomicBoolean();
+        when(analyzer.post(eq("/predict/batch"), any())).thenAnswer(call -> {
+            if (cancelled.compareAndSet(false, true)) {
+                mockMvc.perform(signedIn(post("/api/prediction-jobs/{id}/cancel", id), owner.getId()))
+                        .andExpect(status().isOk());
+            }
+            return Map.of("rows", List.of(Map.of("reports", List.of(CLASSIFIER))));
+        });
+
+        worker.work();
+
+        assertEquals(List.of("USER PREDICTION_JOB_START", "SYSTEM PREDICTION_JOB_CLAIMED",
+                "USER PREDICTION_JOB_CANCEL", "SYSTEM PREDICTION_JOB_CANCELLED"), trail(id));
     }
 
     @Test
@@ -182,6 +234,12 @@ class PredictionJobHttpTest extends PublicPredictionFixture {
         return Map.of("name", name, "inputData", Map.of("Age", 52), "models", List.of(
                 Map.of("modelId", forestModel.getId(), "modelInput", forestInput),
                 Map.of("modelId", netModel.getId(), "modelInput", Map.of("1", 52))));
+    }
+
+    /** Who did what to a job, oldest first. */
+    private List<String> trail(String jobId) {
+        return jdbc.queryForList("SELECT actor_kind || ' ' || action FROM audit_event WHERE target_type = 'PREDICTION_JOB'"
+                + " AND target_id = ? ORDER BY id", String.class, jobId);
     }
 
     private void grant(PermissionKey... permissions) {

@@ -33,6 +33,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.ModelRuntimeClient;
 import dev.ulloasp.mlsuite.model.application.runtime.ModelPreparationLedger;
@@ -149,7 +150,7 @@ class AnalyzerServiceTest {
                 new ModelArtifactContentReader(objectStorageService),
                 mock(ModelPreparationLedger.class));
         return new AnalyzerServiceImpl(modelRuntime, slots, modelRepository,
-                userLookupService, authorizationService, new ObjectMapper());
+                userLookupService, authorizationService, new ObjectMapper(), mock(AuditLogService.class));
     }
 
     @SuppressWarnings("unchecked")

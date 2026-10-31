@@ -11,6 +11,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -53,7 +54,7 @@ class SchemaDraftServiceTest {
     void setUp() {
         engine = new SchemaDraftDiffService();
         service = new SchemaDraftServiceImpl(users, schemas, versions, drafts, versionUseCase,
-                engine, publishedVersions, authorization, mock(SchemaMappingCheck.class));
+                engine, publishedVersions, authorization, mock(SchemaMappingCheck.class), mock(AuditLogService.class));
         lenient().when(users.requireById(7L)).thenReturn(user());
         lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization());
     }

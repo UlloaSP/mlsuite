@@ -12,6 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
@@ -28,6 +32,7 @@ import dev.ulloasp.mlsuite.schema.application.dto.UpdatePredictionResultFeedback
 import dev.ulloasp.mlsuite.schema.application.service.FeedbackHistory;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
+import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackType;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
@@ -68,6 +73,7 @@ public class SchemaReviewService implements SchemaReviewUseCase {
     private final PredictionResultRepository results;
     private final PredictionResultFeedbackRepository feedback;
     private final FeedbackHistory history;
+    private final AuditLogService auditLog;
 
     public void create(Long userId, CreateSchemaReviewRequest request) {
         Long organizationId = organizationId(userId);
@@ -84,6 +90,9 @@ public class SchemaReviewService implements SchemaReviewUseCase {
                 schema.getOrganization(), schema, version, users.requireById(userId), expiresAt));
         assignments.assign(review, request.reviewerIds());
         selectedRuns.forEach(run -> reviewRunRepository.save(new SchemaReviewRun(review, run)));
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.REVIEW_CREATE, review.getPublicId(),
+                AuditDetails.of("schema", schema.getName(), "schemaVersionId", version.getId(),
+                        "runs", selectedRuns.size(), "reviewers", request.reviewerIds().size()));
     }
 
     @Transactional(readOnly = true)
@@ -138,6 +147,8 @@ public class SchemaReviewService implements SchemaReviewUseCase {
                 .orElseGet(() -> new PredictionResultFeedback(result, users.requireById(userId),
                         selected.getReview(), request.type(), request.order(), request.value()));
         item.setValue(request.value());
+        recordFeedback(userId, selected, item.getId() == null ? AuditAction.REVIEW_FEEDBACK_CREATE
+                : AuditAction.REVIEW_FEEDBACK_UPDATE, request.type());
         return PredictionResultFeedbackDto.from(history.save(item, userId));
     }
 
@@ -153,16 +164,28 @@ public class SchemaReviewService implements SchemaReviewUseCase {
                 || item.getReview() == null || !item.getReview().getId().equals(selected.getReview().getId());
         if (invalid) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         item.setValue(request.value());
+        recordFeedback(userId, selected, AuditAction.REVIEW_FEEDBACK_UPDATE, item.getType());
         return PredictionResultFeedbackDto.from(history.save(item, userId));
+    }
+
+    /** The answer's value is the reviewer's judgement of a prediction, and stays out of the log. */
+    private void recordFeedback(Long userId, SchemaReviewRun reviewRun, AuditAction action,
+            PredictionResultFeedbackType type) {
+        auditLog.record(AuditActor.user(userId), reviewRun.getReview().getOrganization().getId(), action,
+                reviewRun.getReview().getPublicId(),
+                AuditDetails.of("reviewRun", reviewRun.getPublicId(), "feedback", type));
     }
 
     public void submit(Long userId, String publicId, List<String> reviewRunIds) {
         User user = users.requireById(userId);
-        reviewRunIds.stream().distinct().forEach(reviewRunId -> {
+        List<String> distinctRuns = reviewRunIds.stream().distinct().toList();
+        distinctRuns.forEach(reviewRunId -> {
             SchemaReviewRun selected = openReviewRun(userId, publicId, reviewRunId);
             submissionRepository.findByReviewRunIdAndUserId(selected.getId(), userId)
                     .orElseGet(() -> submissionRepository.save(new SchemaReviewRunSubmission(selected, user, now())));
         });
+        auditLog.record(AuditActor.user(userId), organizationId(userId), AuditAction.REVIEW_SUBMIT, publicId,
+                AuditDetails.of("runs", distinctRuns.size()));
     }
 
     public void submitInbox(Long userId) {
@@ -170,10 +193,14 @@ public class SchemaReviewService implements SchemaReviewUseCase {
         authorization.require(userId, organizationId, PermissionKey.REVIEW, PermissionKey.MANAGE_REVIEWS);
         User user = users.requireById(userId);
         OffsetDateTime submittedAt = now();
-        reviewRunRepository
-                .findInbox(organizationId, userId, submittedAt, SchemaReviewState.IN_PROGRESS.name())
-                .forEach(reviewRun -> submissionRepository.save(
-                        new SchemaReviewRunSubmission(reviewRun, user, submittedAt)));
+        List<SchemaReviewRun> pending = reviewRunRepository
+                .findInbox(organizationId, userId, submittedAt, SchemaReviewState.IN_PROGRESS.name());
+        pending.forEach(reviewRun -> submissionRepository.save(
+                new SchemaReviewRunSubmission(reviewRun, user, submittedAt)));
+        if (!pending.isEmpty()) {
+            auditLog.record(AuditActor.user(userId), organizationId, AuditAction.REVIEW_SUBMIT_PENDING, organizationId,
+                    AuditDetails.of("runs", pending.size()));
+        }
     }
 
     private SchemaReview accessibleReview(Long userId, String publicId) {

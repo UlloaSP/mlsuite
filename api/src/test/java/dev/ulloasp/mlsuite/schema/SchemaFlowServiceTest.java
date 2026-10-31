@@ -26,6 +26,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.web.server.ResponseStatusException;
 
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
@@ -77,12 +78,12 @@ class SchemaFlowServiceTest {
     void setUp() {
         schemaService = new SchemaServiceImpl(userLookupService, schemaRepository, versionRepository,
                 bindingRepository, runRepository, reviewRepository,
-                authorizationService, mock(SchemaDraftRepository.class), mock(SchemaBookmarkRepository.class));
+                authorizationService, mock(SchemaDraftRepository.class), mock(SchemaBookmarkRepository.class), mock(AuditLogService.class));
         versionService = new SchemaVersionServiceImpl(userLookupService, schemaRepository, versionRepository,
-                bindingRepository, modelRepository, authorizationService, new SchemaMappingCheck(modelRepository));
+                bindingRepository, modelRepository, authorizationService, new SchemaMappingCheck(modelRepository), mock(AuditLogService.class));
         runService = new PredictionRunServiceImpl(userLookupService, bookmarkRepository, runRepository,
                 resultRepository, feedbackRepository, authorizationService, mock(PredictionAttestations.class),
-                new PredictionRunStore(bindingRepository, runRepository, resultRepository, modelRepository));
+                new PredictionRunStore(bindingRepository, runRepository, resultRepository, modelRepository), mock(AuditLogService.class));
         lenient().when(userLookupService.requireById(7L)).thenReturn(user());
         lenient().when(authorizationService.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization());
     }

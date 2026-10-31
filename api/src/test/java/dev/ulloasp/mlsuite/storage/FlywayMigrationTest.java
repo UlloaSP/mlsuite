@@ -26,12 +26,12 @@ class FlywayMigrationTest {
             .withPassword("mlsuite");
 
     @Test
-    void appliesTheBaselineToAnEmptyDatabaseAndIsRepeatable() throws Exception {
+    void appliesTheMigrationsToAnEmptyDatabaseAndIsRepeatable() throws Exception {
         Flyway flyway = flyway("fresh");
 
-        assertEquals(1, flyway.migrate().migrationsExecuted);
+        assertEquals(2, flyway.migrate().migrationsExecuted);
         assertEquals(0, flyway.migrate().migrationsExecuted);
-        assertEquals("1", flyway.info().current().getVersion().toString());
+        assertEquals("2", flyway.info().current().getVersion().toString());
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());

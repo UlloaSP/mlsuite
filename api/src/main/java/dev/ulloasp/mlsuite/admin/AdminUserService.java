@@ -10,6 +10,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
@@ -28,6 +32,7 @@ public class AdminUserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final WorkspaceBootstrapService workspaceBootstrapService;
+    private final AuditLogService auditLog;
 
     public AdminUserPageDto list(int page, int size, String search, String sort, String role) {
         Page<User> users = userRepository.findAll(
@@ -39,7 +44,7 @@ public class AdminUserService {
                 users.hasNext());
     }
 
-    public AdminUserDto create(AdminCreateUserRequest request) {
+    public AdminUserDto create(Long actorId, AdminCreateUserRequest request) {
         String email = request.email().trim().toLowerCase();
         if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new UserAlreadyExistsException(email);
@@ -53,14 +58,20 @@ public class AdminUserService {
         user.setEnabled(request.enabled() == null || request.enabled());
         userRepository.save(user);
         workspaceBootstrapService.ensureCurrentOrganization(user);
+        auditLog.record(AuditActor.user(actorId), null, AuditAction.USER_CREATE, user.getId(),
+                AuditDetails.of("email", email, "role", user.getSystemRole(), "enabled", user.isEnabled()));
         return AdminUserDto.from(user);
     }
 
-    public AdminUserDto update(Long id, AdminUpdateUserRequest request) {
+    public AdminUserDto update(Long actorId, Long id, AdminUpdateUserRequest request) {
         User user = user(id);
         SystemRole nextRole = request.systemRole() == null ? user.getSystemRole() : role(request.systemRole());
         boolean nextEnabled = request.enabled() == null ? user.isEnabled() : request.enabled();
         guardLastSuperadmin(user, nextRole, nextEnabled);
+        String previousName = user.getFullName();
+        String previousUsername = user.getUsername();
+        SystemRole previousRole = user.getSystemRole();
+        boolean wasEnabled = user.isEnabled();
         if (request.fullName() != null && !request.fullName().isBlank()) {
             user.setFullName(request.fullName().trim());
         }
@@ -69,16 +80,26 @@ public class AdminUserService {
         }
         user.setSystemRole(nextRole);
         user.setEnabled(nextEnabled);
+        auditLog.record(AuditActor.user(actorId), null, AuditAction.USER_UPDATE, id, AuditDetails.of("email", user.getEmail(),
+                "name", AuditDetails.changed(previousName, user.getFullName()),
+                "username", AuditDetails.changed(previousUsername, user.getUsername()),
+                "role", AuditDetails.changed(previousRole, nextRole),
+                "enabled", AuditDetails.changed(wasEnabled, nextEnabled)));
         return AdminUserDto.from(user);
     }
 
-    public void resetPassword(Long id, AdminPasswordRequest request) {
-        user(id).setPasswordHash(passwordEncoder.encode(request.password()));
+    public void resetPassword(Long actorId, Long id, AdminPasswordRequest request) {
+        User user = user(id);
+        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        auditLog.record(AuditActor.user(actorId), null, AuditAction.USER_PASSWORD_RESET, id,
+                AuditDetails.of("email", user.getEmail()));
     }
 
-    public void delete(Long id) {
+    public void delete(Long actorId, Long id) {
         User user = user(id);
         guardLastSuperadmin(user, SystemRole.USER, false);
+        auditLog.record(AuditActor.user(actorId), null, AuditAction.USER_DELETE, id,
+                AuditDetails.of("email", user.getEmail(), "name", user.getFullName()));
         try {
             userRepository.deleteAllByIdInBatch(java.util.List.of(id));
             userRepository.flush();

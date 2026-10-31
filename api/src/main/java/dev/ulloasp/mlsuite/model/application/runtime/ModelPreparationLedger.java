@@ -2,6 +2,7 @@ package dev.ulloasp.mlsuite.model.application.runtime;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -38,26 +39,32 @@ public class ModelPreparationLedger {
                 RETURNING id""", (rs, n) -> rs.getLong(1), worker, leaseSeconds).stream().findFirst();
     }
 
-    void ready(Long modelId, String worker, List<Map<String, Object>> featureImportances) {
-        jdbc.update("""
+    /** The model's organization, unless the worker's lease was lost. */
+    Optional<Long> ready(Long modelId, String worker, List<Map<String, Object>> featureImportances) {
+        return jdbc.query("""
                 UPDATE model SET runtime_state = 'READY', feature_importances = ?::jsonb, runtime_error = NULL,
                     runtime_attempts = 0, runtime_lease_owner = NULL, runtime_lease_expires_at = NULL
-                WHERE id = ? AND runtime_lease_owner = ?""", json(featureImportances), modelId, worker);
+                WHERE id = ? AND runtime_lease_owner = ?
+                RETURNING organization_id""", (rs, n) -> rs.getLong(1), json(featureImportances), modelId, worker)
+                .stream().findFirst();
     }
 
-    void fail(Long modelId, String worker, String reason) {
-        jdbc.update("""
+    /** The model's organization, unless the worker's lease was lost. */
+    Optional<Long> fail(Long modelId, String worker, String reason) {
+        return jdbc.query("""
                 UPDATE model SET runtime_state = 'FAILED', runtime_error = ?,
                     runtime_lease_owner = NULL, runtime_lease_expires_at = NULL
-                WHERE id = ? AND runtime_lease_owner = ?""", bounded(reason), modelId, worker);
+                WHERE id = ? AND runtime_lease_owner = ?
+                RETURNING organization_id""", (rs, n) -> rs.getLong(1), bounded(reason), modelId, worker)
+                .stream().findFirst();
     }
 
     /**
      * Counts a failed attempt: the model is claimed again after a delay that doubles from
      * {@code firstDelaySeconds} up to {@code maxDelaySeconds}, or FAILED with the reason once it
-     * has had {@code maxAttempts}. Returns whether it failed for good.
+     * has had {@code maxAttempts}. Returns the model's organization when it failed for good.
      */
-    boolean retryOrFail(Long modelId, String worker, String reason, int maxAttempts, long firstDelaySeconds,
+    Optional<Long> retryOrFail(Long modelId, String worker, String reason, int maxAttempts, long firstDelaySeconds,
             long maxDelaySeconds) {
         return jdbc.query("""
                 UPDATE model SET runtime_attempts = runtime_attempts + 1, runtime_error = ?,
@@ -66,9 +73,10 @@ public class ModelPreparationLedger {
                     runtime_lease_expires_at = CASE WHEN runtime_attempts + 1 >= ? THEN NULL
                         ELSE now() + make_interval(secs => LEAST(?, ? * power(2, runtime_attempts))) END
                 WHERE id = ? AND runtime_lease_owner = ?
-                RETURNING runtime_state""", (rs, n) -> "FAILED".equals(rs.getString(1)), bounded(reason),
+                RETURNING organization_id, runtime_state""",
+                (rs, n) -> "FAILED".equals(rs.getString(2)) ? rs.getLong(1) : null, bounded(reason),
                 maxAttempts, maxAttempts, (double) maxDelaySeconds, (double) firstDelaySeconds, modelId, worker)
-                .stream().findFirst().orElse(false);
+                .stream().filter(Objects::nonNull).findFirst();
     }
 
     /** A READY model whose environment the runtime no longer has is prepared again. */

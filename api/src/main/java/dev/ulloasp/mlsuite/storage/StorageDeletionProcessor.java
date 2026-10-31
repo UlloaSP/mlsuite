@@ -7,12 +7,18 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
+
 @Service
 @ConditionalOnProperty(name = "storage.deletion.enabled", havingValue = "true", matchIfMissing = true)
 public class StorageDeletionProcessor {
 
     private final StorageDeletionWorkQueue queue;
     private final ObjectStorageService objectStorage;
+    private final AuditLogService auditLog;
     private final int maxAttempts;
     private final int batchSize;
     private final long staleAfterSeconds;
@@ -20,11 +26,13 @@ public class StorageDeletionProcessor {
     public StorageDeletionProcessor(
             StorageDeletionWorkQueue queue,
             ObjectStorageService objectStorage,
+            AuditLogService auditLog,
             @Value("${storage.deletion.max-attempts:10}") int maxAttempts,
             @Value("${storage.deletion.batch-size:20}") int batchSize,
             @Value("${storage.deletion.stale-after-seconds:300}") long staleAfterSeconds) {
         this.queue = queue;
         this.objectStorage = objectStorage;
+        this.auditLog = auditLog;
         this.maxAttempts = maxAttempts;
         this.batchSize = batchSize;
         this.staleAfterSeconds = staleAfterSeconds;
@@ -45,7 +53,12 @@ public class StorageDeletionProcessor {
             objectStorage.delete(item.bucket(), item.objectKey(), null);
             queue.complete(item.id(), leaseToken);
         } catch (RuntimeException ex) {
-            queue.fail(item.id(), leaseToken, truncate(ex.getMessage()), maxAttempts);
+            String error = truncate(ex.getMessage());
+            if (queue.fail(item.id(), leaseToken, error, maxAttempts)) {
+                auditLog.record(AuditActor.SYSTEM, item.organizationId(), AuditAction.STORAGE_DELETION_FAILED, item.id(),
+                        AuditDetails.of("bucket", item.bucket(), "objectKey", item.objectKey(),
+                                "attempts", maxAttempts, "reason", error));
+            }
         }
     }
 

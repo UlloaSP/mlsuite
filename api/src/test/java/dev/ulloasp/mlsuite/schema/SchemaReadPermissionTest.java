@@ -12,6 +12,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.server.ResponseStatusException;
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.model.*;
@@ -53,17 +54,17 @@ class SchemaReadPermissionTest {
         when(access.requireCurrentOrganization(3L)).thenReturn(organization);
         var auth = new WorkspaceAuthorizationService(access, mock(RoleDefinitionRepository.class));
         schemaService = new SchemaServiceImpl(users, schemas, versions, bindings, runs,
-                mock(SchemaReviewRepository.class), auth, drafts, bookmarks);
+                mock(SchemaReviewRepository.class), auth, drafts, bookmarks, mock(AuditLogService.class));
         versionService = new SchemaVersionServiceImpl(users, schemas, versions, bindings,
-                mock(ModelRepository.class), auth, mock(SchemaMappingCheck.class));
+                mock(ModelRepository.class), auth, mock(SchemaMappingCheck.class), mock(AuditLogService.class));
         draftService = new SchemaDraftServiceImpl(users, schemas, versions, drafts,
                 mock(SchemaVersionUseCase.class), mock(SchemaDraftDiffService.class),
-                mock(SchemaDraftPublishedVersionResolver.class), auth, mock(SchemaMappingCheck.class));
+                mock(SchemaDraftPublishedVersionResolver.class), auth, mock(SchemaMappingCheck.class), mock(AuditLogService.class));
         bookmarkService = new SchemaBookmarkServiceImpl(schemas, versions, bookmarks, auth,
-                new BookmarkPublishability(bindings, 50));
+                new BookmarkPublishability(bindings, 50), mock(AuditLogService.class));
         predictCatalog = new PredictBookmarkCatalogService(auth, bookmarks, versions, bindings, runs);
         runService = new PredictionRunServiceImpl(users, bookmarks, runs, results, feedback, auth,
-                mock(PredictionAttestations.class), mock(PredictionRunStore.class));
+                mock(PredictionAttestations.class), mock(PredictionRunStore.class), mock(AuditLogService.class));
         feedbackService = new PredictionResultFeedbackService(auth, results, feedback, runs,
                 mock(PredictionResultFeedbackRevisionRepository.class), mock(UserRepository.class),
                 mock(SchemaReviewRepository.class));

@@ -16,6 +16,10 @@ import dev.ulloasp.mlsuite.apiaccess.adapter.out.persistence.repository.ApiClien
 import dev.ulloasp.mlsuite.apiaccess.domain.exception.ApiErrorCode;
 import dev.ulloasp.mlsuite.apiaccess.domain.exception.ApiProblem;
 import dev.ulloasp.mlsuite.apiaccess.domain.model.ApiCaller;
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
@@ -55,6 +59,7 @@ public class ApiRunService {
     private final PredictionResultRepository resultRepository;
     private final ModelRepository modelRepository;
     private final BookmarkPublishability publishability;
+    private final AuditLogService auditLog;
 
     /** The key's holder; a missing key is answered like a wrong one. */
     @Transactional(readOnly = true)
@@ -123,6 +128,10 @@ public class ApiRunService {
         // A key revoked while its run was in the runtime has nothing left to mark; the run stands
         // under the name its client had when the call was accepted.
         keyRepository.markUsed(plan.caller().keyId(), now);
+        auditLog.record(AuditActor.apiClient(plan.caller().clientName()), plan.caller().organizationId(),
+                AuditAction.PREDICTION_RUN, bookmark.getId(), AuditDetails.of("runId", run.getId(),
+                        "clientId", plan.caller().clientId(), "modelId", plan.modelId(),
+                        "schemaVersionId", plan.versionId(), "status", run.getStatus()));
         return run.getId();
     }
 

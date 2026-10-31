@@ -13,6 +13,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
@@ -34,7 +35,7 @@ class WorkspaceBootstrapServiceTest {
         UserRepository users = mock();
         RoleSeedService seeds = mock();
         WorkspaceBootstrapService bootstrap = new WorkspaceBootstrapService(
-                organizations, memberships, users, seeds);
+                organizations, memberships, users, seeds, mock(AuditLogService.class));
         User user = TestFixtures.user(7L);
         RoleDefinition ownerRole = TestFixtures.role(TestFixtures.organization(), "OWNER");
         when(memberships.findActiveByUserId(7L)).thenReturn(List.of());

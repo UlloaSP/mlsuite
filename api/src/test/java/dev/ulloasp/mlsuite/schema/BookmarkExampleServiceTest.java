@@ -24,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
@@ -80,11 +81,11 @@ class BookmarkExampleServiceTest {
         when(access.requireCurrentOrganization(USER_ID)).thenReturn(organization);
         var authorization = new WorkspaceAuthorizationService(access, mock(RoleDefinitionRepository.class));
         stored = BookmarkExampleFixtures.stored(examples);
-        service = new SchemaBookmarkExampleService(bookmarks, runs, examples, authorization);
+        service = new SchemaBookmarkExampleService(bookmarks, runs, examples, authorization, mock(AuditLogService.class));
         // No snapshot here binds a model, so nothing stands between these bookmarks and being public.
         var publishability = new BookmarkPublishability(mock(SchemaModelBindingRepository.class), 50);
         bookmarkService = new SchemaBookmarkServiceImpl(mock(SchemaRepository.class), versions, bookmarks,
-                authorization, publishability);
+                authorization, publishability, mock(AuditLogService.class));
         publicService = new PublicBookmarkService(bookmarks, examples, publishability,
                 mock(ListPluginRuntimeSourcesUseCase.class));
         bookmark.setPublicId(PUBLIC_ID);

@@ -11,6 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
@@ -41,6 +45,7 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
     private final ModelRepository modelRepository;
     private final WorkspaceAuthorizationService authorizationService;
     private final SchemaMappingCheck mappingCheck;
+    private final AuditLogService auditLog;
 
     @Override
     public SchemaVersion createVersion(Long userId, Long schemaId, CreateSchemaVersionRequest request) {
@@ -55,6 +60,8 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
         SchemaVersion version = versionRepository.save(
                 new SchemaVersion(schema, nextVersion, request.name(), request.formSchema()));
         request.bindings().forEach(binding -> saveBinding(organizationId, version, binding));
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.SCHEMA_VERSION_CREATE, version.getId(),
+                AuditDetails.of("schema", schema.getName(), "version", nextVersion, "name", request.name()));
         return version;
     }
 

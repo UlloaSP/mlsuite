@@ -9,8 +9,9 @@ public class StorageDeletionQueue {
 
     private final StorageDeletionTaskRepository tasks;
 
-    public void enqueue(String bucket, String objectKey, String versionId) {
-        tasks.save(new StorageDeletionTask(bucket, objectKey, versionId));
+    /** {@code organizationId} is whose object it is, kept to say so if the deletion fails for good. */
+    public void enqueue(Long organizationId, String bucket, String objectKey, String versionId) {
+        tasks.save(new StorageDeletionTask(organizationId, bucket, objectKey, versionId));
     }
 
     public boolean isDeletionRequested(String bucket, String objectKey) {

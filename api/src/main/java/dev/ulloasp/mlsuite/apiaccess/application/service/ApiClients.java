@@ -19,6 +19,8 @@ import dev.ulloasp.mlsuite.apiaccess.application.dto.ApiClientKeyDto;
 import dev.ulloasp.mlsuite.apiaccess.application.dto.ApiClientSummaryDto;
 import dev.ulloasp.mlsuite.apiaccess.domain.model.ApiClient;
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
@@ -94,8 +96,7 @@ class ApiClients {
         return userLookup.requireById(userId).getFullName();
     }
 
-    void audit(ApiClient client, Long userId, String action, String targetType, Long targetId, String metadata) {
-        auditLog.record(client.getOrganization(), userLookup.requireById(userId), action, targetType,
-                targetId.toString(), metadata);
+    void audit(ApiClient client, Long userId, AuditAction action, Long targetId, Map<String, Object> details) {
+        auditLog.record(AuditActor.user(userId), client.getOrganization().getId(), action, targetId, details);
     }
 }

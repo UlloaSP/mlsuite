@@ -8,19 +8,20 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 
-import dev.ulloasp.mlsuite.audit.adapter.out.persistence.repository.AuditEventRepository;
 import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
@@ -59,7 +60,6 @@ class OrganizationSettingsServiceTest {
     @Mock private SchemaRepository schemaRepository;
     @Mock private PluginMetadataRepository pluginRepository;
     @Mock private SchemaReviewRepository reviewRepository;
-    @Mock private AuditEventRepository auditRepository;
     @Mock private UserRepository userRepository;
 
     private OrganizationDeletionService deletionService;
@@ -76,7 +76,6 @@ class OrganizationSettingsServiceTest {
                 invitationRepository,
                 roleRepository,
                 reviewRepository,
-                auditRepository,
                 userRepository);
         managementService = new OrganizationManagementService(
                 workspaceAccessService,
@@ -87,7 +86,7 @@ class OrganizationSettingsServiceTest {
                 roleSeedService,
                 roleRepository,
                 deletionService,
-                statsService);
+                statsService, mock(AuditLogService.class));
     }
 
     @Test

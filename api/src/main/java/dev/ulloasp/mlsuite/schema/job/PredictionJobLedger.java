@@ -35,8 +35,15 @@ class PredictionJobLedger {
     private final JdbcTemplate jdbc;
     private final ObjectMapper objectMapper;
 
-    /** A claimed job: what its worker needs to run it as the member who started it. */
-    record Claim(Long id, Long organizationId, Long bookmarkId, Long schemaVersionId, Long userId) {
+    /**
+     * A claimed job: what its worker needs to run it as the member who started it. {@code started}
+     * tells a job's first claim from one that came back after a busy runtime or a lost lease.
+     */
+    record Claim(Long id, Long organizationId, Long bookmarkId, Long schemaVersionId, Long userId, boolean started) {
+    }
+
+    /** What a finished job did. */
+    record Outcome(int doneRows, int failedRows) {
     }
 
     /** A row still to run, with the record each model receives. */
@@ -108,13 +115,16 @@ class PredictionJobLedger {
 
     Optional<Claim> claim(String worker, int leaseSeconds) {
         return jdbc.query("""
-                UPDATE prediction_job SET status = 'RUNNING', lease_owner = ?, updated_at = now(),
+                WITH next AS (SELECT id, status FROM prediction_job WHERE status IN ('QUEUED', 'RUNNING')
+                              AND (lease_expires_at IS NULL OR lease_expires_at < now())
+                              ORDER BY id LIMIT 1 FOR UPDATE SKIP LOCKED)
+                UPDATE prediction_job j SET status = 'RUNNING', lease_owner = ?, updated_at = now(),
                     lease_expires_at = now() + make_interval(secs => ?)
-                WHERE id = (SELECT id FROM prediction_job WHERE status IN ('QUEUED', 'RUNNING')
-                            AND (lease_expires_at IS NULL OR lease_expires_at < now())
-                            ORDER BY id LIMIT 1 FOR UPDATE SKIP LOCKED)
-                RETURNING id, organization_id, schema_bookmark_id, schema_version_id, created_by_user_id""",
-                (rs, n) -> new Claim(rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getLong(4), rs.getLong(5)),
+                FROM next WHERE j.id = next.id
+                RETURNING j.id, j.organization_id, j.schema_bookmark_id, j.schema_version_id, j.created_by_user_id,
+                    next.status = 'QUEUED'""",
+                (rs, n) -> new Claim(rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getLong(4), rs.getLong(5),
+                        rs.getBoolean(6)),
                 worker, leaseSeconds).stream().findFirst();
     }
 
@@ -159,10 +169,17 @@ class PredictionJobLedger {
         refreshCounts(jobId, 0);
     }
 
-    void complete(Long jobId, String worker) {
-        jdbc.update("UPDATE prediction_job SET status = 'COMPLETED', lease_owner = NULL, lease_expires_at = NULL,"
-                + " finished_at = now(), updated_at = now() WHERE id = ? AND lease_owner = ? AND status = 'RUNNING'",
-                jobId, worker);
+    /** Finishes the job; empty when it is no longer this worker's. */
+    Optional<Outcome> complete(Long jobId, String worker) {
+        return jdbc.query("UPDATE prediction_job SET status = 'COMPLETED', lease_owner = NULL, lease_expires_at = NULL,"
+                + " finished_at = now(), updated_at = now() WHERE id = ? AND lease_owner = ? AND status = 'RUNNING'"
+                + " RETURNING done_rows, failed_rows", (rs, n) -> new Outcome(rs.getInt(1), rs.getInt(2)),
+                jobId, worker).stream().findFirst();
+    }
+
+    boolean cancelled(Long jobId) {
+        return !jdbc.queryForList("SELECT id FROM prediction_job WHERE id = ? AND status = 'CANCELLED'", Long.class,
+                jobId).isEmpty();
     }
 
     /** Hands the job back to be claimed at once, by this worker or another. */

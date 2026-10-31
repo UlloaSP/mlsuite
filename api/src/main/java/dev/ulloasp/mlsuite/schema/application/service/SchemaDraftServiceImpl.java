@@ -12,6 +12,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaDraftRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
@@ -53,6 +57,7 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
     private final SchemaDraftPublishedVersionResolver publishedVersions;
     private final WorkspaceAuthorizationService authorization;
     private final SchemaMappingCheck mappingCheck;
+    private final AuditLogService auditLog;
     @Override
     public List<SchemaDraft> listDrafts(Long userId, Long schemaId) {
         Long orgId = requireRead(userId);
@@ -69,7 +74,10 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
         List<Map<String, Object>> bindings = bindingJson(versionUseCase.listBindings(userId, base.getId()));
         SchemaDraft draft = new SchemaDraft(schema, base, request.name(), base.getFormSchema(), bindings);
         touch(schema, draft, user);
-        return drafts.save(draft);
+        SchemaDraft saved = drafts.save(draft);
+        auditLog.record(AuditActor.user(userId), orgId, AuditAction.SCHEMA_DRAFT_CREATE, saved.getId(),
+                AuditDetails.of("name", saved.getName(), "schema", schema.getName(), "baseVersionId", base.getId()));
+        return saved;
     }
     @Override
     public SchemaDraft getDraft(Long userId, Long draftId) {
@@ -84,6 +92,8 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
         requireRevision(draft, request.expectedDraftRevision());
         mappingCheck.require(orgId, request.formSchema(),
                 SchemaDraftBindingValues.requestBindings(request.bindings()));
+        auditLog.record(AuditActor.user(userId), orgId, AuditAction.SCHEMA_DRAFT_UPDATE, draftId,
+                AuditDetails.of("draft", request.name(), "name", AuditDetails.changed(draft.getName(), request.name())));
         draft.setName(request.name());
         draft.setFormSchema(request.formSchema());
         draft.setBindings(request.bindings());
@@ -126,6 +136,9 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
         draft.setBaseVersion(current);
         draft.setStatus(SchemaDraftStatus.DRAFT);
         changed(draft, user);
+        auditLog.record(AuditActor.user(userId), orgId, AuditAction.SCHEMA_DRAFT_MERGE, draftId,
+                AuditDetails.of("draft", draft.getName(), "baseVersionId", current.getId(),
+                        "resolvedConflicts", conflicts.size()));
         return new SchemaDraftMergeResultDto(SchemaDraftDto.from(draft), diff(userId, draft, current));
     }
     @Override
@@ -147,6 +160,8 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
         if (!draft.getBaseVersion().getId().equals(current.getId()) || diff.hasConflicts()) {
             draft.setStatus(SchemaDraftStatus.CONFLICT);
             changed(draft, user);
+            auditLog.record(AuditActor.user(userId), orgId, AuditAction.SCHEMA_DRAFT_PUBLISH, draftId,
+                    AuditDetails.of("draft", draft.getName(), "outcome", "conflict"));
             return new SchemaDraftPublishResultDto("conflict", SchemaDraftDto.from(draft), null, diff);
         }
         SchemaVersion version = versionUseCase.createVersion(userId, draft.getSchema().getId(),
@@ -154,6 +169,8 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
         draft.setPublishedVersion(version);
         draft.setStatus(SchemaDraftStatus.PUBLISHED);
         changed(draft, user);
+        auditLog.record(AuditActor.user(userId), orgId, AuditAction.SCHEMA_DRAFT_PUBLISH, draftId,
+                AuditDetails.of("draft", draft.getName(), "outcome", "published", "versionId", version.getId()));
         return publishedResult(userId, draft);
     }
     private SchemaDraftPublishResultDto publishedResult(Long userId, SchemaDraft draft) {
