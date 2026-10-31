@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
@@ -26,6 +27,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.notification.application.service.NotificationService;
+import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
@@ -74,6 +77,7 @@ class SchemaReviewServiceTest {
     @Mock private PredictionRunRepository runs;
     @Mock private PredictionResultRepository results;
     @Mock private PredictionResultFeedbackRepository feedback;
+    @Mock private NotificationService notifications;
     private SchemaReviewService service;
 
     @BeforeEach
@@ -171,6 +175,26 @@ class SchemaReviewServiceTest {
     }
 
     @Test
+    void assignments_TellEachReviewerButNotTheMemberWhoAssignedThemselves() {
+        Organization organization = organization();
+        User assigner = reviewer(7L, "Ada");
+        User reviewer = reviewer(12L, "Grace");
+        when(memberships.findActiveByOrganizationIdOrderByCreatedAtAsc(41L)).thenReturn(List.of(
+                new OrganizationMembership(organization, assigner, TestFixtures.role(organization, "OWNER"), MembershipStatus.ACTIVE),
+                new OrganizationMembership(organization, reviewer, TestFixtures.role(organization, "MEMBER"), MembershipStatus.ACTIVE)));
+        when(authorization.effectiveOrganizationPermissions(any(), any())).thenReturn(Set.of(PermissionKey.REVIEW));
+        Schema schema = new Schema(organization, "Risk", null);
+        SchemaReview review = new SchemaReview(organization, schema, version(schema, 9L), assigner,
+                OffsetDateTime.now().plusDays(1));
+
+        assignmentService().assign(review, List.of(7L, 12L));
+
+        verify(notifications).notify(12L, 41L, NotificationKind.REVIEW_ASSIGNED, review.getPublicId(),
+                Map.of("organizationName", "Org", "schemaName", "Risk", "assignerName", "Ada"));
+        verifyNoMoreInteractions(notifications);
+    }
+
+    @Test
     void assignments_RejectsMemberWithoutReviewPermission() {
         User reviewer = reviewer(12L, "Member");
         Organization organization = organization();
@@ -237,7 +261,7 @@ class SchemaReviewServiceTest {
     }
 
     private SchemaReviewAssignmentService assignmentService() {
-        return new SchemaReviewAssignmentService(memberships, assigneeRepository, authorization);
+        return new SchemaReviewAssignmentService(memberships, assigneeRepository, authorization, notifications);
     }
 
     private SchemaReview review() {

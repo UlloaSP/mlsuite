@@ -7,6 +7,7 @@ import static dev.ulloasp.mlsuite.audit.domain.model.AuditTargetType.AUDIT_LOG;
 import static dev.ulloasp.mlsuite.audit.domain.model.AuditTargetType.INFRASTRUCTURE_SERVICE;
 import static dev.ulloasp.mlsuite.audit.domain.model.AuditTargetType.INVITATION;
 import static dev.ulloasp.mlsuite.audit.domain.model.AuditTargetType.MODEL;
+import static dev.ulloasp.mlsuite.audit.domain.model.AuditTargetType.NOTIFICATION_LOG;
 import static dev.ulloasp.mlsuite.audit.domain.model.AuditTargetType.ORGANIZATION;
 import static dev.ulloasp.mlsuite.audit.domain.model.AuditTargetType.ORGANIZATION_MEMBER;
 import static dev.ulloasp.mlsuite.audit.domain.model.AuditTargetType.PLUGIN;
@@ -131,7 +132,8 @@ public enum AuditAction {
 
     STORAGE_DELETION_FAILED(STORAGE_OBJECT),
     API_REQUEST_RETENTION_PRUNE(API_REQUEST_LOG),
-    AUDIT_RETENTION_PRUNE(AUDIT_LOG);
+    AUDIT_RETENTION_PRUNE(AUDIT_LOG),
+    NOTIFICATION_RETENTION_PRUNE(NOTIFICATION_LOG);
 
     private final AuditTargetType targetType;
 

@@ -38,6 +38,7 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDenie
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAlreadyExistsException;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
 import dev.ulloasp.mlsuite.admin.infrastructure.OpsAgentException;
+import dev.ulloasp.mlsuite.notification.domain.exception.NotificationNotFoundException;
 import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicRunLimitDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaMappingErrorDto;
@@ -59,7 +60,8 @@ public class DomainExceptionHandler {
             PluginNotFoundException.class,
             UserDoesNotExistException.class,
             OrganizationNotFoundException.class,
-            InvitationNotFoundException.class
+            InvitationNotFoundException.class,
+            NotificationNotFoundException.class
     })
     public ResponseEntity<ErrorDto> handleNotFound(RuntimeException ex, HttpServletRequest req) {
         return respond(HttpStatus.NOT_FOUND, ex, req);

@@ -30,8 +30,9 @@ Expired or Revoked. Members with **Manage invitations** can act on each invitati
 
 ## Accept or decline
 
-Pending invitations appear in **Notifications** (the account menu shows how many) with
-**Accept** and **Decline**. Only the account whose email was invited can answer an invitation, and
+Pending invitations appear first in **Notifications** with **Accept** and **Decline**, and the
+account menu counts the new ones. The member who sent the invitation is told the answer there. Only
+the account whose email was invited can answer an invitation, and
 an expired or already answered invitation can be neither accepted nor declined. After accepting,
 the organization becomes your current one.
 

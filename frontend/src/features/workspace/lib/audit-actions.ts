@@ -112,6 +112,7 @@ export const AUDIT_ACTIONS: Record<AuditAction, AuditActionCopy> = {
   STORAGE_DELETION_FAILED: { label: "Storage deletion failed" },
   API_REQUEST_RETENTION_PRUNE: { label: "API calls pruned" },
   AUDIT_RETENTION_PRUNE: { label: "Audit entries pruned" },
+  NOTIFICATION_RETENTION_PRUNE: { label: "Read notifications pruned" },
 };
 
 export const AUDIT_TARGET_TYPES: Record<AuditTargetType, string> = {
@@ -119,6 +120,7 @@ export const AUDIT_TARGET_TYPES: Record<AuditTargetType, string> = {
   API_CLIENT_KEY: "API key",
   API_REQUEST_LOG: "API call log",
   AUDIT_LOG: "Audit log",
+  NOTIFICATION_LOG: "Notifications",
   INFRASTRUCTURE_SERVICE: "Service",
   INVITATION: "Invitation",
   MODEL: "Model",

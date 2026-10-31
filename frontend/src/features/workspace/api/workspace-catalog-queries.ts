@@ -4,7 +4,6 @@ import { useInfiniteCatalog, type CatalogPage } from "@/shared/api/infinite-cata
 import type {
   MemberCatalogDto,
   InvitationCatalogDto,
-  InvitationDto,
   InvitationCandidateDto,
   OrganizationMembershipRowDto,
   PageDtoAuditEventDto,
@@ -20,7 +19,6 @@ import {
   organizationInvitationsQueryKey,
   organizationInvitationCandidatesQueryKey,
   organizationRolesQueryKey,
-  PENDING_INVITATIONS_QUERY_KEY,
   PLATFORM_AUDIT_EVENTS_QUERY_KEY,
 } from "./workspace.keys";
 
@@ -96,10 +94,9 @@ export function usePlatformAuditEventCatalog(controls: AuditControls) {
   return useInfiniteCatalog({
     queryKey: [...PLATFORM_AUDIT_EVENTS_QUERY_KEY, "infinite", controls],
     queryFn: (page, signal) =>
-      appFetch<PageDtoAuditEventDto>(
-        `/api/admin/audit-events/catalog?${params(page, controls)}`,
-        { signal },
-      ),
+      appFetch<PageDtoAuditEventDto>(`/api/admin/audit-events/catalog?${params(page, controls)}`, {
+        signal,
+      }),
     staleTime: 0,
   });
 }
@@ -147,19 +144,6 @@ export function useRoleCatalogMetadata(id: number, enabled = true) {
     queryFn: ({ signal }) =>
       appFetch<RoleCatalogMetadataDto>(`/api/organizations/${id}/roles/metadata`, { signal }),
     enabled: Boolean(id) && enabled,
-  });
-}
-
-export function usePendingInvitationCatalog(search: string) {
-  return useInfiniteCatalog({
-    queryKey: [...PENDING_INVITATIONS_QUERY_KEY, "infinite", search],
-    queryFn: (page, signal) =>
-      appFetch<CatalogPage<InvitationDto>>(
-        `/api/invitations/pending/catalog?${params(page, { search })}`,
-        { signal },
-      ),
-    staleTime: 30_000,
-    refetchInterval: 60_000,
   });
 }
 

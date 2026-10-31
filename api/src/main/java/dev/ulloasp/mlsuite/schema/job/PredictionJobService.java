@@ -18,6 +18,7 @@ import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
+import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 /**
@@ -33,6 +34,8 @@ public class PredictionJobService {
     private static final int LISTED = 50;
 
     private final PredictionJobLedger ledger;
+    private final PredictionJobOutcomes outcomes;
+    private final UserLookupService users;
     private final WorkspaceAuthorizationService authorization;
     private final SchemaBookmarkRepository bookmarks;
     private final SchemaModelBindingRepository bindings;
@@ -41,12 +44,15 @@ public class PredictionJobService {
     private final int maxOpenPerOrganization;
     private final int maxOpenPerMember;
 
-    PredictionJobService(PredictionJobLedger ledger, WorkspaceAuthorizationService authorization,
-            SchemaBookmarkRepository bookmarks, SchemaModelBindingRepository bindings, AuditLogService auditLog,
+    PredictionJobService(PredictionJobLedger ledger, PredictionJobOutcomes outcomes, UserLookupService users,
+            WorkspaceAuthorizationService authorization, SchemaBookmarkRepository bookmarks,
+            SchemaModelBindingRepository bindings, AuditLogService auditLog,
             @Value("${mlsuite.prediction-jobs.max-rows}") int maxRows,
             @Value("${mlsuite.prediction-jobs.max-open-per-organization}") int maxOpenPerOrganization,
             @Value("${mlsuite.prediction-jobs.max-open-per-member}") int maxOpenPerMember) {
         this.ledger = ledger;
+        this.outcomes = outcomes;
+        this.users = users;
         this.authorization = authorization;
         this.bookmarks = bookmarks;
         this.bindings = bindings;
@@ -99,11 +105,11 @@ public class PredictionJobService {
     public PredictionJobDto cancel(Long userId, Long jobId) {
         Long organizationId = requireRun(userId);
         PredictionJobDto job = require(organizationId, jobId);
-        if (!ledger.cancel(organizationId, job.id())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "The bulk upload has already finished");
-        }
+        PredictionJobLedger.FinishedJob cancelled = ledger.cancel(organizationId, job.id())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "The bulk upload has already finished"));
         auditLog.record(AuditActor.user(userId), organizationId, AuditAction.PREDICTION_JOB_CANCEL, jobId,
                 AuditDetails.of("rowsLeft", job.pendingRows()));
+        outcomes.cancelled(cancelled, userId, users.requireById(userId).getFullName());
         return require(organizationId, jobId);
     }
 

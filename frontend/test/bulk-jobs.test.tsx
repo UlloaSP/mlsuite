@@ -73,8 +73,11 @@ afterEach(() => vi.useRealTimers());
 
 const JOBS = "GET /api/schema-bookmarks/9/prediction-jobs";
 
+const show = (route: string) =>
+  mount(<SchemaRunBulkUploadButton bookmarkId="9" version={version} />, { route });
+
 async function openDialog() {
-  const view = await mount(<SchemaRunBulkUploadButton bookmarkId="9" version={version} />);
+  const view = await show("/predict/9");
   await flush();
   await click(document.body.querySelector("button")!);
   await flush();
@@ -82,6 +85,15 @@ async function openDialog() {
 }
 
 describe("bulk uploads run on the server as jobs", () => {
+  test("a finished job's notification opens the list by its link", async () => {
+    routes.set(JOBS, () => ({ status: 200, body: [job({ status: "COMPLETED" })] }));
+
+    await show("/predict/9?bulk=open");
+    await flush();
+
+    expect(document.body.textContent).toContain("Load 1");
+  });
+
   test("the button counts running jobs and the dialog shows each job's progress", async () => {
     routes.set(JOBS, () => ({
       status: 200,

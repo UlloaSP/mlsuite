@@ -40,8 +40,15 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceBootstrapServi
  */
 class AuditCoverageTest {
 
-    /** Changes nothing anyone should audit, or reads through a POST for the size of its body. */
+    /**
+     * Changes nothing anyone should audit, reads through a POST for the size of its body, or tidies
+     * a member's own inbox: reading and clearing notifications acts on nobody else's data.
+     */
     private static final Set<String> NOT_ACTIONS = Set.of(
+            "NotificationController.markRead",
+            "NotificationController.markAllRead",
+            "NotificationController.delete",
+            "NotificationController.deleteRead",
             "WorkspaceController.selectOrganization",
             "WorkspaceCatalogController.selectCurrentOrganization",
             "InferenceCatalogController.inferenceFacetCatalog",

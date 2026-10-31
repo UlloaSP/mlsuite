@@ -31,6 +31,9 @@ class PredictionJobLedger {
     private static final String JOB_COLUMNS = "j.id, j.schema_bookmark_id, j.schema_version_id, j.status, j.total_rows, "
             + "j.done_rows, j.failed_rows, u.full_name, j.created_at, j.updated_at, j.finished_at";
     private static final String OPEN = "('QUEUED', 'RUNNING')";
+    private static final String FINISHED = " RETURNING id, organization_id, schema_bookmark_id,"
+            + " (SELECT b.name FROM schema_bookmark b WHERE b.id = schema_bookmark_id), created_by_user_id,"
+            + " total_rows, done_rows, failed_rows, (SELECT o.name FROM organization o WHERE o.id = organization_id)";
 
     private final JdbcTemplate jdbc;
     private final ObjectMapper objectMapper;
@@ -42,8 +45,9 @@ class PredictionJobLedger {
     record Claim(Long id, Long organizationId, Long bookmarkId, Long schemaVersionId, Long userId, boolean started) {
     }
 
-    /** What a finished job did. */
-    record Outcome(int doneRows, int failedRows) {
+    /** A job this statement ended: what telling the member who started it takes. */
+    record FinishedJob(Long id, Long organizationId, Long bookmarkId, String bookmarkName, Long userId, int totalRows,
+            int doneRows, int failedRows, String organizationName) {
     }
 
     /** A row still to run, with the record each model receives. */
@@ -96,10 +100,11 @@ class PredictionJobLedger {
                         rs.getString(3)), jobId);
     }
 
-    boolean cancel(Long organizationId, Long jobId) {
-        return jdbc.update("UPDATE prediction_job SET status = 'CANCELLED', lease_owner = NULL, lease_expires_at = NULL,"
-                + " finished_at = now(), updated_at = now() WHERE id = ? AND organization_id = ? AND status IN " + OPEN,
-                jobId, organizationId) == 1;
+    /** Cancels an open job; empty once it has finished. */
+    Optional<FinishedJob> cancel(Long organizationId, Long jobId) {
+        return jdbc.query("UPDATE prediction_job SET status = 'CANCELLED', lease_owner = NULL, lease_expires_at = NULL,"
+                + " finished_at = now(), updated_at = now() WHERE id = ? AND organization_id = ? AND status IN " + OPEN
+                + FINISHED, PredictionJobLedger::finished, jobId, organizationId).stream().findFirst();
     }
 
     /** Puts a finished job's failed rows back to run; false when the job is still open. */
@@ -169,12 +174,11 @@ class PredictionJobLedger {
         refreshCounts(jobId, 0);
     }
 
-    /** Finishes the job; empty when it is no longer this worker's. */
-    Optional<Outcome> complete(Long jobId, String worker) {
+    /** Ends the job for the worker holding it; empty when that is no longer this worker. */
+    Optional<FinishedJob> complete(Long jobId, String worker) {
         return jdbc.query("UPDATE prediction_job SET status = 'COMPLETED', lease_owner = NULL, lease_expires_at = NULL,"
                 + " finished_at = now(), updated_at = now() WHERE id = ? AND lease_owner = ? AND status = 'RUNNING'"
-                + " RETURNING done_rows, failed_rows", (rs, n) -> new Outcome(rs.getInt(1), rs.getInt(2)),
-                jobId, worker).stream().findFirst();
+                + FINISHED, PredictionJobLedger::finished, jobId, worker).stream().findFirst();
     }
 
     boolean cancelled(Long jobId) {
@@ -195,6 +199,11 @@ class PredictionJobLedger {
                 PredictionJobStatus.valueOf(rs.getString(4)), total, done, failed, total - done - failed,
                 rs.getString(8), rs.getObject(9, OffsetDateTime.class), rs.getObject(10, OffsetDateTime.class),
                 rs.getObject(11, OffsetDateTime.class));
+    }
+
+    private static FinishedJob finished(ResultSet rs, int rowNumber) throws SQLException {
+        return new FinishedJob(rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getString(4), rs.getLong(5),
+                rs.getInt(6), rs.getInt(7), rs.getInt(8), rs.getString(9));
     }
 
     private PendingRow pendingRow(ResultSet rs, int rowNumber) throws SQLException {

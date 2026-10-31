@@ -4,13 +4,17 @@ import static dev.ulloasp.mlsuite.support.TestFixtures.organization;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.mockito.ArgumentCaptor;
@@ -26,6 +30,8 @@ import dev.ulloasp.mlsuite.invitation.application.dto.CreateInvitationRequest;
 import dev.ulloasp.mlsuite.invitation.application.usecase.InvitationManagementService;
 import dev.ulloasp.mlsuite.invitation.domain.model.Invitation;
 import dev.ulloasp.mlsuite.invitation.domain.model.InvitationStatus;
+import dev.ulloasp.mlsuite.notification.application.service.NotificationService;
+import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
@@ -71,6 +77,9 @@ class InvitationManagementServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private NotificationService notificationService;
+
     private InvitationManagementService service;
 
     @BeforeEach
@@ -84,7 +93,8 @@ class InvitationManagementServiceTest {
                 workspaceAuthorizationService,
                 auditLogService,
                 roleDefinitionRepository,
-                userRepository);
+                userRepository,
+                notificationService);
     }
 
     @Test
@@ -155,6 +165,46 @@ class InvitationManagementServiceTest {
         verify(organizationMembershipRepository).save(membership.capture());
         assertEquals(invitee, membership.getValue().getUser());
         assertEquals(role, membership.getValue().getRoleDefinition());
+        verify(notificationService).notify(eq(8L), eq(41L), eq(NotificationKind.ORGANIZATION_JOINED), eq("41"), any());
+        verify(notificationService, never()).notify(any(), any(), eq(NotificationKind.INVITATION_RECEIVED), any(), any());
+    }
+
+    @Test
+    void createInvitation_TellsTheInvitedAccount() {
+        Organization org = organization();
+        User invitee = user(8L);
+        RoleDefinition role = reviewerRole(org);
+        when(workspaceAccessService.requireUser(7L)).thenReturn(user(7L));
+        when(organizationRepository.findById(41L)).thenReturn(Optional.of(org));
+        when(roleDefinitionRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(role));
+        when(userRepository.findByEmailIgnoreCase("target@example.com")).thenReturn(Optional.of(invitee));
+        when(invitationRepository.save(any(Invitation.class))).thenAnswer(inv -> {
+            Invitation invitation = inv.getArgument(0);
+            invitation.setId(12L);
+            return invitation;
+        });
+
+        service.createInvitation(7L, 41L, new CreateInvitationRequest("target@example.com", 5L));
+
+        verify(notificationService).notify(8L, 41L, NotificationKind.INVITATION_RECEIVED, "12",
+                Map.of("organizationName", org.getName(), "inviterName", "Admin", "roleName", role.getName()));
+    }
+
+    @Test
+    void resendInvitation_TellsTheInvitedAccountAgain() {
+        Organization org = organization();
+        Invitation revoked = new Invitation(org, "target@example.com", reviewerRole(org), user(7L),
+                OffsetDateTime.now(ZoneOffset.UTC).minusDays(1));
+        revoked.setId(12L);
+        revoked.setStatus(InvitationStatus.REVOKED);
+        when(workspaceAccessService.requireUser(7L)).thenReturn(user(7L));
+        when(invitationRepository.findById(12L)).thenReturn(Optional.of(revoked));
+        when(invitationRepository.save(revoked)).thenReturn(revoked);
+        when(userRepository.findByEmailIgnoreCase("target@example.com")).thenReturn(Optional.of(user(8L)));
+
+        service.resendInvitation(7L, 41L, 12L);
+
+        verify(notificationService).notify(eq(8L), eq(41L), eq(NotificationKind.INVITATION_RECEIVED), eq("12"), any());
     }
 
     @Test
@@ -178,6 +228,8 @@ class InvitationManagementServiceTest {
 
         assertEquals(InvitationStatus.PENDING, result.status());
         verifyNoInteractions(organizationMembershipRepository);
+        // No account holds the address, so there is nobody to tell yet.
+        verifyNoInteractions(notificationService);
     }
 
     @Test

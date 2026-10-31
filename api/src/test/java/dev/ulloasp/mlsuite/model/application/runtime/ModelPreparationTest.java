@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,11 +24,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.util.AopTestUtils;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.RuntimeBuilderClient;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.model.domain.model.RuntimeEnvironment;
+import dev.ulloasp.mlsuite.notification.application.service.NotificationService;
+import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 
 /**
@@ -43,6 +48,8 @@ class ModelPreparationTest extends PublicPredictionFixture {
     private static final String KEY = "e".repeat(64);
 
     @Autowired ModelPreparationWorker worker;
+    @Autowired ModelPreparationLedger ledger;
+    @MockitoSpyBean NotificationService notifications;
     @Autowired JdbcTemplate jdbc;
     @MockitoBean RuntimeBuilderClient builder;
 
@@ -167,6 +174,80 @@ class ModelPreparationTest extends PublicPredictionFixture {
                 WHERE p.name = 'with-environment' ORDER BY r.model_id = ? DESC""", String.class, forestModel.getId()));
     }
 
+    @Test
+    void theMemberWhoUploadedAModelIsToldOnceItIsReady() {
+        when(analyzer.post(eq("/verify"), any())).thenReturn(Map.of("samples", 3));
+
+        worker.work();
+        worker.work();
+
+        assertEquals(List.of("MODEL_READY"), told());
+        assertEquals(forestModel.getName(), label("modelName"));
+        assertEquals(organization.getId(), jdbc.queryForObject("SELECT organization_id FROM notification"
+                + " WHERE recipient_user_id = ? AND target_id = ?", Long.class, owner.getId(), forestModel.getId().toString()));
+    }
+
+    @Test
+    void aModelThatFailsAtOnceTellsTheReason() {
+        doThrow(new AnalyzerServiceException(422, "numpy==9.9.9 is refused")).when(builder).build(any());
+
+        worker.work();
+
+        assertEquals(List.of("MODEL_FAILED"), told());
+        assertEquals("numpy==9.9.9 is refused", label("reason"));
+        assertEquals(1, entries("MODEL_PREPARATION_FAILED"));
+    }
+
+    @Test
+    void anAttemptThatWillBeRetriedTellsNobodyAndTheLastOneToldOnce() {
+        doThrow(new AnalyzerServiceException(0, "The environment builder is unreachable")).when(builder).build(any());
+
+        worker.work();
+        assertEquals(List.of(), told());
+        assertEquals(0, entries("MODEL_PREPARATION_FAILED"));
+
+        jdbc.update("UPDATE model SET runtime_lease_expires_at = now() - interval '1 second' WHERE id = ?",
+                forestModel.getId());
+        worker.work();
+        assertEquals(List.of("MODEL_FAILED"), told());
+        assertEquals(1, entries("MODEL_PREPARATION_FAILED"));
+        assertEquals("The environment builder is unreachable", label("reason"));
+    }
+
+    @Test
+    void anOutcomeThatCannotBeToldIsNotRecordedEitherAndTheModelIsPreparedAgain() {
+        when(analyzer.post(eq("/verify"), any())).thenReturn(Map.of("samples", 3));
+        NotificationService target = AopTestUtils.getUltimateTargetObject(notifications);
+        doThrow(new IllegalStateException("the inbox is down")).doCallRealMethod().when(target)
+                .notify(any(), any(), eq(NotificationKind.MODEL_READY), any(), any());
+
+        worker.work();
+
+        assertEquals("PREPARING", state());
+        assertEquals(List.of(), told());
+        assertEquals(0, entries("MODEL_PREPARATION_READY"));
+
+        jdbc.update("UPDATE model SET runtime_lease_expires_at = now() - interval '1 second' WHERE id = ?",
+                forestModel.getId());
+        worker.work();
+
+        assertEquals("READY", state());
+        assertEquals(List.of("MODEL_READY"), told());
+        assertEquals(1, entries("MODEL_PREPARATION_READY"));
+    }
+
+    @Test
+    void aWorkerThatLostTheModelTellsNobody() {
+        jdbc.update("UPDATE model SET runtime_lease_owner = 'the-next-worker' WHERE id = ?", forestModel.getId());
+
+        ledger.ready(forestModel.getId(), "a-worker-that-stalled", null);
+        ledger.fail(forestModel.getId(), "a-worker-that-stalled", "too late");
+
+        assertEquals(List.of(), told());
+        assertEquals("PREPARING", state());
+        assertEquals(0, entries("MODEL_PREPARATION_READY") + entries("MODEL_PREPARATION_FAILED"));
+    }
+
     private Map<String, String> sealed(Long modelId) throws Exception {
         String request = objectMapper.writeValueAsString(Map.of("schemaVersionId", version.getId(),
                 "modelId", modelId, "modelInput", Map.of("age", 52)));
@@ -174,6 +255,23 @@ class ModelPreparationTest extends PublicPredictionFixture {
                 bookmark.getId()), owner.getId()).contentType(MediaType.APPLICATION_JSON).content(request))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         return Map.of("attestation", objectMapper.readTree(prediction).get("attestation").asText());
+    }
+
+    private int entries(String action) {
+        return jdbc.queryForObject("SELECT count(*) FROM audit_event WHERE action = ? AND target_id = ?", Integer.class,
+                action, forestModel.getId().toString());
+    }
+
+    /** What the forest's uploader was told about it, oldest first. */
+    private List<String> told() {
+        return jdbc.queryForList("SELECT kind FROM notification WHERE recipient_user_id = ? AND target_type = 'MODEL'"
+                + " AND target_id = ? ORDER BY id", String.class, owner.getId(), forestModel.getId().toString());
+    }
+
+    private String label(String label) {
+        return jdbc.queryForObject("SELECT payload ->> ? FROM notification WHERE recipient_user_id = ?"
+                + " AND target_id = ? ORDER BY id DESC LIMIT 1", String.class, label, owner.getId(),
+                forestModel.getId().toString());
     }
 
     private String state() {
