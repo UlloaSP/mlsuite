@@ -14,7 +14,7 @@ IMAGES = {
     "ops-agent": "mlsuite-ops-agent",
 }
 COMPOSE_SERVICES = {
-    "api": ("artifact-migrate", "db-migrate", "spring-app"),
+    "api": ("artifact-prune", "db-migrate", "spring-app"),
     "backend": ("py-analyzer", "runtime-builder"),
 }
 PLATFORM = "linux/amd64"

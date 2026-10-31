@@ -23,7 +23,7 @@ services:
   runtime-builder: *backend-dev
 
   db-migrate: *api-dev
-  artifact-migrate: *api-dev
+  artifact-prune: *api-dev
   spring-app: *api-dev
 
   frontend:

@@ -40,9 +40,7 @@ never commit `.env`.
 | `DB_ADMIN_USER`, `DB_ADMIN_PASS` | `mlsuite_admin` | PostgreSQL superuser and database owner. |
 | `DB_MIGRATION_USER`, `DB_MIGRATION_PASS` | `mlsuite_migrator` | Owns the schema; runs Flyway migrations. |
 | `DB_USER`, `DB_PASS` | `mlsuite_app` | The application's role: data access only. |
-| `DB_LEGACY_OWNER`, `DB_LEGACY_PASS` | `mlsuite` | Original owner of a volume created by an older Compose file; its tables are handed over, then its login is revoked. |
 | `DB_POOL_MAX_SIZE`, `DB_POOL_MIN_IDLE`, `DB_POOL_CONNECTION_TIMEOUT_MS` | `10`, `2`, `30000` | API connection pool. Size it from PostgreSQL's connection budget. |
-| `FLYWAY_BASELINE_ON_MIGRATE`, `FLYWAY_BASELINE_VERSION` | `false`, `1` | Baseline an audited pre-Flyway database. Enable for exactly one migration, then set back to `false`. |
 
 Compose creates the three roles on every start. On an externally managed database, create
 equivalent roles yourself; the migration role must be able to install `pg_trgm`.
@@ -52,15 +50,12 @@ equivalent roles yourself; the migration role must be able to install `pg_trgm`.
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `RUSTFS_ACCESS_KEY`, `RUSTFS_SECRET_KEY` | `mlsuite-root` | RustFS administrator, used only by RustFS and its initializer. |
-| `STORAGE_ENABLED` | `true` | Store models and plugins in RustFS. |
 | `STORAGE_ENDPOINT` | `http://rustfs:9000` | S3 endpoint. |
 | `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | `mlsuite-app` | The application's RustFS user, limited to the bucket. Must differ from the root user. |
 | `STORAGE_BUCKET` | `mlsuite` | Bucket name. Versioning is enabled on it. |
 | `STORAGE_AUTO_CREATE_BUCKET` | `true` | Let the API create the bucket. |
-| `STORAGE_RETAIN_INLINE_COPY` | `true` | Keep the database copy of each model during the rollback window. |
 | `STORAGE_DELETION_ENABLED`, `STORAGE_DELETION_BATCH_SIZE`, `STORAGE_DELETION_STALE_AFTER_SECONDS` | `true`, `20`, `300` | Background removal of deleted files. |
-| `ARTIFACT_MIGRATION_COMMAND` | `status` | What `artifact-migrate` does: `status`, `migrate`, `verify`, `retry-failed`, `prune-orphans`. |
-| `ARTIFACT_MIGRATION_MAX_ATTEMPTS`, `ARTIFACT_MIGRATION_STALE_AFTER_SECONDS`, `ARTIFACT_MIGRATION_ORPHAN_GRACE_SECONDS` | `5`, `900`, `86400` | Retries, lease length, and the minimum age before `prune-orphans` removes an unreferenced object. |
+| `ARTIFACT_ORPHAN_GRACE_SECONDS` | `86400` | The minimum age before the `artifact-prune` job removes a model object nothing refers to. |
 
 ## Models
 

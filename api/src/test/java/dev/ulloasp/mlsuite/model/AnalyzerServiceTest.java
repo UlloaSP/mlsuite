@@ -49,7 +49,6 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDenie
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
-import dev.ulloasp.mlsuite.storage.ModelArtifactInlineCopy;
 import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
@@ -147,7 +146,7 @@ class AnalyzerServiceTest {
     private AnalyzerServiceImpl service(WorkspaceRuntimeSlots slots) {
         AnalyzerClient analyzerClient = new AnalyzerClient(restTemplate, restTemplate, "http://py-analyzer:8000");
         ModelRuntimeClient modelRuntime = new ModelRuntimeClient(analyzerClient,
-                new ModelArtifactContentReader(objectStorageService, mock(ModelArtifactInlineCopy.class)),
+                new ModelArtifactContentReader(objectStorageService),
                 mock(ModelPreparationLedger.class));
         return new AnalyzerServiceImpl(modelRuntime, slots, modelRepository,
                 userLookupService, authorizationService, new ObjectMapper());

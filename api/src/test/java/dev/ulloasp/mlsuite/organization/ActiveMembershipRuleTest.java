@@ -22,7 +22,6 @@ import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.Invitat
 import dev.ulloasp.mlsuite.invitation.application.usecase.InvitationManagementService;
 import dev.ulloasp.mlsuite.invitation.domain.model.Invitation;
 import dev.ulloasp.mlsuite.invitation.domain.model.InvitationStatus;
-import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
@@ -73,11 +72,9 @@ class ActiveMembershipRuleTest {
         OrganizationRepository organizations = mock();
         OrganizationMembershipRepository memberships = mock();
         UserRepository users = mock();
-        ModelRepository models = mock();
         WorkspaceBootstrapService bootstrap = new WorkspaceBootstrapService(
-                organizations, memberships, users, models, mock(RoleSeedService.class));
+                organizations, memberships, users, mock(RoleSeedService.class));
         when(memberships.findActiveByUserId(7L)).thenReturn(List.of(active));
-        when(models.findByUserIdAndOrganizationIdIsNull(7L)).thenReturn(List.of());
 
         assertSame(activeOrganization, bootstrap.ensureCurrentOrganization(user));
         assertSame(activeOrganization, user.getCurrentOrganization());

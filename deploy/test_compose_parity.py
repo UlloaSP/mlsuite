@@ -66,7 +66,7 @@ def main() -> None:
     development = render("docker-compose.dev.yml")
     digest = "sha256:" + "a" * 64
     image_names = {
-        "artifact-migrate": "mlsuite-api",
+        "artifact-prune": "mlsuite-api",
         "db-migrate": "mlsuite-api",
         "spring-app": "mlsuite-api",
         "py-analyzer": "mlsuite-sklearn-backend",

@@ -54,7 +54,7 @@ it does not perform independent cryptographic verification of attestations.
 
 The Compose asset provides all application service references and platform; the
 base production override deliberately contains no fallback application images. The
-single API image is reused by `db-migrate`, `artifact-migrate`, and `spring-app`
+single API image is reused by `db-migrate`, `artifact-prune`, and `spring-app`
 so migrations always run from the exact digest being promoted.
 It is intended to accompany `docker-compose.yml` and `docker-compose.prod.yml`;
 PostgreSQL, RustFS, secrets,
@@ -72,7 +72,12 @@ the cutover wizard and ops-agent then consume the same digest-pinned configurati
 The base production Compose file gates the API on a one-shot Flyway migration
 and deep readiness checks. The operator must still provide environment-specific
 backup, restore, promotion and rollback orchestration; follow the production
-database and artifact rollout in `README.md` before starting the release.
+database rollout in `README.md` before starting the release.
+Releases carry one Flyway baseline, so an installation created before it cannot be
+upgraded: wipe its PostgreSQL and RustFS volumes, including `pg_data` and
+`rustfs_data` on a Compose host, before the first start. Object storage is
+mandatory: `STORAGE_ENABLED`, `STORAGE_RETAIN_INLINE_COPY`, `FLYWAY_BASELINE_*`,
+`DB_LEGACY_*` and `ARTIFACT_MIGRATION_*` no longer exist and can leave `.env`.
 The initial on-premise contract is `local-single-disk`. The cutover wizard creates
 a coordinated local PostgreSQL plus RustFS backup, verifies it through an isolated
 restore rehearsal, rejects a rehearsal that exceeds `RECOVERY_RTO_MINUTES`, and

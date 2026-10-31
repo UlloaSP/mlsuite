@@ -5,8 +5,6 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
-import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
@@ -27,12 +25,10 @@ public class WorkspaceBootstrapService {
     private final OrganizationRepository organizationRepository;
     private final OrganizationMembershipRepository membershipRepository;
     private final UserRepository userRepository;
-    private final ModelRepository modelRepository;
     private final RoleSeedService roleSeedService;
 
     public Organization ensureCurrentOrganization(User user) {
         if (user.getSystemRole() == SystemRole.SUPERADMIN && user.getCurrentOrganization() != null) {
-            backfillModels(user, user.getCurrentOrganization());
             return user.getCurrentOrganization();
         }
 
@@ -42,7 +38,6 @@ public class WorkspaceBootstrapService {
                     .filter(membership -> membership.getOrganization().getId().equals(user.getCurrentOrganization().getId()))
                     .findFirst();
             if (currentMembership.isPresent()) {
-                backfillModels(user, user.getCurrentOrganization());
                 return user.getCurrentOrganization();
             }
         }
@@ -50,7 +45,6 @@ public class WorkspaceBootstrapService {
             Organization current = memberships.get(0).getOrganization();
             user.setCurrentOrganization(current);
             userRepository.save(user);
-            backfillModels(user, current);
             return current;
         }
 
@@ -68,15 +62,7 @@ public class WorkspaceBootstrapService {
                 MembershipStatus.ACTIVE));
         user.setCurrentOrganization(organization);
         userRepository.save(user);
-        backfillModels(user, organization);
         return organization;
-    }
-
-    private void backfillModels(User user, Organization organization) {
-        for (Model model : modelRepository.findByUserIdAndOrganizationIdIsNull(user.getId())) {
-            model.setOrganization(organization);
-            modelRepository.save(model);
-        }
     }
 
     private String buildSlug(User user) {

@@ -14,8 +14,8 @@ public class MlsuiteApplication {
             DatabaseMigrationApplication.run(args);
             return;
         }
-        if ("artifact-migrate".equalsIgnoreCase(mode)) {
-            ArtifactMigrationApplication.run(args);
+        if ("artifact-prune".equalsIgnoreCase(mode)) {
+            ArtifactPruneApplication.run(args);
             return;
         }
         SpringApplication.run(MlsuiteApplication.class, args);

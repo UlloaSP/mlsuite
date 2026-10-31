@@ -1,6 +1,6 @@
 ---
 title: Production rollout
-description: "Run published images in production: the release override, the cutover wizard, database and artifact migrations, backups, promotion gates and rollback."
+description: "Run published images in production: the release override, the cutover wizard, database migrations, backups, promotion gates and rollback."
 ---
 
 Production runs the images of an [immutable release](/self-hosting/releases/) rather than local
@@ -35,25 +35,24 @@ For a real cutover, run the gated wizard from the repository root:
 
 It checks the configuration (`MODEL_MUTATIONS_REQUIRE_VERSION=true`, the single-disk risk
 accepted, the backup timer active), freezes writes, takes a coordinated backup, rehearses a restore
-in isolation, runs the database migration and the artifact migration, checks the canary's
+in isolation, runs the database migration, checks the canary's
 readiness and records what a rollback needs. It changes production only after explicit
 confirmations. Review it before running it.
 
 ## Database
 
 Flyway is the only owner of the database schema; the API validates it and never changes it. An
-empty installation needs no preparation. An existing database created before Flyway must first be
-compared with `api/src/main/resources/db/migration/V1__baseline.sql` and, only if it matches,
-baselined once with `FLYWAY_BASELINE_ON_MIGRATE=true` on a `db-migrate` run. Never leave that
-setting enabled.
+installation starts from an empty database, which `V1__baseline.sql` brings to the whole schema. A
+database created before that baseline cannot be upgraded: wipe the PostgreSQL and RustFS volumes
+before the first start.
 
 ## Model artifacts
 
-Models stored in the database by earlier versions are moved to RustFS by the resumable
-`artifact-migrate` job (profile `operations`), run with `ARTIFACT_MIGRATION_COMMAND` set to
-`status`, `migrate`, `verify` and finally `prune-orphans`. Each upload is read back and checked
-against its SHA-256 before it counts as migrated. Keep `STORAGE_RETAIN_INLINE_COPY=true` during the
-rollback window so the previous version can still read every model.
+RustFS is the only home of model files, so the API needs it to store and run models. Each upload is
+read back and checked against its SHA-256 before its model is saved. A crash between the two leaves
+a file nothing refers to; the one-shot `artifact-prune` job (profile `operations`) removes those once
+they are older than `ARTIFACT_ORPHAN_GRACE_SECONDS`. Run it only against the database that owns the
+bucket: a file unknown to any other database looks like an orphan.
 
 ## Backups
 
@@ -78,13 +77,10 @@ documented objective is a 24-hour recovery point (`RECOVERY_RPO_MINUTES`) and an
 Promote a release only when:
 
 - `db-migrate` finished and Flyway reports no drift;
-- the artifact `status` shows no failed, running, inline-only or unverified rows, and `verify`
-  finds no missing or mismatched object;
 - `/actuator/health/readiness` is healthy on the canary API;
 - a PostgreSQL and RustFS restore has been rehearsed in isolation.
 
 ## Rollback
 
-On an application failure, roll the images back while the inline model copies remain. When
-persistent state is incompatible, prefer rolling forward, or restore PostgreSQL and RustFS together
+On an application failure, roll the images back. When persistent state is incompatible, prefer rolling forward, or restore PostgreSQL and RustFS together
 from the same backup.

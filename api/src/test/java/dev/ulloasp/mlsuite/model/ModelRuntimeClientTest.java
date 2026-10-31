@@ -41,7 +41,6 @@ import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.storage.ArtifactHash;
 import dev.ulloasp.mlsuite.storage.ArtifactIntegrityException;
 import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
-import dev.ulloasp.mlsuite.storage.ModelArtifactInlineCopy;
 import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
 import dev.ulloasp.mlsuite.storage.ObjectStorageException;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
@@ -49,7 +48,7 @@ import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 /**
  * The hash-first transfer every runtime call of a model makes: the artifact's SHA-256 alone, and
  * the artifact only once the runtime answers that it does not hold it, streamed into the request
- * from the store (or the inline copy) and verified as it streams, never read whole first.
+ * from the store and verified as it streams, never read whole first.
  */
 class ModelRuntimeClientTest {
 
@@ -60,14 +59,13 @@ class ModelRuntimeClientTest {
 
     private final RestTemplate restTemplate = mock(RestTemplate.class);
     private final ObjectStorageService storage = mock(ObjectStorageService.class);
-    private final ModelArtifactInlineCopy inline = mock(ModelArtifactInlineCopy.class);
     private final ModelPreparationLedger preparations = mock(ModelPreparationLedger.class);
     private ModelRuntimeClient client;
 
     @BeforeEach
     void setUp() {
         client = new ModelRuntimeClient(new AnalyzerClient(restTemplate, restTemplate, "http://runtime"),
-                new ModelArtifactContentReader(storage, inline), preparations);
+                new ModelArtifactContentReader(storage), preparations);
     }
 
     @Test
@@ -83,7 +81,6 @@ class ModelRuntimeClientTest {
         assertEquals("{\"age\":52}", sent.get(0).getFirst("data").getBody());
         assertNull(sent.get(0).getFirst("model_file"));
         verify(storage, never()).open(any(), any(), any());
-        verify(inline, never()).open(any());
     }
 
     @Test
@@ -110,7 +107,7 @@ class ModelRuntimeClientTest {
     void aRunResentWithItsArtifactHasTheTimeOfABundleTransferNotOfARun() {
         RestTemplate bundles = mock(RestTemplate.class);
         ModelRuntimeClient timed = new ModelRuntimeClient(new AnalyzerClient(restTemplate, bundles, "http://runtime"),
-                new ModelArtifactContentReader(storage, inline), preparations);
+                new ModelArtifactContentReader(storage), preparations);
         when(restTemplate.postForObject(eq("http://runtime/predict"), any(), eq(Map.class)))
                 .thenThrow(runtimeError(409, "Artifact is not loaded; send it with its SHA-256"));
         when(bundles.postForObject(eq("http://runtime/predict"), any(), eq(Map.class))).thenReturn(Map.of());
@@ -136,23 +133,8 @@ class ModelRuntimeClientTest {
     }
 
     @Test
-    void anInlineCopyIsStreamedWhenTheStoredObjectCannotBeOpened() throws IOException {
+    void anArtifactWhoseObjectCannotBeOpenedIsNotSent() {
         when(storage.open("bucket", "key", "v1")).thenThrow(new ObjectStorageException("down"));
-        when(inline.size(7L)).thenReturn((long) BYTES.length);
-        when(inline.open(7L)).thenReturn(new ByteArrayInputStream(BYTES));
-        when(restTemplate.postForObject(eq("http://runtime/predict"), any(), eq(Map.class)))
-                .thenThrow(runtimeError(409, "Artifact is not loaded; send it with its SHA-256"))
-                .thenReturn(Map.of());
-
-        client.run("/predict", stored(SHA256), FIELDS);
-
-        assertArrayEquals(BYTES, read((Resource) sent(2).get(1).getFirst("model_file").getBody()));
-    }
-
-    @Test
-    void anArtifactWithNeitherAStoredObjectNorAnInlineCopyIsNotSent() {
-        when(storage.open("bucket", "key", "v1")).thenThrow(new ObjectStorageException("down"));
-        when(inline.size(7L)).thenReturn(0L);
         when(restTemplate.postForObject(eq("http://runtime/predict"), any(), eq(Map.class)))
                 .thenThrow(runtimeError(409, "Artifact is not loaded; send it with its SHA-256"))
                 .thenReturn(Map.of());
@@ -175,22 +157,6 @@ class ModelRuntimeClientTest {
         assertEquals("Missing features: age", refused.getDetail());
         sent(1);
         verify(storage, never()).open(any(), any(), any());
-    }
-
-    @Test
-    void aModelStoredBeforeArtifactsWereHashedSendsItsBytesUnderTheirHash() throws IOException {
-        when(inline.size(7L)).thenReturn((long) BYTES.length);
-        when(inline.open(7L)).thenAnswer(call -> new ByteArrayInputStream(BYTES));
-        when(restTemplate.postForObject(eq("http://runtime/predict"), any(), eq(Map.class))).thenReturn(Map.of());
-        RunnableModel unhashed = new RunnableModel(
-                new ModelArtifactReference(7L, "forest.mlbundle", null, null, null, null, null),
-                "legacy", ModelRuntimeState.READY);
-
-        client.run("/predict", unhashed, FIELDS);
-
-        MultiValueMap<String, HttpEntity<?>> only = sent(1).get(0);
-        assertEquals(SHA256, only.getFirst("artifact_sha256").getBody());
-        assertArrayEquals(BYTES, read((Resource) only.getFirst("model_file").getBody()));
     }
 
     @Test

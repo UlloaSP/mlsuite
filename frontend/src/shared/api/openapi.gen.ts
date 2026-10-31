@@ -2695,7 +2695,7 @@ export interface components {
         };
         ApiPredictionModel: {
             name: string;
-            sha256: string | null;
+            sha256: string;
         };
         ApiPredictionOutput: {
             prediction?: string;
@@ -3118,9 +3118,9 @@ export interface components {
             manifest: {
                 [key: string]: unknown;
             };
-            sha256: string | null;
+            sha256: string;
             /** Format: int64 */
-            sizeBytes: number | null;
+            sizeBytes: number;
         };
         ModelDto: {
             /** Format: date-time */

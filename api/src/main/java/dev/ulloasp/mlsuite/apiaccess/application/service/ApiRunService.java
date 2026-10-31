@@ -101,7 +101,7 @@ public class ApiRunService {
         });
         BoundModel model = models.get(0);
         return new ApiRunPlan(caller, target, version.getId(), version.getVersion(), version.getName(), model.id(),
-                model.name(), modelRepository.findArtifactSha256(model.id()).orElse(null),
+                model.name(), modelRepository.findArtifactSha256(model.id()).orElseThrow(),
                 PublicForm.of(version.getFormSchema(), models).reportRoutes(), features);
     }
 

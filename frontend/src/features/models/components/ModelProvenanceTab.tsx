@@ -14,8 +14,8 @@ import type { RuntimeEnvironmentDto } from "@/shared/api/openapi.gen";
 type Props = {
   manifest: ModelManifestView;
   fileName: string;
-  sizeBytes: number | null;
-  sha256: string | null;
+  sizeBytes: number;
+  sha256: string;
   environment: RuntimeEnvironmentDto;
 };
 
@@ -33,7 +33,7 @@ export function ModelProvenanceTab({ manifest, fileName, sizeBytes, sha256, envi
           <ModelFacts
             facts={stated([
               { label: "File", value: fileName },
-              { label: "Size", value: sizeBytes === null ? null : formatBytes(sizeBytes) },
+              { label: "Size", value: formatBytes(sizeBytes) },
               { label: "SHA-256", value: sha256, mono: true },
             ])}
           />

@@ -29,7 +29,7 @@ if [[ "${1:-}" == compose ]]; then
   if [[ "$*" == *'config --format json'* ]]; then
     digest=sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
     printf '{"services":{'
-    printf '"artifact-migrate":{"image":"ghcr.io/example/mlsuite-api@%s"},' "$digest"
+    printf '"artifact-prune":{"image":"ghcr.io/example/mlsuite-api@%s"},' "$digest"
     printf '"db-migrate":{"image":"ghcr.io/example/mlsuite-api@%s"},' "$digest"
     printf '"spring-app":{"image":"ghcr.io/example/mlsuite-api@%s"},' "$digest"
     printf '"frontend":{"image":"ghcr.io/example/mlsuite-frontend@%s"},' "$digest"
@@ -64,7 +64,6 @@ mkdir -p "$backup_root/production-20200101T000000Z" "$backup_root/production-202
 env_file="$work/test.env"
 cat > "$env_file" <<EOF
 DB_ADMIN_USER=admin
-DB_LEGACY_OWNER=legacy
 DB_PROD=mlsuite
 STORAGE_BUCKET=mlsuite
 COMPOSE_PROJECT_NAME=mlsuite

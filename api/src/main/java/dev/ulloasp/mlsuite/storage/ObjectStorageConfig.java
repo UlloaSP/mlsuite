@@ -25,10 +25,6 @@ public class ObjectStorageConfig {
 
     @Bean
     ObjectStorageService objectStorageService(StorageProperties properties) {
-        if (!properties.isEnabled()) {
-            return new DisabledObjectStorageService();
-        }
-
         return new S3ObjectStorageService(s3Client(properties), properties);
     }
 

@@ -65,7 +65,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml down
 | `ops-agent` | Reads Docker Compose for the [Infrastructure](/admin/infrastructure/) page | none |
 | `db-provision`, `rustfs-init` | One-shot: create database roles, the bucket and its policy | none |
 | `db-migrate` | One-shot: apply the Flyway database migrations before the API starts | none |
-| `artifact-migrate` | One-shot, profile `operations`: move stored models into object storage | none |
+| `artifact-prune` | One-shot, profile `operations`: remove model objects nothing refers to | none |
 
 The browser talks only to `frontend`. Keep the API reachable only through it: nginx passes the
 client's address to the API in a header that the API trusts for the public run limits. PostgreSQL is

@@ -612,10 +612,7 @@
             "type": "string"
           },
           "sha256": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           }
         },
         "required": [
@@ -2176,17 +2173,11 @@
             "type": "object"
           },
           "sha256": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           },
           "sizeBytes": {
             "format": "int64",
-            "type": [
-              "integer",
-              "null"
-            ]
+            "type": "integer"
           }
         },
         "required": [

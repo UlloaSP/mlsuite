@@ -16,12 +16,10 @@ import org.hibernate.type.SqlTypes;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -46,13 +44,12 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Model {
 
-    public Model(User user, String name, String type, String specific_type, String fileName, byte[] modelFile) {
+    public Model(User user, String name, String type, String specific_type, String fileName) {
         this.user = user;
         this.name = name;
         this.type = type;
         this.specificType = specific_type;
         this.fileName = fileName;
-        this.modelFile = modelFile;
     }
 
     @Id
@@ -71,8 +68,8 @@ public class Model {
     @JoinColumn(name = "updated_by_user_id", foreignKey = @ForeignKey(name = "fk_model_updated_by"))
     private User updatedBy;
 
-    @ManyToOne
-    @JoinColumn(name = "organization_id", foreignKey = @ForeignKey(name = "fk_model_organization"))
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "organization_id", nullable = false, foreignKey = @ForeignKey(name = "fk_model_organization"))
     private Organization organization;
 
     @Column(name = "name", nullable = false, length = 100)
@@ -87,52 +84,26 @@ public class Model {
     @Column(name = "file_name", nullable = false, length = 255)
     private String fileName;
 
-    /**
-     * The inline copy of the artifact. Loaded only when read inside a session, so a read of models
-     * never carries their artifacts; this needs the build-time enhancement in pom.xml. Outside a
-     * session read it with ModelRepository.findModelFile.
-     */
-    @Basic(fetch = FetchType.LAZY)
-    @JdbcTypeCode(SqlTypes.VARBINARY)
-    @Column(name = "model_file", nullable = false)
-    private byte[] modelFile;
-
-    @Column(name = "storage_bucket", length = 100)
+    @Column(name = "storage_bucket", nullable = false, length = 100)
     private String storageBucket;
 
-    @Column(name = "storage_object_key", length = 512)
+    @Column(name = "storage_object_key", nullable = false, length = 512)
     private String storageObjectKey;
 
-    @Column(name = "storage_etag", length = 128)
+    @Column(name = "storage_etag", nullable = false, length = 128)
     private String storageEtag;
 
-    @Column(name = "model_size_bytes")
+    @Column(name = "model_size_bytes", nullable = false)
     private Long modelSizeBytes;
 
-    @Column(name = "artifact_sha256", length = 64)
+    @Column(name = "artifact_sha256", nullable = false, length = 64)
     private String artifactSha256;
 
-    @Column(name = "storage_version_id", length = 255)
+    @Column(name = "storage_version_id", nullable = false, length = 255)
     private String storageVersionId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "artifact_state", nullable = false, length = 32)
-    private ModelArtifactState artifactState = ModelArtifactState.INLINE_ONLY;
-
-    @Column(name = "artifact_verified_at", columnDefinition = "TIMESTAMPTZ")
+    @Column(name = "artifact_verified_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime artifactVerifiedAt;
-
-    @Column(name = "artifact_migration_attempts", nullable = false)
-    private int artifactMigrationAttempts;
-
-    @Column(name = "artifact_migration_error", length = 1000)
-    private String artifactMigrationError;
-
-    @Column(name = "artifact_migration_started_at", columnDefinition = "TIMESTAMPTZ")
-    private OffsetDateTime artifactMigrationStartedAt;
-
-    @Column(name = "artifact_migration_worker", length = 128)
-    private String artifactMigrationWorker;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "input_schema", nullable = false)
@@ -176,11 +147,4 @@ public class Model {
 
     @Column(name = "archived_at", columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime archivedAt;
-
-    public boolean hasStoredObject() {
-        return this.storageBucket != null
-                && !this.storageBucket.isBlank()
-                && this.storageObjectKey != null
-                && !this.storageObjectKey.isBlank();
-    }
 }

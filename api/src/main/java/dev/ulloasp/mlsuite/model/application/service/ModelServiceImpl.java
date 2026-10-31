@@ -27,16 +27,12 @@ import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelReposit
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
-import dev.ulloasp.mlsuite.storage.ArtifactHash;
 import dev.ulloasp.mlsuite.storage.ArtifactSource;
-import dev.ulloasp.mlsuite.storage.ModelArtifactInlineCopy;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
-import dev.ulloasp.mlsuite.storage.StorageProperties;
 import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
 import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
 import dev.ulloasp.mlsuite.storage.ModelArtifactWriter;
 import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
-import dev.ulloasp.mlsuite.model.domain.model.ModelArtifactState;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -56,8 +52,6 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
     private final ModelArtifactWriter artifactWriter;
     private final ModelArtifactContentReader artifactReader;
     private final StorageDeletionQueue deletionQueue;
-    private final ModelArtifactInlineCopy inlineCopy;
-    private final boolean retainInlineCopy;
     private final RuntimeEnvironments environments;
     private final boolean requireMutationVersion;
 
@@ -71,8 +65,6 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
             ModelArtifactWriter artifactWriter,
             ModelArtifactContentReader artifactReader,
             StorageDeletionQueue deletionQueue,
-            ModelArtifactInlineCopy inlineCopy,
-            StorageProperties storageProperties,
             RuntimeEnvironments environments,
             @Value("${model.mutations.require-version:false}") boolean requireMutationVersion) {
         this.userLookupService = userLookupService;
@@ -84,8 +76,6 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         this.artifactWriter = artifactWriter;
         this.artifactReader = artifactReader;
         this.deletionQueue = deletionQueue;
-        this.inlineCopy = inlineCopy;
-        this.retainInlineCopy = storageProperties.isRetainInlineCopy();
         this.environments = environments;
         this.requireMutationVersion = requireMutationVersion;
         this.catalogReader = new ModelCatalogReader(modelRepository, workspaceAuthorizationService);
@@ -122,26 +112,17 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         model.setFeatureImportances(inspection.featureImportances());
         model.setEnvironmentKey(environments.register(inspection.environment()));
         model.setRuntimeState(RuntimeEnvironments.initialState(model.getEnvironmentKey()));
-        model.setModelFile(new byte[0]);
-        model.setModelSizeBytes(artifact.sizeBytes());
-        model.setArtifactState(ModelArtifactState.INLINE_ONLY);
         return storeArtifact(model, artifact, sha256, contentType);
     }
 
     /**
-     * Streams the new model's artifact into the object store and, when the inline copy is kept,
-     * into its row; the copy is written last, over JDBC, so no later flush of the entity, which
-     * holds no artifact, overwrites it.
+     * Streams the new model's artifact into the object store, then writes its row, which only
+     * exists naming a verified object. The object goes again if the row cannot be written.
      */
     private Model storeArtifact(Model model, ArtifactSource artifact, String sha256, String contentType) {
+        artifactWriter.storeAndAttach(model, artifact, sha256, contentType);
         try {
-            modelRepository.saveAndFlush(model);
-            artifactWriter.storeAndAttach(model, artifact, sha256, contentType);
-            Model stored = modelRepository.saveAndFlush(model);
-            if (retainInlineCopy) {
-                inlineCopy.write(stored.getId(), artifact, sha256);
-            }
-            return stored;
+            return modelRepository.saveAndFlush(model);
         } catch (RuntimeException ex) {
             deleteStoredObject(model, ex);
             throw ex;
@@ -211,12 +192,9 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
             throw new ModelAlreadyExistsException(nextName, organization.getName());
         }
 
-        ModelArtifactReference reference = ModelArtifactReference.of(source);
-        ArtifactSource artifact = artifactReader.source(reference);
-        // A model stored before artifacts were hashed gets the hash of its bytes, read once more.
-        String sha256 = reference.sha256() != null ? reference.sha256() : ArtifactHash.sha256(artifact);
-        Model copy = copyModel(user, organization, source, nextName, artifact.sizeBytes());
-        return storeArtifact(copy, artifact, sha256, "application/octet-stream");
+        ArtifactSource artifact = artifactReader.source(ModelArtifactReference.of(source));
+        Model copy = copyModel(user, organization, source, nextName);
+        return storeArtifact(copy, artifact, source.getArtifactSha256(), "application/octet-stream");
     }
 
     @Override
@@ -227,9 +205,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         if (bindingRepository.existsByModelId(modelId) || resultRepository.existsByModelId(modelId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Model is used by schemas or prediction runs. Archive it instead.");
         }
-        if (model.hasStoredObject()) {
-            deletionQueue.enqueue(model.getStorageBucket(), model.getStorageObjectKey(), model.getStorageVersionId());
-        }
+        deletionQueue.enqueue(model.getStorageBucket(), model.getStorageObjectKey(), model.getStorageVersionId());
         modelRepository.delete(model);
         environments.releaseWhenUnused(model.getEnvironmentKey());
     }
@@ -246,7 +222,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         return name.strip();
     }
 
-    private Model copyModel(User user, Organization organization, Model source, String name, long sizeBytes) {
+    private Model copyModel(User user, Organization organization, Model source, String name) {
         Model copy = new Model();
         copy.setUser(user);
         copy.setUpdatedBy(user);
@@ -255,9 +231,6 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         copy.setType(source.getType());
         copy.setSpecificType(source.getSpecificType());
         copy.setFileName(source.getFileName());
-        copy.setModelFile(new byte[0]);
-        copy.setModelSizeBytes(sizeBytes);
-        copy.setArtifactState(ModelArtifactState.INLINE_ONLY);
         copy.setInputSchema(source.getInputSchema());
         copy.setBundleManifest(source.getBundleManifest());
         copy.setFeatureImportances(source.getFeatureImportances());
@@ -269,9 +242,6 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
     }
 
     private void deleteStoredObject(Model model, RuntimeException original) {
-        if (!model.hasStoredObject()) {
-            return;
-        }
         try {
             objectStorageService.delete(
                     model.getStorageBucket(), model.getStorageObjectKey(), model.getStorageVersionId());

@@ -10,28 +10,21 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
-import dev.ulloasp.mlsuite.model.domain.model.ModelArtifactState;
 import dev.ulloasp.mlsuite.model.application.runtime.RunnableModel;
-import dev.ulloasp.mlsuite.storage.StoredArtifactReference;
 
 @Repository
 public interface ModelRepository extends JpaRepository<Model, Long> {
 
     List<Model> findByOrganizationId(Long organizationId);
 
-    /** The artifact's SHA-256 alone, without reading the artifact; empty while none is recorded. */
+    /** The artifact's SHA-256 alone, without loading the model. */
     @Query("SELECT m.artifactSha256 FROM Model m WHERE m.id = :id")
     Optional<String> findArtifactSha256(Long id);
-
-    /** The inline copy of the artifact, which no other read loads: an empty array when none is kept. */
-    @Query("SELECT m.modelFile FROM Model m WHERE m.id = :id")
-    Optional<byte[]> findModelFile(Long id);
 
     @Query("""
             SELECT new dev.ulloasp.mlsuite.model.application.runtime.RunnableModel(
@@ -88,21 +81,7 @@ public interface ModelRepository extends JpaRepository<Model, Long> {
             boolean archivedOnly,
             Pageable pageable);
 
-    List<Model> findByUserIdAndOrganizationIdIsNull(Long userId);
-
-    @Query("""
-            SELECT new dev.ulloasp.mlsuite.storage.StoredArtifactReference(
-                m.id, m.storageBucket, m.storageObjectKey, m.storageVersionId,
-                m.modelSizeBytes, m.artifactSha256)
-            FROM Model m
-            WHERE m.storageObjectKey IS NOT NULL
-            ORDER BY m.id
-            """)
-    Slice<StoredArtifactReference> findStoredArtifactReferences(Pageable pageable);
-
     boolean existsByStorageBucketAndStorageObjectKey(String storageBucket, String storageObjectKey);
-
-    long countByArtifactState(ModelArtifactState state);
 
     boolean existsByNameAndOrganizationId(String name, Long organizationId);
 

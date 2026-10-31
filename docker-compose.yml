@@ -1,6 +1,6 @@
 # Shared service topology. Always combine this file with the dev or prod image override.
 
-# Settings shared by the API image's migrate, artifact-migrate and server modes.
+# Settings shared by the API image's migrate, artifact-prune and server modes.
 x-api-env: &api-env
   SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
   LOG_PATH: ${LOG_PATH}
@@ -99,10 +99,6 @@ services:
       PGDATABASE: ${DB_PROD}
       PGUSER: ${DB_ADMIN_USER}
       PGPASSWORD: ${DB_ADMIN_PASS}
-      DB_ADMIN_USER: ${DB_ADMIN_USER}
-      DB_ADMIN_PASS: ${DB_ADMIN_PASS}
-      DB_LEGACY_OWNER: ${DB_LEGACY_OWNER}
-      DB_LEGACY_PASS: ${DB_LEGACY_PASS}
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
       DB_MIGRATION_USER: ${DB_MIGRATION_USER}
@@ -199,8 +195,6 @@ services:
       DB_MIGRATION_USER: ${DB_MIGRATION_USER}
       DB_MIGRATION_PASS: ${DB_MIGRATION_PASS}
       FLYWAY_ENABLED: "true"
-      FLYWAY_BASELINE_ON_MIGRATE: ${FLYWAY_BASELINE_ON_MIGRATE:-false}
-      FLYWAY_BASELINE_VERSION: ${FLYWAY_BASELINE_VERSION:-1}
     depends_on:
       db-provision:
         condition: service_completed_successfully
@@ -210,23 +204,18 @@ services:
     restart: "no"
     logging: *logging
 
-  artifact-migrate:
+  artifact-prune:
     profiles: [ operations ]
     environment:
       <<: *api-pool-env
-      MLSUITE_MODE: artifact-migrate
+      MLSUITE_MODE: artifact-prune
       FLYWAY_ENABLED: "false"
-      STORAGE_ENABLED: "true"
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
       STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
       STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
       STORAGE_BUCKET: ${STORAGE_BUCKET}
       STORAGE_AUTO_CREATE_BUCKET: "false"
-      STORAGE_RETAIN_INLINE_COPY: "true"
-      ARTIFACT_MIGRATION_COMMAND: ${ARTIFACT_MIGRATION_COMMAND:-status}
-      ARTIFACT_MIGRATION_MAX_ATTEMPTS: ${ARTIFACT_MIGRATION_MAX_ATTEMPTS:-5}
-      ARTIFACT_MIGRATION_STALE_AFTER_SECONDS: ${ARTIFACT_MIGRATION_STALE_AFTER_SECONDS:-900}
-      ARTIFACT_MIGRATION_ORPHAN_GRACE_SECONDS: ${ARTIFACT_MIGRATION_ORPHAN_GRACE_SECONDS:-86400}
+      ARTIFACT_ORPHAN_GRACE_SECONDS: ${ARTIFACT_ORPHAN_GRACE_SECONDS:-86400}
     depends_on:
       db-migrate:
         condition: service_completed_successfully
@@ -246,13 +235,11 @@ services:
       CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
       ANALYZER_BASE_URL: ${ANALYZER_BASE_URL}
       RUNTIME_BUILDER_BASE_URL: ${RUNTIME_BUILDER_BASE_URL}
-      STORAGE_ENABLED: ${STORAGE_ENABLED}
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
       STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
       STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
       STORAGE_BUCKET: ${STORAGE_BUCKET}
       STORAGE_AUTO_CREATE_BUCKET: ${STORAGE_AUTO_CREATE_BUCKET}
-      STORAGE_RETAIN_INLINE_COPY: ${STORAGE_RETAIN_INLINE_COPY}
       STORAGE_DELETION_ENABLED: ${STORAGE_DELETION_ENABLED}
       STORAGE_DELETION_BATCH_SIZE: ${STORAGE_DELETION_BATCH_SIZE:-20}
       STORAGE_DELETION_STALE_AFTER_SECONDS: ${STORAGE_DELETION_STALE_AFTER_SECONDS:-300}
