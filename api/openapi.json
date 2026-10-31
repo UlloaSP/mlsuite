@@ -1027,7 +1027,11 @@
               "STORAGE_DELETION_FAILED",
               "API_REQUEST_RETENTION_PRUNE",
               "AUDIT_RETENTION_PRUNE",
-              "NOTIFICATION_RETENTION_PRUNE"
+              "NOTIFICATION_RETENTION_PRUNE",
+              "SYSTEM_ALERT_RAISED",
+              "SYSTEM_ALERT_ESCALATED",
+              "SYSTEM_ALERT_RESOLVED",
+              "SYSTEM_ALERT_RETENTION_PRUNE"
             ],
             "type": "string"
           },
@@ -1103,6 +1107,7 @@
               "SCHEMA_DRAFT",
               "SCHEMA_VERSION",
               "STORAGE_OBJECT",
+              "SYSTEM_ALERT",
               "TERMINAL_SESSION",
               "USER"
             ],
@@ -2582,7 +2587,10 @@
               "INVITATION_ACCEPTED",
               "INVITATION_DECLINED",
               "ORGANIZATION_JOINED",
-              "REVIEW_ASSIGNED"
+              "REVIEW_ASSIGNED",
+              "SYSTEM_ALERT_RAISED",
+              "SYSTEM_ALERT_ESCALATED",
+              "SYSTEM_ALERT_RESOLVED"
             ],
             "type": "string"
           },
@@ -2613,7 +2621,8 @@
               "MODEL",
               "INVITATION",
               "ORGANIZATION",
-              "REVIEW"
+              "REVIEW",
+              "SYSTEM_ALERT"
             ],
             "type": "string"
           }
@@ -6805,6 +6814,178 @@
         ],
         "type": "object"
       },
+      "SystemAlertDto": {
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "label": {
+            "type": "string"
+          },
+          "latestValue": {
+            "format": "double",
+            "type": "number"
+          },
+          "raisedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "resolvedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "severity": {
+            "enum": [
+              "WARNING",
+              "CRITICAL"
+            ],
+            "type": "string"
+          },
+          "signal": {
+            "enum": [
+              "PREDICTION_ROWS_PENDING",
+              "PREDICTION_OLDEST_AGE",
+              "MODELS_PREPARING",
+              "RUNTIME_QUEUE",
+              "RUNTIME_REJECTIONS",
+              "STORAGE_DELETIONS_FAILED",
+              "HOST_CPU",
+              "HOST_RAM",
+              "HOST_DISK",
+              "OPS_AGENT"
+            ],
+            "type": "string"
+          },
+          "threshold": {
+            "format": "double",
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "value": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "latestValue",
+          "raisedAt",
+          "resolvedAt",
+          "severity",
+          "signal",
+          "threshold",
+          "unit",
+          "value"
+        ],
+        "type": "object"
+      },
+      "SystemAlertSignalDto": {
+        "properties": {
+          "clearThreshold": {
+            "format": "double",
+            "type": "number"
+          },
+          "criticalThreshold": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "signal": {
+            "enum": [
+              "PREDICTION_ROWS_PENDING",
+              "PREDICTION_OLDEST_AGE",
+              "MODELS_PREPARING",
+              "RUNTIME_QUEUE",
+              "RUNTIME_REJECTIONS",
+              "STORAGE_DELETIONS_FAILED",
+              "HOST_CPU",
+              "HOST_RAM",
+              "HOST_DISK",
+              "OPS_AGENT"
+            ],
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "value": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "warningThreshold": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "clearThreshold",
+          "criticalThreshold",
+          "label",
+          "signal",
+          "unit",
+          "value",
+          "warningThreshold"
+        ],
+        "type": "object"
+      },
+      "SystemAlertsDto": {
+        "properties": {
+          "open": {
+            "items": {
+              "$ref": "#/components/schemas/SystemAlertDto"
+            },
+            "type": "array"
+          },
+          "opsAgentReporting": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "recent": {
+            "items": {
+              "$ref": "#/components/schemas/SystemAlertDto"
+            },
+            "type": "array"
+          },
+          "sampledAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "signals": {
+            "items": {
+              "$ref": "#/components/schemas/SystemAlertSignalDto"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "open",
+          "opsAgentReporting",
+          "recent",
+          "sampledAt",
+          "signals"
+        ],
+        "type": "object"
+      },
       "TerminalSessionRequest": {
         "properties": {
           "cols": {
@@ -7525,6 +7706,26 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/admin/alerts": {
+      "get": {
+        "operationId": "systemAlerts",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemAlertsDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "system-alert-controller"
+        ]
+      }
+    },
     "/api/admin/api-traffic/clients": {
       "get": {
         "operationId": "listApiTrafficClients",
@@ -7921,6 +8122,7 @@
                 "SCHEMA_DRAFT",
                 "SCHEMA_VERSION",
                 "STORAGE_OBJECT",
+                "SYSTEM_ALERT",
                 "TERMINAL_SESSION",
                 "USER"
               ],
@@ -10182,6 +10384,7 @@
                 "SCHEMA_DRAFT",
                 "SCHEMA_VERSION",
                 "STORAGE_OBJECT",
+                "SYSTEM_ALERT",
                 "TERMINAL_SESSION",
                 "USER"
               ],

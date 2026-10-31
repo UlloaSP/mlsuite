@@ -31,6 +31,9 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
     long countBySystemRoleAndEnabledTrue(SystemRole systemRole);
 
+    @Query("SELECT u.id FROM User u WHERE u.systemRole = :systemRole AND u.enabled = true")
+    List<Long> findEnabledIdsBySystemRole(@Param("systemRole") SystemRole systemRole);
+
     @Query("""
             SELECT u FROM User u
             WHERE u.enabled = true

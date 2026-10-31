@@ -32,6 +32,8 @@ export type NavigationItem = {
   label: string;
   activeWhen?: (pathname: string) => boolean;
   children?: NavigationChild[];
+  /** How many things in the section want attention, and what to call them. */
+  attention?: { count: number; label: string };
 };
 
 export type NavigationGroup = { label: string; items: NavigationItem[] };

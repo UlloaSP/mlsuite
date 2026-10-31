@@ -304,6 +304,15 @@ describe("opening a notification", () => {
     ],
     [{ kind: "ORGANIZATION_JOINED", targetType: "ORGANIZATION", targetId: "9" }, "/home"],
     [{ kind: "INVITATION_RECEIVED", targetType: "INVITATION", targetId: "3" }, null],
+    [
+      {
+        kind: "SYSTEM_ALERT_RAISED",
+        targetType: "SYSTEM_ALERT",
+        targetId: "4",
+        organizationId: null,
+      },
+      "/admin/infrastructure?tab=alerts",
+    ],
   ])("%o leads to %s", (overrides, to) => {
     expect(notificationLink(notification(overrides))).toBe(to);
   });
@@ -337,6 +346,27 @@ describe("what a notification says", () => {
       { assignerName: "Ada", schemaName: "Risk" },
       "Ada asked you to review runs of Risk.",
     ],
+    [
+      "SYSTEM_ALERT_RAISED",
+      { label: "CPU", unit: "%", severity: "WARNING", value: 91.5, threshold: 85 },
+      "At 91.5%, past the 85% threshold.",
+    ],
+    [
+      "SYSTEM_ALERT_RAISED",
+      { label: "Ops agent not reporting", unit: "", severity: "WARNING", value: 1, threshold: 1 },
+      "It has held long enough to raise an alert.",
+    ],
+    [
+      "SYSTEM_ALERT_ESCALATED",
+      { label: "Prediction rows waiting", unit: "rows", value: 120000, threshold: 100000 },
+      `At ${(120000).toLocaleString()} rows, past the ${(100000).toLocaleString()} rows threshold.`,
+    ],
+    [
+      "SYSTEM_ALERT_RESOLVED",
+      { label: "CPU", unit: "%", severity: "CRITICAL", value: 40, threshold: 70 },
+      "Back to 40%, under 70%.",
+    ],
+    ["SYSTEM_ALERT_RESOLVED", { label: "Ops agent", unit: "", value: 0 }, "It is back to normal."],
   ])("%s", (kind, payload, description) => {
     expect(presentNotification(notification({ kind, payload })).description).toBe(description);
   });

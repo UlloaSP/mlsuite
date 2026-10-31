@@ -8,6 +8,9 @@ from __future__ import annotations
 
 from collections import deque
 from datetime import UTC, datetime
+import os
+from pathlib import Path
+import shutil
 from typing import Any
 
 from .config import Settings
@@ -45,6 +48,34 @@ def collect_metrics(services: list[dict[str, Any]]) -> dict[str, Any]:
             if service.get("name")
         ],
     }
+
+
+def machine_load(services_cpu_percent: float) -> dict[str, float | None]:
+    """How much of the machine is in use, read from its own counters.
+
+    The aggregate RAM percent divides by the sum of the containers' limits, and most
+    containers have the whole machine as their limit, so it cannot say how full memory is.
+    """
+    return {
+        "cpuPercent": round(services_cpu_percent / (os.cpu_count() or 1), 2),
+        "ramPercent": _machine_memory_percent(Path("/proc/meminfo")),
+        "diskPercent": _disk_percent(),
+    }
+
+
+def _machine_memory_percent(meminfo: Path) -> float | None:
+    try:
+        rows = dict(line.split(":", 1) for line in meminfo.read_text().splitlines() if ":" in line)
+        total = int(rows["MemTotal"].split()[0])
+        available = int(rows["MemAvailable"].split()[0])
+    except (OSError, KeyError, ValueError, IndexError):
+        return None
+    return round((1 - available / total) * 100, 2) if total > 0 else None
+
+
+def _disk_percent() -> float:
+    usage = shutil.disk_usage("/")
+    return round(usage.used / usage.total * 100, 2)
 
 
 def _sum_numeric(rows: list[dict[str, Any]], key: str) -> float:
