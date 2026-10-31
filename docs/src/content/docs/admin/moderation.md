@@ -33,8 +33,8 @@ outcomes and latency, never their content.
   - **Reinstate** lets its keys work again.
 
 **Accounts**
-: Personal accounts, marked as such, and organizations. Each organization with clients, its calls this month against its limit, and whether that limit
-  is its own or the instance default. **Set monthly limit…** sets the number of succeeded calls its
+: Each account with clients, personal accounts marked as such: its calls this month against its
+  limit, and whether that limit is its own or the instance default. **Set monthly limit…** sets the number of succeeded calls its
   clients may make together per calendar month (UTC), or **Follow the instance default**. A limit
   of 0 refuses every call.
 
