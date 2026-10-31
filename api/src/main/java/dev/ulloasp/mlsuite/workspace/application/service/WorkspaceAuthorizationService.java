@@ -34,6 +34,7 @@ public class WorkspaceAuthorizationService {
 
     public Set<PermissionKey> effectiveOrganizationPermissions(Long userId, Long organizationId) {
         if (workspaceAccessService.isSuperadmin(userId)) {
+            workspaceAccessService.requireNotPurging(organizationId);
             return EnumSet.allOf(PermissionKey.class);
         }
         return workspaceAccessService.requireMembership(userId, organizationId).getRoleDefinition().getPermissions();

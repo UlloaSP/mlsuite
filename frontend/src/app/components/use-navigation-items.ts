@@ -126,6 +126,7 @@ export function useNavigationItems() {
           label: "API traffic",
           children: API_TRAFFIC_CHILDREN,
         },
+        { root: "/admin/purges", to: "/admin/purges", icon: SECTION_ICONS.purges, label: "Purges" },
         { root: "/admin/audit", to: "/admin/audit", icon: SECTION_ICONS.audit, label: "Audit log" },
         {
           root: "/admin/infrastructure",

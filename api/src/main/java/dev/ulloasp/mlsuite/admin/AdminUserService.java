@@ -1,9 +1,6 @@
 package dev.ulloasp.mlsuite.admin;
 
 import org.springframework.data.domain.Page;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -95,20 +92,6 @@ public class AdminUserService {
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         auditLog.record(AuditActor.user(actorId), null, AuditAction.USER_PASSWORD_RESET, id,
                 AuditDetails.of("email", user.getEmail()));
-    }
-
-    public void delete(Long actorId, Long id) {
-        User user = user(id);
-        guardLastSuperadmin(user, SystemRole.USER, false);
-        auditLog.record(AuditActor.user(actorId), null, AuditAction.USER_DELETE, id,
-                AuditDetails.of("email", user.getEmail(), "name", user.getFullName()));
-        try {
-            userRepository.deleteAllByIdInBatch(java.util.List.of(id));
-            userRepository.flush();
-        } catch (DataIntegrityViolationException error) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "User is referenced by protected records. Remove those references before deleting the user.", error);
-        }
     }
 
     private User user(Long id) {

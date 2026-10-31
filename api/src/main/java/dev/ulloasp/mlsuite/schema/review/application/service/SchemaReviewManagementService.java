@@ -18,6 +18,7 @@ import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.application.service.FeedbackHistory;
+import dev.ulloasp.mlsuite.schema.catalog.InferenceRows;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewAssigneeRepository;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
@@ -25,6 +26,7 @@ import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.Sche
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRunSubmissionRepository;
 import dev.ulloasp.mlsuite.schema.review.application.dto.ReviewAssignmentCountsDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewAssignmentStatusDto;
+import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewCreatorDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewReviewerDto;
 import dev.ulloasp.mlsuite.schema.review.application.port.in.SchemaReviewManagementUseCase;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReview;
@@ -47,6 +49,7 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
     private final PredictionRunRepository runs;
     private final PredictionResultFeedbackRepository feedback;
     private final FeedbackHistory history;
+    private final InferenceRows inferenceRows;
     private final WorkspaceAccessService workspaceAccess;
     private final WorkspaceAuthorizationService authorization;
     private final AuditLogService auditLog;
@@ -121,6 +124,22 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
                 AuditDetails.of("reviewRun", reviewRunId, "reviewerId", reviewerId, "answers", answers.size()));
     }
 
+    @Override
+    public void delete(Long userId, String reviewId) {
+        Long organizationId = organizationId(userId);
+        authorization.require(userId, organizationId, PermissionKey.MANAGE_REVIEWS);
+        SchemaReview review = reviews.findByPublicIdAndOrganizationId(reviewId, organizationId)
+                .orElseThrow(SchemaReviewUnavailableException::new);
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.REVIEW_DELETE, reviewId,
+                AuditDetails.of("schema", review.getSchema().getName(), "schemaVersionId", review.getSchemaVersion().getId()));
+        // The answers leave with the review, at the database, so the runs they were on are told here.
+        feedback.findRunIdsAnsweredIn(review.getId()).forEach(inferenceRows::answersChanged);
+        submissions.deleteByReview(review.getId());
+        reviewRuns.deleteByReview(review.getId());
+        assignees.deleteByReview(review.getId());
+        reviews.delete(review);
+    }
+
     private SchemaReviewAssignmentStatusDto status(SchemaReviewRun reviewRun,
             SchemaReviewAssignee assignee) {
         SchemaReview review = reviewRun.getReview();
@@ -135,7 +154,7 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
         return new SchemaReviewAssignmentStatusDto(
                 review.getPublicId(), reviewRun.getPublicId(),
                 SchemaReviewReviewerDto.from(assignee.getUser()),
-                SchemaReviewReviewerDto.from(review.getCreatedBy()), state,
+                SchemaReviewCreatorDto.from(review.getCreatedBy()), state,
                 submission == null ? null : submission.getSubmittedAt(),
                 review.getCreatedAt(), review.getUpdatedAt(),
                 review.getExpiresAt(), !review.getExpiresAt().isAfter(now()));

@@ -51,6 +51,10 @@ Each user's menu offers:
 | Change password | Set a new password. This is how users who forgot theirs get back in. The account's open sessions end. |
 | Change role | Make the account a User or a Superadmin. The account's open sessions end, so it signs in again with the new role. |
 | Disable user / Enable user | A disabled account cannot sign in, and its open sessions end on their next request. |
-| Delete | Remove the account, if nothing else refers to it. Accounts that created models, runs or other records cannot be deleted; disable them instead. |
+| Purge | Close the account at once and destroy its personal account for good, after showing what would go and asking for the exact username. What the person did in organizations stays, under "Deleted user". Refused while they are the only owner of an organization with members or content. |
 
-The last enabled superadmin cannot be demoted, disabled or deleted.
+The last enabled superadmin cannot be demoted, disabled or purged.
+
+## Purges
+
+A purge destroys an organization, a user, a schema or a model with everything that depends on it, past the guards that keep such things from being deleted, and cannot be undone. It starts from the actions of the target and runs on the server, a batch at a time: a restart resumes it, a failure keeps its error under **Purges** until you retry it, and until it ends the target is closed, so no new run starts in it. Purging a model takes every snapshot that binds it, as a snapshot cannot run without its models. The audit log and the runtime environments stay.

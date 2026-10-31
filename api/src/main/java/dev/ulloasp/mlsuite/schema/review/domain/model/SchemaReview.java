@@ -59,8 +59,9 @@ public class SchemaReview {
     @JoinColumn(name = "schema_version_id", nullable = false, foreignKey = @ForeignKey(name = "fk_schema_review_version"))
     private SchemaVersion schemaVersion;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by_user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_schema_review_creator"))
+    /** Null once the person who created it is gone. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_user_id", foreignKey = @ForeignKey(name = "fk_schema_review_creator"))
     private User createdBy;
 
     @Column(name = "expires_at", nullable = false, columnDefinition = "TIMESTAMPTZ")

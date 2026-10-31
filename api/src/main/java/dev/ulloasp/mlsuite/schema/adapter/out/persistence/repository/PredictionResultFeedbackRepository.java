@@ -14,7 +14,12 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackType;
 
 public interface PredictionResultFeedbackRepository extends JpaRepository<PredictionResultFeedback, Long> {
 
-    void deleteByResult_Run_Id(Long runId);
+    /** Every answer on these runs, by anyone and in any review. */
+    List<PredictionResultFeedback> findByResultRunIdIn(Collection<Long> runIds);
+
+    /** The runs answered in a review. */
+    @Query("SELECT DISTINCT f.result.run.id FROM PredictionResultFeedback f WHERE f.review.id = :reviewId")
+    List<Long> findRunIdsAnsweredIn(Long reviewId);
 
     @Query("""
             SELECT f FROM PredictionResultFeedback f

@@ -68,7 +68,7 @@ const assignment = (
   reviewId: "rev-1",
   reviewRunId: "run-a",
   reviewer: { id: 4, fullName: "Grace Hopper", email: "grace@acme.test" },
-  createdBy: { id: 1, fullName: "Ada Lovelace", email: "ada@acme.test" },
+  createdBy: { fullName: "Ada Lovelace", email: "ada@acme.test" },
   reviewState: "COMPLETED",
   submittedAt: "2026-09-28T15:53:00Z",
   createdAt: "2026-09-28T12:21:00Z",

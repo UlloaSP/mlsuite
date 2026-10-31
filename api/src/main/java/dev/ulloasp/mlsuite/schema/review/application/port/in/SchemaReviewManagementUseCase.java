@@ -17,4 +17,7 @@ public interface SchemaReviewManagementUseCase {
     void reopen(Long userId, String reviewId, String reviewRunId, Long reviewerId);
 
     void deleteResponse(Long userId, String reviewId, String reviewRunId, Long reviewerId);
+
+    /** Removes the review with the answers given in it; its runs stay, as do answers given elsewhere. */
+    void delete(Long userId, String reviewId);
 }

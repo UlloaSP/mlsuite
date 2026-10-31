@@ -10,13 +10,14 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackChange;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackRevision;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackType;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReview;
+import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
 import jakarta.annotation.Nullable;
 
 /**
  * One change of an answer about a result: the answer it changed, the review it belongs to (none
  * for a public page's), its author (a member or a visitor), what it said after the change (nothing
- * once deleted), and the member who changed it, when. Names are null for a member or review that
- * no longer exists.
+ * once deleted), and the member who changed it, when. A member who no longer exists is named
+ * "Deleted user"; a review that no longer exists is null.
  */
 public record PredictionResultFeedbackRevisionDto(
         Long id,
@@ -41,8 +42,15 @@ public record PredictionResultFeedbackRevisionDto(
         return new PredictionResultFeedbackRevisionDto(revision.getId(), revision.getFeedbackId(),
                 revision.getResultId(), revision.getReviewId(),
                 review == null ? null : FeedbackRevisionReviewDto.from(review),
-                revision.getUserId(), names.get(revision.getUserId()), revision.getVisitorId(),
+                revision.getUserId(), name(revision.getUserId(), revision, names), revision.getVisitorId(),
                 revision.getType(), revision.getOrder(), revision.getValue(), revision.getChange(),
-                revision.getChangedByUserId(), names.get(revision.getChangedByUserId()), revision.getChangedAt());
+                revision.getChangedByUserId(), name(revision.getChangedByUserId(), revision, names),
+                revision.getChangedAt());
+    }
+
+    /** A visitor has no name, and only they change their own answers. */
+    private static String name(Long userId, PredictionResultFeedbackRevision revision, Map<Long, String> names) {
+        if (userId == null && revision.getVisitorId() != null) return null;
+        return userId == null ? DeletedUser.NAME : names.getOrDefault(userId, DeletedUser.NAME);
     }
 }

@@ -31,6 +31,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import dev.ulloasp.mlsuite.admin.AdminOwnerCatalogService;
 import dev.ulloasp.mlsuite.admin.AdminUserService;
 import dev.ulloasp.mlsuite.admin.alert.SystemAlertService;
+import dev.ulloasp.mlsuite.admin.purge.PurgeRequestService;
+import dev.ulloasp.mlsuite.schema.application.port.in.SchemaContentDeletionUseCase;
+import dev.ulloasp.mlsuite.user.application.port.in.DeleteAccountUseCase;
 import dev.ulloasp.mlsuite.admin.infrastructure.InfrastructureService;
 import dev.ulloasp.mlsuite.admin.moderation.PublicBookmarkModerationService;
 import dev.ulloasp.mlsuite.apiaccess.application.port.in.ApiClientAccessUseCase;
@@ -104,7 +107,8 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
 @Import(OpenApiContractConventions.class)
 @MockitoBean(types = {
         AdminOwnerCatalogService.class, AdminUserService.class, SystemAlertService.class, AnalyzerUseCase.class,
-        ApiClientAccessUseCase.class,
+        ApiClientAccessUseCase.class, DeleteAccountUseCase.class, PurgeRequestService.class,
+        SchemaContentDeletionUseCase.class,
         ApiClientUseCase.class, ApiPredictionUseCase.class, ApiTrafficUseCase.class, ApiUsageUseCase.class,
         AuditLogUseCase.class, AuthService.class, AuthenticationManager.class, BookmarkListCatalogUseCase.class,
         CatalogSelectionService.class, GetCurrentUserProfileUseCase.class,

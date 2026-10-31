@@ -976,10 +976,12 @@
               "SCHEMA_DUPLICATE",
               "SCHEMA_DELETE",
               "SCHEMA_VERSION_CREATE",
+              "SCHEMA_VERSION_DELETE",
               "SCHEMA_DRAFT_CREATE",
               "SCHEMA_DRAFT_UPDATE",
               "SCHEMA_DRAFT_MERGE",
               "SCHEMA_DRAFT_PUBLISH",
+              "SCHEMA_DRAFT_DELETE",
               "BOOKMARK_CREATE",
               "BOOKMARK_MOVE",
               "BOOKMARK_UPDATE",
@@ -988,13 +990,16 @@
               "BOOKMARK_EXAMPLE_MARK",
               "BOOKMARK_EXAMPLE_UNMARK",
               "BOOKMARK_MODERATION_UNPUBLISH",
+              "BOOKMARK_DELETE",
               "PREDICTION_RUN",
               "PREDICTION_RUN_SAVE",
               "PREDICTION_RUN_BATCH_CREATE",
               "PREDICTION_RUN_DELETE",
+              "PREDICTION_RUN_BATCH_DELETE",
               "PREDICTION_JOB_START",
               "PREDICTION_JOB_CANCEL",
               "PREDICTION_JOB_RETRY",
+              "PREDICTION_JOB_DELETE",
               "PREDICTION_JOB_CLAIMED",
               "PREDICTION_JOB_COMPLETED",
               "PREDICTION_JOB_CANCELLED",
@@ -1005,6 +1010,7 @@
               "REVIEW_SUBMIT_PENDING",
               "REVIEW_REOPEN",
               "REVIEW_RESPONSE_DELETE",
+              "REVIEW_DELETE",
               "PUBLIC_FEEDBACK_SAVE",
               "PLUGIN_UPLOAD",
               "PLUGIN_DELETE",
@@ -1019,7 +1025,12 @@
               "AUTH_LOGIN_FAILED",
               "AUTH_LOGOUT",
               "AUTH_REGISTER",
+              "PURGE_REQUEST",
+              "PURGE_RETRY",
+              "PURGE_COMPLETED",
+              "PURGE_FAILED",
               "STORAGE_DELETION_FAILED",
+              "STORAGE_DELETION_RETENTION_PRUNE",
               "API_REQUEST_RETENTION_PRUNE",
               "AUDIT_RETENTION_PRUNE",
               "NOTIFICATION_RETENTION_PRUNE",
@@ -1095,6 +1106,7 @@
               "PLUGIN",
               "PREDICTION_JOB",
               "PREDICTION_RUN",
+              "PURGE_JOB",
               "REVIEW",
               "ROLE",
               "SCHEMA",
@@ -1771,6 +1783,47 @@
         ],
         "type": "object"
       },
+      "DeleteAccountRequest": {
+        "properties": {
+          "password": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "password"
+        ],
+        "type": "object"
+      },
+      "DeletePredictionRunsRequest": {
+        "properties": {
+          "runIds": {
+            "items": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "maxItems": 500,
+            "minItems": 0,
+            "type": "array"
+          }
+        },
+        "required": [
+          "runIds"
+        ],
+        "type": "object"
+      },
+      "DeletedPredictionRunsDto": {
+        "properties": {
+          "deleted": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "deleted"
+        ],
+        "type": "object"
+      },
       "Dependency": {
         "properties": {
           "message": {
@@ -1886,10 +1939,7 @@
             "type": "string"
           },
           "createdByName": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           },
           "publicId": {
             "type": "string"
@@ -2273,6 +2323,57 @@
         ],
         "type": "object"
       },
+      "ManagedReviewDto": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdByName": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "reviewers": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "runs": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "schemaName": {
+            "type": "string"
+          },
+          "schemaVersion": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "schemaVersionName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "createdAt",
+          "createdByName",
+          "expiresAt",
+          "id",
+          "reviewers",
+          "runs",
+          "schemaName",
+          "schemaVersion",
+          "schemaVersionName"
+        ],
+        "type": "object"
+      },
       "MemberCatalogDto": {
         "properties": {
           "hasNext": {
@@ -2434,7 +2535,10 @@
             ]
           },
           "updatedByEmail": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "updatedByName": {
             "type": "string"
@@ -2564,6 +2668,9 @@
               "INVITATION_DECLINED",
               "ORGANIZATION_JOINED",
               "REVIEW_ASSIGNED",
+              "ORGANIZATION_PURGED",
+              "PURGE_COMPLETED",
+              "PURGE_FAILED",
               "SYSTEM_ALERT_RAISED",
               "SYSTEM_ALERT_ESCALATED",
               "SYSTEM_ALERT_RESOLVED"
@@ -2598,6 +2705,7 @@
               "INVITATION",
               "ORGANIZATION",
               "REVIEW",
+              "PURGE_JOB",
               "SYSTEM_ALERT"
             ],
             "type": "string"
@@ -2782,7 +2890,10 @@
             ]
           },
           "updatedByEmail": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "updatedByName": {
             "type": "string"
@@ -3279,6 +3390,39 @@
         ],
         "type": "object"
       },
+      "PageDtoManagedReviewDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ManagedReviewDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
       "PageDtoModelDto": {
         "properties": {
           "hasNext": {
@@ -3683,6 +3827,39 @@
           "items": {
             "items": {
               "$ref": "#/components/schemas/PublicRunDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoPurgeJobDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PurgeJobDto"
             },
             "type": "array"
           },
@@ -5244,6 +5421,185 @@
         ],
         "type": "object"
       },
+      "PurgeJobDto": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": "object"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "finishedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "phase": {
+            "enum": [
+              "PREPARE",
+              "JOBS",
+              "FEEDBACK",
+              "REVIEWS",
+              "RESULTS",
+              "RUNS",
+              "SCHEMA_CONTENT",
+              "VERSIONS",
+              "MODELS",
+              "PLUGINS",
+              "MEMBERS",
+              "ACCOUNT",
+              "FINISH"
+            ],
+            "type": "string"
+          },
+          "phaseCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "phaseNumber": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "requestedByLabel": {
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "ORGANIZATION",
+              "USER",
+              "SCHEMA",
+              "MODEL"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "QUEUED",
+              "RUNNING",
+              "COMPLETED",
+              "FAILED"
+            ],
+            "type": "string"
+          },
+          "targetId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "targetLabel": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "counts",
+          "createdAt",
+          "error",
+          "finishedAt",
+          "id",
+          "phase",
+          "phaseCount",
+          "phaseNumber",
+          "requestedByLabel",
+          "scope",
+          "status",
+          "targetId",
+          "targetLabel",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "PurgePreviewDto": {
+        "properties": {
+          "confirmation": {
+            "type": "string"
+          },
+          "counts": {
+            "additionalProperties": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": "object"
+          },
+          "refusal": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scope": {
+            "enum": [
+              "ORGANIZATION",
+              "USER",
+              "SCHEMA",
+              "MODEL"
+            ],
+            "type": "string"
+          },
+          "targetId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "targetLabel": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirmation",
+          "counts",
+          "refusal",
+          "scope",
+          "targetId",
+          "targetLabel"
+        ],
+        "type": "object"
+      },
+      "RequestPurgeRequest": {
+        "properties": {
+          "confirmation": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "ORGANIZATION",
+              "USER",
+              "SCHEMA",
+              "MODEL"
+            ],
+            "type": "string"
+          },
+          "targetId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "confirmation",
+          "scope",
+          "targetId"
+        ],
+        "type": "object"
+      },
       "ReviewAssignmentCountsDto": {
         "properties": {
           "completed": {
@@ -5875,10 +6231,7 @@
             ]
           },
           "updatedByName": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           }
         },
         "required": [
@@ -6288,7 +6641,7 @@
             "type": "string"
           },
           "createdBy": {
-            "$ref": "#/components/schemas/SchemaReviewReviewerDto"
+            "$ref": "#/components/schemas/SchemaReviewCreatorDto"
           },
           "expired": {
             "type": "boolean"
@@ -6363,6 +6716,24 @@
           "runs",
           "schema",
           "schemaVersion"
+        ],
+        "type": "object"
+      },
+      "SchemaReviewCreatorDto": {
+        "properties": {
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fullName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "fullName"
         ],
         "type": "object"
       },
@@ -7802,6 +8173,7 @@
                 "PLUGIN",
                 "PREDICTION_JOB",
                 "PREDICTION_RUN",
+                "PURGE_JOB",
                 "REVIEW",
                 "ROLE",
                 "SCHEMA",
@@ -7993,7 +8365,7 @@
     },
     "/api/admin/public-bookmarks": {
       "get": {
-        "operationId": "list_11",
+        "operationId": "list_12",
         "parameters": [
           {
             "in": "query",
@@ -8079,6 +8451,174 @@
         },
         "tags": [
           "public-bookmark-moderation-controller"
+        ]
+      }
+    },
+    "/api/admin/purges": {
+      "get": {
+        "operationId": "list_7",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoPurgeJobDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "purge-controller"
+        ]
+      },
+      "post": {
+        "operationId": "request",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestPurgeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurgeJobDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "purge-controller"
+        ]
+      }
+    },
+    "/api/admin/purges/preview": {
+      "get": {
+        "operationId": "preview_1",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "scope",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ORGANIZATION",
+                "USER",
+                "SCHEMA",
+                "MODEL"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "targetId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurgePreviewDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "purge-controller"
+        ]
+      }
+    },
+    "/api/admin/purges/{jobId}/retry": {
+      "post": {
+        "operationId": "retry_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurgeJobDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "purge-controller"
         ]
       }
     },
@@ -8244,28 +8784,6 @@
       }
     },
     "/api/admin/users/{id}": {
-      "delete": {
-        "operationId": "delete_4",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "format": "int64",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "admin-user-controller"
-        ]
-      },
       "patch": {
         "operationId": "update_3",
         "parameters": [
@@ -9658,7 +10176,7 @@
     },
     "/api/notifications/{notificationId}": {
       "delete": {
-        "operationId": "delete_6",
+        "operationId": "delete_7",
         "parameters": [
           {
             "in": "path",
@@ -10064,6 +10582,7 @@
                 "PLUGIN",
                 "PREDICTION_JOB",
                 "PREDICTION_RUN",
+                "PURGE_JOB",
                 "REVIEW",
                 "ROLE",
                 "SCHEMA",
@@ -11623,7 +12142,7 @@
     },
     "/api/plugins/runtime": {
       "get": {
-        "operationId": "list_10",
+        "operationId": "list_11",
         "responses": {
           "200": {
             "content": {
@@ -11665,6 +12184,28 @@
       }
     },
     "/api/prediction-jobs/{jobId}": {
+      "delete": {
+        "operationId": "delete_5",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-job-controller"
+        ]
+      },
       "get": {
         "operationId": "get_7",
         "parameters": [
@@ -11793,7 +12334,7 @@
     },
     "/api/prediction-result-feedback": {
       "get": {
-        "operationId": "list_9",
+        "operationId": "list_10",
         "parameters": [
           {
             "in": "query",
@@ -11893,6 +12434,36 @@
         },
         "tags": [
           "prediction-result-feedback-controller"
+        ]
+      }
+    },
+    "/api/prediction-runs/batch-delete": {
+      "post": {
+        "operationId": "deleteMany",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeletePredictionRunsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedPredictionRunsDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-run-controller"
         ]
       }
     },
@@ -12021,7 +12592,7 @@
     },
     "/api/prediction-runs/{runId}": {
       "delete": {
-        "operationId": "delete_5",
+        "operationId": "delete_4",
         "parameters": [
           {
             "in": "path",
@@ -12105,7 +12676,7 @@
     },
     "/api/public/bookmarks": {
       "get": {
-        "operationId": "list_8",
+        "operationId": "list_9",
         "parameters": [
           {
             "in": "query",
@@ -12824,6 +13395,28 @@
       }
     },
     "/api/schema-bookmarks/{bookmarkId}": {
+      "delete": {
+        "operationId": "deleteBookmark",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-content-deletion-controller"
+        ]
+      },
       "get": {
         "operationId": "get_1",
         "parameters": [
@@ -12934,7 +13527,7 @@
     },
     "/api/schema-bookmarks/{bookmarkId}/examples": {
       "get": {
-        "operationId": "list_7",
+        "operationId": "list_8",
         "parameters": [
           {
             "in": "path",
@@ -13440,6 +14033,28 @@
       }
     },
     "/api/schema-drafts/{draftId}": {
+      "delete": {
+        "operationId": "deleteDraft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draftId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-content-deletion-controller"
+        ]
+      },
       "get": {
         "operationId": "get",
         "parameters": [
@@ -14094,6 +14709,93 @@
         ]
       }
     },
+    "/api/schema-reviews/managed/catalog": {
+      "get": {
+        "operationId": "managedCatalog",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoManagedReviewDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-catalog-controller"
+        ]
+      }
+    },
+    "/api/schema-reviews/{reviewId}": {
+      "delete": {
+        "operationId": "delete_6",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reviewId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-controller"
+        ]
+      }
+    },
     "/api/schema-reviews/{reviewId}/runs/{reviewRunId}": {
       "get": {
         "operationId": "detail",
@@ -14340,6 +15042,28 @@
       }
     },
     "/api/schema-versions/{versionId}": {
+      "delete": {
+        "operationId": "deleteVersion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "versionId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-content-deletion-controller"
+        ]
+      },
       "get": {
         "operationId": "get_3",
         "parameters": [
@@ -15224,6 +15948,27 @@
       }
     },
     "/api/users/me": {
+      "delete": {
+        "operationId": "deleteAccount",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "user-controller"
+        ]
+      },
       "get": {
         "operationId": "getProfile",
         "responses": {

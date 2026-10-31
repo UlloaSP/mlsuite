@@ -9,6 +9,7 @@ import { organizationQueryKey } from "@/shared/api/organization-query-key";
 import type { PredictionJobDto } from "@/shared/api/openapi.gen";
 import {
   cancelPredictionJob,
+  deletePredictionJob,
   getPredictionJobFailures,
   getPredictionJobs,
   retryPredictionJob,
@@ -46,13 +47,22 @@ export function usePredictionJobFailures(jobId: number, enabled: boolean) {
   });
 }
 
-/** Cancels or retries a job; the bookmark's list is read again either way. */
+/** Cancels, retries or deletes a job; the bookmark's list is read again whatever happens. */
 export function usePredictionJobAction(bookmarkId: string) {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ jobId, action }: { jobId: number; action: "cancel" | "retry" }) =>
-      action === "cancel" ? cancelPredictionJob(jobId) : retryPredictionJob(jobId),
+    mutationFn: async ({
+      jobId,
+      action,
+    }: {
+      jobId: number;
+      action: "cancel" | "retry" | "delete";
+    }): Promise<void> => {
+      if (action === "cancel") await cancelPredictionJob(jobId);
+      else if (action === "retry") await retryPredictionJob(jobId);
+      else await deletePredictionJob(jobId);
+    },
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: jobsKey(organizationId, bookmarkId) }),
   });

@@ -27,8 +27,9 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
     /** What a superadmin works across: every team and their own personal account, that first. */
     @Query("""
             SELECT o FROM Organization o
-            WHERE o.kind = dev.ulloasp.mlsuite.organization.domain.model.OrganizationKind.TEAM
-            OR o.ownerUser.id = :userId
+            WHERE o.purgingAt IS NULL
+            AND (o.kind = dev.ulloasp.mlsuite.organization.domain.model.OrganizationKind.TEAM
+                OR o.ownerUser.id = :userId)
             ORDER BY o.kind, o.name
             """)
     List<Organization> findAdministeredBy(Long userId);
@@ -40,6 +41,7 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
     @Query("""
             SELECT o FROM Organization o
             WHERE o.kind = dev.ulloasp.mlsuite.organization.domain.model.OrganizationKind.TEAM
+            AND o.purgingAt IS NULL
             AND (
                 :search = ''
                 OR lower(o.name) LIKE lower(concat('%', :search, '%'))
@@ -65,6 +67,7 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
                     AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE
                 )
             )
+            AND o.purgingAt IS NULL
             AND (:teamOnly = false OR o.kind = dev.ulloasp.mlsuite.organization.domain.model.OrganizationKind.TEAM)
             AND (
                 lower(o.name) LIKE :search ESCAPE '!'

@@ -22,7 +22,8 @@ import lombok.NoArgsConstructor;
 /**
  * One change of an answer, as it stood after the change: who gave the answer, in which review,
  * what it said (nothing once deleted) and who changed it when. Revisions are only ever added, and
- * outlive the answer they describe, so every label a model was given stays auditable.
+ * outlive the answer they describe, so every label a model was given stays auditable. The result
+ * is kept as a plain id: a run's deletion leaves its DELETED revisions, which go with the snapshot.
  */
 @Entity
 @Getter
@@ -39,6 +40,9 @@ public class PredictionResultFeedbackRevision {
 
     @Column(name = "prediction_result_id", nullable = false, updatable = false)
     private Long resultId;
+
+    @Column(name = "schema_version_id", nullable = false, updatable = false)
+    private Long schemaVersionId;
 
     @Column(name = "schema_review_id", updatable = false)
     private Long reviewId;
@@ -74,6 +78,7 @@ public class PredictionResultFeedbackRevision {
             Long changedByUserId, OffsetDateTime changedAt) {
         this.feedbackId = answer.getId();
         this.resultId = answer.getResult().getId();
+        this.schemaVersionId = answer.getResult().getRun().getSchemaVersion().getId();
         this.reviewId = answer.getReview() == null ? null : answer.getReview().getId();
         this.userId = answer.getUser() == null ? null : answer.getUser().getId();
         this.visitorId = answer.getVisitor() == null ? null : answer.getVisitor().getId();

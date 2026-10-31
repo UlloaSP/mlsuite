@@ -8,7 +8,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
-  useDeleteAdminUser,
   useResetAdminUserPassword,
   useUpdateAdminUser,
 } from "@/features/admin/api/admin-user.mutations";
@@ -57,10 +56,8 @@ export function AdminUsersPage() {
   });
   const updateUser = useUpdateAdminUser();
   const resetPassword = useResetAdminUserPassword();
-  const deleteUser = useDeleteAdminUser();
   const [resetTarget, setResetTarget] = useState<ResetTarget>(null);
-  const isActionPending =
-    updateUser.isPending || resetPassword.isPending || deleteUser.isPending || pageQuery.isLoading;
+  const isActionPending = updateUser.isPending || resetPassword.isPending || pageQuery.isLoading;
 
   const update = async (
     row: AdminUserDto,
@@ -69,11 +66,6 @@ export function AdminUsersPage() {
     // Failures propagate: the tile shows them inline in a dialog, or as a toast for the switch.
     await updateUser.mutateAsync({ id: row.id, payload });
     toast.success("User updated.");
-  };
-  const remove = async (row: AdminUserDto) => {
-    // Failures propagate to the delete dialog, which stays open and shows them.
-    await deleteUser.mutateAsync(row.id);
-    toast.success("User deleted.");
   };
   const submitResetPassword = (nextPassword: string) => {
     if (!resetTarget) return;
@@ -123,7 +115,6 @@ export function AdminUsersPage() {
             key={row.id}
             disabled={isActionPending}
             item={row}
-            onDelete={() => remove(row)}
             onResetPassword={() => setResetTarget({ id: row.id, fullName: row.fullName })}
             onUpdate={(payload) => update(row, payload)}
           />

@@ -34,6 +34,3 @@ export const resetPassword = (id: number, password: string): Promise<void> =>
     `/api/admin/users/${id}/password`,
     json("POST", { password } satisfies AdminPasswordRequest),
   );
-
-export const deleteUser = (id: number): Promise<void> =>
-  appFetch<void>(`/api/admin/users/${id}`, { method: "DELETE" });

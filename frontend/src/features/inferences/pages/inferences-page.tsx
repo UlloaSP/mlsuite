@@ -8,7 +8,10 @@ import {
   useInferenceCatalogMetadata,
   useInferenceSelection,
 } from "@/features/inferences/api/inference-catalog";
-import { useDeleteInferenceMutation } from "@/features/inferences/api/inference-mutations";
+import {
+  useDeleteInferenceMutation,
+  useDeleteInferencesMutation,
+} from "@/features/inferences/api/inference-mutations";
 import { InferenceActionsMenu } from "@/features/inferences/components/InferenceActionsMenu";
 import { InferenceCatalogToolbar } from "@/features/inferences/components/InferenceCatalogToolbar";
 import { InferenceColumnsMenu } from "@/features/inferences/components/InferenceColumnsMenu";
@@ -56,6 +59,8 @@ const URL_FILTER_DEFAULTS = {
   sort: "createdAt.desc",
 };
 const EMPTY_ROWS: InferenceTableRow[] = [];
+const DELETE_CONSEQUENCE =
+  "Each leaves any review it is in, and goes with its results and reviewers' answers. This cannot be undone.";
 
 const validStatus = (value: string): InferenceFilters["status"] =>
   value === "SUCCESS" || value === "PARTIAL_SUCCESS" || value === "FAILED" ? value : "all";
@@ -74,6 +79,7 @@ export function InferencesPage({
 }) {
   const { data: workspace } = useWorkspaceContext();
   const deleteInference = useDeleteInferenceMutation();
+  const deleteInferences = useDeleteInferencesMutation();
   const navigate = useNavigate();
   const actionDialog = useActionDialog();
   const urlFilters = useUrlFilters(URL_FILTER_DEFAULTS);
@@ -117,12 +123,25 @@ export function InferencesPage({
   const handleDelete = async (item: PredictionRunCatalogItemDto) => {
     const confirmed = await actionDialog.confirm({
       title: `Delete ${item.name}?`,
-      description: "This cannot be undone.",
+      description: DELETE_CONSEQUENCE,
       confirmLabel: "Delete",
       danger: true,
     });
     if (!confirmed) return;
     deleteInference.mutate(item.id, { onSuccess: () => toast.success("Inference deleted.") });
+  };
+  const handleDeleteSelection = async () => {
+    const ids = (await loadItems()).map((item) => item.id);
+    const confirmed = await actionDialog.confirm({
+      title: `Delete ${ids.length} ${ids.length === 1 ? "inference" : "inferences"}?`,
+      description: `Every inference the search and filters select. ${DELETE_CONSEQUENCE}`,
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!confirmed) return;
+    deleteInferences.mutate(ids, {
+      onSuccess: () => toast.success(`${ids.length} deleted.`),
+    });
   };
   const applyFilters = (choice: InferenceFilterChoice) => {
     urlFilters.setFilters({
@@ -224,6 +243,15 @@ export function InferencesPage({
               {workspace?.permissions.canExportPredictions
                 ? renderExportAction?.({ count: totalItems, loadItems })
                 : null}
+              {canDelete && totalItems > 0 ? (
+                <AppButton
+                  variant="danger"
+                  disabled={deleteInferences.isPending}
+                  onClick={() => void handleDeleteSelection()}
+                >
+                  {deleteInferences.isPending ? "Deleting…" : `Delete ${totalItems}`}
+                </AppButton>
+              ) : null}
             </>
           }
         />

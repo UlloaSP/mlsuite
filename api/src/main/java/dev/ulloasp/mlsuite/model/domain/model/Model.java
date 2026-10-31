@@ -60,9 +60,14 @@ public class Model {
     @Column(name = "version", nullable = false)
     private Long version;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_model_user", foreignKeyDefinition = "FOREIGN KEY (user_id) REFERENCES app_user(id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE"))
+    /** Who uploaded it; null once that person is gone. */
+    @ManyToOne
+    @JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "fk_model_user"))
     private User user;
+
+    /** When a purge of it was asked for; written only by the purge, so saving this row never clears it. */
+    @Column(name = "purging_at", insertable = false, updatable = false, columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime purgingAt;
 
     @ManyToOne
     @JoinColumn(name = "updated_by_user_id", foreignKey = @ForeignKey(name = "fk_model_updated_by"))

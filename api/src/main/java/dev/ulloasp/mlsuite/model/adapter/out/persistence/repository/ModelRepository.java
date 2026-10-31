@@ -64,6 +64,7 @@ public interface ModelRepository extends JpaRepository<Model, Long> {
     @Query("""
             SELECT m FROM Model m
             WHERE m.organization.id = :organizationId
+            AND m.purgingAt IS NULL
             AND (:includeArchived = true OR m.archivedAt IS NULL)
             AND (:archivedOnly = false OR m.archivedAt IS NOT NULL)
             AND (

@@ -101,6 +101,24 @@ const PRESENT: Record<NotificationKind, (labels: Labels) => Presentation> = {
     icon: SECTION_ICONS.reviews,
     tone: "info",
   }),
+  ORGANIZATION_PURGED: (labels) => ({
+    title: `${labels.organizationName} was deleted`,
+    description: "A platform administrator deleted this organization and everything in it.",
+    icon: SECTION_ICONS.organizations,
+    tone: "warning",
+  }),
+  PURGE_COMPLETED: (labels) => ({
+    title: "Purge completed",
+    description: `${labels.targetLabel} and everything that depended on it are gone.`,
+    icon: SECTION_ICONS.purges,
+    tone: "success",
+  }),
+  PURGE_FAILED: (labels) => ({
+    title: "Purge failed",
+    description: `${labels.targetLabel}: ${labels.reason}`,
+    icon: CircleX,
+    tone: "danger",
+  }),
   SYSTEM_ALERT_RAISED: (labels) => ({
     title: `Platform alert: ${labels.label}`,
     description: alertCrossed(labels),
@@ -138,6 +156,8 @@ export const notificationLink = (notification: NotificationDto): string | null =
       return `/review/${notification.targetId}`;
     case "ORGANIZATION":
       return "/home";
+    case "PURGE_JOB":
+      return "/admin/purges";
     case "SYSTEM_ALERT":
       return "/admin/infrastructure?tab=alerts";
     case "INVITATION":

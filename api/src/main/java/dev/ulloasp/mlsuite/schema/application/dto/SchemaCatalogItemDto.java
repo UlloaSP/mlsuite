@@ -6,6 +6,7 @@ import java.util.Map;
 
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
+import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
 import jakarta.annotation.Nullable;
@@ -18,7 +19,7 @@ public record SchemaCatalogItemDto(
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
         @Nullable OffsetDateTime archivedAt,
-        @Nullable String updatedByName,
+        String updatedByName,
         @Nullable String updatedByEmail,
         @Nullable String updatedByAvatarUrl,
         long modelCount,
@@ -36,7 +37,7 @@ public record SchemaCatalogItemDto(
                 schema.getCreatedAt(),
                 schema.getUpdatedAt(),
                 schema.getArchivedAt(),
-                modifier == null ? null : modifier.getFullName(),
+                DeletedUser.nameOf(modifier),
                 modifier == null ? null : modifier.getEmail(),
                 modifier == null ? null : modifier.getAvatarUrl(),
                 modelCount,

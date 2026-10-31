@@ -11,6 +11,7 @@ import java.util.Map;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.domain.model.ModelRuntimeState;
+import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
 import jakarta.annotation.Nullable;
@@ -27,7 +28,7 @@ public record ModelDto(
         @Nullable OffsetDateTime archivedAt,
         long version,
         String updatedByName,
-        String updatedByEmail,
+        @Nullable String updatedByEmail,
         @Nullable String updatedByAvatarUrl,
         long fieldCount,
         long reportCount,
@@ -47,7 +48,7 @@ public record ModelDto(
                 model.getUpdatedAt(),
                 model.getArchivedAt(),
                 model.getVersion() == null ? 0 : model.getVersion(),
-                modifier == null ? null : modifier.getFullName(),
+                DeletedUser.nameOf(modifier),
                 modifier == null ? null : modifier.getEmail(),
                 modifier == null ? null : modifier.getAvatarUrl(),
                 countVisibleFields(model.getInputSchema()),

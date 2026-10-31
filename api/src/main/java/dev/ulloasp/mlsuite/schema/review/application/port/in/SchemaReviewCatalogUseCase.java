@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.review.application.port.in;
 
+import dev.ulloasp.mlsuite.schema.review.application.dto.ManagedReviewDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.ReviewCatalogSummaryDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.ReviewInboxCatalogDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.ReviewInboxItemDto;
@@ -22,4 +23,7 @@ public interface SchemaReviewCatalogUseCase {
     PageDto<SchemaReviewRunListItemDto> reviewRuns(Long userId, String reviewId, CatalogRequest request);
 
     PageDto<SchemaReviewAssignmentStatusDto> assignments(Long userId, Long predictionRunId, CatalogRequest request);
+
+    /** Every review of the organization, newest first, for those who manage them. */
+    PageDto<ManagedReviewDto> managed(Long userId, CatalogRequest request);
 }

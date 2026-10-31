@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 
 @Repository
@@ -35,7 +36,7 @@ public interface OrganizationMembershipRepository
     @Query("SELECT m FROM OrganizationMembership m WHERE m.organization.id = :organizationId AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE ORDER BY m.createdAt ASC")
     List<OrganizationMembership> findActiveByOrganizationIdOrderByCreatedAtAsc(Long organizationId);
 
-    @Query("SELECT m FROM OrganizationMembership m WHERE m.user.id = :userId AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE ORDER BY m.organization.name ASC")
+    @Query("SELECT m FROM OrganizationMembership m WHERE m.user.id = :userId AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE AND m.organization.purgingAt IS NULL ORDER BY m.organization.name ASC")
     List<OrganizationMembership> findActiveByUserId(Long userId);
 
     @Query("""
@@ -77,4 +78,23 @@ public interface OrganizationMembershipRepository
             AND m.organization.kind = dev.ulloasp.mlsuite.organization.domain.model.OrganizationKind.TEAM
             """)
     long countActiveTeamsByUserId(Long userId);
+
+    /** The teams whose owner the user is, with a purge of the team not asked for. */
+    @Query("""
+            SELECT m.organization FROM OrganizationMembership m
+            WHERE m.user.id = :userId
+            AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE
+            AND m.roleDefinition.systemKey = 'OWNER'
+            AND m.organization.kind = dev.ulloasp.mlsuite.organization.domain.model.OrganizationKind.TEAM
+            AND m.organization.purgingAt IS NULL
+            """)
+    List<Organization> findOwnedTeams(Long userId);
+
+    /** The team's active owners and members besides the user. */
+    @Query("""
+            SELECT m FROM OrganizationMembership m
+            WHERE m.organization.id = :organizationId AND m.user.id <> :userId
+            AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE
+            """)
+    List<OrganizationMembership> findOtherActiveMembers(Long organizationId, Long userId);
 }
