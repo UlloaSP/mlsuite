@@ -6,6 +6,7 @@ import java.util.Map;
 
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
+import dev.ulloasp.mlsuite.user.application.dto.UserAvatarUrl;
 import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
@@ -39,7 +40,7 @@ public record SchemaCatalogItemDto(
                 schema.getArchivedAt(),
                 DeletedUser.nameOf(modifier),
                 modifier == null ? null : modifier.getEmail(),
-                modifier == null ? null : modifier.getAvatarUrl(),
+                modifier == null ? null : UserAvatarUrl.of(modifier),
                 modelCount,
                 countVisibleFields(formSchema),
                 countReports(formSchema));

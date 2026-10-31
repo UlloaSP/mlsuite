@@ -1,4 +1,4 @@
-package dev.ulloasp.mlsuite.organization.application.usecase;
+package dev.ulloasp.mlsuite.util;
 
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -14,14 +14,15 @@ import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * Turns an uploaded picture into the logo that is stored: the centered square of it, at most
- * {@value #SIDE} pixels wide, since it is shown at a few dozen. It is kept lossless as PNG: a
+ * Turns an uploaded picture into the logo or avatar that is stored: the centered square of it, at
+ * most {@value #SIDE} pixels wide, since it is shown at a few dozen. It is kept lossless as PNG: a
  * logo is flat colour and sharp edges, which JPEG blurs into visible artifacts.
  */
-public final class OrganizationLogoImage {
+public final class SquareImage {
 
     public static final int SIDE = 256;
     public static final int MIN_SIDE = 64;
@@ -30,18 +31,28 @@ public final class OrganizationLogoImage {
     private static final long MAX_PIXELS = 25_000_000L;
     private static final Set<String> FORMATS = Set.of("png", "jpeg");
 
-    private OrganizationLogoImage() {
+    private SquareImage() {
     }
 
     public record Normalized(byte[] content, String contentType) {
     }
 
-    public static Normalized normalize(byte[] upload) {
-        if (upload.length > MAX_UPLOAD_BYTES) throw invalid("The logo must be at most 2 MB.");
-        BufferedImage source = decode(upload);
+    /** The picture {@code upload} holds, ready to store; {@code noun} names it in a refusal. */
+    public static Normalized normalize(MultipartFile upload, String noun) {
+        if (upload == null || upload.isEmpty()) throw invalid("Upload a PNG or JPG image.");
+        if (upload.getSize() > MAX_UPLOAD_BYTES) throw invalid(tooLarge(noun));
+        try {
+            return normalize(upload.getBytes(), noun);
+        } catch (IOException failure) {
+            throw invalid("The image could not be read.");
+        }
+    }
+
+    private static Normalized normalize(byte[] upload, String noun) {
+        BufferedImage source = decode(upload, noun);
         int side = Math.min(source.getWidth(), source.getHeight());
         if (side < MIN_SIDE) {
-            throw invalid("The logo must be at least %d by %d pixels.".formatted(MIN_SIDE, MIN_SIDE));
+            throw invalid("The %s must be at least %d by %d pixels.".formatted(noun, MIN_SIDE, MIN_SIDE));
         }
         boolean alpha = source.getColorModel().hasAlpha();
         BufferedImage square = source.getSubimage(
@@ -50,7 +61,7 @@ public final class OrganizationLogoImage {
         return new Normalized(encodePng(logo), "image/png");
     }
 
-    private static BufferedImage decode(byte[] upload) {
+    private static BufferedImage decode(byte[] upload, String noun) {
         try (ImageInputStream input = ImageIO.createImageInputStream(new ByteArrayInputStream(upload))) {
             Iterator<ImageReader> readers = input == null ? null : ImageIO.getImageReaders(input);
             if (readers == null || !readers.hasNext()) throw invalid("Upload a PNG or JPG image.");
@@ -61,7 +72,7 @@ public final class OrganizationLogoImage {
                 }
                 reader.setInput(input);
                 if ((long) reader.getWidth(0) * reader.getHeight(0) > MAX_PIXELS) {
-                    throw invalid("The logo has too many pixels to be read.");
+                    throw invalid("The %s has too many pixels to be read.".formatted(noun));
                 }
                 BufferedImage image = reader.read(0);
                 if (image == null) throw invalid("The image could not be read.");
@@ -111,6 +122,10 @@ public final class OrganizationLogoImage {
         } catch (IOException failure) {
             throw new IllegalStateException("PNG encoding failed", failure);
         }
+    }
+
+    private static String tooLarge(String noun) {
+        return "The %s must be at most 2 MB.".formatted(noun);
     }
 
     private static ResponseStatusException invalid(String message) {

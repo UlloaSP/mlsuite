@@ -20,7 +20,7 @@ final class PluginCatalogValues {
     static PluginDto toDto(StoredPlugin stored, PluginMetadata row) {
         return row.getUpdatedBy() != null ? toDto(stored) : new PluginDto(stored.id(), stored.fileName(),
                 stored.contentType(), stored.sizeBytes(), stored.createdAt(), stored.updatedAt(), DeletedUser.NAME,
-                null, null, stored.source(), describe(stored.source()).type(), describe(stored.source()).kind());
+                null, stored.source(), describe(stored.source()).type(), describe(stored.source()).kind());
     }
 
     static PluginDto toDto(StoredPlugin stored) {
@@ -34,7 +34,6 @@ final class PluginCatalogValues {
                 stored.updatedAt(),
                 stored.updatedByName(),
                 stored.updatedByEmail(),
-                stored.updatedByAvatarUrl(),
                 stored.source(),
                 descriptor.type(),
                 descriptor.kind());

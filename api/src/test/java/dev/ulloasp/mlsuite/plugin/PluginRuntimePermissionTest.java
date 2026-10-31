@@ -45,7 +45,7 @@ class PluginRuntimePermissionTest {
         membership(permission);
         var time = OffsetDateTime.now();
         when(objects.list(41L)).thenReturn(List.of(new StoredPlugin("qa", "qa.ts", "text/typescript", 12,
-                time, time, "private name", "private@example.test", "private avatar", "export default {}")));
+                time, time, "private name", "private@example.test", "export default {}")));
         var result = runtime.list(3L);
         assertEquals("export default {}", result.getFirst().source());
         assertEquals(7, result.getFirst().getClass().getRecordComponents().length);
@@ -64,7 +64,7 @@ class PluginRuntimePermissionTest {
         when(metadata.findByOrganizationIdAndKindInOrderByIdAsc(41L, Set.of("number", "body-map", "risk-gauge")))
                 .thenReturn(List.of(used, gone));
         when(objects.readPinned(used)).thenReturn(Optional.of(new StoredPlugin("body", "body.ts",
-                "text/typescript", 12, time, time, "private name", "private@example.test", "private avatar",
+                "text/typescript", 12, time, time, "private name", "private@example.test",
                 "export default {}")));
         // A plugin queued for deletion is simply not served.
         when(objects.readPinned(gone)).thenReturn(Optional.empty());

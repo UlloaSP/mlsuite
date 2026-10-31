@@ -49,7 +49,6 @@ export function NavbarOrganizationMenu({
           )}
         >
           <NamespaceMark
-            avatarUrl={context.user.avatarUrl}
             className="size-8 rounded-xl"
             fallbackClassName="bg-fg text-fg-inverse"
             iconSize={15}

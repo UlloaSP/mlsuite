@@ -13,7 +13,9 @@ export const protectedPages: RouteObject[] = [
   page("home", () =>
     import("@/app/pages/authenticated-home-page").then((m) => m.AuthenticatedHomePage),
   ),
-  page("profile", () => import("@/features/user/pages/profilePage").then((m) => m.ProfilePage)),
+  page("profile", () =>
+    import("@/features/user/pages/own-profile-page").then((m) => m.OwnProfilePage),
+  ),
   page("settings", () => import("@/features/user/pages/SettingsPage").then((m) => m.SettingsPage)),
   page("notifications", () =>
     import("@/app/pages/NotificationsRoutePage").then((m) => m.NotificationsRoutePage),

@@ -13,10 +13,12 @@ Limits marked *configurable* are defaults that an operator changes in
 | Password | 10 to 128 characters |
 | Full name | 150 characters |
 | Organization name, handle, description | 150, 39, 600 characters |
-| Organization logo | PNG or JPG, at least 64 × 64 px, up to 2 MB; stored as a 256 px square |
+| Organization logo, profile picture | PNG or JPG, at least 64 × 64 px, up to 2 MB; stored as a 256 px square |
+| Profile bio, company, location, website | 280, 100, 100, 255 characters |
+| Profile links, pinned bookmarks | 4 links of 255 characters, 6 bookmarks |
 | Role name, description | 120, 600 characters |
 | Invitation validity | 7 days |
-| Failed sign-ins | 10 per network in 15 minutes, then `429` until the window ends, *configurable* |
+| Failed sign-ins and wrong current passwords | 10 per network in 15 minutes, then `429` until the window ends, *configurable* |
 | Registration attempts | 5 per network in 15 minutes, *configurable* |
 
 ## Models, schemas and runs

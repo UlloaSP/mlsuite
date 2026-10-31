@@ -124,7 +124,7 @@ class PublicBookmarkFeedServiceTest {
         assertFalse(page.hasNext());
         assertEquals(new PublicBookmarkSummaryDto(cardio.getPublicId(), "production",
                 "Estimates cardiovascular risk.", 2, 2, "Acme Health", null,
-                dev.ulloasp.mlsuite.organization.domain.model.OrganizationKind.TEAM, page.items().get(1).updatedAt()),
+                dev.ulloasp.mlsuite.organization.domain.model.OrganizationKind.TEAM, null, page.items().get(1).updatedAt()),
                 page.items().get(1));
         assertEquals("Globex Retail", page.items().get(0).organizationName());
         // The description is the bookmark's own: one without it shows none, whatever its schema says.
@@ -182,7 +182,7 @@ class PublicBookmarkFeedServiceTest {
         PublicBookmarkSummaryDto card = service.getPublishedBookmarkPage(0, 24, "cardio", "updated").items().get(0);
 
         assertEquals(Set.of("publicId", "name", "description", "inputCount", "reportCount",
-                "organizationName", "organizationLogoUrl", "organizationKind", "updatedAt"),
+                "organizationName", "organizationLogoUrl", "organizationKind", "publisherHandle", "updatedAt"),
                 mapper.convertValue(card, Map.class).keySet());
         String json = mapper.writeValueAsString(card);
         // Neither the member's address nor the organization's names for its schema and snapshot.

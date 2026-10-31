@@ -18,7 +18,7 @@ describe("the mark beside a publisher's name", () => {
   test("a person is shown by their initials, not as a building", async () => {
     const { host } = await open("PERSONAL");
 
-    expect(host.textContent).toBe("AD");
+    expect(host.textContent).toBe("AL");
     expect(host.querySelector("svg")).toBeNull();
   });
 

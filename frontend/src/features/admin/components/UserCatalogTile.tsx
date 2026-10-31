@@ -17,6 +17,7 @@ import {
 import { formatDate } from "@/shared/lib/date-time";
 import { useState } from "react";
 import { toast } from "sonner";
+import { PersonAvatar } from "@/shared/ui/PersonAvatar";
 import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { PurgeDialog } from "@/capabilities/purge/PurgeDialog";
@@ -55,25 +56,17 @@ export function UserCatalogTile({
     }
   };
   const displayName = item.fullName || item.username || item.email;
-  const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
     <>
       <CatalogEntry
         title={displayName}
         icon={
-          item.avatarUrl ? (
-            <img
-              src={item.avatarUrl}
-              alt=""
-              className="size-12 shrink-0 rounded-full object-cover"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <span className="grid size-12 shrink-0 place-items-center rounded-full bg-accent-subtle text-sm font-semibold text-accent-strong">
-              {initials}
-            </span>
-          )
+          <PersonAvatar
+            avatarUrl={item.avatarUrl}
+            className="size-12 rounded-full text-sm"
+            name={displayName}
+          />
         }
         description={item.email}
         metadata={

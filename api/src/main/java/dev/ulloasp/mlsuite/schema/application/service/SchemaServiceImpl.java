@@ -28,6 +28,7 @@ import dev.ulloasp.mlsuite.schema.application.dto.SchemaCatalogItemDto;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
+import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
@@ -132,6 +133,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
         Schema schema = requireSchema(schemaId, organization.getId());
         if (schema.getArchivedAt() == null) {
             schema.setArchivedAt(OffsetDateTime.now(ZoneOffset.UTC));
+            bookmarkRepository.findBySchemaIdOrderByNameAsc(schemaId).forEach(SchemaBookmark::unpin);
             auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.SCHEMA_ARCHIVE, schemaId,
                     AuditDetails.of("name", schema.getName()));
         }

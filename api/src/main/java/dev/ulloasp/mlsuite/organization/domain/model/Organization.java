@@ -51,6 +51,11 @@ public class Organization {
         return kind == OrganizationKind.PERSONAL;
     }
 
+    /** The handle of the profile behind a personal account, while anyone may read that profile. */
+    public String profileHandle() {
+        return isPersonal() ? ownerUser.visibleHandle() : null;
+    }
+
     /** Refuses, with {@code refusal} as the reason, what a personal account cannot do. */
     public void requireTeam(String refusal) {
         if (isPersonal()) {

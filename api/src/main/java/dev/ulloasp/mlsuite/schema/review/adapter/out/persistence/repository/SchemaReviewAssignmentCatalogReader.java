@@ -64,7 +64,7 @@ public class SchemaReviewAssignmentCatalogReader {
         };
         String select = "SELECT new " + DTO + "SchemaReviewAssignmentStatusDto("
                 + "review.publicId, rr.publicId, new " + DTO
-                + "SchemaReviewReviewerDto(reviewer.id, reviewer.fullName, reviewer.email), new " + DTO
+                + "SchemaReviewReviewerDto(reviewer.id, reviewer.fullName, reviewer.email, reviewer.avatarUpdatedAt), new " + DTO
                 + "SchemaReviewCreatorDto(coalesce(creator.fullName, :deletedUser), creator.email), " + STATE
                 + ", submission.submittedAt, review.createdAt, review.updatedAt, review.expiresAt, "
                 + "review.expiresAt <= :now) ";

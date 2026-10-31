@@ -8,7 +8,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { act } from "react";
 import { Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
-import { PublicBookmarkCard } from "@/features/explore/components/PublicBookmarkCard";
+import { PublicBookmarkCard } from "@/capabilities/public-bookmarks/PublicBookmarkCard";
 import { noteSegments } from "@/features/explore/lib/publication-note-links";
 import { PublicBookmarkPage } from "@/features/explore/pages/public-bookmark-page";
 import type { PublicBookmarkDto, PublicBookmarkSummaryDto } from "@/shared/api/openapi.gen";
@@ -39,6 +39,7 @@ const summary = (overrides: Partial<PublicBookmarkSummaryDto> = {}): PublicBookm
   organizationName: "Acme Health",
   organizationLogoUrl: LOGO,
   organizationKind: "TEAM",
+  publisherHandle: null,
   updatedAt: AT,
   ...overrides,
 });

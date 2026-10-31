@@ -84,8 +84,11 @@ import dev.ulloasp.mlsuite.schema.review.application.port.in.SchemaReviewManagem
 import dev.ulloasp.mlsuite.schema.review.application.port.in.SchemaReviewUseCase;
 import dev.ulloasp.mlsuite.search.application.port.in.SearchWorkspaceUseCase;
 import dev.ulloasp.mlsuite.security.auth.AuthService;
+import dev.ulloasp.mlsuite.security.auth.PasswordChangeService;
 import dev.ulloasp.mlsuite.startup.StartupReadinessService;
 import dev.ulloasp.mlsuite.user.application.port.in.GetCurrentUserProfileUseCase;
+import dev.ulloasp.mlsuite.user.application.port.in.PublicProfileUseCase;
+import dev.ulloasp.mlsuite.user.application.port.in.UserProfileUseCase;
 import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase;
 
 /**
@@ -119,7 +122,8 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
         ModelPreparationService.class, NotificationUseCase.class, RuntimeEnvironments.class,
         OrganizationCatalogService.class, OrganizationLogoService.class,
         OrganizationManagementUseCase.class,
-        PluginCatalogUseCase.class, PredictBookmarkCatalogUseCase.class, PredictionResultFeedbackUseCase.class,
+        PasswordChangeService.class, PluginCatalogUseCase.class, PredictBookmarkCatalogUseCase.class,
+        PredictionResultFeedbackUseCase.class, PublicProfileUseCase.class,
         PredictionJobService.class, PredictionResultRepository.class, PredictionRunUseCase.class, PublicBookmarkModerationService.class,
         PublicBookmarkUseCase.class, PublicPredictionUseCase.class, PublicRunUseCase.class, RoleCatalogUseCase.class,
         RoleListCatalogUseCase.class, RoleManagementUseCase.class, SchemaBookmarkExampleUseCase.class,
@@ -127,7 +131,7 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
         SchemaCreationUseCase.class, SchemaDraftUseCase.class, SchemaRepositoryCatalogUseCase.class,
         SchemaReviewCatalogUseCase.class, SchemaReviewManagementUseCase.class,
         SchemaReviewUseCase.class, SchemaVersionUseCase.class, SearchWorkspaceUseCase.class,
-        StartupReadinessService.class, WorkspaceContextUseCase.class,
+        StartupReadinessService.class, UserProfileUseCase.class, WorkspaceContextUseCase.class,
         WorkspacePredictionUseCase.class })
 class OpenApiContractTest {
 
