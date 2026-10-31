@@ -26,7 +26,13 @@ public enum NotificationKind {
     /** inviterName, roleName: a superadmin's invitation is accepted on the spot. */
     ORGANIZATION_JOINED(NotificationTargetType.ORGANIZATION),
     /** schemaName, assignerName. */
-    REVIEW_ASSIGNED(NotificationTargetType.REVIEW);
+    REVIEW_ASSIGNED(NotificationTargetType.REVIEW),
+    /** label, unit, severity, value, threshold: about the platform, sent to every enabled superadmin. */
+    SYSTEM_ALERT_RAISED(NotificationTargetType.SYSTEM_ALERT),
+    /** As SYSTEM_ALERT_RAISED, at its critical threshold. */
+    SYSTEM_ALERT_ESCALATED(NotificationTargetType.SYSTEM_ALERT),
+    /** As SYSTEM_ALERT_RAISED, at its clear threshold. */
+    SYSTEM_ALERT_RESOLVED(NotificationTargetType.SYSTEM_ALERT);
 
     private final NotificationTargetType targetType;
 

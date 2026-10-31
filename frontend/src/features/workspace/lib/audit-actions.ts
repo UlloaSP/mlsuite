@@ -113,6 +113,10 @@ export const AUDIT_ACTIONS: Record<AuditAction, AuditActionCopy> = {
   API_REQUEST_RETENTION_PRUNE: { label: "API calls pruned" },
   AUDIT_RETENTION_PRUNE: { label: "Audit entries pruned" },
   NOTIFICATION_RETENTION_PRUNE: { label: "Read notifications pruned" },
+  SYSTEM_ALERT_RAISED: { label: "Platform alert raised" },
+  SYSTEM_ALERT_ESCALATED: { label: "Platform alert escalated" },
+  SYSTEM_ALERT_RESOLVED: { label: "Platform alert resolved" },
+  SYSTEM_ALERT_RETENTION_PRUNE: { label: "Old platform alerts removed" },
 };
 
 export const AUDIT_TARGET_TYPES: Record<AuditTargetType, string> = {
@@ -136,6 +140,7 @@ export const AUDIT_TARGET_TYPES: Record<AuditTargetType, string> = {
   SCHEMA_DRAFT: "Schema draft",
   SCHEMA_VERSION: "Schema snapshot",
   STORAGE_OBJECT: "Stored object",
+  SYSTEM_ALERT: "Platform alert",
   TERMINAL_SESSION: "Terminal session",
   USER: "User",
 };

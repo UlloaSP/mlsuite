@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { NotificationDto } from "@/shared/api/openapi.gen";
+import { formatMeasure } from "@/shared/lib/format-measure";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import type { NotificationKind } from "@/features/notifications/api/notifications.api";
 
@@ -23,6 +24,14 @@ type Presentation = {
 type Labels = NotificationDto["payload"];
 
 const rows = (labels: Labels) => `${labels.doneRows} of ${labels.totalRows} rows ran`;
+
+const measure = (labels: Labels, amount: unknown) =>
+  formatMeasure(Number(amount), String(labels.unit));
+
+const alertCrossed = (labels: Labels) =>
+  labels.unit === ""
+    ? "It has held long enough to raise an alert."
+    : `At ${measure(labels, labels.value)}, past the ${measure(labels, labels.threshold)} threshold.`;
 
 /** A notification draws from its own payload, so it survives what it describes. */
 const PRESENT: Record<NotificationKind, (labels: Labels) => Presentation> = {
@@ -92,6 +101,27 @@ const PRESENT: Record<NotificationKind, (labels: Labels) => Presentation> = {
     icon: SECTION_ICONS.reviews,
     tone: "info",
   }),
+  SYSTEM_ALERT_RAISED: (labels) => ({
+    title: `Platform alert: ${labels.label}`,
+    description: alertCrossed(labels),
+    icon: AlertTriangle,
+    tone: labels.severity === "CRITICAL" ? "danger" : "warning",
+  }),
+  SYSTEM_ALERT_ESCALATED: (labels) => ({
+    title: `Alert now critical: ${labels.label}`,
+    description: alertCrossed(labels),
+    icon: AlertTriangle,
+    tone: "danger",
+  }),
+  SYSTEM_ALERT_RESOLVED: (labels) => ({
+    title: `Alert resolved: ${labels.label}`,
+    description:
+      labels.unit === ""
+        ? "It is back to normal."
+        : `Back to ${measure(labels, labels.value)}, under ${measure(labels, labels.threshold)}.`,
+    icon: CheckCircle2,
+    tone: "success",
+  }),
 };
 
 export const presentNotification = (notification: NotificationDto) =>
@@ -108,6 +138,8 @@ export const notificationLink = (notification: NotificationDto): string | null =
       return `/review/${notification.targetId}`;
     case "ORGANIZATION":
       return "/home";
+    case "SYSTEM_ALERT":
+      return "/admin/infrastructure?tab=alerts";
     case "INVITATION":
       return notification.kind === "INVITATION_RECEIVED"
         ? null

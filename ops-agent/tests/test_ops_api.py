@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
+from mlsuite_ops_agent import metrics
 from mlsuite_ops_agent.app import create_app
 from mlsuite_ops_agent.compose import ComposeError, ComposeGateway
 from mlsuite_ops_agent.config import Settings
@@ -262,3 +263,68 @@ def test_terminal_creation_requires_shell_whitelist() -> None:
         assert "Shell disabled" in str(error)
     else:
         raise AssertionError("Expected shell whitelist failure")
+
+
+def _load_app(monkeypatch, services: list[dict[str, object]]):
+    app = create_app()
+
+    async def fake_start():
+        app.state.agent._latest_services = services
+        app.state.agent.metrics.points = deque([{"cpuPercent": 300.0}], maxlen=10)
+
+    async def fake_stop():
+        return None
+
+    monkeypatch.setattr(app.state.agent, "start", fake_start)
+    monkeypatch.setattr(app.state.agent, "stop", fake_stop)
+    return app
+
+
+def test_load_reports_the_share_of_the_machine_in_use(monkeypatch, tmp_path) -> None:
+    meminfo = tmp_path / "meminfo"
+    meminfo.write_text("MemTotal: 1000 kB\nMemFree: 100 kB\nMemAvailable: 250 kB\n")
+    real_path = metrics.Path
+    monkeypatch.setattr(metrics, "Path", lambda path: meminfo if path == "/proc/meminfo" else real_path(path))
+    monkeypatch.setattr(metrics.os, "cpu_count", lambda: 4)
+    monkeypatch.setattr(metrics.shutil, "disk_usage", lambda _path: SimpleNamespace(total=200, used=50))
+    app = _load_app(monkeypatch, [{"name": "spring-app", "cpuPercent": 300.0}])
+
+    with TestClient(app) as client:
+        response = client.get("/internal/load", headers=auth_headers())
+
+    assert response.status_code == 200
+    assert response.json() == {"cpuPercent": 75.0, "ramPercent": 75.0, "diskPercent": 25.0}
+
+
+def test_load_leaves_memory_unknown_without_the_machines_counters(monkeypatch, tmp_path) -> None:
+    monkeypatch.setattr(metrics, "Path", lambda _path: tmp_path / "missing")
+    monkeypatch.setattr(metrics.shutil, "disk_usage", lambda _path: SimpleNamespace(total=200, used=50))
+    app = _load_app(monkeypatch, [{"name": "spring-app", "cpuPercent": 1.0}])
+
+    with TestClient(app) as client:
+        assert client.get("/internal/load", headers=auth_headers()).json()["ramPercent"] is None
+
+
+def test_load_refuses_to_answer_when_no_service_is_measured(monkeypatch) -> None:
+    app = _load_app(monkeypatch, [{"name": "spring-app", "status": "missing", "cpuPercent": None}])
+
+    with TestClient(app) as client:
+        response = client.get("/internal/load", headers=auth_headers())
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "No service is reporting."}
+
+
+def test_load_refuses_to_answer_while_compose_is_failing(monkeypatch) -> None:
+    app = _load_app(monkeypatch, [{"name": "spring-app", "cpuPercent": 1.0}])
+
+    with TestClient(app) as client:
+        app.state.agent._compose_failed = True
+        assert client.get("/internal/load", headers=auth_headers()).status_code == 503
+
+
+def test_load_requires_the_shared_secret(monkeypatch) -> None:
+    app = _load_app(monkeypatch, [{"name": "spring-app", "cpuPercent": 1.0}])
+
+    with TestClient(app) as client:
+        assert client.get("/internal/load").status_code == 401

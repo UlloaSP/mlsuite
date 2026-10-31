@@ -73,14 +73,14 @@ class StartupReadinessServiceTest {
     }
 
     @Test
-    void check_ReturnsNotReadyWhenOpsAgentFails() throws IOException {
+    void check_StaysReadyWhenOpsAgentFails() throws IOException {
         doThrow(new IOException("ops down"))
                 .when(serviceProbe)
                 .requireOk("http://ops-agent:8091/health");
 
         StartupReadinessDto readiness = service.check();
 
-        assertFalse(readiness.ready());
+        assertTrue(readiness.ready());
         assertFalse(readiness.dependencies().stream()
                 .filter(dependency -> dependency.name().equals("ops-agent"))
                 .findFirst()

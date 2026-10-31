@@ -46,6 +46,40 @@ class RuntimeSlotsTest {
     }
 
     @Test
+    void theShareCountsEveryRunItTurnsAwayAndTheRunsWaiting() throws Exception {
+        RuntimeSlots full = slots(0, 0, 4, 0);
+        assertThrows(Busy.class, () -> full.run("ana", () -> "never"));
+        RuntimeSlots perCaller = slots(1, 4, 1, 0);
+        CountDownLatch running = new CountDownLatch(1);
+        CountDownLatch finish = new CountDownLatch(1);
+        var holder = CompletableFuture.supplyAsync(() -> perCaller.run("ana", () -> {
+            running.countDown();
+            await(finish);
+            return "done";
+        }), pool);
+        assertTrue(running.await(10, TimeUnit.SECONDS));
+        assertThrows(Busy.class, () -> perCaller.run("ana", () -> "never"));
+        assertThrows(Busy.class, () -> perCaller.run("ben", () -> "timed out"));
+        RuntimeSlots patient = slots(1, 4, 4, 10_000);
+        var occupant = CompletableFuture.supplyAsync(() -> patient.run("ana", () -> {
+            await(finish);
+            return "done";
+        }), pool);
+        waitUntil(() -> patient.placesTaken() == 1);
+        var queued = CompletableFuture.supplyAsync(() -> patient.run("ben", () -> "ran"), pool);
+        waitUntil(() -> patient.waiting() == 1);
+
+        assertEquals(new RuntimeSlots.Load(0, 1), full.load());
+        assertEquals(new RuntimeSlots.Load(0, 2), perCaller.load());
+        assertEquals(new RuntimeSlots.Load(1, 0), patient.load());
+
+        finish.countDown();
+        assertEquals("done", holder.get(10, TimeUnit.SECONDS));
+        assertEquals("done", occupant.get(10, TimeUnit.SECONDS));
+        assertEquals("ran", queued.get(10, TimeUnit.SECONDS));
+    }
+
+    @Test
     void aRunFindingTheShareInUseWaitsItsTurnAndRuns() throws Exception {
         RuntimeSlots slots = slots(1, 4, 4, 10_000);
         CountDownLatch running = new CountDownLatch(1);

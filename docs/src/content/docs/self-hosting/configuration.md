@@ -128,6 +128,32 @@ password or system role changes.
 The agent mounts the Docker socket and the repository read-only. Anyone who controls it controls
 the host's Docker; keep the secret private.
 
+## Alerts
+
+See [Load alerts](/admin/infrastructure/#load-alerts) for what each signal measures.
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `ALERTS_EVALUATE_SECONDS` | `15` | How often the signals are read. At least 1. |
+| `ALERTS_SUSTAIN_SECONDS` | `120` | How long a condition must hold before an alert raises or escalates. |
+| `ALERTS_CLEAR_SECONDS` | `300` | How long a value must stay under its clear threshold before the alert resolves. |
+| `ALERTS_RETENTION_DAYS` | `30` | How long resolved alerts are kept. At least 1. |
+
+Each signal has three thresholds, set as `ALERTS_<SIGNAL>_WARNING`, `_CRITICAL` and `_CLEAR`, with
+clear at or below warning and warning at or below critical; the API refuses to start otherwise.
+
+| `<SIGNAL>` | Warning | Critical | Clear |
+| --- | --- | --- | --- |
+| `PREDICTION_ROWS` | `20000` | `100000` | `10000` |
+| `PREDICTION_AGE_SECONDS` | `900` | `3600` | `300` |
+| `MODELS_PREPARING` | `10` | `50` | `3` |
+| `RUNTIME_QUEUE` | `100` | `500` | `20` |
+| `RUNTIME_REJECTIONS_PER_MINUTE` | `10` | `120` | `1` |
+| `STORAGE_DELETIONS_FAILED` | `1` | `50` | `1` |
+| `CPU_PERCENT` | `85` | `95` | `70` |
+| `RAM_PERCENT` | `85` | `95` | `70` |
+| `DISK_PERCENT` | `85` | `95` | `80` |
+
 ## Backups and recovery
 
 Read by the scripts in `scripts/`, not by the application. See

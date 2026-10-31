@@ -10,7 +10,7 @@ from fastapi import WebSocket
 
 from .compose import ComposeGateway, ComposeError
 from .config import Settings
-from .metrics import MetricsBuffer, collect_metrics
+from .metrics import MetricsBuffer, collect_metrics, machine_load
 from .terminal import TerminalManager
 
 
@@ -36,12 +36,14 @@ class AgentState:
         self.service_task: asyncio.Task[None] | None = None
         self.cleanup_task: asyncio.Task[None] | None = None
         self._latest_services: list[dict[str, Any]] = []
+        self._compose_failed = False
 
     async def start(self) -> None:
         try:
             self._latest_services = await self.compose.service_snapshot()
         except ComposeError:
             self._latest_services = []
+            self._compose_failed = True
         self.metrics.append(collect_metrics(self._latest_services))
         self.sampler_task = asyncio.create_task(self._sample_loop())
         self.service_task = asyncio.create_task(self._service_loop())
@@ -77,6 +79,13 @@ class AgentState:
             },
         }
 
+    def load(self) -> dict[str, float | None] | None:
+        """The machine's load, or None while nothing here says what the stack is doing."""
+        measured = any(service.get("cpuPercent") is not None for service in self._latest_services)
+        if self._compose_failed or not measured:
+            return None
+        return machine_load(self.metrics.points[-1]["cpuPercent"])
+
     async def register_client(self, websocket: WebSocket) -> StreamClient:
         client = StreamClient(websocket)
         self.clients.add(client)
@@ -111,7 +120,9 @@ class AgentState:
             await asyncio.sleep(5)
             try:
                 self._latest_services = await self.compose.service_snapshot()
+                self._compose_failed = False
             except ComposeError as error:
+                self._compose_failed = True
                 await self.broadcast({"type": "error", "message": str(error)})
 
     async def _cleanup_loop(self) -> None:
