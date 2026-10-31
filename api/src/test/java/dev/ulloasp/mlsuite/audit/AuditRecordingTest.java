@@ -161,18 +161,20 @@ class AuditRecordingTest extends PublicPredictionFixture {
     void registeringIsRecordedOnceWithoutTheAutomaticSignIn() throws Exception {
         String address = "register-" + UUID.randomUUID() + "@example.test";
         long logins = entries(AuditAction.AUTH_LOGIN);
+        long organizations = entries(AuditAction.ORGANIZATION_CREATE);
 
         mockMvc.perform(post("/api/auth/register").header(ClientNetworks.CLIENT_ADDRESS_HEADER, network)
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(Map.of(
-                        "email", address, "password", "a-long-password", "fullName", "New Person"))))
+                        "email", address, "password", "a-long-password", "fullName", "New Person",
+                        "username", "new-" + UUID.randomUUID().toString().substring(0, 8)))))
                 .andExpect(status().isCreated());
 
         Map<String, Object> row = lastRow(AuditAction.AUTH_REGISTER);
         assertEquals("New Person", row.get("actor_label"));
         assertTrue(row.get("metadata").toString().contains(address));
         assertEquals(logins, entries(AuditAction.AUTH_LOGIN));
-        Map<String, Object> workspace = lastRow(AuditAction.ORGANIZATION_CREATE);
-        assertEquals(row.get("actor_user_id"), workspace.get("actor_user_id"));
+        // Opening a personal account is part of the registration, and no organization was created.
+        assertEquals(organizations, entries(AuditAction.ORGANIZATION_CREATE));
     }
 
     @Test

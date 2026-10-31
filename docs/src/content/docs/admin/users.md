@@ -19,7 +19,7 @@ Other accounts that open these pages get "Not found".
 ## Organizations
 
 **Organizations** lists every organization with its counts of models, schemas, plugins,
-inferences and members. Search by name, slug or description; sort by latest updated, latest
+inferences and members; personal accounts are not organizations and are not listed. Search by name, slug or description; sort by latest updated, latest
 created or name. Each organization's menu offers **Edit name**, **Edit slug**, **Edit
 description**, **Transfer owner** and **Delete**; deletion succeeds only for an
 [empty organization](/organizations/overview/#settings).
@@ -29,7 +29,7 @@ description**, **Transfer owner** and **Delete**; deletion succeeds only for an
 | Field | Rule |
 | --- | --- |
 | Name | Required, up to 150 characters. |
-| Slug | Filled from the name until edited; up to 120 characters, unique. |
+| Handle | Filled from the name until edited; up to 39 characters, unique among users and organizations. |
 | Owner | Any account; defaults to you. |
 | Description | Optional, up to 600 characters. |
 
@@ -41,8 +41,8 @@ The new organization gets the built-in [roles](/organizations/roles/).
 and when it was created. Search by name or email, filter by role, and sort by name, newest or
 oldest.
 
-**New user** creates an account with an email, full name, password (10 to 128 characters) and
-role. It is enabled at once and gets a personal organization.
+**New user** creates an account with an email, full name, username, password (10 to 128 characters)
+and role. It is enabled at once and owns its personal account.
 
 Each user's menu offers:
 

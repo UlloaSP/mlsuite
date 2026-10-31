@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { RouteObject } from "react-router";
-import { page, reviewAccess, superadmin, workspace } from "./lazy-route";
+import { page, reviewAccess, superadmin, teamOrganization, workspace } from "./lazy-route";
 
 const reviewsPage = () =>
   import("@/features/reviews/pages/reviews-page").then((m) => m.ReviewsPage);
@@ -18,40 +18,44 @@ export const protectedPages: RouteObject[] = [
   page("notifications", () =>
     import("@/app/pages/NotificationsRoutePage").then((m) => m.NotificationsRoutePage),
   ),
+  page("workspace/organizations", () =>
+    import("@/features/workspace/pages/organizations-route-page").then(
+      (m) => m.OrganizationsRoutePage,
+    ),
+  ),
+  page("workspace/organizations/create", () =>
+    import("@/app/router/create-organization-route").then((m) => m.CreateOrganizationRoute),
+  ),
   page("workspace/organizations/:organizationId", () =>
     import("@/features/workspace/pages/organization-admin-page").then(
       (m) => m.OrganizationAdminPage,
     ),
   ),
-  page("workspace/organizations/:organizationId/members", () =>
-    import("@/features/workspace/pages/members-page").then((m) => m.MembersPage),
-  ),
-  page("workspace/organizations/:organizationId/invitations", () =>
-    import("@/features/workspace/pages/invitations-page").then((m) => m.InvitationsPage),
-  ),
-  page("workspace/organizations/:organizationId/roles", () =>
-    import("@/features/workspace/pages/roles-page").then((m) => m.RolesPage),
-  ),
   page("workspace/organizations/:organizationId/audit-log", () =>
     import("@/features/workspace/pages/audit-log-page").then((m) => m.AuditLogPage),
   ),
-  page("workspace/organizations/:organizationId/settings", () =>
-    import("@/features/workspace/pages/organization-settings-page").then(
-      (m) => m.OrganizationSettingsPage,
+  teamOrganization([
+    page("workspace/organizations/:organizationId/members", () =>
+      import("@/features/workspace/pages/members-page").then((m) => m.MembersPage),
     ),
-  ),
+    page("workspace/organizations/:organizationId/invitations", () =>
+      import("@/features/workspace/pages/invitations-page").then((m) => m.InvitationsPage),
+    ),
+    page("workspace/organizations/:organizationId/roles", () =>
+      import("@/features/workspace/pages/roles-page").then((m) => m.RolesPage),
+    ),
+    page("workspace/organizations/:organizationId/settings", () =>
+      import("@/features/workspace/pages/organization-settings-page").then(
+        (m) => m.OrganizationSettingsPage,
+      ),
+    ),
+  ]),
   reviewAccess([
     page("review", reviewsPage),
     page("review/:reviewId", reviewsPage),
     page("review/:reviewId/runs/:reviewRunId", reviewsPage),
   ]),
   superadmin([
-    page("workspace/organizations", () =>
-      import("@/features/workspace/pages/organizations-page").then((m) => m.OrganizationsPage),
-    ),
-    page("workspace/organizations/create", () =>
-      import("@/app/router/create-organization-route").then((m) => m.CreateOrganizationRoute),
-    ),
     page("admin/users", () =>
       import("@/features/admin/pages/admin-users-page").then((m) => m.AdminUsersPage),
     ),

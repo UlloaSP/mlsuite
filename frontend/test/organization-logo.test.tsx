@@ -20,6 +20,7 @@ vi.mock("@/features/workspace/api/workspace.mutations", () => ({
 const organization = (logoUrl: string | null): OrganizationDto => ({
   id: 7,
   name: "Acme",
+  kind: "TEAM",
   slug: "acme",
   description: null,
   logoUrl,

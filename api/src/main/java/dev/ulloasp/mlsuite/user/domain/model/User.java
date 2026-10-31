@@ -33,7 +33,8 @@ import lombok.Setter;
 @AllArgsConstructor
 @Entity
 @Table(name = "app_user", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_app_user_email", columnNames = { "email" })
+        @UniqueConstraint(name = "uq_app_user_email", columnNames = { "email" }),
+        @UniqueConstraint(name = "uq_app_user_username", columnNames = { "username" })
 })
 public class User {
 
@@ -72,6 +73,7 @@ public class User {
     @Column(name = "enabled", nullable = false)
     private boolean enabled = true;
 
+    /** The organization the user last selected; null leaves them in their personal account. */
     @ManyToOne
     @JoinColumn(name = "current_organization_id")
     private Organization currentOrganization;

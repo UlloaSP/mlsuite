@@ -30,7 +30,6 @@ import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
-import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
@@ -39,7 +38,6 @@ import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceBootstrapService;
 
 class ActiveMembershipRuleTest {
 
@@ -49,12 +47,10 @@ class ActiveMembershipRuleTest {
         Organization organization = organization(41L);
         OrganizationMembership membership = membership(organization, user, MembershipStatus.ACTIVE);
         UserLookupService users = mock();
-        WorkspaceBootstrapService bootstrap = mock();
         OrganizationRepository organizations = mock();
         OrganizationMembershipRepository memberships = mock();
-        WorkspaceAccessService access = new WorkspaceAccessService(users, bootstrap, organizations, memberships);
+        WorkspaceAccessService access = new WorkspaceAccessService(users, organizations, memberships);
         when(users.requireById(7L)).thenReturn(user);
-        when(bootstrap.ensureCurrentOrganization(user)).thenReturn(organization);
         when(organizations.findById(41L)).thenReturn(Optional.of(organization));
         when(memberships.findActiveByOrganizationIdAndUserId(41L, 7L)).thenReturn(Optional.of(membership));
 
@@ -62,24 +58,6 @@ class ActiveMembershipRuleTest {
 
         when(memberships.findActiveByOrganizationIdAndUserId(41L, 7L)).thenReturn(Optional.empty());
         assertThrows(OrganizationAccessDeniedException.class, () -> access.requireMembership(7L, 41L));
-    }
-
-    @Test
-    void bootstrapReplacesStaleCurrentOrganizationWithAnActiveOne() {
-        User user = user(7L);
-        user.setCurrentOrganization(organization(40L));
-        Organization activeOrganization = organization(41L);
-        OrganizationMembership active = membership(activeOrganization, user, MembershipStatus.ACTIVE);
-        OrganizationRepository organizations = mock();
-        OrganizationMembershipRepository memberships = mock();
-        UserRepository users = mock();
-        WorkspaceBootstrapService bootstrap = new WorkspaceBootstrapService(
-                organizations, memberships, users, mock(RoleSeedService.class), mock(AuditLogService.class));
-        when(memberships.findActiveByUserId(7L)).thenReturn(List.of(active));
-
-        assertSame(activeOrganization, bootstrap.ensureCurrentOrganization(user));
-        assertSame(activeOrganization, user.getCurrentOrganization());
-        verify(users).save(user);
     }
 
     @ParameterizedTest

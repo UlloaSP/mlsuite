@@ -74,8 +74,10 @@ public class OrganizationLogoService {
     }
 
     private Organization requireOrganization(Long organizationId) {
-        return organizationRepository.findById(organizationId)
+        Organization organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
+        organization.requireTeam("A personal account is pictured by its owner, not by a logo.");
+        return organization;
     }
 
     private static byte[] bytes(MultipartFile upload) {

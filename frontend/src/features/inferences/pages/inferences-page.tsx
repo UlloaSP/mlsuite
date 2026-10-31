@@ -176,7 +176,7 @@ export function InferencesPage({
       title={!metadata.data?.totalItems ? "No inferences yet" : "No matching inferences"}
       description={
         !metadata.data?.totalItems
-          ? "Run a schema bookmark to populate this organization catalog."
+          ? "Run a schema bookmark to fill this catalog."
           : "Adjust the search or filters to see more results."
       }
     />

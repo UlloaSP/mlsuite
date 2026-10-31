@@ -12,7 +12,7 @@ Limits marked *configurable* are defaults that an operator changes in
 | --- | --- |
 | Password | 10 to 128 characters |
 | Full name | 150 characters |
-| Organization name, slug, description | 150, 120, 600 characters |
+| Organization name, handle, description | 150, 39, 600 characters |
 | Organization logo | PNG or JPG, at least 64 × 64 px, up to 2 MB; stored as a 256 px square |
 | Role name, description | 120, 600 characters |
 | Invitation validity | 7 days |

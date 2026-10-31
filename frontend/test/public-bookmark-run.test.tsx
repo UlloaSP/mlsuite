@@ -41,6 +41,7 @@ const publicBookmark = (
   reportCount: 1,
   organizationName: "Acme Health",
   organizationLogoUrl: null,
+  organizationKind: "TEAM",
   formSchema: {
     fields: [{ kind: "number", label: "Age", mappedTo: "in0", ...age }],
     reports: [{ kind: "classifier", label: "Risk", id: "out0", mappedTo: "out0" }],

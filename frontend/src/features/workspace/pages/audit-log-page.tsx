@@ -30,7 +30,7 @@ export function AuditLogPage() {
       <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
           title="Audit log"
-          description="Who did what in this organization and when: its members, API clients, public visitors, platform administrators and the system's own work. Entries are kept for 7 days by default."
+          description="Who did what here and when: people, API clients, public visitors, platform administrators and the system's own work. Entries are kept for 7 days by default."
           breadcrumbs={[{ label: "Audit log" }]}
         />
         {dashboard.data ? (

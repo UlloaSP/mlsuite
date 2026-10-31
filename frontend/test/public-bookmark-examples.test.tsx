@@ -84,6 +84,7 @@ const publicBookmark: PublicBookmarkDto = {
   reportCount: 1,
   organizationName: "Acme Health",
   organizationLogoUrl: null,
+  organizationKind: "TEAM",
   formSchema: FORM_SCHEMA,
   updatedAt: AT,
 };

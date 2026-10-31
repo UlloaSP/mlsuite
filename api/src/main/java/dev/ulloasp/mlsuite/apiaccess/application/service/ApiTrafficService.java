@@ -141,7 +141,7 @@ public class ApiTrafficService implements ApiTrafficUseCase {
             Organization organization = client.getOrganization();
             return new AdminApiClientDto(client.getId(), client.getName(), client.getStatus(),
                     client.getSuspensionReason(), client.getSuspendedAt(), organization.getId(), organization.getName(),
-                    OrganizationLogoUrl.of(organization), usage == null ? 0 : usage.keyCount(),
+                    OrganizationLogoUrl.of(organization), organization.getKind(), usage == null ? 0 : usage.keyCount(),
                     usage == null ? null : usage.lastUsedAt(), calls[0], calls[1]);
         }).toList();
     }
@@ -155,7 +155,7 @@ public class ApiTrafficService implements ApiTrafficUseCase {
                 .countSucceededByOrganization(ids, ApiCallLimits.monthStart(Instant.now())).stream()
                 .collect(Collectors.toMap(row -> (Long) row[0], row -> ((Number) row[1]).longValue()));
         return organizations.stream().map(organization -> new AdminApiOrganizationDto(organization.getId(),
-                organization.getName(), OrganizationLogoUrl.of(organization),
+                organization.getName(), OrganizationLogoUrl.of(organization), organization.getKind(),
                 clientCounts.getOrDefault(organization.getId(), 0L), monthCalls.getOrDefault(organization.getId(), 0L),
                 settings.monthlyLimit(organization.getApiMonthlyCallLimit()),
                 organization.getApiMonthlyCallLimit() != null)).toList();

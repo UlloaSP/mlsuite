@@ -25,6 +25,13 @@
             "format": "int64",
             "type": "integer"
           },
+          "organizationKind": {
+            "enum": [
+              "PERSONAL",
+              "TEAM"
+            ],
+            "type": "string"
+          },
           "organizationLogoUrl": {
             "type": [
               "string",
@@ -69,6 +76,7 @@
           "lastUsedAt",
           "name",
           "organizationId",
+          "organizationKind",
           "organizationLogoUrl",
           "organizationName",
           "status",
@@ -87,6 +95,13 @@
           },
           "customLimit": {
             "type": "boolean"
+          },
+          "kind": {
+            "enum": [
+              "PERSONAL",
+              "TEAM"
+            ],
+            "type": "string"
           },
           "logoUrl": {
             "type": [
@@ -113,6 +128,7 @@
         "required": [
           "clientCount",
           "customLimit",
+          "kind",
           "logoUrl",
           "monthCalls",
           "monthlyLimit",
@@ -153,16 +169,14 @@
           "username": {
             "maxLength": 50,
             "minLength": 0,
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           }
         },
         "required": [
           "email",
           "fullName",
-          "password"
+          "password",
+          "username"
         ],
         "type": "object"
       },
@@ -1128,15 +1142,13 @@
           "username": {
             "maxLength": 50,
             "minLength": 0,
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           }
         },
         "required": [
           "email",
-          "password"
+          "password",
+          "username"
         ],
         "type": "object"
       },
@@ -2457,6 +2469,13 @@
           "name": {
             "type": "string"
           },
+          "organizationKind": {
+            "enum": [
+              "PERSONAL",
+              "TEAM"
+            ],
+            "type": "string"
+          },
           "organizationLogoUrl": {
             "type": [
               "string",
@@ -2493,6 +2512,7 @@
         "required": [
           "id",
           "name",
+          "organizationKind",
           "organizationLogoUrl",
           "organizationName",
           "publicId",
@@ -2797,6 +2817,13 @@
             "format": "int64",
             "type": "integer"
           },
+          "kind": {
+            "enum": [
+              "PERSONAL",
+              "TEAM"
+            ],
+            "type": "string"
+          },
           "logoUrl": {
             "type": [
               "string",
@@ -2818,6 +2845,7 @@
           "createdAt",
           "description",
           "id",
+          "kind",
           "logoUrl",
           "name",
           "slug",
@@ -4875,6 +4903,13 @@
           "name": {
             "type": "string"
           },
+          "organizationKind": {
+            "enum": [
+              "PERSONAL",
+              "TEAM"
+            ],
+            "type": "string"
+          },
           "organizationLogoUrl": {
             "type": [
               "string",
@@ -4911,6 +4946,7 @@
           "formSchema",
           "inputCount",
           "name",
+          "organizationKind",
           "organizationLogoUrl",
           "organizationName",
           "publicId",
@@ -4956,6 +4992,13 @@
           "name": {
             "type": "string"
           },
+          "organizationKind": {
+            "enum": [
+              "PERSONAL",
+              "TEAM"
+            ],
+            "type": "string"
+          },
           "organizationLogoUrl": {
             "type": [
               "string",
@@ -4981,6 +5024,7 @@
           "description",
           "inputCount",
           "name",
+          "organizationKind",
           "organizationLogoUrl",
           "organizationName",
           "publicId",

@@ -87,7 +87,7 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
       error={error}
       onClose={onClose}
       title="Create review"
-      description="Choose the inferences and organization members responsible for reviewing them."
+      description="Choose the inferences and the members responsible for reviewing them."
       footer={
         <>
           <div className="mr-auto">
@@ -158,7 +158,7 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
         <ReviewSelectionCatalog
           organizationId={organizationId}
           title="Reviewers"
-          emptyDescription="Assign Review permission to an active organization member first."
+          emptyDescription="Assign Review permission to an active member first."
           source={{ kind: "reviewers" }}
           idFromString={Number}
           selectedIds={selectedReviewerIds}

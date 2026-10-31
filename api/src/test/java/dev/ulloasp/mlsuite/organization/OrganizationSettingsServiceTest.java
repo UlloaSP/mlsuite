@@ -31,7 +31,7 @@ import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationDeletion
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationManagementService;
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationStatsService;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
-import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAlreadyExistsException;
+import dev.ulloasp.mlsuite.organization.domain.exception.HandleTakenException;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
@@ -182,7 +182,7 @@ class OrganizationSettingsServiceTest {
         when(organizationRepository.findById(41L)).thenReturn(Optional.of(organization()));
         when(organizationRepository.existsBySlug("taken")).thenReturn(true);
 
-        assertThrows(OrganizationAlreadyExistsException.class,
+        assertThrows(HandleTakenException.class,
                 () -> managementService.updateOrganization(
                         7L, 41L, new UpdateOrganizationRequest("Acme", "taken", null)));
     }

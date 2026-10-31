@@ -36,6 +36,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RoleManagementService implements RoleManagementUseCase {
 
+    private static final String NO_ROLES = "A personal account has no roles to manage.";
+
     private final WorkspaceAuthorizationService authorizationService;
     private final RoleCatalogService catalogService;
     private final RoleDefinitionRepository roleRepository;
@@ -50,6 +52,7 @@ public class RoleManagementService implements RoleManagementUseCase {
     public RoleDefinitionDto create(Long userId, Long organizationId, CreateRoleRequest request) {
         authorizationService.require(userId, organizationId, PermissionKey.MANAGE_MEMBER_ROLES);
         var org = organizationRepository.findById(organizationId).orElseThrow(() -> new OrganizationNotFoundException(organizationId));
+        org.requireTeam(NO_ROLES);
         RoleDefinition role = new RoleDefinition(org, RoleScope.ORGANIZATION, request.name().strip(), uniqueSlug(organizationId, request.name()), null);
         role.setDescription(request.description());
         role.setCreatedBy(userLookupService.requireById(userId));
@@ -130,8 +133,10 @@ public class RoleManagementService implements RoleManagementUseCase {
     }
 
     private RoleDefinition requireRole(Long organizationId, Long roleId) {
-        return roleRepository.findByIdAndOrganizationId(roleId, organizationId)
+        RoleDefinition role = roleRepository.findByIdAndOrganizationId(roleId, organizationId)
                 .orElseThrow(() -> new IllegalArgumentException("Role does not exist."));
+        role.getOrganization().requireTeam(NO_ROLES);
+        return role;
     }
 
     private Set<PermissionKey> parsePermissions(Long userId, Long orgId, List<String> keys) {

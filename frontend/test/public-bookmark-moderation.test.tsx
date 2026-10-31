@@ -31,6 +31,7 @@ const bookmark = (overrides: Partial<ModeratedBookmarkDto>): ModeratedBookmarkDt
   schemaArchived: false,
   organizationName: "Acme Health",
   organizationLogoUrl: null,
+  organizationKind: "TEAM",
   version: 2,
   versionName: "Baseline",
   publicId: "acme-public-id",
@@ -44,6 +45,7 @@ const globex = bookmark({
   schemaName: "Churn",
   organizationName: "Globex",
   organizationLogoUrl: null,
+  organizationKind: "TEAM",
   version: 1,
   versionName: null,
   publicId: "globex-public-id",
@@ -55,6 +57,7 @@ const archived = bookmark({
   schemaArchived: true,
   organizationName: "Globex",
   organizationLogoUrl: null,
+  organizationKind: "TEAM",
   publicId: "globex-archived-id",
 });
 

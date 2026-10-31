@@ -2658,6 +2658,8 @@ export interface components {
             name: string;
             /** Format: int64 */
             organizationId: number;
+            /** @enum {string} */
+            organizationKind: "PERSONAL" | "TEAM";
             organizationLogoUrl: string | null;
             organizationName: string;
             /** @enum {string} */
@@ -2674,6 +2676,8 @@ export interface components {
             /** Format: int64 */
             clientCount: number;
             customLimit: boolean;
+            /** @enum {string} */
+            kind: "PERSONAL" | "TEAM";
             logoUrl: string | null;
             /** Format: int64 */
             monthCalls: number;
@@ -2690,7 +2694,7 @@ export interface components {
             fullName: string;
             password: string;
             systemRole?: string | null;
-            username?: string | null;
+            username: string;
         };
         AdminPasswordRequest: {
             password: string;
@@ -2923,7 +2927,7 @@ export interface components {
             email: string;
             fullName?: string | null;
             password: string;
-            username?: string | null;
+            username: string;
         };
         BookmarkExampleStateDto: {
             example: components["schemas"]["SchemaBookmarkExampleDto"] | null;
@@ -3279,6 +3283,8 @@ export interface components {
             /** Format: int64 */
             id: number;
             name: string;
+            /** @enum {string} */
+            organizationKind: "PERSONAL" | "TEAM";
             organizationLogoUrl: string | null;
             organizationName: string;
             publicId: string;
@@ -3373,6 +3379,8 @@ export interface components {
             description: string | null;
             /** Format: int64 */
             id: number;
+            /** @enum {string} */
+            kind: "PERSONAL" | "TEAM";
             logoUrl: string | null;
             name: string;
             slug: string;
@@ -3977,6 +3985,8 @@ export interface components {
             /** Format: int32 */
             inputCount: number;
             name: string;
+            /** @enum {string} */
+            organizationKind: "PERSONAL" | "TEAM";
             organizationLogoUrl: string | null;
             organizationName: string;
             publicId: string;
@@ -4000,6 +4010,8 @@ export interface components {
             /** Format: int32 */
             inputCount: number;
             name: string;
+            /** @enum {string} */
+            organizationKind: "PERSONAL" | "TEAM";
             organizationLogoUrl: string | null;
             organizationName: string;
             publicId: string;

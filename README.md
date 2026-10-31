@@ -152,7 +152,8 @@ Then open <http://localhost:5173>. Without a session it shows the public feed at
 back to the page you were on. Sign in at [`/login`](http://localhost:5173/login)
 with the superadmin account configured in `.env`, or register at
 [`/login?mode=register`](http://localhost:5173/login?mode=register): a new account
-gets its own personal organization.
+owns what it uploads in its personal account, and can create organizations to work
+with other people.
 
 Inspect, follow and stop the stack with the same files:
 

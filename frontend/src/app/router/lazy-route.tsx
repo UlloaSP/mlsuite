@@ -7,6 +7,7 @@ import type { ComponentType, ReactElement } from "react";
 import { Outlet, type RouteObject } from "react-router";
 import { RequireWorkspacePermission } from "@/features/workspace/components/RequireWorkspacePermission";
 import { RequireSuperadmin } from "@/features/workspace/components/RequireSuperadmin";
+import { RequireTeamOrganization } from "@/features/workspace/components/RequireTeamOrganization";
 import { RequireReviewAccess } from "@/features/reviews/components/RequireReviewAccess";
 import type { WorkspacePermissionKey } from "@/capabilities/workspace-context/workspace-context";
 
@@ -26,6 +27,14 @@ export const superadmin = (children: RouteObject[]) =>
     <RequireSuperadmin>
       <Outlet />
     </RequireSuperadmin>,
+    children,
+  );
+
+export const teamOrganization = (children: RouteObject[]) =>
+  guard(
+    <RequireTeamOrganization>
+      <Outlet />
+    </RequireTeamOrganization>,
     children,
   );
 

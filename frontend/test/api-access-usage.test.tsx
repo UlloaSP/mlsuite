@@ -92,6 +92,7 @@ const trafficClient: AdminApiClientDto = {
   organizationId: 3,
   organizationName: "Acme",
   organizationLogoUrl: null,
+  organizationKind: "TEAM",
   keyCount: 1,
   lastUsedAt: AT,
   weekCalls: 120,
@@ -101,6 +102,7 @@ const organization: AdminApiOrganizationDto = {
   organizationId: 3,
   name: "Acme",
   logoUrl: null,
+  kind: "TEAM",
   clientCount: 1,
   monthCalls: 812,
   monthlyLimit: 10000,
@@ -290,7 +292,7 @@ describe("API traffic for the platform", () => {
   test("the overview has no month, which belongs to each organization", async () => {
     const host = await open("/admin/api-traffic", <AdminApiTrafficPage />);
 
-    expect(host.textContent).toContain("Organizations");
+    expect(host.textContent).toContain("Accounts");
     expect(host.textContent).not.toContain("This month");
   });
 });

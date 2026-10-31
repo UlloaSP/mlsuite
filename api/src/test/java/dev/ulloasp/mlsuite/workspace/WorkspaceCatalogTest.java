@@ -83,7 +83,7 @@ class WorkspaceCatalogTest extends PublicPredictionFixture {
                 .andExpect(jsonPath("$.currentMembership.id").value(nullValue()))
                 .andExpect(jsonPath("$.currentMembership.roleDefinition.systemKey").value("OWNER"))
                 .andExpect(jsonPath("$.permissions.canDeleteOrganization").value(true))
-                .andExpect(jsonPath("$.membershipCount").value(1));
+                .andExpect(jsonPath("$.membershipCount").value(2));
         mockMvc.perform(asOwner(get(ORGANIZATIONS).param("search", mark)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalItems").value(3));

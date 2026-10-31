@@ -19,7 +19,7 @@ export function AuditLog({ organizationId }: { organizationId: number }) {
       <AuditEventList
         log={log}
         isFiltered={filters.isFiltered}
-        emptyDescription="What people, API clients, public visitors and the system do in this organization appears here as it happens, and is kept for 7 days by default."
+        emptyDescription="What people, API clients, public visitors and the system do here appears as it happens, and is kept for 7 days by default."
       />
     </section>
   );

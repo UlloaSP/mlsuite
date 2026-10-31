@@ -40,7 +40,7 @@ export function ExplorePage() {
       controls={controls}
       header={{
         title: "Explore",
-        description: "Bookmarks that organizations have published for anyone to open.",
+        description: "Bookmarks published for anyone to open.",
         breadcrumbs: [{ label: "Explore" }],
       }}
       navigation={<ExploreVisitorIntro />}
@@ -54,7 +54,7 @@ export function ExplorePage() {
       sortOptions={SORTS}
       emptyIcon={<ExploreIcon size={22} />}
       emptyTitle="Nothing has been published yet"
-      emptyDescription="Bookmarks appear here once an organization publishes one."
+      emptyDescription="Bookmarks appear here once someone publishes one."
       filteredEmptyTitle="No matching bookmarks"
       filteredEmptyDescription="Try another search term."
       renderItem={(bookmark) => <PublicBookmarkCard key={bookmark.publicId} bookmark={bookmark} />}

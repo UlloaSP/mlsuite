@@ -45,6 +45,8 @@ type RouteStatusPageProps = {
   homePath?: string;
   homeLabel?: string;
   onReload?: () => void;
+  /** Offered in place of going home, for a failure that asking again can cure. */
+  onRetry?: () => void;
 };
 
 const reloadApplication = () => window.location.reload();
@@ -54,6 +56,7 @@ export function RouteStatusPage({
   homePath = "/workspace",
   homeLabel = "Go to workspace",
   onReload = reloadApplication,
+  onRetry,
 }: RouteStatusPageProps) {
   const navigate = useNavigate();
   const [label, light, heavy, description] = errorContent[status];
@@ -82,6 +85,11 @@ export function RouteStatusPage({
               <button type="button" className="route-status-action" data-primary onClick={onReload}>
                 <RotateCw className="size-[17px]" />
                 Reload application
+              </button>
+            ) : onRetry ? (
+              <button type="button" className="route-status-action" data-primary onClick={onRetry}>
+                <RotateCw className="size-[17px]" />
+                Try again
               </button>
             ) : (
               <button

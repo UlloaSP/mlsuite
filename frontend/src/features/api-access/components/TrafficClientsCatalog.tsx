@@ -55,7 +55,7 @@ export function TrafficClientsCatalog() {
         onFilterChange={controls.setFilter}
         onQueryChange={controls.setQuery}
         onSortChange={controls.setSort}
-        placeholder="Search by client or organization"
+        placeholder="Search by client or account"
         query={controls.query}
         resultCount={query.data?.totalItems ?? 0}
         sort={controls.sort}
@@ -77,7 +77,7 @@ export function TrafficClientsCatalog() {
           title: filtered ? "No matching clients" : "No API clients on this instance",
           description: filtered
             ? "Try another filter or search term."
-            : "Clients appear here when an organization creates one.",
+            : "Clients appear here when an account creates one.",
         }}
       >
         {items.map((client) => (

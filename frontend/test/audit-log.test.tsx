@@ -45,11 +45,18 @@ const rows = [
   entry(3, "SOMETHING_NEW", { detail: "Written before details had names" }),
   entry(4, "ROLE_UPDATE", { role: "Reader", name: { from: "Viewer", to: "Reader" } }),
   entry(5, "AUDIT_RETENTION_PRUNE", { removed: 12 }, { kind: "SYSTEM", id: null, name: "System" }),
-  entry(6, "PREDICTION_RUN", { status: "SUCCESS" }, { kind: "VISITOR", id: null, name: "Public visitor" }),
+  entry(
+    6,
+    "PREDICTION_RUN",
+    { status: "SUCCESS" },
+    { kind: "VISITOR", id: null, name: "Public visitor" },
+  ),
   entry(7, "PREDICTION_RUN", { runId: 8 }, { kind: "API_CLIENT", id: null, name: "Lab2Pressure" }),
   entry(8, "AUTH_LOGIN_FAILED", null, { kind: "VISITOR", id: null, name: "who@example.test" }),
   entry(9, "ROLE_CREATE", null),
-  ...Array.from({ length: 21 }, (_, index) => entry(index + 10, "ROLE_UPDATE", { role: `R${index}` })),
+  ...Array.from({ length: 21 }, (_, index) =>
+    entry(index + 10, "ROLE_UPDATE", { role: `R${index}` }),
+  ),
 ];
 let fail = false;
 let empty = false;

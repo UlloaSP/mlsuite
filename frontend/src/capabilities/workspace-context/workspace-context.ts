@@ -35,6 +35,8 @@ export const workspaceContextQueryOptions = () =>
       return context;
     },
     staleTime: 60_000,
+    // ProtectedRoute shows a failure, so one failure gets one visible owner.
+    meta: { errorHandledLocally: true },
   });
 
 export const useWorkspaceContext = (enabled = true) =>
@@ -46,12 +48,13 @@ export const useCurrentOrganizationId = (): number | undefined =>
 export const useCan = (permission: WorkspacePermissionKey): boolean =>
   Boolean(useWorkspaceContext().data?.permissions[permission]);
 
-export function useWorkspaceOrganizationCatalog(search: string) {
+/** Where the member may switch to, their personal account first; "team" leaves only organizations. */
+export function useWorkspaceOrganizationCatalog(search: string, filter: "all" | "team" = "all") {
   return useInfiniteCatalog({
-    queryKey: [...WORKSPACE_CONTEXT_QUERY_KEY, "organizations", "infinite", search],
+    queryKey: [...WORKSPACE_CONTEXT_QUERY_KEY, "organizations", "infinite", search, filter],
     queryFn: (page, signal) =>
       appFetch<CatalogPage<OrganizationDto>>(
-        `/api/workspace/context/organizations/catalog?${new URLSearchParams({ page: String(page), size: "24", search })}`,
+        `/api/workspace/context/organizations/catalog?${new URLSearchParams({ page: String(page), size: "24", search, filter })}`,
         { signal },
       ),
   });

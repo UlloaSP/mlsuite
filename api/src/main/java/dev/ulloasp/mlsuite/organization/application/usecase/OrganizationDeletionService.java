@@ -33,6 +33,7 @@ public class OrganizationDeletionService {
     public void delete(Long organizationId) {
         var organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
+        organization.requireTeam("A personal account lasts as long as its owner's account.");
         assertEmpty(organizationId);
         membershipRepository.deleteAll(membershipRepository.findByOrganizationId(organizationId));
         roleRepository.deleteAll(roleRepository.findByOrganizationId(organizationId));

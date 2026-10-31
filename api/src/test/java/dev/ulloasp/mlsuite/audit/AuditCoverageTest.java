@@ -30,7 +30,6 @@ import com.tngtech.archunit.core.importer.ImportOption;
 
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceBootstrapService;
 
 /**
  * Keeps the audit log complete as the API grows: walking the compiled call graph from each
@@ -57,9 +56,6 @@ class AuditCoverageTest {
             "InferenceCatalogController.selection",
             "CatalogSelectionController.page",
             "CatalogSelectionController.ids");
-
-    /** Records for its own reason, on whichever call finds a member with no workspace. */
-    private static final Set<String> NOT_FOLLOWED = Set.of(WorkspaceBootstrapService.class.getName());
 
     private static final JavaClasses CLASSES = new ClassFileImporter()
             .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
@@ -124,8 +120,7 @@ class AuditCoverageTest {
         while (!pending.isEmpty()) {
             for (JavaMethodCall call : pending.poll().getMethodCallsFromSelf()) {
                 if (call.getTargetOwner().isEquivalentTo(AuditLogService.class)) return true;
-                if (!call.getTargetOwner().getPackageName().startsWith("dev.ulloasp.mlsuite")
-                        || NOT_FOLLOWED.contains(call.getTargetOwner().getName())) continue;
+                if (!call.getTargetOwner().getPackageName().startsWith("dev.ulloasp.mlsuite")) continue;
                 implementations(call).filter(seen::add).forEach(pending::add);
             }
         }

@@ -124,12 +124,13 @@ class BookmarkPublishingHttpTest {
         when(publicBookmarks.getPublishedBookmark(PUBLIC_ID)).thenReturn(new PublicBookmarkDto(
                 PUBLIC_ID, "production", "Estimates risk.", "Published in Lancet 2026, doi:10.1000/xyz.", 1, 1, 0,
                 "Org", "/api/public/organizations/3/logo?v=1",
+                dev.ulloasp.mlsuite.organization.domain.model.OrganizationKind.TEAM,
                 Map.of("fields", List.of(Map.of("kind", "number", "label", "Age"))),
                 OffsetDateTime.parse("2026-10-01T10:00:00Z")));
 
         mockMvc.perform(get("/api/public/bookmarks/{publicId}", PUBLIC_ID))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(11))
+                .andExpect(jsonPath("$.length()").value(12))
                 .andExpect(jsonPath("$.publicId").value(PUBLIC_ID))
                 .andExpect(jsonPath("$.name").value("production"))
                 .andExpect(jsonPath("$.description").value("Estimates risk."))

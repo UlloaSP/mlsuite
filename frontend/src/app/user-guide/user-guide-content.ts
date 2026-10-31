@@ -24,9 +24,9 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
       "Browse the bookmarks every organization has published. Anyone can open these pages, signed in or not.",
   },
   "workspace-switcher": {
-    title: "Active organization",
+    title: "Where you work",
     description:
-      "Everything you see belongs to the active organization. Open this menu for its overview, members, invitations, roles, audit log, and settings, or to switch organization.",
+      "Everything you see belongs to the account you work in: your own, or an organization you belong to. Open this menu for its pages, to switch, or to create an organization.",
   },
   "nav:Organizations": {
     title: "Organizations",
@@ -60,7 +60,7 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
   "nav:Plugins": {
     title: "Plugins",
     description:
-      "Upload plugins that add custom fields and reports to this organization's forms, and delete the ones you no longer use.",
+      "Upload plugins that add custom fields and reports to your forms, and delete the ones you no longer use.",
   },
   "nav:Review": {
     title: "Review",
@@ -79,7 +79,7 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
   "nav:API traffic": {
     title: "API traffic",
     description:
-      "See how much every organization's API clients call and fail, suspend a client, and set each organization's monthly limit.",
+      "See how much every account's API clients call and fail, suspend a client, and set each account's monthly limit.",
   },
   "nav:Infra": {
     title: "Infrastructure",

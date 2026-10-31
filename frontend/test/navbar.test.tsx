@@ -35,7 +35,8 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   }),
   useWorkspaceContext: () => ({
     data: {
-      currentOrganization: { id: 7, name: "Acme", slug: "acme" },
+      currentOrganization: { id: 7, name: "Acme", kind: "TEAM", slug: "acme" },
+      user: { avatarUrl: null },
       organizations: [{ id: 7, name: "Acme", slug: "acme" }],
       permissions: {
         canViewModels: true,

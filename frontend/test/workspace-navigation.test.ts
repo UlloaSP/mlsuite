@@ -2,10 +2,11 @@ import { describe, expect, it } from "vite-plus/test";
 import { getWorkspaceLinks, isWorkspacePath } from "@/app/components/workspace-navigation";
 import type { WorkspacePermissionsDto } from "@/shared/api/openapi.gen";
 
+const TEAM = { id: 7, kind: "TEAM" } as const;
 const permissions = (granted: Partial<WorkspacePermissionsDto>) =>
   ({ canViewWorkspace: true, ...granted }) as WorkspacePermissionsDto;
 const labels = (granted: Partial<WorkspacePermissionsDto>) =>
-  getWorkspaceLinks(permissions(granted), 7).map(({ label }) => label);
+  getWorkspaceLinks(permissions(granted), TEAM).map(({ label }) => label);
 
 describe("workspace navigation in the organization switcher", () => {
   it("lists every page of the active organization for a full-access member", () => {
@@ -17,7 +18,7 @@ describe("workspace navigation in the organization switcher", () => {
           canViewAuditLog: true,
           canViewOrganization: true,
         }),
-        7,
+        TEAM,
       ).map(({ label, to }) => [label, to]),
     ).toEqual([
       ["Overview", "/workspace"],
@@ -51,7 +52,7 @@ describe("workspace navigation in the organization switcher", () => {
     expect(
       getWorkspaceLinks(
         { canViewWorkspace: false, canViewMembers: true } as WorkspacePermissionsDto,
-        7,
+        TEAM,
       ),
     ).toEqual([]);
   });

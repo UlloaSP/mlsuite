@@ -17,6 +17,7 @@ export function OrganizationMark({
   fallbackClassName,
   iconSize,
   logoUrl,
+  personalName,
 }: {
   /** Size and radius of the box, e.g. "size-8 rounded-lg". */
   className: string;
@@ -24,6 +25,8 @@ export function OrganizationMark({
   fallbackClassName?: string;
   iconSize: number;
   logoUrl: string | null | undefined;
+  /** The person whose personal account this is: their initials stand in for the icon. */
+  personalName?: string;
 }) {
   if (logoUrl) {
     return (
@@ -40,7 +43,11 @@ export function OrganizationMark({
       aria-hidden="true"
       className={cx("grid shrink-0 place-items-center", className, fallbackClassName)}
     >
-      <Building2 size={iconSize} />
+      {personalName ? (
+        <span className="font-semibold">{personalName.slice(0, 2).toUpperCase()}</span>
+      ) : (
+        <Building2 size={iconSize} />
+      )}
     </span>
   );
 }

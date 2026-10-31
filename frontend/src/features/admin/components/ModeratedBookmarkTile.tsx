@@ -12,7 +12,7 @@ import { AppBadge } from "@/shared/ui/AppBadge";
 import { appButtonClass } from "@/shared/ui/button-styles";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
-import { OrganizationMark } from "@/shared/ui/OrganizationMark";
+import { PublisherMark } from "@/shared/ui/PublisherMark";
 import { UnpublishBookmarkDialog } from "./UnpublishBookmarkDialog";
 import type { ModeratedBookmarkDto } from "@/shared/api/openapi.gen";
 
@@ -59,10 +59,12 @@ export function ModeratedBookmarkTile({
         metadata={
           <>
             <span className="inline-flex items-center gap-1">
-              <OrganizationMark
+              <PublisherMark
                 className="size-4 rounded-sm"
                 iconSize={14}
+                kind={item.organizationKind}
                 logoUrl={item.organizationLogoUrl}
+                name={item.organizationName}
               />
               {item.organizationName}
             </span>

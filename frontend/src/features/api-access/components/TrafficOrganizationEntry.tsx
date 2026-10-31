@@ -12,10 +12,10 @@ import { failureMessage, formatCount } from "@/features/api-access/lib/api-forma
 import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
-import { OrganizationMark } from "@/shared/ui/OrganizationMark";
+import { PublisherMark } from "@/shared/ui/PublisherMark";
 import type { AdminApiOrganizationDto } from "@/shared/api/openapi.gen";
 
-/** An organization with API clients: its month against its limit, which the platform sets. */
+/** An account with API clients: its month against its limit, which the platform sets. */
 export function TrafficOrganizationEntry({
   organization,
 }: {
@@ -39,17 +39,22 @@ export function TrafficOrganizationEntry({
       <CatalogEntry
         title={organization.name}
         titleAccessory={
-          organization.customLimit ? (
-            <AppBadge tone="info">Own limit</AppBadge>
-          ) : (
-            <AppBadge>Default limit</AppBadge>
-          )
+          <>
+            {organization.kind === "PERSONAL" ? <AppBadge>Personal account</AppBadge> : null}
+            {organization.customLimit ? (
+              <AppBadge tone="info">Own limit</AppBadge>
+            ) : (
+              <AppBadge>Default limit</AppBadge>
+            )}
+          </>
         }
         icon={
-          <OrganizationMark
+          <PublisherMark
             className="mt-0.5 size-5 rounded-sm"
             iconSize={16}
+            kind={organization.kind}
             logoUrl={organization.logoUrl}
+            name={organization.name}
           />
         }
         metadata={

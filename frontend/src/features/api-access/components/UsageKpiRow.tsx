@@ -15,8 +15,8 @@ const PERIOD_LABEL: Record<string, string> = {
 };
 
 /**
- * The headline numbers of a period. The platform sees how many organizations called; an
- * organization sees its calendar month against its limit instead.
+ * The headline numbers of a period. The platform sees how many accounts called; an account sees
+ * its calendar month against its limit instead.
  */
 export function UsageKpiRow({ usage }: { usage: ApiUsageDto }) {
   const period = PERIOD_LABEL[usage.period] ?? usage.period;
@@ -42,7 +42,7 @@ export function UsageKpiRow({ usage }: { usage: ApiUsageDto }) {
         />
       ) : (
         <UsageTile
-          label="Organizations"
+          label="Accounts"
           value={formatCount(usage.activeOrganizations)}
           sub={`${formatCount(usage.activeClients)} ${usage.activeClients === 1 ? "client" : "clients"} called · ${formatCount(usage.runtimeBusy)} turned away busy`}
         />

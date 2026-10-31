@@ -10,8 +10,8 @@ import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-
 import { cx } from "@/shared/ui/cx";
 import { AppTooltip } from "@/shared/ui/AppTooltip";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
-import { OrganizationMark } from "@/shared/ui/OrganizationMark";
 import { useMediaQuery } from "@/shared/ui/use-media-query";
+import { NamespaceMark } from "@/app/components/NamespaceMark";
 import { OrganizationMenuContent } from "@/app/components/OrganizationMenuContent";
 import { sidebarMenuContent } from "@/app/components/sidebar-menu-styles";
 import { isWorkspacePath } from "@/app/components/workspace-navigation";
@@ -48,11 +48,12 @@ export function NavbarOrganizationMenu({
             FOCUS_RING,
           )}
         >
-          <OrganizationMark
+          <NamespaceMark
+            avatarUrl={context.user.avatarUrl}
             className="size-8 rounded-xl"
             fallbackClassName="bg-fg text-fg-inverse"
             iconSize={15}
-            logoUrl={organization.logoUrl}
+            organization={organization}
           />
           <NavbarLabel compact={compact} className="max-w-44">
             <span className="block truncate text-sm font-semibold text-fg">

@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Check } from "lucide-react";
+import { Building2, Check, Plus } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { useCallback, useRef, useState } from "react";
 import { defaultRangeExtractor, useVirtualizer } from "@tanstack/react-virtual";
@@ -15,7 +15,7 @@ import type { WorkspaceCurrentContextDto } from "@/shared/api/openapi.gen";
 import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
 import { AppSearchField } from "@/shared/ui/AppSearchField";
 import { cx } from "@/shared/ui/cx";
-import { OrganizationMark } from "@/shared/ui/OrganizationMark";
+import { NamespaceMark } from "./NamespaceMark";
 import { SidebarMenuLink } from "./SidebarMenuLink";
 import {
   SIDEBAR_MENU_ITEM,
@@ -25,7 +25,10 @@ import {
 import { isChildActive } from "./sidebar-navigation-support";
 import { getWorkspaceLinks } from "./workspace-navigation";
 
-/** Active organization pages and the organization switcher, shared by sidebar and bar. */
+/**
+ * Active organization pages and the switcher, shared by sidebar and bar: the member's personal
+ * account comes first, as the server orders it, then their organizations, then a new one.
+ */
 export function OrganizationMenuContent({
   align,
   className,
@@ -75,7 +78,7 @@ export function OrganizationMenuContent({
   const navigate = useNavigate();
   const location = useLocation();
   const selectOrganization = useSelectOrganization();
-  const workspaceLinks = getWorkspaceLinks(context.permissions, context.currentOrganization.id);
+  const workspaceLinks = getWorkspaceLinks(context.permissions, context.currentOrganization);
   const currentPath = `${location.pathname}${location.search}`;
 
   return (
@@ -102,17 +105,15 @@ export function OrganizationMenuContent({
               ))}
             </DropdownMenu.Group>
             <DropdownMenu.Separator className={SIDEBAR_MENU_SEPARATOR} />
-            <DropdownMenu.Label className={SIDEBAR_MENU_LABEL}>
-              Switch organization
-            </DropdownMenu.Label>
+            <DropdownMenu.Label className={SIDEBAR_MENU_LABEL}>Switch to</DropdownMenu.Label>
           </>
         ) : null}
         {searchable ? (
           // Typing must not reach the menu's own type-ahead.
           <div className="px-1 pb-2" onKeyDown={(event) => event.stopPropagation()}>
             <AppSearchField
-              label="Search organization"
-              placeholder="Search organization"
+              label="Search accounts"
+              placeholder="Search accounts"
               value={search}
               onChange={setSearch}
             />
@@ -165,11 +166,12 @@ export function OrganizationMenuContent({
                   }}
                 >
                   <span className="flex min-w-0 items-center gap-2.5">
-                    <OrganizationMark
+                    <NamespaceMark
+                      avatarUrl={context.user.avatarUrl}
                       className="size-8 rounded-lg"
                       fallbackClassName="bg-surface-muted text-fg-secondary"
                       iconSize={14}
-                      logoUrl={organization.logoUrl}
+                      organization={organization}
                     />
                     <span className="min-w-0">
                       <span className="block truncate font-semibold">{organization.name}</span>
@@ -195,15 +197,30 @@ export function OrganizationMenuContent({
                   : organizations.refetch());
               }}
             >
-              Could not load organizations. Retry
+              Could not load accounts. Retry
             </DropdownMenu.Item>
           ) : organizations.isFetching ? (
             <p role="status" className="px-3 py-2 text-xs text-fg-secondary">
-              Loading organizations…
+              Loading accounts…
             </p>
           ) : items.length === 0 ? (
-            <p className="px-3 py-2 text-xs text-fg-secondary">No organizations match.</p>
+            <p className="px-3 py-2 text-xs text-fg-secondary">No accounts match.</p>
           ) : null}
+        </DropdownMenu.Group>
+        <DropdownMenu.Separator className={SIDEBAR_MENU_SEPARATOR} />
+        <DropdownMenu.Group>
+          <SidebarMenuLink
+            active={location.pathname === "/workspace/organizations"}
+            icon={Building2}
+            label="Organizations"
+            to="/workspace/organizations"
+          />
+          <SidebarMenuLink
+            active={location.pathname === "/workspace/organizations/create"}
+            icon={Plus}
+            label="New organization"
+            to="/workspace/organizations/create"
+          />
         </DropdownMenu.Group>
       </DropdownMenu.Content>
     </DropdownMenu.Portal>
