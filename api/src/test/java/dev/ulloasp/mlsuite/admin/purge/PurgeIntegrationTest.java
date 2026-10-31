@@ -200,6 +200,27 @@ class PurgeIntegrationTest extends PublicPredictionFixture {
         assertFalse(ledger.renew(asked.id(), "dead-worker", 120));
     }
 
+    /** A bulk job holds the thread fixed-delay scheduled tasks share, and a purge must neither wait for it nor hold it. */
+    @Test
+    void purgesRunOnAThreadOfTheirOwn() {
+        PurgeLedger idle = org.mockito.Mockito.mock(PurgeLedger.class);
+        var thread = new java.util.concurrent.CompletableFuture<String>();
+        org.mockito.Mockito.when(idle.claim(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyInt()))
+                .thenAnswer(call -> {
+                    thread.complete(Thread.currentThread().getName());
+                    return Optional.empty();
+                });
+        PurgeWorker running = new PurgeWorker(idle, steps, null, org.mockito.Mockito.mock(
+                org.springframework.transaction.PlatformTransactionManager.class), 10, 120, 5);
+
+        running.start();
+        try {
+            assertEquals("purge-worker", thread.orTimeout(5, java.util.concurrent.TimeUnit.SECONDS).join());
+        } finally {
+            running.stop();
+        }
+    }
+
     @Test
     void concurrentWorkersNeverTakeTheSameJob() throws Exception {
         purge(PurgeScope.SCHEMA, schema.getId(), "Cardio risk");

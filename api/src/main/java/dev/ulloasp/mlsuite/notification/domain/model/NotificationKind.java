@@ -32,7 +32,13 @@ public enum NotificationKind {
     /** scope, targetLabel. */
     PURGE_COMPLETED(NotificationTargetType.PURGE_JOB),
     /** scope, targetLabel, reason. */
-    PURGE_FAILED(NotificationTargetType.PURGE_JOB);
+    PURGE_FAILED(NotificationTargetType.PURGE_JOB),
+    /** label, unit, severity, value, threshold: about the platform, sent to every enabled superadmin. */
+    SYSTEM_ALERT_RAISED(NotificationTargetType.SYSTEM_ALERT),
+    /** As SYSTEM_ALERT_RAISED, at its critical threshold. */
+    SYSTEM_ALERT_ESCALATED(NotificationTargetType.SYSTEM_ALERT),
+    /** As SYSTEM_ALERT_RAISED, at its clear threshold. */
+    SYSTEM_ALERT_RESOLVED(NotificationTargetType.SYSTEM_ALERT);
 
     private final NotificationTargetType targetType;
 

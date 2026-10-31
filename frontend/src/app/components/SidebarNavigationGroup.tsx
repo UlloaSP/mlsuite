@@ -9,6 +9,7 @@ import { RESTORE_SCROLL_STATE } from "@/app/layouts/use-scroll-memory";
 import { Link, useNavigate } from "react-router";
 import { cx } from "@/shared/ui/cx";
 import { AppKbd } from "@/shared/ui/AppKbd";
+import { NavigationIcon } from "./NavigationIcon";
 import { isChildActive, type NavigationItem } from "./sidebar-navigation-support";
 import { SidebarGroupLabel } from "./app-sidebar/SidebarGroupLabel";
 import { SidebarLabel } from "./app-sidebar/SidebarLabel";
@@ -51,7 +52,6 @@ export function SidebarNavigationGroup({
             const active = isParentActive(item);
             const hasChildren = Boolean(item.children?.length);
             const open = openItem === undefined ? active : openItem === item.root;
-            const Icon = item.icon;
 
             return (
               <li key={item.root} className="relative min-w-0">
@@ -71,7 +71,7 @@ export function SidebarNavigationGroup({
                     title={item.label}
                     type="button"
                   >
-                    <Icon size={18} className="shrink-0" />
+                    <NavigationIcon item={item} size={18} />
                     <SidebarLabel className="truncate">{item.label}</SidebarLabel>
                     {!collapsed ? (
                       <AppKbd
@@ -101,7 +101,7 @@ export function SidebarNavigationGroup({
                       state={RESTORE_SCROLL_STATE}
                       viewTransition
                     >
-                      <Icon size={18} className="shrink-0" />
+                      <NavigationIcon item={item} size={18} />
                       <SidebarLabel className="truncate">{item.label}</SidebarLabel>
                       {!collapsed ? (
                         <AppKbd

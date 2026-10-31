@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useLocation } from "react-router";
 import { useUser } from "@/capabilities/workspace-context/session";
+import { useOpenSystemAlertCount } from "@/features/infrastructure/api/infrastructure.queries";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { EXPLORE_NAVIGATION_ITEM } from "./explore-navigation";
@@ -38,6 +39,7 @@ export function useNavigationItems() {
 
   const canViewModels = Boolean(permissions?.canViewModels);
   const superadmin = user?.systemRole === "SUPERADMIN";
+  const { data: openAlerts = 0 } = useOpenSystemAlertCount(superadmin);
   const entries: Array<NavigationItem & { visible: boolean }> = [
     {
       visible: canViewModels,
@@ -132,6 +134,13 @@ export function useNavigationItems() {
           icon: SECTION_ICONS.infrastructure,
           label: "Infra",
           children: INFRA_CHILDREN,
+          attention:
+            openAlerts > 0
+              ? {
+                  count: openAlerts,
+                  label: `${openAlerts} open ${openAlerts === 1 ? "alert" : "alerts"}`,
+                }
+              : undefined,
         },
       ]
     : [];

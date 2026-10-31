@@ -15,13 +15,13 @@ export function OverviewSignalsPanel({
   streamConnected: boolean;
   onNavigateTab: NavigateTab;
 }) {
-  const alerts = buildDashboardAlerts(overview, streamConnected, null);
+  const alerts = buildDashboardAlerts(overview, streamConnected);
   return (
     <div className="overflow-hidden rounded-card border border-line bg-surface">
       <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
         <div>
-          <p className="text-sm font-semibold text-fg">Operational signals</p>
-          <p className="mt-0.5 text-xs text-fg-secondary">{alerts.length} active in last 60m</p>
+          <p className="text-sm font-semibold text-fg">Live service state</p>
+          <p className="mt-0.5 text-xs text-fg-secondary">As this page sees them now</p>
         </div>
         <button
           type="button"

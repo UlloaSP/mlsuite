@@ -23,6 +23,7 @@ public enum AuditTargetType {
     SCHEMA_DRAFT,
     SCHEMA_VERSION,
     STORAGE_OBJECT,
+    SYSTEM_ALERT,
     TERMINAL_SESSION,
     USER
 }

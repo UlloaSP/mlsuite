@@ -5,6 +5,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.LongFunction;
 import java.util.function.Supplier;
 
@@ -31,6 +32,11 @@ public class RuntimeSlots {
     private final int maxPerCaller;
     private final long maxWaitNanos;
     private final LongFunction<RuntimeException> busy;
+    private final LongAdder rejected = new LongAdder();
+
+    /** Runs waiting for a slot now, and runs turned away since this instance started. */
+    public record Load(int waiting, long rejected) {
+    }
 
     protected RuntimeSlots(int maxConcurrent, RuntimeQueue queue, LongFunction<RuntimeException> busy) {
         if (maxConcurrent < 0 || queue.maxWaiting() < 0 || queue.maxPerCaller() < 1 || queue.maxWaitMs() < 0) {
@@ -48,7 +54,7 @@ public class RuntimeSlots {
     public Admission admit(Object caller) {
         if (places.incrementAndGet() > maxPlaces) {
             places.decrementAndGet();
-            throw busy.apply(RETRY_AFTER_SECONDS);
+            throw turnedAway();
         }
         boolean[] taken = { false };
         callers.compute(caller, (key, held) -> {
@@ -59,7 +65,7 @@ public class RuntimeSlots {
         });
         if (!taken[0]) {
             places.decrementAndGet();
-            throw busy.apply(RETRY_AFTER_SECONDS);
+            throw turnedAway();
         }
         return new Admission(caller, System.nanoTime() + maxWaitNanos);
     }
@@ -69,6 +75,16 @@ public class RuntimeSlots {
         try (Admission admission = admit(caller)) {
             return admission.run(work);
         }
+    }
+
+    /** What the share is carrying, read without touching the admission path. */
+    public Load load() {
+        return new Load(waiting(), rejected.sum());
+    }
+
+    private RuntimeException turnedAway() {
+        rejected.increment();
+        return busy.apply(RETRY_AFTER_SECONDS);
     }
 
     /** Runs holding a place, running or waiting. */
@@ -97,11 +113,11 @@ public class RuntimeSlots {
         public <T> T run(Supplier<T> work) {
             try {
                 if (!slots.tryAcquire(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS)) {
-                    throw busy.apply(RETRY_AFTER_SECONDS);
+                    throw turnedAway();
                 }
             } catch (InterruptedException interrupted) {
                 Thread.currentThread().interrupt();
-                throw busy.apply(RETRY_AFTER_SECONDS);
+                throw turnedAway();
             }
             try {
                 return work.get();

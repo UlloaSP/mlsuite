@@ -33,6 +33,25 @@ class StorageDeletionProcessorTest {
         verify(queue).complete(org.mockito.ArgumentMatchers.eq(7L), anyString());
     }
 
+    /** A bulk job holds the thread fixed-delay scheduled tasks share, and deletions must go on meanwhile. */
+    @Test
+    void deletionsRunOnAThreadOfTheirOwn() {
+        StorageDeletionProcessor running = new StorageDeletionProcessor(queue, storage, auditLog, 5, 20, 300, 5);
+        var thread = new java.util.concurrent.CompletableFuture<String>();
+        when(queue.claim(org.mockito.ArgumentMatchers.eq(20), org.mockito.ArgumentMatchers.eq(300L), anyString()))
+                .thenAnswer(call -> {
+                    thread.complete(Thread.currentThread().getName());
+                    return List.of();
+                });
+
+        running.start();
+        try {
+            org.junit.jupiter.api.Assertions.assertEquals("storage-deletion", thread.orTimeout(5, java.util.concurrent.TimeUnit.SECONDS).join());
+        } finally {
+            running.stop();
+        }
+    }
+
     @Test
     void aTaskWithoutAVersionRemovesEveryVersionOfItsKey() {
         when(queue.claim(org.mockito.ArgumentMatchers.eq(20), org.mockito.ArgumentMatchers.eq(300L), anyString()))

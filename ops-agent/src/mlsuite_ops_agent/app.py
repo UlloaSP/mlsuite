@@ -73,6 +73,13 @@ def create_app() -> FastAPI:
     async def overview() -> dict[str, object]:
         return await state.snapshot()
 
+    @app.get("/internal/load", dependencies=[Depends(verify_request)])
+    async def load() -> JSONResponse:
+        reading = state.load()
+        if reading is None:
+            return JSONResponse(status_code=503, content={"detail": "No service is reporting."})
+        return JSONResponse(content=reading)
+
     @app.post("/internal/services/{service_name}/actions", dependencies=[Depends(verify_request)])
     async def service_action(service_name: str, request: ServiceActionRequest) -> dict[str, str]:
         await state.compose.action(service_name, request.action)

@@ -92,6 +92,14 @@ public class WorkspaceAccessService {
                 .orElseThrow(() -> new OrganizationAccessDeniedException(organizationId));
     }
 
+    /** Nobody acts in an organization being purged, superadmins included. */
+    public void requireNotPurging(Long organizationId) {
+        organizationRepository.findById(organizationId).filter(organization -> organization.getPurgingAt() != null)
+                .ifPresent(organization -> {
+                    throw new OrganizationPurgingException(organizationId, organization.getName());
+                });
+    }
+
     public boolean isSuperadmin(Long userId) {
         return isSuperadmin(userLookupService.requireById(userId));
     }

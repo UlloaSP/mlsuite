@@ -64,6 +64,8 @@ class PredictionRunCatalogTest {
         lenient().when(users.requireById(7L)).thenReturn(new User());
         lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization);
         when(runs.findByIdAndOrganizationId(12L, 41L)).thenReturn(java.util.Optional.of(run));
+        when(deletion.delete(7L, java.util.List.of(12L)))
+                .thenReturn(new dev.ulloasp.mlsuite.schema.application.service.PredictionRunDeletion.Deleted(0, 0));
 
         service.deleteRun(7L, 12L);
 

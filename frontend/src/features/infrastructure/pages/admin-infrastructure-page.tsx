@@ -120,7 +120,10 @@ export function AdminInfrastructurePage() {
       {actionDialog.dialog}
       {/* Each view renders its own page header; the loading and empty states share this one. */}
       <AppSurface className="app-scroll flex flex-1 flex-col gap-6 overflow-auto">
-        {overview && !showLoading ? (
+        {activeTab === "alerts" ? (
+          // Alerts come from the API, so they stay readable while the ops agent is away.
+          <AlertsView overview={overview} streamConnected={streamConnected} />
+        ) : overview && !showLoading ? (
           <>
             {activeTab === "overview" && (
               <OverviewView
@@ -160,13 +163,6 @@ export function AdminInfrastructurePage() {
                 selectedService={selectedService}
                 terminalEnabled={Boolean(selectedStatus?.terminalEnabled)}
                 onSelectService={handleSelectService}
-              />
-            )}
-            {activeTab === "alerts" && (
-              <AlertsView
-                overview={overview}
-                streamConnected={streamConnected}
-                selectedService={selectedService}
               />
             )}
           </>

@@ -54,6 +54,10 @@ vi.mock("@/features/workspace/api/workspace.mutations", () => ({
   useSelectOrganization: () => ({ mutateAsync: vi.fn() }),
 }));
 vi.mock("@/app/components/AppGlobalSearch", () => ({ AppGlobalSearch: () => null }));
+const openAlerts = vi.hoisted(() => ({ count: 0 }));
+vi.mock("@/features/infrastructure/api/infrastructure.queries", () => ({
+  useOpenSystemAlertCount: (enabled: boolean) => ({ data: enabled ? openAlerts.count : undefined }),
+}));
 
 function LocationProbe() {
   return <output data-testid="location">{useLocation().pathname}</output>;
@@ -83,6 +87,22 @@ afterEach(() => {
 });
 
 describe("navigation bar", () => {
+  test("marks Infra with the open alerts, in words as well as a number", async () => {
+    openAlerts.count = 2;
+    const container = await render(
+      <SidebarProvider open onOpenChange={() => undefined}>
+        <Navbar position="top" />
+      </SidebarProvider>,
+    );
+    openAlerts.count = 0;
+
+    const infra = container.querySelector('[data-user-guide-item="nav:Infra"]')!;
+    expect(infra.textContent).toContain("2 open alerts");
+    expect(
+      container.querySelector('[data-user-guide-item="nav:Models"]')?.textContent,
+    ).not.toContain("open");
+  });
+
   test("lists the same entries as the sidebar, with menus for sections that have children", async () => {
     const container = await render(
       <SidebarProvider open onOpenChange={() => undefined}>

@@ -20,6 +20,7 @@ import static dev.ulloasp.mlsuite.audit.domain.model.AuditTargetType.SCHEMA_BOOK
 import static dev.ulloasp.mlsuite.audit.domain.model.AuditTargetType.SCHEMA_DRAFT;
 import static dev.ulloasp.mlsuite.audit.domain.model.AuditTargetType.SCHEMA_VERSION;
 import static dev.ulloasp.mlsuite.audit.domain.model.AuditTargetType.STORAGE_OBJECT;
+import static dev.ulloasp.mlsuite.audit.domain.model.AuditTargetType.SYSTEM_ALERT;
 import static dev.ulloasp.mlsuite.audit.domain.model.AuditTargetType.TERMINAL_SESSION;
 import static dev.ulloasp.mlsuite.audit.domain.model.AuditTargetType.USER;
 
@@ -146,7 +147,11 @@ public enum AuditAction {
     STORAGE_DELETION_RETENTION_PRUNE(STORAGE_OBJECT),
     API_REQUEST_RETENTION_PRUNE(API_REQUEST_LOG),
     AUDIT_RETENTION_PRUNE(AUDIT_LOG),
-    NOTIFICATION_RETENTION_PRUNE(NOTIFICATION_LOG);
+    NOTIFICATION_RETENTION_PRUNE(NOTIFICATION_LOG),
+    SYSTEM_ALERT_RAISED(SYSTEM_ALERT),
+    SYSTEM_ALERT_ESCALATED(SYSTEM_ALERT),
+    SYSTEM_ALERT_RESOLVED(SYSTEM_ALERT),
+    SYSTEM_ALERT_RETENTION_PRUNE(SYSTEM_ALERT);
 
     private final AuditTargetType targetType;
 
