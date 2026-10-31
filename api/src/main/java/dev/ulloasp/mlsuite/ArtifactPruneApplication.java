@@ -10,11 +10,15 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-import dev.ulloasp.mlsuite.storage.ArtifactOrphanPruneCommand;
+import dev.ulloasp.mlsuite.storage.ArtifactJobCommand;
 import dev.ulloasp.mlsuite.storage.ArtifactOrphanReconciliationService;
+import dev.ulloasp.mlsuite.storage.ArtifactVerificationService;
 import dev.ulloasp.mlsuite.storage.ObjectStorageConfig;
 
-/** The one-shot {@code artifact-prune} job: removes artifact objects no model refers to. */
+/**
+ * The one-shot {@code artifact-prune} job: removes artifact objects no model refers to or, with
+ * {@code ARTIFACT_JOB=verify}, checks every model's artifact against its persisted hash.
+ */
 @Configuration(proxyBeanMethods = false)
 @Profile("artifact-prune")
 @EnableAutoConfiguration
@@ -23,7 +27,8 @@ import dev.ulloasp.mlsuite.storage.ObjectStorageConfig;
 @Import({
         ObjectStorageConfig.class,
         ArtifactOrphanReconciliationService.class,
-        ArtifactOrphanPruneCommand.class
+        ArtifactVerificationService.class,
+        ArtifactJobCommand.class
 })
 public class ArtifactPruneApplication {
 
@@ -32,7 +37,7 @@ public class ArtifactPruneApplication {
         application.setAdditionalProfiles("artifact-prune");
         application.setWebApplicationType(WebApplicationType.NONE);
         try (ConfigurableApplicationContext ignored = application.run(args)) {
-            // The prune is executed by ArtifactOrphanPruneCommand.
+            // The job is executed by ArtifactJobCommand.
         }
     }
 }

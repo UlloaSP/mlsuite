@@ -21,9 +21,8 @@ import jakarta.annotation.PreDestroy;
 
 /**
  * Removes the objects queued for deletion: a task's exact version, or every version of its key. It
- * has a thread of its own rather than {@code @Scheduled}: every fixed-delay scheduled task shares
- * one thread, and a bulk job or a model's preparation holds that thread until it ends, while what
- * a member deleted, or a purge destroyed, has to leave storage meanwhile.
+ * has a thread of its own rather than {@code @Scheduled}, so a long batch of deletions takes no
+ * thread from the scheduler's pool, which is sized for the tasks that run there.
  */
 @Service
 @ConditionalOnProperty(name = "storage.deletion.enabled", havingValue = "true", matchIfMissing = true)

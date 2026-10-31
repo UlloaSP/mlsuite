@@ -8,6 +8,7 @@ package dev.ulloasp.mlsuite.model.adapter.out.persistence.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Repository;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.application.runtime.RunnableModel;
+import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
 
 @Repository
 public interface ModelRepository extends JpaRepository<Model, Long> {
@@ -83,6 +85,16 @@ public interface ModelRepository extends JpaRepository<Model, Long> {
             Pageable pageable);
 
     boolean existsByStorageBucketAndStorageObjectKey(String storageBucket, String storageObjectKey);
+
+    /** The artifacts of the models after {@code after}, in id order, read without the models. */
+    @Query("""
+            SELECT new dev.ulloasp.mlsuite.storage.ModelArtifactReference(
+                m.id, m.fileName, m.storageBucket, m.storageObjectKey, m.storageVersionId,
+                m.modelSizeBytes, m.artifactSha256)
+            FROM Model m
+            WHERE m.id > :after
+            ORDER BY m.id""")
+    List<ModelArtifactReference> findArtifactsAfter(Long after, Limit limit);
 
     boolean existsByNameAndOrganizationId(String name, Long organizationId);
 

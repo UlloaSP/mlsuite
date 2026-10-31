@@ -61,6 +61,7 @@ class ArtifactOrphanReconciliationServiceTest {
         when(reconciliation.prune(60)).thenReturn(new ArtifactOrphanReport(1, 0, 1));
 
         assertThrows(IllegalStateException.class,
-                () -> new ArtifactOrphanPruneCommand(reconciliation, 60).run(null));
+                () -> new ArtifactJobCommand(reconciliation, mock(ArtifactVerificationService.class), 60, "prune")
+                        .run(null));
     }
 }

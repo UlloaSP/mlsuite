@@ -312,6 +312,11 @@ unknown key layouts are outside its scope. It is an operator's job, never
 scheduled: run it only against the database that owns the bucket, since an object
 unknown to any other database looks like an orphan.
 
+With `-e ARTIFACT_JOB=verify` the same job deletes nothing: it reads every model's
+exact object version and fails unless its size and SHA-256 match the model's row.
+The restore rehearsal (`scripts/smoke-restored-release.sh`) runs it against the
+restored database and bucket before starting the API.
+
 ### Promotion and rollback
 
 Production promotion gates are:

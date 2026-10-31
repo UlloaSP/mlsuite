@@ -96,6 +96,9 @@ def main() -> None:
     ), "production ops-agent must preserve the digest-pinned release model"
     for name in APP_SERVICES:
         assert "build" in development["services"][name], f"development must build {name}"
+    assert "ARTIFACT_JOB=verify" in (ROOT / "scripts/smoke-restored-release.sh").read_text(), (
+        "the restore rehearsal must check every model artifact against its hash"
+    )
     assert normalize(development) == normalize(production), (
         "development and production Compose differ outside build/image selection"
     )

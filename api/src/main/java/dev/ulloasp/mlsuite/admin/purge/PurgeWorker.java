@@ -23,9 +23,8 @@ import jakarta.annotation.PreDestroy;
  * and the job is claimed again from the phase it reached. A failed purge stays failed, with its
  * error, until a superadmin retries it.
  *
- * <p>It has a thread of its own rather than {@code @Scheduled}: every fixed-delay scheduled task
- * shares one thread, which a bulk job holds until it ends and a long purge would take from bulk
- * jobs, model preparation and every other scheduled task.
+ * <p>It has a thread of its own rather than {@code @Scheduled}, so a long purge takes no thread
+ * from the scheduler's pool, which is sized for the tasks that run there.
  */
 @Component
 class PurgeWorker {
