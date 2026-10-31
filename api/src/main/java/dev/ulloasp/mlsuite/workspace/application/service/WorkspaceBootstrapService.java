@@ -5,6 +5,10 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
@@ -26,6 +30,7 @@ public class WorkspaceBootstrapService {
     private final OrganizationMembershipRepository membershipRepository;
     private final UserRepository userRepository;
     private final RoleSeedService roleSeedService;
+    private final AuditLogService auditLog;
 
     public Organization ensureCurrentOrganization(User user) {
         if (user.getSystemRole() == SystemRole.SUPERADMIN && user.getCurrentOrganization() != null) {
@@ -62,6 +67,9 @@ public class WorkspaceBootstrapService {
                 MembershipStatus.ACTIVE));
         user.setCurrentOrganization(organization);
         userRepository.save(user);
+        auditLog.record(AuditActor.user(user.getId()), organization.getId(), AuditAction.ORGANIZATION_CREATE,
+                organization.getId(), AuditDetails.of("name", organization.getName(), "slug", organization.getSlug(),
+                        "owner", user.getFullName(), "personal", true));
         return organization;
     }
 

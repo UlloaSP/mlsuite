@@ -1,8 +1,11 @@
 package dev.ulloasp.mlsuite.schema.job;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -23,10 +27,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.util.AopTestUtils;
 import org.springframework.test.web.servlet.ResultActions;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dev.ulloasp.mlsuite.notification.application.service.NotificationService;
+import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
@@ -44,6 +52,7 @@ class PredictionJobHttpTest extends PublicPredictionFixture {
     @Autowired PredictionJobWorker worker;
     @Autowired PredictionJobLedger ledger;
     @Autowired PredictionJobOutcomes outcomes;
+    @MockitoSpyBean NotificationService notifications;
     @Autowired JdbcTemplate jdbc;
     private RoleDefinition role;
 
@@ -76,6 +85,55 @@ class PredictionJobHttpTest extends PublicPredictionFixture {
                 + " WHERE p.name = 'job-row-0' AND r.model_id = ?", String.class, forestModel.getId()));
         // Two chunks of two rows at most, one runtime call per model each.
         verify(analyzer, times(4)).post(eq("/predict/batch"), any());
+    }
+
+    @Test
+    void aJobLeavesOneEntryPerActionAndNonePerRow() throws Exception {
+        JsonNode job = json(start(rows(3)).andReturn().getResponse().getContentAsString());
+        worker.work();
+
+        String id = job.get("id").asText();
+        assertEquals(List.of("USER PREDICTION_JOB_START", "SYSTEM PREDICTION_JOB_CLAIMED",
+                "SYSTEM PREDICTION_JOB_COMPLETED"), trail(id));
+        assertEquals("{\"doneRows\": 3, \"failedRows\": 0}", jdbc.queryForObject("SELECT metadata::text FROM audit_event"
+                + " WHERE action = 'PREDICTION_JOB_COMPLETED' AND target_id = ?", String.class, id));
+    }
+
+    @Test
+    void aJobThatComesBackIsNotClaimedAgainOnTheRecord() throws Exception {
+        worker.work();
+        JsonNode job = json(start(rows(1)).andReturn().getResponse().getContentAsString());
+        String id = job.get("id").asText();
+        var claim = ledger.claim("a-worker-that-dies", 120).orElseThrow();
+        assertEquals(job.get("id").asLong(), claim.id());
+        assertTrue(claim.started());
+        jdbc.update("UPDATE prediction_job SET lease_expires_at = now() - interval '1 second' WHERE id = ?", claim.id());
+
+        var again = ledger.claim("another-worker", 120).orElseThrow();
+
+        assertFalse(again.started());
+        ledger.release(again.id(), "another-worker");
+        worker.work();
+        assertEquals(List.of("USER PREDICTION_JOB_START", "SYSTEM PREDICTION_JOB_COMPLETED"), trail(id));
+    }
+
+    @Test
+    void aMemberCancellingAJobInFlightIsSeenByItsWorker() throws Exception {
+        JsonNode job = json(start(rows(1)).andReturn().getResponse().getContentAsString());
+        String id = job.get("id").asText();
+        AtomicBoolean cancelled = new AtomicBoolean();
+        when(analyzer.post(eq("/predict/batch"), any())).thenAnswer(call -> {
+            if (cancelled.compareAndSet(false, true)) {
+                mockMvc.perform(signedIn(post("/api/prediction-jobs/{id}/cancel", id), owner.getId()))
+                        .andExpect(status().isOk());
+            }
+            return Map.of("rows", List.of(Map.of("reports", List.of(CLASSIFIER))));
+        });
+
+        worker.work();
+
+        assertEquals(List.of("USER PREDICTION_JOB_START", "SYSTEM PREDICTION_JOB_CLAIMED",
+                "USER PREDICTION_JOB_CANCEL", "SYSTEM PREDICTION_JOB_CANCELLED"), trail(id));
     }
 
     @Test
@@ -219,6 +277,43 @@ class PredictionJobHttpTest extends PublicPredictionFixture {
     }
 
     @Test
+    void anEndThatCannotBeToldIsNotRecordedEitherAndIsReportedOnceWhenTheJobEndsAgain() throws Exception {
+        long job = json(start(rows(1)).andReturn().getResponse().getContentAsString()).get("id").asLong();
+        String id = String.valueOf(job);
+        NotificationService target = AopTestUtils.getUltimateTargetObject(notifications);
+        doThrow(new IllegalStateException("the inbox is down")).doCallRealMethod().when(target)
+                .notify(any(), any(), eq(NotificationKind.PREDICTION_JOB_COMPLETED), any(), any());
+
+        worker.work();
+
+        read(json("{\"id\": " + job + "}")).andExpect(jsonPath("$.status").value("RUNNING"));
+        assertEquals(List.of(), told(job));
+        assertEquals(List.of("USER PREDICTION_JOB_START", "SYSTEM PREDICTION_JOB_CLAIMED"), trail(id));
+
+        worker.work();
+
+        read(json("{\"id\": " + job + "}")).andExpect(jsonPath("$.status").value("COMPLETED"));
+        assertEquals(List.of("PREDICTION_JOB_COMPLETED"), told(job));
+        assertEquals(List.of("USER PREDICTION_JOB_START", "SYSTEM PREDICTION_JOB_CLAIMED",
+                "SYSTEM PREDICTION_JOB_COMPLETED"), trail(id));
+    }
+
+    @Test
+    void aStoppedJobIsRecordedWithItsReasonAndToldOnce() throws Exception {
+        long job = json(start(rows(2)).andReturn().getResponse().getContentAsString()).get("id").asLong();
+        grant(PermissionKey.VIEW_MODELS);
+
+        worker.work();
+
+        assertEquals(List.of("USER PREDICTION_JOB_START", "SYSTEM PREDICTION_JOB_CLAIMED",
+                "SYSTEM PREDICTION_JOB_COMPLETED"), trail(String.valueOf(job)));
+        assertEquals("The member who started the upload may no longer run predictions", jdbc.queryForObject(
+                "SELECT metadata ->> 'stopped' FROM audit_event WHERE action = 'PREDICTION_JOB_COMPLETED'"
+                        + " AND target_id = ?", String.class, String.valueOf(job)));
+        assertEquals(List.of("PREDICTION_JOB_STOPPED"), told(job));
+    }
+
+    @Test
     void aWorkerThatLostItsLeaseToldNobodyAndFailsNoRows() throws Exception {
         long job = json(start(rows(1)).andReturn().getResponse().getContentAsString()).get("id").asLong();
         ledger.claim("a-worker-that-stalled", 120).orElseThrow();
@@ -229,6 +324,7 @@ class PredictionJobHttpTest extends PublicPredictionFixture {
         outcomes.stop(job, "a-worker-that-stalled", "too late");
 
         assertEquals(List.of(), told(job));
+        assertEquals(List.of("USER PREDICTION_JOB_START"), trail(String.valueOf(job)));
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM prediction_job_row WHERE job_id = ? AND status = 'FAILED'",
                 Integer.class, job));
         outcomes.complete(job, "the-next-worker");
@@ -285,6 +381,12 @@ class PredictionJobHttpTest extends PublicPredictionFixture {
         return Map.of("name", name, "inputData", Map.of("Age", 52), "models", List.of(
                 Map.of("modelId", forestModel.getId(), "modelInput", forestInput),
                 Map.of("modelId", netModel.getId(), "modelInput", Map.of("1", 52))));
+    }
+
+    /** Who did what to a job, oldest first. */
+    private List<String> trail(String jobId) {
+        return jdbc.queryForList("SELECT actor_kind || ' ' || action FROM audit_event WHERE target_type = 'PREDICTION_JOB'"
+                + " AND target_id = ? ORDER BY id", String.class, jobId);
     }
 
     private void grant(PermissionKey... permissions) {

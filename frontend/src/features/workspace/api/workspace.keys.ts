@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+export const PLATFORM_AUDIT_EVENTS_QUERY_KEY = ["platformAuditEvents"] as const;
 export const ORGANIZATION_CATALOG_PAGE_SIZE = 24;
 export const ORGANIZATION_CATALOG_PAGE_QUERY_KEY = ["organizationCatalogPages"] as const;
 

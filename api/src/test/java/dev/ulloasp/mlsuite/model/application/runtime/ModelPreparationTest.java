@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,11 +24,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.util.AopTestUtils;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.RuntimeBuilderClient;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.model.domain.model.RuntimeEnvironment;
+import dev.ulloasp.mlsuite.notification.application.service.NotificationService;
+import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 
 /**
@@ -44,6 +49,7 @@ class ModelPreparationTest extends PublicPredictionFixture {
 
     @Autowired ModelPreparationWorker worker;
     @Autowired ModelPreparationLedger ledger;
+    @MockitoSpyBean NotificationService notifications;
     @Autowired JdbcTemplate jdbc;
     @MockitoBean RuntimeBuilderClient builder;
 
@@ -69,6 +75,7 @@ class ModelPreparationTest extends PublicPredictionFixture {
 
         verify(builder).build(any(RuntimeEnvironment.class));
         assertEquals("READY", state());
+        assertEquals("SYSTEM MODEL_PREPARATION_READY", lastEntry());
         assertEquals("age", jdbc.queryForObject(
                 "SELECT feature_importances -> 0 ->> 'feature' FROM model WHERE id = ?", String.class, forestModel.getId()));
     }
@@ -83,6 +90,7 @@ class ModelPreparationTest extends PublicPredictionFixture {
 
         assertEquals("FAILED", state());
         assertEquals("The environment needs packages MLsuite does not install: numpy==9.9.9", error());
+        assertEquals("SYSTEM MODEL_PREPARATION_FAILED", lastEntry());
         verify(analyzer, never()).post(eq("/verify"), any());
     }
 
@@ -106,6 +114,7 @@ class ModelPreparationTest extends PublicPredictionFixture {
         assertEquals("PREPARING", state());
         assertEquals(1, jdbc.queryForObject("SELECT runtime_attempts FROM model WHERE id = ?", Integer.class,
                 forestModel.getId()));
+        assertEquals("none", lastEntry());
         assertTrue(jdbc.queryForObject("SELECT runtime_lease_expires_at > now() FROM model WHERE id = ?",
                 Boolean.class, forestModel.getId()), "not claimed again before its delay");
         jdbc.update("UPDATE model SET runtime_lease_expires_at = now() - interval '1 second' WHERE id = ?",
@@ -186,6 +195,7 @@ class ModelPreparationTest extends PublicPredictionFixture {
 
         assertEquals(List.of("MODEL_FAILED"), told());
         assertEquals("numpy==9.9.9 is refused", label("reason"));
+        assertEquals(1, entries("MODEL_PREPARATION_FAILED"));
     }
 
     @Test
@@ -194,12 +204,36 @@ class ModelPreparationTest extends PublicPredictionFixture {
 
         worker.work();
         assertEquals(List.of(), told());
+        assertEquals(0, entries("MODEL_PREPARATION_FAILED"));
 
         jdbc.update("UPDATE model SET runtime_lease_expires_at = now() - interval '1 second' WHERE id = ?",
                 forestModel.getId());
         worker.work();
         assertEquals(List.of("MODEL_FAILED"), told());
+        assertEquals(1, entries("MODEL_PREPARATION_FAILED"));
         assertEquals("The environment builder is unreachable", label("reason"));
+    }
+
+    @Test
+    void anOutcomeThatCannotBeToldIsNotRecordedEitherAndTheModelIsPreparedAgain() {
+        when(analyzer.post(eq("/verify"), any())).thenReturn(Map.of("samples", 3));
+        NotificationService target = AopTestUtils.getUltimateTargetObject(notifications);
+        doThrow(new IllegalStateException("the inbox is down")).doCallRealMethod().when(target)
+                .notify(any(), any(), eq(NotificationKind.MODEL_READY), any(), any());
+
+        worker.work();
+
+        assertEquals("PREPARING", state());
+        assertEquals(List.of(), told());
+        assertEquals(0, entries("MODEL_PREPARATION_READY"));
+
+        jdbc.update("UPDATE model SET runtime_lease_expires_at = now() - interval '1 second' WHERE id = ?",
+                forestModel.getId());
+        worker.work();
+
+        assertEquals("READY", state());
+        assertEquals(List.of("MODEL_READY"), told());
+        assertEquals(1, entries("MODEL_PREPARATION_READY"));
     }
 
     @Test
@@ -211,6 +245,7 @@ class ModelPreparationTest extends PublicPredictionFixture {
 
         assertEquals(List.of(), told());
         assertEquals("PREPARING", state());
+        assertEquals(0, entries("MODEL_PREPARATION_READY") + entries("MODEL_PREPARATION_FAILED"));
     }
 
     private Map<String, String> sealed(Long modelId) throws Exception {
@@ -220,6 +255,11 @@ class ModelPreparationTest extends PublicPredictionFixture {
                 bookmark.getId()), owner.getId()).contentType(MediaType.APPLICATION_JSON).content(request))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         return Map.of("attestation", objectMapper.readTree(prediction).get("attestation").asText());
+    }
+
+    private int entries(String action) {
+        return jdbc.queryForObject("SELECT count(*) FROM audit_event WHERE action = ? AND target_id = ?", Integer.class,
+                action, forestModel.getId().toString());
     }
 
     /** What the forest's uploader was told about it, oldest first. */
@@ -240,5 +280,12 @@ class ModelPreparationTest extends PublicPredictionFixture {
 
     private String error() {
         return jdbc.queryForObject("SELECT runtime_error FROM model WHERE id = ?", String.class, forestModel.getId());
+    }
+
+    /** The latest system entry about the forest, as actor and action. */
+    private String lastEntry() {
+        return jdbc.queryForList("SELECT actor_kind || ' ' || action FROM audit_event WHERE target_type = 'MODEL'"
+                + " AND target_id = ? AND actor_kind = 'SYSTEM' AND organization_id = ? ORDER BY id DESC LIMIT 1",
+                String.class, forestModel.getId().toString(), organization.getId()).stream().findFirst().orElse("none");
     }
 }

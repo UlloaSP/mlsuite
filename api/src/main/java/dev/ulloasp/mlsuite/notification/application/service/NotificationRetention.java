@@ -9,6 +9,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.notification.adapter.out.persistence.repository.NotificationRepository;
 
 /** Forgets notifications read longer ago than the retention period, once an hour. Unread ones stay. */
@@ -18,10 +22,11 @@ public class NotificationRetention {
     private static final Logger log = LoggerFactory.getLogger(NotificationRetention.class);
 
     private final NotificationRepository notifications;
+    private final AuditLogService auditLog;
     private final int retentionDays;
     private final int batchSize;
 
-    public NotificationRetention(NotificationRepository notifications,
+    public NotificationRetention(NotificationRepository notifications, AuditLogService auditLog,
             @Value("${mlsuite.notifications.retention-days}") int retentionDays,
             @Value("${mlsuite.notifications.retention-batch-size}") int batchSize) {
         if (retentionDays < 1) {
@@ -31,6 +36,7 @@ public class NotificationRetention {
             throw new IllegalArgumentException("mlsuite.notifications.retention-batch-size must be at least 1.");
         }
         this.notifications = notifications;
+        this.auditLog = auditLog;
         this.retentionDays = retentionDays;
         this.batchSize = batchSize;
     }
@@ -44,6 +50,10 @@ public class NotificationRetention {
             batch = notifications.deleteReadBefore(cutoff, batchSize);
             removed += batch;
         } while (batch == batchSize);
-        if (removed > 0) log.info("Removed {} notifications read over {} days ago", removed, retentionDays);
+        if (removed > 0) {
+            log.info("Removed {} notifications read over {} days ago", removed, retentionDays);
+            auditLog.record(AuditActor.SYSTEM, null, AuditAction.NOTIFICATION_RETENTION_PRUNE, null,
+                    AuditDetails.of("removed", removed, "retentionDays", retentionDays));
+        }
     }
 }

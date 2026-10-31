@@ -8,5 +8,6 @@ public interface StorageDeletionWorkQueue {
 
     void complete(Long id, String claimToken);
 
-    void fail(Long id, String claimToken, String error, int maxAttempts);
+    /** Counts a failed attempt; true when it was the last the task gets. */
+    boolean fail(Long id, String claimToken, String error, int maxAttempts);
 }

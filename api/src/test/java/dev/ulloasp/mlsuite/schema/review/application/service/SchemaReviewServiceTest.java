@@ -19,6 +19,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.support.TestFixtures;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -83,7 +84,7 @@ class SchemaReviewServiceTest {
     void setUp() {
         service = new SchemaReviewService(reviewRepository, reviewRunRepository, submissionRepository,
                 assignments, workspaceAccess, authorization, users, schemas, versions, bindings, runs, results, feedback,
-                mock(FeedbackHistory.class));
+                mock(FeedbackHistory.class), mock(AuditLogService.class));
     }
 
     @Test

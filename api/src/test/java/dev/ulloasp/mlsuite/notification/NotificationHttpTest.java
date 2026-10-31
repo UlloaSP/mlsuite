@@ -37,9 +37,12 @@ class NotificationHttpTest extends PublicPredictionFixture {
     @Autowired NotificationRetention retention;
     @Autowired JdbcTemplate jdbc;
     private User member;
+    private int reportsBefore;
 
     @BeforeEach
     void aMemberWithAnEmptyInbox() {
+        reportsBefore = jdbc.queryForObject(
+                "SELECT count(*) FROM audit_event WHERE action = 'NOTIFICATION_RETENTION_PRUNE'", Integer.class);
         inTransaction(() -> {
             member = new User("member" + System.nanoTime(), "member-" + UUID.randomUUID() + "@corp.example", "unused",
                     "Member", SystemRole.USER);
@@ -182,6 +185,19 @@ class NotificationHttpTest extends PublicPredictionFixture {
 
         assertEquals(java.util.List.of(recent, forgotten), jdbc.queryForList(
                 "SELECT id FROM notification WHERE recipient_user_id = ? ORDER BY id", Long.class, member.getId()));
+        assertEquals(1, retentionReports());
+        assertEquals("5", jdbc.queryForObject("""
+                SELECT metadata ->> 'removed' FROM audit_event WHERE action = 'NOTIFICATION_RETENTION_PRUNE'
+                AND actor_kind = 'SYSTEM' AND organization_id IS NULL ORDER BY id DESC LIMIT 1""", String.class));
+
+        retention.prune();
+
+        assertEquals(1, retentionReports());
+    }
+
+    private int retentionReports() {
+        return jdbc.queryForObject("SELECT count(*) FROM audit_event WHERE action = 'NOTIFICATION_RETENTION_PRUNE'",
+                Integer.class) - reportsBefore;
     }
 
     private long notify(User recipient) {

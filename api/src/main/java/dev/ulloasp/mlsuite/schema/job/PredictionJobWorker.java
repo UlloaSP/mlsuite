@@ -13,6 +13,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.model.application.service.WorkspaceRuntimeSlots;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
@@ -48,12 +52,14 @@ class PredictionJobWorker {
     private final WorkspaceRuntimeSlots slots;
     private final WorkspaceAuthorizationService authorization;
     private final SchemaModelBindingRepository bindings;
+    private final AuditLogService auditLog;
     private final int chunkRows;
     private final int leaseSeconds;
 
     PredictionJobWorker(PredictionJobLedger ledger, PredictionJobChunks chunks, PredictionJobOutcomes outcomes,
             WorkspacePredictionPlanner planner, WorkspacePredictionService predictions, WorkspaceRuntimeSlots slots,
             WorkspaceAuthorizationService authorization, SchemaModelBindingRepository bindings,
+            AuditLogService auditLog,
             @Value("${mlsuite.prediction-jobs.chunk-rows}") int chunkRows,
             @Value("${mlsuite.prediction-jobs.lease-seconds}") int leaseSeconds) {
         this.ledger = ledger;
@@ -64,6 +70,7 @@ class PredictionJobWorker {
         this.slots = slots;
         this.authorization = authorization;
         this.bindings = bindings;
+        this.auditLog = auditLog;
         this.chunkRows = chunkRows;
         this.leaseSeconds = leaseSeconds;
     }
@@ -73,6 +80,10 @@ class PredictionJobWorker {
         Optional<Claim> claimed;
         while ((claimed = ledger.claim(worker, leaseSeconds)).isPresent()) {
             Claim job = claimed.get();
+            if (job.started()) {
+                auditLog.record(AuditActor.SYSTEM, job.organizationId(), AuditAction.PREDICTION_JOB_CLAIMED, job.id(),
+                        AuditDetails.of("bookmarkId", job.bookmarkId()));
+            }
             try {
                 run(job);
             } catch (RuntimeBusyException busy) {
@@ -114,7 +125,13 @@ class PredictionJobWorker {
                 outcomes.stop(job.id(), worker, unplannable.getReason());
                 return;
             }
-            if (!chunks.store(job, worker, rows, byModel)) return;
+            if (!chunks.store(job, worker, rows, byModel)) {
+                if (ledger.cancelled(job.id())) {
+                    auditLog.record(AuditActor.SYSTEM, job.organizationId(), AuditAction.PREDICTION_JOB_CANCELLED,
+                            job.id());
+                }
+                return;
+            }
         }
     }
 

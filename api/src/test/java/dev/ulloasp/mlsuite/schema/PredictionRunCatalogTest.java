@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.springframework.http.HttpStatus;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,6 +52,7 @@ class PredictionRunCatalogTest {
     @Mock private PredictionResultFeedbackRepository feedback;
     @Mock private ModelRepository models;
     @Mock private WorkspaceAuthorizationService authorization;
+    @Mock private AuditLogService auditLog;
     @InjectMocks private PredictionRunServiceImpl service;
     private CurrentUser user;
 

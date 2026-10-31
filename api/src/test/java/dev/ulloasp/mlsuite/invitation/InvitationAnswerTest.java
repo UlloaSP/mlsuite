@@ -106,6 +106,8 @@ class InvitationAnswerTest extends PublicPredictionFixture {
                 + " WHERE recipient_user_id = ? AND target_id = ?", String.class, owner.getId(), accepted.getId().toString()));
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM notification WHERE recipient_user_id = ?"
                 + " AND read_at IS NULL", Integer.class, invitee.getId()));
+        assertEquals(1, entries(accepted, "INVITATION_ACCEPT"));
+        assertEquals(1, entries(declined, "INVITATION_DECLINE"));
     }
 
     @Test
@@ -116,6 +118,7 @@ class InvitationAnswerTest extends PublicPredictionFixture {
 
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM notification WHERE target_type = 'INVITATION'"
                 + " AND target_id = ?", Integer.class, expired.getId().toString()));
+        assertEquals(0, entries(expired, "INVITATION_ACCEPT"));
     }
 
     @Test
@@ -185,6 +188,11 @@ class InvitationAnswerTest extends PublicPredictionFixture {
 
     private MockHttpServletRequestBuilder answer(Invitation invitation, String verb, User user) {
         return signedIn(post("/api/invitations/{id}/" + verb, invitation.getId()), user.getId());
+    }
+
+    private int entries(Invitation invitation, String action) {
+        return jdbc.queryForObject("SELECT count(*) FROM audit_event WHERE action = ? AND target_id = ?", Integer.class,
+                action, invitation.getId().toString());
     }
 
     private String toldTheInviter(Invitation invitation) {

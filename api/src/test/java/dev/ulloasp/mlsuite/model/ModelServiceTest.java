@@ -11,6 +11,7 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -75,6 +77,7 @@ class ModelServiceTest {
                 artifactReader,
                 deletionQueue,
                 environments,
+                mock(AuditLogService.class),
                 false);
         lenient().when(environments.register(any())).thenAnswer(call -> call.<BundleInspection.Environment>getArgument(0).key());
         lenient().when(workspaceAuthorizationService.requireCurrent(eq(3L), any(PermissionKey[].class))).thenReturn(organization());
@@ -155,7 +158,7 @@ class ModelServiceTest {
 
         service.deleteModel(3L, 9L, 0L);
 
-        verify(deletionQueue).enqueue("models", model.getStorageObjectKey(), "version-7");
+        verify(deletionQueue).enqueue(41L, "models", model.getStorageObjectKey(), "version-7");
         verify(modelRepository).delete(model);
         verify(objectStorageService, never()).delete(anyString(), anyString(), any());
         verify(environments).releaseWhenUnused(model.getEnvironmentKey());

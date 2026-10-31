@@ -68,6 +68,9 @@ export const protectedPages: RouteObject[] = [
         (m) => m.AdminApiTrafficPage,
       ),
     ),
+    page("admin/audit", () =>
+      import("@/features/workspace/pages/admin-audit-log-page").then((m) => m.AdminAuditLogPage),
+    ),
     page("admin/infrastructure", () =>
       import("@/features/infrastructure/pages/admin-infrastructure-page").then(
         (m) => m.AdminInfrastructurePage,

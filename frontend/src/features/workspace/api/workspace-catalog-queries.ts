@@ -19,10 +19,12 @@ import {
   organizationInvitationsQueryKey,
   organizationInvitationCandidatesQueryKey,
   organizationRolesQueryKey,
+  PLATFORM_AUDIT_EVENTS_QUERY_KEY,
 } from "./workspace.keys";
 
 type Controls = { search: string; filter?: string; sort?: string };
-const params = (page: number, controls: Controls) =>
+type AuditControls = Record<string, string>;
+const params = (page: number, controls: Controls | AuditControls) =>
   new URLSearchParams({ page: String(page), size: "24", ...controls });
 
 export function useMemberCatalog(id: number, controls: Controls, enabled = true) {
@@ -74,7 +76,7 @@ export function useInvitationCatalog(id: number, controls: Controls) {
 }
 
 /** Every visit reads the log afresh: actions across the product add to it. */
-export function useAuditEventCatalog(id: number, controls: Controls, enabled = true) {
+export function useAuditEventCatalog(id: number, controls: AuditControls, enabled = true) {
   return useInfiniteCatalog({
     queryKey: [...organizationAuditEventsQueryKey(id), "infinite", controls],
     queryFn: (page, signal) =>
@@ -83,6 +85,18 @@ export function useAuditEventCatalog(id: number, controls: Controls, enabled = t
         { signal },
       ),
     enabled: Boolean(id) && enabled,
+    staleTime: 0,
+  });
+}
+
+/** The log of every organization and of the platform itself, read afresh like an organization's. */
+export function usePlatformAuditEventCatalog(controls: AuditControls) {
+  return useInfiniteCatalog({
+    queryKey: [...PLATFORM_AUDIT_EVENTS_QUERY_KEY, "infinite", controls],
+    queryFn: (page, signal) =>
+      appFetch<PageDtoAuditEventDto>(`/api/admin/audit-events/catalog?${params(page, controls)}`, {
+        signal,
+      }),
     staleTime: 0,
   });
 }

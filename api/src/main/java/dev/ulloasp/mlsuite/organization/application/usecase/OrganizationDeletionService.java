@@ -4,7 +4,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import dev.ulloasp.mlsuite.audit.adapter.out.persistence.repository.AuditEventRepository;
 import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
@@ -29,7 +28,6 @@ public class OrganizationDeletionService {
     private final InvitationRepository invitationRepository;
     private final RoleDefinitionRepository roleRepository;
     private final SchemaReviewRepository reviewRepository;
-    private final AuditEventRepository auditRepository;
     private final UserRepository userRepository;
 
     public void delete(Long organizationId) {
@@ -47,8 +45,7 @@ public class OrganizationDeletionService {
                 || schemaRepository.countByOrganizationId(organizationId) > 0
                 || pluginRepository.countByOrganizationId(organizationId) > 0
                 || invitationRepository.countByOrganizationId(organizationId) > 0
-                || reviewRepository.countByOrganizationId(organizationId) > 0
-                || auditRepository.countByOrganizationId(organizationId) > 0) {
+                || reviewRepository.countByOrganizationId(organizationId) > 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Only empty organizations can be deleted.");
         }
     }

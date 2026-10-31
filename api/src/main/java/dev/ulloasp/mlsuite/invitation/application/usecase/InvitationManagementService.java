@@ -8,6 +8,9 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
 import dev.ulloasp.mlsuite.invitation.application.dto.CreateInvitationRequest;
@@ -100,7 +103,8 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         } else {
             notifyInvitee(saved);
         }
-        auditLogService.record(organization, user, "INVITATION_CREATE", "INVITATION", saved.getId().toString(), saved.getEmail());
+        auditLogService.record(AuditActor.user(userId), organizationId, AuditAction.INVITATION_CREATE, saved.getId(),
+                AuditDetails.of("email", saved.getEmail(), "role", roleDefinition.getName()));
         return InvitationDto.from(saved);
     }
 
@@ -116,7 +120,8 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         invitation.setExpiresAt(OffsetDateTime.now(ZoneOffset.UTC).plusDays(7));
         Invitation saved = invitationRepository.save(invitation);
         notifyInvitee(saved);
-        auditLogService.record(saved.getOrganization(), user, "INVITATION_RESEND", "INVITATION", saved.getId().toString(), saved.getEmail());
+        auditLogService.record(AuditActor.user(userId), organizationId, AuditAction.INVITATION_RESEND, saved.getId(),
+                AuditDetails.of("email", saved.getEmail()));
         return InvitationDto.from(saved);
     }
 
@@ -130,13 +135,8 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         }
         invitation.setStatus(InvitationStatus.REVOKED);
         invitationRepository.save(invitation);
-        auditLogService.record(
-                invitation.getOrganization(),
-                workspaceAccessService.requireUser(userId),
-                "INVITATION_REVOKE",
-                "INVITATION",
-                invitation.getId().toString(),
-                invitation.getEmail());
+        auditLogService.record(AuditActor.user(userId), organizationId, AuditAction.INVITATION_REVOKE, invitationId,
+                AuditDetails.of("email", invitation.getEmail()));
     }
 
     @Override
@@ -151,6 +151,8 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         User user = userLookupService.requireById(userId);
         Invitation invitation = requireOwnPendingInvitation(user, invitationId);
         acceptPendingInvitation(invitation, user);
+        auditLogService.record(AuditActor.user(userId), invitation.getOrganization().getId(),
+                AuditAction.INVITATION_ACCEPT, invitationId, AuditDetails.of("role", invitation.getRoleDefinition().getName()));
         notifyAnswered(invitation, user, NotificationKind.INVITATION_ACCEPTED);
         return InvitationDto.from(invitation);
     }
@@ -161,6 +163,8 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         Invitation invitation = requireOwnPendingInvitation(user, invitationId);
         invitation.setStatus(InvitationStatus.REVOKED);
         invitationRepository.save(invitation);
+        auditLogService.record(AuditActor.user(userId), invitation.getOrganization().getId(),
+                AuditAction.INVITATION_DECLINE, invitationId);
         notifyAnswered(invitation, user, NotificationKind.INVITATION_DECLINED);
     }
 

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,6 +19,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
@@ -57,6 +62,7 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
     private final StorageDeletionQueue deletionQueue;
     private final PluginObjectReader pluginObjects;
     private final OrganizationRepository organizations;
+    private final AuditLogService auditLog;
 
     @Override
     @Transactional
@@ -92,6 +98,8 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
                 }
             });
             persistMetadata(organization, stored, user, uploaded, null);
+            auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.PLUGIN_UPLOAD, id,
+                    AuditDetails.of("file", stored.fileName(), "sizeBytes", stored.sizeBytes()));
             return toDto(stored);
         } catch (IOException ex) {
             throw new IllegalStateException("Could not serialize plugin.", ex);
@@ -156,10 +164,13 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
         pluginObjects.load(organization.getId(), id);
         Optional<PluginMetadata> metadata = pluginMetadataRepository.findByIdAndOrganizationId(id, organization.getId());
         deletionQueue.enqueue(
+                organization.getId(),
                 storageProperties.getBucket(),
                 itemObjectKey(organization.getId(), id),
                 metadata.map(PluginMetadata::getStorageVersionId).orElse(null));
         metadata.ifPresent(pluginMetadataRepository::delete);
+        auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.PLUGIN_DELETE, id,
+                metadata.map(plugin -> AuditDetails.of("file", plugin.getFileName())).orElse(Map.of()));
     }
 
     private void persistMetadata(

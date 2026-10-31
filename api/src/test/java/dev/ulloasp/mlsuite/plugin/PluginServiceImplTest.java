@@ -9,6 +9,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -18,6 +19,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.data.domain.PageImpl;
@@ -88,7 +90,7 @@ class PluginServiceImplTest {
                 pluginMetadataRepository,
                 deletionQueue,
                 reader,
-                organizations);
+                organizations, mock(AuditLogService.class));
         objects = Map.of(
                 "organizations/41/plugins/items/field.json", bytes(plugin(
                         "field", "alpha.ts", "export default defineFieldKind({ kind: \"alpha-field\" });")),
@@ -224,7 +226,7 @@ class PluginServiceImplTest {
         PageDto<PluginDto> page = service.list(7L, 0, 10, "all", "", "name");
 
         assertEquals(List.of("invalid", "report"), page.items().stream().map(PluginDto::id).toList());
-        verify(deletionQueue).enqueue("bucket", "organizations/41/plugins/items/field.json", null);
+        verify(deletionQueue).enqueue(41L, "bucket", "organizations/41/plugins/items/field.json", null);
     }
 
     @Test

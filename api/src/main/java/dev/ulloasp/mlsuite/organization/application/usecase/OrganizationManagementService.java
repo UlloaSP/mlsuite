@@ -1,10 +1,15 @@
 package dev.ulloasp.mlsuite.organization.application.usecase;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
@@ -46,6 +51,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
     private final RoleDefinitionRepository roleDefinitionRepository;
     private final OrganizationDeletionService organizationDeletionService;
     private final OrganizationStatsService organizationStatsService;
+    private final AuditLogService auditLog;
 
     @Override
     public List<OrganizationDto> listOrganizations(Long userId) {
@@ -78,6 +84,9 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         membershipRepository.save(new OrganizationMembership(
                 organization, owner, roleSeedService.orgRole(organization, OrganizationRole.OWNER), MembershipStatus.ACTIVE));
         owner.setCurrentOrganization(organization);
+        auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.ORGANIZATION_CREATE,
+                organization.getId(), AuditDetails.of("name", organization.getName(), "slug", slug,
+                        "owner", owner.getFullName()));
         return OrganizationDto.from(organization);
     }
 
@@ -120,16 +129,22 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         if (!slug.equals(organization.getSlug()) && organizationRepository.existsBySlug(slug)) {
             throw new OrganizationAlreadyExistsException(slug);
         }
+        Map<String, Object> changes = AuditDetails.of(
+                "name", AuditDetails.changed(organization.getName(), request.name().strip()),
+                "slug", AuditDetails.changed(organization.getSlug(), slug),
+                "description", AuditDetails.changed(organization.getDescription(), request.description()));
         organization.setName(request.name().strip());
         organization.setSlug(slug);
         organization.setDescription(request.description());
         organization.setUpdatedBy(workspaceAccessService.requireUser(userId));
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.ORGANIZATION_UPDATE, organizationId, changes);
         return OrganizationDto.from(organizationRepository.save(organization));
     }
 
     @Override
     public void deleteOrganization(Long userId, Long organizationId) {
         workspaceAuthorizationService.require(userId, organizationId, PermissionKey.DELETE_ORGANIZATION);
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.ORGANIZATION_DELETE, organizationId);
         organizationDeletionService.delete(organizationId);
     }
 
@@ -163,6 +178,9 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         }
         RoleDefinition nextRole = roleDefinitionRepository.findByIdAndOrganizationId(nextRoleId, organizationId)
                 .orElseThrow(() -> new IllegalArgumentException("Role does not exist."));
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.MEMBER_ROLE_CHANGE, membershipId,
+                AuditDetails.of("member", membership.getUser().getFullName(),
+                        "role", AuditDetails.changed(membership.getRoleDefinition().getName(), nextRole.getName())));
         membership.setRoleDefinition(nextRole);
         return OrganizationMembershipDto.from(membershipRepository.save(membership));
     }
@@ -178,6 +196,8 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         }
         membership.setStatus(MembershipStatus.REMOVED);
         membershipRepository.save(membership);
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.MEMBER_REMOVE, membershipId,
+                AuditDetails.of("member", membership.getUser().getFullName()));
     }
 
     @Override
@@ -203,6 +223,9 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         nextOwner.setRoleDefinition(roleSeedService.orgRole(nextOwner.getOrganization(), OrganizationRole.OWNER));
         nextOwner.getOrganization().setUpdatedBy(workspaceAccessService.requireUser(userId));
         membershipRepository.save(currentOwner);
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.OWNERSHIP_TRANSFER, organizationId,
+                AuditDetails.of("owner", AuditDetails.changed(currentOwner.getUser().getFullName(),
+                        nextOwner.getUser().getFullName())));
         return OrganizationMembershipDto.from(membershipRepository.save(nextOwner));
     }
 
