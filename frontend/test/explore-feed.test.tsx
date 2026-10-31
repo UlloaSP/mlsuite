@@ -80,6 +80,7 @@ const CARDIO: PublicBookmarkSummaryDto = {
   organizationName: "Acme Health",
   organizationLogoUrl: null,
   organizationKind: "TEAM",
+  publisherHandle: null,
   updatedAt: AT,
 };
 const CHURN: PublicBookmarkSummaryDto = {
@@ -91,6 +92,7 @@ const CHURN: PublicBookmarkSummaryDto = {
   organizationName: "Bob Other",
   organizationLogoUrl: null,
   organizationKind: "TEAM",
+  publisherHandle: null,
   updatedAt: AT,
 };
 
@@ -174,8 +176,9 @@ describe("public feed page", () => {
     expect(calledUrls()).toEqual(["/api/public/bookmarks?page=0&search=&size=24&sort=updated"]);
     expect(host.querySelector("h1")?.textContent).toBe("Explore");
     expect(cards(host)).toEqual([`/explore/${CARDIO.publicId}`, `/explore/${CHURN.publicId}`]);
-    const [cardio, churn] = [...host.querySelectorAll("a[aria-label^='Open ']")];
-    expect(cardio.getAttribute("aria-label")).toBe("Open production by Acme Health");
+    const [link] = host.querySelectorAll("a[aria-label^='Open ']");
+    expect(link?.getAttribute("aria-label")).toBe("Open production by Acme Health");
+    const [cardio, churn] = host.querySelectorAll("article");
     expect(cardio.querySelector("h2")?.textContent).toBe("production");
     expect(cardio.querySelector("p")?.textContent).toBe("Estimates cardiovascular risk.");
     const size = (card: Element) =>

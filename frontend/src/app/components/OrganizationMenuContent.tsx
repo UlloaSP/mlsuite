@@ -167,7 +167,6 @@ export function OrganizationMenuContent({
                 >
                   <span className="flex min-w-0 items-center gap-2.5">
                     <NamespaceMark
-                      avatarUrl={context.user.avatarUrl}
                       className="size-8 rounded-lg"
                       fallbackClassName="bg-surface-muted text-fg-secondary"
                       iconSize={14}

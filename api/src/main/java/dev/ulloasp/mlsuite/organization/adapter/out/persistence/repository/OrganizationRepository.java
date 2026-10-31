@@ -24,6 +24,20 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
     /** The personal account of a user, the only kind of organization that names an owner here. */
     Optional<Organization> findByOwnerUserId(Long userId);
 
+    /** The teams a person is an active member of, by name, for their profile. */
+    @Query("""
+            SELECT o FROM Organization o
+            WHERE o.kind = dev.ulloasp.mlsuite.organization.domain.model.OrganizationKind.TEAM
+            AND EXISTS (
+                SELECT m.id FROM OrganizationMembership m
+                WHERE m.organization = o
+                AND m.user.id = :userId
+                AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE
+            )
+            ORDER BY lower(o.name), o.id
+            """)
+    List<Organization> findTeamsOfMember(Long userId, Pageable pageable);
+
     /** What a superadmin works across: every team and their own personal account, that first. */
     @Query("""
             SELECT o FROM Organization o

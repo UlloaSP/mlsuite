@@ -59,6 +59,7 @@ const bookmark: PublicBookmarkDto = {
   organizationName: "Acme Health",
   organizationLogoUrl: null,
   organizationKind: "TEAM",
+  publisherHandle: null,
   formSchema: {
     fields: [{ kind: "number", label: "Age", mappedTo: "in0", defaultValue: 52 }],
     reports: [

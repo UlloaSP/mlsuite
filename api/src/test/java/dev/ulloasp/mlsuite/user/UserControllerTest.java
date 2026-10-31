@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.user.adapter.in.web.UserController;
 import dev.ulloasp.mlsuite.user.application.port.in.GetCurrentUserProfileUseCase;
+import dev.ulloasp.mlsuite.user.application.port.in.UserProfileUseCase;
 import dev.ulloasp.mlsuite.user.application.dto.UserDto;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
@@ -29,13 +30,15 @@ class UserControllerTest {
 
     @Mock
     private GetCurrentUserProfileUseCase getCurrentUserProfileUseCase;
+    @Mock
+    private UserProfileUseCase userProfiles;
     private CurrentUser user;
 
     private UserController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new UserController(getCurrentUserProfileUseCase);
+        controller = new UserController(getCurrentUserProfileUseCase, userProfiles);
     }
 
     @Test

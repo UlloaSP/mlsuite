@@ -13,7 +13,6 @@ public record PluginDto(
         OffsetDateTime updatedAt,
         @Nullable String updatedByName,
         @Nullable String updatedByEmail,
-        @Nullable String updatedByAvatarUrl,
         String source,
         String pluginType,
         @Nullable String kind) {

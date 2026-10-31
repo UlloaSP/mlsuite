@@ -11,7 +11,8 @@ import {
 } from "@/features/explore/api/public-bookmark-api";
 import { PublicBookmarkPanel } from "@/features/explore/components/PublicBookmarkPanel";
 import { PublicationNote } from "@/features/explore/components/PublicationNote";
-import { PublicFormSize } from "@/features/explore/components/PublicFormSize";
+import { PublicFormSize } from "@/capabilities/public-bookmarks/PublicFormSize";
+import { PublisherName } from "@/capabilities/public-bookmarks/PublisherName";
 import { WorkspaceBookmarkLink } from "@/features/explore/components/WorkspaceBookmarkLink";
 import { formatDate } from "@/shared/lib/date-time";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -87,7 +88,9 @@ export function PublicBookmarkPage() {
               logoUrl={bookmark.organizationLogoUrl}
               name={bookmark.organizationName}
             />
-            <dd>{bookmark.organizationName}</dd>
+            <dd className="min-w-0">
+              <PublisherName handle={bookmark.publisherHandle} name={bookmark.organizationName} />
+            </dd>
           </div>
           <PublicFormSize inputCount={bookmark.inputCount} reportCount={bookmark.reportCount} />
           <div className={FACT}>

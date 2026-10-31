@@ -210,9 +210,13 @@ class SchemaReviewCatalogTest extends PublicPredictionFixture {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(2))
                 .andExpect(jsonPath("$.completed").value(1));
+        inTransaction(() -> entityManager.find(User.class, owner.getId())
+                .setAvatarUpdatedAt(OffsetDateTime.parse("2026-10-01T10:00:00Z")));
         mockMvc.perform(signedIn(get(assignments + "/catalog").param("filter", "COMPLETED"), owner.getId()))
                 .andExpect(jsonPath("$.totalItems").value(1))
-                .andExpect(jsonPath("$.items[0].reviewer.id").value(owner.getId()));
+                .andExpect(jsonPath("$.items[0].reviewer.id").value(owner.getId()))
+                .andExpect(jsonPath("$.items[0].reviewer.avatarUrl")
+                        .value("/api/public/users/" + owner.getId() + "/avatar?v=1790848800000"));
         String reviewRun = assignments + "/" + cases.get(10).getPublicId() + "/";
         mockMvc.perform(signedIn(get(reviewRun + owner.getId()), owner.getId()))
                 .andExpect(jsonPath("$.reviewState").value("COMPLETED"));

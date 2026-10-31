@@ -44,7 +44,6 @@ export function SidebarOrganizationHeader({ side }: { side: SidebarPosition }) {
               title={organization.name}
             >
               <NamespaceMark
-                avatarUrl={context.user.avatarUrl}
                 className={SIDEBAR_MENU_TILE}
                 fallbackClassName="bg-fg text-fg-inverse"
                 iconSize={16}

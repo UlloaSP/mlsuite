@@ -25,7 +25,6 @@ final class PluginCatalogValues {
                 stored.updatedAt(),
                 stored.updatedByName(),
                 stored.updatedByEmail(),
-                stored.updatedByAvatarUrl(),
                 stored.source(),
                 descriptor.type(),
                 descriptor.kind());

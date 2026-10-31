@@ -67,8 +67,8 @@ const assignment = (
 ): SchemaReviewAssignmentStatusDto => ({
   reviewId: "rev-1",
   reviewRunId: "run-a",
-  reviewer: { id: 4, fullName: "Grace Hopper", email: "grace@acme.test" },
-  createdBy: { id: 1, fullName: "Ada Lovelace", email: "ada@acme.test" },
+  reviewer: { id: 4, fullName: "Grace Hopper", email: "grace@acme.test", avatarUrl: null },
+  createdBy: { id: 1, fullName: "Ada Lovelace", email: "ada@acme.test", avatarUrl: null },
   reviewState: "COMPLETED",
   submittedAt: "2026-09-28T15:53:00Z",
   createdAt: "2026-09-28T12:21:00Z",
@@ -125,7 +125,7 @@ test("a tile names reviewer and requester, and shows expiry only while the revie
         assignment={assignment({
           reviewState: "PENDING",
           submittedAt: null,
-          reviewer: { id: 5, fullName: "Alan", email: "alan@acme.test" },
+          reviewer: { id: 5, fullName: "Alan", email: "alan@acme.test", avatarUrl: null },
         })}
         to="/inferences/1/reviews/run-a/reviewers/5"
         disabled={false}
@@ -191,7 +191,12 @@ test("the reviews list uses backend catalogs for review filters without a footer
   state.assignments = Array.from({ length: 11 }, (_, index) =>
     assignment({
       reviewRunId: `run-${index}`,
-      reviewer: { id: index + 10, fullName: `Reviewer ${index}`, email: `r${index}@acme.test` },
+      reviewer: {
+        id: index + 10,
+        fullName: `Reviewer ${index}`,
+        email: `r${index}@acme.test`,
+        avatarUrl: null,
+      },
       reviewState: index < 2 ? "PENDING" : "COMPLETED",
     }),
   );

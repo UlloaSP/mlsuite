@@ -260,7 +260,7 @@ class PluginServiceImplTest {
 
     private StoredPlugin plugin(String id, String fileName, String source) {
         return new StoredPlugin(id, fileName, "application/typescript", source.length(), now(), now(),
-                "Alice", "alice@example.com", null, source);
+                "Alice", "alice@example.com", source);
     }
 
     private OffsetDateTime now() {

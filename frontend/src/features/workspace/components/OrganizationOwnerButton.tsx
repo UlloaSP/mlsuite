@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { PersonAvatar } from "@/shared/ui/PersonAvatar";
 import type { OrganizationCatalogItemDto } from "@/shared/api/openapi.gen";
 
 export function OrganizationOwnerButton({ item }: { item: OrganizationCatalogItemDto }) {
@@ -9,17 +10,11 @@ export function OrganizationOwnerButton({ item }: { item: OrganizationCatalogIte
       onClick={() => toast.info("Not available yet.")}
       className="flex w-fit max-w-full items-center gap-2 rounded-control px-1 py-1 text-left hover:bg-surface-muted"
     >
-      {item.ownerAvatarUrl ? (
-        <img
-          src={item.ownerAvatarUrl}
-          alt=""
-          className="size-7 shrink-0 rounded-full object-cover"
-        />
-      ) : (
-        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-accent-subtle text-xs font-semibold text-accent-strong">
-          {owner.slice(0, 1).toUpperCase()}
-        </span>
-      )}
+      <PersonAvatar
+        avatarUrl={item.ownerAvatarUrl}
+        className="size-7 rounded-full text-xs"
+        name={owner}
+      />
       <span className="min-w-0">
         <span className="block truncate text-sm font-semibold text-fg">{owner}</span>
         {item.ownerEmail ? (

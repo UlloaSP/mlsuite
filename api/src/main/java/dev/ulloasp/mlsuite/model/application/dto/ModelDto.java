@@ -11,6 +11,7 @@ import java.util.Map;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.domain.model.ModelRuntimeState;
+import dev.ulloasp.mlsuite.user.application.dto.UserAvatarUrl;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
 import jakarta.annotation.Nullable;
@@ -49,7 +50,7 @@ public record ModelDto(
                 model.getVersion() == null ? 0 : model.getVersion(),
                 modifier == null ? null : modifier.getFullName(),
                 modifier == null ? null : modifier.getEmail(),
-                modifier == null ? null : modifier.getAvatarUrl(),
+                modifier == null ? null : UserAvatarUrl.of(modifier),
                 countVisibleFields(model.getInputSchema()),
                 countReports(model.getInputSchema()),
                 model.getRuntimeState(),

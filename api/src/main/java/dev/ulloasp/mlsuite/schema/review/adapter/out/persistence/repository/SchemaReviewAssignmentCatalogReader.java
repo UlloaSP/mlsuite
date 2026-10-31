@@ -63,8 +63,8 @@ public class SchemaReviewAssignmentCatalogReader {
         };
         String select = "SELECT new " + DTO + "SchemaReviewAssignmentStatusDto("
                 + "review.publicId, rr.publicId, new " + DTO
-                + "SchemaReviewReviewerDto(reviewer.id, reviewer.fullName, reviewer.email), new " + DTO
-                + "SchemaReviewReviewerDto(creator.id, creator.fullName, creator.email), " + STATE
+                + "SchemaReviewReviewerDto(reviewer.id, reviewer.fullName, reviewer.email, reviewer.avatarUpdatedAt), new " + DTO
+                + "SchemaReviewReviewerDto(creator.id, creator.fullName, creator.email, creator.avatarUpdatedAt), " + STATE
                 + ", submission.submittedAt, review.createdAt, review.updatedAt, review.expiresAt, "
                 + "review.expiresAt <= :now) ";
         var query = entities.createQuery(select + SOURCE + " ORDER BY " + order

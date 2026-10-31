@@ -4,6 +4,7 @@ import { defaultRangeExtractor, useVirtualizer } from "@tanstack/react-virtual";
 import type { AppComboboxItem } from "./AppCombobox";
 import { useLoadMoreNearEnd } from "./catalog/useLoadMoreNearEnd";
 import { cx } from "./cx";
+import { PersonAvatar } from "./PersonAvatar";
 
 const OVERSCAN = 4;
 
@@ -123,17 +124,13 @@ export function ComboboxOptions<TId extends string | number>({
                   row.index === activeIndex && "bg-surface-muted",
                 )}
               >
-                {item.avatarUrl ? (
-                  <img
-                    src={item.avatarUrl}
-                    alt=""
-                    className="size-9 shrink-0 rounded-control object-cover"
+                {/* People have a picture or initials; other options show no mark. */}
+                {item.avatarUrl !== undefined ? (
+                  <PersonAvatar
+                    avatarUrl={item.avatarUrl}
+                    className="size-9 rounded-control text-xs"
+                    name={item.label}
                   />
-                ) : item.avatarUrl === null ? (
-                  // People without a picture show their initial; other options show no mark.
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-control bg-accent-subtle text-xs font-semibold text-accent-strong">
-                    {item.label.slice(0, 1).toUpperCase()}
-                  </span>
                 ) : null}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold text-fg">{item.label}</span>

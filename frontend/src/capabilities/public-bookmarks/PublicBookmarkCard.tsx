@@ -5,35 +5,36 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ArrowRight, Tag } from "lucide-react";
 import { Link } from "react-router";
-import { PublicFormSize } from "@/features/explore/components/PublicFormSize";
 import { formatDate } from "@/shared/lib/date-time";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { PublisherMark } from "@/shared/ui/PublisherMark";
+import { PublicFormSize } from "./PublicFormSize";
+import { PublisherName } from "./PublisherName";
 import type { PublicBookmarkSummaryDto } from "@/shared/api/openapi.gen";
 
 /**
- * One published bookmark in the feed: what it does, how much it asks for and gives back, who
- * published it, and a way in. The schema and snapshot behind it are its organization's own.
+ * One published bookmark in the feed or on a profile: what it does, how much it asks for and gives
+ * back, who published it, and a way in. The schema and snapshot behind it are its organization's
+ * own. Its title stretches over the card, so the publisher can be a link of its own beside it.
  */
 export function PublicBookmarkCard({ bookmark }: { bookmark: PublicBookmarkSummaryDto }) {
   return (
-    <Link
-      to={`/explore/${encodeURIComponent(bookmark.publicId)}`}
-      aria-label={`Open ${bookmark.name} by ${bookmark.organizationName}`}
-      className={cx(
-        "group flex h-full flex-col gap-4 rounded-card border border-line bg-surface p-5 transition hover:border-line-strong hover:shadow-hover",
-        FOCUS_RING,
-      )}
-    >
-      <header className="flex items-center gap-3">
+    <article className="group relative flex h-full flex-col gap-4 rounded-card border border-line bg-surface p-5 transition hover:border-line-strong hover:shadow-hover">
+      <div className="flex items-center gap-3">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-control bg-accent-subtle text-accent-strong">
           <Tag size={18} />
         </span>
         <h2 className="min-w-0 flex-1 truncate text-lg font-semibold tracking-[-0.01em] text-fg">
-          {bookmark.name}
+          <Link
+            to={`/explore/${encodeURIComponent(bookmark.publicId)}`}
+            aria-label={`Open ${bookmark.name} by ${bookmark.organizationName}`}
+            className={cx("after:absolute after:inset-0 after:rounded-card", FOCUS_RING)}
+          >
+            {bookmark.name}
+          </Link>
         </h2>
-      </header>
+      </div>
 
       {/* Always two lines tall, so every card of a row lines up whatever its description. */}
       <p className="line-clamp-2 min-h-10 text-sm leading-5 text-fg-secondary">
@@ -55,7 +56,7 @@ export function PublicBookmarkCard({ bookmark }: { bookmark: PublicBookmarkSumma
               logoUrl={bookmark.organizationLogoUrl}
               name={bookmark.organizationName}
             />
-            <span className="truncate">{bookmark.organizationName}</span>
+            <PublisherName handle={bookmark.publisherHandle} name={bookmark.organizationName} />
           </span>
           <span>Updated {formatDate(bookmark.updatedAt)}</span>
         </div>
@@ -64,6 +65,6 @@ export function PublicBookmarkCard({ bookmark }: { bookmark: PublicBookmarkSumma
           <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
         </span>
       </footer>
-    </Link>
+    </article>
   );
 }

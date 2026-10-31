@@ -1,6 +1,6 @@
 ---
 title: Your account and settings
-description: "Profile, notifications and the personal settings of this browser: color scheme, themes, fonts, keybindings and layout."
+description: "Your profile and its public page, notifications, and the personal settings of this browser: color scheme, themes, fonts, keybindings and layout."
 ---
 
 import Capture from "../../../components/Capture.astro";
@@ -8,13 +8,38 @@ import Capture from "../../../components/Capture.astro";
 The account menu at the bottom of the navigation opens **Profile**, **Notifications**,
 **Settings** and **Sign out**.
 
-- **Profile** shows your name, email, system role, current organization and role, and this
-  browser's language, time zone and theme. It is read-only.
+- **Profile** is your page, and where you edit it. See [Your profile](#your-profile).
 - **Notifications** tells you what happened while you were elsewhere: bulk uploads that finished
   or were stopped, models that became ready or could not be prepared, invitations answered, and
   reviews assigned to you. Each one leads to what it is about and switches to its organization when
   needed. Invitations waiting for you come first, with **Accept** and **Decline**. The account menu
   counts what you have not read, and a notification you have read is removed after 30 days.
+
+## Your profile
+
+Your profile is your page on the instance, at `/u/your-handle`. Anyone can open it, signed in or
+not. It shows your picture, name, handle, bio, company, location, website, up to four links, when
+you joined, and what you publish from your personal account. Your email is never on it, nor anything
+of a private bookmark.
+
+**Profile** shows the same page to you, with how many models, schemas, plugins and inferences your
+personal account holds. Only you see those counts. **Edit profile** changes everything below.
+
+- **Picture**: PNG or JPG, cropped to a square. Without one, your initials stand in for it. It
+  appears beside your name in the workspace, in member lists and reviews, and on what you publish.
+- **Details**: your name, your handle, a bio of up to 280 characters, and your links, which must be
+  `http` or `https` addresses.
+- **Handle**: changing it renames your personal account and moves your page. The old address stops
+  working at once, and anyone can then take the old handle.
+- **Public profile**: on by default. While it is off, your page answers exactly as if it did not
+  exist, and nothing links to it. Your name and picture still appear on bookmarks you keep published.
+- **Show my organizations**: off by default. When on, your page lists the organizations you belong
+  to, by name and logo.
+- **Pinned bookmarks**: up to six of your published bookmarks, in the order you choose, shown first
+  on your page. A pin goes away when its bookmark is unpublished, moderated, archived or deleted,
+  and does not come back if the bookmark is published again.
+- **Password**: changing it needs your current password. It signs you out everywhere else, and you
+  stay signed in on this device. Wrong guesses count like [failed sign-ins](/reference/limits/).
 
 ## Settings
 

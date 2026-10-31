@@ -3,9 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { PublicBookmarkCard } from "@/capabilities/public-bookmarks/PublicBookmarkCard";
 import { usePublicBookmarkCatalog } from "@/features/explore/api/public-bookmark-api";
 import { ExploreVisitorIntro } from "@/features/explore/components/ExploreVisitorIntro";
-import { PublicBookmarkCard } from "@/features/explore/components/PublicBookmarkCard";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";

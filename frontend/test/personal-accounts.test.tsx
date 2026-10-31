@@ -9,7 +9,6 @@ import { CreateOrganizationRoute } from "@/app/router/create-organization-route"
 import { RequireTeamOrganization } from "@/features/workspace/components/RequireTeamOrganization";
 import { OrganizationOverview } from "@/features/workspace/components/overview/OrganizationOverview";
 import { YourOrganizationsPage } from "@/features/workspace/pages/your-organizations-page";
-import { ProfilePage } from "@/features/user/pages/profilePage";
 import type {
   OrganizationDto,
   WorkspaceCurrentContextDto,
@@ -85,8 +84,6 @@ vi.mock("@/features/admin/api/admin-user.queries", () => ({
     return { data: { items: [] } };
   },
 }));
-vi.mock("@/features/user/components/ProfileBody", () => ({ ProfileBody: () => null }));
-vi.mock("@/features/user/components/ProfileHeader", () => ({ ProfileHeader: () => null }));
 
 beforeEach(() => {
   Object.assign(state, {
@@ -129,7 +126,7 @@ describe("the switcher", () => {
     expect(entries).toEqual([
       "Overview",
       "Audit log",
-      "ADAda Lovelaceada-lovelace",
+      "ALAda Lovelaceada-lovelace",
       "Acmeacme",
       "Organizations",
       "New organization",
@@ -203,33 +200,6 @@ describe("pages that belong to organizations", () => {
     expect(host.textContent).not.toContain("Members");
     expect(host.textContent).not.toContain("Invitations");
     expect(host.textContent).not.toContain("organization");
-  });
-
-  test("the profile tells a personal account from an organization", async () => {
-    state.context = {
-      data: {
-        currentOrganization: PERSONAL,
-        currentMembership: { roleDefinition: { name: "Owner" } },
-        membershipCount: 0,
-      },
-    };
-    const personal = await mount(<ProfilePage />, { route: "/profile" });
-
-    expect(personal.host.textContent).toContain("Working in your personal account");
-    expect(personal.host.textContent).toContain("Not a member of any organization");
-    expect(personal.host.textContent).not.toContain("Owner");
-
-    state.context = {
-      data: {
-        currentOrganization: TEAM,
-        currentMembership: { roleDefinition: { name: "Viewer" } },
-        membershipCount: 2,
-      },
-    };
-    const team = await mount(<ProfilePage />, { route: "/profile" });
-
-    expect(team.host.textContent).toContain("Member of 2 organizations");
-    expect(team.host.textContent).toContain("Viewer");
   });
 });
 

@@ -1,10 +1,13 @@
 package dev.ulloasp.mlsuite.schema.domain.model;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -15,8 +18,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -75,6 +80,11 @@ public class SchemaBookmark {
     @Column(name = "public_id", unique = true, length = 36)
     private String publicId;
 
+    @OneToMany(mappedBy = "bookmark", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private List<ProfilePin> pins = new ArrayList<>();
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime createdAt;
@@ -86,5 +96,11 @@ public class SchemaBookmark {
     /** Makes the bookmark private again; its public id is kept for a later publish. */
     public void unpublish() {
         this.visibility = BookmarkVisibility.PRIVATE;
+        unpin();
+    }
+
+    /** Takes the bookmark off its owner's profile: a pin stands only while anyone may read it. */
+    public void unpin() {
+        pins.clear();
     }
 }

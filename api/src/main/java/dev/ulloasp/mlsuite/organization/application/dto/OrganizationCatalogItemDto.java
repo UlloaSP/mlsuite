@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.organization.application.dto;
 import java.time.OffsetDateTime;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.user.application.dto.UserAvatarUrl;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
 import jakarta.annotation.Nullable;
@@ -51,7 +52,7 @@ public record OrganizationCatalogItemDto(
                 ownerAvatarUrl,
                 modifier == null ? null : modifier.getFullName(),
                 modifier == null ? null : modifier.getEmail(),
-                modifier == null ? null : modifier.getAvatarUrl(),
+                modifier == null ? null : UserAvatarUrl.of(modifier),
                 modelCount,
                 schemaCount,
                 pluginCount,
