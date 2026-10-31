@@ -112,12 +112,10 @@ describe("infra helpers", () => {
     expect(countHealthyServices(services)).toBe(1);
     expect(countProblemServices(services)).toBe(5);
     expect(
-      buildDashboardAlerts({ ...overview, services }, true, null).some(
-        (alert) => alert.id === "healthy",
-      ),
+      buildDashboardAlerts({ ...overview, services }, true).some((alert) => alert.id === "healthy"),
     ).toBe(false);
-    expect(buildDashboardAlerts({ ...overview, services: [] }, true, null)).toEqual([]);
-    expect(buildDashboardAlerts(overview, true, null)[0].id).toBe("healthy");
+    expect(buildDashboardAlerts({ ...overview, services: [] }, true)).toEqual([]);
+    expect(buildDashboardAlerts(overview, true)[0].id).toBe("healthy");
   });
 
   it("filters, sorts, and counts service rows", () => {
@@ -261,12 +259,10 @@ describe("infra helpers", () => {
         ],
       },
       false,
-      "frontend",
     );
 
     expect(alerts.some((alert) => alert.id === "stream")).toBe(true);
     expect(alerts.some((alert) => alert.id === "frontend")).toBe(true);
-    expect(alerts.some((alert) => alert.id === "shell")).toBe(true);
   });
 
   it("preserves infrastructure query and transport contracts", async () => {

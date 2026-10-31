@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/api/admin/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["systemAlerts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/api-traffic/clients": {
         parameters: {
             query?: never;
@@ -2903,7 +2919,7 @@ export interface components {
         };
         AuditEventDto: {
             /** @enum {string} */
-            action: "ORGANIZATION_CREATE" | "ORGANIZATION_UPDATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_LOGO_REPLACE" | "ORGANIZATION_LOGO_REMOVE" | "OWNERSHIP_TRANSFER" | "MEMBER_ROLE_CHANGE" | "MEMBER_REMOVE" | "INVITATION_CREATE" | "INVITATION_RESEND" | "INVITATION_REVOKE" | "INVITATION_ACCEPT" | "INVITATION_DECLINE" | "ROLE_CREATE" | "ROLE_FROM_TEMPLATE" | "ROLE_DUPLICATE" | "ROLE_UPDATE" | "ROLE_DELETE" | "API_CLIENT_CREATE" | "API_CLIENT_UPDATE" | "API_CLIENT_DELETE" | "API_KEY_ISSUE" | "API_KEY_REVOKE" | "API_ACCESS_GRANT" | "API_ACCESS_REVOKE" | "API_CLIENT_SUSPEND" | "API_CLIENT_REINSTATE" | "API_CALL_LIMIT_SET" | "MODEL_UPLOAD" | "MODEL_RENAME" | "MODEL_ARCHIVE" | "MODEL_RESTORE" | "MODEL_ENVIRONMENT_RETRY" | "MODEL_DUPLICATE" | "MODEL_DELETE" | "MODEL_EXPLAIN" | "MODEL_PREPARATION_READY" | "MODEL_PREPARATION_FAILED" | "SCHEMA_CREATE" | "SCHEMA_RENAME" | "SCHEMA_ARCHIVE" | "SCHEMA_RESTORE" | "SCHEMA_DUPLICATE" | "SCHEMA_DELETE" | "SCHEMA_VERSION_CREATE" | "SCHEMA_DRAFT_CREATE" | "SCHEMA_DRAFT_UPDATE" | "SCHEMA_DRAFT_MERGE" | "SCHEMA_DRAFT_PUBLISH" | "BOOKMARK_CREATE" | "BOOKMARK_MOVE" | "BOOKMARK_UPDATE" | "BOOKMARK_PUBLISH" | "BOOKMARK_UNPUBLISH" | "BOOKMARK_EXAMPLE_MARK" | "BOOKMARK_EXAMPLE_UNMARK" | "BOOKMARK_MODERATION_UNPUBLISH" | "PREDICTION_RUN" | "PREDICTION_RUN_SAVE" | "PREDICTION_RUN_BATCH_CREATE" | "PREDICTION_RUN_DELETE" | "PREDICTION_JOB_START" | "PREDICTION_JOB_CANCEL" | "PREDICTION_JOB_RETRY" | "PREDICTION_JOB_CLAIMED" | "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_CANCELLED" | "REVIEW_CREATE" | "REVIEW_FEEDBACK_CREATE" | "REVIEW_FEEDBACK_UPDATE" | "REVIEW_SUBMIT" | "REVIEW_SUBMIT_PENDING" | "REVIEW_REOPEN" | "REVIEW_RESPONSE_DELETE" | "PUBLIC_FEEDBACK_SAVE" | "PLUGIN_UPLOAD" | "PLUGIN_DELETE" | "USER_CREATE" | "USER_UPDATE" | "USER_PASSWORD_RESET" | "USER_DELETE" | "INFRASTRUCTURE_SERVICE_ACTION" | "TERMINAL_SESSION_OPEN" | "TERMINAL_SESSION_CLOSE" | "AUTH_LOGIN" | "AUTH_LOGIN_FAILED" | "AUTH_LOGOUT" | "AUTH_REGISTER" | "STORAGE_DELETION_FAILED" | "API_REQUEST_RETENTION_PRUNE" | "AUDIT_RETENTION_PRUNE" | "NOTIFICATION_RETENTION_PRUNE";
+            action: "ORGANIZATION_CREATE" | "ORGANIZATION_UPDATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_LOGO_REPLACE" | "ORGANIZATION_LOGO_REMOVE" | "OWNERSHIP_TRANSFER" | "MEMBER_ROLE_CHANGE" | "MEMBER_REMOVE" | "INVITATION_CREATE" | "INVITATION_RESEND" | "INVITATION_REVOKE" | "INVITATION_ACCEPT" | "INVITATION_DECLINE" | "ROLE_CREATE" | "ROLE_FROM_TEMPLATE" | "ROLE_DUPLICATE" | "ROLE_UPDATE" | "ROLE_DELETE" | "API_CLIENT_CREATE" | "API_CLIENT_UPDATE" | "API_CLIENT_DELETE" | "API_KEY_ISSUE" | "API_KEY_REVOKE" | "API_ACCESS_GRANT" | "API_ACCESS_REVOKE" | "API_CLIENT_SUSPEND" | "API_CLIENT_REINSTATE" | "API_CALL_LIMIT_SET" | "MODEL_UPLOAD" | "MODEL_RENAME" | "MODEL_ARCHIVE" | "MODEL_RESTORE" | "MODEL_ENVIRONMENT_RETRY" | "MODEL_DUPLICATE" | "MODEL_DELETE" | "MODEL_EXPLAIN" | "MODEL_PREPARATION_READY" | "MODEL_PREPARATION_FAILED" | "SCHEMA_CREATE" | "SCHEMA_RENAME" | "SCHEMA_ARCHIVE" | "SCHEMA_RESTORE" | "SCHEMA_DUPLICATE" | "SCHEMA_DELETE" | "SCHEMA_VERSION_CREATE" | "SCHEMA_DRAFT_CREATE" | "SCHEMA_DRAFT_UPDATE" | "SCHEMA_DRAFT_MERGE" | "SCHEMA_DRAFT_PUBLISH" | "BOOKMARK_CREATE" | "BOOKMARK_MOVE" | "BOOKMARK_UPDATE" | "BOOKMARK_PUBLISH" | "BOOKMARK_UNPUBLISH" | "BOOKMARK_EXAMPLE_MARK" | "BOOKMARK_EXAMPLE_UNMARK" | "BOOKMARK_MODERATION_UNPUBLISH" | "PREDICTION_RUN" | "PREDICTION_RUN_SAVE" | "PREDICTION_RUN_BATCH_CREATE" | "PREDICTION_RUN_DELETE" | "PREDICTION_JOB_START" | "PREDICTION_JOB_CANCEL" | "PREDICTION_JOB_RETRY" | "PREDICTION_JOB_CLAIMED" | "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_CANCELLED" | "REVIEW_CREATE" | "REVIEW_FEEDBACK_CREATE" | "REVIEW_FEEDBACK_UPDATE" | "REVIEW_SUBMIT" | "REVIEW_SUBMIT_PENDING" | "REVIEW_REOPEN" | "REVIEW_RESPONSE_DELETE" | "PUBLIC_FEEDBACK_SAVE" | "PLUGIN_UPLOAD" | "PLUGIN_DELETE" | "USER_CREATE" | "USER_UPDATE" | "USER_PASSWORD_RESET" | "USER_DELETE" | "INFRASTRUCTURE_SERVICE_ACTION" | "TERMINAL_SESSION_OPEN" | "TERMINAL_SESSION_CLOSE" | "AUTH_LOGIN" | "AUTH_LOGIN_FAILED" | "AUTH_LOGOUT" | "AUTH_REGISTER" | "STORAGE_DELETION_FAILED" | "API_REQUEST_RETENTION_PRUNE" | "AUDIT_RETENTION_PRUNE" | "NOTIFICATION_RETENTION_PRUNE" | "SYSTEM_ALERT_RAISED" | "SYSTEM_ALERT_ESCALATED" | "SYSTEM_ALERT_RESOLVED" | "SYSTEM_ALERT_RETENTION_PRUNE";
             actor: components["schemas"]["AuditActorDto"];
             /** Format: date-time */
             createdAt: string;
@@ -2920,7 +2936,7 @@ export interface components {
             requestId: string | null;
             targetId: string | null;
             /** @enum {string} */
-            targetType: "API_CLIENT" | "API_CLIENT_KEY" | "API_REQUEST_LOG" | "AUDIT_LOG" | "INFRASTRUCTURE_SERVICE" | "INVITATION" | "MODEL" | "NOTIFICATION_LOG" | "ORGANIZATION" | "ORGANIZATION_MEMBER" | "PLUGIN" | "PREDICTION_JOB" | "PREDICTION_RUN" | "REVIEW" | "ROLE" | "SCHEMA" | "SCHEMA_BOOKMARK" | "SCHEMA_DRAFT" | "SCHEMA_VERSION" | "STORAGE_OBJECT" | "TERMINAL_SESSION" | "USER";
+            targetType: "API_CLIENT" | "API_CLIENT_KEY" | "API_REQUEST_LOG" | "AUDIT_LOG" | "INFRASTRUCTURE_SERVICE" | "INVITATION" | "MODEL" | "NOTIFICATION_LOG" | "ORGANIZATION" | "ORGANIZATION_MEMBER" | "PLUGIN" | "PREDICTION_JOB" | "PREDICTION_RUN" | "REVIEW" | "ROLE" | "SCHEMA" | "SCHEMA_BOOKMARK" | "SCHEMA_DRAFT" | "SCHEMA_VERSION" | "STORAGE_OBJECT" | "SYSTEM_ALERT" | "TERMINAL_SESSION" | "USER";
         };
         AuthRequest: {
             /** Format: email */
@@ -3306,7 +3322,7 @@ export interface components {
             /** Format: int64 */
             id: number;
             /** @enum {string} */
-            kind: "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_COMPLETED_WITH_FAILURES" | "PREDICTION_JOB_STOPPED" | "PREDICTION_JOB_CANCELLED" | "MODEL_READY" | "MODEL_FAILED" | "INVITATION_RECEIVED" | "INVITATION_ACCEPTED" | "INVITATION_DECLINED" | "ORGANIZATION_JOINED" | "REVIEW_ASSIGNED";
+            kind: "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_COMPLETED_WITH_FAILURES" | "PREDICTION_JOB_STOPPED" | "PREDICTION_JOB_CANCELLED" | "MODEL_READY" | "MODEL_FAILED" | "INVITATION_RECEIVED" | "INVITATION_ACCEPTED" | "INVITATION_DECLINED" | "ORGANIZATION_JOINED" | "REVIEW_ASSIGNED" | "SYSTEM_ALERT_RAISED" | "SYSTEM_ALERT_ESCALATED" | "SYSTEM_ALERT_RESOLVED";
             /** Format: int64 */
             organizationId: number | null;
             payload: {
@@ -3316,7 +3332,7 @@ export interface components {
             readAt: string | null;
             targetId: string;
             /** @enum {string} */
-            targetType: "PREDICTION_JOB" | "MODEL" | "INVITATION" | "ORGANIZATION" | "REVIEW";
+            targetType: "PREDICTION_JOB" | "MODEL" | "INVITATION" | "ORGANIZATION" | "REVIEW" | "SYSTEM_ALERT";
         };
         Option: {
             label: string;
@@ -4459,6 +4475,48 @@ export interface components {
         SuspendApiClientRequest: {
             reason: string;
         };
+        SystemAlertDto: {
+            /** Format: int64 */
+            id: number;
+            label: string;
+            /** Format: double */
+            latestValue: number;
+            /** Format: date-time */
+            raisedAt: string;
+            /** Format: date-time */
+            resolvedAt: string | null;
+            /** @enum {string} */
+            severity: "WARNING" | "CRITICAL";
+            /** @enum {string} */
+            signal: "PREDICTION_ROWS_PENDING" | "PREDICTION_OLDEST_AGE" | "MODELS_PREPARING" | "RUNTIME_QUEUE" | "RUNTIME_REJECTIONS" | "STORAGE_DELETIONS_FAILED" | "HOST_CPU" | "HOST_RAM" | "HOST_DISK" | "OPS_AGENT";
+            /** Format: double */
+            threshold: number;
+            unit: string;
+            /** Format: double */
+            value: number;
+        };
+        SystemAlertSignalDto: {
+            /** Format: double */
+            clearThreshold: number;
+            /** Format: double */
+            criticalThreshold: number | null;
+            label: string;
+            /** @enum {string} */
+            signal: "PREDICTION_ROWS_PENDING" | "PREDICTION_OLDEST_AGE" | "MODELS_PREPARING" | "RUNTIME_QUEUE" | "RUNTIME_REJECTIONS" | "STORAGE_DELETIONS_FAILED" | "HOST_CPU" | "HOST_RAM" | "HOST_DISK" | "OPS_AGENT";
+            unit: string;
+            /** Format: double */
+            value: number | null;
+            /** Format: double */
+            warningThreshold: number;
+        };
+        SystemAlertsDto: {
+            open: components["schemas"]["SystemAlertDto"][];
+            opsAgentReporting: boolean | null;
+            recent: components["schemas"]["SystemAlertDto"][];
+            /** Format: date-time */
+            sampledAt: string | null;
+            signals: components["schemas"]["SystemAlertSignalDto"][];
+        };
         TerminalSessionRequest: {
             /** Format: int32 */
             cols: number;
@@ -4804,6 +4862,9 @@ export type ServiceActionRequest = components['schemas']['ServiceActionRequest']
 export type StartupReadinessDto = components['schemas']['StartupReadinessDto'];
 export type SubmitSchemaReviewRunsRequest = components['schemas']['SubmitSchemaReviewRunsRequest'];
 export type SuspendApiClientRequest = components['schemas']['SuspendApiClientRequest'];
+export type SystemAlertDto = components['schemas']['SystemAlertDto'];
+export type SystemAlertSignalDto = components['schemas']['SystemAlertSignalDto'];
+export type SystemAlertsDto = components['schemas']['SystemAlertsDto'];
 export type TerminalSessionRequest = components['schemas']['TerminalSessionRequest'];
 export type TerminalSessionResponse = components['schemas']['TerminalSessionResponse'];
 export type TraceRequest = components['schemas']['TraceRequest'];
@@ -4825,6 +4886,26 @@ export type WorkspacePredictionRequest = components['schemas']['WorkspacePredict
 export type WorkspaceUserDto = components['schemas']['WorkspaceUserDto'];
 export type $defs = Record<string, never>;
 export interface operations {
+    systemAlerts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemAlertsDto"];
+                };
+            };
+        };
+    };
     listApiTrafficClients: {
         parameters: {
             query?: {
@@ -4985,7 +5066,7 @@ export interface operations {
                 to?: string | null;
                 actorKind?: "USER" | "SYSTEM" | "API_CLIENT" | "VISITOR" | null;
                 actor?: string | null;
-                targetType?: "API_CLIENT" | "API_CLIENT_KEY" | "API_REQUEST_LOG" | "AUDIT_LOG" | "INFRASTRUCTURE_SERVICE" | "INVITATION" | "MODEL" | "NOTIFICATION_LOG" | "ORGANIZATION" | "ORGANIZATION_MEMBER" | "PLUGIN" | "PREDICTION_JOB" | "PREDICTION_RUN" | "REVIEW" | "ROLE" | "SCHEMA" | "SCHEMA_BOOKMARK" | "SCHEMA_DRAFT" | "SCHEMA_VERSION" | "STORAGE_OBJECT" | "TERMINAL_SESSION" | "USER" | null;
+                targetType?: "API_CLIENT" | "API_CLIENT_KEY" | "API_REQUEST_LOG" | "AUDIT_LOG" | "INFRASTRUCTURE_SERVICE" | "INVITATION" | "MODEL" | "NOTIFICATION_LOG" | "ORGANIZATION" | "ORGANIZATION_MEMBER" | "PLUGIN" | "PREDICTION_JOB" | "PREDICTION_RUN" | "REVIEW" | "ROLE" | "SCHEMA" | "SCHEMA_BOOKMARK" | "SCHEMA_DRAFT" | "SCHEMA_VERSION" | "STORAGE_OBJECT" | "SYSTEM_ALERT" | "TERMINAL_SESSION" | "USER" | null;
                 organization?: string;
             };
             header?: never;
@@ -6356,7 +6437,7 @@ export interface operations {
                 to?: string | null;
                 actorKind?: "USER" | "SYSTEM" | "API_CLIENT" | "VISITOR" | null;
                 actor?: string | null;
-                targetType?: "API_CLIENT" | "API_CLIENT_KEY" | "API_REQUEST_LOG" | "AUDIT_LOG" | "INFRASTRUCTURE_SERVICE" | "INVITATION" | "MODEL" | "NOTIFICATION_LOG" | "ORGANIZATION" | "ORGANIZATION_MEMBER" | "PLUGIN" | "PREDICTION_JOB" | "PREDICTION_RUN" | "REVIEW" | "ROLE" | "SCHEMA" | "SCHEMA_BOOKMARK" | "SCHEMA_DRAFT" | "SCHEMA_VERSION" | "STORAGE_OBJECT" | "TERMINAL_SESSION" | "USER" | null;
+                targetType?: "API_CLIENT" | "API_CLIENT_KEY" | "API_REQUEST_LOG" | "AUDIT_LOG" | "INFRASTRUCTURE_SERVICE" | "INVITATION" | "MODEL" | "NOTIFICATION_LOG" | "ORGANIZATION" | "ORGANIZATION_MEMBER" | "PLUGIN" | "PREDICTION_JOB" | "PREDICTION_RUN" | "REVIEW" | "ROLE" | "SCHEMA" | "SCHEMA_BOOKMARK" | "SCHEMA_DRAFT" | "SCHEMA_VERSION" | "STORAGE_OBJECT" | "SYSTEM_ALERT" | "TERMINAL_SESSION" | "USER" | null;
             };
             header?: never;
             path: {

@@ -55,6 +55,19 @@ class OpsAgentActionClientTest {
     }
 
     @Test
+    void readsTheMachinesLoadAndFailsWhenTheAgentCannotSay() {
+        server.createContext("/internal/load", exchange -> {
+            byte[] body = "{\"detail\":\"No service is reporting.\"}".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(503, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.close();
+        });
+        server.start();
+
+        assertEquals(503, assertThrows(OpsAgentException.class, client::load).getStatus());
+    }
+
+    @Test
     void preservesUpstreamActionFailure() {
         server.createContext("/internal/services/py-analyzer/actions", exchange -> {
             byte[] body = "{\"detail\":\"Docker rejected action\"}".getBytes(StandardCharsets.UTF_8);

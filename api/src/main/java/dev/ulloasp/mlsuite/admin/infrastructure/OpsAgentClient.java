@@ -23,6 +23,7 @@ public class OpsAgentClient {
 
     private final OkHttpClient httpClient;
     private final OkHttpClient actionClient;
+    private final OkHttpClient loadClient;
     private final ObjectMapper objectMapper;
     private final OpsAgentProperties properties;
 
@@ -34,10 +35,16 @@ public class OpsAgentClient {
                 .readTimeout(Duration.ofSeconds(60))
                 .callTimeout(Duration.ofSeconds(60))
                 .build();
+        this.loadClient = httpClient.newBuilder().callTimeout(Duration.ofSeconds(5)).build();
     }
 
     public JsonNode overview() {
         return readJson(buildRequest("/internal/overview").get().build());
+    }
+
+    /** How much of the machine is in use. Fails when the agent cannot say, as when it cannot be reached. */
+    public JsonNode load() {
+        return readJson(buildRequest("/internal/load").get().build(), loadClient);
     }
 
     public void action(String serviceName, String action) {
@@ -75,7 +82,11 @@ public class OpsAgentClient {
     }
 
     private JsonNode readJson(Request request) {
-        try (Response response = httpClient.newCall(request).execute()) {
+        return readJson(request, httpClient);
+    }
+
+    private JsonNode readJson(Request request, OkHttpClient client) {
+        try (Response response = client.newCall(request).execute()) {
             String body = response.body() != null ? response.body().string() : "";
             if (!response.isSuccessful()) {
                 throw new OpsAgentException(response.code(), extractMessage(body));
