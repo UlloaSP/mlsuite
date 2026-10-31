@@ -98,14 +98,31 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
         Page<SchemaBookmark> bookmarks = bookmarkRepository.findPublishedPage(
                 search == null ? "" : search.strip(),
                 PageDto.request(page, size, sort(sort)));
-        // A card counts what the bookmark's page shows, so it is read from the same public form.
+        return PageDto.of(bookmarks, summaries(bookmarks.getContent()));
+    }
+
+    @Override
+    public List<PublicBookmarkSummaryDto> getPinnedBookmarks(Long userId) {
+        return summaries(bookmarkRepository.findPinnedBy(userId));
+    }
+
+    @Override
+    public PageDto<PublicBookmarkSummaryDto> getUnpinnedBookmarkPage(Long organizationId, int page, int size,
+            String search) {
+        Page<SchemaBookmark> bookmarks = bookmarkRepository.findPublishedUnpinned(organizationId,
+                search == null ? "" : search.strip(), PageDto.request(page, size, sort("updated")));
+        return PageDto.of(bookmarks, summaries(bookmarks.getContent()));
+    }
+
+    /** A card counts what the bookmark's page shows, so it is read from the same public form. */
+    private List<PublicBookmarkSummaryDto> summaries(List<SchemaBookmark> bookmarks) {
         Map<Long, List<BoundModel>> models = publishability.models(
-                bookmarks.getContent().stream().map(SchemaBookmark::getVersion).toList());
-        return PageDto.of(bookmarks, bookmarks.getContent().stream().map(bookmark -> {
+                bookmarks.stream().map(SchemaBookmark::getVersion).toList());
+        return bookmarks.stream().map(bookmark -> {
             SchemaVersion version = bookmark.getVersion();
             PublicForm form = PublicForm.of(version.getFormSchema(), models.getOrDefault(version.getId(), List.of()));
             return PublicBookmarkSummaryDto.from(bookmark, form.inputCount(), form.reportCount());
-        }).toList());
+        }).toList();
     }
 
     /** Answers 404 unless the bookmark is public now, as every public read of it does. */

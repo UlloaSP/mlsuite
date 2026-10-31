@@ -4,6 +4,7 @@ import { assignmentActions } from "@/features/inferences/lib/use-review-assignme
 import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
+import { PersonAvatar } from "@/shared/ui/PersonAvatar";
 import { ReviewAssignmentFacts } from "./ReviewAssignmentFacts";
 import { ReviewStateBadges } from "./ReviewStateBadges";
 import type { SchemaReviewAssignmentStatusDto } from "@/shared/api/openapi.gen";
@@ -31,9 +32,12 @@ export function InferenceReviewTile({ assignment, to, disabled, onDelete, onReop
             FOCUS_RING,
           )}
         >
-          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-surface-subtle text-sm font-semibold text-fg">
-            {assignment.reviewer.fullName.trim().charAt(0).toUpperCase() || "?"}
-          </span>
+          <PersonAvatar
+            avatarUrl={assignment.reviewer.avatarUrl}
+            className="size-10 rounded-full text-sm"
+            fallbackClassName="bg-surface-subtle text-fg"
+            name={assignment.reviewer.fullName}
+          />
           <span className="min-w-0">
             <span className="block truncate font-semibold text-fg">
               {assignment.reviewer.fullName}

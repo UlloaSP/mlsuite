@@ -23,6 +23,8 @@ public record PublicBookmarkSummaryDto(
         String organizationName,
         @Nullable String organizationLogoUrl,
         OrganizationKind organizationKind,
+        /** Where the publisher's profile answers, for a person who keeps one public. */
+        @Nullable String publisherHandle,
         OffsetDateTime updatedAt) {
 
     public static PublicBookmarkSummaryDto from(SchemaBookmark bookmark, int inputCount, int reportCount) {
@@ -35,6 +37,7 @@ public record PublicBookmarkSummaryDto(
                 bookmark.getSchema().getOrganization().getName(),
                 OrganizationLogoUrl.of(bookmark.getSchema().getOrganization()),
                 bookmark.getSchema().getOrganization().getKind(),
+                bookmark.getSchema().getOrganization().profileHandle(),
                 bookmark.getUpdatedAt());
     }
 }

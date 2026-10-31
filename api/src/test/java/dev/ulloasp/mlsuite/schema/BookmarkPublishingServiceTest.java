@@ -176,8 +176,8 @@ class BookmarkPublishingServiceTest {
                 view.formSchema());
         ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
         assertEquals(Set.of("publicId", "name", "description", "publicationNote", "version", "inputCount",
-                "reportCount", "organizationName", "organizationLogoUrl", "organizationKind", "formSchema",
-                "updatedAt"),
+                "reportCount", "organizationName", "organizationLogoUrl", "organizationKind", "publisherHandle",
+                "formSchema", "updatedAt"),
                 mapper.convertValue(view, Map.class).keySet());
         String json = mapper.writeValueAsString(view);
         for (String secret : List.of("model-11", "model-99", "smoker__1", "gone", "site", "Site", "cohort")) {

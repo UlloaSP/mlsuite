@@ -2,6 +2,7 @@ package dev.ulloasp.mlsuite.admin;
 
 import java.time.OffsetDateTime;
 
+import dev.ulloasp.mlsuite.user.application.dto.UserAvatarUrl;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
@@ -23,7 +24,7 @@ public record AdminUserDto(
                 user.getUsername(),
                 user.getEmail(),
                 user.getFullName(),
-                user.getAvatarUrl(),
+                UserAvatarUrl.of(user),
                 user.getSystemRole(),
                 user.isEnabled(),
                 user.getCreatedAt());

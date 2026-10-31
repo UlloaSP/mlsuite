@@ -1,15 +1,12 @@
 package dev.ulloasp.mlsuite.organization.application.usecase;
 
-import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
@@ -21,6 +18,7 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundExc
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationLogo;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
+import dev.ulloasp.mlsuite.util.SquareImage;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import lombok.RequiredArgsConstructor;
@@ -43,13 +41,7 @@ public class OrganizationLogoService {
     public OrganizationDto replace(Long userId, Long organizationId, MultipartFile upload) {
         workspaceAuthorizationService.require(userId, organizationId, PermissionKey.EDIT_ORGANIZATION);
         Organization organization = requireOrganization(organizationId);
-        if (upload == null || upload.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Upload a PNG or JPG image.");
-        }
-        if (upload.getSize() > OrganizationLogoImage.MAX_UPLOAD_BYTES) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The logo must be at most 2 MB.");
-        }
-        OrganizationLogoImage.Normalized logo = OrganizationLogoImage.normalize(bytes(upload));
+        SquareImage.Normalized logo = SquareImage.normalize(upload, "logo");
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         logoRepository.save(new OrganizationLogo(organizationId, logo.content(), logo.contentType(), now));
         organization.setLogoUpdatedAt(now);
@@ -78,13 +70,5 @@ public class OrganizationLogoService {
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
         organization.requireTeam("A personal account is pictured by its owner, not by a logo.");
         return organization;
-    }
-
-    private static byte[] bytes(MultipartFile upload) {
-        try {
-            return upload.getBytes();
-        } catch (IOException failure) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The image could not be read.");
-        }
     }
 }

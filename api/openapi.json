@@ -1012,6 +1012,11 @@
               "USER_UPDATE",
               "USER_PASSWORD_RESET",
               "USER_DELETE",
+              "USER_PROFILE_UPDATE",
+              "USER_HANDLE_CHANGE",
+              "USER_AVATAR_REPLACE",
+              "USER_AVATAR_REMOVE",
+              "USER_PASSWORD_CHANGE",
               "INFRASTRUCTURE_SERVICE_ACTION",
               "TERMINAL_SESSION_OPEN",
               "TERMINAL_SESSION_CLOSE",
@@ -1281,6 +1286,25 @@
           "search",
           "size",
           "timeZone"
+        ],
+        "type": "object"
+      },
+      "ChangePasswordRequest": {
+        "properties": {
+          "currentPassword": {
+            "maxLength": 128,
+            "minLength": 0,
+            "type": "string"
+          },
+          "newPassword": {
+            "maxLength": 128,
+            "minLength": 10,
+            "type": "string"
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
         ],
         "type": "object"
       },
@@ -2885,6 +2909,12 @@
             "format": "int64",
             "type": "integer"
           },
+          "profileHandle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "roleDefinition": {
             "$ref": "#/components/schemas/RoleSummaryDto"
           },
@@ -2908,6 +2938,7 @@
           "fullName",
           "id",
           "organizationId",
+          "profileHandle",
           "roleDefinition",
           "status",
           "userId"
@@ -2943,6 +2974,12 @@
             "format": "int64",
             "type": "integer"
           },
+          "profileHandle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "role": {
             "$ref": "#/components/schemas/RoleSummaryDto"
           },
@@ -2967,9 +3004,41 @@
           "fullName",
           "id",
           "organizationId",
+          "profileHandle",
           "role",
           "status",
           "userId"
+        ],
+        "type": "object"
+      },
+      "OwnProfileDto": {
+        "properties": {
+          "inferences": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "models": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "plugins": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/PublicProfileDto"
+          },
+          "schemas": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "inferences",
+          "models",
+          "plugins",
+          "profile",
+          "schemas"
         ],
         "type": "object"
       },
@@ -4132,12 +4201,6 @@
             "format": "date-time",
             "type": "string"
           },
-          "updatedByAvatarUrl": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "updatedByEmail": {
             "type": [
               "string",
@@ -4161,7 +4224,6 @@
           "sizeBytes",
           "source",
           "updatedAt",
-          "updatedByAvatarUrl",
           "updatedByEmail",
           "updatedByName"
         ],
@@ -4928,6 +4990,12 @@
               "null"
             ]
           },
+          "publisherHandle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "reportCount": {
             "format": "int32",
             "type": "integer"
@@ -4951,6 +5019,7 @@
           "organizationName",
           "publicId",
           "publicationNote",
+          "publisherHandle",
           "reportCount",
           "updatedAt",
           "version"
@@ -5011,6 +5080,12 @@
           "publicId": {
             "type": "string"
           },
+          "publisherHandle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "reportCount": {
             "format": "int32",
             "type": "integer"
@@ -5028,6 +5103,7 @@
           "organizationLogoUrl",
           "organizationName",
           "publicId",
+          "publisherHandle",
           "reportCount",
           "updatedAt"
         ],
@@ -5078,6 +5154,100 @@
         "required": [
           "values",
           "version"
+        ],
+        "type": "object"
+      },
+      "PublicProfileDto": {
+        "properties": {
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "company": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "handle": {
+            "type": "string"
+          },
+          "joinedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "links": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "organizations": {
+            "items": {
+              "$ref": "#/components/schemas/PublicProfileOrganizationDto"
+            },
+            "type": "array"
+          },
+          "pinned": {
+            "items": {
+              "$ref": "#/components/schemas/PublicBookmarkSummaryDto"
+            },
+            "type": "array"
+          },
+          "website": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "avatarUrl",
+          "bio",
+          "company",
+          "fullName",
+          "handle",
+          "joinedAt",
+          "links",
+          "location",
+          "organizations",
+          "pinned",
+          "website"
+        ],
+        "type": "object"
+      },
+      "PublicProfileOrganizationDto": {
+        "properties": {
+          "logoUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "logoUrl",
+          "name"
         ],
         "type": "object"
       },
@@ -6359,6 +6529,12 @@
       },
       "SchemaReviewReviewerDto": {
         "properties": {
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "email": {
             "type": "string"
           },
@@ -6371,6 +6547,7 @@
           }
         },
         "required": [
+          "avatarUrl",
           "email",
           "fullName",
           "id"
@@ -6797,6 +6974,23 @@
         ],
         "type": "object"
       },
+      "UpdateProfilePinsRequest": {
+        "properties": {
+          "publicIds": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 6,
+            "minItems": 0,
+            "type": "array"
+          }
+        },
+        "required": [
+          "publicIds"
+        ],
+        "type": "object"
+      },
       "UpdateRoleRequest": {
         "properties": {
           "description": {
@@ -6887,9 +7081,97 @@
         ],
         "type": "object"
       },
+      "UpdateUserProfileRequest": {
+        "properties": {
+          "bio": {
+            "maxLength": 280,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "company": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fullName": {
+            "maxLength": 150,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "handle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "links": {
+            "items": {
+              "maxLength": 255,
+              "minLength": 0,
+              "type": "string"
+            },
+            "maxItems": 4,
+            "minItems": 0,
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "location": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "profilePublic": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "profileShowsOrganizations": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "website": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
       "UserDto": {
         "properties": {
           "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "company": {
             "type": [
               "string",
               "null"
@@ -6911,6 +7193,24 @@
             "format": "int64",
             "type": "integer"
           },
+          "links": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "profilePublic": {
+            "type": "boolean"
+          },
+          "profileShowsOrganizations": {
+            "type": "boolean"
+          },
           "systemRole": {
             "enum": [
               "USER",
@@ -6920,17 +7220,30 @@
           },
           "userName": {
             "type": "string"
+          },
+          "website": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
           "avatarUrl",
+          "bio",
+          "company",
           "createdAt",
           "email",
           "enabled",
           "fullName",
           "id",
+          "links",
+          "location",
+          "profilePublic",
+          "profileShowsOrganizations",
           "systemRole",
-          "userName"
+          "userName",
+          "website"
         ],
         "type": "object"
       },
@@ -10258,7 +10571,7 @@
     },
     "/api/organizations/{organizationId}/logo": {
       "delete": {
-        "operationId": "remove",
+        "operationId": "remove_1",
         "parameters": [
           {
             "in": "path",
@@ -10287,7 +10600,7 @@
         ]
       },
       "put": {
-        "operationId": "replace",
+        "operationId": "replace_1",
         "parameters": [
           {
             "in": "path",
@@ -12423,7 +12736,7 @@
     },
     "/api/public/organizations/{organizationId}/logo": {
       "get": {
-        "operationId": "read",
+        "operationId": "read_1",
         "parameters": [
           {
             "in": "path",
@@ -12450,6 +12763,118 @@
         },
         "tags": [
           "organization-logo-controller"
+        ]
+      }
+    },
+    "/api/public/users/{handle}": {
+      "get": {
+        "operationId": "profile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "handle",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicProfileDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-profile-controller"
+        ]
+      }
+    },
+    "/api/public/users/{handle}/bookmarks": {
+      "get": {
+        "operationId": "bookmarks",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "handle",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoPublicBookmarkSummaryDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-profile-controller"
+        ]
+      }
+    },
+    "/api/public/users/{userId}/avatar": {
+      "get": {
+        "operationId": "read",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "format": "byte",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "user-avatar-controller"
         ]
       }
     },
@@ -15029,6 +15454,214 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "user-controller"
+        ]
+      },
+      "patch": {
+        "operationId": "updateProfile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "user-controller"
+        ]
+      }
+    },
+    "/api/users/me/avatar": {
+      "delete": {
+        "operationId": "remove",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "user-avatar-controller"
+        ]
+      },
+      "put": {
+        "operationId": "replace",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "avatar": {
+                    "format": "binary",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "avatar"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "user-avatar-controller"
+        ]
+      }
+    },
+    "/api/users/me/bookmarks": {
+      "get": {
+        "operationId": "ownBookmarks",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "default": "",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoPublicBookmarkSummaryDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "user-controller"
+        ]
+      }
+    },
+    "/api/users/me/password": {
+      "post": {
+        "operationId": "change",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "password-change-controller"
+        ]
+      }
+    },
+    "/api/users/me/pins": {
+      "put": {
+        "operationId": "replacePins",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfilePinsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnProfileDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "user-controller"
+        ]
+      }
+    },
+    "/api/users/me/profile": {
+      "get": {
+        "operationId": "ownProfile",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnProfileDto"
                 }
               }
             },

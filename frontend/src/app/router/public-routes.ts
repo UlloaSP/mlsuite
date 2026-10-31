@@ -12,6 +12,9 @@ export const publicPages: RouteObject[] = [
   page("explore/:publicId", () =>
     import("@/features/explore/pages/public-bookmark-page").then((m) => m.PublicBookmarkPage),
   ),
+  page("u/:handle", () =>
+    import("@/features/user/pages/public-profile-page").then((m) => m.PublicProfilePage),
+  ),
 ];
 
 /** Whether `path` opens one of them: a page a visitor can go back to without a session. */

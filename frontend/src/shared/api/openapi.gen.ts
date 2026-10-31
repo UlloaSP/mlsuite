@@ -988,9 +988,9 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["replace"];
+        put: operations["replace_1"];
         post?: never;
-        delete: operations["remove"];
+        delete: operations["remove_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1685,6 +1685,54 @@ export interface paths {
         trace?: never;
     };
     "/api/public/organizations/{organizationId}/logo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["read_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/users/{handle}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["profile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/users/{handle}/bookmarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["bookmarks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/users/{userId}/avatar": {
         parameters: {
             query?: never;
             header?: never;
@@ -2577,6 +2625,86 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
+        patch: operations["updateProfile"];
+        trace?: never;
+    };
+    "/api/users/me/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["replace"];
+        post?: never;
+        delete: operations["remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/me/bookmarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ownBookmarks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/me/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["change"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/me/pins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["replacePins"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/me/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ownProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
         patch?: never;
         trace?: never;
     };
@@ -2903,7 +3031,7 @@ export interface components {
         };
         AuditEventDto: {
             /** @enum {string} */
-            action: "ORGANIZATION_CREATE" | "ORGANIZATION_UPDATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_LOGO_REPLACE" | "ORGANIZATION_LOGO_REMOVE" | "OWNERSHIP_TRANSFER" | "MEMBER_ROLE_CHANGE" | "MEMBER_REMOVE" | "INVITATION_CREATE" | "INVITATION_RESEND" | "INVITATION_REVOKE" | "INVITATION_ACCEPT" | "INVITATION_DECLINE" | "ROLE_CREATE" | "ROLE_FROM_TEMPLATE" | "ROLE_DUPLICATE" | "ROLE_UPDATE" | "ROLE_DELETE" | "API_CLIENT_CREATE" | "API_CLIENT_UPDATE" | "API_CLIENT_DELETE" | "API_KEY_ISSUE" | "API_KEY_REVOKE" | "API_ACCESS_GRANT" | "API_ACCESS_REVOKE" | "API_CLIENT_SUSPEND" | "API_CLIENT_REINSTATE" | "API_CALL_LIMIT_SET" | "MODEL_UPLOAD" | "MODEL_RENAME" | "MODEL_ARCHIVE" | "MODEL_RESTORE" | "MODEL_ENVIRONMENT_RETRY" | "MODEL_DUPLICATE" | "MODEL_DELETE" | "MODEL_EXPLAIN" | "MODEL_PREPARATION_READY" | "MODEL_PREPARATION_FAILED" | "SCHEMA_CREATE" | "SCHEMA_RENAME" | "SCHEMA_ARCHIVE" | "SCHEMA_RESTORE" | "SCHEMA_DUPLICATE" | "SCHEMA_DELETE" | "SCHEMA_VERSION_CREATE" | "SCHEMA_DRAFT_CREATE" | "SCHEMA_DRAFT_UPDATE" | "SCHEMA_DRAFT_MERGE" | "SCHEMA_DRAFT_PUBLISH" | "BOOKMARK_CREATE" | "BOOKMARK_MOVE" | "BOOKMARK_UPDATE" | "BOOKMARK_PUBLISH" | "BOOKMARK_UNPUBLISH" | "BOOKMARK_EXAMPLE_MARK" | "BOOKMARK_EXAMPLE_UNMARK" | "BOOKMARK_MODERATION_UNPUBLISH" | "PREDICTION_RUN" | "PREDICTION_RUN_SAVE" | "PREDICTION_RUN_BATCH_CREATE" | "PREDICTION_RUN_DELETE" | "PREDICTION_JOB_START" | "PREDICTION_JOB_CANCEL" | "PREDICTION_JOB_RETRY" | "PREDICTION_JOB_CLAIMED" | "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_CANCELLED" | "REVIEW_CREATE" | "REVIEW_FEEDBACK_CREATE" | "REVIEW_FEEDBACK_UPDATE" | "REVIEW_SUBMIT" | "REVIEW_SUBMIT_PENDING" | "REVIEW_REOPEN" | "REVIEW_RESPONSE_DELETE" | "PUBLIC_FEEDBACK_SAVE" | "PLUGIN_UPLOAD" | "PLUGIN_DELETE" | "USER_CREATE" | "USER_UPDATE" | "USER_PASSWORD_RESET" | "USER_DELETE" | "INFRASTRUCTURE_SERVICE_ACTION" | "TERMINAL_SESSION_OPEN" | "TERMINAL_SESSION_CLOSE" | "AUTH_LOGIN" | "AUTH_LOGIN_FAILED" | "AUTH_LOGOUT" | "AUTH_REGISTER" | "STORAGE_DELETION_FAILED" | "API_REQUEST_RETENTION_PRUNE" | "AUDIT_RETENTION_PRUNE" | "NOTIFICATION_RETENTION_PRUNE";
+            action: "ORGANIZATION_CREATE" | "ORGANIZATION_UPDATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_LOGO_REPLACE" | "ORGANIZATION_LOGO_REMOVE" | "OWNERSHIP_TRANSFER" | "MEMBER_ROLE_CHANGE" | "MEMBER_REMOVE" | "INVITATION_CREATE" | "INVITATION_RESEND" | "INVITATION_REVOKE" | "INVITATION_ACCEPT" | "INVITATION_DECLINE" | "ROLE_CREATE" | "ROLE_FROM_TEMPLATE" | "ROLE_DUPLICATE" | "ROLE_UPDATE" | "ROLE_DELETE" | "API_CLIENT_CREATE" | "API_CLIENT_UPDATE" | "API_CLIENT_DELETE" | "API_KEY_ISSUE" | "API_KEY_REVOKE" | "API_ACCESS_GRANT" | "API_ACCESS_REVOKE" | "API_CLIENT_SUSPEND" | "API_CLIENT_REINSTATE" | "API_CALL_LIMIT_SET" | "MODEL_UPLOAD" | "MODEL_RENAME" | "MODEL_ARCHIVE" | "MODEL_RESTORE" | "MODEL_ENVIRONMENT_RETRY" | "MODEL_DUPLICATE" | "MODEL_DELETE" | "MODEL_EXPLAIN" | "MODEL_PREPARATION_READY" | "MODEL_PREPARATION_FAILED" | "SCHEMA_CREATE" | "SCHEMA_RENAME" | "SCHEMA_ARCHIVE" | "SCHEMA_RESTORE" | "SCHEMA_DUPLICATE" | "SCHEMA_DELETE" | "SCHEMA_VERSION_CREATE" | "SCHEMA_DRAFT_CREATE" | "SCHEMA_DRAFT_UPDATE" | "SCHEMA_DRAFT_MERGE" | "SCHEMA_DRAFT_PUBLISH" | "BOOKMARK_CREATE" | "BOOKMARK_MOVE" | "BOOKMARK_UPDATE" | "BOOKMARK_PUBLISH" | "BOOKMARK_UNPUBLISH" | "BOOKMARK_EXAMPLE_MARK" | "BOOKMARK_EXAMPLE_UNMARK" | "BOOKMARK_MODERATION_UNPUBLISH" | "PREDICTION_RUN" | "PREDICTION_RUN_SAVE" | "PREDICTION_RUN_BATCH_CREATE" | "PREDICTION_RUN_DELETE" | "PREDICTION_JOB_START" | "PREDICTION_JOB_CANCEL" | "PREDICTION_JOB_RETRY" | "PREDICTION_JOB_CLAIMED" | "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_CANCELLED" | "REVIEW_CREATE" | "REVIEW_FEEDBACK_CREATE" | "REVIEW_FEEDBACK_UPDATE" | "REVIEW_SUBMIT" | "REVIEW_SUBMIT_PENDING" | "REVIEW_REOPEN" | "REVIEW_RESPONSE_DELETE" | "PUBLIC_FEEDBACK_SAVE" | "PLUGIN_UPLOAD" | "PLUGIN_DELETE" | "USER_CREATE" | "USER_UPDATE" | "USER_PASSWORD_RESET" | "USER_DELETE" | "USER_PROFILE_UPDATE" | "USER_HANDLE_CHANGE" | "USER_AVATAR_REPLACE" | "USER_AVATAR_REMOVE" | "USER_PASSWORD_CHANGE" | "INFRASTRUCTURE_SERVICE_ACTION" | "TERMINAL_SESSION_OPEN" | "TERMINAL_SESSION_CLOSE" | "AUTH_LOGIN" | "AUTH_LOGIN_FAILED" | "AUTH_LOGOUT" | "AUTH_REGISTER" | "STORAGE_DELETION_FAILED" | "API_REQUEST_RETENTION_PRUNE" | "AUDIT_RETENTION_PRUNE" | "NOTIFICATION_RETENTION_PRUNE";
             actor: components["schemas"]["AuditActorDto"];
             /** Format: date-time */
             createdAt: string;
@@ -2962,6 +3090,10 @@ export interface components {
             /** Format: int32 */
             size: number;
             timeZone: string;
+        };
+        ChangePasswordRequest: {
+            currentPassword: string;
+            newPassword: string;
         };
         Condition: {
             columnId: string;
@@ -3397,6 +3529,7 @@ export interface components {
             id: number | null;
             /** Format: int64 */
             organizationId: number;
+            profileHandle: string | null;
             roleDefinition: components["schemas"]["RoleSummaryDto"];
             /** @enum {string} */
             status: "ACTIVE" | "PENDING" | "REMOVED";
@@ -3414,11 +3547,23 @@ export interface components {
             id: number;
             /** Format: int64 */
             organizationId: number;
+            profileHandle: string | null;
             role: components["schemas"]["RoleSummaryDto"];
             /** @enum {string} */
             status: "ACTIVE" | "PENDING" | "REMOVED";
             /** Format: int64 */
             userId: number;
+        };
+        OwnProfileDto: {
+            /** Format: int64 */
+            inferences: number;
+            /** Format: int64 */
+            models: number;
+            /** Format: int64 */
+            plugins: number;
+            profile: components["schemas"]["PublicProfileDto"];
+            /** Format: int64 */
+            schemas: number;
         };
         PageDtoAdminApiClientDto: {
             hasNext: boolean;
@@ -3764,7 +3909,6 @@ export interface components {
             source: string;
             /** Format: date-time */
             updatedAt: string;
-            updatedByAvatarUrl: string | null;
             updatedByEmail: string | null;
             updatedByName: string | null;
         };
@@ -3991,6 +4135,7 @@ export interface components {
             organizationName: string;
             publicId: string;
             publicationNote: string | null;
+            publisherHandle: string | null;
             /** Format: int32 */
             reportCount: number;
             /** Format: date-time */
@@ -4015,6 +4160,7 @@ export interface components {
             organizationLogoUrl: string | null;
             organizationName: string;
             publicId: string;
+            publisherHandle: string | null;
             /** Format: int32 */
             reportCount: number;
             /** Format: date-time */
@@ -4036,6 +4182,24 @@ export interface components {
             };
             /** Format: int32 */
             version: number;
+        };
+        PublicProfileDto: {
+            avatarUrl: string | null;
+            bio: string | null;
+            company: string | null;
+            fullName: string;
+            handle: string;
+            /** Format: date-time */
+            joinedAt: string;
+            links: string[];
+            location: string | null;
+            organizations: components["schemas"]["PublicProfileOrganizationDto"][];
+            pinned: components["schemas"]["PublicBookmarkSummaryDto"][];
+            website: string | null;
+        };
+        PublicProfileOrganizationDto: {
+            logoUrl: string | null;
+            name: string;
         };
         PublicRunDto: {
             /** Format: date-time */
@@ -4389,6 +4553,7 @@ export interface components {
             schemaVersion: components["schemas"]["SchemaVersionDto"];
         };
         SchemaReviewReviewerDto: {
+            avatarUrl: string | null;
             email: string;
             fullName: string;
             /** Format: int64 */
@@ -4502,6 +4667,9 @@ export interface components {
             feedbackId: number;
             value: components["schemas"]["JsonNode"];
         };
+        UpdateProfilePinsRequest: {
+            publicIds: string[];
+        };
         UpdateRoleRequest: {
             description?: string | null;
             name: string;
@@ -4523,17 +4691,35 @@ export interface components {
             };
             name: string;
         };
+        UpdateUserProfileRequest: {
+            bio?: string | null;
+            company?: string | null;
+            fullName?: string | null;
+            handle?: string | null;
+            links?: string[] | null;
+            location?: string | null;
+            profilePublic?: boolean | null;
+            profileShowsOrganizations?: boolean | null;
+            website?: string | null;
+        };
         UserDto: {
             avatarUrl: string | null;
+            bio: string | null;
+            company: string | null;
             createdAt: string;
             email: string;
             enabled: boolean;
             fullName: string;
             /** Format: int64 */
             id: number;
+            links: string[];
+            location: string | null;
+            profilePublic: boolean;
+            profileShowsOrganizations: boolean;
             /** @enum {string} */
             systemRole: "USER" | "SUPERADMIN";
             userName: string;
+            website: string | null;
         };
         WorkspaceContextDto: {
             currentMembership: components["schemas"]["OrganizationMembershipDto"];
@@ -4649,6 +4835,7 @@ export type BulkInvitationRequest = components['schemas']['BulkInvitationRequest
 export type CatalogSelectionItemDto = components['schemas']['CatalogSelectionItemDto'];
 export type CatalogSelectionPageDto = components['schemas']['CatalogSelectionPageDto'];
 export type CatalogSelectionRequest = components['schemas']['CatalogSelectionRequest'];
+export type ChangePasswordRequest = components['schemas']['ChangePasswordRequest'];
 export type Condition = components['schemas']['Condition'];
 export type ConditionRequest = components['schemas']['ConditionRequest'];
 export type CreateApiClientKeyRequest = components['schemas']['CreateApiClientKeyRequest'];
@@ -4704,6 +4891,7 @@ export type OrganizationCatalogItemDto = components['schemas']['OrganizationCata
 export type OrganizationDto = components['schemas']['OrganizationDto'];
 export type OrganizationMembershipDto = components['schemas']['OrganizationMembershipDto'];
 export type OrganizationMembershipRowDto = components['schemas']['OrganizationMembershipRowDto'];
+export type OwnProfileDto = components['schemas']['OwnProfileDto'];
 export type PageDtoAdminApiClientDto = components['schemas']['PageDtoAdminApiClientDto'];
 export type PageDtoAdminApiOrganizationDto = components['schemas']['PageDtoAdminApiOrganizationDto'];
 export type PageDtoAdminUserDto = components['schemas']['PageDtoAdminUserDto'];
@@ -4757,6 +4945,8 @@ export type PublicBookmarkSummaryDto = components['schemas']['PublicBookmarkSumm
 export type PublicPredictionDto = components['schemas']['PublicPredictionDto'];
 export type PublicPredictionReportDto = components['schemas']['PublicPredictionReportDto'];
 export type PublicPredictionRequest = components['schemas']['PublicPredictionRequest'];
+export type PublicProfileDto = components['schemas']['PublicProfileDto'];
+export type PublicProfileOrganizationDto = components['schemas']['PublicProfileOrganizationDto'];
 export type PublicRunDto = components['schemas']['PublicRunDto'];
 export type PublicRunFeedbackDto = components['schemas']['PublicRunFeedbackDto'];
 export type PublicRunFeedbackRequest = components['schemas']['PublicRunFeedbackRequest'];
@@ -4813,9 +5003,11 @@ export type UpdateApiClientRequest = components['schemas']['UpdateApiClientReque
 export type UpdateOrganizationMembershipRoleRequest = components['schemas']['UpdateOrganizationMembershipRoleRequest'];
 export type UpdateOrganizationRequest = components['schemas']['UpdateOrganizationRequest'];
 export type UpdatePredictionResultFeedbackRequest = components['schemas']['UpdatePredictionResultFeedbackRequest'];
+export type UpdateProfilePinsRequest = components['schemas']['UpdateProfilePinsRequest'];
 export type UpdateRoleRequest = components['schemas']['UpdateRoleRequest'];
 export type UpdateSchemaBookmarkRequest = components['schemas']['UpdateSchemaBookmarkRequest'];
 export type UpdateSchemaDraftRequest = components['schemas']['UpdateSchemaDraftRequest'];
+export type UpdateUserProfileRequest = components['schemas']['UpdateUserProfileRequest'];
 export type UserDto = components['schemas']['UserDto'];
 export type WorkspaceContextDto = components['schemas']['WorkspaceContextDto'];
 export type WorkspaceCurrentContextDto = components['schemas']['WorkspaceCurrentContextDto'];
@@ -6571,7 +6763,7 @@ export interface operations {
             };
         };
     };
-    replace: {
+    replace_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -6600,7 +6792,7 @@ export interface operations {
             };
         };
     };
-    remove: {
+    remove_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -7804,12 +7996,81 @@ export interface operations {
             };
         };
     };
-    read: {
+    read_1: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 organizationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    profile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                handle: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicProfileDto"];
+                };
+            };
+        };
+    };
+    bookmarks: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                handle: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoPublicBookmarkSummaryDto"];
+                };
+            };
+        };
+    };
+    read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
             };
             cookie?: never;
         };
@@ -9400,6 +9661,167 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserDto"];
+                };
+            };
+        };
+    };
+    updateProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDto"];
+                };
+            };
+        };
+    };
+    replace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    avatar: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDto"];
+                };
+            };
+        };
+    };
+    remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDto"];
+                };
+            };
+        };
+    };
+    ownBookmarks: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoPublicBookmarkSummaryDto"];
+                };
+            };
+        };
+    };
+    change: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    replacePins: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfilePinsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnProfileDto"];
+                };
+            };
+        };
+    };
+    ownProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnProfileDto"];
                 };
             };
         };

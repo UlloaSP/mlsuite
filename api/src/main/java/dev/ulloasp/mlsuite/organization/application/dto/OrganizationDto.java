@@ -13,7 +13,7 @@ public record OrganizationDto(
         String name,
         OrganizationKind kind,
         @Nullable String description,
-        /** Where its logo is read from, or null while it has none. */
+        /** Where its picture is read from: its logo, or its owner's avatar; null while it has none. */
         @Nullable String logoUrl,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt) {

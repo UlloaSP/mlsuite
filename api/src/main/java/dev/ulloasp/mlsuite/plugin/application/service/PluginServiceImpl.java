@@ -82,7 +82,6 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
                     now,
                     user.getFullName(),
                     user.getEmail(),
-                    user.getAvatarUrl(),
                     new String(file.getBytes(), StandardCharsets.UTF_8));
             StoredObject uploaded = objectStorageService.store(
                     itemObjectKey(organization.getId(), id),

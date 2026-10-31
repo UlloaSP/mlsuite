@@ -23,6 +23,7 @@ import dev.ulloasp.mlsuite.security.identity.ClientNetworks;
 import dev.ulloasp.mlsuite.user.adapter.in.web.UserController;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.application.port.in.GetCurrentUserProfileUseCase;
+import dev.ulloasp.mlsuite.user.application.port.in.UserProfileUseCase;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.PersonalAccountService;
@@ -32,16 +33,16 @@ import dev.ulloasp.mlsuite.workspace.application.service.PersonalAccountService;
  * session check. Only the stored accounts are stand-ins: {@link #account} keeps one that tests change
  * the way the admin pages would.
  */
-@WebMvcTest(controllers = { AuthController.class, UserController.class }, properties = {
+@WebMvcTest(controllers = { AuthController.class, PasswordChangeController.class, UserController.class }, properties = {
         "spring.profiles.active=test",
         "logging.file.name=target/auth-http-test.log",
         "server.port=0",
         "cors.allow-origins=http://localhost:5173",
         "mlsuite.auth.max-login-failures=3",
         "mlsuite.auth.max-registrations=2" })
-@Import({ SecurityConfig.class, AuthService.class, AuthAttemptLimiter.class, DatabaseUserDetailsService.class,
-        SessionAccountCheck.class })
-@MockitoBean(types = { PersonalAccountService.class, AuditLogService.class })
+@Import({ SecurityConfig.class, AuthService.class, PasswordChangeService.class, AuthAttemptLimiter.class,
+        DatabaseUserDetailsService.class, SessionAccountCheck.class })
+@MockitoBean(types = { PersonalAccountService.class, AuditLogService.class, UserProfileUseCase.class })
 abstract class AuthHttpFixture {
 
     static final String PASSWORD = "correct-horse-battery";

@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Building2 } from "lucide-react";
 import { apiUrl } from "@/shared/api/http";
+import { personInitials } from "@/shared/lib/person-initials";
 import { cx } from "./cx";
 
 /**
@@ -44,7 +45,7 @@ export function OrganizationMark({
       className={cx("grid shrink-0 place-items-center", className, fallbackClassName)}
     >
       {personalName ? (
-        <span className="font-semibold">{personalName.slice(0, 2).toUpperCase()}</span>
+        <span className="font-semibold">{personInitials(personalName)}</span>
       ) : (
         <Building2 size={iconSize} />
       )}

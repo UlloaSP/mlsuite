@@ -3,17 +3,14 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { Link } from "react-router";
+import { profilePath } from "@/shared/lib/profile-path";
 import { formatCompactRelativeTime } from "@/shared/lib/relative-time";
+import { cx } from "@/shared/ui/cx";
+import { FOCUS_RING } from "@/shared/ui/focus-ring";
+import { PersonAvatar } from "@/shared/ui/PersonAvatar";
 import { OverviewListPanel } from "./OverviewListPanel";
 import type { OrganizationMembershipRowDto } from "@/shared/api/openapi.gen";
-
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("") || "?";
 
 export function OverviewMembersPanel({
   members,
@@ -37,20 +34,25 @@ export function OverviewMembersPanel({
         const name = member.fullName || member.email;
         return (
           <li key={member.id} className="flex items-center gap-3 px-5 py-3">
-            {member.avatarUrl ? (
-              <img
-                src={member.avatarUrl}
-                alt=""
-                referrerPolicy="no-referrer"
-                className="size-8 shrink-0 rounded-full border border-line object-cover"
-              />
-            ) : (
-              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-accent-subtle text-2xs font-semibold text-accent-strong">
-                {initials(name)}
-              </span>
-            )}
+            <PersonAvatar
+              avatarUrl={member.avatarUrl}
+              className="size-8 rounded-full text-2xs"
+              name={name}
+            />
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium text-fg">{name}</span>
+              {member.profileHandle ? (
+                <Link
+                  to={profilePath(member.profileHandle)}
+                  className={cx(
+                    "block truncate rounded-sm text-sm font-medium text-fg hover:underline",
+                    FOCUS_RING,
+                  )}
+                >
+                  {name}
+                </Link>
+              ) : (
+                <span className="block truncate text-sm font-medium text-fg">{name}</span>
+              )}
               <span className="block truncate text-xs text-fg-secondary">{member.email}</span>
             </span>
             <span className="shrink-0 text-right">
