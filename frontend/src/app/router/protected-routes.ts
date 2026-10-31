@@ -16,7 +16,7 @@ export const protectedPages: RouteObject[] = [
   page("profile", () => import("@/features/user/pages/profilePage").then((m) => m.ProfilePage)),
   page("settings", () => import("@/features/user/pages/SettingsPage").then((m) => m.SettingsPage)),
   page("notifications", () =>
-    import("@/features/workspace/pages/notifications-page").then((m) => m.NotificationsPage),
+    import("@/app/pages/NotificationsRoutePage").then((m) => m.NotificationsRoutePage),
   ),
   page("workspace/organizations/:organizationId", () =>
     import("@/features/workspace/pages/organization-admin-page").then(

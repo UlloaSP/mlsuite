@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.invitation.application.usecase;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +18,9 @@ import dev.ulloasp.mlsuite.invitation.domain.exception.InvitationNotFoundExcepti
 import dev.ulloasp.mlsuite.invitation.domain.model.Invitation;
 import dev.ulloasp.mlsuite.invitation.domain.model.InvitationStatus;
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.notification.application.service.NotificationService;
+import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
+import dev.ulloasp.mlsuite.notification.domain.model.NotificationTargetType;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
@@ -48,6 +52,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     private final AuditLogService auditLogService;
     private final RoleDefinitionRepository roleDefinitionRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Override
     public List<InvitationDto> listInvitations(Long userId, Long organizationId) {
@@ -88,6 +93,12 @@ public class InvitationManagementService implements InvitationManagementUseCase 
             User invitee = userRepository.findByEmailIgnoreCase(saved.getEmail())
                     .orElseThrow(() -> new IllegalArgumentException("Invited user does not exist."));
             acceptPendingInvitation(saved, invitee);
+            if (!invitee.getId().equals(userId)) {
+                notificationService.notify(invitee.getId(), organizationId, NotificationKind.ORGANIZATION_JOINED,
+                        organizationId.toString(), invited(saved));
+            }
+        } else {
+            notifyInvitee(saved);
         }
         auditLogService.record(organization, user, "INVITATION_CREATE", "INVITATION", saved.getId().toString(), saved.getEmail());
         return InvitationDto.from(saved);
@@ -104,6 +115,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         invitation.setStatus(InvitationStatus.PENDING);
         invitation.setExpiresAt(OffsetDateTime.now(ZoneOffset.UTC).plusDays(7));
         Invitation saved = invitationRepository.save(invitation);
+        notifyInvitee(saved);
         auditLogService.record(saved.getOrganization(), user, "INVITATION_RESEND", "INVITATION", saved.getId().toString(), saved.getEmail());
         return InvitationDto.from(saved);
     }
@@ -139,6 +151,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         User user = userLookupService.requireById(userId);
         Invitation invitation = requireOwnPendingInvitation(user, invitationId);
         acceptPendingInvitation(invitation, user);
+        notifyAnswered(invitation, user, NotificationKind.INVITATION_ACCEPTED);
         return InvitationDto.from(invitation);
     }
 
@@ -148,6 +161,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         Invitation invitation = requireOwnPendingInvitation(user, invitationId);
         invitation.setStatus(InvitationStatus.REVOKED);
         invitationRepository.save(invitation);
+        notifyAnswered(invitation, user, NotificationKind.INVITATION_DECLINED);
     }
 
     @Override
@@ -194,6 +208,27 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         user.setCurrentOrganization(invitation.getOrganization());
         invitation.setStatus(InvitationStatus.ACCEPTED);
         invitationRepository.save(invitation);
+    }
+
+    /** Invitations go to existing accounts; an address without one finds it once it has an account. */
+    private void notifyInvitee(Invitation invitation) {
+        userRepository.findByEmailIgnoreCase(invitation.getEmail())
+                .ifPresent(invitee -> notificationService.notify(invitee.getId(), invitation.getOrganization().getId(),
+                        NotificationKind.INVITATION_RECEIVED, invitation.getId().toString(), invited(invitation)));
+    }
+
+    private void notifyAnswered(Invitation invitation, User invitee, NotificationKind answer) {
+        String id = invitation.getId().toString();
+        notificationService.markTargetRead(invitee.getId(), NotificationTargetType.INVITATION, id);
+        notificationService.notify(invitation.getInvitedBy().getId(), invitation.getOrganization().getId(), answer, id,
+                Map.of("organizationName", invitation.getOrganization().getName(),
+                        "inviteeName", invitee.getFullName()));
+    }
+
+    private static Map<String, Object> invited(Invitation invitation) {
+        return Map.of("organizationName", invitation.getOrganization().getName(),
+                "inviterName", invitation.getInvitedBy().getFullName(),
+                "roleName", invitation.getRoleDefinition().getName());
     }
 
     private RoleDefinition resolveRoleDefinition(Organization organization, CreateInvitationRequest request) {

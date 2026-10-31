@@ -43,6 +43,7 @@ class PredictionJobHttpTest extends PublicPredictionFixture {
 
     @Autowired PredictionJobWorker worker;
     @Autowired PredictionJobLedger ledger;
+    @Autowired PredictionJobOutcomes outcomes;
     @Autowired JdbcTemplate jdbc;
     private RoleDefinition role;
 
@@ -145,6 +146,97 @@ class PredictionJobHttpTest extends PublicPredictionFixture {
     }
 
     @Test
+    void aFinishedJobTellsItsMemberOnceWithItsCounts() throws Exception {
+        long job = json(start(rows(3)).andReturn().getResponse().getContentAsString()).get("id").asLong();
+
+        worker.work();
+        worker.work();
+
+        assertEquals(List.of("PREDICTION_JOB_COMPLETED"), told(job));
+        assertEquals(bookmark.getName(), payload(job, "bookmarkName"));
+        assertEquals(bookmark.getId().toString(), payload(job, "bookmarkId"));
+        assertEquals("3", payload(job, "doneRows"));
+        assertEquals("0", payload(job, "failedRows"));
+        assertEquals(organization.getId(), jdbc.queryForObject(
+                "SELECT organization_id FROM notification WHERE target_type = 'PREDICTION_JOB' AND target_id = ?",
+                Long.class, String.valueOf(job)));
+    }
+
+    @Test
+    void failedRowsAreToldAndARetryThatFinishesReportsItsNewEnd() throws Exception {
+        List<Map<String, Object>> rows = rows(2);
+        rows.set(1, row("job-row-1", Map.of()));
+        long job = json(start(rows).andReturn().getResponse().getContentAsString()).get("id").asLong();
+        worker.work();
+
+        assertEquals(List.of("PREDICTION_JOB_COMPLETED_WITH_FAILURES"), told(job));
+        assertEquals("1", payload(job, "failedRows"));
+
+        when(analyzer.post(eq("/predict/batch"), any())).thenReturn(Map.of("rows", List.of(Map.of("reports",
+                List.of(CLASSIFIER)))));
+        mockMvc.perform(signedIn(post("/api/prediction-jobs/{id}/retry", job), owner.getId()))
+                .andExpect(status().isOk());
+        worker.work();
+
+        assertEquals(List.of("PREDICTION_JOB_COMPLETED_WITH_FAILURES", "PREDICTION_JOB_COMPLETED"), told(job));
+    }
+
+    @Test
+    void aMemberWhoCancelsTheirOwnJobIsNotToldAndOneWhoseJobWasCancelledIs() throws Exception {
+        long own = json(start(rows(1)).andReturn().getResponse().getContentAsString()).get("id").asLong();
+        mockMvc.perform(signedIn(post("/api/prediction-jobs/{id}/cancel", own), owner.getId()))
+                .andExpect(status().isOk());
+        assertEquals(List.of(), told(own));
+
+        long theirs = json(start(rows(1)).andReturn().getResponse().getContentAsString()).get("id").asLong();
+        Long starter = jdbc.queryForObject("""
+                INSERT INTO app_user (username, email, full_name, password_hash, enabled, system_role, created_at, updated_at)
+                VALUES (?, ?, 'Starter', 'unused', TRUE, 'USER', now(), now()) RETURNING id""", Long.class,
+                "starter" + theirs, "starter" + theirs + "@example.test");
+        jdbc.update("UPDATE prediction_job SET created_by_user_id = ? WHERE id = ?", starter, theirs);
+
+        mockMvc.perform(signedIn(post("/api/prediction-jobs/{id}/cancel", theirs), owner.getId()))
+                .andExpect(status().isOk());
+        worker.work();
+
+        assertEquals(List.of("PREDICTION_JOB_CANCELLED"), told(theirs));
+        assertEquals(owner.getFullName(), payload(theirs, "actorName"));
+        assertEquals(starter, jdbc.queryForObject(
+                "SELECT recipient_user_id FROM notification WHERE target_type = 'PREDICTION_JOB' AND target_id = ?",
+                Long.class, String.valueOf(theirs)));
+    }
+
+    @Test
+    void aMemberWhoLostTheRightToRunPredictionsIsToldTheSystemStoppedTheirJob() throws Exception {
+        long job = json(start(rows(2)).andReturn().getResponse().getContentAsString()).get("id").asLong();
+        grant(PermissionKey.VIEW_MODELS);
+
+        worker.work();
+
+        assertEquals(List.of("PREDICTION_JOB_STOPPED"), told(job));
+        assertEquals("The member who started the upload may no longer run predictions", payload(job, "reason"));
+        assertEquals("2", payload(job, "failedRows"));
+    }
+
+    @Test
+    void aWorkerThatLostItsLeaseToldNobodyAndFailsNoRows() throws Exception {
+        long job = json(start(rows(1)).andReturn().getResponse().getContentAsString()).get("id").asLong();
+        ledger.claim("a-worker-that-stalled", 120).orElseThrow();
+        jdbc.update("UPDATE prediction_job SET lease_expires_at = now() - interval '1 second' WHERE id = ?", job);
+        ledger.claim("the-next-worker", 120).orElseThrow();
+
+        outcomes.complete(job, "a-worker-that-stalled");
+        outcomes.stop(job, "a-worker-that-stalled", "too late");
+
+        assertEquals(List.of(), told(job));
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM prediction_job_row WHERE job_id = ? AND status = 'FAILED'",
+                Integer.class, job));
+        outcomes.complete(job, "the-next-worker");
+        outcomes.complete(job, "the-next-worker");
+        assertEquals(List.of("PREDICTION_JOB_COMPLETED"), told(job));
+    }
+
+    @Test
     void aJobHoldsBoundedRowsForBoundModelsAndAMemberBoundedOpenJobs() throws Exception {
         start(rows(6)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("A bulk upload holds at most 5 rows; split the file"));
@@ -156,6 +248,17 @@ class PredictionJobHttpTest extends PublicPredictionFixture {
         start(rows(1)).andExpect(status().isCreated());
         start(rows(1, 10)).andExpect(status().isCreated());
         start(rows(1, 20)).andExpect(status().isTooManyRequests());
+    }
+
+    /** The kinds the job was reported with, oldest first. */
+    private List<String> told(long job) {
+        return jdbc.queryForList("SELECT kind FROM notification WHERE target_type = 'PREDICTION_JOB' AND target_id = ?"
+                + " ORDER BY id", String.class, String.valueOf(job));
+    }
+
+    private String payload(long job, String label) {
+        return jdbc.queryForObject("SELECT payload ->> ? FROM notification WHERE target_type = 'PREDICTION_JOB'"
+                + " AND target_id = ? ORDER BY id DESC LIMIT 1", String.class, label, String.valueOf(job));
     }
 
     private ResultActions start(List<Map<String, Object>> rows) throws Exception {

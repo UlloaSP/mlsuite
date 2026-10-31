@@ -3,7 +3,6 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-export const PENDING_INVITATIONS_QUERY_KEY = ["pendingInvitations"] as const;
 export const ORGANIZATION_CATALOG_PAGE_SIZE = 24;
 export const ORGANIZATION_CATALOG_PAGE_QUERY_KEY = ["organizationCatalogPages"] as const;
 

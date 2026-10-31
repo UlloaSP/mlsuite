@@ -6,7 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { WORKSPACE_CONTEXT_QUERY_KEY } from "@/capabilities/workspace-context/workspace-context";
 import { actInOrganization } from "@/shared/api/http";
-import { acceptInvitation, declineInvitation } from "./invitations.api";
 import {
   createOrganization,
   deleteOrganization,
@@ -21,34 +20,12 @@ import {
   ORGANIZATION_CATALOG_PAGE_QUERY_KEY,
   organizationAdminDashboardQueryKey,
   organizationMembersQueryKey,
-  PENDING_INVITATIONS_QUERY_KEY,
 } from "./workspace.keys";
 import type {
   OrganizationDto,
   UpdateOrganizationRequest,
   WorkspaceCurrentContextDto,
 } from "@/shared/api/openapi.gen";
-
-export const useAcceptInvitation = () => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: acceptInvitation,
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: PENDING_INVITATIONS_QUERY_KEY });
-      void qc.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY });
-    },
-  });
-};
-
-export const useDeclineInvitation = () => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: declineInvitation,
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: PENDING_INVITATIONS_QUERY_KEY });
-    },
-  });
-};
 
 const useInvalidateOrganizationQueries = () => {
   const queryClient = useQueryClient();
@@ -126,9 +103,10 @@ export const useReplaceOrganizationLogoMutation = () =>
 export const useRemoveOrganizationLogoMutation = () =>
   useOrganizationLogoMutation((organizationId: number) => removeOrganizationLogo(organizationId));
 
-export const useSelectOrganization = () => {
+export const useSelectOrganization = (meta?: { errorHandledLocally: boolean }) => {
   const qc = useQueryClient();
   return useMutation({
+    meta,
     mutationFn: selectOrganization,
     onSuccess: async (context) => {
       // This tab works in the selected organization from now on; other tabs keep theirs.

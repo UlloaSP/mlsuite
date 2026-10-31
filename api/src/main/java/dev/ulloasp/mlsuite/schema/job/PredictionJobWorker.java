@@ -42,6 +42,7 @@ class PredictionJobWorker {
     private final String worker = "api-" + UUID.randomUUID();
     private final PredictionJobLedger ledger;
     private final PredictionJobChunks chunks;
+    private final PredictionJobOutcomes outcomes;
     private final WorkspacePredictionPlanner planner;
     private final WorkspacePredictionService predictions;
     private final WorkspaceRuntimeSlots slots;
@@ -50,13 +51,14 @@ class PredictionJobWorker {
     private final int chunkRows;
     private final int leaseSeconds;
 
-    PredictionJobWorker(PredictionJobLedger ledger, PredictionJobChunks chunks, WorkspacePredictionPlanner planner,
-            WorkspacePredictionService predictions, WorkspaceRuntimeSlots slots,
+    PredictionJobWorker(PredictionJobLedger ledger, PredictionJobChunks chunks, PredictionJobOutcomes outcomes,
+            WorkspacePredictionPlanner planner, WorkspacePredictionService predictions, WorkspaceRuntimeSlots slots,
             WorkspaceAuthorizationService authorization, SchemaModelBindingRepository bindings,
             @Value("${mlsuite.prediction-jobs.chunk-rows}") int chunkRows,
             @Value("${mlsuite.prediction-jobs.lease-seconds}") int leaseSeconds) {
         this.ledger = ledger;
         this.chunks = chunks;
+        this.outcomes = outcomes;
         this.planner = planner;
         this.predictions = predictions;
         this.slots = slots;
@@ -89,11 +91,11 @@ class PredictionJobWorker {
         while (true) {
             List<PendingRow> rows = ledger.pending(job.id(), chunkRows);
             if (rows.isEmpty()) {
-                ledger.complete(job.id(), worker);
+                outcomes.complete(job.id(), worker);
                 return;
             }
             if (!authorization.has(job.userId(), job.organizationId(), PermissionKey.RUN_PREDICTIONS)) {
-                stop(job, "The member who started the upload may no longer run predictions");
+                outcomes.stop(job.id(), worker, "The member who started the upload may no longer run predictions");
                 return;
             }
             Map<Long, List<AttestedPrediction>> byModel = new LinkedHashMap<>();
@@ -109,7 +111,7 @@ class PredictionJobWorker {
             } catch (RuntimeBusyException busy) {
                 throw busy;
             } catch (ResponseStatusException unplannable) {
-                stop(job, unplannable.getReason());
+                outcomes.stop(job.id(), worker, unplannable.getReason());
                 return;
             }
             if (!chunks.store(job, worker, rows, byModel)) return;
@@ -119,10 +121,5 @@ class PredictionJobWorker {
     private List<Long> boundModels(Claim job) {
         return bindings.findBySchemaVersionId(job.schemaVersionId()).stream()
                 .map(binding -> binding.getModel().getId()).toList();
-    }
-
-    private void stop(Claim job, String reason) {
-        ledger.failPending(job.id(), reason);
-        ledger.complete(job.id(), worker);
     }
 }

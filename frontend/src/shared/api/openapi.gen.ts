@@ -676,6 +676,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/notifications/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["catalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["deleteRead"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["markAllRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["unreadCount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/{notificationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["delete_6"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/{notificationId}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["markRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/organizations": {
         parameters: {
             query?: never;
@@ -3170,6 +3266,24 @@ export interface components {
             /** Format: int64 */
             versionId: number;
         };
+        NotificationDto: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: int64 */
+            id: number;
+            /** @enum {string} */
+            kind: "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_COMPLETED_WITH_FAILURES" | "PREDICTION_JOB_STOPPED" | "PREDICTION_JOB_CANCELLED" | "MODEL_READY" | "MODEL_FAILED" | "INVITATION_RECEIVED" | "INVITATION_ACCEPTED" | "INVITATION_DECLINED" | "ORGANIZATION_JOINED" | "REVIEW_ASSIGNED";
+            /** Format: int64 */
+            organizationId: number | null;
+            payload: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            readAt: string | null;
+            targetId: string;
+            /** @enum {string} */
+            targetType: "PREDICTION_JOB" | "MODEL" | "INVITATION" | "ORGANIZATION" | "REVIEW";
+        };
         Option: {
             label: string;
             value: string;
@@ -3373,6 +3487,16 @@ export interface components {
         PageDtoModeratedBookmarkDto: {
             hasNext: boolean;
             items: components["schemas"]["ModeratedBookmarkDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoNotificationDto: {
+            hasNext: boolean;
+            items: components["schemas"]["NotificationDto"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -4316,6 +4440,10 @@ export interface components {
             /** Format: int64 */
             nextOwnerMembershipId: number;
         };
+        UnreadNotificationCountDto: {
+            /** Format: int64 */
+            count: number;
+        };
         UpdateApiClientRequest: {
             description?: string | null;
             name: string;
@@ -4528,6 +4656,7 @@ export type ModelDetailsDto = components['schemas']['ModelDetailsDto'];
 export type ModelDto = components['schemas']['ModelDto'];
 export type ModeratedBookmarkDto = components['schemas']['ModeratedBookmarkDto'];
 export type MoveSchemaBookmarkRequest = components['schemas']['MoveSchemaBookmarkRequest'];
+export type NotificationDto = components['schemas']['NotificationDto'];
 export type Option = components['schemas']['Option'];
 export type OrganizationAdminDashboardDto = components['schemas']['OrganizationAdminDashboardDto'];
 export type OrganizationAdminStatsDto = components['schemas']['OrganizationAdminStatsDto'];
@@ -4546,6 +4675,7 @@ export type PageDtoInvitationCandidateDto = components['schemas']['PageDtoInvita
 export type PageDtoInvitationDto = components['schemas']['PageDtoInvitationDto'];
 export type PageDtoModelDto = components['schemas']['PageDtoModelDto'];
 export type PageDtoModeratedBookmarkDto = components['schemas']['PageDtoModeratedBookmarkDto'];
+export type PageDtoNotificationDto = components['schemas']['PageDtoNotificationDto'];
 export type PageDtoOption = components['schemas']['PageDtoOption'];
 export type PageDtoOrganizationCatalogItemDto = components['schemas']['PageDtoOrganizationCatalogItemDto'];
 export type PageDtoOrganizationDto = components['schemas']['PageDtoOrganizationDto'];
@@ -4638,6 +4768,7 @@ export type TerminalSessionRequest = components['schemas']['TerminalSessionReque
 export type TerminalSessionResponse = components['schemas']['TerminalSessionResponse'];
 export type TraceRequest = components['schemas']['TraceRequest'];
 export type TransferOrganizationOwnershipRequest = components['schemas']['TransferOrganizationOwnershipRequest'];
+export type UnreadNotificationCountDto = components['schemas']['UnreadNotificationCountDto'];
 export type UpdateApiClientRequest = components['schemas']['UpdateApiClientRequest'];
 export type UpdateOrganizationMembershipRoleRequest = components['schemas']['UpdateOrganizationMembershipRoleRequest'];
 export type UpdateOrganizationRequest = components['schemas']['UpdateOrganizationRequest'];
@@ -5857,6 +5988,128 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ModelDto"];
                 };
+            };
+        };
+    };
+    catalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                filter?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoNotificationDto"];
+                };
+            };
+        };
+    };
+    deleteRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    markAllRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unreadCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadNotificationCountDto"];
+                };
+            };
+        };
+    };
+    delete_6: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notificationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    markRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notificationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
