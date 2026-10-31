@@ -5,7 +5,6 @@ import { formatTimestamp } from "@/shared/lib/date-time";
 import { AppBadge, enumLabel } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
-import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import type { PurgeJobDto } from "@/shared/api/openapi.gen";
 
 const TONES = {
@@ -25,13 +24,11 @@ export function PurgeJobEntry({
   job: PurgeJobDto;
   onRetry: () => void;
 }) {
-  const Icon = SECTION_ICONS.purges;
   const done = job.status === "COMPLETED";
   return (
     <CatalogEntry
       title={job.targetLabel}
       titleAccessory={<AppBadge tone={TONES[job.status]}>{job.status}</AppBadge>}
-      icon={<Icon size={16} className="mt-1 text-fg-secondary" />}
       metadata={
         <>
           <span>{SCOPE_LABELS[job.scope]}</span>

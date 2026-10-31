@@ -2,6 +2,7 @@ package dev.ulloasp.mlsuite.admin.purge;
 
 import java.util.Map;
 
+import org.springframework.core.NestedExceptionUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,7 +54,7 @@ class PurgeOutcomes {
 
     @Transactional
     void fail(PurgeJob job, String worker, RuntimeException failure) {
-        String reason = bounded(failure.getMessage());
+        String reason = bounded(NestedExceptionUtils.getMostSpecificCause(failure).getMessage());
         if (!ledger.fail(job.id(), worker, reason)) return;
         auditLog.record(AuditActor.SYSTEM, job.organizationId(), AuditAction.PURGE_FAILED, job.id(),
                 AuditDetails.of("scope", job.scope(), "targetId", job.targetId(), "target", job.targetLabel(),

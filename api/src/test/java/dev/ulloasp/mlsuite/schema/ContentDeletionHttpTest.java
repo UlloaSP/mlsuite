@@ -215,7 +215,7 @@ class ContentDeletionHttpTest extends PublicPredictionFixture {
     @Test
     void aSnapshotStaysWhileAnythingNeedsItAndSaysWhat() throws Exception {
         remove("/api/schema-versions/{id}", version.getId()).andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message", containsString("1 inferences ran")));
+                .andExpect(jsonPath("$.message", containsString("Inferences ran on this snapshot (1)")));
         remove("/api/prediction-runs/{id}", run.getId()).andExpect(status().isNoContent());
 
         remove("/api/schema-versions/{id}", version.getId()).andExpect(status().isConflict())

@@ -102,7 +102,7 @@ public class SchemaContentDeletionService implements SchemaContentDeletionUseCas
         Long versionId = version.getId();
         long inferences = runs.countBySchemaVersionId(versionId);
         if (inferences > 0) {
-            throw conflict("%d inferences ran on this snapshot, so it stays while they do.".formatted(inferences));
+            throw conflict("Inferences ran on this snapshot (%d), so it stays while they do.".formatted(inferences));
         }
         if (reviews.existsBySchemaVersionId(versionId)) {
             throw conflict("A review is built on this snapshot; delete the review first.");
