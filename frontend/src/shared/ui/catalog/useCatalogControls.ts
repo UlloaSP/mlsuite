@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useSearchParams } from "react-router";
+import { useSearchParamsUpdate } from "@/shared/lib/use-search-params-update";
 import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
 
 type CatalogControlsOptions<TFilter extends string, TSort extends string> = {
@@ -27,7 +28,8 @@ export function useCatalogControls<TFilter extends string, TSort extends string>
   sorts,
   normalizeQuery = (query) => query.trim(),
 }: CatalogControlsOptions<TFilter, TSort>): CatalogControls<TFilter, TSort> {
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
+  const updateParams = useSearchParamsUpdate();
   const query = params.get("q") ?? "";
   const filterParam = params.get("filter");
   const sortParam = params.get("sort");
@@ -39,25 +41,16 @@ export function useCatalogControls<TFilter extends string, TSort extends string>
 
   useEffect(() => {
     if (!filterParam || filters.includes(filterParam as TFilter)) return;
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current);
-        next.delete("filter");
-        return next;
-      },
-      { replace: true },
-    );
-  }, [filterParam, filters, setParams]);
+    updateParams((next) => next.delete("filter"));
+  }, [filterParam, filters, updateParams]);
 
   const update = (values: Record<string, string | null>, replace = false) => {
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current);
+    updateParams(
+      (next) => {
         Object.entries(values).forEach(([key, value]) => {
           if (value) next.set(key, value);
           else next.delete(key);
         });
-        return next;
       },
       { replace },
     );
