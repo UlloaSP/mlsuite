@@ -62,6 +62,8 @@ services:
       OPS_AGENT_TERMINAL_IDLE_MINUTES: ${OPS_AGENT_TERMINAL_IDLE_MINUTES}
       OPS_AGENT_TERMINAL_MAX_SESSIONS: ${OPS_AGENT_TERMINAL_MAX_SESSIONS}
       OPS_AGENT_LOG_TAIL_LINES: ${OPS_AGENT_LOG_TAIL_LINES}
+      # Read in the checkout mounted below; a root outside it leaves the backup alert unknown.
+      OPS_AGENT_BACKUP_ROOT: ${LOCAL_BACKUP_ROOT:-backups}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./:/workspace:ro
@@ -119,9 +121,14 @@ services:
       CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
       RUNTIME_WORKERS: ${RUNTIME_WORKERS:-2}
       RUNTIME_BUNDLE_CACHE_MB: ${RUNTIME_BUNDLE_CACHE_MB:-512}
+      RUNTIME_WORKER_MEMORY_MB: ${RUNTIME_WORKER_MEMORY_MB:-4096}
+      RUNTIME_WORKER_OPEN_FILES: ${RUNTIME_WORKER_OPEN_FILES:-1024}
+      RUNTIME_WORKER_PROCESSES: ${RUNTIME_WORKER_PROCESSES:-512}
     volumes:
       - runtime_environments:/var/lib/mlsuite/environments:ro
     mem_limit: ${RUNTIME_MEMORY_LIMIT:-6g}
+    # Reaps what a model's processes leave behind once their worker is ended.
+    init: true
     healthcheck:
       test: [ "CMD", "/app/.venv/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:${PYTHON_PORT}/health', timeout=4)" ]
       interval: 15s
@@ -246,7 +253,6 @@ services:
       STORAGE_DELETION_STALE_AFTER_SECONDS: ${STORAGE_DELETION_STALE_AFTER_SECONDS:-300}
       STORAGE_DELETION_RETENTION_DAYS: ${STORAGE_DELETION_RETENTION_DAYS:-7}
       PURGE_BATCH_SIZE: ${PURGE_BATCH_SIZE:-1000}
-      MODEL_MUTATIONS_REQUIRE_VERSION: ${MODEL_MUTATIONS_REQUIRE_VERSION:-true}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
       PREDICTION_ATTESTATION_SECRET: ${PREDICTION_ATTESTATION_SECRET}
       PUBLIC_PREDICTION_MAX_MODEL_SIZE_MB: ${PUBLIC_PREDICTION_MAX_MODEL_SIZE_MB:-50}

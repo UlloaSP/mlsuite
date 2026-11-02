@@ -2,6 +2,7 @@ package dev.ulloasp.mlsuite.organization.application.usecase;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,7 @@ import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitio
 import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.workspace.application.dto.MembershipActionsDto;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import lombok.RequiredArgsConstructor;
@@ -150,11 +152,10 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         workspaceAuthorizationService.require(userId, organizationId, PermissionKey.VIEW_MEMBERS);
         roleSeedService.ensureOrganizationRoles(organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException(organizationId)));
-        return membershipRepository.findActiveByOrganizationIdOrderByCreatedAtAsc(organizationId)
-                .stream()
-                .map(membership -> OrganizationMembershipRowDto.from(
-                        membership,
-                        workspaceAuthorizationService.organizationMemberActions(userId, organizationId, membership)))
+        List<OrganizationMembership> members = membershipRepository.findActiveByOrganizationIdOrderByCreatedAtAsc(organizationId);
+        List<MembershipActionsDto> actions = workspaceAuthorizationService.organizationMemberActions(userId, organizationId, members);
+        return IntStream.range(0, members.size())
+                .mapToObj(index -> OrganizationMembershipRowDto.from(members.get(index), actions.get(index)))
                 .toList();
     }
 

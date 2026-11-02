@@ -25,8 +25,11 @@ class PluginCatalogQueryTest extends PublicPredictionFixture {
         inTransaction(() -> {
             for (int i = 0; i < 30; i++) {
                 String id = "catalog-" + schema.getId() + "-" + String.format("%02d", i);
-                entityManager.persist(new PluginMetadata(id, organization, "objects/" + i, "same.ts",
-                        "text/typescript", 1, at, at, owner, i < 29 ? "field" : "report", "same"));
+                PluginMetadata row = new PluginMetadata(id, organization, "objects/" + i, "same.ts",
+                        "text/typescript", 1, at, at, owner, i < 29 ? "field" : "report", "same");
+                row.setSha256("a".repeat(64));
+                row.setStorageVersionId("v1");
+                entityManager.persist(row);
             }
         });
 

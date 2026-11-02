@@ -18,6 +18,7 @@ import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository.FeedbackSaved;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
@@ -226,9 +227,12 @@ public class SchemaReviewService implements SchemaReviewUseCase {
 
     private SchemaReviewRunListItemDto runItem(Long userId, SchemaReviewRun item,
             SchemaReviewRunSubmission submission) {
+        OffsetDateTime savedAt = feedback.findFeedbackSaved(List.of(item.getId()), userId).stream()
+                .findFirst().map(FeedbackSaved::getSavedAt).orElse(null);
         SchemaReviewState reviewState = submission != null ? SchemaReviewState.COMPLETED
-                : hasFeedback(userId, item) ? SchemaReviewState.IN_PROGRESS : SchemaReviewState.PENDING;
-        OffsetDateTime stateAt = submission == null ? item.getRun().getCreatedAt() : submission.getSubmittedAt();
+                : savedAt != null ? SchemaReviewState.IN_PROGRESS : SchemaReviewState.PENDING;
+        OffsetDateTime stateAt = submission != null ? submission.getSubmittedAt()
+                : savedAt != null ? savedAt : item.getRun().getCreatedAt();
         return new SchemaReviewRunListItemDto(item.getPublicId(),
                 PredictionRunDto.from(item.getRun(), results.findByRunIdOrderByIdAsc(item.getRun().getId())),
                 reviewState, stateAt, submission == null ? null : submission.getSubmittedAt());
@@ -242,11 +246,6 @@ public class SchemaReviewService implements SchemaReviewUseCase {
                 .toList();
         if (selected.isEmpty() || selected.size() != new HashSet<>(ids).size()) throw badRequest("Run list invalid");
         return selected;
-    }
-
-    private boolean hasFeedback(Long userId, SchemaReviewRun reviewRun) {
-        return feedback.existsByResultRunIdAndUserIdAndReviewId(reviewRun.getRun().getId(), userId,
-                reviewRun.getReview().getId());
     }
 
     private void requireNotSubmitted(Long userId, SchemaReviewRun reviewRun) {

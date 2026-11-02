@@ -6,8 +6,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -18,6 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
@@ -137,6 +141,33 @@ class SchemaReviewCatalogTest extends PublicPredictionFixture {
         assertEquals(28, new TreeSet<>(paged).size());
         // After the newest run, runs created together follow in the order of their public ids.
         assertEquals(paged.subList(1, 28).stream().sorted().toList(), paged.subList(1, 28));
+    }
+
+    /** A run in progress is listed with when its feedback was last saved, not when the run was made. */
+    @Test
+    void aRunInProgressShowsWhenItsFeedbackWasSaved() throws Exception {
+        OffsetDateTime saved = now.minusHours(5).withNano(0);
+        inTransaction(() -> entityManager
+                .createQuery("update PredictionResultFeedback f set f.updatedAt = :at where f.result.run = :run")
+                .setParameter("at", saved)
+                .setParameter("run", cases.get(0).getRun())
+                .executeUpdate());
+
+        String one = mockMvc.perform(signedIn(get(INBOX + "/" + shared.getPublicId() + "/runs/"
+                + cases.get(0).getPublicId()), owner.getId())).andReturn().getResponse().getContentAsString();
+        String listed = inbox(owner, "search", "Case 00").andReturn().getResponse().getContentAsString();
+
+        assertEquals(saved.toInstant(), stateEnteredAt(objectMapper.readTree(one)));
+        assertEquals(saved.toInstant(), stateEnteredAt(objectMapper.readTree(listed).get("items").get(0)));
+        // A pending run has no feedback: it is pending since the run was made.
+        String pending = inbox(owner, "search", "Case 15").andReturn().getResponse().getContentAsString();
+        assertEquals(now.minusDays(2).toInstant().truncatedTo(ChronoUnit.SECONDS),
+                stateEnteredAt(objectMapper.readTree(pending).get("items").get(0))
+                        .truncatedTo(ChronoUnit.SECONDS));
+    }
+
+    private static Instant stateEnteredAt(JsonNode item) {
+        return OffsetDateTime.parse(item.get("stateEnteredAt").asText()).toInstant();
     }
 
     @Test

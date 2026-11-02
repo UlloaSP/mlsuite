@@ -157,7 +157,7 @@ class PersonalAccountTest extends PersonalAccountFixture {
 
         mockMvc.perform(as(user, get(ORGANIZATIONS + "/" + personal.getId() + "/audit-events/catalog")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalItems").value(1))
+                .andExpect(jsonPath("$.items.length()").value(1))
                 .andExpect(jsonPath("$.items[0].action").value("PLUGIN_UPLOAD"))
                 .andExpect(jsonPath("$.items[0].organizationName").value(personal.getName()))
                 .andExpect(jsonPath("$.items[0].actor.name").value(user.getFullName()));

@@ -27,7 +27,11 @@ export function PlatformAuditLog() {
 
   return (
     <section aria-label="Audit log" className="flex min-h-0 flex-1 flex-col">
-      <AuditLogToolbar filters={filters} totalItems={log.data?.totalItems}>
+      <AuditLogToolbar
+        filters={filters}
+        loaded={log.data?.items.length}
+        more={Boolean(log.hasNextPage)}
+      >
         <div className="w-full sm:w-56">
           <AppCombobox<string>
             aria-label="Filter by organization"

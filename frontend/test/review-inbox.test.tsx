@@ -3,15 +3,24 @@ import { act } from "react";
 import { Route, Routes, useLocation } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { ReviewsPage } from "@/features/reviews/pages/reviews-page";
+import { formatTimestamp } from "@/shared/lib/date-time";
 import { click, mount } from "./support/dom";
 
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   useCurrentOrganizationId: () => 7,
   useCan: () => false,
 }));
-vi.mock("@/capabilities/prediction-runtime/mlform/executable-schema", () => ({
-  toExecutableSchemaVersion: (version: unknown) => version,
-}));
+vi.mock("@/capabilities/prediction-runtime/mlform/executable-schema", async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import("@/capabilities/prediction-runtime/mlform/executable-schema")
+    >();
+  return {
+    // Fixture snapshots carry no form unless a test gives them one.
+    toExecutableSchemaVersion: (version: { formSchema?: unknown }) =>
+      version.formSchema ? actual.toExecutableSchemaVersion(version as never) : version,
+  };
+});
 vi.mock("@/features/reviews/components/ReviewStepContextPanel", () => ({
   ReviewStepContextPanel: () => null,
 }));
@@ -41,6 +50,7 @@ const item = ({ publicId, reviewId, reviewState }: Item) => ({
 });
 let inbox: ReturnType<typeof item>[];
 let requests: string[];
+let snapshot: Record<string, unknown>;
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
@@ -51,6 +61,7 @@ beforeEach(() => {
     item({ publicId: "todo-2", reviewId: "r2", reviewState: "PENDING" }),
   ];
   requests = [];
+  snapshot = { id: 1 };
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: string) => {
@@ -75,7 +86,7 @@ beforeEach(() => {
         const found = inbox.find((entry) => entry.reviewId === run[1] && entry.publicId === run[2]);
         return found ? json(found) : json({ status: 404, message: "Review run not found" }, 404);
       }
-      return json({ publicId: path.slice(1), schema: { name: "Risk" }, schemaVersion: { id: 1 } });
+      return json({ publicId: path.slice(1), schema: { name: "Risk" }, schemaVersion: snapshot });
     }),
   );
 });
@@ -153,4 +164,39 @@ test("an empty inbox says so", async () => {
   const host = await openInbox("/review");
 
   expect(host.textContent).toContain("Inbox clear");
+});
+
+test("a review whose snapshot cannot run is shown as such, and the tray stays usable", async () => {
+  snapshot = {
+    id: 1,
+    bindings: [],
+    formSchema: { fields: [], reports: [{ label: "Risk", kind: "classifier" }] },
+  };
+  const host = await openInbox("/review");
+
+  expect(host.textContent).not.toContain("Review unavailable");
+  expect(host.textContent).toContain("Review cannot be shown");
+  expect(host.textContent).toContain("Schema report 1 falta mappedTo");
+  expect(host.querySelector("aside")?.textContent).toContain("Run todo-1");
+});
+
+test("a review whose report reads a bare output position opens", async () => {
+  snapshot = {
+    id: 1,
+    bindings: [],
+    formSchema: { fields: [], reports: [{ label: "Risk", kind: "classifier", mappedTo: 0 }] },
+  };
+  const host = await openInbox("/review");
+
+  expect(host.textContent).not.toContain("Review cannot be shown");
+  expect(detail(host)).toBe("saved");
+});
+
+test("a run with saved feedback shows when the feedback was saved", async () => {
+  inbox[0]!.stateEnteredAt = "2026-07-21T09:30:00Z";
+  const host = await openInbox("/review");
+
+  const tray = host.querySelector("aside")!.textContent;
+  expect(tray).toContain(`Feedback saved · ${formatTimestamp("2026-07-21T09:30:00Z")}`);
+  expect(tray).not.toContain(`Feedback saved · ${formatTimestamp("2026-07-20T08:00:00Z")}`);
 });

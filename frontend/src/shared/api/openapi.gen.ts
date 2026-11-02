@@ -3162,6 +3162,14 @@ export interface components {
             /** @enum {string} */
             targetType: "API_CLIENT" | "API_CLIENT_KEY" | "API_REQUEST_LOG" | "AUDIT_LOG" | "INFRASTRUCTURE_SERVICE" | "INVITATION" | "MODEL" | "NOTIFICATION_LOG" | "ORGANIZATION" | "ORGANIZATION_MEMBER" | "PLUGIN" | "PREDICTION_JOB" | "PREDICTION_RUN" | "PURGE_JOB" | "REVIEW" | "ROLE" | "SCHEMA" | "SCHEMA_BOOKMARK" | "SCHEMA_DRAFT" | "SCHEMA_VERSION" | "STORAGE_OBJECT" | "SYSTEM_ALERT" | "TERMINAL_SESSION" | "USER";
         };
+        AuditEventPageDto: {
+            hasNext: boolean;
+            items: components["schemas"]["AuditEventDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+        };
         AuthRequest: {
             /** Format: email */
             email: string;
@@ -3576,7 +3584,7 @@ export interface components {
             /** Format: int64 */
             id: number;
             /** @enum {string} */
-            kind: "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_COMPLETED_WITH_FAILURES" | "PREDICTION_JOB_STOPPED" | "PREDICTION_JOB_CANCELLED" | "MODEL_READY" | "MODEL_FAILED" | "INVITATION_RECEIVED" | "INVITATION_ACCEPTED" | "INVITATION_DECLINED" | "ORGANIZATION_JOINED" | "REVIEW_ASSIGNED" | "ORGANIZATION_PURGED" | "PURGE_COMPLETED" | "PURGE_FAILED" | "SYSTEM_ALERT_RAISED" | "SYSTEM_ALERT_ESCALATED" | "SYSTEM_ALERT_RESOLVED";
+            kind: "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_COMPLETED_WITH_FAILURES" | "PREDICTION_JOB_STOPPED" | "PREDICTION_JOB_CANCELLED" | "MODEL_READY" | "MODEL_FAILED" | "INVITATION_RECEIVED" | "INVITATION_ACCEPTED" | "INVITATION_DECLINED" | "ORGANIZATION_JOINED" | "REVIEW_ASSIGNED" | "REVIEW_REOPENED" | "ORGANIZATION_PURGED" | "PURGE_COMPLETED" | "PURGE_FAILED" | "SYSTEM_ALERT_RAISED" | "SYSTEM_ALERT_ESCALATED" | "SYSTEM_ALERT_RESOLVED";
             /** Format: int64 */
             organizationId: number | null;
             payload: {
@@ -3746,16 +3754,6 @@ export interface components {
         PageDtoApiRequestDto: {
             hasNext: boolean;
             items: components["schemas"]["ApiRequestDto"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalItems: number;
-        };
-        PageDtoAuditEventDto: {
-            hasNext: boolean;
-            items: components["schemas"]["AuditEventDto"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -4846,7 +4844,7 @@ export interface components {
             /** @enum {string} */
             severity: "WARNING" | "CRITICAL";
             /** @enum {string} */
-            signal: "PREDICTION_ROWS_PENDING" | "PREDICTION_OLDEST_AGE" | "MODELS_PREPARING" | "RUNTIME_QUEUE" | "RUNTIME_REJECTIONS" | "STORAGE_DELETIONS_FAILED" | "HOST_CPU" | "HOST_RAM" | "HOST_DISK" | "OPS_AGENT";
+            signal: "PREDICTION_ROWS_PENDING" | "PREDICTION_OLDEST_AGE" | "MODELS_PREPARING" | "RUNTIME_QUEUE" | "RUNTIME_REJECTIONS" | "STORAGE_DELETIONS_FAILED" | "HOST_CPU" | "HOST_RAM" | "HOST_DISK" | "OPS_AGENT" | "BACKUP_FAILED";
             /** Format: double */
             threshold: number;
             unit: string;
@@ -4860,7 +4858,7 @@ export interface components {
             criticalThreshold: number | null;
             label: string;
             /** @enum {string} */
-            signal: "PREDICTION_ROWS_PENDING" | "PREDICTION_OLDEST_AGE" | "MODELS_PREPARING" | "RUNTIME_QUEUE" | "RUNTIME_REJECTIONS" | "STORAGE_DELETIONS_FAILED" | "HOST_CPU" | "HOST_RAM" | "HOST_DISK" | "OPS_AGENT";
+            signal: "PREDICTION_ROWS_PENDING" | "PREDICTION_OLDEST_AGE" | "MODELS_PREPARING" | "RUNTIME_QUEUE" | "RUNTIME_REJECTIONS" | "STORAGE_DELETIONS_FAILED" | "HOST_CPU" | "HOST_RAM" | "HOST_DISK" | "OPS_AGENT" | "BACKUP_FAILED";
             unit: string;
             /** Format: double */
             value: number | null;
@@ -5080,6 +5078,7 @@ export type ApiUsageMonth = components['schemas']['ApiUsageMonth'];
 export type ApiUsagePoint = components['schemas']['ApiUsagePoint'];
 export type AuditActorDto = components['schemas']['AuditActorDto'];
 export type AuditEventDto = components['schemas']['AuditEventDto'];
+export type AuditEventPageDto = components['schemas']['AuditEventPageDto'];
 export type AuthRequest = components['schemas']['AuthRequest'];
 export type BookmarkExampleStateDto = components['schemas']['BookmarkExampleStateDto'];
 export type BulkInvitationRequest = components['schemas']['BulkInvitationRequest'];
@@ -5152,7 +5151,6 @@ export type PageDtoAdminApiOrganizationDto = components['schemas']['PageDtoAdmin
 export type PageDtoAdminUserDto = components['schemas']['PageDtoAdminUserDto'];
 export type PageDtoApiClientSummaryDto = components['schemas']['PageDtoApiClientSummaryDto'];
 export type PageDtoApiRequestDto = components['schemas']['PageDtoApiRequestDto'];
-export type PageDtoAuditEventDto = components['schemas']['PageDtoAuditEventDto'];
 export type PageDtoInferenceCatalogRowDto = components['schemas']['PageDtoInferenceCatalogRowDto'];
 export type PageDtoInvitationCandidateDto = components['schemas']['PageDtoInvitationCandidateDto'];
 export type PageDtoInvitationDto = components['schemas']['PageDtoInvitationDto'];
@@ -5476,7 +5474,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageDtoAuditEventDto"];
+                    "application/json": components["schemas"]["AuditEventPageDto"];
                 };
             };
         };
@@ -6923,7 +6921,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageDtoAuditEventDto"];
+                    "application/json": components["schemas"]["AuditEventPageDto"];
                 };
             };
         };

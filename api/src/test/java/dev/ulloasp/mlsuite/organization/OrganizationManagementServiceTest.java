@@ -165,6 +165,9 @@ class OrganizationManagementServiceTest {
         OrganizationMembership newest = membership(2L, OrganizationRole.MEMBER, MembershipStatus.ACTIVE);
         when(membershipRepository.findActiveByOrganizationIdOrderByCreatedAtAsc(41L))
                 .thenReturn(List.of(oldest, newest));
+        MembershipActionsDto none = new MembershipActionsDto(false, false, List.of());
+        when(workspaceAuthorizationService.organizationMemberActions(7L, 41L, List.of(oldest, newest)))
+                .thenReturn(List.of(none, none));
 
         var result = service.getAdminDashboard(7L, 41L);
 

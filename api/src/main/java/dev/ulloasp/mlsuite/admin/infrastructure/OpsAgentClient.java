@@ -2,6 +2,8 @@ package dev.ulloasp.mlsuite.admin.infrastructure;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
@@ -47,6 +49,11 @@ public class OpsAgentClient {
         return readJson(buildRequest("/internal/load").get().build(), loadClient);
     }
 
+    /** Whether the host's last local backup attempt failed or left no backup ({@code failing}, null when unknown). */
+    public JsonNode backup() {
+        return readJson(buildRequest("/internal/backup").get().build(), loadClient);
+    }
+
     public void action(String serviceName, String action) {
         JsonNode payload = objectMapper.createObjectNode().put("action", action);
         RequestBody body = RequestBody.create(payload.toString(), JSON);
@@ -68,6 +75,14 @@ public class OpsAgentClient {
         } catch (IOException ex) {
             throw new OpsAgentException(502, "Cannot encode terminal session request.");
         }
+    }
+
+    /** The terminal sessions the agent has now, attached or not. */
+    public Set<String> terminalSessionIds() {
+        Set<String> ids = new HashSet<>();
+        readJson(buildRequest("/internal/terminal/sessions").get().build(), loadClient)
+                .path("sessionIds").forEach(id -> ids.add(id.asText()));
+        return ids;
     }
 
     public void closeTerminalSession(String sessionId) {

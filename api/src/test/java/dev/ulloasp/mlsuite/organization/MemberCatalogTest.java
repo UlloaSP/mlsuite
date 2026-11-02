@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.organization;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -9,6 +10,8 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -22,7 +25,7 @@ import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
-/** Members, owner candidates and assignable roles of an organization, paged on PostgreSQL. */
+/** Members, owner candidates and assignable roles of an organization, listed and paged on PostgreSQL. */
 class MemberCatalogTest extends PublicPredictionFixture {
     private final List<Long> roleIds = new ArrayList<>();
     private final List<Long> membershipIds = new ArrayList<>();
@@ -134,6 +137,40 @@ class MemberCatalogTest extends PublicPredictionFixture {
         mockMvc.perform(asOwner(get(path))).andExpect(status().isForbidden());
         grantOwner(PermissionKey.VIEW_MEMBERS, PermissionKey.TRANSFER_OWNERSHIP);
         mockMvc.perform(asOwner(get(path))).andExpect(status().isOk());
+    }
+
+    /** Listing every member reads the caller's permissions and the roles to choose from once. */
+    @Test
+    void listingEveryMemberDoesNotQueryPerMember() throws Exception {
+        statementsListingMembers(51); // The first listing seeds the organization's system roles.
+        long fifty = statementsListingMembers(51);
+        inTransaction(() -> {
+            for (int i = 50; i < 60; i++) {
+                String name = "member-" + schema.getId() + "-" + i;
+                User user = new User(name, name + "@test.example", "unused", "Person " + i, SystemRole.USER);
+                entityManager.persist(user);
+                entityManager.persist(new OrganizationMembership(organization, user,
+                        entityManager.find(RoleDefinition.class, roleIds.getFirst()), MembershipStatus.ACTIVE));
+            }
+        });
+
+        // Rows load in batches of 50 (hibernate.default_batch_fetch_size): ten more members may
+        // cost one more batch, never statements of their own.
+        long sixty = statementsListingMembers(61);
+        assertTrue(sixty <= fifty + 1, "51 members: " + fifty + " statements, 61 members: " + sixty);
+    }
+
+    private long statementsListingMembers(int members) throws Exception {
+        Statistics statistics = entityManager.getEntityManagerFactory().unwrap(SessionFactory.class).getStatistics();
+        statistics.setStatisticsEnabled(true);
+        statistics.clear();
+        mockMvc.perform(asOwner(get(organizationPath + "/members")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(members))
+                .andExpect(jsonPath("$[1].actions.canChangeRole").value(true));
+        long statements = statistics.getPrepareStatementCount();
+        statistics.setStatisticsEnabled(false);
+        return statements;
     }
 
     private void grantOwner(PermissionKey... permissions) {

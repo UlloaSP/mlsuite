@@ -54,7 +54,7 @@ class ModelReadPermissionTest {
                 mock(ModelArtifactWriter.class), mock(ModelArtifactContentReader.class),
                 mock(StorageDeletionQueue.class),
                 mock(RuntimeEnvironments.class),
-                mock(AuditLogService.class), false);
+                mock(AuditLogService.class));
     }
 
     @ParameterizedTest

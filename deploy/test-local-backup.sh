@@ -87,6 +87,8 @@ grep -Fxq 'physical_disk_failure_covered=false' "$destination/recovery.scope"
 grep -q 'stop frontend spring-app' "$calls"
 grep -q 'stop rustfs' "$calls"
 if grep -q 'up -d --no-deps spring-app' "$calls"; then exit 1; fi
+attempt() { sed -n "s/^$1=//p" "$backup_root/last-attempt"; }
+[[ "$(attempt result)" == succeeded && "$(attempt backup)" == "$(basename "$destination")" ]]
 
 : > "$calls"
 destination=$(cd "$root" && ENV_FILE="$env_file" DOCKER_BIN="$fake_docker" \
@@ -105,6 +107,7 @@ if (cd "$root" && FAKE_SOURCE_KIB=100 FAKE_HOST_AVAILABLE_KIB=249 ENV_FILE="$env
 fi
 if grep -q 'stop frontend spring-app' "$calls"; then exit 1; fi
 [[ "$(list_backups)" == "$kept_backups" ]] || { echo "a refused backup pruned an existing one" >&2; exit 1; }
+[[ "$(attempt result)" == failed && -z "$(attempt backup)" ]] || { echo "a refused backup was not recorded" >&2; exit 1; }
 
 : > "$calls"
 first_output="$work/first.out"
@@ -118,6 +121,8 @@ if (cd "$root" && ENV_FILE="$env_file" DOCKER_BIN="$fake_docker" \
 fi
 grep -q 'another local backup is running' "$work/concurrent.err"
 wait "$first_pid"
+# The attempt turned away by the lock records nothing; the one holding it records its success.
+[[ "$(attempt result)" == succeeded && "$(attempt backup)" == "$(basename "$(cat "$first_output")")" ]]
 
 : > "$calls"
 kept_backups=$(list_backups)
@@ -130,5 +135,6 @@ fi
 if find "$backup_root" -mindepth 1 -maxdepth 1 -type d -name '.partial-*' | grep -q .; then exit 1; fi
 grep -q 'up -d rustfs rustfs-init' "$calls"
 grep -q 'up -d --no-deps spring-app frontend' "$calls"
+[[ "$(attempt result)" == failed ]] || { echo "a failed backup was not recorded" >&2; exit 1; }
 
 echo "Single-disk local backup contract verified."

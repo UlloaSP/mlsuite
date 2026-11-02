@@ -70,6 +70,7 @@ class SystemAlertTest extends PublicPredictionFixture {
         disabled = user(SystemRole.SUPERADMIN);
         member = user(SystemRole.USER);
         jdbc.update("UPDATE app_user SET enabled = FALSE WHERE id = ?", disabled.getId());
+        noBackupFailing();
     }
 
     @Test
@@ -213,6 +214,7 @@ class SystemAlertTest extends PublicPredictionFixture {
                 "SELECT latest_value FROM system_alert WHERE signal = 'HOST_CPU'", Double.class));
 
         reset(opsAgent);
+        noBackupFailing();
         cpuAt(60);
         evaluateAt(410);
         assertEquals(2, openAlerts());
@@ -341,6 +343,10 @@ class SystemAlertTest extends PublicPredictionFixture {
                 new AlertSettings.Threshold(80, 90d, 85));
 
         assertThrows(IllegalArgumentException.class, () -> new AlertSettings(15, 60, 120, 30, 10, inverted));
+    }
+
+    private void noBackupFailing() {
+        when(opsAgent.backup()).thenReturn(objectMapper.createObjectNode().put("failing", false));
     }
 
     private void cpuAt(double percent) {

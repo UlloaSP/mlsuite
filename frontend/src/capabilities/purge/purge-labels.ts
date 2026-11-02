@@ -28,6 +28,7 @@ const COUNT_LABELS: Record<string, string> = {
   emptyOrganizations: "Empty organizations",
   anonymizedRuns: "Inferences made anonymous",
   anonymizedApiClients: "API clients made anonymous",
+  anonymizedPlugins: "Plugins made anonymous",
 };
 
 /** Only these say what the purge destroyed; the rest are the steps it took to get there. */

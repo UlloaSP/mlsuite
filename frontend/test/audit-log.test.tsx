@@ -91,7 +91,6 @@ beforeEach(() => {
         items: matched.slice(page * 24, (page + 1) * 24),
         page,
         size: 24,
-        totalItems: matched.length,
         hasNext: (page + 1) * 24 < matched.length,
       }),
       { headers: { "content-type": "application/json" } },
@@ -123,7 +122,7 @@ test("lists recorded entries with readable actions, their actor, target and deta
   const host = await render();
   expect(catalogRequests()[0]!.pathname).toBe("/api/organizations/3/audit-events/catalog");
   expect(catalogRequests()[0]!.searchParams.get("page")).toBe("0");
-  expect(host.textContent).toContain("30 entries");
+  expect(host.textContent).toContain("24+ entries");
   expect(host.textContent).toContain("API client suspended");
   expect(host.textContent).toContain("Platform");
   expect(host.textContent).toContain("Platform Root");
@@ -221,7 +220,7 @@ test("distinguishes a failed request from an empty log and retries", async () =>
   fail = false;
   await click("Retry", host);
   await settle();
-  expect(host.textContent).toContain("30 entries");
+  expect(host.textContent).toContain("24+ entries");
 });
 
 test("is denied, without asking for the log, to a role without the permission", async () => {

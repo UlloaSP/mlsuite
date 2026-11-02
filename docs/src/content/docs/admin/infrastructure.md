@@ -20,7 +20,9 @@ Stopping or restarting a service interrupts it and may disconnect users, includi
 The managed services default to `postgres`, `py-analyzer`, `runtime-builder`, `rustfs`, `spring-app` and `frontend`
 (`OPS_AGENT_MANAGED_SERVICES`). The terminal is **off** until services are listed in
 `OPS_AGENT_TERMINAL_SERVICES`; anything typed there can change files and stop services. Idle
-shells close after 15 minutes. See the [ops agent settings](/self-hosting/configuration/#operations-agent).
+shells close after 15 minutes, and closing the tab ends the shell. The audit log records each shell's
+opening and its end, whether it was closed, its tab went away or the agent ended it; what is typed in
+it is not recorded. See the [ops agent settings](/self-hosting/configuration/#operations-agent).
 
 ## Load alerts
 
@@ -37,6 +39,7 @@ Alertmanager.
 | Storage deletions that failed | Deletions that used up their attempts | 1 / 50 / 1 |
 | CPU, memory, disk | Share of the machine in use, from the ops agent | 85% / 95% / 70% (disk clears under 80%) |
 | Ops agent not reporting | The agent cannot be reached, or cannot measure the stack | Warning only |
+| Last backup failed | The last run of `scripts/create-local-backup.sh` failed, or the backup it made is gone | Critical only |
 
 An alert raises once its condition has held for 2 minutes, and resolves once the value has stayed
 under its clear threshold for 5 minutes, so a value hovering around a threshold raises once and
@@ -44,6 +47,10 @@ stays open. A warning that reaches its critical threshold for 2 minutes becomes 
 so until it resolves. Each raise, escalation and resolution sends one notification to every enabled
 superadmin and adds one entry to the [audit log](/organizations/audit-log/); the **Infra** entry in
 the navigation counts the open alerts. Resolved alerts are kept 30 days.
+
+Backups run before each deployment, not on a schedule, so their age raises nothing, and a host that
+never took a backup has none failing. A failed backup stays alerted until a later one succeeds. The
+agent reads `LOCAL_BACKUP_ROOT` inside the checkout; a root outside it leaves the signal unknown.
 
 While the ops agent is not reporting, CPU, memory and disk are **unknown**, not zero: the page says
 so, alerts on them neither raise nor resolve, and they take a full clear period to resolve once it

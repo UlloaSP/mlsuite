@@ -16,6 +16,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 
@@ -24,9 +25,17 @@ import org.springframework.http.HttpMethod;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.ResultActions;
 
+import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
+import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
-/** A person's avatar: replaced and removed by them, read by anyone, pictured on their account. */
+/**
+ * A person's avatar: replaced and removed by them, pictured on their account, and read by anyone
+ * while their profile is public or their account publishes; otherwise only by them, superadmins and
+ * the people they share an organization with.
+ */
 class UserAvatarTest extends ProfileFixture {
 
     private static final String AVATAR = ME + "/avatar";
@@ -57,11 +66,39 @@ class UserAvatarTest extends ProfileFixture {
         byte[] served = mockMvc.perform(get(url(ada)))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("image/png"))
-                .andExpect(header().string("Cache-Control", "max-age=31536000, public, immutable"))
+                .andExpect(header().string("Cache-Control", "max-age=31536000, private, immutable"))
                 .andReturn().getResponse().getContentAsByteArray();
         BufferedImage image = ImageIO.read(new ByteArrayInputStream(served));
         assertEquals(256, image.getWidth());
         assertEquals(256, image.getHeight());
+    }
+
+    @Test
+    void aPrivatePersonsAvatarIsForThemTheirColleaguesAndSuperadmins() throws Exception {
+        User ada = registered(unique("ada"));
+        User stranger = registered(unique("bob"));
+        User colleague = registered(unique("cy"));
+        User root = new User(unique("root"), unique("root") + "@example.test", "x", "Root", SystemRole.SUPERADMIN);
+        inTransaction(() -> entityManager.persist(root));
+        upload(ada, png(128, 128)).andExpect(status().isOk());
+        String address = url(ada);
+        edited(ada, Map.of("profilePublic", false));
+        long team = createdOrganization(ada, "Lab", unique("lab"));
+        inTransaction(() -> entityManager.persist(new OrganizationMembership(entityManager.find(Organization.class, team),
+                colleague, roles.findByOrganizationIdAndSystemKey(team, "VIEWER").orElseThrow(), MembershipStatus.ACTIVE)));
+
+        mockMvc.perform(get(address)).andExpect(status().isNotFound());
+        mockMvc.perform(as(stranger, get(address))).andExpect(status().isNotFound());
+        mockMvc.perform(as(ada, get(address))).andExpect(status().isOk());
+        mockMvc.perform(as(colleague, get(address))).andExpect(status().isOk());
+        mockMvc.perform(as(root, get(address))).andExpect(status().isOk());
+        // Member lists picture her by this address, and only members see them.
+        mockMvc.perform(as(ada, get(ORGANIZATIONS + "/" + team + "/members")))
+                .andExpect(jsonPath("$[0].avatarUrl").value(address));
+
+        // What her account publishes shows her picture to anyone, as #140 decided.
+        published(ada, "Shared");
+        mockMvc.perform(get(address)).andExpect(status().isOk());
     }
 
     @Test

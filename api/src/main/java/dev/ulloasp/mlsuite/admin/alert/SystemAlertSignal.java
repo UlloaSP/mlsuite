@@ -15,7 +15,8 @@ public enum SystemAlertSignal {
     HOST_CPU("CPU", "%"),
     HOST_RAM("Memory", "%"),
     HOST_DISK("Disk", "%"),
-    OPS_AGENT("Ops agent not reporting", "");
+    OPS_AGENT("Ops agent not reporting", ""),
+    BACKUP_FAILED("Last backup failed", "");
 
     private final String label;
     private final String unit;

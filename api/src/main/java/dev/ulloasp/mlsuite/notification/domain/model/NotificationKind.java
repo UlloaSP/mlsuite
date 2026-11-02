@@ -27,6 +27,8 @@ public enum NotificationKind {
     ORGANIZATION_JOINED(NotificationTargetType.ORGANIZATION),
     /** schemaName, assignerName. */
     REVIEW_ASSIGNED(NotificationTargetType.REVIEW),
+    /** schemaName, runName, reviewRunId, actorName: a manager reopened a run the reviewer had submitted. */
+    REVIEW_REOPENED(NotificationTargetType.REVIEW),
     /** organizationName: a superadmin deleted the organization, which is gone. */
     ORGANIZATION_PURGED(NotificationTargetType.ORGANIZATION),
     /** scope, targetLabel. */

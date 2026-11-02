@@ -327,12 +327,9 @@ Production promotion gates are:
 - `/actuator/health/readiness` is healthy on the canary API;
 - a PostgreSQL plus RustFS restore has been exercised in an isolated environment.
 
-`MODEL_MUTATIONS_REQUIRE_VERSION=false` exists only for a controlled
-compatibility window before promotion, so an already-open older frontend can
-mutate models without the new parameter. The production cutover requires `true`:
-old cached clients must refresh, missing versions receive `428 Precondition
-Required`, and mismatched versions receive `409 Conflict`. New clients always send
-the version and keep stale-write protection.
+A change to a model must send the version it was made on: a missing version
+receives `428 Precondition Required` and a stale one `409 Conflict`, so a page
+left open cannot overwrite a newer change.
 
 Deploy backward-compatible API instances gradually. On application failure, roll
 back the image. On an incompatible persistent state, prefer roll-forward or restore

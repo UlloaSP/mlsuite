@@ -299,6 +299,15 @@ describe("opening a notification", () => {
     [{ kind: "MODEL_FAILED", targetType: "MODEL", targetId: "12" }, "/models/12"],
     [{ kind: "REVIEW_ASSIGNED", targetType: "REVIEW", targetId: "abc" }, "/review/abc"],
     [
+      {
+        kind: "REVIEW_REOPENED",
+        targetType: "REVIEW",
+        targetId: "abc",
+        payload: { reviewRunId: "run-1" },
+      },
+      "/review/abc/runs/run-1",
+    ],
+    [
       { kind: "INVITATION_ACCEPTED", targetType: "INVITATION", targetId: "3" },
       "/workspace/organizations/9/invitations",
     ],
@@ -345,6 +354,11 @@ describe("what a notification says", () => {
       "REVIEW_ASSIGNED",
       { assignerName: "Ada", schemaName: "Risk" },
       "Ada asked you to review runs of Risk.",
+    ],
+    [
+      "REVIEW_REOPENED",
+      { actorName: "Ada", runName: "Case 7", schemaName: "Risk" },
+      "Ada reopened Case 7 in Risk for you to review again.",
     ],
     [
       "ORGANIZATION_PURGED",

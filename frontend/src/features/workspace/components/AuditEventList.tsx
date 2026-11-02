@@ -7,7 +7,7 @@ import { History } from "lucide-react";
 import { AuditEventEntry } from "@/features/workspace/components/AuditEventEntry";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import type { useInfiniteCatalog } from "@/shared/api/infinite-catalog";
-import type { AuditEventDto, PageDtoAuditEventDto } from "@/shared/api/openapi.gen";
+import type { AuditEventDto, AuditEventPageDto } from "@/shared/api/openapi.gen";
 
 /** The entries an audit catalog loaded, with its loading, failed and empty states. */
 export function AuditEventList({
@@ -16,7 +16,7 @@ export function AuditEventList({
   emptyDescription,
   showOrganization = false,
 }: {
-  log: ReturnType<typeof useInfiniteCatalog<PageDtoAuditEventDto>>;
+  log: ReturnType<typeof useInfiniteCatalog<AuditEventPageDto>>;
   isFiltered: boolean;
   emptyDescription: string;
   showOrganization?: boolean;

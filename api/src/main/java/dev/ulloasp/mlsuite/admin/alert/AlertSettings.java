@@ -18,6 +18,8 @@ public record AlertSettings(long evaluateSeconds, long sustainSeconds, long clea
 
     /** The ops agent is reporting or it is not, and losing it costs measures, not capacity. */
     private static final Threshold NOT_REPORTING = new Threshold(1, null, 1);
+    /** The data's last copy failed or is gone: nothing to tune, and nothing milder to say. */
+    private static final Threshold BACKUP_FAILED = new Threshold(1, 1d, 1);
 
     public record Threshold(double warning, @Nullable Double critical, double clear) {
     }
@@ -33,6 +35,7 @@ public record AlertSettings(long evaluateSeconds, long sustainSeconds, long clea
         Map<SystemAlertSignal, Threshold> all = new EnumMap<>(SystemAlertSignal.class);
         all.putAll(thresholds);
         all.put(SystemAlertSignal.OPS_AGENT, NOT_REPORTING);
+        all.put(SystemAlertSignal.BACKUP_FAILED, BACKUP_FAILED);
         for (SystemAlertSignal signal : SystemAlertSignal.values()) {
             Threshold threshold = all.get(signal);
             if (threshold == null || threshold.clear() > threshold.warning()

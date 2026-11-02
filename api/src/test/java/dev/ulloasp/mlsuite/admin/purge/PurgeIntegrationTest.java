@@ -97,7 +97,8 @@ class PurgeIntegrationTest extends PublicPredictionFixture {
                 VALUES (?, 0, 'row', '{}', '[]', 'PENDING')""", job);
         jdbc.update("""
                 INSERT INTO plugin_metadata (id, organization_id, plugin_type, file_name, content_type, object_key,
-                    size_bytes, created_at, updated_at) VALUES (?, ?, 'field', 'p.ts', 'text/plain', ?, 1, now(), now())""",
+                    size_bytes, sha256, storage_version_id, created_at, updated_at)
+                VALUES (?, ?, 'field', 'p.ts', 'text/plain', ?, 1, repeat('a', 64), 'v1', now(), now())""",
                 suffix, organization.getId(), "organizations/" + organization.getId() + "/plugins/items/" + suffix + ".json");
         jdbc.update("""
                 INSERT INTO invitation (organization_id, invited_by_user_id, role_definition_id, email, status,

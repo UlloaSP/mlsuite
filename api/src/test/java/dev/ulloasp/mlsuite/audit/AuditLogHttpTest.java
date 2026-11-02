@@ -29,6 +29,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import dev.ulloasp.mlsuite.audit.adapter.in.web.AuditLogController;
 import dev.ulloasp.mlsuite.audit.application.dto.AuditActorDto;
 import dev.ulloasp.mlsuite.audit.application.dto.AuditEventDto;
+import dev.ulloasp.mlsuite.audit.application.dto.AuditEventPageDto;
 import dev.ulloasp.mlsuite.audit.application.dto.AuditFilters;
 import dev.ulloasp.mlsuite.audit.application.port.in.AuditLogUseCase;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
@@ -40,7 +41,6 @@ import dev.ulloasp.mlsuite.security.auth.SessionAccountCheck;
 import dev.ulloasp.mlsuite.security.auth.AuthenticatedUserPrincipal;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
-import dev.ulloasp.mlsuite.util.PageDto;
 
 /** The audit log endpoint behind the real security filter chain. */
 @WebMvcTest(controllers = AuditLogController.class, properties = {
@@ -83,12 +83,12 @@ class AuditLogHttpTest {
         when(auditLog.list(MEMBER_ID, ORGANIZATION_ID, new CatalogRequest(1, 2, "north", "API_KEY_REVOKE", null),
                 new AuditFilters(OffsetDateTime.parse("2026-10-01T00:00:00Z"), OffsetDateTime.parse("2026-10-02T00:00:00Z"),
                         AuditActorKind.USER, "ada", AuditTargetType.API_CLIENT_KEY)))
-                .thenReturn(new PageDto<>(List.of(new AuditEventDto(90L,
+                .thenReturn(new AuditEventPageDto(List.of(new AuditEventDto(90L,
                         OffsetDateTime.parse("2026-10-01T10:00:00Z"),
                         new AuditActorDto(AuditActorKind.USER, 3L, "Ada Admin"),
                         AuditAction.API_KEY_REVOKE, AuditTargetType.API_CLIENT_KEY, "12",
                         Map.of("client", "North", "key", "ci"), ORGANIZATION_ID, "Acme", "198.51.100.7", REQUEST)),
-                        1, 2, 3, false));
+                        1, 2, false));
 
         mockMvc.perform(signedIn(get(CATALOG, ORGANIZATION_ID)
                 .param("page", "1").param("size", "2").param("search", "north").param("filter", "API_KEY_REVOKE")
@@ -97,7 +97,7 @@ class AuditLogHttpTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page").value(1))
                 .andExpect(jsonPath("$.size").value(2))
-                .andExpect(jsonPath("$.totalItems").value(3))
+                .andExpect(jsonPath("$.totalItems").doesNotExist())
                 .andExpect(jsonPath("$.hasNext").value(false))
                 .andExpect(jsonPath("$.items.length()").value(1))
                 .andExpect(jsonPath("$.items[0].length()").value(11))
@@ -121,7 +121,7 @@ class AuditLogHttpTest {
     void theCatalogDefaultsToTheFirstPageOfEveryAction() throws Exception {
         when(auditLog.list(eq(MEMBER_ID), eq(ORGANIZATION_ID), eq(new CatalogRequest(null, null, null, null, null)),
                 eq(AuditFilters.NONE)))
-                .thenReturn(new PageDto<>(List.of(), 0, 24, 0, false));
+                .thenReturn(new AuditEventPageDto(List.of(), 0, 24, false));
 
         mockMvc.perform(signedIn(get(CATALOG, ORGANIZATION_ID)))
                 .andExpect(status().isOk())
@@ -132,7 +132,7 @@ class AuditLogHttpTest {
     @Test
     void thePlatformCatalogTakesItsOrganizationFilterAndIsForSuperadminsAlone() throws Exception {
         when(auditLog.listPlatform(new CatalogRequest(null, null, null, null, null), AuditFilters.NONE, "platform"))
-                .thenReturn(new PageDto<>(List.of(), 0, 24, 0, false));
+                .thenReturn(new AuditEventPageDto(List.of(), 0, 24, false));
 
         mockMvc.perform(get(PLATFORM)).andExpect(status().isUnauthorized());
         mockMvc.perform(signedIn(get(PLATFORM), SystemRole.USER)).andExpect(status().isForbidden());

@@ -63,6 +63,15 @@ public interface OrganizationMembershipRepository
     @Query("SELECT COUNT(m) FROM OrganizationMembership m WHERE m.organization.id = :organizationId AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE")
     long countActiveByOrganizationId(Long organizationId);
 
+    /** Whether two people are both active members of some organization. */
+    @Query("""
+            SELECT COUNT(m) > 0 FROM OrganizationMembership m, OrganizationMembership other
+            WHERE m.user.id = :userId AND other.user.id = :otherUserId AND other.organization = m.organization
+            AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE
+            AND other.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE
+            """)
+    boolean shareAnOrganization(Long userId, Long otherUserId);
+
     @Query("SELECT COUNT(m) FROM OrganizationMembership m WHERE m.roleDefinition.id = :roleDefinitionId AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE")
     long countActiveByRoleDefinitionId(Long roleDefinitionId);
 

@@ -64,7 +64,6 @@ equivalent roles yourself; the migration role must be able to install `pg_trgm`.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `MODEL_MUTATIONS_REQUIRE_VERSION` | `true` | Refuse model changes that do not send the model's version (`428`), so stale pages cannot overwrite each other. Keep `true`. |
 | `PREDICTION_ATTESTATION_SECRET` | | Signs the predictions the API runs for workspace inferences; an inference can only be saved with results signed by it, within 24 hours. Required: at least 32 random characters, the same on every API instance. Changing it invalidates unsaved results. |
 
 ## Runtime capacity
@@ -77,6 +76,9 @@ equivalent roles yourself; the migration role must be able to install `pg_trgm`.
 | `RUNTIME_QUEUE_MAX_WAIT_MS` | `5000` | How long a run may wait for its turn before it receives `503` with `Retry-After`. |
 | `RUNTIME_WORKERS` | `2` | Worker processes the runtime runs models in, in all, about one per core it may use; each runs one request at a time inside one model's environment and holds the bundles it loaded, so size them by memory too. |
 | `RUNTIME_BUNDLE_CACHE_MB` | `512` | Total artifact size of the bundles each worker keeps loaded, and of the artifacts the runtime keeps on disk; the newest is kept even when larger. A run sends its artifact only when the runtime lacks it. |
+| `RUNTIME_WORKER_MEMORY_MB` | `4096` | Address space one worker's model may use; a worker with scikit-learn loaded uses about 370 MB. |
+| `RUNTIME_WORKER_OPEN_FILES` | `1024` | Files one worker's model may hold open. |
+| `RUNTIME_WORKER_PROCESSES` | `512` | Processes and threads a worker may start, counted by the kernel for the runtime's user as a whole. A model past any of these bounds fails alone with an error naming the setting, and its worker, with whatever it started, is replaced. Models may write only to `/tmp`. |
 | `RUNTIME_MEMORY_LIMIT` | `6g` | Memory the runtime, its workers included, may use. |
 | `RUNTIME_BUILDER_BASE_URL` | `http://runtime-builder:8001` | How the API reaches the environment builder. |
 | `RUNTIME_PACKAGE_INDEX_URL` | `https://pypi.org/simple` | The only index the builder installs from; a mirror works, since every file is checked against the lock's SHA-256 and the lock's URLs are never used. |
@@ -166,7 +168,7 @@ Read by the scripts in `scripts/`, not by the application. See
 | --- | --- | --- |
 | `RECOVERY_MODE` | `local-single-disk` | The only supported topology. |
 | `SINGLE_DISK_RISK_ACCEPTED` | `false` | Must be `true` to run the cutover: losing the disk loses the data. |
-| `LOCAL_BACKUP_ROOT` | `backups` | Where backups are written. |
+| `LOCAL_BACKUP_ROOT` | `backups` | Where backups are written, relative to the checkout so the ops agent can report a failed backup. |
 | `LOCAL_BACKUP_RETENTION_COUNT` | `7` | Backups kept. |
 | `LOCAL_BACKUP_MIN_FREE_PERCENT` | `15` | Free disk space a backup must leave. |
 | `RECOVERY_RPO_MINUTES`, `RECOVERY_RTO_MINUTES` | `1440`, `480` | Maximum age of the newest backup, and maximum duration of a restore rehearsal. |

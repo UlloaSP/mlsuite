@@ -39,6 +39,13 @@ running=$("${compose[@]}" ps --status running --services 2>/dev/null || true)
 lock="$backup_root/.backup.lock"
 exec 9>"$lock"
 flock -n 9 || { echo "another local backup is running" >&2; exit 1; }
+# Each attempt, once it holds the lock, leaves its outcome beside the backups; the ops agent
+# reports a failed attempt, or a last backup that is gone, to superadmins as an alert.
+record_attempt() {
+  printf 'result=%s\nfinished_epoch=%s\nbackup=%s\n' "$1" "$(date -u +%s)" "${2:-}" \
+    > "$backup_root/.last-attempt.tmp" && mv -f "$backup_root/.last-attempt.tmp" "$backup_root/last-attempt"
+}
+trap 'record_attempt failed' EXIT
 timestamp=$(date -u +%Y%m%dT%H%M%SZ)
 created_epoch=$(date -u +%s)
 partial="$backup_root/.partial-$timestamp-$$"
@@ -82,6 +89,7 @@ cleanup() {
     status=1
   fi
   if (( status != 0 )); then rm -rf -- "$partial"; fi
+  if (( status == 0 )); then record_attempt succeeded "$(basename "$destination")"; else record_attempt failed; fi
   exit "$status"
 }
 trap cleanup EXIT INT TERM

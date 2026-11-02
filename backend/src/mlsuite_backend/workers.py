@@ -5,6 +5,10 @@ stops the least recently used idle worker of another environment to make room, e
 worker to come free. A busy environment can therefore use every process, and an idle one keeps
 its warm workers until another needs the room. A worker that dies or overruns its timeout is
 discarded, never reused.
+
+Each worker runs within the bounds of config (memory, open files, processes), which it applies to
+itself before loading any model, in a process group of its own: stopping a worker ends every
+process its model started.
 """
 
 import asyncio
@@ -16,6 +20,7 @@ import signal
 from collections.abc import AsyncIterator, Callable
 from pathlib import Path
 
+from . import config
 from .config import BUNDLE_CACHE_BYTES, RUNTIME_WORKERS, WORKER_TIMEOUT_SECONDS
 from .environments import Environment
 
@@ -47,12 +52,20 @@ class Worker:
     @classmethod
     async def start(cls, environment: Environment) -> "Worker":
         # Only what a worker needs: no secret of the runtime reaches the model's code.
-        env = {"MLSUITE_BUNDLE_CACHE_BYTES": str(BUNDLE_CACHE_BYTES), "HOME": "/tmp", **_ONE_THREAD}
+        env = {
+            "MLSUITE_BUNDLE_CACHE_BYTES": str(BUNDLE_CACHE_BYTES),
+            "MLSUITE_WORKER_MEMORY_BYTES": str(config.WORKER_MEMORY_BYTES),
+            "MLSUITE_WORKER_OPEN_FILES": str(config.WORKER_OPEN_FILES),
+            "MLSUITE_WORKER_PROCESSES": str(config.WORKER_PROCESSES),
+            "HOME": "/tmp",
+            **_ONE_THREAD,
+        }
         if os.name == "nt":
             env["SYSTEMROOT"] = os.environ.get("SYSTEMROOT", "")
         process = await asyncio.create_subprocess_exec(
             str(environment.python), "-I", str(WORKER_SCRIPT),
             stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, env=env, limit=_MAX_LINE,
+            start_new_session=os.name == "posix",
         )
         return cls(environment, process)
 
@@ -73,13 +86,19 @@ class Worker:
             raise WorkerFailed(_exit_reason(code))
         answer = json.loads(line)
         if not answer["ok"]:
+            if answer.get("retire"):
+                # Past a bound it answers and exits; once it has, the pool replaces it.
+                await self.process.wait()
             raise WorkerError(answer["status"], answer["detail"])
         return answer["result"]
 
     async def stop(self) -> None:
         self.process.stdin.close()
-        if self.alive:
-            with contextlib.suppress(ProcessLookupError):
+        with contextlib.suppress(ProcessLookupError, PermissionError):
+            if os.name == "posix":
+                # The whole group: what the model started ends with its worker, even after it exited.
+                os.killpg(self.process.pid, signal.SIGKILL)
+            elif self.alive:
                 self.process.kill()
         await self.process.wait()
         with contextlib.suppress(ConnectionError):
@@ -111,6 +130,14 @@ class WorkerPool:
             await self._release(worker)
 
     async def _acquire(self, environment: Environment) -> Worker:
+        retired: list[Worker] = []
+        try:
+            return await self._take(environment, retired)
+        finally:
+            for worker in retired:
+                await worker.stop()
+
+    async def _take(self, environment: Environment, retired: list[Worker]) -> Worker:
         async with self._free:
             while True:
                 for worker in self._idle:
@@ -119,6 +146,7 @@ class WorkerPool:
                         if worker.alive:
                             return worker
                         self._count -= 1
+                        retired.append(worker)
                         break
                 else:
                     if self._count < self._max or self._idle:
@@ -139,11 +167,14 @@ class WorkerPool:
 
     async def _release(self, worker: Worker) -> None:
         async with self._free:
-            if worker.alive:
+            alive = worker.alive
+            if alive:
                 self._idle.append(worker)
             else:
                 self._count -= 1
             self._free.notify()
+        if not alive:
+            await worker.stop()
 
     async def close(self) -> None:
         async with self._free:

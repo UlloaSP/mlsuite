@@ -14,7 +14,10 @@ export type CatalogPage<T> = {
   hasNext: boolean;
 };
 
-type CatalogOptions<TPage extends CatalogPage<unknown>> = {
+/** What paging needs of a page: a catalog that is never counted whole carries no total. */
+type PagedCatalog = Omit<CatalogPage<unknown>, "totalItems">;
+
+type CatalogOptions<TPage extends PagedCatalog> = {
   /** Resource root, the literal "infinite", then the search, filter and sort values. */
   queryKey: QueryKey;
   queryFn: (page: number, signal: AbortSignal) => Promise<TPage>;
@@ -34,7 +37,7 @@ const defaultItemId = (item: unknown) =>
 const catalogRoot = (queryKey: QueryKey) =>
   hashKey(queryKey.slice(0, queryKey.indexOf("infinite") + 1));
 
-export function infiniteCatalogOptions<TPage extends CatalogPage<unknown>>({
+export function infiniteCatalogOptions<TPage extends PagedCatalog>({
   queryFn,
   itemId = defaultItemId,
   refetchInterval,
@@ -72,8 +75,6 @@ export function infiniteCatalogOptions<TPage extends CatalogPage<unknown>>({
   });
 }
 
-export function useInfiniteCatalog<TPage extends CatalogPage<unknown>>(
-  options: CatalogOptions<TPage>,
-) {
+export function useInfiniteCatalog<TPage extends PagedCatalog>(options: CatalogOptions<TPage>) {
   return useInfiniteQuery(infiniteCatalogOptions(options));
 }

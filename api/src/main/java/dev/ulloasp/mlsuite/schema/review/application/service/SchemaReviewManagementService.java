@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.schema.review.application.service;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,8 @@ import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
+import dev.ulloasp.mlsuite.notification.application.service.NotificationService;
+import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
@@ -34,6 +37,9 @@ import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewAssignee;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewRun;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewRunSubmission;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewState;
+import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
+import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
+import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import lombok.RequiredArgsConstructor;
@@ -53,6 +59,8 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
     private final WorkspaceAccessService workspaceAccess;
     private final WorkspaceAuthorizationService authorization;
     private final AuditLogService auditLog;
+    private final NotificationService notifications;
+    private final UserRepository users;
 
     @Transactional(readOnly = true)
     public List<SchemaReviewAssignmentStatusDto> assignmentStatus(Long userId, Long predictionRunId) {
@@ -100,6 +108,14 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
         submissions.delete(submission);
         auditLog.record(AuditActor.user(userId), organizationId, AuditAction.REVIEW_REOPEN, reviewId,
                 AuditDetails.of("reviewRun", reviewRunId, "reviewerId", reviewerId));
+        if (!reviewerId.equals(userId)) {
+            notifications.notify(reviewerId, organizationId, NotificationKind.REVIEW_REOPENED, reviewId, Map.of(
+                    "organizationName", review.getOrganization().getName(),
+                    "schemaName", review.getSchema().getName(),
+                    "runName", reviewRun.getRun().getName(),
+                    "reviewRunId", reviewRunId,
+                    "actorName", users.findById(userId).map(User::getFullName).orElse(DeletedUser.NAME)));
+        }
     }
 
     public void deleteResponse(Long userId, String reviewId, String reviewRunId, Long reviewerId) {

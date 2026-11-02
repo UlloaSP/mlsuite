@@ -1141,6 +1141,34 @@
         ],
         "type": "object"
       },
+      "AuditEventPageDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuditEventDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size"
+        ],
+        "type": "object"
+      },
       "AuthRequest": {
         "properties": {
           "email": {
@@ -2692,6 +2720,7 @@
               "INVITATION_DECLINED",
               "ORGANIZATION_JOINED",
               "REVIEW_ASSIGNED",
+              "REVIEW_REOPENED",
               "ORGANIZATION_PURGED",
               "PURGE_COMPLETED",
               "PURGE_FAILED",
@@ -3302,39 +3331,6 @@
           "items": {
             "items": {
               "$ref": "#/components/schemas/ApiRequestDto"
-            },
-            "type": "array"
-          },
-          "page": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "size": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "totalItems": {
-            "format": "int64",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "hasNext",
-          "items",
-          "page",
-          "size",
-          "totalItems"
-        ],
-        "type": "object"
-      },
-      "PageDtoAuditEventDto": {
-        "properties": {
-          "hasNext": {
-            "type": "boolean"
-          },
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/AuditEventDto"
             },
             "type": "array"
           },
@@ -7227,7 +7223,8 @@
               "HOST_CPU",
               "HOST_RAM",
               "HOST_DISK",
-              "OPS_AGENT"
+              "OPS_AGENT",
+              "BACKUP_FAILED"
             ],
             "type": "string"
           },
@@ -7284,7 +7281,8 @@
               "HOST_CPU",
               "HOST_RAM",
               "HOST_DISK",
-              "OPS_AGENT"
+              "OPS_AGENT",
+              "BACKUP_FAILED"
             ],
             "type": "string"
           },
@@ -8518,7 +8516,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageDtoAuditEventDto"
+                  "$ref": "#/components/schemas/AuditEventPageDto"
                 }
               }
             },
@@ -10919,7 +10917,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageDtoAuditEventDto"
+                  "$ref": "#/components/schemas/AuditEventPageDto"
                 }
               }
             },
