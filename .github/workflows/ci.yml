@@ -215,6 +215,8 @@ jobs:
         run: sudo bash deploy/test-backup-timer-install.sh
       - name: Verify recovery RTO gate
         run: bash deploy/test-recovery-rto.sh
+      - name: Verify a deployment keeps or restores the running release
+        run: bash deploy/test-deploy-release.sh
       - name: Validate release contracts and failure handling
         run: python3 -m unittest discover -s .github/tests -p 'test_release_*.py'
       - name: Require the image security gate and shared scan policy

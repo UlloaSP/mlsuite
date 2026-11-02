@@ -16,6 +16,10 @@ The workflow verifies:
 - production Docker builds and Trivy scans for frontend, API, backend and ops-agent;
 - Compose resolution and immutable-release contract tests.
 
+`deploy/test-deploy-release.sh` runs a deployment against a fake Docker: a valid release, the
+backup that precedes it, each failure that must leave the running release in place, and the
+rollback.
+
 CI uses hosted Ubuntu runners, read-only repository permissions, and no deployment secrets. Actions are pinned to full commit SHAs. A skipped, cancelled, or failed dependency does not satisfy the aggregate check.
 
 Image scans run on PRs to either protected branch and pushes to `develop` and `main`.

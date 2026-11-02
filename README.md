@@ -107,7 +107,9 @@ cannot load or predict its samples there is *failed* with the reason, and a memb
 who may edit models can have it prepared again. Bundles written before locks run in
 the runtime's frozen legacy environment (mlbundle 0.2.1, scikit-learn 1.9.1). Every
 stored result keeps the environment that computed it. To allow a new version, add
-it to the allowlist once bundles needing it reproduce their predictions on the
+it to the allowlist on `develop`, then run the manual `allowlist:corpus` and
+`allowlist:shelob` GitLab jobs: they export a bundle of every model family with
+each allowlisted scikit-learn version and check that it reproduces its predictions on the
 production host.
 
 Fields map to the model's own feature names; a model without them takes its
