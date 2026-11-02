@@ -7,8 +7,11 @@ type AppSearchFieldProps = {
   value: string;
   onChange: (value: string) => void;
   className?: string;
-  /** Result count shown as "N noun" or, while filtered, "X of N noun". */
-  count?: { shown: number; total: number; filtered: boolean; noun: string };
+  /**
+   * Result count shown as "N noun" or, while filtered, "X of N noun"; `more` marks a total that is
+   * only what is loaded so far ("N+ noun").
+   */
+  count?: { shown: number; total: number; filtered: boolean; noun: string; more?: boolean };
 };
 
 export function AppSearchField({
@@ -28,7 +31,8 @@ export function AppSearchField({
       suffix={
         count ? (
           <span className="shrink-0 whitespace-nowrap border-l border-line pl-3 text-sm font-semibold text-fg-secondary">
-            {count.filtered ? `${count.shown} of ${count.total}` : count.total} {count.noun}
+            {count.filtered ? `${count.shown} of ${count.total}` : count.total}
+            {count.more ? "+" : ""} {count.noun}
           </span>
         ) : undefined
       }

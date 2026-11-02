@@ -1,13 +1,17 @@
 package dev.ulloasp.mlsuite.audit;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.EnumSet;
 
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,7 +102,7 @@ class AuditLogCatalogTest extends PublicPredictionFixture {
     void theLogIsPagedNewestFirstAndKeepsEachEntryAsRecorded() throws Exception {
         mockMvc.perform(asOwner(get(path).param("size", "24")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalItems").value(31))
+                .andExpect(jsonPath("$.totalItems").doesNotExist())
                 .andExpect(jsonPath("$.items.length()").value(24))
                 .andExpect(jsonPath("$.hasNext").value(true))
                 .andExpect(jsonPath("$.items[0].action").value("BOOKMARK_MODERATION_UNPUBLISH"))
@@ -120,41 +124,63 @@ class AuditLogCatalogTest extends PublicPredictionFixture {
                 .andExpect(jsonPath("$.items[6].targetId").value(String.valueOf(TARGET)));
     }
 
+    /** The log grows with everything that happens: a page never counts every matching row. */
+    @Test
+    void aPageReadsOneRowPastItselfAndCountsNothing() throws Exception {
+        Statistics statistics = entityManager.getEntityManagerFactory().unwrap(SessionFactory.class).getStatistics();
+        statistics.setStatisticsEnabled(true);
+        statistics.clear();
+        try {
+            mockMvc.perform(asOwner(get(path).param("size", "10").param("search", "analyst")))
+                    .andExpect(jsonPath("$.items.length()").value(10))
+                    .andExpect(jsonPath("$.hasNext").value(true));
+            mockMvc.perform(asRoot(get(PLATFORM).param("size", "10")))
+                    .andExpect(jsonPath("$.hasNext").value(true));
+
+            assertTrue(Arrays.stream(statistics.getQueries()).anyMatch(query -> query.contains("from audit_event")),
+                    Arrays.toString(statistics.getQueries()));
+            assertTrue(Arrays.stream(statistics.getQueries()).noneMatch(query -> query.toLowerCase().contains("count(")),
+                    Arrays.toString(statistics.getQueries()));
+        } finally {
+            statistics.setStatisticsEnabled(false);
+        }
+    }
+
     @Test
     void entriesFilterByActionAndSearchByActorTargetOrMetadata() throws Exception {
         mockMvc.perform(asOwner(get(path).param("filter", "role_delete")))
-                .andExpect(jsonPath("$.totalItems").value(10));
+                .andExpect(jsonPath("$.items.length()").value(10));
         mockMvc.perform(asOwner(get(path).param("filter", "NOT_AN_ACTION")))
                 .andExpect(status().isBadRequest());
         mockMvc.perform(asOwner(get(path).param("search", "platform root")))
-                .andExpect(jsonPath("$.totalItems").value(1));
+                .andExpect(jsonPath("$.items.length()").value(1));
         mockMvc.perform(asOwner(get(path).param("search", "ANALYST 0")))
-                .andExpect(jsonPath("$.totalItems").value(10));
+                .andExpect(jsonPath("$.items.length()").value(10));
         mockMvc.perform(asOwner(get(path).param("search", "analyst 0").param("filter", "ROLE_DELETE")))
-                .andExpect(jsonPath("$.totalItems").value(4));
+                .andExpect(jsonPath("$.items.length()").value(4));
         mockMvc.perform(asOwner(get(path).param("search", String.valueOf(TARGET + 12))))
-                .andExpect(jsonPath("$.totalItems").value(1))
+                .andExpect(jsonPath("$.items.length()").value(1))
                 .andExpect(jsonPath("$.items[0].metadata.name").value("Analyst 12"));
         mockMvc.perform(asOwner(get(path).param("search", "%")))
-                .andExpect(jsonPath("$.totalItems").value(0));
+                .andExpect(jsonPath("$.items.length()").value(0));
     }
 
     @Test
     void entriesFilterByPeriodActorAndTarget() throws Exception {
         mockMvc.perform(asOwner(get(path).param("from", START.toString()).param("to", START.plusMinutes(10).toString())))
-                .andExpect(jsonPath("$.totalItems").value(10));
+                .andExpect(jsonPath("$.items.length()").value(10));
         mockMvc.perform(asOwner(get(path).param("from", START.plusMinutes(29).toString())))
-                .andExpect(jsonPath("$.totalItems").value(2));
+                .andExpect(jsonPath("$.items.length()").value(2));
         mockMvc.perform(asOwner(get(path).param("to", "not-a-date"))).andExpect(status().isBadRequest());
         mockMvc.perform(asOwner(get(path).param("targetType", "SCHEMA_BOOKMARK")))
-                .andExpect(jsonPath("$.totalItems").value(1));
+                .andExpect(jsonPath("$.items.length()").value(1));
         mockMvc.perform(asOwner(get(path).param("targetType", "NOT_A_TARGET"))).andExpect(status().isBadRequest());
         mockMvc.perform(asOwner(get(path).param("actor", "ROOT")))
-                .andExpect(jsonPath("$.totalItems").value(1));
-        mockMvc.perform(asOwner(get(path).param("actorKind", "USER")))
-                .andExpect(jsonPath("$.totalItems").value(31));
+                .andExpect(jsonPath("$.items.length()").value(1));
+        mockMvc.perform(asOwner(get(path).param("actorKind", "USER").param("size", "100")))
+                .andExpect(jsonPath("$.items.length()").value(31));
         mockMvc.perform(asOwner(get(path).param("actorKind", "SYSTEM")))
-                .andExpect(jsonPath("$.totalItems").value(0));
+                .andExpect(jsonPath("$.items.length()").value(0));
     }
 
     @Test
@@ -178,10 +204,10 @@ class AuditLogCatalogTest extends PublicPredictionFixture {
                 AuditDetails.of("removed", 3));
         String own = organization.getId().toString();
 
-        mockMvc.perform(asRoot(get(PLATFORM).param("organization", own)))
-                .andExpect(jsonPath("$.totalItems").value(31));
+        mockMvc.perform(asRoot(get(PLATFORM).param("organization", own).param("size", "100")))
+                .andExpect(jsonPath("$.items.length()").value(31));
         mockMvc.perform(asRoot(get(PLATFORM).param("organization", other.getId().toString())))
-                .andExpect(jsonPath("$.totalItems").value(1))
+                .andExpect(jsonPath("$.items.length()").value(1))
                 .andExpect(jsonPath("$.items[0].organizationName").value("Other"));
         mockMvc.perform(asRoot(get(PLATFORM).param("organization", "platform").param("actorKind", "SYSTEM")
                 .param("filter", "API_REQUEST_RETENTION_PRUNE")))
@@ -213,9 +239,9 @@ class AuditLogCatalogTest extends PublicPredictionFixture {
                 .andExpect(jsonPath("$.permissions.canViewAuditLog").value(false));
 
         // A superadmin reads any organization's log without being a member of it.
-        mockMvc.perform(signedIn(get(path), moderator.getId(), SystemRole.SUPERADMIN))
+        mockMvc.perform(signedIn(get(path).param("size", "100"), moderator.getId(), SystemRole.SUPERADMIN))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalItems").value(31));
+                .andExpect(jsonPath("$.items.length()").value(31));
     }
 
     private MockHttpServletRequestBuilder asOwner(MockHttpServletRequestBuilder request) {

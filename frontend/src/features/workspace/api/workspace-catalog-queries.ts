@@ -6,7 +6,7 @@ import type {
   InvitationCatalogDto,
   InvitationCandidateDto,
   OrganizationMembershipRowDto,
-  PageDtoAuditEventDto,
+  AuditEventPageDto,
   PermissionGroupDto,
   RoleCatalogMetadataDto,
   RoleDefinitionDto,
@@ -80,7 +80,7 @@ export function useAuditEventCatalog(id: number, controls: AuditControls, enable
   return useInfiniteCatalog({
     queryKey: [...organizationAuditEventsQueryKey(id), "infinite", controls],
     queryFn: (page, signal) =>
-      appFetch<PageDtoAuditEventDto>(
+      appFetch<AuditEventPageDto>(
         `/api/organizations/${id}/audit-events/catalog?${params(page, controls)}`,
         { signal },
       ),
@@ -94,7 +94,7 @@ export function usePlatformAuditEventCatalog(controls: AuditControls) {
   return useInfiniteCatalog({
     queryKey: [...PLATFORM_AUDIT_EVENTS_QUERY_KEY, "infinite", controls],
     queryFn: (page, signal) =>
-      appFetch<PageDtoAuditEventDto>(`/api/admin/audit-events/catalog?${params(page, controls)}`, {
+      appFetch<AuditEventPageDto>(`/api/admin/audit-events/catalog?${params(page, controls)}`, {
         signal,
       }),
     staleTime: 0,

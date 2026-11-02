@@ -7,12 +7,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import dev.ulloasp.mlsuite.audit.application.dto.AuditEventDto;
+import dev.ulloasp.mlsuite.audit.application.dto.AuditEventPageDto;
 import dev.ulloasp.mlsuite.audit.application.dto.AuditFilters;
 import dev.ulloasp.mlsuite.audit.application.port.in.AuditLogUseCase;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
-import dev.ulloasp.mlsuite.util.PageDto;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -23,7 +22,7 @@ public class AuditLogController {
 
     /** The organization's audit log, newest first; {@code filter} is an action code or {@code all}. */
     @GetMapping("/api/organizations/{organizationId}/audit-events/catalog")
-    public PageDto<AuditEventDto> auditEventCatalog(CurrentUser user, @PathVariable Long organizationId,
+    public AuditEventPageDto auditEventCatalog(CurrentUser user, @PathVariable Long organizationId,
             @ModelAttribute CatalogRequest request, @ModelAttribute AuditFilters filters) {
         return auditLogUseCase.list(user.userId(), organizationId, request, filters);
     }
@@ -34,7 +33,7 @@ public class AuditLogController {
      */
     @GetMapping("/api/admin/audit-events/catalog")
     @PreAuthorize("hasRole('SUPERADMIN')")
-    public PageDto<AuditEventDto> platformAuditEventCatalog(@ModelAttribute CatalogRequest request,
+    public AuditEventPageDto platformAuditEventCatalog(@ModelAttribute CatalogRequest request,
             @ModelAttribute AuditFilters filters, @RequestParam(required = false) String organization) {
         return auditLogUseCase.listPlatform(request, filters, organization);
     }

@@ -28,14 +28,19 @@ const TARGET_OPTIONS = [
   ...Object.entries(AUDIT_TARGET_TYPES).map(([value, label]) => ({ value, label })),
 ];
 
-/** Search and every filter of an audit catalog; `children` are the filters only one catalog has. */
+/**
+ * Search and every filter of an audit catalog; `children` are the filters only one catalog has.
+ * The log is never counted whole, so the count is the entries loaded, marked when more follow.
+ */
 export function AuditLogToolbar({
   filters,
-  totalItems,
+  loaded,
+  more,
   children,
 }: {
   filters: AuditFilterState;
-  totalItems: number | undefined;
+  loaded: number | undefined;
+  more: boolean;
   children?: ReactNode;
 }) {
   const { q, action, actorKind, actor, target, from, to } = filters.values;
@@ -46,13 +51,14 @@ export function AuditLogToolbar({
         label="Search the audit log"
         placeholder="Search actor, target, details…"
         count={
-          totalItems === undefined
+          loaded === undefined
             ? undefined
             : {
-                shown: totalItems,
-                total: totalItems,
+                shown: loaded,
+                total: loaded,
                 filtered: false,
-                noun: totalItems === 1 ? "entry" : "entries",
+                more,
+                noun: loaded === 1 && !more ? "entry" : "entries",
               }
         }
         value={q}

@@ -4,8 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
@@ -15,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.audit.adapter.out.persistence.repository.AuditEventRepository;
 import dev.ulloasp.mlsuite.audit.application.dto.AuditEventDto;
+import dev.ulloasp.mlsuite.audit.application.dto.AuditEventPageDto;
 import dev.ulloasp.mlsuite.audit.application.dto.AuditFilters;
 import dev.ulloasp.mlsuite.audit.application.port.in.AuditLogUseCase;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
@@ -22,7 +22,6 @@ import dev.ulloasp.mlsuite.audit.domain.model.AuditEvent;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.util.CatalogPages;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
-import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
@@ -48,22 +47,23 @@ public class AuditCatalogService implements AuditLogUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public PageDto<AuditEventDto> list(Long userId, Long organizationId, CatalogRequest request, AuditFilters filters) {
+    public AuditEventPageDto list(Long userId, Long organizationId, CatalogRequest request, AuditFilters filters) {
         authorizationService.require(userId, organizationId, PermissionKey.VIEW_AUDIT_LOG);
         Specification<AuditEvent> own = (root, query, builder) -> builder.equal(root.get("organizationId"), organizationId);
-        Page<AuditEvent> page = events.findAll(own.and(matching(request, filters)), pageable(request));
-        return PageDto.of(page, page.getContent().stream().map(AuditEventDto::forOrganization).toList());
+        Slice<AuditEvent> page = page(own.and(matching(request, filters)), request);
+        return AuditEventPageDto.of(page, page.getContent().stream().map(AuditEventDto::forOrganization).toList());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public PageDto<AuditEventDto> listPlatform(CatalogRequest request, AuditFilters filters, String organization) {
-        Page<AuditEvent> page = events.findAll(scope(organization).and(matching(request, filters)), pageable(request));
-        return PageDto.of(page, page.getContent().stream().map(AuditEventDto::from).toList());
+    public AuditEventPageDto listPlatform(CatalogRequest request, AuditFilters filters, String organization) {
+        Slice<AuditEvent> page = page(scope(organization).and(matching(request, filters)), request);
+        return AuditEventPageDto.of(page, page.getContent().stream().map(AuditEventDto::from).toList());
     }
 
-    private static Pageable pageable(CatalogRequest request) {
-        return CatalogPages.pageable(request, NEWEST_FIRST);
+    /** One page and whether another follows, without counting the matching rows. */
+    private Slice<AuditEvent> page(Specification<AuditEvent> matching, CatalogRequest request) {
+        return events.findBy(matching, query -> query.slice(CatalogPages.pageable(request, NEWEST_FIRST)));
     }
 
     private static Specification<AuditEvent> scope(String organization) {

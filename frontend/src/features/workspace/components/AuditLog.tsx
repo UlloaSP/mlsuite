@@ -15,7 +15,11 @@ export function AuditLog({ organizationId }: { organizationId: number }) {
 
   return (
     <section aria-label="Audit log" className="flex min-h-0 flex-1 flex-col">
-      <AuditLogToolbar filters={filters} totalItems={log.data?.totalItems} />
+      <AuditLogToolbar
+        filters={filters}
+        loaded={log.data?.items.length}
+        more={Boolean(log.hasNextPage)}
+      />
       <AuditEventList
         log={log}
         isFiltered={filters.isFiltered}

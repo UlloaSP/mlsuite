@@ -3162,6 +3162,14 @@ export interface components {
             /** @enum {string} */
             targetType: "API_CLIENT" | "API_CLIENT_KEY" | "API_REQUEST_LOG" | "AUDIT_LOG" | "INFRASTRUCTURE_SERVICE" | "INVITATION" | "MODEL" | "NOTIFICATION_LOG" | "ORGANIZATION" | "ORGANIZATION_MEMBER" | "PLUGIN" | "PREDICTION_JOB" | "PREDICTION_RUN" | "PURGE_JOB" | "REVIEW" | "ROLE" | "SCHEMA" | "SCHEMA_BOOKMARK" | "SCHEMA_DRAFT" | "SCHEMA_VERSION" | "STORAGE_OBJECT" | "SYSTEM_ALERT" | "TERMINAL_SESSION" | "USER";
         };
+        AuditEventPageDto: {
+            hasNext: boolean;
+            items: components["schemas"]["AuditEventDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+        };
         AuthRequest: {
             /** Format: email */
             email: string;
@@ -3746,16 +3754,6 @@ export interface components {
         PageDtoApiRequestDto: {
             hasNext: boolean;
             items: components["schemas"]["ApiRequestDto"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalItems: number;
-        };
-        PageDtoAuditEventDto: {
-            hasNext: boolean;
-            items: components["schemas"]["AuditEventDto"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -5080,6 +5078,7 @@ export type ApiUsageMonth = components['schemas']['ApiUsageMonth'];
 export type ApiUsagePoint = components['schemas']['ApiUsagePoint'];
 export type AuditActorDto = components['schemas']['AuditActorDto'];
 export type AuditEventDto = components['schemas']['AuditEventDto'];
+export type AuditEventPageDto = components['schemas']['AuditEventPageDto'];
 export type AuthRequest = components['schemas']['AuthRequest'];
 export type BookmarkExampleStateDto = components['schemas']['BookmarkExampleStateDto'];
 export type BulkInvitationRequest = components['schemas']['BulkInvitationRequest'];
@@ -5152,7 +5151,6 @@ export type PageDtoAdminApiOrganizationDto = components['schemas']['PageDtoAdmin
 export type PageDtoAdminUserDto = components['schemas']['PageDtoAdminUserDto'];
 export type PageDtoApiClientSummaryDto = components['schemas']['PageDtoApiClientSummaryDto'];
 export type PageDtoApiRequestDto = components['schemas']['PageDtoApiRequestDto'];
-export type PageDtoAuditEventDto = components['schemas']['PageDtoAuditEventDto'];
 export type PageDtoInferenceCatalogRowDto = components['schemas']['PageDtoInferenceCatalogRowDto'];
 export type PageDtoInvitationCandidateDto = components['schemas']['PageDtoInvitationCandidateDto'];
 export type PageDtoInvitationDto = components['schemas']['PageDtoInvitationDto'];
@@ -5476,7 +5474,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageDtoAuditEventDto"];
+                    "application/json": components["schemas"]["AuditEventPageDto"];
                 };
             };
         };
@@ -6923,7 +6921,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageDtoAuditEventDto"];
+                    "application/json": components["schemas"]["AuditEventPageDto"];
                 };
             };
         };
