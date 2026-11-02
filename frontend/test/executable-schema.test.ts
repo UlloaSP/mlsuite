@@ -59,4 +59,16 @@ describe("toExecutableSchemaVersion", () => {
       { label: "Risk", kind: "classifier", mappedTo: { "Model One:Signature One": "risk" } },
     ]);
   });
+
+  test("keeps a report mapped to a bare output position, which serves every bound model", () => {
+    const version = {
+      name: "v1",
+      bindings,
+      formSchema: { fields: [], reports: [{ label: "Risk", kind: "classifier", mappedTo: 0 }] },
+    };
+
+    expect(toExecutableSchemaVersion(version).formSchema.reports).toEqual([
+      { label: "Risk", kind: "classifier", mappedTo: 0 },
+    ]);
+  });
 });

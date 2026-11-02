@@ -15,7 +15,9 @@ import dev.ulloasp.mlsuite.schema.application.dto.SchemaMappingIssueDto;
  * A snapshot's mappings read against the signatures of the models it binds. A field sends its
  * value to an input and a report reads an output; one that names neither runs without error and
  * silently drops the value or the report, so each such mapping is an issue, located by the JSON
- * pointer of the {@code mappedTo} (or of its entry) that names it.
+ * pointer of the {@code mappedTo} (or of its entry) that names it. A mapping is MLForm's: a bare
+ * target (a name or a position) that serves every model, or a map of them keyed by model. A report
+ * without one, or a mapping of any other shape, names nothing.
  */
 final class SchemaMappings {
 
@@ -73,7 +75,7 @@ final class SchemaMappings {
         }
         List<?> reports = list(source.get("reports"));
         for (int index = 0; index < reports.size(); index++) {
-            if (reports.get(index) instanceof Map<?, ?> report && report.containsKey(MAPPED_TO)) {
+            if (reports.get(index) instanceof Map<?, ?> report) {
                 check(report.get(MAPPED_TO), "/reports/" + index + "/" + MAPPED_TO, subject(Side.OUTPUT, report, index),
                         Side.OUTPUT, models, issues);
             }
@@ -102,7 +104,10 @@ final class SchemaMappings {
 
     private static void check(Object mappedTo, String pointer, String subject, Side side, List<Signature> models,
             List<SchemaMappingIssueDto> issues) {
-        if (!isTarget(mappedTo) && !(mappedTo instanceof Map<?, ?>)) return;
+        if (!isTarget(mappedTo) && !(mappedTo instanceof Map<?, ?>)) {
+            issues.add(new SchemaMappingIssueDto(pointer, subject + " maps to no bound model."));
+            return;
+        }
         boolean routed = false;
         List<Signature> sharing = new ArrayList<>();
         String shared = null;

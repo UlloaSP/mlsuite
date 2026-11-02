@@ -60,10 +60,15 @@ export function ReviewsPage() {
   const submitMutation = useSubmitSchemaReviewInboxMutation();
   const qc = useQueryClient();
   const org = useCurrentOrganizationId() ?? "none";
-  const selectedVersion = useMemo(
-    () => (selectedReview ? toExecutableSchemaVersion(selectedReview.schemaVersion) : undefined),
-    [selectedReview],
-  );
+  // One review whose snapshot cannot run is that review's problem: the inbox stays usable.
+  const prepared = useMemo(() => {
+    if (!selectedReview) return undefined;
+    try {
+      return { version: toExecutableSchemaVersion(selectedReview.schemaVersion) };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : String(error) };
+    }
+  }, [selectedReview]);
   const open = useCallback(
     (item: ReviewRailItem, replace = false) => {
       // The tray already holds the item, so opening it never waits for a request.
@@ -121,11 +126,13 @@ export function ReviewsPage() {
             <section className="flex min-w-0 flex-col gap-6 xl:overflow-y-auto 2xl:flex-row 2xl:items-start">
               <ReviewStepContextPanel />
               <div className="min-w-0 flex-1">
-                {selectedReview ? (
+                {prepared?.error ? (
+                  <AppEmptyState title="Review cannot be shown" description={prepared.error} />
+                ) : prepared?.version ? (
                   <SchemaReviewRunDetailPanel
                     reviewId={selected.reviewId}
                     reviewRunId={selected.publicId}
-                    version={selectedVersion ?? selectedReview.schemaVersion}
+                    version={prepared.version}
                     onReviewChanged={() =>
                       qc.invalidateQueries({ queryKey: SCHEMA_REVIEW_INBOX_QUERY_KEY(org) })
                     }
