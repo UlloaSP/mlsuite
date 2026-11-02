@@ -16,6 +16,11 @@ from pathlib import Path
 _SOURCE = str(Path(__file__).resolve().parents[1])
 sys.path.insert(0, _SOURCE)
 
+from mlsuite_worker import limits  # noqa: E402
+
+# Before mlbundle or any model library is imported, and so before any model runs.
+limits.apply()
+
 from mlsuite_worker.commands import (  # noqa: E402
     CommandError,
     LoadedBundles,
@@ -53,14 +58,22 @@ def main() -> None:
     sys.stdout = sys.stderr
     bundles = LoadedBundles(int(os.environ.get("MLSUITE_BUNDLE_CACHE_BYTES", "0")) or 512 * 1024 * 1024)
     for line in sys.stdin:
+        retire = False
         try:
             answer = {"ok": True, "result": _handle(bundles, json.loads(line))}
         except CommandError as error:
             answer = {"ok": False, "status": error.status, "detail": error.detail}
         except Exception as error:  # noqa: BLE001 - one request's failure is its answer, not the worker's end
-            answer = {"ok": False, "status": 500, "detail": f"{type(error).__name__}: {error}"}
+            reached = limits.breach(error)
+            retire = reached is not None
+            detail = reached or f"{type(error).__name__}: {error}"
+            answer = {"ok": False, "status": limits.STATUS if retire else 500, "detail": detail}
         answers.write(json.dumps(answer) + "\n")
         answers.flush()
+        if retire:
+            # Past a bound the model may have left memory, files or processes behind: the runtime
+            # starts a fresh worker and ends whatever this one started.
+            return
 
 
 if __name__ == "__main__":

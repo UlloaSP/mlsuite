@@ -26,9 +26,10 @@ RUN apk upgrade --no-cache && apk add --no-cache python-3.14
 COPY --from=uv /uv /usr/local/bin/uv
 # A new named volume takes this directory's owner, so the builder can write it unprivileged.
 RUN mkdir -p /var/lib/mlsuite/environments && chown 65532:65532 /var/lib/mlsuite/environments
+# Created by root, before the switch: the runtime's user, and so every model, may write /tmp only.
+WORKDIR /app
 
 USER 65532
-WORKDIR /app
 COPY --from=build /app/.venv ./.venv
 COPY --from=build /opt/mlsuite/legacy /opt/mlsuite/legacy
 COPY --from=build /app/src ./src

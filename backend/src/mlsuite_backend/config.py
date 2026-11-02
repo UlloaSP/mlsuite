@@ -29,6 +29,12 @@ RUNTIME_WORKERS = _positive_int("RUNTIME_WORKERS", 2)
 BUNDLE_CACHE_BYTES = _positive_int("RUNTIME_BUNDLE_CACHE_MB", 512) * 1024 * 1024
 # A worker answering nothing for this long is stopped, and its request fails.
 WORKER_TIMEOUT_SECONDS = _positive_int("RUNTIME_WORKER_TIMEOUT_SECONDS", 300)
+# What one worker's model may take: address space (a single-threaded worker with scikit-learn and
+# pandas loaded uses about 370 MB of it), open files, and processes and threads, which the kernel
+# counts for the runtime's user as a whole. A model past one fails alone and its worker retires.
+WORKER_MEMORY_BYTES = _positive_int("RUNTIME_WORKER_MEMORY_MB", 4096) * 1024 * 1024
+WORKER_OPEN_FILES = _positive_int("RUNTIME_WORKER_OPEN_FILES", 1024)
+WORKER_PROCESSES = _positive_int("RUNTIME_WORKER_PROCESSES", 512)
 # Where the runtime keeps the verified artifacts its workers read.
 ARTIFACT_DIRECTORY = Path(tempfile.gettempdir()) / "mlsuite-artifacts"
 # Built environments, one directory per environment key; the builder writes, the runtime reads.
