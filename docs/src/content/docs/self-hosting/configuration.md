@@ -166,7 +166,7 @@ Read by the scripts in `scripts/`, not by the application. See
 | --- | --- | --- |
 | `RECOVERY_MODE` | `local-single-disk` | The only supported topology. |
 | `SINGLE_DISK_RISK_ACCEPTED` | `false` | Must be `true` to run the cutover: losing the disk loses the data. |
-| `LOCAL_BACKUP_ROOT` | `backups` | Where backups are written. |
+| `LOCAL_BACKUP_ROOT` | `backups` | Where backups are written, relative to the checkout so the ops agent can report a failed backup. |
 | `LOCAL_BACKUP_RETENTION_COUNT` | `7` | Backups kept. |
 | `LOCAL_BACKUP_MIN_FREE_PERCENT` | `15` | Free disk space a backup must leave. |
 | `RECOVERY_RPO_MINUTES`, `RECOVERY_RTO_MINUTES` | `1440`, `480` | Maximum age of the newest backup, and maximum duration of a restore rehearsal. |

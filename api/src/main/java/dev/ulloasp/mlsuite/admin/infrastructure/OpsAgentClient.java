@@ -47,6 +47,11 @@ public class OpsAgentClient {
         return readJson(buildRequest("/internal/load").get().build(), loadClient);
     }
 
+    /** Whether the host's last local backup attempt failed or left no backup ({@code failing}, null when unknown). */
+    public JsonNode backup() {
+        return readJson(buildRequest("/internal/backup").get().build(), loadClient);
+    }
+
     public void action(String serviceName, String action) {
         JsonNode payload = objectMapper.createObjectNode().put("action", action);
         RequestBody body = RequestBody.create(payload.toString(), JSON);

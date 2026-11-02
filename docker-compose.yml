@@ -62,6 +62,8 @@ services:
       OPS_AGENT_TERMINAL_IDLE_MINUTES: ${OPS_AGENT_TERMINAL_IDLE_MINUTES}
       OPS_AGENT_TERMINAL_MAX_SESSIONS: ${OPS_AGENT_TERMINAL_MAX_SESSIONS}
       OPS_AGENT_LOG_TAIL_LINES: ${OPS_AGENT_LOG_TAIL_LINES}
+      # Read in the checkout mounted below; a root outside it leaves the backup alert unknown.
+      OPS_AGENT_BACKUP_ROOT: ${LOCAL_BACKUP_ROOT:-backups}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./:/workspace:ro

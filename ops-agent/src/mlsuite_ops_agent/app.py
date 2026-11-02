@@ -10,6 +10,7 @@ import json
 from fastapi import Depends, FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 
+from .backups import backup_failing, backup_root
 from .compose import ComposeError
 from .config import SETTINGS
 from .models import ServiceActionRequest, ServiceLogsSnapshot, TerminalSessionRequest, TerminalSessionResponse
@@ -79,6 +80,10 @@ def create_app() -> FastAPI:
         if reading is None:
             return JSONResponse(status_code=503, content={"detail": "No service is reporting."})
         return JSONResponse(content=reading)
+
+    @app.get("/internal/backup", dependencies=[Depends(verify_request)])
+    async def backup() -> dict[str, bool | None]:
+        return {"failing": backup_failing(backup_root(SETTINGS.backup_root))}
 
     @app.post("/internal/services/{service_name}/actions", dependencies=[Depends(verify_request)])
     async def service_action(service_name: str, request: ServiceActionRequest) -> dict[str, str]:

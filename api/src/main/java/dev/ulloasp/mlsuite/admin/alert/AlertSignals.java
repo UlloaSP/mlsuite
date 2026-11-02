@@ -105,6 +105,21 @@ public class AlertSignals {
             values.put(SystemAlertSignal.OPS_AGENT, 0d);
         } catch (OpsAgentException notReporting) {
             values.put(SystemAlertSignal.OPS_AGENT, 1d);
+            return;
+        }
+        readBackup(values);
+    }
+
+    /**
+     * The host's last local backup, as the ops agent reads it. A host that never took one has none
+     * failing: backups run before each deployment, so their age says nothing about a failure.
+     */
+    private void readBackup(Map<SystemAlertSignal, Double> values) {
+        try {
+            JsonNode failing = opsAgent.backup().path("failing");
+            if (failing.isBoolean()) values.put(SystemAlertSignal.BACKUP_FAILED, failing.booleanValue() ? 1d : 0d);
+        } catch (OpsAgentException unknown) {
+            // The agent cannot tell: unknown, neither a failure nor a recovery.
         }
     }
 

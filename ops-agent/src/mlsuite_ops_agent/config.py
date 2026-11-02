@@ -36,6 +36,8 @@ class Settings:
     terminal_idle_minutes: int = int(_env("OPS_AGENT_TERMINAL_IDLE_MINUTES", "15"))
     terminal_max_sessions: int = int(_env("OPS_AGENT_TERMINAL_MAX_SESSIONS", "10"))
     log_tail_lines: int = int(_env("OPS_AGENT_LOG_TAIL_LINES", "200"))
+    # LOCAL_BACKUP_ROOT, relative to the checkout.
+    backup_root: str = _env("OPS_AGENT_BACKUP_ROOT", "backups")
 
 
 SETTINGS = Settings()
