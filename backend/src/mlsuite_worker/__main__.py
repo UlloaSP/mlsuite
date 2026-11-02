@@ -67,7 +67,7 @@ def main() -> None:
             reached = limits.breach(error)
             retire = reached is not None
             detail = reached or f"{type(error).__name__}: {error}"
-            answer = {"ok": False, "status": limits.STATUS if retire else 500, "detail": detail}
+            answer = {"ok": False, "status": limits.STATUS if retire else 500, "detail": detail, "retire": retire}
         answers.write(json.dumps(answer) + "\n")
         answers.flush()
         if retire:

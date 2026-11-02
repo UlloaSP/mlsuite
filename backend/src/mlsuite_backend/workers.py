@@ -86,6 +86,9 @@ class Worker:
             raise WorkerFailed(_exit_reason(code))
         answer = json.loads(line)
         if not answer["ok"]:
+            if answer.get("retire"):
+                # Past a bound it answers and exits; once it has, the pool replaces it.
+                await self.process.wait()
             raise WorkerError(answer["status"], answer["detail"])
         return answer["result"]
 

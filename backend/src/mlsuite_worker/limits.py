@@ -31,7 +31,11 @@ def apply(environ: dict[str, str] | os._Environ = os.environ) -> None:
 
 def breach(error: BaseException) -> str | None:
     """What reaching a bound means for the model, or None for any other failure."""
-    if isinstance(error, MemoryError):
+    # Native libraries the model loads fail to map into the address space as an ImportError.
+    out_of_memory = isinstance(error, MemoryError) or (isinstance(error, OSError) and error.errno == errno.ENOMEM) or (
+        isinstance(error, ImportError) and ("failed to map segment" in str(error) or "Cannot allocate memory" in str(error))
+    )
+    if out_of_memory:
         return "The model needed more memory than a worker may use (RUNTIME_WORKER_MEMORY_MB)"
     if isinstance(error, OSError) and error.errno in (errno.EMFILE, errno.ENFILE):
         return "The model opened more files than a worker may (RUNTIME_WORKER_OPEN_FILES)"

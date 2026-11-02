@@ -78,6 +78,14 @@ def test_a_model_past_the_memory_bound_fails_with_a_clear_reason() -> None:
     assert said == "The model needed more memory than a worker may use (RUNTIME_WORKER_MEMORY_MB)"
 
 
+def test_a_native_library_that_cannot_be_mapped_is_the_memory_bound() -> None:
+    # What loading scikit-learn's native libraries says under the bound on the real runtime.
+    error = ImportError("libgfortran-040039e1-0352e75f.so.5.0.0: failed to map segment from shared object")
+
+    assert limits.breach(error) == "The model needed more memory than a worker may use (RUNTIME_WORKER_MEMORY_MB)"
+    assert limits.breach(ImportError("No module named 'xgboost'")) is None
+
+
 @posix
 def test_a_model_past_the_open_files_bound_fails_with_a_clear_reason() -> None:
     said = _breach_in_a_bounded_process({"MLSUITE_WORKER_OPEN_FILES": "32"},
@@ -129,8 +137,8 @@ def test_a_worker_past_a_bound_answers_retires_and_the_runtime_goes_on(monkeypat
         async with pool.worker(_environment()) as worker:
             with pytest.raises(WorkerError) as breached:
                 await worker.call({"op": "predict", "records": [0] * (line_bytes // 2)})
-            await worker.process.wait()
-            retired = worker.process.returncode == 0
+            # Gone by the time its answer is raised, so the pool never hands it out again.
+            retired = not worker.alive and worker.process.returncode == 0
         async with pool.worker(_environment()) as fresh:
             with pytest.raises(WorkerError) as answered:
                 await fresh.call({"op": "unknown"})
