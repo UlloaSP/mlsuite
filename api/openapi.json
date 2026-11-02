@@ -2692,6 +2692,7 @@
               "INVITATION_DECLINED",
               "ORGANIZATION_JOINED",
               "REVIEW_ASSIGNED",
+              "REVIEW_REOPENED",
               "ORGANIZATION_PURGED",
               "PURGE_COMPLETED",
               "PURGE_FAILED",
@@ -7227,7 +7228,8 @@
               "HOST_CPU",
               "HOST_RAM",
               "HOST_DISK",
-              "OPS_AGENT"
+              "OPS_AGENT",
+              "BACKUP_FAILED"
             ],
             "type": "string"
           },
@@ -7284,7 +7286,8 @@
               "HOST_CPU",
               "HOST_RAM",
               "HOST_DISK",
-              "OPS_AGENT"
+              "OPS_AGENT",
+              "BACKUP_FAILED"
             ],
             "type": "string"
           },

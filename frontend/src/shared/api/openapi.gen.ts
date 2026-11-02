@@ -3576,7 +3576,7 @@ export interface components {
             /** Format: int64 */
             id: number;
             /** @enum {string} */
-            kind: "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_COMPLETED_WITH_FAILURES" | "PREDICTION_JOB_STOPPED" | "PREDICTION_JOB_CANCELLED" | "MODEL_READY" | "MODEL_FAILED" | "INVITATION_RECEIVED" | "INVITATION_ACCEPTED" | "INVITATION_DECLINED" | "ORGANIZATION_JOINED" | "REVIEW_ASSIGNED" | "ORGANIZATION_PURGED" | "PURGE_COMPLETED" | "PURGE_FAILED" | "SYSTEM_ALERT_RAISED" | "SYSTEM_ALERT_ESCALATED" | "SYSTEM_ALERT_RESOLVED";
+            kind: "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_COMPLETED_WITH_FAILURES" | "PREDICTION_JOB_STOPPED" | "PREDICTION_JOB_CANCELLED" | "MODEL_READY" | "MODEL_FAILED" | "INVITATION_RECEIVED" | "INVITATION_ACCEPTED" | "INVITATION_DECLINED" | "ORGANIZATION_JOINED" | "REVIEW_ASSIGNED" | "REVIEW_REOPENED" | "ORGANIZATION_PURGED" | "PURGE_COMPLETED" | "PURGE_FAILED" | "SYSTEM_ALERT_RAISED" | "SYSTEM_ALERT_ESCALATED" | "SYSTEM_ALERT_RESOLVED";
             /** Format: int64 */
             organizationId: number | null;
             payload: {
@@ -4846,7 +4846,7 @@ export interface components {
             /** @enum {string} */
             severity: "WARNING" | "CRITICAL";
             /** @enum {string} */
-            signal: "PREDICTION_ROWS_PENDING" | "PREDICTION_OLDEST_AGE" | "MODELS_PREPARING" | "RUNTIME_QUEUE" | "RUNTIME_REJECTIONS" | "STORAGE_DELETIONS_FAILED" | "HOST_CPU" | "HOST_RAM" | "HOST_DISK" | "OPS_AGENT";
+            signal: "PREDICTION_ROWS_PENDING" | "PREDICTION_OLDEST_AGE" | "MODELS_PREPARING" | "RUNTIME_QUEUE" | "RUNTIME_REJECTIONS" | "STORAGE_DELETIONS_FAILED" | "HOST_CPU" | "HOST_RAM" | "HOST_DISK" | "OPS_AGENT" | "BACKUP_FAILED";
             /** Format: double */
             threshold: number;
             unit: string;
@@ -4860,7 +4860,7 @@ export interface components {
             criticalThreshold: number | null;
             label: string;
             /** @enum {string} */
-            signal: "PREDICTION_ROWS_PENDING" | "PREDICTION_OLDEST_AGE" | "MODELS_PREPARING" | "RUNTIME_QUEUE" | "RUNTIME_REJECTIONS" | "STORAGE_DELETIONS_FAILED" | "HOST_CPU" | "HOST_RAM" | "HOST_DISK" | "OPS_AGENT";
+            signal: "PREDICTION_ROWS_PENDING" | "PREDICTION_OLDEST_AGE" | "MODELS_PREPARING" | "RUNTIME_QUEUE" | "RUNTIME_REJECTIONS" | "STORAGE_DELETIONS_FAILED" | "HOST_CPU" | "HOST_RAM" | "HOST_DISK" | "OPS_AGENT" | "BACKUP_FAILED";
             unit: string;
             /** Format: double */
             value: number | null;

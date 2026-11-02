@@ -101,6 +101,12 @@ const PRESENT: Record<NotificationKind, (labels: Labels) => Presentation> = {
     icon: SECTION_ICONS.reviews,
     tone: "info",
   }),
+  REVIEW_REOPENED: (labels) => ({
+    title: "Review reopened",
+    description: `${labels.actorName} reopened ${labels.runName} in ${labels.schemaName} for you to review again.`,
+    icon: SECTION_ICONS.reviews,
+    tone: "info",
+  }),
   ORGANIZATION_PURGED: (labels) => ({
     title: `${labels.organizationName} was deleted`,
     description: "A platform administrator deleted this organization and everything in it.",
@@ -153,7 +159,9 @@ export const notificationLink = (notification: NotificationDto): string | null =
     case "MODEL":
       return `/models/${notification.targetId}`;
     case "REVIEW":
-      return `/review/${notification.targetId}`;
+      return notification.kind === "REVIEW_REOPENED"
+        ? `/review/${notification.targetId}/runs/${notification.payload.reviewRunId}`
+        : `/review/${notification.targetId}`;
     case "ORGANIZATION":
       return "/home";
     case "PURGE_JOB":
