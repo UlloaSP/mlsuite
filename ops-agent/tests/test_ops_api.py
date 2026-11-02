@@ -53,6 +53,7 @@ class FakeTerminals:
 
     async def close(self, session_id: str) -> None:
         self.closed.append(session_id)
+        self.sessions.pop(session_id, None)
 
     async def write(self, session_id: str, data: str) -> None:
         self.sessions[session_id].last_write = data
@@ -130,10 +131,15 @@ def test_action_logs_and_terminal_routes_work(monkeypatch) -> None:
         )
         assert created.status_code == 200
         assert created.json()["sessionId"] == "term-1"
+        listed = client.get("/internal/terminal/sessions", headers=auth_headers())
+        assert listed.json() == {"sessionIds": ["term-1"]}
+        assert client.get("/internal/terminal/sessions").status_code == 401
 
         closed = client.delete("/internal/terminal/sessions/term-1", headers=auth_headers())
         assert closed.status_code == 200
         assert fake_terminals.closed == ["term-1"]
+        # The API records the end of every session the agent no longer lists.
+        assert client.get("/internal/terminal/sessions", headers=auth_headers()).json() == {"sessionIds": []}
 
 
 def test_stream_socket_sends_service_status_fields(monkeypatch) -> None:

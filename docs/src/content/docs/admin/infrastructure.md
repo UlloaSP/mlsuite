@@ -20,7 +20,9 @@ Stopping or restarting a service interrupts it and may disconnect users, includi
 The managed services default to `postgres`, `py-analyzer`, `runtime-builder`, `rustfs`, `spring-app` and `frontend`
 (`OPS_AGENT_MANAGED_SERVICES`). The terminal is **off** until services are listed in
 `OPS_AGENT_TERMINAL_SERVICES`; anything typed there can change files and stop services. Idle
-shells close after 15 minutes. See the [ops agent settings](/self-hosting/configuration/#operations-agent).
+shells close after 15 minutes, and closing the tab ends the shell. The audit log records each shell's
+opening and its end, whether it was closed, its tab went away or the agent ended it; what is typed in
+it is not recorded. See the [ops agent settings](/self-hosting/configuration/#operations-agent).
 
 ## Load alerts
 

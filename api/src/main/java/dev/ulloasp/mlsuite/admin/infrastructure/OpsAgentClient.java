@@ -2,6 +2,8 @@ package dev.ulloasp.mlsuite.admin.infrastructure;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
@@ -73,6 +75,14 @@ public class OpsAgentClient {
         } catch (IOException ex) {
             throw new OpsAgentException(502, "Cannot encode terminal session request.");
         }
+    }
+
+    /** The terminal sessions the agent has now, attached or not. */
+    public Set<String> terminalSessionIds() {
+        Set<String> ids = new HashSet<>();
+        readJson(buildRequest("/internal/terminal/sessions").get().build(), loadClient)
+                .path("sessionIds").forEach(id -> ids.add(id.asText()));
+        return ids;
     }
 
     public void closeTerminalSession(String sessionId) {

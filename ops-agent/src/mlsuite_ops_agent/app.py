@@ -103,6 +103,11 @@ def create_app() -> FastAPI:
             wsPath=f"/internal/terminal/{session.session_id}",
         )
 
+    @app.get("/internal/terminal/sessions", dependencies=[Depends(verify_request)])
+    async def terminal_sessions() -> dict[str, list[str]]:
+        """Every session the agent has, attached or not: the API records the end of the others."""
+        return {"sessionIds": list(state.terminals.sessions)}
+
     @app.delete("/internal/terminal/sessions/{session_id}", dependencies=[Depends(verify_request)])
     async def close_terminal_session(session_id: str) -> dict[str, str]:
         await state.terminals.close(session_id)

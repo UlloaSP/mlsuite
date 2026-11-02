@@ -16,6 +16,7 @@ public class InfrastructureService {
 
     private final OpsAgentClient opsAgentClient;
     private final AuditLogService auditLog;
+    private final TerminalSessions terminals;
 
     public JsonNode overview() {
         return opsAgentClient.overview();
@@ -32,14 +33,10 @@ public class InfrastructureService {
     }
 
     public TerminalSessionResponse createTerminalSession(Long actorId, TerminalSessionRequest request) {
-        TerminalSessionResponse upstream = opsAgentClient.createTerminalSession(request);
-        auditLog.record(AuditActor.user(actorId), null, AuditAction.TERMINAL_SESSION_OPEN, upstream.sessionId(),
-                AuditDetails.of("service", request.serviceName()));
-        return new TerminalSessionResponse(upstream.sessionId(), "/api/admin/infrastructure/terminal/" + upstream.sessionId());
+        return terminals.open(actorId, request);
     }
 
     public void closeTerminalSession(Long actorId, String sessionId) {
-        opsAgentClient.closeTerminalSession(sessionId);
-        auditLog.record(AuditActor.user(actorId), null, AuditAction.TERMINAL_SESSION_CLOSE, sessionId);
+        terminals.end(AuditActor.user(actorId), sessionId, "closed");
     }
 }
