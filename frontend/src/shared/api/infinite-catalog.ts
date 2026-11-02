@@ -75,8 +75,6 @@ export function infiniteCatalogOptions<TPage extends PagedCatalog>({
   });
 }
 
-export function useInfiniteCatalog<TPage extends PagedCatalog>(
-  options: CatalogOptions<TPage>,
-) {
+export function useInfiniteCatalog<TPage extends PagedCatalog>(options: CatalogOptions<TPage>) {
   return useInfiniteQuery(infiniteCatalogOptions(options));
 }

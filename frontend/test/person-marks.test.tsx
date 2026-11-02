@@ -46,7 +46,11 @@ describe("where a person appears", () => {
 
   test("an avatar the viewer may not read gives way to the initials", async () => {
     const { host } = await mount(
-      <PersonAvatar avatarUrl="/api/public/users/7/avatar?v=1" className="size-8" name="Ada King" />,
+      <PersonAvatar
+        avatarUrl="/api/public/users/7/avatar?v=1"
+        className="size-8"
+        name="Ada King"
+      />,
     );
 
     await act(async () => {

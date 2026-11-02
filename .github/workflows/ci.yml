@@ -54,6 +54,8 @@ jobs:
           cache: true
           run-install: false
       - run: vp install --frozen-lockfile
+      # Formatting, lint and types; warnings are reported without failing the job.
+      - run: vp check
       - run: vp test --run
         env:
           # Let jsdom supply browser storage instead of Node 26's incomplete global.

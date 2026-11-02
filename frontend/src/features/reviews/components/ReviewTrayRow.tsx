@@ -24,7 +24,8 @@ export function ReviewTrayRow({ item, tone, active, onSelect }: ReviewTrayRowPro
         {item.schemaName} · {item.run.name}
       </span>
       <span className="mt-1.5 block text-xs text-fg-secondary">
-        {tone === "revision" ? "Feedback saved" : "Entered pending"} · {formatTimestamp(item.stateEnteredAt)}
+        {tone === "revision" ? "Feedback saved" : "Entered pending"} ·{" "}
+        {formatTimestamp(item.stateEnteredAt)}
       </span>
       <span
         className={cx(
