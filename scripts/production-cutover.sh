@@ -124,7 +124,6 @@ python3 deploy/check_env.py --env-file "$ENV_FILE" || exit 1
 for key in RECOVERY_MODE SINGLE_DISK_RISK_ACCEPTED LOCAL_BACKUP_ROOT LOCAL_BACKUP_RETENTION_COUNT LOCAL_BACKUP_MIN_FREE_PERCENT RECOVERY_RPO_MINUTES RECOVERY_RTO_MINUTES; do
   [[ -n "$(env_value "$key" || true)" ]] || { warn "$key must be set in $ENV_FILE"; exit 1; }
 done
-[[ "$(env_value MODEL_MUTATIONS_REQUIRE_VERSION)" == true ]] || { warn "Production requires MODEL_MUTATIONS_REQUIRE_VERSION=true"; exit 1; }
 [[ "$(env_value RECOVERY_MODE)" == local-single-disk ]] || { warn "This deployment supports RECOVERY_MODE=local-single-disk"; exit 1; }
 [[ "$(env_value SINGLE_DISK_RISK_ACCEPTED)" == true ]] || { warn "Set SINGLE_DISK_RISK_ACCEPTED=true only after accepting that disk loss is unrecoverable"; exit 1; }
 [[ "$(env_value RECOVERY_RPO_MINUTES)" =~ ^[0-9]+$ && "$(env_value RECOVERY_RTO_MINUTES)" =~ ^[0-9]+$ ]] || { warn "RPO/RTO must be integer minutes"; exit 1; }

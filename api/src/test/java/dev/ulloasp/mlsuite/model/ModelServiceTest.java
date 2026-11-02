@@ -77,8 +77,7 @@ class ModelServiceTest {
                 artifactReader,
                 deletionQueue,
                 environments,
-                mock(AuditLogService.class),
-                false);
+                mock(AuditLogService.class));
         lenient().when(environments.register(any())).thenAnswer(call -> call.<BundleInspection.Environment>getArgument(0).key());
         lenient().when(workspaceAuthorizationService.requireCurrent(eq(3L), any(PermissionKey[].class))).thenReturn(organization());
     }

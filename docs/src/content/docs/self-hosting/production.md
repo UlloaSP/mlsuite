@@ -33,8 +33,7 @@ For a real cutover, run the gated wizard from the repository root:
 ./scripts/production-cutover.sh
 ```
 
-It checks the configuration (`MODEL_MUTATIONS_REQUIRE_VERSION=true`, the single-disk risk
-accepted, the backup timer active), freezes writes, takes a coordinated backup, rehearses a restore
+It checks the configuration (the single-disk risk accepted, the backup timer active), freezes writes, takes a coordinated backup, rehearses a restore
 in isolation, runs the database migration, checks the canary's
 readiness and records what a rollback needs. It changes production only after explicit
 confirmations. Review it before running it.

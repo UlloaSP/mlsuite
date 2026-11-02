@@ -69,7 +69,7 @@ STORAGE_ENV=(-e STORAGE_ENDPOINT="$storage_endpoint" -e STORAGE_ACCESS_KEY="$sto
 docker rm -f "$api_container" >/dev/null 2>&1 || true
 "${COMPOSE[@]}" run -d --no-deps --name "$api_container" \
   -p "127.0.0.1:${smoke_port}:${spring_port}" "${DB_ENV[@]}" "${STORAGE_ENV[@]}" \
-  -e FLYWAY_ENABLED=false -e MODEL_MUTATIONS_REQUIRE_VERSION=true spring-app >/dev/null
+  -e FLYWAY_ENABLED=false spring-app >/dev/null
 
 for _ in $(seq 1 30); do
   if curl --fail --silent "http://127.0.0.1:${smoke_port}/actuator/health/readiness" >/dev/null; then

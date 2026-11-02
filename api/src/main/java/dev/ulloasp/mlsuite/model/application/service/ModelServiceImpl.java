@@ -9,7 +9,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -58,7 +57,6 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
     private final StorageDeletionQueue deletionQueue;
     private final RuntimeEnvironments environments;
     private final AuditLogService auditLog;
-    private final boolean requireMutationVersion;
 
     public ModelServiceImpl(
             UserLookupService userLookupService,
@@ -71,8 +69,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
             ModelArtifactContentReader artifactReader,
             StorageDeletionQueue deletionQueue,
             RuntimeEnvironments environments,
-            AuditLogService auditLog,
-            @Value("${model.mutations.require-version:false}") boolean requireMutationVersion) {
+            AuditLogService auditLog) {
         this.userLookupService = userLookupService;
         this.modelRepository = modelRepository;
         this.objectStorageService = objectStorageService;
@@ -84,7 +81,6 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         this.deletionQueue = deletionQueue;
         this.environments = environments;
         this.auditLog = auditLog;
-        this.requireMutationVersion = requireMutationVersion;
         this.catalogReader = new ModelCatalogReader(modelRepository, workspaceAuthorizationService);
     }
 
@@ -159,7 +155,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
     public Model renameModel(Long userId, Long modelId, String name, Long expectedVersion) {
         Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.EDIT_MODELS);
         Model model = requireModel(userId, organization.getId(), modelId);
-        ModelVersionGuard.requireCurrent(model, expectedVersion, requireMutationVersion);
+        ModelVersionGuard.requireCurrent(model, expectedVersion);
         String nextName = normalizeName(name);
         if (modelRepository.existsByNameAndOrganizationIdAndIdNot(nextName, organization.getId(), modelId)) {
             throw new ModelAlreadyExistsException(nextName, organization.getName());
@@ -175,7 +171,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
     public Model archiveModel(Long userId, Long modelId, Long expectedVersion) {
         Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.EDIT_MODELS);
         Model model = requireModel(userId, organization.getId(), modelId);
-        ModelVersionGuard.requireCurrent(model, expectedVersion, requireMutationVersion);
+        ModelVersionGuard.requireCurrent(model, expectedVersion);
         if (model.getArchivedAt() == null) {
             model.setArchivedAt(OffsetDateTime.now(ZoneOffset.UTC));
             auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.MODEL_ARCHIVE, modelId,
@@ -190,7 +186,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
     public Model restoreModel(Long userId, Long modelId, Long expectedVersion) {
         Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.EDIT_MODELS);
         Model model = requireModel(userId, organization.getId(), modelId);
-        ModelVersionGuard.requireCurrent(model, expectedVersion, requireMutationVersion);
+        ModelVersionGuard.requireCurrent(model, expectedVersion);
         if (model.getArchivedAt() != null) {
             auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.MODEL_RESTORE, modelId,
                     AuditDetails.of("name", model.getName()));
@@ -222,7 +218,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
     public void deleteModel(Long userId, Long modelId, Long expectedVersion) {
         Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.DELETE_MODELS);
         Model model = requireModel(userId, organization.getId(), modelId);
-        ModelVersionGuard.requireCurrent(model, expectedVersion, requireMutationVersion);
+        ModelVersionGuard.requireCurrent(model, expectedVersion);
         if (bindingRepository.existsByModelId(modelId) || resultRepository.existsByModelId(modelId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Model is used by schemas or prediction runs. Archive it instead.");
         }
