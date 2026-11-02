@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { useState } from "react";
 import { apiUrl } from "@/shared/api/http";
 import { personInitials } from "@/shared/lib/person-initials";
 import { cx } from "./cx";
@@ -10,7 +11,8 @@ import { cx } from "./cx";
 /**
  * How a person is pictured beside their name: their avatar, or their initials without one. The
  * caller sizes and shapes the box; the name stays the accessible text next to it, so the picture
- * itself says nothing.
+ * itself says nothing. A private person's avatar is not served to everyone, so a picture that
+ * cannot be read gives way to the initials too.
  */
 export function PersonAvatar({
   avatarUrl,
@@ -25,9 +27,15 @@ export function PersonAvatar({
   fallbackClassName?: string;
   name: string;
 }) {
-  if (avatarUrl) {
+  const [unreadable, setUnreadable] = useState<string | null>(null);
+  if (avatarUrl && unreadable !== avatarUrl) {
     return (
-      <img src={apiUrl(avatarUrl)} alt="" className={cx("shrink-0 object-cover", className)} />
+      <img
+        src={apiUrl(avatarUrl)}
+        alt=""
+        className={cx("shrink-0 object-cover", className)}
+        onError={() => setUnreadable(avatarUrl)}
+      />
     );
   }
   return (

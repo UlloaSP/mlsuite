@@ -103,6 +103,10 @@ public interface SchemaBookmarkRepository
             """)
     Page<SchemaBookmark> findPublishedPage(String search, Pageable pageable);
 
+    /** Whether an account publishes anything, which shows the picture of the person behind it. */
+    @Query("SELECT COUNT(b) > 0 FROM SchemaBookmark b WHERE b.schema.organization.id = :organizationId AND " + PUBLISHED)
+    boolean existsPublished(Long organizationId);
+
     /** What an account publishes and has not pinned, for the profile of the person behind it. */
     @Query("SELECT b FROM SchemaBookmark b WHERE b.schema.organization.id = :organizationId AND " + PUBLISHED + """
             AND NOT EXISTS (SELECT 1 FROM ProfilePin pin WHERE pin.bookmark = b)

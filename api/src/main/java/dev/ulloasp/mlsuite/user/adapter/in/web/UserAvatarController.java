@@ -14,14 +14,16 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
+import dev.ulloasp.mlsuite.security.identity.PublicCaller;
 import dev.ulloasp.mlsuite.user.application.dto.UserDto;
 import dev.ulloasp.mlsuite.user.application.port.in.PublicProfileUseCase;
 import dev.ulloasp.mlsuite.user.application.port.in.UserProfileUseCase;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Replacing and removing the avatar are a person's own; reading it is open under /api/public,
- * which SecurityConfig permits to anyone, because public pages show it.
+ * Replacing and removing the avatar are a person's own; reading it is under /api/public, which
+ * SecurityConfig permits to anyone, because public pages show it, and answers 404 to a viewer
+ * without a reason to see a private person's avatar.
  */
 @RestController
 @RequiredArgsConstructor
@@ -40,13 +42,16 @@ public class UserAvatarController {
         return ResponseEntity.ok(profiles.removeAvatar(user.userId()));
     }
 
-    /** The address carries the avatar's version, so a browser may keep the bytes for good. */
+    /**
+     * The address carries the avatar's version, so a browser may keep the bytes for good. Whether
+     * it may read them depends on who asks, so no shared cache keeps them.
+     */
     @GetMapping("/api/public/users/{userId}/avatar")
-    public ResponseEntity<byte[]> read(@PathVariable Long userId) {
-        return publicProfiles.avatar(userId)
+    public ResponseEntity<byte[]> read(@PathVariable Long userId, PublicCaller caller) {
+        return publicProfiles.avatar(userId, caller.userId())
                 .map(avatar -> ResponseEntity.ok()
                         .contentType(MediaType.parseMediaType(avatar.getContentType()))
-                        .cacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable())
+                        .cacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePrivate().immutable())
                         .body(avatar.getContent()))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

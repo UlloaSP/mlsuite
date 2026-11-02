@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 // @vitest-environment jsdom
 
+import { act } from "react";
 import { describe, expect, test, vi } from "vite-plus/test";
 import { PublicBookmarkCard } from "@/capabilities/public-bookmarks/PublicBookmarkCard";
 import { MemberTable } from "@/features/workspace/components/MemberTable";
@@ -41,6 +42,19 @@ describe("where a person appears", () => {
     await rerender(<PersonAvatar avatarUrl={null} className="size-8" name="Ada King" />);
     expect(host.textContent).toBe("AK");
     expect(host.querySelector("img")).toBeNull();
+  });
+
+  test("an avatar the viewer may not read gives way to the initials", async () => {
+    const { host } = await mount(
+      <PersonAvatar avatarUrl="/api/public/users/7/avatar?v=1" className="size-8" name="Ada King" />,
+    );
+
+    await act(async () => {
+      host.querySelector("img")!.dispatchEvent(new Event("error"));
+    });
+
+    expect(host.querySelector("img")).toBeNull();
+    expect(host.textContent).toBe("AK");
   });
 
   test("a card links to its publisher only while their profile is visible", async () => {

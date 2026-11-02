@@ -9,10 +9,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
+import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkSummaryDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicBookmarkUseCase;
@@ -24,16 +26,20 @@ import dev.ulloasp.mlsuite.user.application.dto.PublicProfileOrganizationDto;
 import dev.ulloasp.mlsuite.user.application.dto.UserAvatarUrl;
 import dev.ulloasp.mlsuite.user.application.port.in.PublicProfileUseCase;
 import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
+import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.domain.model.UserAvatar;
 import dev.ulloasp.mlsuite.util.PageDto;
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 
 /**
  * Reads a profile. Like the public surface of bookmarks it never consults a session: a handle whose
  * owner is private, disabled, or unknown answers alike, so its existence cannot be probed. An
  * avatar is read by user id and not by handle, because it is also drawn beside their name on what
- * they published and in the organizations they work in.
+ * they published and in the organizations they work in. Unlike the rest it looks at the session:
+ * a private person's avatar is for themself, superadmins and the people they work with, and for
+ * anyone while their account publishes, whose public pages show it.
  */
 @Service
 @Transactional(readOnly = true)
@@ -51,6 +57,8 @@ public class PublicProfileService implements PublicProfileUseCase {
     private final SchemaRepository schemaRepository;
     private final PluginMetadataRepository pluginRepository;
     private final PredictionRunRepository predictionRunRepository;
+    private final OrganizationMembershipRepository memberships;
+    private final SchemaBookmarkRepository bookmarks;
 
     @Override
     public Optional<PublicProfileDto> profile(String handle) {
@@ -63,8 +71,19 @@ public class PublicProfileService implements PublicProfileUseCase {
     }
 
     @Override
-    public Optional<UserAvatar> avatar(Long userId) {
-        return avatarRepository.findById(userId);
+    public Optional<UserAvatar> avatar(Long userId, @Nullable Long viewerId) {
+        return avatarRepository.findById(userId)
+                .filter(avatar -> userRepository.findById(userId).filter(person -> mayView(person, viewerId)).isPresent());
+    }
+
+    private boolean mayView(User person, @Nullable Long viewerId) {
+        if (person.visibleHandle() != null || person.getId().equals(viewerId)) return true;
+        if (viewerId != null && (userRepository.findById(viewerId).filter(viewer -> viewer.getSystemRole() == SystemRole.SUPERADMIN).isPresent()
+                || memberships.shareAnOrganization(person.getId(), viewerId))) {
+            return true;
+        }
+        return organizationRepository.findByOwnerUserId(person.getId())
+                .filter(account -> bookmarks.existsPublished(account.getId())).isPresent();
     }
 
     public OwnProfileDto own(Long userId) {
