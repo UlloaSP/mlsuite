@@ -11,6 +11,7 @@ import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationDeletionService;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.plugin.application.service.PluginAuthorship;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.application.service.AccountDeletionRules;
 import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
@@ -32,6 +33,7 @@ class PurgeAccountSteps {
     private final AccountDeletionRules rules;
     private final OrganizationDeletionService organizations;
     private final AuditLogService auditLog;
+    private final PluginAuthorship plugins;
 
     List<PurgeStep> of(PurgeJob job) {
         if (job.scope() != PurgeScope.USER) return List.of();
@@ -45,6 +47,7 @@ class PurgeAccountSteps {
                             SELECT id FROM prediction_run WHERE created_by_email = ? LIMIT ?)""",
                         DeletedUser.NAME, email, limit)),
                 new PurgeStep("anonymizedApiClients", limit -> anonymizeClients(userId, name)),
+                new PurgeStep("anonymizedPlugins", limit -> plugins.forget(userId, limit)),
                 new PurgeStep("emptyOrganizations", limit -> deleteEmptyTeams(userId)),
                 new PurgeStep("invitations", limit -> jdbc.update("""
                         DELETE FROM invitation WHERE lower(email) = lower(?)
