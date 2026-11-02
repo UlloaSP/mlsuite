@@ -4,7 +4,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -16,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository.FeedbackSaved;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunDto;
@@ -89,11 +89,8 @@ public class SchemaReviewCatalogService implements SchemaReviewCatalogUseCase {
                 .filter(found -> !submissions.existsByReviewRunIdAndUserId(found.getId(), userId))
                 .orElseThrow(SchemaReviewUnavailableException::new);
         PredictionRun run = reviewRun.getRun();
-        Set<Long> started = feedback.existsByResultRunIdAndUserIdAndReviewId(run.getId(), userId, review.getId())
-                ? Set.of(reviewRun.getId())
-                : Set.of();
-        return inboxItem(review,
-                item(reviewRun, run, null, results.findByRunIdOrderByIdAsc(run.getId()), started));
+        return inboxItem(review, item(reviewRun, run, null, results.findByRunIdOrderByIdAsc(run.getId()),
+                saved(List.of(reviewRun.getId()), userId)));
     }
 
     @Override
@@ -138,22 +135,29 @@ public class SchemaReviewCatalogService implements SchemaReviewCatalogUseCase {
         List<Long> runIds = rows.stream().map(row -> row.getRun().getId()).toList();
         Map<Long, List<PredictionResult>> runResults = results.findByRunIdInOrderByRunIdAscIdAsc(runIds).stream()
                 .collect(Collectors.groupingBy(result -> result.getRun().getId()));
-        Set<Long> started = feedback.findReviewRunIdsAnsweredBy(
-                rows.stream().map(row -> row.getReviewRun().getId()).toList(), userId);
+        Map<Long, OffsetDateTime> saved = saved(rows.stream().map(row -> row.getReviewRun().getId()).toList(), userId);
         return rows.stream()
                 .map(row -> item(row.getReviewRun(), row.getRun(), row.getSubmission(),
-                        runResults.getOrDefault(row.getRun().getId(), List.of()), started))
+                        runResults.getOrDefault(row.getRun().getId(), List.of()), saved))
                 .toList();
     }
 
+    /** When the reviewer last saved feedback on each of these review runs they answered. */
+    private Map<Long, OffsetDateTime> saved(List<Long> reviewRunIds, Long userId) {
+        return feedback.findFeedbackSaved(reviewRunIds, userId).stream()
+                .collect(Collectors.toMap(FeedbackSaved::getReviewRunId, FeedbackSaved::getSavedAt));
+    }
+
     private SchemaReviewRunListItemDto item(SchemaReviewRun reviewRun, PredictionRun run,
-            SchemaReviewRunSubmission submission, List<PredictionResult> runResults, Set<Long> started) {
+            SchemaReviewRunSubmission submission, List<PredictionResult> runResults, Map<Long, OffsetDateTime> saved) {
+        OffsetDateTime savedAt = saved.get(reviewRun.getId());
         SchemaReviewState state = submission != null ? SchemaReviewState.COMPLETED
-                : started.contains(reviewRun.getId()) ? SchemaReviewState.IN_PROGRESS : SchemaReviewState.PENDING;
+                : savedAt != null ? SchemaReviewState.IN_PROGRESS : SchemaReviewState.PENDING;
+        // Submitted when submitted, in progress since the feedback was last saved, else pending since the run.
+        OffsetDateTime enteredAt = submission != null ? submission.getSubmittedAt()
+                : savedAt != null ? savedAt : run.getCreatedAt();
         return new SchemaReviewRunListItemDto(reviewRun.getPublicId(), PredictionRunDto.from(run, runResults),
-                state,
-                submission == null ? run.getCreatedAt() : submission.getSubmittedAt(),
-                submission == null ? null : submission.getSubmittedAt());
+                state, enteredAt, submission == null ? null : submission.getSubmittedAt());
     }
 
     private ReviewInboxItemDto inboxItem(SchemaReview review, SchemaReviewRunListItemDto item) {

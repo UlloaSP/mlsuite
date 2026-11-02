@@ -3,6 +3,7 @@ import { act } from "react";
 import { Route, Routes, useLocation } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { ReviewsPage } from "@/features/reviews/pages/reviews-page";
+import { formatTimestamp } from "@/shared/lib/date-time";
 import { click, mount } from "./support/dom";
 
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
@@ -189,4 +190,13 @@ test("a review whose report reads a bare output position opens", async () => {
 
   expect(host.textContent).not.toContain("Review cannot be shown");
   expect(detail(host)).toBe("saved");
+});
+
+test("a run with saved feedback shows when the feedback was saved", async () => {
+  inbox[0]!.stateEnteredAt = "2026-07-21T09:30:00Z";
+  const host = await openInbox("/review");
+
+  const tray = host.querySelector("aside")!.textContent;
+  expect(tray).toContain(`Feedback saved · ${formatTimestamp("2026-07-21T09:30:00Z")}`);
+  expect(tray).not.toContain(`Feedback saved · ${formatTimestamp("2026-07-20T08:00:00Z")}`);
 });

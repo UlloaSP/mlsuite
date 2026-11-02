@@ -1,9 +1,9 @@
 package dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository;
 
+import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -70,10 +70,18 @@ public interface PredictionResultFeedbackRepository extends JpaRepository<Predic
 
     boolean existsByResultRunIdAndUserIdAndReviewId(Long runId, Long userId, Long reviewId);
 
-    /** Which of the review runs the user has answered at least once, in their own review. */
+    /** When a reviewer last saved feedback on a review run. */
+    interface FeedbackSaved {
+        Long getReviewRunId();
+
+        OffsetDateTime getSavedAt();
+    }
+
+    /** The review runs among these that the reviewer answered, each with when they last saved. */
     @Query("""
-            SELECT DISTINCT rr.id FROM SchemaReviewRun rr, PredictionResultFeedback f
+            SELECT rr.id AS reviewRunId, MAX(f.updatedAt) AS savedAt FROM SchemaReviewRun rr, PredictionResultFeedback f
             WHERE rr.id IN :reviewRunIds AND f.result.run = rr.run AND f.review = rr.review AND f.user.id = :userId
+            GROUP BY rr.id
             """)
-    Set<Long> findReviewRunIdsAnsweredBy(Collection<Long> reviewRunIds, Long userId);
+    List<FeedbackSaved> findFeedbackSaved(Collection<Long> reviewRunIds, Long userId);
 }
