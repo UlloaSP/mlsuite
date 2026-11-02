@@ -96,7 +96,7 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
                     }
                 }
             });
-            persistMetadata(organization, stored, user, uploaded, null);
+            persistMetadata(organization, stored, user, uploaded);
             auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.PLUGIN_UPLOAD, id,
                     AuditDetails.of("file", stored.fileName(), "sizeBytes", stored.sizeBytes()));
             return toDto(stored);
@@ -108,7 +108,7 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
     @Override
     @Transactional
     public PageDto<PluginDto> list(Long userId, int page, int size, String type, String search, String sort) {
-        Organization organization = indexedCatalog(userId);
+        Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.VIEW_PLUGINS);
         String safeType = "field".equals(type) || "report".equals(type) ? type : "all";
         Page<PluginMetadata> result = pluginMetadataRepository.findCatalogPage(organization.getId(), safeType,
                 CatalogPages.likeLiteral(search == null ? "" : search.strip()), sort == null ? "updated" : sort,
@@ -132,26 +132,10 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
     @Override
     @Transactional
     public PluginStatsDto stats(Long userId) {
-        Organization organization = indexedCatalog(userId);
+        Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.VIEW_PLUGINS);
         return new PluginStatsDto(
                 pluginMetadataRepository.countByOrganizationIdAndPluginType(organization.getId(), "field"),
                 pluginMetadataRepository.countByOrganizationIdAndPluginType(organization.getId(), "report"));
-    }
-
-    private Organization indexedCatalog(Long userId) {
-        Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.VIEW_PLUGINS);
-        if (!organization.isPluginCatalogIndexed()) {
-            // Index legacy object-only plugins once, serialized with upload and deletion.
-            organization = organizations.lockById(organization.getId()).orElseThrow();
-            if (!organization.isPluginCatalogIndexed()) {
-                Organization locked = organization;
-                pluginObjects.listWithIdentity(organization.getId()).forEach(item ->
-                        persistMetadata(locked, item.plugin(), null, null, item));
-                organization.setPluginCatalogIndexed(true);
-                organizations.save(organization);
-            }
-        }
-        return organization;
     }
 
     @Override
@@ -170,41 +154,15 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
                 metadata.map(plugin -> AuditDetails.of("file", plugin.getFileName())).orElse(Map.of()));
     }
 
-    private void persistMetadata(
-            Organization organization,
-            StoredPlugin stored,
-            User updatedBy,
-            StoredObject uploaded,
-            PluginObjectReader.ReadPlugin read) {
+    /** The row that pins the stored object: its exact version, size and SHA-256. */
+    private void persistMetadata(Organization organization, StoredPlugin stored, User updatedBy, StoredObject uploaded) {
         PluginDescriptor descriptor = describe(stored.source());
-        Optional<PluginMetadata> existing = pluginMetadataRepository
-                .findByIdAndOrganizationId(stored.id(), organization.getId());
-        if (uploaded == null && existing.isPresent()) {
-            return;
-        }
-        PluginMetadata metadata = existing.orElseGet(PluginMetadata::new);
-        metadata.setId(stored.id());
-        metadata.setOrganization(organization);
-        metadata.setObjectKey(itemObjectKey(organization.getId(), stored.id()));
-        metadata.setFileName(stored.fileName());
-        metadata.setContentType(stored.contentType());
-        metadata.setSizeBytes(stored.sizeBytes());
-        metadata.setCreatedAt(stored.createdAt());
-        metadata.setUpdatedAt(stored.updatedAt());
-        if (updatedBy != null) {
-            metadata.setUpdatedBy(updatedBy);
-        }
-        metadata.setPluginType(descriptor.type());
-        metadata.setKind(descriptor.kind());
-        if (uploaded != null) {
-            metadata.setSizeBytes(uploaded.sizeBytes());
-            metadata.setSha256(uploaded.sha256());
-            metadata.setStorageVersionId(uploaded.versionId());
-        } else if (read != null) {
-            metadata.setSizeBytes(read.sizeBytes());
-            metadata.setSha256(read.sha256());
-            metadata.setStorageVersionId(read.versionId());
-        }
+        PluginMetadata metadata = new PluginMetadata(stored.id(), organization,
+                itemObjectKey(organization.getId(), stored.id()), stored.fileName(), stored.contentType(),
+                uploaded.sizeBytes(), stored.createdAt(), stored.updatedAt(), updatedBy, descriptor.type(),
+                descriptor.kind());
+        metadata.setSha256(uploaded.sha256());
+        metadata.setStorageVersionId(uploaded.versionId());
         pluginMetadataRepository.save(metadata);
     }
 
