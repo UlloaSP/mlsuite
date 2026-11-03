@@ -3,9 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
-import react, { reactCompilerPreset } from "@vitejs/plugin-react";
+import react from "@vitejs/plugin-react";
 import { resolve } from "node:path";
 import { defineConfig } from "vite-plus";
 
@@ -35,8 +34,10 @@ export default defineConfig({
       },
     },
   },
-  // The React Compiler memoizes components and hooks, so code need not do it by hand.
-  plugins: [react(), babel({ presets: [reactCompilerPreset()] }), tailwindcss()],
+  // The React Compiler (oxc's Rust port, no Babel) memoizes components and hooks, so code need
+  // not do it by hand. `{ logDiagnostics: true }` names the code it skips: fix that code rather
+  // than opt it out. Only TanStack Virtual's useVirtualizer() callers are skipped, by design.
+  plugins: [react({ compiler: true }), tailwindcss()],
   test: { maxWorkers: 4 },
   build: {
     outDir: "./dist",

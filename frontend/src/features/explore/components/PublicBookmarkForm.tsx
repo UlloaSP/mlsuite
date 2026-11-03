@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { applyPredictionInputsToSchema } from "@/capabilities/prediction-runtime/mlform/schema-inputs";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import {
@@ -61,13 +61,12 @@ const hasFields = (schema: PublicBookmarkDto["formSchema"]) =>
  */
 export function PublicBookmarkForm({ publicId, version, formSchema, onRun }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const onRunRef = useRef(onRun);
-  onRunRef.current = onRun;
+  const reportRun = useEffectEvent(onRun);
   const mountedRef = useRef<MountedSandboxedPublicForm | null>(null);
   // Wide, the form takes the height the page leaves and scrolls inside; narrow, the page scrolls.
   const sizing: SandboxSizing = useMediaQuery("(min-width: 64rem)") ? "fill" : "content";
-  const sizingRef = useRef(sizing);
-  sizingRef.current = sizing;
+  // A new form starts at the current sizing; later changes reach the mounted one below.
+  const currentSizing = useEffectEvent(() => sizing);
   const [mountError, setMountError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [failure, setFailure] = useState<PublicRunFailure | null>(null);
@@ -96,14 +95,14 @@ export function PublicBookmarkForm({ publicId, version, formSchema, onRun }: Pro
       container: containerRef.current,
       schema,
       plugins,
-      sizing: sizingRef.current,
+      sizing: currentSizing(),
       run: async (values) => {
         const { queryKey } = publicRunQuotaQueryOptions(publicId, caller);
         if (queryClient.getQueryData(queryKey)?.remaining === 0) return null;
         try {
           const result = await runPublicBookmark(publicId, { version, values });
           queryClient.setQueryData(queryKey, result.quota);
-          onRunRef.current(result.run);
+          reportRun(result.run);
           return result.run.reports.map((report) => ({
             key: report.key,
             payload: isRecord(report.payload) ? report.payload : {},

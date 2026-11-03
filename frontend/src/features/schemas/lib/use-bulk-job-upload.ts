@@ -3,8 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { parseSpreadsheetPredictionFile } from "@/capabilities/prediction-runtime/data/parse-spreadsheet-prediction-file";
@@ -39,11 +38,10 @@ export function useBulkJobUpload(bookmarkId: string, version: SchemaVersionDto) 
   const organizationId = useCurrentOrganizationId() ?? "none";
   const queryClient = useQueryClient();
   const { mutateAsync: startJob } = useStartPredictionJob(bookmarkId);
-  const [preparing, setPreparing] = useState(false);
 
-  const start = async (file: File) => {
-    setPreparing(true);
-    try {
+  // Resolves to the number of rows sent to the server, 0 when the file had none to run.
+  const upload = useMutation({
+    mutationFn: async (file: File) => {
       const parsed = await parseSpreadsheetPredictionFile(
         file,
         getModelInputBulkSchema(version),
@@ -58,10 +56,7 @@ export function useBulkJobUpload(bookmarkId: string, version: SchemaVersionDto) 
           ),
         });
       }
-      if (parsed.records.length === 0) {
-        toast.warning("Bulk upload not started: the file has no rows to run");
-        return;
-      }
+      if (parsed.records.length === 0) return 0;
       const plugins = await queryClient.fetchQuery(predictionCatalogQueryOptions(organizationId));
       // The schema is normalized with its plugins in the sandbox, as for a single run.
       const run = await prepareSchemaRun(version.formSchema, version.bindings, plugins);
@@ -77,13 +72,16 @@ export function useBulkJobUpload(bookmarkId: string, version: SchemaVersionDto) 
           })),
         })),
       });
-      toast.success(`Bulk upload started: ${parsed.records.length} rows run on the server`);
-    } catch (error) {
-      toast.error("Bulk upload could not start", { description: errorMessage(error) });
-    } finally {
-      setPreparing(false);
-    }
-  };
+      return parsed.records.length;
+    },
+    onSuccess: (rows) => {
+      if (rows === 0) toast.warning("Bulk upload not started: the file has no rows to run");
+      else toast.success(`Bulk upload started: ${rows} rows run on the server`);
+    },
+    onError: (error) =>
+      toast.error("Bulk upload could not start", { description: errorMessage(error) }),
+    meta: { errorHandledLocally: true },
+  });
 
-  return { start, preparing };
+  return { start: upload.mutate, preparing: upload.isPending };
 }

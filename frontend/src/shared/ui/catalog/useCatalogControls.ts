@@ -20,12 +20,14 @@ export type CatalogControls<TFilter extends string, TSort extends string> = {
   sort: TSort;
 };
 
+const trimQuery = (query: string) => query.trim();
+
 export function useCatalogControls<TFilter extends string, TSort extends string>({
   initialFilter,
   initialSort,
   filters,
   sorts,
-  normalizeQuery = (query) => query.trim(),
+  normalizeQuery = trimQuery,
 }: CatalogControlsOptions<TFilter, TSort>): CatalogControls<TFilter, TSort> {
   const params = useUrlSearchParams();
   const updateParams = useSearchParamsUpdate();

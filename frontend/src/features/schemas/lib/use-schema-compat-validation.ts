@@ -42,8 +42,6 @@ export function useSchemaCompatValidation({ editorRef, monacoRef, onValid }: Opt
   const warningRef = useRef<EditorErrorCard | null>(null);
   const jsonSchemaCatalogRef = useRef<PluginCatalog | null>(null);
   const checkRef = useRef(0);
-  const onValidRef = useRef(onValid);
-  onValidRef.current = onValid;
 
   useEffect(() => {
     const checker = openSchemaChecker();
@@ -125,7 +123,7 @@ export function useSchemaCompatValidation({ editorRef, monacoRef, onValid }: Opt
       checker.check(parsed, catalog).then(
         (result) => {
           if (check !== checkRef.current || model.isDisposed()) return;
-          if (result.success) onValidRef.current(parsed);
+          if (result.success) onValid(parsed);
           show(result.issues);
         },
         (error: Error) => {
@@ -140,7 +138,7 @@ export function useSchemaCompatValidation({ editorRef, monacoRef, onValid }: Opt
         },
       );
     },
-    [editorRef, monacoRef],
+    [editorRef, monacoRef, onValid],
   );
 
   /** Takes the catalog the schema is checked against, or the failure that left it empty. */

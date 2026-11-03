@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
@@ -39,8 +39,6 @@ export function ReviewSelectionCatalog<TId extends SelectionId>({
   title,
 }: Props<TId>) {
   const [query, setQuery] = useState("");
-  const [selectionError, setSelectionError] = useState(false);
-  const [selecting, setSelecting] = useState(false);
   const search = useDebouncedValue(query.trim());
   const queryClient = useQueryClient();
   const request: SelectionRequest = {
@@ -53,21 +51,12 @@ export function ReviewSelectionCatalog<TId extends SelectionId>({
   };
   const catalog = useSelectionCatalog(organizationId, request, true);
   const items = catalog.data?.items ?? [];
-  const selectAll = async () => {
-    setSelecting(true);
-    setSelectionError(false);
-    try {
-      // What is typed right now, not the search the list is still catching up to.
-      const ids = await queryClient.fetchQuery(
-        selectionIdsQueryOptions(organizationId, { ...request, search: query.trim() }),
-      );
-      onSelectAll([...new Set([...selectedIds, ...ids.map(idFromString)])]);
-    } catch {
-      setSelectionError(true);
-    } finally {
-      setSelecting(false);
-    }
-  };
+  const selectAll = useMutation({
+    mutationFn: (typed: string) =>
+      queryClient.fetchQuery(selectionIdsQueryOptions(organizationId, { ...request, search: typed })),
+    onSuccess: (ids) => onSelectAll([...new Set([...selectedIds, ...ids.map(idFromString)])]),
+    meta: { errorHandledLocally: true },
+  });
   return (
     <section className="flex min-h-0 flex-col p-5">
       <ReviewSelectionHeader
@@ -75,10 +64,11 @@ export function ReviewSelectionCatalog<TId extends SelectionId>({
         count={selectedIds.size}
         total={source.kind === "runs" ? source.ids.length : (catalog.data?.totalAvailable ?? 0)}
         onClear={onClear}
-        onSelectAll={() => void selectAll()}
+        // What is typed right now, not the search the list is still catching up to.
+        onSelectAll={() => selectAll.mutate(query.trim())}
         selectLabel={query.trim() ? "Select results" : "Select all"}
         selectDisabled={
-          selecting || catalog.isLoading || Boolean(catalog.error) || !catalog.data?.totalItems
+          selectAll.isPending || catalog.isLoading || Boolean(catalog.error) || !catalog.data?.totalItems
         }
       />
       <AppTextField
@@ -89,10 +79,10 @@ export function ReviewSelectionCatalog<TId extends SelectionId>({
         value={query}
         onChange={(event) => {
           setQuery(event.currentTarget.value);
-          setSelectionError(false);
+          selectAll.reset();
         }}
       />
-      {selectionError ? (
+      {selectAll.isError ? (
         <p role="alert" className="mt-2 text-sm text-danger-fg">
           Could not select results. Try again.
         </p>
