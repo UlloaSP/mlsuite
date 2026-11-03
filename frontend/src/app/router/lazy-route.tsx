@@ -83,12 +83,16 @@ export const searchPage = <
     },
     // Only a page that loads data depends on its search for loading.
     loaderDeps: ({ search }) => ({ search: loader ? (search as z.output<TSchema>) : undefined }),
+    // Entering or preloading the page warms its data. While it is shown, the page asks for what its
+    // search needs itself: typing reaches the server once, after the search's pause.
     loader: loader
-      ? ({ context, params, deps }) =>
-          loader({
-            queryClient: queryClientOf(context),
-            params: params as ResolveParams<TPath>,
-            search: deps.search!,
-          })
+      ? ({ context, params, deps, cause }) =>
+          cause === "stay"
+            ? undefined
+            : loader({
+                queryClient: queryClientOf(context),
+                params: params as ResolveParams<TPath>,
+                search: deps.search!,
+              })
       : undefined,
   });
