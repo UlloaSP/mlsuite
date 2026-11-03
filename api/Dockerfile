@@ -41,4 +41,6 @@ RUN env SPRING_PROFILES_ACTIVE=prod SPRING_PORT=8080 LOG_PATH=/tmp \
 
 EXPOSE 8080
 # The class path must read as it did in the training run, or the JVM ignores the cache.
-ENTRYPOINT ["java","-XX:+UseG1GC","-XX:MaxRAMPercentage=75.0","-XX:AOTCache=app.aot","-jar","app.jar"]
+# The cache's adapters are machine code for the CPU that built the image: on one without its
+# instructions (shelob has no AVX) they crash with SIGILL, so the JVM regenerates them instead.
+ENTRYPOINT ["java","-XX:+UseG1GC","-XX:MaxRAMPercentage=75.0","-XX:+UnlockDiagnosticVMOptions","-XX:-AOTAdapterCaching","-XX:AOTCache=app.aot","-jar","app.jar"]
