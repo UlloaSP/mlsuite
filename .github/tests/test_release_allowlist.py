@@ -18,7 +18,7 @@ export_corpus = load("export_corpus")
 driver = load("driver")
 
 ALLOWLIST = {
-    "python": ["3.14.2", "3.14.10"],
+    "python": ">=3.14.0,<3.15",
     "mlbundle": {"0.3.9": "a", "0.3.10": "b"},
     "packages": {"numpy": ">=2.0,<3", "scikit-learn": ">=1.7.2,<2"},
 }

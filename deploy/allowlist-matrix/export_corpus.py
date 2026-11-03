@@ -81,7 +81,8 @@ def main() -> None:
     output = Path(sys.argv[1]).resolve()
     output.mkdir(parents=True, exist_ok=True)
     allowlist = tomllib.loads(ALLOWLIST.read_text(encoding="utf-8"))
-    python = max(allowlist["python"], key=version_key)
+    # uv picks a CPython inside the allowlist's range, as the builder would accept it.
+    python = allowlist["python"]
     found = environments(allowlist)
     with tempfile.TemporaryDirectory() as directory:
         work = Path(directory)

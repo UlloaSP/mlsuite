@@ -2,9 +2,11 @@
 #
 # A bundle's pylock.toml pins every distribution its model needs, and the environment always holds
 # exactly those versions. This list decides which locks MLsuite agrees to install: the Python
-# version and the mlbundle release are named exactly, and every locked package (the model's
-# libraries and all their dependencies) must be named below, at a version inside its range.
-# Pre-releases are never installed.
+# version must be inside its range and one the runtime's uv can download (backend/Dockerfile pins
+# that uv, so upgrading it is how a new CPython patch release becomes installable), the mlbundle
+# release is named exactly, and every locked package (the model's libraries and all their
+# dependencies) must be named below, at a version inside its range. Pre-releases are never
+# installed.
 #
 # Before installing, the builder also checks each locked release on the package index: it must
 # have been published at least RUNTIME_PACKAGE_MIN_AGE_DAYS ago (7 by default), not be yanked,
@@ -18,10 +20,7 @@
 # (deploy/allowlist-matrix) export every model family at both ends of the scikit-learn range and
 # check their predictions on shelob; run them when a range widens to a new major line.
 
-python = [
-    "3.14.0", "3.14.1", "3.14.2", "3.14.3", "3.14.4",
-    "3.14.5", "3.14.6", "3.14.7", "3.14.8", "3.14.9",
-]
+python = ">=3.14.0,<3.15"
 
 # Each release's py3-none-any wheel digest: the lock omits mlbundle, so the builder installs it
 # by this hash.

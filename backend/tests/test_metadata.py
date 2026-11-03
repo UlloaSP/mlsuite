@@ -72,7 +72,7 @@ def test_metadata_refuses_a_bundle_whose_environment_is_not_allowed(monkeypatch)
     lock = mlbundle.inspect(upload[1].getvalue()).environment_lock
     granted = [package for package in lock.packages if package.name != "onnxruntime"]
     allowlist = parse_allowlist(
-        f'python = ["{lock.python_version}"]\n'
+        f'python = "=={lock.python_version}"\n'
         f'[mlbundle]\n"{mlbundle.__version__}" = "{"0" * 64}"\n'
         "[packages]\n" + "".join(f'{package.name} = "=={package.version}"\n' for package in granted)
     )

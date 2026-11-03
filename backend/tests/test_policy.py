@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import mlbundle
 import pytest
 
-from mlsuite_backend import config
+from mlsuite_backend import config, policy
 from mlsuite_backend.policy import parse_allowlist
 from tests.helpers import make_classifier, serialize_bundle
 
@@ -22,7 +22,7 @@ def _granting(lock: mlbundle.EnvironmentLock, *, skip: str = "", python: str = "
         f'{p.name} = "{ranges.get(p.name, f">={p.version}")}"\n' for p in lock.packages if p.name != skip
     )
     return (
-        f'python = ["{python or lock.python_version}"]\n'
+        f'python = "{python or "==" + lock.python_version}"\n'
         f'[mlbundle]\n"0.3.0" = "{DIGEST}"\n'
         f"[packages]\n{packages}"
     )
@@ -35,10 +35,10 @@ def test_a_lock_inside_every_range_has_no_violations() -> None:
 
 def test_python_mlbundle_and_unnamed_packages_are_refused_with_the_reason() -> None:
     lock = _lock()
-    allowlist = parse_allowlist(_granting(lock, skip="numpy", python="3.14.99"))
+    allowlist = parse_allowlist(_granting(lock, skip="numpy", python="==3.14.99"))
 
     assert allowlist.violations(lock, "0.3.9") == [
-        f"python=={lock.python_version}",
+        f"python=={lock.python_version} (MLsuite installs ==3.14.99)",
         "mlbundle==0.3.9",
         f"numpy=={lock.version('numpy')} (not a package MLsuite installs)",
     ]
@@ -55,20 +55,37 @@ def test_a_version_outside_its_range_is_refused_with_the_range() -> None:
 
 @pytest.mark.parametrize("version", ["2.6.0rc1", "2.6.0.dev3", "not-a-version"])
 def test_pre_releases_and_unparsable_versions_are_refused_inside_any_range(version: str) -> None:
-    allowlist = parse_allowlist(f'python = ["3.14.7"]\n[mlbundle]\n"0.3.0" = "{DIGEST}"\n[packages]\nnumpy = ">=2.0"\n')
+    allowlist = parse_allowlist(f'python = ">=3.14"\n[mlbundle]\n"0.3.0" = "{DIGEST}"\n[packages]\nnumpy = ">=2.0"\n')
     lock = SimpleNamespace(python_version="3.14.7", packages=[SimpleNamespace(name="numpy", version=version)])
 
     assert allowlist.violations(lock, "0.3.0") == [f"numpy=={version} (MLsuite installs >=2.0)"]
+
+
+def test_a_python_inside_the_range_that_the_runtime_cannot_download_is_refused(monkeypatch) -> None:
+    monkeypatch.setattr(policy, "python_installable", lambda version: version != "3.14.11")
+    allowlist = parse_allowlist(f'python = ">=3.14,<3.15"\n[mlbundle]\n"0.3.0" = "{DIGEST}"\n[packages]\n')
+
+    newest = SimpleNamespace(python_version="3.14.11", packages=[])
+    assert allowlist.violations(newest, "0.3.0") == ["python==3.14.11 (the runtime cannot download it yet)"]
+    assert allowlist.violations(SimpleNamespace(python_version="3.14.10", packages=[]), "0.3.0") == []
+
+
+@pytest.mark.real_uv
+def test_python_installable_asks_this_machine_s_uv() -> None:
+    policy.python_installable.cache_clear()
+    assert policy.python_installable("3.14.7")
+    assert not policy.python_installable("3.14.999")
 
 
 @pytest.mark.parametrize(
     "text",
     [
         '[mlbundle]\n"0.3.0" = "' + DIGEST + '"\n[packages]\n',
-        'python = ["3.14.7"]\n[mlbundle]\n"0.3.0" = "not-a-digest"\n[packages]\n',
-        'python = ["3.14.7"]\n[mlbundle]\n"0.3.0" = "' + DIGEST + '"\n[packages]\nnumpy = ["2.5.4"]\n',
-        'python = ["3.14.7"]\n[mlbundle]\n"0.3.0" = "' + DIGEST + '"\n[packages]\nnumpy = ""\n',
-        'python = ["3.14.7"]\n[mlbundle]\n"0.3.0" = "' + DIGEST + '"\n[packages]\nnumpy = "about 2"\n',
+        'python = ["3.14.7"]\n[mlbundle]\n"0.3.0" = "' + DIGEST + '"\n[packages]\n',
+        'python = ">=3.14"\n[mlbundle]\n"0.3.0" = "not-a-digest"\n[packages]\n',
+        'python = ">=3.14"\n[mlbundle]\n"0.3.0" = "' + DIGEST + '"\n[packages]\nnumpy = ["2.5.4"]\n',
+        'python = ">=3.14"\n[mlbundle]\n"0.3.0" = "' + DIGEST + '"\n[packages]\nnumpy = ""\n',
+        'python = ">=3.14"\n[mlbundle]\n"0.3.0" = "' + DIGEST + '"\n[packages]\nnumpy = "about 2"\n',
     ],
 )
 def test_a_malformed_allowlist_is_refused(text: str) -> None:
@@ -79,7 +96,8 @@ def test_a_malformed_allowlist_is_refused(text: str) -> None:
 def test_the_repository_allowlist_parses_and_grants_the_released_mlbundle() -> None:
     allowlist = parse_allowlist(config.ALLOWLIST_PATH.read_text(encoding="utf-8"))
     assert "0.3.0" in allowlist.mlbundle
-    assert all(version.startswith("3.14.") for version in allowlist.python)
+    assert all(version in allowlist.python for version in ("3.14.0", "3.14.9", "3.14.10"))
+    assert "3.15.0" not in allowlist.python
 
 
 @pytest.mark.parametrize(
