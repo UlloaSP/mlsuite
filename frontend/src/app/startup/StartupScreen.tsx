@@ -45,12 +45,12 @@ function useHeldFor(active: boolean, delayMs: number) {
   const [held, setHeld] = useState(false);
 
   useEffect(() => {
-    if (!active) {
-      setHeld(false);
-      return;
-    }
+    if (!active) return;
     const timeout = window.setTimeout(() => setHeld(true), delayMs);
-    return () => window.clearTimeout(timeout);
+    return () => {
+      window.clearTimeout(timeout);
+      setHeld(false);
+    };
   }, [active, delayMs]);
 
   return active && held;

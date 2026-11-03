@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { enumLabel } from "@/shared/ui/AppBadge";
+import { enumLabel } from "@/shared/ui/badge-label";
 import type { AuditEventDto } from "@/shared/api/openapi.gen";
 
 type AuditAction = AuditEventDto["action"];

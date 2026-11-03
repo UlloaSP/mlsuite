@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act } from "react";
+import { act, useEffect } from "react";
 import { getRouteApi, useLocation } from "@tanstack/react-router";
 import { expect, test } from "vite-plus/test";
 import { useSearchUpdate } from "@/shared/lib/use-search-update";
@@ -15,11 +15,17 @@ let update: (change: Partial<TrafficSearch>) => void;
 let catalog: ReturnType<typeof useCatalogControls<TrafficSearch["filter"], TrafficSearch["sort"]>>;
 
 function View() {
-  update = useSearchUpdate<TrafficSearch>();
+  const current = useSearchUpdate<TrafficSearch>();
+  useEffect(() => {
+    update = current;
+  });
   return null;
 }
 function Catalog() {
-  catalog = useCatalogControls(route.useSearch());
+  const current = useCatalogControls(route.useSearch());
+  useEffect(() => {
+    catalog = current;
+  });
   return null;
 }
 function Url() {

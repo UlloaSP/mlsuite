@@ -90,12 +90,6 @@ export function AppCombobox<TId extends string | number = number>({
     typedSearch.cancel();
     onSearchChange?.("");
   };
-  useEffect(() => {
-    if (!open && value == null && picked) {
-      setPicked(null);
-      setQuery("");
-    }
-  }, [open, value, picked]);
   // Pointer and focus on the field itself never dismiss its own list.
   const keepField = (event: Event) => {
     if (fieldRef.current?.contains(event.target as Node)) event.preventDefault();
@@ -107,6 +101,8 @@ export function AppCombobox<TId extends string | number = number>({
     setOpen(false);
   };
   const openList = () => {
+    // A choice the owner has since cleared is forgotten, with its text.
+    if (value == null) setPicked(null);
     setOpen(true);
     setQuery(onSearchChange ? "" : (selected?.label ?? ""));
     resetSearch();
@@ -141,7 +137,7 @@ export function AppCombobox<TId extends string | number = number>({
           )}
         >
           <input
-            value={open ? query : (selected?.label ?? query)}
+            value={open ? query : (selected?.label ?? (picked ? "" : query))}
             disabled={disabled}
             placeholder={placeholder}
             role="combobox"

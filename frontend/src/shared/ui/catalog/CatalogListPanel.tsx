@@ -82,8 +82,7 @@ export function CatalogListPanel({
         />
       ) : null}
       {!showLoading && items.length > 0 ? (
-        <div
-          role="list"
+        <ul
           className={cx("relative", !flush && "pr-1")}
           style={{ height: virtualizer.getTotalSize() }}
         >
@@ -91,13 +90,12 @@ export function CatalogListPanel({
             items
               .slice(row.index * columnCount, (row.index + 1) * columnCount)
               .map((item, column) => (
-                <div
+                <li
                   key={
                     item && typeof item === "object" && "key" in item
                       ? String(item.key)
                       : row.index * columnCount + column
                   }
-                  role="listitem"
                   data-index={row.index}
                   ref={measureItem}
                   className={cx(
@@ -127,10 +125,10 @@ export function CatalogListPanel({
                   }}
                 >
                   {item}
-                </div>
+                </li>
               )),
           )}
-        </div>
+        </ul>
       ) : null}
       {errorMessage != null && !showLoading ? (
         <div className="flex flex-col items-start gap-3 py-3">

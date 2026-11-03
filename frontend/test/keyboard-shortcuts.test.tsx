@@ -11,7 +11,7 @@ import { mount } from "./support/dom";
 
 function GlobalSearchShortcut({ onOpen }: { onOpen: () => void }) {
   useShortcut("global-search", onOpen);
-  return <input aria-label="Field" />;
+  return <input aria-label="Run notes" />;
 }
 
 const press = (target: Element, init: KeyboardEventInit) =>

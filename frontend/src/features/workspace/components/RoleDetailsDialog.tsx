@@ -1,5 +1,5 @@
 import { Shield } from "lucide-react";
-import { badgeLabel } from "@/shared/ui/AppBadge";
+import { badgeLabel } from "@/shared/ui/badge-label";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppDialog } from "@/shared/ui/AppDialog";
 import type { RoleDefinitionDto } from "@/shared/api/openapi.gen";

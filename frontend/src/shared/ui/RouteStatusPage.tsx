@@ -131,7 +131,7 @@ function useReloadCountdown(active: boolean, onReload: () => void) {
     if (!active) return;
     const timeout = window.setTimeout(() => {
       if (seconds > 1) {
-        setSeconds(seconds - 1);
+        setSeconds((current) => current - 1);
         return;
       }
       onReload();

@@ -32,6 +32,7 @@ export function InvitationCatalog({
   const filters = useSearchFilters(route.useSearch(), invitationsSearch);
   const { q: query, status } = filters.values;
   const [selected, setSelected] = useState<number[]>([]);
+  const selectedIds = new Set(selected);
   const request = useInvitationCatalog(organizationId, {
     search: useDebouncedValue(query.trim()),
     filter: status.toLowerCase() === "all" ? "all" : status,
@@ -108,7 +109,7 @@ export function InvitationCatalog({
             key={invite.id}
             invite={invite}
             canManage={canManage}
-            selected={selected.includes(invite.id)}
+            selected={selectedIds.has(invite.id)}
             onSelect={(checked) =>
               setSelected((current) =>
                 checked ? [...current, invite.id] : current.filter((id) => id !== invite.id),

@@ -68,7 +68,7 @@ export function ReviewsPage() {
     }
   }, [selectedReview]);
   const open = useCallback(
-    (item: ReviewRailItem, replace = false) => {
+    (item: Pick<ReviewRailItem, "reviewId" | "publicId">, replace = false) => {
       void navigate({
         to: "/review/$reviewId/runs/$reviewRunId",
         params: { reviewId: item.reviewId, reviewRunId: item.publicId },
@@ -79,16 +79,19 @@ export function ReviewsPage() {
     [navigate],
   );
 
+  // The run the URL should name; `selected` itself is rebuilt on some renders, its ids are not.
+  const selectedReviewId = selected?.reviewId;
+  const selectedRunId = selected?.publicId;
   useEffect(() => {
     if (resolving || failure) return;
-    if (!selected) {
+    if (!selectedReviewId || !selectedRunId) {
       if (reviewId || reviewRunId)
         void navigate({ to: "/review", replace: true, viewTransition: false });
       return;
     }
-    if (selected.reviewId === reviewId && selected.publicId === reviewRunId) return;
-    open(selected, true);
-  }, [resolving, failure, navigate, open, reviewId, reviewRunId, selected]);
+    if (selectedReviewId === reviewId && selectedRunId === reviewRunId) return;
+    open({ reviewId: selectedReviewId, publicId: selectedRunId }, true);
+  }, [resolving, failure, navigate, open, reviewId, reviewRunId, selectedReviewId, selectedRunId]);
 
   if (inbox.error instanceof HttpError && inbox.error.status === 403) {
     return <ReviewUnavailable title="Access denied" description="Your role cannot review." />;
