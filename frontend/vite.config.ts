@@ -42,7 +42,7 @@ export default defineConfig({
   build: {
     outDir: "./dist",
     rolldownOptions: {
-      // The plugin sandbox is a document of its own; only it loads plugin code and TypeScript.
+      // The plugin sandbox is a document of its own; only it loads plugin code and its compiler.
       input: {
         index: resolve(import.meta.dirname, "index.html"),
         "plugin-sandbox": resolve(import.meta.dirname, "plugin-sandbox.html"),
@@ -50,10 +50,6 @@ export default defineConfig({
       output: {
         codeSplitting: {
           groups: [
-            {
-              name: "typescript",
-              test: /node_modules[\\/]typescript(?:[\\/]|$)/,
-            },
             {
               name: "react",
               test: /node_modules[\\/](?:react|react-dom)(?:[\\/]|$)/,

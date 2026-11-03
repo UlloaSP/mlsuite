@@ -153,9 +153,9 @@ MLForm is a capability, not the MLsuite plugin catalog.
 Plugin code is untrusted and runs only in the plugin sandbox, never in the app's origin.
 
 - The sandbox is a separate Vite entry (`plugin-sandbox.html` + `app/plugin-sandbox-main.ts`),
-  embedded as an opaque-origin `<iframe sandbox>`; it alone bundles the plugin compiler, the
-  TypeScript package, and MLForm's plugin execution. The app entry graph must not import
-  `typescript` or build Blob-URL modules; `frontend-architecture.test.ts` enforces this.
+  embedded as an opaque-origin `<iframe sandbox>`; it alone bundles the plugin compiler (Sucrase,
+  which strips TypeScript types) and MLForm's plugin execution. The app entry graph must not
+  import `sucrase` or build Blob-URL modules; `frontend-architecture.test.ts` enforces this.
 - `capabilities/prediction-runtime/sandbox/` owns the host (`openPluginSandbox`), the typed
   `postMessage` channel and its zod protocol, the app-side services that open a sandbox to
   inspect or run plugins, and the guest that runs inside the sandbox document.
