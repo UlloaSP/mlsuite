@@ -1,3 +1,4 @@
+import { getRouteApi } from "@tanstack/react-router";
 import { MessageSquareText } from "lucide-react";
 import { useReviewAssignmentCatalog } from "@/features/inferences/api/inference-review-catalog";
 import { useReviewAssignmentActions } from "@/features/inferences/lib/use-review-assignment-actions";
@@ -37,18 +38,15 @@ const SORTS: Array<{ value: ReviewSort; label: string }> = [
   { value: "reviewer", label: "Reviewer" },
 ];
 
+const route = getRouteApi("/protected/app/can-view-models/inferences/$inferenceId");
+
 /**
  * Every reviewer assignment that includes this inference, one tile each, with
  * the catalog's usual search, state filter, and sort.
  */
 export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Props) {
   const actions = useReviewAssignmentActions(inferenceId, inferenceName);
-  const controls = useCatalogControls<StateFilter, ReviewSort>({
-    filters: FILTERS.map(({ value }) => value),
-    initialFilter: "all",
-    initialSort: "requested",
-    sorts: SORTS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const assignments = useReviewAssignmentCatalog(inferenceId, {
     search: controls.search,
     filter: controls.filter === "all" ? "all" : STATE_OF[controls.filter],

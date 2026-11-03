@@ -1,9 +1,13 @@
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { queryOptions, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { SCHEMA_BOOKMARK_EXAMPLES_QUERY_KEY } from "./schema-keys";
 import type { SchemaBookmarkExampleDto, BookmarkExampleStateDto } from "@/shared/api/openapi.gen";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { appFetch } from "@/shared/api/http";
-import { useInfiniteCatalog, type CatalogPage } from "@/shared/api/infinite-catalog";
+import {
+  infiniteCatalogOptions,
+  useInfiniteCatalog,
+  type CatalogPage,
+} from "@/shared/api/infinite-catalog";
 import type {
   PredictBookmarkDto,
   SchemaVersionDto,
@@ -54,9 +58,8 @@ export const useChangeCatalog = (schemaId: string | undefined, controls: Control
 export const useBookmarkCatalog = (schemaId: string | undefined, controls: Controls) =>
   useRepositoryCatalog<SchemaBookmarkDto>("bookmarks", schemaId, controls);
 
-export function usePredictCatalog(controls: Controls) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useInfiniteCatalog({
+export const predictCatalogQueryOptions = (organizationId: number | string, controls: Controls) =>
+  infiniteCatalogOptions({
     queryKey: [...ORGANIZATION_BOOKMARKS_QUERY_KEY(organizationId), "infinite", controls],
     queryFn: (page, signal) =>
       appFetch<CatalogPage<PredictBookmarkDto>>(
@@ -65,7 +68,9 @@ export function usePredictCatalog(controls: Controls) {
       ),
     enabled: organizationId !== "none",
   });
-}
+
+export const usePredictCatalog = (controls: Controls) =>
+  useInfiniteQuery(predictCatalogQueryOptions(useCurrentOrganizationId() ?? "none", controls));
 
 export function useBookmarkExampleCatalog(bookmarkId: number, enabled: boolean) {
   const org = useCurrentOrganizationId() ?? "none";

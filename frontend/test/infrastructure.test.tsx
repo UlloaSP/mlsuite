@@ -328,7 +328,7 @@ describe("overview chart", () => {
   it("draws the enabled layers on a percent axis and lists each one's value in its tooltip", async () => {
     const { host } = await mount(
       <OverviewChartPanel overview={overview} streamConnected chartRange="1h" />,
-      { route: "/" },
+      { route: "/admin/infrastructure" },
     );
     const chart = host.querySelector<SVGSVGElement>(
       'svg[aria-label="Service aggregate load, last 1h"]',
@@ -357,7 +357,7 @@ describe("overview chart", () => {
         streamConnected
         chartRange="1h"
       />,
-      { route: "/" },
+      { route: "/admin/infrastructure" },
     );
     const labels = [...host.querySelectorAll('[data-ts-key^="y-tick-label:number:"]')].map(
       (label) => label.textContent,

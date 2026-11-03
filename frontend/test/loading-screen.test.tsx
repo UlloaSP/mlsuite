@@ -18,7 +18,8 @@ vi.mock("@/app/startup/startup-query", () => ({
   useStartupReadinessQuery: () => ({ data: undefined }),
   useStartupServicesQuery: () => ({ data: undefined }),
 }));
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({ data: undefined, error: null, isLoading: true }),
 }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({

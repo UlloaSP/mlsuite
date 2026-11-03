@@ -17,7 +17,8 @@ import type {
   UpdateApiClientRequest,
 } from "@/shared/api/openapi.gen";
 
-export type UsagePeriod = "day" | "week" | "month";
+export const USAGE_PERIODS = ["day", "week", "month"] as const;
+export type UsagePeriod = (typeof USAGE_PERIODS)[number];
 
 export type CatalogPageRequest = {
   page: number;

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { CheckCircle2, GitMerge, PencilLine } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { AppLink } from "@/shared/ui/AppLink";
 import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -40,8 +40,10 @@ import type {
   SchemaModelBindingDto,
 } from "@/shared/api/openapi.gen";
 
+const route = getRouteApi("/protected/app/can-edit-models/schemas/$schemaId/drafts/$draftId/conflicts");
+
 export function SchemaDraftConflictPage() {
-  const { schemaId, draftId } = useParams({ strict: false });
+  const { schemaId, draftId } = route.useParams();
   const navigate = useNavigate();
   const { data: schemaDto } = useSchema(schemaId);
   const draftQuery = useSchemaDraft(draftId);

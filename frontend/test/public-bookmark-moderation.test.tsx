@@ -4,7 +4,7 @@ import { act } from "react";
 import { createMemoryHistory, RouterProvider, type AnyRoute } from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { useNavigationItems } from "@/app/components/use-navigation-items";
-import { createAppRouter, router } from "@/app/router/routes";
+import { createAppRouter } from "@/app/router/routes";
 import { AdminPublicBookmarksPage } from "@/features/admin/pages/admin-public-bookmarks-page";
 import type { ModeratedBookmarkDto } from "@/shared/api/openapi.gen";
 import { changeValue, click, mount, searchDelay } from "./support/dom";
@@ -277,12 +277,14 @@ describe("public bookmark moderation page", () => {
 });
 
 describe("moderation access", () => {
+  const router = createAppRouter(new QueryClient());
   /** The id of the pathless guard route the page at `path` sits under. */
   const guardOf = (path: string) =>
     (router.routesByPath as Record<string, AnyRoute | undefined>)[path]?.parentRoute.options.id;
   const openRoute = async () => {
-    const app = createAppRouter(createMemoryHistory({ initialEntries: [ROUTE] }));
-    const { host } = await mount(<RouterProvider router={app} />, { queryClient: newClient() });
+    const client = newClient();
+    const app = createAppRouter(client, createMemoryHistory({ initialEntries: [ROUTE] }));
+    const { host } = await mount(<RouterProvider router={app} />, { queryClient: client });
     // The page is a lazy route: wait for whichever page it resolves to, then for its list.
     for (let turn = 0; turn < 200 && !host.querySelector("h1"); turn += 1) await flush();
     await settle();

@@ -8,9 +8,11 @@ import {
   createRouter,
   Outlet,
   RouterProvider,
+  type AnyRoute,
 } from "@tanstack/react-router";
 import { act, createContext, useContext, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { routeTree } from "@/app/router/routes";
 import { parseSearch, stringifySearch } from "@/app/router/search-params";
 import { afterEach, beforeEach, vi } from "vite-plus/test";
 
@@ -21,7 +23,9 @@ export type MountOptions = {
   route?: string;
   /**
    * The pages that router matches, by path (`/review/$reviewId`); the mounted tree stays
-   * rendered around them. Without pages, every address shows the tree alone.
+   * rendered around them. Without pages, every address shows the tree alone. The router has the
+   * app's routes (ids, paths, search validation) without their pages, guards or loaders, so a
+   * component reads its route's typed params and search as in the app.
    */
   routes?: Record<string, ReactNode>;
   /** Wraps the tree in a QueryClientProvider for this client. */
@@ -61,14 +65,52 @@ function TestRoot() {
   );
 }
 
+const joinPath = (parent: string, path: string | undefined) =>
+  path === undefined ? parent : `${parent.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+
+/** The app's routes under `parent`, each showing the page `routes` names for its path, if any. */
+const appRoutes = (
+  source: AnyRoute,
+  parent: AnyRoute,
+  parentPath: string,
+  routes: Record<string, ReactNode>,
+  seen: Set<string>,
+): AnyRoute[] =>
+  ((source.children ?? []) as AnyRoute[]).map((child) => {
+    const { id, path, validateSearch, search } = child.options as {
+      id?: string;
+      path?: string;
+      validateSearch?: never;
+      search?: never;
+    };
+    const fullPath = joinPath(parentPath, path);
+    const children = (child.children ?? []) as AnyRoute[];
+    if (children.length === 0) seen.add(fullPath);
+    const route = createRoute({
+      getParentRoute: () => parent,
+      ...(id ? { id } : { path: path! }),
+      validateSearch,
+      search,
+      component: children.length > 0 ? Outlet : () => routes[fullPath] ?? routes.$ ?? null,
+    });
+    return children.length > 0
+      ? route.addChildren(appRoutes(child, route, fullPath, routes, seen))
+      : route;
+  });
+
 /** A memory router at `route` whose root renders the mounted tree around the matched page. */
-export function createTestRouter(route: string, routes: Record<string, ReactNode> = { $: null }) {
+export function createTestRouter(route: string, routes: Record<string, ReactNode> = {}) {
   const root = createRootRoute({ component: TestRoot });
-  const pages = Object.entries(routes).map(([path, element]) =>
-    createRoute({ getParentRoute: () => root, path, component: () => element }),
-  );
+  const seen = new Set<string>();
+  const app = appRoutes(routeTree, root, "", routes, seen);
+  // Any other address shows the mounted tree alone; pages a test invents match as written.
+  const extra = Object.entries({ $: null, ...routes })
+    .filter(([path]) => !seen.has(path))
+    .map(([path, element]) =>
+      createRoute({ getParentRoute: () => root, path, component: () => element }),
+    );
   return createRouter({
-    routeTree: root.addChildren(pages),
+    routeTree: root.addChildren([...app, ...extra]),
     history: createMemoryHistory({ initialEntries: [route] }),
     parseSearch,
     stringifySearch,

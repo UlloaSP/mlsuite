@@ -3,14 +3,17 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { getRouteApi } from "@tanstack/react-router";
 import { useAuditEventCatalog } from "@/features/workspace/api/workspace-catalog-queries";
 import { AuditEventList } from "@/features/workspace/components/AuditEventList";
 import { AuditLogToolbar } from "@/features/workspace/components/AuditLogToolbar";
 import { useAuditFilters } from "@/features/workspace/lib/use-audit-filters";
 
+const route = getRouteApi("/protected/app/workspace/organizations/$organizationId/audit-log");
+
 /** The organization's audit log, newest first; its search and filters live in the URL. */
 export function AuditLog({ organizationId }: { organizationId: number }) {
-  const filters = useAuditFilters();
+  const filters = useAuditFilters(route.useSearch());
   const log = useAuditEventCatalog(organizationId, filters.controls);
 
   return (

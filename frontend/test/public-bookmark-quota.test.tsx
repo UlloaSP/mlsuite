@@ -140,7 +140,7 @@ function framedPage(route: string) {
   const root = createRootRoute();
   const frame = createRoute({
     getParentRoute: () => root,
-    id: "frame",
+    id: "session-frame",
     component: SessionFrameLayout,
   });
   const page = createRoute({

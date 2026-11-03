@@ -1,3 +1,4 @@
+import { getRouteApi } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { usePurgeJobs, useRetryPurge } from "@/features/admin/api/purge-jobs.queries";
@@ -19,15 +20,12 @@ const SORT_OPTIONS: Array<{ value: PurgeSort; label: string }> = [
   { value: "newest", label: "Newest" },
 ];
 
+const route = getRouteApi("/protected/app/superadmin/admin/purges");
+
 /** Every purge asked for on this instance; those under way read again until they end. */
 export function AdminPurgesPage() {
   const { data: user, error } = useUser();
-  const controls = useCatalogControls<PurgeFilter, PurgeSort>({
-    filters: FILTERS.map(({ value }) => value),
-    initialFilter: "all",
-    initialSort: "newest",
-    sorts: SORT_OPTIONS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const canView = user?.systemRole === "SUPERADMIN";
   const pageQuery = usePurgeJobs(controls.search, controls.filter, canView);
   const retry = useRetryPurge();

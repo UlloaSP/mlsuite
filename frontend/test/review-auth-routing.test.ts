@@ -5,7 +5,10 @@ import { resolve } from "node:path";
 import { describe, expect, test } from "vite-plus/test";
 import { safeReturnTo } from "@/capabilities/workspace-context/session";
 import { canManageReviewsRoute, reviewAccessRoute } from "@/app/router/layout-routes";
-import { router } from "@/app/router/routes";
+import { QueryClient } from "@tanstack/react-query";
+import { createAppRouter } from "@/app/router/routes";
+
+const router = createAppRouter(new QueryClient());
 
 describe("integrated review authentication and routes", () => {
   test("keeps one fixed login/register page without external-review injection seams", () => {

@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Search, Plus } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { emitErrorFromUnknown } from "@/shared/api/error-notifications";
 import {
@@ -49,15 +49,12 @@ const SORT_OPTIONS: Array<{ value: OrganizationSortMode; label: string }> = [
   { value: "name", label: "Name" },
 ];
 
+const route = getRouteApi("/protected/app/workspace/organizations");
+
 export function OrganizationsPage() {
   const navigate = useNavigate();
   const { data: user, error } = useUser();
-  const controls = useCatalogControls<OrganizationFilterMode, OrganizationSortMode>({
-    filters: FILTERS.map(({ value }) => value),
-    initialFilter: "all",
-    initialSort: "updated",
-    sorts: SORT_OPTIONS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const updateMutation = useUpdateOrganizationMutation();
   const deleteMutation = useDeleteOrganizationMutation();
   const transferMutation = useTransferOrganizationOwnershipMutation();

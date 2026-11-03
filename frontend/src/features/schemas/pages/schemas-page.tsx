@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Search, Plus } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   useArchiveSchemaMutation,
@@ -43,17 +43,14 @@ const SORT_OPTIONS: Array<{ value: SchemaSortMode; label: string }> = [
   { value: "name", label: "Name" },
 ];
 
+const route = getRouteApi("/protected/app/can-view-models/schemas");
+
 export function SchemasPage() {
   const navigate = useNavigate();
   const { data: user, error } = useUser();
   const { data: workspace } = useWorkspaceContext();
   const organizationId = workspace?.currentOrganization.id;
-  const controls = useCatalogControls<SchemaStatusFilter, SchemaSortMode>({
-    filters: STATUS_FILTERS.map(({ value }) => value),
-    initialFilter: "active",
-    initialSort: "updated",
-    sorts: SORT_OPTIONS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const renameMutation = useRenameSchemaMutation();
   const archiveMutation = useArchiveSchemaMutation();
   const restoreMutation = useRestoreSchemaMutation();

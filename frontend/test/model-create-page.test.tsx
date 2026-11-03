@@ -12,7 +12,8 @@ const mocks = vi.hoisted(() => ({
   success: vi.fn(),
 }));
 vi.mock("sonner", () => ({ toast: { error: mocks.error, success: mocks.success } }));
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({ data: { id: 1 } }),
 }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({

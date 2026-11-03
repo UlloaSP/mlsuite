@@ -24,7 +24,8 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   useCurrentOrganizationId: () => 3,
   useWorkspaceContext: () => ({ data: { permissions: { canRunPredictions: state.canRun } } }),
 }));
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({ data: { id: "user-1" } }),
 }));
 vi.mock("@/features/schemas/api/schema-prediction-mutations", () => ({

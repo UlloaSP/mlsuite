@@ -3,19 +3,19 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { UsagePeriod } from "@/features/api-access/api/api-access.api";
+import { getRouteApi } from "@tanstack/react-router";
 import { useApiTrafficUsage } from "@/features/api-access/api/api-traffic.queries";
 import { TrafficClientsCatalog } from "@/features/api-access/components/TrafficClientsCatalog";
 import { TrafficOrganizationsCatalog } from "@/features/api-access/components/TrafficOrganizationsCatalog";
-import { USAGE_PERIODS, UsagePanel } from "@/features/api-access/components/UsagePanel";
-import { useSearchParamState } from "@/shared/lib/use-search-param-state";
+import { UsagePanel } from "@/features/api-access/components/UsagePanel";
+import { useSearchUpdate } from "@/shared/lib/use-search-update";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppTabPanel, AppTabs } from "@/shared/ui/AppTabs";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 
-const TABS = ["overview", "clients", "organizations"] as const;
-type Tab = (typeof TABS)[number];
+
+const route = getRouteApi("/protected/app/superadmin/admin/api-traffic");
 
 /**
  * The platform's API traffic, for superadmins: how much every organization's clients call and
@@ -23,8 +23,12 @@ type Tab = (typeof TABS)[number];
  * with their organizations.
  */
 export function AdminApiTrafficPage() {
-  const [tab, setTab] = useSearchParamState<Tab>("tab", "overview", TABS);
-  const [period, setPeriod] = useSearchParamState<UsagePeriod>("period", "day", USAGE_PERIODS);
+  const search = route.useSearch();
+  const updateSearch = useSearchUpdate<typeof search>();
+  const tab = search.tab;
+  const setTab = (value: typeof tab) => updateSearch({ tab: value });
+  const period = search.period;
+  const setPeriod = (value: typeof period) => updateSearch({ period: value });
   const usage = useApiTrafficUsage(period, tab === "overview");
 
   return (

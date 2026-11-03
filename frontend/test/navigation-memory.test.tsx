@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act } from "react";
-import { useLocation, useNavigate, useRouter } from "@tanstack/react-router";
+import { getRouteApi, useLocation, useNavigate, useRouter } from "@tanstack/react-router";
 import { useSelector } from "@tanstack/react-store";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 import { LocationBar } from "@/app/components/LocationBar";
@@ -9,14 +9,15 @@ import { RESTORE_SCROLL_STATE, useScrollMemory } from "@/app/layouts/use-scroll-
 import { useRecordSectionLocation } from "@/app/components/section-memory";
 import { useNavigationItems } from "@/app/components/use-navigation-items";
 import { appHref } from "@/shared/lib/app-href";
-import { useSearchParamState } from "@/shared/lib/use-search-param-state";
+import { useSearchUpdate } from "@/shared/lib/use-search-update";
 import { BreadcrumbProvider } from "@/shared/ui/breadcrumb/BreadcrumbProvider";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { locationDisplayAtom, type LocationDisplay } from "@/shared/ui/sidebar-preferences";
 import { click, mount, type Mounted } from "./support/dom";
 
 const workspace = vi.hoisted(() => ({ organizationId: 7 }));
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({ data: { id: "user-1", systemRole: "USER" } }),
 }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
@@ -116,30 +117,33 @@ test("each location display draws the trail in one place only", async () => {
   expect(container.querySelector("footer")?.textContent).toBe("ModelsRisk model");
 });
 
+const modelRoute = getRouteApi("/protected/app/can-view-models/models/$modelId");
+
 function TabProbe() {
-  const [tab, setTab] = useSearchParamState("tab", "inputs", ["inputs", "outputs"] as const);
+  const search = modelRoute.useSearch();
+  const updateSearch = useSearchUpdate<typeof search>();
   const location = useLocation();
   return (
     <>
-      <output>{`${tab}|${location.searchStr}`}</output>
-      <button type="button" onClick={() => setTab("outputs")}>
-        outputs
-      </button>
-      <button type="button" onClick={() => setTab("inputs")}>
+      <output>{`${search.tab}|${location.searchStr}`}</output>
+      <button type="button" onClick={() => updateSearch({ tab: "inputs" })}>
         inputs
+      </button>
+      <button type="button" onClick={() => updateSearch({ tab: "overview" })}>
+        overview
       </button>
     </>
   );
 }
 
-test("view choices live in the URL, with the default left out and unknown values ignored", async () => {
-  await render(<TabProbe />, "/run?tab=bogus");
+test("view choices live in the URL, with the default left out and unknown values dropped", async () => {
+  await render(<TabProbe />, "/models/7?tab=bogus");
   const output = () => container.querySelector("output")!.textContent;
-  expect(output()).toBe("inputs|?tab=bogus");
+  expect(output()).toBe("overview|");
   await click(container.querySelectorAll("button")[0]);
-  expect(output()).toBe("outputs|?tab=outputs");
+  expect(output()).toBe("inputs|?tab=inputs");
   await click(container.querySelectorAll("button")[1]);
-  expect(output()).toBe("inputs|");
+  expect(output()).toBe("overview|");
 });
 
 function ScrollPage({ name }: { name: string }) {

@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ReviewCreationButton } from "@/capabilities/review-creation/ReviewCreationButton";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
@@ -46,29 +46,15 @@ import { useActionDialog } from "@/shared/ui/use-action-dialog";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
 import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
-import { useUrlFilters } from "@/shared/lib/use-url-filters";
+import { useSearchFilters } from "@/shared/lib/use-search-filters";
+import { inferencesSearch } from "@/features/inferences/pages/inference-search";
 import type { PredictionRunCatalogItemDto } from "@/shared/api/openapi.gen";
 
-const URL_FILTER_DEFAULTS = {
-  q: "",
-  schema: "all",
-  bookmark: "all",
-  status: "all",
-  feedback: "all",
-  origin: "all",
-  where: "",
-  sort: "createdAt.desc",
-};
 const EMPTY_ROWS: InferenceTableRow[] = [];
 const DELETE_CONSEQUENCE =
   "Each leaves any review it is in, and goes with its results and reviewers' answers. This cannot be undone.";
 
-const validStatus = (value: string): InferenceFilters["status"] =>
-  value === "SUCCESS" || value === "PARTIAL_SUCCESS" || value === "FAILED" ? value : "all";
-const validFeedback = (value: string): InferenceFilters["feedback"] =>
-  value === "COMPLETED" || value === "PENDING" || value === "NOT_REQUIRED" ? value : "all";
-const validOrigin = (value: string): InferenceFilters["origin"] =>
-  value === "WORKSPACE" || value === "PUBLIC" || value === "API" ? value : "all";
+const route = getRouteApi("/protected/app/can-view-models/inferences");
 
 export function InferencesPage({
   renderExportAction,
@@ -83,7 +69,7 @@ export function InferencesPage({
   const deleteInferences = useDeleteInferencesMutation();
   const navigate = useNavigate();
   const actionDialog = useActionDialog();
-  const urlFilters = useUrlFilters(URL_FILTER_DEFAULTS);
+  const urlFilters = useSearchFilters(route.useSearch(), inferencesSearch);
   const { q, schema, bookmark, status, feedback, origin, where } = urlFilters.values;
   const sort = normalizeInferenceSort(urlFilters.values.sort);
   const query = useDebouncedValue(q.trim());
@@ -93,9 +79,9 @@ export function InferencesPage({
       query,
       schemaId: schema,
       bookmarkId: bookmark,
-      status: validStatus(status),
-      feedback: validFeedback(feedback),
-      origin: validOrigin(origin),
+      status,
+      feedback,
+      origin,
       conditions: parseConditions(where),
     }),
     [query, schema, bookmark, status, feedback, origin, where],

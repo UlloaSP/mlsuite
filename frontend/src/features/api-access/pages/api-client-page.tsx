@@ -5,10 +5,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { KeyRound } from "lucide-react";
 import { useState } from "react";
-import { useParams } from "@tanstack/react-router";
+import { getRouteApi } from "@tanstack/react-router";
 import { useCan } from "@/capabilities/workspace-context/workspace-context";
 import { useApiClient, useApiUsage } from "@/features/api-access/api/api-access.queries";
-import type { UsagePeriod } from "@/features/api-access/api/api-access.api";
 import { ApiClientAccessTab } from "@/features/api-access/components/ApiClientAccessTab";
 import { ApiClientKeysTab } from "@/features/api-access/components/ApiClientKeysTab";
 import { ApiClientSettingsTab } from "@/features/api-access/components/ApiClientSettingsTab";
@@ -16,9 +15,9 @@ import { ApiClientStatusBadge } from "@/features/api-access/components/ApiClient
 import { IssueKeyDialog } from "@/features/api-access/components/IssueKeyDialog";
 import { RequestLog } from "@/features/api-access/components/RequestLog";
 import { SuspensionNotice } from "@/features/api-access/components/SuspensionNotice";
-import { USAGE_PERIODS, UsagePanel } from "@/features/api-access/components/UsagePanel";
+import { UsagePanel } from "@/features/api-access/components/UsagePanel";
 import { isHttpError } from "@/shared/api/http";
-import { useSearchParamState } from "@/shared/lib/use-search-param-state";
+import { useSearchUpdate } from "@/shared/lib/use-search-update";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
@@ -27,16 +26,16 @@ import { AppTabPanel, AppTabs } from "@/shared/ui/AppTabs";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
 
-const TABS = ["overview", "keys", "access", "requests", "settings"] as const;
-type Tab = (typeof TABS)[number];
+const route = getRouteApi("/protected/app/can-view-api-access/api-access/clients/$clientId");
 
 /** One client: its usage, keys, bookmarks and calls, each a linkable tab. */
 export function ApiClientPage() {
-  const { clientId = "" } = useParams({ strict: false });
+  const { clientId } = route.useParams();
   const id = Number(clientId);
   const canManage = useCan("canManageApiAccess");
-  const [tab, setTab] = useSearchParamState<Tab>("tab", "overview", TABS);
-  const [period, setPeriod] = useSearchParamState<UsagePeriod>("period", "day", USAGE_PERIODS);
+  const search = route.useSearch();
+  const { tab, period } = search;
+  const updateSearch = useSearchUpdate<typeof search>();
   const [issuing, setIssuing] = useState(false);
   const query = useApiClient(Number.isInteger(id) ? id : undefined);
   const usage = useApiUsage(period, id, Number.isInteger(id) && tab === "overview");
@@ -60,7 +59,7 @@ export function ApiClientPage() {
     { label: "Requests", value: "requests" as const },
     ...(canManage ? [{ label: "Settings", value: "settings" as const }] : []),
   ];
-  const shown: Tab = tab === "settings" && !canManage ? "overview" : tab;
+  const shown: typeof tab = tab === "settings" && !canManage ? "overview" : tab;
 
   return (
     <AppPage>
@@ -86,13 +85,13 @@ export function ApiClientPage() {
           }
         />
         <SuspensionNotice client={client.client} />
-        <AppTabs aria-label="Client" items={items} value={shown} onChange={setTab}>
+        <AppTabs aria-label="Client" items={items} value={shown} onChange={(next) => updateSearch({ tab: next })}>
           <AppTabPanel value={shown} className="flex min-h-0 flex-1 flex-col">
             {shown === "overview" ? (
               <UsagePanel
                 usage={usage}
                 period={period}
-                onPeriodChange={setPeriod}
+                onPeriodChange={(next) => updateSearch({ period: next })}
                 showTopClients={false}
               />
             ) : shown === "keys" ? (
@@ -100,7 +99,7 @@ export function ApiClientPage() {
             ) : shown === "access" ? (
               <ApiClientAccessTab client={client} canManage={canManage} />
             ) : shown === "requests" ? (
-              <RequestLog clientId={client.client.id} />
+              <RequestLog clientId={client.client.id} search={search} />
             ) : (
               <ApiClientSettingsTab client={client} />
             )}

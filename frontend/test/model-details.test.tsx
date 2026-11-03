@@ -181,7 +181,7 @@ test("inputs name what they feed and outputs their position, classes and target"
 });
 
 test("the overview ranks features by importance and names the pipeline", async () => {
-  const { host } = await mount(<ModelDetailTabs model={model} details={details} />, { route: "/" });
+  const { host } = await mount(<ModelDetailTabs model={model} details={details} />, { route: "/models/12" });
 
   expect(host.textContent).toContain("2 inputs");
   expect(host.textContent).toContain("1 output, 2 classes");
@@ -207,7 +207,7 @@ test.each([
   ],
 ])("the %s tab is linkable and shows what the bundle states", async (tab, expected) => {
   const { host } = await mount(<ModelDetailTabs model={model} details={details} />, {
-    route: `/?tab=${tab}`,
+    route: `/models/12?tab=${tab}`,
   });
 
   for (const text of expected) expect(host.textContent).toContain(text);
@@ -216,7 +216,7 @@ test.each([
 test("a model without structure says it has no importances instead of an empty chart", async () => {
   const { host } = await mount(
     <ModelDetailTabs model={model} details={{ ...details, featureImportances: null }} />,
-    { route: "/" },
+    { route: "/models/12" },
   );
 
   expect(host.textContent).toContain("No feature importances");
@@ -225,7 +225,7 @@ test("a model without structure says it has no importances instead of an empty c
 test("a model stored without its bundle's manifest says so", async () => {
   const { host } = await mount(
     <ModelDetailTabs model={model} details={{ ...details, manifest: {} }} />,
-    { route: "/" },
+    { route: "/models/12" },
   );
 
   expect(host.textContent).toContain("No bundle details");
@@ -234,7 +234,7 @@ test("a model stored without its bundle's manifest says so", async () => {
 
 test("details that could not be loaded leave the model's own facts in place", async () => {
   const { host } = await mount(<ModelDetailTabs model={model} details={undefined} />, {
-    route: "/",
+    route: "/models/12",
   });
 
   expect(host.textContent).toContain("Bundle details unavailable");

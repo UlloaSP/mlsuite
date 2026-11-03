@@ -5,10 +5,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { inspectPluginCatalog } from "@/capabilities/prediction-runtime/sandbox/plugin-sandbox-services";
 import type { PluginRuntimeSourceDto } from "@/shared/api/openapi.gen";
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, useInfiniteQuery } from "@tanstack/react-query";
 import { appFetch, isHttpError, json } from "@/shared/api/http";
 import { organizationQueryKey } from "@/shared/api/organization-query-key";
-import { useInfiniteCatalog } from "@/shared/api/infinite-catalog";
+import { infiniteCatalogOptions } from "@/shared/api/infinite-catalog";
 import type {
   PageDtoPublicBookmarkSummaryDto,
   PublicBookmarkDto,
@@ -49,13 +49,16 @@ const getPublicBookmark = (publicId: string, signal?: AbortSignal): Promise<Publ
 export const isPublicBookmarkMissing = (error: unknown) =>
   isHttpError(error) && error.status === 404;
 
-export const usePublicBookmarkCatalog = (search: string, sort: string) =>
-  useInfiniteCatalog({
+export const publicBookmarkCatalogQueryOptions = (search: string, sort: string) =>
+  infiniteCatalogOptions({
     queryKey: ["public", "bookmarks", "infinite", search, sort],
     queryFn: (page, signal) => getPublicBookmarkPage(page, search, sort, signal),
     staleTime: 0,
     meta: { errorHandledLocally: true },
   });
+
+export const usePublicBookmarkCatalog = (search: string, sort: string) =>
+  useInfiniteQuery(publicBookmarkCatalogQueryOptions(search, sort));
 
 /**
  * Public data belongs to no organization, so its key carries no tenant scope and the same

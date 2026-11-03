@@ -2,6 +2,7 @@
 
 import { createMemoryHistory } from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { QueryClient } from "@tanstack/react-query";
 import { createAppRouter } from "@/app/router/routes";
 
 // jsdom has no View Transitions API; the router only starts one when the document offers it.
@@ -24,7 +25,8 @@ afterEach(() => {
   Reflect.deleteProperty(document, "startViewTransition");
 });
 
-const appRouter = () => createAppRouter(createMemoryHistory({ initialEntries: ["/login"] }));
+const appRouter = () =>
+  createAppRouter(new QueryClient(), createMemoryHistory({ initialEntries: ["/login"] }));
 
 describe("route view transitions", () => {
   it("makes every navigation a view transition unless it opts out", () => {

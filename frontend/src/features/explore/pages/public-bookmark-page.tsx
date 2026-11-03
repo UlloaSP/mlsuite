@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "@tanstack/react-router";
+import { getRouteApi } from "@tanstack/react-router";
 import {
   isPublicBookmarkMissing,
   publicBookmarkQueryOptions,
@@ -27,6 +27,8 @@ import { AppPageHeader } from "@/shared/ui/PageHeader";
 
 const FACT = "inline-flex items-center gap-1.5";
 
+const route = getRouteApi("/session-frame/explore/$publicId");
+
 /**
  * A published bookmark, the same for anonymous visitors and members of any organization:
  * its form is read and run through the public API, and the frame around it is chosen by the
@@ -37,7 +39,7 @@ const FACT = "inline-flex items-center gap-1.5";
  * it, on narrow ones the page scrolls.
  */
 export function PublicBookmarkPage() {
-  const { publicId = "" } = useParams({ strict: false });
+  const { publicId } = route.useParams();
   const query = useQuery(publicBookmarkQueryOptions(publicId));
   const bookmark = query.data;
 

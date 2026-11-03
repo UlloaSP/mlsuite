@@ -3,11 +3,12 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { getRouteApi } from "@tanstack/react-router";
 import { AppLink } from "@/shared/ui/AppLink";
 import { useApiAccessBookmarks } from "@/features/api-access/api/api-access.queries";
 import { EndpointDocsView } from "@/features/api-access/components/EndpointDocsView";
 import { failureMessage } from "@/features/api-access/lib/api-format";
-import { useSearchParamState } from "@/shared/lib/use-search-param-state";
+import { useSearchUpdate } from "@/shared/lib/use-search-update";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
@@ -23,13 +24,18 @@ type Given = ApiAccessBookmarkDto & { apiId: string };
 const isGiven = (bookmark: ApiAccessBookmarkDto): bookmark is Given =>
   bookmark.apiId !== null && bookmark.clientNames.length > 0;
 
+const route = getRouteApi("/protected/app/can-view-api-access/api-access/docs");
+
 /**
  * The reference of the client API for each bookmark a client was given. The bookmark is chosen
  * in the URL (`?bookmark=<id>`), so a bookmark's menu can link straight to its endpoint.
  */
 export function ApiDocsPage() {
   const bookmarks = useApiAccessBookmarks();
-  const [selected, setSelected] = useSearchParamState<string>("bookmark", "");
+  const search = route.useSearch();
+  const updateSearch = useSearchUpdate<typeof search>();
+  const selected = search.bookmark;
+  const setSelected = (value: typeof selected) => updateSearch({ bookmark: value });
   const given = (bookmarks.data ?? []).filter(isGiven);
   const requested = bookmarks.data?.find((bookmark) => String(bookmark.id) === selected);
   // Without a choice in the URL, the first bookmark clients can run is documented.

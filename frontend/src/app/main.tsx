@@ -7,9 +7,10 @@ import { RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
 import { AppProviders } from "./providers/AppProviders";
 import { createAppQueryClient } from "./providers/query-client";
-import { router } from "./router/routes";
+import { createAppRouter } from "./router/routes";
 
 const queryClient = createAppQueryClient();
+const router = createAppRouter(queryClient);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <AppProviders queryClient={queryClient}>

@@ -18,7 +18,8 @@ import { buttonByText, click, mount } from "./support/dom";
 
 const toast = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({ data: { id: 4 } }),
 }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
@@ -91,13 +92,11 @@ function Location() {
 
 async function showInbox(state: Inbox = {}, selectOrganization = vi.fn().mockResolvedValue({})) {
   inbox = { notifications: [], pending: [], unread: 0, ...state };
-  const view = await mount(
-    <>
-      <NotificationsPage selectOrganization={selectOrganization} />
-      <Location />
-    </>,
-    { route: "/notifications" },
-  );
+  // The inbox is its route's page: opening a notification leaves it for the target's page.
+  const view = await mount(<Location />, {
+    route: "/notifications",
+    routes: { "/notifications": <NotificationsPage selectOrganization={selectOrganization} /> },
+  });
   await flush();
   return { ...view, selectOrganization };
 }

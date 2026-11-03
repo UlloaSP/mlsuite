@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { queryOptions, useQuery } from "@tanstack/react-query";
-import { useInfiniteCatalog } from "@/shared/api/infinite-catalog";
+import { queryOptions, useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { infiniteCatalogOptions } from "@/shared/api/infinite-catalog";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import type { ModelDto } from "@/shared/api/openapi.gen";
 import { getModel, getModelDetails, getModelPage } from "./model.api";
@@ -52,17 +52,24 @@ export const modelDetailsQueryOptions = (organizationId: number | string, modelI
 export const useModelDetails = (modelId?: number | string) =>
   useQuery(modelDetailsQueryOptions(useCurrentOrganizationId() ?? "none", modelId ?? ""));
 
+export const modelCatalogQueryOptions = (
+  organizationId: number | string,
+  search: string,
+  sort: string,
+  status: string,
+) =>
+  infiniteCatalogOptions({
+    queryKey: [...modelKeys.all(organizationId), "infinite", search, sort, status],
+    queryFn: (page, signal) =>
+      getModelPage({ page, search, size: MODEL_CATALOG_PAGE_SIZE, sort, status }, signal),
+    enabled: organizationId !== "none",
+    refetchInterval: (pages) =>
+      pages.some((page) => page.items.some(isPreparing)) ? MODEL_PREPARING_POLL_MS : false,
+  });
+
 export const useModelCatalogPageQuery = (
   organizationId: number | string | undefined,
   search: string,
   sort: string,
   status: string,
-) =>
-  useInfiniteCatalog({
-    queryKey: [...modelKeys.all(organizationId ?? "none"), "infinite", search, sort, status],
-    queryFn: (page, signal) =>
-      getModelPage({ page, search, size: MODEL_CATALOG_PAGE_SIZE, sort, status }, signal),
-    enabled: Boolean(organizationId),
-    refetchInterval: (pages) =>
-      pages.some((page) => page.items.some(isPreparing)) ? MODEL_PREPARING_POLL_MS : false,
-  });
+) => useInfiniteQuery(modelCatalogQueryOptions(organizationId ?? "none", search, sort, status));

@@ -1,9 +1,11 @@
+import { getRouteApi } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppSearchField } from "@/shared/ui/AppSearchField";
 import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
-import { useUrlFilters } from "@/shared/lib/use-url-filters";
+import { useSearchFilters } from "@/shared/lib/use-search-filters";
+import { invitationsSearch } from "@/features/workspace/pages/workspace-search";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { useInvitationCatalog } from "@/features/workspace/api/workspace-catalog-queries";
@@ -16,6 +18,8 @@ import { InvitationCard } from "./InvitationCard";
 
 const statuses = ["ALL", "PENDING", "ACCEPTED", "EXPIRED", "REVOKED"];
 
+const route = getRouteApi("/protected/app/team-organization/workspace/organizations/$organizationId/invitations");
+
 export function InvitationCatalog({
   organizationId,
   canManage,
@@ -23,7 +27,7 @@ export function InvitationCatalog({
   organizationId: number;
   canManage: boolean;
 }) {
-  const filters = useUrlFilters({ q: "", status: "ALL" });
+  const filters = useSearchFilters(route.useSearch(), invitationsSearch);
   const { q: query, status } = filters.values;
   const [selected, setSelected] = useState<number[]>([]);
   const request = useInvitationCatalog(organizationId, {

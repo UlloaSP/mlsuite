@@ -100,9 +100,9 @@ afterEach(() => vi.unstubAllGlobals());
 
 async function render(search = "") {
   const view = await mount(null, {
-    route: search.startsWith("/") ? search : `/organizations/3/audit-log${search}`,
+    route: search.startsWith("/") ? search : `/workspace/organizations/3/audit-log${search}`,
     routes: {
-      "/organizations/$organizationId/audit-log": <AuditLogPage />,
+      "/workspace/organizations/$organizationId/audit-log": <AuditLogPage />,
       "/admin/audit": <AdminAuditLogPage />,
     },
   });

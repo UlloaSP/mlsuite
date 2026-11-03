@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { getRouteApi } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUpRight, PencilLine, X } from "lucide-react";
 import { AppLink } from "@/shared/ui/AppLink";
@@ -16,7 +17,7 @@ import { ProfilePinsEditor } from "@/features/user/components/ProfilePinsEditor"
 import { ProfileSummary } from "@/features/user/components/ProfileSummary";
 import { ProfileView } from "@/features/user/components/ProfileView";
 import { profileLink } from "@/shared/lib/profile-link";
-import { useSearchParamState } from "@/shared/lib/use-search-param-state";
+import { useSearchUpdate } from "@/shared/lib/use-search-update";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
@@ -27,7 +28,8 @@ import { appButtonClass } from "@/shared/ui/button-styles";
 import { cx } from "@/shared/ui/cx";
 import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
 
-const VIEWS = ["page", "edit"] as const;
+
+const route = getRouteApi("/protected/app/profile");
 
 /**
  * A person's own profile: their page as others read it, whether or not it is public, with counts
@@ -37,7 +39,10 @@ export function OwnProfilePage() {
   const { data: user } = useUser();
   const query = useQuery(ownProfileQueryOptions());
   const bookmarks = useOwnProfileBookmarks("");
-  const [view, setView] = useSearchParamState("view", "page", VIEWS);
+  const search = route.useSearch();
+  const updateSearch = useSearchUpdate<typeof search>();
+  const view = search.view;
+  const setView = (value: typeof view) => updateSearch({ view: value });
 
   if (query.isPending || !user) return <AppPageLoader label="Loading your profile…" />;
 

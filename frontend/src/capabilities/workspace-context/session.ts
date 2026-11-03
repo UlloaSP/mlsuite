@@ -28,16 +28,13 @@ export const useCurrentUserIsSuperadmin = () => useUser().data?.systemRole === "
 /** The one address of the sign-in and register screen. */
 export const SIGN_IN_PATH = "/login";
 
-/** The search param naming which of the screen's two forms is open; signing in when absent. */
-export const AUTH_MODE_PARAM = "mode";
-
 /** The sign-in screen, set to come back to `returnTo` once signed in. */
 export const signInLink = (returnTo: string) =>
   linkOptions({ to: SIGN_IN_PATH, search: { returnTo } });
 
 /** The same screen on its registration form, set to come back to `returnTo` once registered. */
 export const registerLink = (returnTo: string) =>
-  linkOptions({ to: SIGN_IN_PATH, search: { returnTo, [AUTH_MODE_PARAM]: "register" } });
+  linkOptions({ to: SIGN_IN_PATH, search: { returnTo, mode: "register" } });
 
 // Any origin serves as the site here: only whether the browser would leave it matters.
 const SITE_ORIGIN = "https://mlsuite.invalid";

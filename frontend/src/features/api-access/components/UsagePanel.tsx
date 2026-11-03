@@ -17,8 +17,6 @@ import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppSegmentedControl } from "@/shared/ui/AppSegmentedControl";
 import type { ApiUsageDto } from "@/shared/api/openapi.gen";
 
-export const USAGE_PERIODS = ["day", "week", "month"] as const;
-
 const PERIOD_OPTIONS = [
   { value: "day", label: "24 hours" },
   { value: "week", label: "7 days" },

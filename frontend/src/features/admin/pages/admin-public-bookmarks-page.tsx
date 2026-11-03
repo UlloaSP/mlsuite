@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { getRouteApi } from "@tanstack/react-router";
 import { Globe } from "lucide-react";
 import { toast } from "sonner";
 import { useUnpublishPublicBookmark } from "@/features/admin/api/public-bookmark-moderation.mutations";
@@ -28,15 +29,12 @@ const SORT_OPTIONS: Array<{ value: BookmarkSortMode; label: string }> = [
   { value: "organization", label: "Organization" },
 ];
 
+const route = getRouteApi("/protected/app/superadmin/admin/public-bookmarks");
+
 /** Moderation: every bookmark that is public on this instance, whichever organization owns it. */
 export function AdminPublicBookmarksPage() {
   const { data: user, error } = useUser();
-  const controls = useCatalogControls<BookmarkFilterMode, BookmarkSortMode>({
-    filters: FILTERS.map(({ value }) => value),
-    initialFilter: "all",
-    initialSort: "updated",
-    sorts: SORT_OPTIONS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const canView = user?.systemRole === "SUPERADMIN";
   const pageQuery = useModeratedBookmarks(
     { page: 0, search: controls.search, size: PAGE_SIZE, sort: controls.sort },

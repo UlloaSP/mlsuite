@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useSearchParamState } from "@/shared/lib/use-search-param-state";
+import type { SNAPSHOT_PREVIEW_MODES } from "@/features/schemas/pages/schema-search";
 import { AppSegmentedControl } from "@/shared/ui/AppSegmentedControl";
 import { cx } from "@/shared/ui/cx";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
@@ -12,8 +12,7 @@ import { SchemaCodeViewer } from "./SchemaCodeViewer";
 import { SchemaFormPreview } from "./SchemaFormPreview";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
-const PREVIEW_MODE_VALUES = ["form", "json", "bindings"] as const;
-type PreviewMode = (typeof PREVIEW_MODE_VALUES)[number];
+type PreviewMode = (typeof SNAPSHOT_PREVIEW_MODES)[number];
 
 const PREVIEW_MODES = [
   { value: "form", label: "Form" },
@@ -23,10 +22,12 @@ const PREVIEW_MODES = [
 
 type Props = {
   version: SchemaVersionDto;
+  /** How the snapshot is shown, which the page keeps in its URL. */
+  mode: PreviewMode;
+  onModeChange: (mode: PreviewMode) => void;
 };
 
-export function SchemaSnapshotPreviewPanel({ version }: Props) {
-  const [mode, setMode] = useSearchParamState<PreviewMode>("view", "form", PREVIEW_MODE_VALUES);
+export function SchemaSnapshotPreviewPanel({ version, mode, onModeChange: setMode }: Props) {
   const fieldCount = countVisibleSchemaFields(version.formSchema);
   const reportCount = Array.isArray(version.formSchema.reports)
     ? version.formSchema.reports.length

@@ -1,80 +1,82 @@
 // @vitest-environment jsdom
 
 import { act } from "react";
-import { useLocation } from "@tanstack/react-router";
+import { getRouteApi, useLocation } from "@tanstack/react-router";
 import { expect, test } from "vite-plus/test";
-import { useSearchParamState } from "@/shared/lib/use-search-param-state";
-import { useUrlFilters } from "@/shared/lib/use-url-filters";
+import { useSearchUpdate } from "@/shared/lib/use-search-update";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { mount } from "./support/dom";
 
-let filters: ReturnType<typeof useUrlFilters<"q" | "action">>;
-let setTab: (tab: "list" | "grid") => void;
-let catalog: ReturnType<typeof useCatalogControls<"active" | "archived", "updated" | "name">>;
+// The platform's traffic page: a tab and a period beside its clients catalog's params.
+const route = getRouteApi("/protected/app/superadmin/admin/api-traffic");
 
-function Filters() {
-  filters = useUrlFilters({ q: "", action: "all" });
-  return null;
-}
-function Tab() {
-  setTab = useSearchParamState<"list" | "grid">("view", "list")[1];
+type TrafficSearch = ReturnType<typeof route.useSearch>;
+let update: (change: Partial<TrafficSearch>) => void;
+let catalog: ReturnType<typeof useCatalogControls<TrafficSearch["filter"], TrafficSearch["sort"]>>;
+
+function View() {
+  update = useSearchUpdate<TrafficSearch>();
   return null;
 }
 function Catalog() {
-  catalog = useCatalogControls({
-    filters: ["active", "archived"],
-    initialFilter: "active",
-    initialSort: "updated",
-    sorts: ["updated", "name"],
-  });
+  catalog = useCatalogControls(route.useSearch());
   return null;
 }
 function Url() {
   return <output>{useLocation().searchStr}</output>;
 }
 
-const render = async (route: string) => {
+const render = async (entry: string) => {
   const { host } = await mount(
     <>
-      <Filters />
-      <Tab />
+      <View />
       <Catalog />
       <Url />
     </>,
-    { route },
+    { route: entry },
   );
   return () => new URLSearchParams(host.querySelector("output")!.textContent!);
 };
 
 test("changes made before the URL renders again all apply, from one hook or several", async () => {
-  const url = await render("/log?keep=yes");
+  const url = await render("/admin/api-traffic");
 
   await act(async () => {
-    filters.setFilters({ q: "ada" });
-    filters.setFilters({ action: "ROLE_DELETE" });
-    setTab("grid");
+    catalog.setQuery("ada");
+    update({ tab: "clients" });
+    update({ period: "week" });
     catalog.setSort("name");
   });
 
   expect(Object.fromEntries(url())).toEqual({
-    keep: "yes",
     q: "ada",
-    action: "ROLE_DELETE",
-    view: "grid",
+    tab: "clients",
+    period: "week",
     sort: "name",
   });
 });
 
-test("a later render starts from the URL it shows, and defaults leave it", async () => {
-  const url = await render("/log?action=ROLE_DELETE&view=grid");
+test("a later render starts from the URL it shows, and fallbacks leave it", async () => {
+  const url = await render("/admin/api-traffic?tab=clients&period=week");
 
   await act(async () => {
-    filters.setFilters({ action: "all" });
+    update({ period: "day" });
   });
   await act(async () => {
-    setTab("list");
-    catalog.setFilter("archived");
+    update({ tab: "overview" });
+    catalog.setFilter("suspended");
   });
 
-  expect(Object.fromEntries(url())).toEqual({ filter: "archived" });
+  expect(Object.fromEntries(url())).toEqual({ filter: "suspended" });
+});
+
+test("a value the page does not know reads as its fallback and leaves with the next change", async () => {
+  const url = await render("/admin/api-traffic?tab=bogus&filter=unknown&sort=bad");
+
+  expect(catalog).toMatchObject({ filter: "all", sort: "updated" });
+  await act(async () => {
+    catalog.setQuery("next");
+  });
+
+  expect(Object.fromEntries(url())).toEqual({ q: "next" });
 });

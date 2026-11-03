@@ -196,7 +196,10 @@ test("the reviews list uses backend catalogs for review filters without a footer
       reviewState: index < 2 ? "PENDING" : "COMPLETED",
     }),
   );
-  await render(<InferenceReviewStatusSection inferenceId={1} inferenceName="Case 12" />);
+  await render(
+    <InferenceReviewStatusSection inferenceId={1} inferenceName="Case 12" />,
+    "/inferences/1",
+  );
   expect(container.querySelectorAll("article").length).toBeGreaterThan(0);
   expect(container.querySelector("footer")).toBeNull();
 

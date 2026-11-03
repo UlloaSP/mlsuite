@@ -1,6 +1,12 @@
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { useInfiniteCatalog } from "@/shared/api/infinite-catalog";
-import { queryOptions, useQueries, useQuery, type QueryKey } from "@tanstack/react-query";
+import { infiniteCatalogOptions } from "@/shared/api/infinite-catalog";
+import {
+  queryOptions,
+  useInfiniteQuery,
+  useQueries,
+  useQuery,
+  type QueryKey,
+} from "@tanstack/react-query";
 import { getSchema, getSchemaPage, getSchemaVersion } from "./schema-api";
 import { getSchemaBookmark } from "./schema-bookmark-api";
 import { getSchemaDraft, getSchemaDraftDiff } from "./schema-draft-api";
@@ -115,21 +121,22 @@ export const usePredictionRunsFeedback = (runs: readonly PredictionRunDto[]) => 
   return { ...query, data: query.data ?? [] };
 };
 
+export const schemaCatalogQueryOptions = (
+  organizationId: number | string,
+  search: string,
+  sort: string,
+  status: string,
+) =>
+  infiniteCatalogOptions({
+    queryKey: [...SCHEMA_CATALOG_PAGE_QUERY_KEY(organizationId), "infinite", search, sort, status],
+    queryFn: (page, signal) =>
+      getSchemaPage({ page, search, size: SCHEMA_CATALOG_PAGE_SIZE, sort, status }, signal),
+    enabled: organizationId !== "none",
+  });
+
 export const useSchemaCatalogPageQuery = (
   organizationId: number | string | undefined,
   search: string,
   sort: string,
   status: string,
-) =>
-  useInfiniteCatalog({
-    queryKey: [
-      ...SCHEMA_CATALOG_PAGE_QUERY_KEY(organizationId ?? "none"),
-      "infinite",
-      search,
-      sort,
-      status,
-    ],
-    queryFn: (page, signal) =>
-      getSchemaPage({ page, search, size: SCHEMA_CATALOG_PAGE_SIZE, sort, status }, signal),
-    enabled: Boolean(organizationId),
-  });
+) => useInfiniteQuery(schemaCatalogQueryOptions(organizationId ?? "none", search, sort, status));

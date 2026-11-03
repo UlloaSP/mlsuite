@@ -11,7 +11,9 @@ import {
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { SessionFrameLayout } from "@/app/layouts/SessionFrameLayout";
 import { sessionFrameRoute } from "@/app/router/layout-routes";
-import { router } from "@/app/router/routes";
+import { createAppRouter } from "@/app/router/routes";
+
+const router = createAppRouter(new QueryClient());
 import { parseSearch, stringifySearch } from "@/app/router/search-params";
 import { PublicBookmarkPage } from "@/features/explore/pages/public-bookmark-page";
 import { SchemaBookmarkCatalogItem } from "@/features/schemas/components/SchemaBookmarkCatalogItem";
@@ -342,7 +344,7 @@ describe("public page frame", () => {
     const root = createRootRoute();
     const frame = createRoute({
       getParentRoute: () => root,
-      id: "frame",
+      id: "session-frame",
       component: SessionFrameLayout,
     });
     const page = createRoute({

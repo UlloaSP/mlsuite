@@ -1,5 +1,6 @@
+import { getRouteApi } from "@tanstack/react-router";
 import { useState } from "react";
-import { useSearchParamState } from "@/shared/lib/use-search-param-state";
+import { useSearchUpdate } from "@/shared/lib/use-search-update";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { Filter, RefreshCw, Search } from "lucide-react";
 import { AppBadge } from "@/shared/ui/AppBadge";
@@ -29,6 +30,8 @@ type Props = {
   onAction: (serviceName: string, action: "START" | "STOP" | "RESTART") => void;
   onSync: () => void;
 };
+const route = getRouteApi("/protected/app/superadmin/admin/infrastructure");
+
 export function ServicesView({
   services,
   selectedService,
@@ -38,8 +41,12 @@ export function ServicesView({
   onSync,
 }: Props) {
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useSearchParamState<string>("status", "all");
-  const [healthFilter, setHealthFilter] = useSearchParamState<string>("health", "all");
+  const search = route.useSearch();
+  const updateSearch = useSearchUpdate<typeof search>();
+  const statusFilter = search.status;
+  const setStatusFilter = (value: typeof statusFilter) => updateSearch({ status: value });
+  const healthFilter = search.health;
+  const setHealthFilter = (value: typeof healthFilter) => updateSearch({ health: value });
   const [sort, setSort] = useState<ServiceSort>({
     key: "name",
     dir: "asc",

@@ -3,10 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useSearchParamState } from "@/shared/lib/use-search-param-state";
+import { useSearchUpdate } from "@/shared/lib/use-search-update";
 import { GitCompareArrows, PencilLine, Save } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { useAtom, useSelector } from "@tanstack/react-store";
 import { AppLink } from "@/shared/ui/AppLink";
 import { toast } from "sonner";
@@ -34,11 +34,11 @@ import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChan
 import { SchemaFormPreview } from "@/features/schemas/components/SchemaFormPreview";
 import { SchemaCodeViewer } from "@/features/schemas/components/SchemaCodeViewer";
 
-const EDITOR_VIEWS = ["code", "preview"] as const;
-type EditorView = (typeof EDITOR_VIEWS)[number];
+
+const route = getRouteApi("/protected/app/can-edit-models/schemas/$schemaId/drafts/$draftId");
 
 export function SchemaDraftEditorPage() {
-  const { schemaId, draftId } = useParams({ strict: false });
+  const { schemaId, draftId } = route.useParams();
   const navigate = useNavigate();
   const { data: schemaDto } = useSchema(schemaId);
   const { data: draft } = useSchemaDraft(draftId);
@@ -49,7 +49,10 @@ export function SchemaDraftEditorPage() {
   const [schemaText, setSchemaText] = useAtom(atoms.schemaText);
   const schemaErrors = useSelector(atoms.schemaErrors);
   const setMappingIssues = atoms.schemaMappingIssues.set;
-  const [editorView, setEditorView] = useSearchParamState<EditorView>("view", "code", EDITOR_VIEWS);
+  const search = route.useSearch();
+  const updateSearch = useSearchUpdate<typeof search>();
+  const editorView = search.view;
+  const setEditorView = (value: typeof editorView) => updateSearch({ view: value });
   const [renameOpen, setRenameOpen] = useState(false);
 
   const editorHasErrors = Array.isArray(schemaErrors) && schemaErrors.length > 0;

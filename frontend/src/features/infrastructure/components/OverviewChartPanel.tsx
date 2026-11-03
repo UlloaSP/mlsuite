@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { getRouteApi } from "@tanstack/react-router";
 import { areaY, defineChart, lineY } from "@tanstack/charts";
 import { crosshair } from "@tanstack/charts/crosshair";
 import { decorative } from "@tanstack/charts/mark/decorative";
@@ -10,7 +11,7 @@ import { Chart } from "@tanstack/charts/react/tooltip";
 import { scaleLinear } from "@tanstack/charts/scales/linear";
 import { scalePoint } from "@tanstack/charts/scales/point";
 import { tooltip } from "@tanstack/charts/tooltip";
-import { useSearchParamState } from "@/shared/lib/use-search-param-state";
+import { useSearchUpdate } from "@/shared/lib/use-search-update";
 import { useState } from "react";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppSelect } from "@/shared/ui/AppSelect";
@@ -26,6 +27,8 @@ import {
 import { ChartTooltip } from "./ChartTooltip";
 import { AppCheckbox } from "@/shared/ui/AppCheckbox";
 
+const route = getRouteApi("/protected/app/superadmin/admin/infrastructure");
+
 export function OverviewChartPanel({
   overview,
   streamConnected,
@@ -35,7 +38,10 @@ export function OverviewChartPanel({
   streamConnected: boolean;
   chartRange: string;
 }) {
-  const [chartService, setChartService] = useSearchParamState<string>("service", "all");
+  const search = route.useSearch();
+  const updateSearch = useSearchUpdate<typeof search>();
+  const chartService = search.service;
+  const setChartService = (value: typeof chartService) => updateSearch({ service: value });
   const [layers, setLayers] = useState<Record<ChartLayer, boolean>>({
     cpu: true,
     ram: true,

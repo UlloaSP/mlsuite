@@ -15,7 +15,8 @@ import { Navbar } from "@/app/components/navbar/Navbar";
 import { SidebarProvider } from "@/app/components/app-sidebar/SidebarContext";
 import { mount } from "./support/dom";
 
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({
     data: {
       userName: "ada",

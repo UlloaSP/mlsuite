@@ -1,14 +1,18 @@
+import { getRouteApi } from "@tanstack/react-router";
 import { KeyRound } from "lucide-react";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSearchField } from "@/shared/ui/AppSearchField";
 import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
-import { useUrlFilters } from "@/shared/lib/use-url-filters";
+import { useSearchFilters } from "@/shared/lib/use-search-filters";
+import { rolesSearch } from "@/features/workspace/pages/workspace-search";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { usePermissionCatalog } from "@/features/workspace/api/workspace-catalog-queries";
 
+const route = getRouteApi("/protected/app/team-organization/workspace/organizations/$organizationId/roles");
+
 export function PermissionCatalog({ organizationId }: { organizationId: number }) {
-  const filters = useUrlFilters({ q: "" });
+  const filters = useSearchFilters(route.useSearch(), rolesSearch);
   const query = filters.values.q;
   const request = usePermissionCatalog(organizationId, useDebouncedValue(query.trim()));
   const groups = request.data?.items ?? [];
