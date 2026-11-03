@@ -56,9 +56,9 @@ describe("theme persistence", () => {
     expect(nextThemeMode("dark")).toBe("system");
   });
 
-  it("reads preferences the boot script migrated and validated", async () => {
-    localStorage.setItem("ui/theme", JSON.stringify("dark"));
-    localStorage.setItem("ui/theme-preset", JSON.stringify("invalid"));
+  it("reads preferences the boot script validated", async () => {
+    localStorage.setItem("ui/color-scheme", JSON.stringify("dark"));
+    localStorage.setItem("ui/theme-selection", JSON.stringify({ light: "invalid", dark: "eshkra" }));
     localStorage.setItem("ui/contrast", JSON.stringify(103));
     await bootWithSystemTheme(false);
 

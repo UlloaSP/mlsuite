@@ -78,12 +78,6 @@ export function ModelDetailTabs({ model, details }: Props) {
           title="Bundle details unavailable"
           description="What the model's bundle says about it could not be loaded. Try again in a moment."
         />
-      ) : manifest.steps.length === 0 ? (
-        <AppEmptyState
-          compact
-          title="No bundle details"
-          description="This model was stored before MLsuite kept what its bundle says about it. Upload its .mlbundle again to see it here."
-        />
       ) : (
         <AppTabs
           aria-label="Model details"

@@ -39,12 +39,4 @@ describe("font catalog", () => {
       expect(fontStylesheet).toContain(`family=${family.replaceAll(" ", "+")}:`);
     }
   });
-
-  it("migrates every legacy id to an existing preset", () => {
-    const presets = new Set<string>([...INTERFACE_FONTS, ...MONOSPACE_FONTS].map((f) => f.value));
-    const legacyTargets = Object.values(bootStacks("legacyFontIds"));
-
-    expect(legacyTargets.length).toBeGreaterThan(0);
-    expect(legacyTargets.every((id) => presets.has(id))).toBe(true);
-  });
 });

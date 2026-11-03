@@ -3,8 +3,6 @@
 (function () {
   const KEYS = {
     mode: "ui/color-scheme",
-    legacyMode: "ui/theme",
-    legacyPreset: "ui/theme-preset",
     selection: "ui/theme-selection",
     contrast: "ui/contrast",
     customThemes: "ui/custom-themes",
@@ -50,12 +48,6 @@
     "fira-code": "'Fira Code', Consolas, ui-monospace, monospace",
     "source-code-pro": "'Source Code Pro', Consolas, ui-monospace, monospace",
     "system-mono": "ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Menlo, Consolas, monospace",
-  };
-  const legacyFontIds = {
-    cereal: "manrope",
-    segoe: "ibm-plex-sans",
-    avenir: "source-sans-3",
-    consolas: "system-mono",
   };
   const interfaceFonts = Object.keys(interfaceStacks);
   const monospaceFonts = Object.keys(monospaceStacks);
@@ -162,23 +154,16 @@
     const customValue = read(KEYS.customThemes);
     const customThemes = Array.isArray(customValue) ? customValue.filter(isCustomTheme) : [];
     const storedSelection = read(KEYS.selection);
-    const legacyPreset = read(KEYS.legacyPreset);
-    const migrated = isThemeId(legacyPreset, customThemes) ? legacyPreset : defaultTheme;
     const selection =
       storedSelection &&
       isThemeId(storedSelection.light, customThemes) &&
       isThemeId(storedSelection.dark, customThemes)
         ? storedSelection
-        : { light: migrated, dark: migrated };
+        : { light: defaultTheme, dark: defaultTheme };
     const currentMode = read(KEYS.mode);
-    const legacyMode = read(KEYS.legacyMode);
     const contrast = read(KEYS.contrast);
     return {
-      mode: modes.includes(currentMode)
-        ? currentMode
-        : currentMode === null && modes.includes(legacyMode)
-          ? legacyMode
-          : "system",
+      mode: modes.includes(currentMode) ? currentMode : "system",
       selection,
       contrast: contrasts.includes(contrast) ? contrast : 100,
       customThemes,
@@ -242,15 +227,8 @@
       .forEach((meta) => meta.setAttribute("content", pageBackground));
     return resolved;
   };
-  const withCurrentFontIds = (value) =>
-    value && {
-      ...value,
-      interfaceFont: legacyFontIds[value.interfaceFont] ?? value.interfaceFont,
-      monospaceFont: legacyFontIds[value.monospaceFont] ?? value.monospaceFont,
-    };
   const applyTypography = (value) => {
-    const current = withCurrentFontIds(value);
-    const typography = validTypography(current) ? current : defaultTypography;
+    const typography = validTypography(value) ? value : defaultTypography;
     const root = document.documentElement;
     root.dataset.interfaceFont = typography.interfaceFont;
     root.dataset.monospaceFont = typography.monospaceFont;

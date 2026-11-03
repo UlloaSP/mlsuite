@@ -93,10 +93,9 @@ const details: ModelDetailsDto = {
   sizeBytes: 4096,
   sha256: "abc123",
   environment: {
-    key: "py3.14-mlbundle0.2.1",
-    legacy: true,
-    pythonVersion: "3.14",
-    writerVersion: "0.2.1",
+    key: "e".repeat(64),
+    pythonVersion: "3.14.7",
+    writerVersion: "0.3.1",
     packages: [],
   },
 };
@@ -220,16 +219,6 @@ test("a model without structure says it has no importances instead of an empty c
   );
 
   expect(host.textContent).toContain("No feature importances");
-});
-
-test("a model stored without its bundle's manifest says so", async () => {
-  const { host } = await mount(
-    <ModelDetailTabs model={model} details={{ ...details, manifest: {} }} />,
-    { route: "/models/12" },
-  );
-
-  expect(host.textContent).toContain("No bundle details");
-  expect(host.querySelector('[role="tablist"]')).toBeNull();
 });
 
 test("details that could not be loaded leave the model's own facts in place", async () => {

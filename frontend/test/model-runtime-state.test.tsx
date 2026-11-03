@@ -64,7 +64,6 @@ const NUMPY_REFUSED = "The environment needs packages MLsuite does not install: 
 
 const locked: RuntimeEnvironmentDto = {
   key: "env-locked",
-  legacy: false,
   pythonVersion: "3.12.7",
   writerVersion: "0.3.0",
   packages: [{ name: "scikit-learn", version: "1.5.2" }],
