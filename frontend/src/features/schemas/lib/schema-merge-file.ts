@@ -3,7 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { stringify } from "json-source-map";
+import { parseTree } from "jsonc-parser";
+import { lineIndex, pointerNodes } from "./json-text-positions";
 import type { SchemaDraftChangeDto } from "@/shared/api/openapi.gen";
 
 type Range = { end: number; start: number };
@@ -78,14 +79,18 @@ function sharedAncestor(path: string, current: PrintResult, incoming: PrintResul
   return candidate;
 }
 
+/**
+ * The value printed with two-space indents, and for every JSON pointer the lines it spans: from
+ * its key's line (a member) or its value's, to the line its value ends on.
+ */
 function printJson(value: unknown): PrintResult {
-  // Any JSON value is accepted at runtime; the typings leave out null.
-  const { json, pointers } = stringify(value as object, null, 2);
+  const json = JSON.stringify(value, null, 2);
+  const { lineOf } = lineIndex(json);
   const ranges = new Map<string, Range>();
-  for (const [path, pointer] of Object.entries(pointers)) {
-    ranges.set(path, {
-      start: pointer.key?.line ?? pointer.value.line,
-      end: pointer.valueEnd.line,
+  for (const [pointer, { value: node, member }] of pointerNodes(parseTree(json)!)) {
+    ranges.set(pointer, {
+      start: lineOf((member ?? node).offset),
+      end: lineOf(node.offset + node.length),
     });
   }
   return { lines: json.split("\n"), ranges };

@@ -22,8 +22,8 @@ import lombok.RequiredArgsConstructor;
 /**
  * Runs a published bookmark for anyone and keeps the run as the visitor's. The visitor names
  * only the bookmark; which models run, and with which features, is decided here. This class is
- * deliberately not transactional, and its endpoint is left out of open-in-view (see
- * OpenInViewConfig): planning reads the database and returns, the runtime is called with no
+ * deliberately not transactional (and open-in-view is off): planning reads the database and
+ * returns, the runtime is called with no
  * connection held, and the run is then recorded in a transaction of its own. What went wrong
  * stays in the server log; the visitor gets a message that names no model and repeats nothing
  * the runtime said.

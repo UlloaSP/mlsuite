@@ -5,21 +5,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "storage")
 public class StorageProperties {
 
-    private boolean enabled;
     private String endpoint;
     private String accessKey;
     private String secretKey;
     private String bucket;
     private boolean autoCreateBucket;
-    private boolean retainInlineCopy = true;
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
 
     public String getEndpoint() {
         return endpoint;
@@ -59,13 +49,5 @@ public class StorageProperties {
 
     public void setAutoCreateBucket(boolean autoCreateBucket) {
         this.autoCreateBucket = autoCreateBucket;
-    }
-
-    public boolean isRetainInlineCopy() {
-        return retainInlineCopy;
-    }
-
-    public void setRetainInlineCopy(boolean retainInlineCopy) {
-        this.retainInlineCopy = retainInlineCopy;
     }
 }

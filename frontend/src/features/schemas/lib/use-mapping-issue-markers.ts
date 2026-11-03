@@ -3,9 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtomValue } from "jotai";
+import { useSelector } from "@tanstack/react-store";
 import { type RefObject, useCallback, useEffect } from "react";
-import { schemaMappingIssuesAtom } from "@/features/schemas/lib/editor-atoms";
+import { useEditorAtoms } from "@/features/schemas/lib/editor-atoms";
 import type {
   MonacoEditorInstance,
   MonacoNamespace,
@@ -21,7 +21,7 @@ type Options = {
 
 /** Underlines in the editor each mapping the server refused, where it now stands in the text. */
 export function useMappingIssueMarkers({ editorRef, monacoRef }: Options) {
-  const issues = useAtomValue(schemaMappingIssuesAtom);
+  const issues = useSelector(useEditorAtoms().schemaMappingIssues);
 
   const show = useCallback(
     (text: string) => {

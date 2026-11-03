@@ -3,8 +3,7 @@
 A bundle's lock names every distribution its model needs except mlbundle, which the manifest's
 writer_version pins; an environment is that pair. Its key is the SHA-256 of the lock's
 environment_id and the writer version, so bundles that need the same files share one
-environment. Bundles written before locks existed (mlbundle 0.2.1) run in the frozen legacy
-environment, whose key is LEGACY.
+environment.
 """
 
 import hashlib
@@ -15,9 +14,8 @@ from pathlib import Path
 
 import mlbundle
 
-from .config import ENVIRONMENT_ROOT, LEGACY_PYTHON, VENV_PYTHON
+from .config import ENVIRONMENT_ROOT, VENV_PYTHON
 
-LEGACY = "legacy"
 READY_FILE = "ready.json"
 _KEY = re.compile(r"[0-9a-f]{64}")
 
@@ -39,7 +37,7 @@ def environment_key(lock: mlbundle.EnvironmentLock, writer_version: str) -> str:
 
 
 def is_key(value: str) -> bool:
-    return value == LEGACY or _KEY.fullmatch(value) is not None
+    return _KEY.fullmatch(value) is not None
 
 
 def directory(key: str, root: Path = ENVIRONMENT_ROOT) -> Path:
@@ -60,8 +58,6 @@ def describe(lock: mlbundle.EnvironmentLock, writer_version: str) -> dict[str, o
 
 
 def resolve(key: str, root: Path = ENVIRONMENT_ROOT) -> Environment:
-    if key == LEGACY:
-        return Environment(LEGACY, LEGACY_PYTHON, checked=False)
     built = directory(key, root)
     if not (built / READY_FILE).is_file():
         raise EnvironmentUnavailable(key)

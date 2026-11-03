@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ACTION=${1:?usage: smoke-restored-release.sh start|stop STATE_FILE ENV_FILE RELEASE_COMPOSE [--baseline]}
+ACTION=${1:?usage: smoke-restored-release.sh start|stop STATE_FILE ENV_FILE RELEASE_COMPOSE}
 STATE_FILE=${2:?restore state file is required}
 ENV_FILE=${3:-.env}
 RELEASE_COMPOSE=${4:-docker-compose.release.yml}
-BASELINE=${5:-}
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 [[ -f "$STATE_FILE" ]] || { echo "restore state not found: $STATE_FILE" >&2; exit 1; }
@@ -53,28 +52,24 @@ smoke_port=${smoke_port:-18080}
 
 DB_ENV=(-e DB_HOST="$db_host" -e DB_PORT="$db_port" -e DB_PROD="$db_name" \
   -e DB_USER="$db_user" -e DB_PASS="$db_pass")
-baseline_env=()
-if [[ "$BASELINE" == --baseline ]]; then
-  baseline_env=(-e FLYWAY_BASELINE_ON_MIGRATE=true -e FLYWAY_BASELINE_VERSION=1)
-fi
 
 "${COMPOSE[@]}" run --rm --no-deps \
   "${DB_ENV[@]}" -e DB_MIGRATION_USER="$db_user" -e DB_MIGRATION_PASS="$db_pass" \
-  "${baseline_env[@]}" db-migrate
+  db-migrate
 
 STORAGE_ENV=(-e STORAGE_ENDPOINT="$storage_endpoint" -e STORAGE_ACCESS_KEY="$storage_access" \
   -e STORAGE_SECRET_KEY="$storage_secret" -e STORAGE_BUCKET="$storage_bucket" \
-  -e STORAGE_AUTO_CREATE_BUCKET=false -e STORAGE_RETAIN_INLINE_COPY=true)
+  -e STORAGE_AUTO_CREATE_BUCKET=false)
+
+# Every model's stored artifact must still match the hash its row persists.
 "${COMPOSE[@]}" run --rm --no-deps "${DB_ENV[@]}" "${STORAGE_ENV[@]}" \
-  -e ARTIFACT_MIGRATION_COMMAND=migrate artifact-migrate
-"${COMPOSE[@]}" run --rm --no-deps "${DB_ENV[@]}" "${STORAGE_ENV[@]}" \
-  -e ARTIFACT_MIGRATION_COMMAND=verify artifact-migrate
+  -e ARTIFACT_JOB=verify artifact-prune
 
 "${COMPOSE[@]}" up -d --no-deps py-analyzer runtime-builder
 docker rm -f "$api_container" >/dev/null 2>&1 || true
 "${COMPOSE[@]}" run -d --no-deps --name "$api_container" \
   -p "127.0.0.1:${smoke_port}:${spring_port}" "${DB_ENV[@]}" "${STORAGE_ENV[@]}" \
-  -e FLYWAY_ENABLED=false -e MODEL_MUTATIONS_REQUIRE_VERSION=true spring-app >/dev/null
+  -e FLYWAY_ENABLED=false spring-app >/dev/null
 
 for _ in $(seq 1 30); do
   if curl --fail --silent "http://127.0.0.1:${smoke_port}/actuator/health/readiness" >/dev/null; then

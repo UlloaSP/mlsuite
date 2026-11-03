@@ -19,14 +19,15 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "storage_deletion_task", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_storage_deletion_object", columnNames = {"bucket", "object_key"})
+        @UniqueConstraint(name = "uq_storage_deletion_object", columnNames = {"bucket", "object_key", "object_version_id"})
 })
 @Getter
 @Setter
 @NoArgsConstructor
 public class StorageDeletionTask {
 
-    public StorageDeletionTask(String bucket, String objectKey, String objectVersionId) {
+    public StorageDeletionTask(Long organizationId, String bucket, String objectKey, String objectVersionId) {
+        this.organizationId = organizationId;
         this.bucket = bucket;
         this.objectKey = objectKey;
         this.objectVersionId = objectVersionId;
@@ -37,6 +38,10 @@ public class StorageDeletionTask {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /** Whose object this is. No foreign key: the task outlives the organization. */
+    @Column(name = "organization_id")
+    private Long organizationId;
 
     @Column(name = "bucket", nullable = false, length = 100)
     private String bucket;

@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { getPredictionShortId } from "@/capabilities/prediction-runtime/data/model-utils";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
@@ -9,8 +9,9 @@ import { FOCUS_RING } from "@/shared/ui/focus-ring";
  */
 export function InferenceNameCell({ id, name }: { id: number; name: string }) {
   return (
-    <Link
-      to={`/inferences/${id}`}
+    <AppLink
+      to="/inferences/$inferenceId"
+      params={{ inferenceId: String(id) }}
       onClick={(event) => event.stopPropagation()}
       className={cx(
         "flex min-w-0 items-baseline gap-2 rounded-control text-left hover:underline",
@@ -21,6 +22,6 @@ export function InferenceNameCell({ id, name }: { id: number; name: string }) {
       <span className="shrink-0 font-mono text-2xs text-fg-muted">
         #{getPredictionShortId(String(id))}
       </span>
-    </Link>
+    </AppLink>
   );
 }

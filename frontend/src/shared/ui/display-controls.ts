@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtom } from "jotai";
-import { nextThemeMode, themeModeAtom } from "./appearance-state";
+import { useAtom, useSelector } from "@tanstack/react-store";
+import { nextThemeMode, setThemeMode, themeModeAtom } from "./appearance-state";
 import { fullscreenAtom } from "./ui-state";
 
 const restoreRouteTransition = (element: HTMLElement, previousValue: string) => {
@@ -17,14 +17,13 @@ const restoreRouteTransition = (element: HTMLElement, previousValue: string) => 
 
 /** Cycles System → Light → Dark with the corner reveal used by the theme shortcut. */
 export function useThemeModeCycle() {
-  const [mode, setMode] = useAtom(themeModeAtom);
-  const nextMode = nextThemeMode(mode);
+  const nextMode = nextThemeMode(useSelector(themeModeAtom));
 
   const cycleMode = () => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     if (typeof document.startViewTransition !== "function" || reduceMotion) {
-      setMode(nextMode);
+      setThemeMode(nextMode);
       return;
     }
 
@@ -35,7 +34,7 @@ export function useThemeModeCycle() {
     if (content) content.style.viewTransitionName = "none";
 
     root.classList.add("theme-corner-transition");
-    const transition = document.startViewTransition(() => setMode(nextMode));
+    const transition = document.startViewTransition(() => setThemeMode(nextMode));
     void transition.finished.finally(() => {
       window.setTimeout(() => {
         root.classList.remove("theme-corner-transition");

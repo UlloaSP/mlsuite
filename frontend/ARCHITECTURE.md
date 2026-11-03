@@ -72,8 +72,11 @@ TanStack Query is the source of truth for remote state.
 - Include every query input in the key and define keys once per resource.
 - Define key and fetch function together with `queryOptions()`.
 - Propagate `AbortSignal` and throw typed errors.
-- Mutations own all related cache updates and invalidations.
-- Do not copy Query DTOs into Jotai or module-global caches.
+- Mutations own all related cache updates and invalidations. Define each with
+  `mutationOptions()` in the feature's `api/`; its callbacks reach the cache through the
+  context's `client`, and its hook only supplies inputs such as the current organization.
+  Components call the hook; they do not invalidate or write the cache after a mutation.
+- Do not copy Query DTOs into TanStack Store atoms or module-global caches.
 
 Use the narrowest owner for client state:
 
@@ -81,7 +84,8 @@ Use the narrowest owner for client state:
 2. use URL state for navigable filters, tabs, and sorting;
 3. use local state for one component or page;
 4. use a local reducer/provider for a complex screen;
-5. use Jotai only across unrelated branches.
+5. use TanStack Store atoms only across unrelated branches; persist preferences with
+   `createPersistedAtom`.
 
 Persisted catalogs use backend search, filters, sorting, and page counts. TanStack Query
 accumulates server pages through `useInfiniteCatalog`, and TanStack Virtual renders the loaded
@@ -100,9 +104,38 @@ independently of the pages the user has scrolled through.
 
 ## Routing
 
-- Use React Router Data Mode and lazy feature routes.
+- Use TanStack Router with a code-based route tree in `app/router/` and lazy page components.
+  Pathless layout routes hold the shell and the permission guards; the router is registered, so
+  `to`, `params` and `search` are type-checked against real routes.
+- Make page routes with `page()` or `searchPage()` from `lazy-route.tsx`, never with
+  `createRoute()` where the tree is declared: a page module imported in place would make the
+  tree's type depend on the page, whose links depend on the tree, and every typed address would
+  silently become `any`.
 - Keep the persistent shell in one layout route.
-- Loaders may call `queryClient.ensureQueryData()` with feature query options.
+- Write in-code addresses as typed `to` + `params` + `search`, or `linkOptions()` from a helper.
+  Addresses only known at runtime as strings (return-to, remembered or server-sent links) go
+  through `appHref()`. Render links with `AppLink`, which is the current page only on its exact
+  address.
+- A page reads its params with `getRouteApi(id).useParams()`. Only a component shown under
+  several routes (a layout guard, one page mounted at several addresses) reads
+  `useParams({ strict: false })`.
+- Search params are plain strings in the URL, never JSON (`search-params.ts`). Each page route
+  validates the params it owns with a zod schema kept in its feature's `pages/*-search.ts` and
+  built from `shared/lib/search-schema.ts`: an absent or unknown value reads as the param's
+  fallback, and the router leaves fallbacks out of the URL. Read them with
+  `getRouteApi(id).useSearch()`; change them with `useSearchUpdate()`, `useCatalogControls()` or
+  `useSearchFilters()`. A component shown under several routes takes its values from its page.
+- `useLocation()` already names the next address while its page loads; code that must follow the
+  page on screen reads the resolved location or the matches.
+- Links preload their page and its data on intent. A loader starts its page's queries with
+  feature query options (`prefetchForMember()` for workspace data) and never fails navigation:
+  the page owns its loading, missing and failure states. Query owns caching, so every preload asks
+  it again.
+- Scroll lives in page containers, not the window. `app/layouts/use-scroll-memory.ts` restores a
+  history entry's positions on back and forward, resumes a section at its last position when it
+  is returned to through the navigation, and waits for a paged catalog to load enough rows; the
+  router's own scroll restoration keys one position per entry and restores it at once, so it
+  cannot express either.
 - Route factories receive dependencies from `app`; they do not import application singletons.
 - Permission boundaries render loading, denied, not-found, and unexpected-failure states explicitly.
 - Heavy modules such as Monaco, Xterm, charts, diffs, and MLForm load only where needed.
@@ -120,9 +153,9 @@ MLForm is a capability, not the MLsuite plugin catalog.
 Plugin code is untrusted and runs only in the plugin sandbox, never in the app's origin.
 
 - The sandbox is a separate Vite entry (`plugin-sandbox.html` + `app/plugin-sandbox-main.ts`),
-  embedded as an opaque-origin `<iframe sandbox>`; it alone bundles the plugin compiler, the
-  TypeScript package, and MLForm's plugin execution. The app entry graph must not import
-  `typescript` or build Blob-URL modules; `frontend-architecture.test.ts` enforces this.
+  embedded as an opaque-origin `<iframe sandbox>`; it alone bundles the plugin compiler (Sucrase,
+  which strips TypeScript types) and MLForm's plugin execution. The app entry graph must not
+  import `sucrase` or build Blob-URL modules; `frontend-architecture.test.ts` enforces this.
 - `capabilities/prediction-runtime/sandbox/` owns the host (`openPluginSandbox`), the typed
   `postMessage` channel and its zod protocol, the app-side services that open a sandbox to
   inspect or run plugins, and the guest that runs inside the sandbox document.

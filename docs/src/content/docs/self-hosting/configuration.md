@@ -40,9 +40,7 @@ never commit `.env`.
 | `DB_ADMIN_USER`, `DB_ADMIN_PASS` | `mlsuite_admin` | PostgreSQL superuser and database owner. |
 | `DB_MIGRATION_USER`, `DB_MIGRATION_PASS` | `mlsuite_migrator` | Owns the schema; runs Flyway migrations. |
 | `DB_USER`, `DB_PASS` | `mlsuite_app` | The application's role: data access only. |
-| `DB_LEGACY_OWNER`, `DB_LEGACY_PASS` | `mlsuite` | Original owner of a volume created by an older Compose file; its tables are handed over, then its login is revoked. |
 | `DB_POOL_MAX_SIZE`, `DB_POOL_MIN_IDLE`, `DB_POOL_CONNECTION_TIMEOUT_MS` | `10`, `2`, `30000` | API connection pool. Size it from PostgreSQL's connection budget. |
-| `FLYWAY_BASELINE_ON_MIGRATE`, `FLYWAY_BASELINE_VERSION` | `false`, `1` | Baseline an audited pre-Flyway database. Enable for exactly one migration, then set back to `false`. |
 
 Compose creates the three roles on every start. On an externally managed database, create
 equivalent roles yourself; the migration role must be able to install `pg_trgm`.
@@ -51,23 +49,21 @@ equivalent roles yourself; the migration role must be able to install `pg_trgm`.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` | `mlsuite-root` | MinIO administrator, used only by MinIO and its initializer. |
-| `MINIO_CONSOLE_ADDRESS` | `:9001` | MinIO console address inside the network; not published. |
-| `STORAGE_ENABLED` | `true` | Store models and plugins in MinIO. |
-| `STORAGE_ENDPOINT` | `http://minio:9000` | S3 endpoint. |
-| `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | `mlsuite-app` | The application's MinIO user, limited to the bucket. Must differ from the root user. |
+| `RUSTFS_ACCESS_KEY`, `RUSTFS_SECRET_KEY` | `mlsuite-root` | RustFS administrator, used only by RustFS and its initializer. |
+| `STORAGE_ENDPOINT` | `http://rustfs:9000` | S3 endpoint. |
+| `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | `mlsuite-app` | The application's RustFS user, limited to the bucket. Must differ from the root user. |
 | `STORAGE_BUCKET` | `mlsuite` | Bucket name. Versioning is enabled on it. |
 | `STORAGE_AUTO_CREATE_BUCKET` | `true` | Let the API create the bucket. |
-| `STORAGE_RETAIN_INLINE_COPY` | `true` | Keep the database copy of each model during the rollback window. |
 | `STORAGE_DELETION_ENABLED`, `STORAGE_DELETION_BATCH_SIZE`, `STORAGE_DELETION_STALE_AFTER_SECONDS` | `true`, `20`, `300` | Background removal of deleted files. |
-| `ARTIFACT_MIGRATION_COMMAND` | `status` | What `artifact-migrate` does: `status`, `migrate`, `verify`, `retry-failed`, `prune-orphans`. |
-| `ARTIFACT_MIGRATION_MAX_ATTEMPTS`, `ARTIFACT_MIGRATION_STALE_AFTER_SECONDS`, `ARTIFACT_MIGRATION_ORPHAN_GRACE_SECONDS` | `5`, `900`, `86400` | Retries, lease length, and the minimum age before `prune-orphans` removes an unreferenced object. |
+| `STORAGE_DELETION_RETENTION_DAYS` | `7` | How long a finished file deletion is remembered. At least 1. |
+| `PURGE_BATCH_SIZE` | `1000` | How many rows of a table a purge deletes in each transaction. |
+| `ARTIFACT_ORPHAN_GRACE_SECONDS` | `86400` | The minimum age before the `artifact-prune` job removes a model object nothing refers to. |
+| `ARTIFACT_JOB` | `prune` | What the `artifact-prune` job does: `prune`, or `verify` to only check every model artifact against its SHA-256. |
 
 ## Models
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `MODEL_MUTATIONS_REQUIRE_VERSION` | `true` | Refuse model changes that do not send the model's version (`428`), so stale pages cannot overwrite each other. Keep `true`. |
 | `PREDICTION_ATTESTATION_SECRET` | | Signs the predictions the API runs for workspace inferences; an inference can only be saved with results signed by it, within 24 hours. Required: at least 32 random characters, the same on every API instance. Changing it invalidates unsaved results. |
 
 ## Runtime capacity
@@ -80,9 +76,14 @@ equivalent roles yourself; the migration role must be able to install `pg_trgm`.
 | `RUNTIME_QUEUE_MAX_WAIT_MS` | `5000` | How long a run may wait for its turn before it receives `503` with `Retry-After`. |
 | `RUNTIME_WORKERS` | `2` | Worker processes the runtime runs models in, in all, about one per core it may use; each runs one request at a time inside one model's environment and holds the bundles it loaded, so size them by memory too. |
 | `RUNTIME_BUNDLE_CACHE_MB` | `512` | Total artifact size of the bundles each worker keeps loaded, and of the artifacts the runtime keeps on disk; the newest is kept even when larger. A run sends its artifact only when the runtime lacks it. |
+| `RUNTIME_WORKER_MEMORY_MB` | `4096` | Address space one worker's model may use; a worker with scikit-learn loaded uses about 370 MB. |
+| `RUNTIME_WORKER_OPEN_FILES` | `1024` | Files one worker's model may hold open. |
+| `RUNTIME_WORKER_PROCESSES` | `512` | Processes and threads a worker may start, counted by the kernel for the runtime's user as a whole. A model past any of these bounds fails alone with an error naming the setting, and its worker, with whatever it started, is replaced. Models may write only to `/tmp`. |
 | `RUNTIME_MEMORY_LIMIT` | `6g` | Memory the runtime, its workers included, may use. |
 | `RUNTIME_BUILDER_BASE_URL` | `http://runtime-builder:8001` | How the API reaches the environment builder. |
 | `RUNTIME_PACKAGE_INDEX_URL` | `https://pypi.org/simple` | The only index the builder installs from; a mirror works, since every file is checked against the lock's SHA-256 and the lock's URLs are never used. |
+| `RUNTIME_PACKAGE_METADATA_URL` | `https://pypi.org/pypi` | The PyPI JSON API the builder asks about each locked release before installing it; with a mirror that has no JSON API, keep it on PyPI. If it cannot be reached, the build fails and is tried again. |
+| `RUNTIME_PACKAGE_MIN_AGE_DAYS` | `7` | A release published fewer days ago is not installed yet; the model's preparation fails with the date it becomes installable. |
 | `RUNTIME_BUILDER_MEMORY_LIMIT` | `2g` | Memory the builder may use. |
 
 ## Public runs and the client API
@@ -97,6 +98,8 @@ equivalent roles yourself; the migration role must be able to install `pg_trgm`.
 | `API_ACCESS_REQUESTS_PER_MINUTE` | `60` | Calls one client may make per clock minute. At least 1. |
 | `API_ACCESS_MONTHLY_CALLS` | `10000` | Succeeded calls an organization's clients may make per UTC month, unless a superadmin sets another limit. |
 | `API_ACCESS_REQUEST_RETENTION_DAYS` | `90` | How long the request log is kept. At least 31. |
+| `NOTIFICATIONS_RETENTION_DAYS` | `30` | How long a notification is kept once read; unread ones stay. At least 1. |
+| `AUDIT_RETENTION_DAYS` | `7` | How long audit log entries are kept. At least 1. |
 
 The public run counts are kept in the API's memory: they restart with the API and hold only with a
 single API instance. The client API limits are counted from the request log, so they hold across
@@ -123,7 +126,7 @@ password or system role changes.
 | `OPS_AGENT_HOST`, `OPS_AGENT_PORT` | `0.0.0.0`, `8091` | Agent bind address. |
 | `OPS_AGENT_DOCKER_BIN` | `docker` | Docker CLI. |
 | `OPS_AGENT_COMPOSE_PROJECT` | `mlsuite` | Must match the project the stack runs under. |
-| `OPS_AGENT_MANAGED_SERVICES` | `postgres,py-analyzer,runtime-builder,minio,spring-app,frontend` | Services the Infrastructure page shows and controls. |
+| `OPS_AGENT_MANAGED_SERVICES` | `postgres,py-analyzer,runtime-builder,rustfs,spring-app,frontend` | Services the Infrastructure page shows and controls. |
 | `OPS_AGENT_SAMPLE_INTERVAL_SECONDS`, `OPS_AGENT_RETENTION_MINUTES` | `5`, `60` | Metric sampling and history. |
 | `OPS_AGENT_TERMINAL_SERVICES` | | Services that allow a shell. Blank: none. |
 | `OPS_AGENT_TERMINAL_IDLE_MINUTES`, `OPS_AGENT_TERMINAL_MAX_SESSIONS` | `15`, `5` | Idle timeout and concurrent shells. |
@@ -131,6 +134,32 @@ password or system role changes.
 
 The agent mounts the Docker socket and the repository read-only. Anyone who controls it controls
 the host's Docker; keep the secret private.
+
+## Alerts
+
+See [Load alerts](/admin/infrastructure/#load-alerts) for what each signal measures.
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `ALERTS_EVALUATE_SECONDS` | `15` | How often the signals are read. At least 1. |
+| `ALERTS_SUSTAIN_SECONDS` | `120` | How long a condition must hold before an alert raises or escalates. |
+| `ALERTS_CLEAR_SECONDS` | `300` | How long a value must stay under its clear threshold before the alert resolves. |
+| `ALERTS_RETENTION_DAYS` | `30` | How long resolved alerts are kept. At least 1. |
+
+Each signal has three thresholds, set as `ALERTS_<SIGNAL>_WARNING`, `_CRITICAL` and `_CLEAR`, with
+clear at or below warning and warning at or below critical; the API refuses to start otherwise.
+
+| `<SIGNAL>` | Warning | Critical | Clear |
+| --- | --- | --- | --- |
+| `PREDICTION_ROWS` | `20000` | `100000` | `10000` |
+| `PREDICTION_AGE_SECONDS` | `900` | `3600` | `300` |
+| `MODELS_PREPARING` | `10` | `50` | `3` |
+| `RUNTIME_QUEUE` | `100` | `500` | `20` |
+| `RUNTIME_REJECTIONS_PER_MINUTE` | `10` | `120` | `1` |
+| `STORAGE_DELETIONS_FAILED` | `1` | `50` | `1` |
+| `CPU_PERCENT` | `85` | `95` | `70` |
+| `RAM_PERCENT` | `85` | `95` | `70` |
+| `DISK_PERCENT` | `85` | `95` | `80` |
 
 ## Backups and recovery
 
@@ -141,7 +170,7 @@ Read by the scripts in `scripts/`, not by the application. See
 | --- | --- | --- |
 | `RECOVERY_MODE` | `local-single-disk` | The only supported topology. |
 | `SINGLE_DISK_RISK_ACCEPTED` | `false` | Must be `true` to run the cutover: losing the disk loses the data. |
-| `LOCAL_BACKUP_ROOT` | `backups` | Where backups are written. |
+| `LOCAL_BACKUP_ROOT` | `backups` | Where backups are written, relative to the checkout so the ops agent can report a failed backup. |
 | `LOCAL_BACKUP_RETENTION_COUNT` | `7` | Backups kept. |
 | `LOCAL_BACKUP_MIN_FREE_PERCENT` | `15` | Free disk space a backup must leave. |
 | `RECOVERY_RPO_MINUTES`, `RECOVERY_RTO_MINUTES` | `1440`, `480` | Maximum age of the newest backup, and maximum duration of a restore rehearsal. |

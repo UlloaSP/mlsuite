@@ -3,9 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { getRouteApi } from "@tanstack/react-router";
+import { PublicBookmarkCard } from "@/capabilities/public-bookmarks/PublicBookmarkCard";
 import { usePublicBookmarkCatalog } from "@/features/explore/api/public-bookmark-api";
 import { ExploreVisitorIntro } from "@/features/explore/components/ExploreVisitorIntro";
-import { PublicBookmarkCard } from "@/features/explore/components/PublicBookmarkCard";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
@@ -19,18 +20,15 @@ const SORTS: Array<{ value: FeedSort; label: string }> = [
   { value: "name", label: "Name" },
 ];
 
+const route = getRouteApi("/session-frame/explore");
+
 /**
  * The public feed: every published bookmark, the same for anonymous visitors and members
  * of any organization. It reads only the public API; the frame around it is chosen by the
  * router.
  */
 export function ExplorePage() {
-  const controls = useCatalogControls<"all", FeedSort>({
-    filters: FILTERS.map(({ value }) => value),
-    initialFilter: "all",
-    initialSort: "updated",
-    sorts: SORTS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const query = usePublicBookmarkCatalog(controls.search, controls.sort);
   const ExploreIcon = SECTION_ICONS.explore;
 
@@ -40,7 +38,7 @@ export function ExplorePage() {
       controls={controls}
       header={{
         title: "Explore",
-        description: "Bookmarks that organizations have published for anyone to open.",
+        description: "Bookmarks published for anyone to open.",
         breadcrumbs: [{ label: "Explore" }],
       }}
       navigation={<ExploreVisitorIntro />}
@@ -54,7 +52,7 @@ export function ExplorePage() {
       sortOptions={SORTS}
       emptyIcon={<ExploreIcon size={22} />}
       emptyTitle="Nothing has been published yet"
-      emptyDescription="Bookmarks appear here once an organization publishes one."
+      emptyDescription="Bookmarks appear here once someone publishes one."
       filteredEmptyTitle="No matching bookmarks"
       filteredEmptyDescription="Try another search term."
       renderItem={(bookmark) => <PublicBookmarkCard key={bookmark.publicId} bookmark={bookmark} />}

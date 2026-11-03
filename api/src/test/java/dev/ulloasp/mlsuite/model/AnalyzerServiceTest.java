@@ -31,8 +31,9 @@ import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.ModelRuntimeClient;
 import dev.ulloasp.mlsuite.model.application.runtime.ModelPreparationLedger;
@@ -49,7 +50,6 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDenie
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
-import dev.ulloasp.mlsuite.storage.ModelArtifactInlineCopy;
 import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
@@ -147,10 +147,10 @@ class AnalyzerServiceTest {
     private AnalyzerServiceImpl service(WorkspaceRuntimeSlots slots) {
         AnalyzerClient analyzerClient = new AnalyzerClient(restTemplate, restTemplate, "http://py-analyzer:8000");
         ModelRuntimeClient modelRuntime = new ModelRuntimeClient(analyzerClient,
-                new ModelArtifactContentReader(objectStorageService, mock(ModelArtifactInlineCopy.class)),
+                new ModelArtifactContentReader(objectStorageService),
                 mock(ModelPreparationLedger.class));
         return new AnalyzerServiceImpl(modelRuntime, slots, modelRepository,
-                userLookupService, authorizationService, new ObjectMapper());
+                userLookupService, authorizationService, new ObjectMapper(), mock(AuditLogService.class));
     }
 
     @SuppressWarnings("unchecked")
@@ -168,7 +168,7 @@ class AnalyzerServiceTest {
 
     private RunnableModel artifact() {
         return new RunnableModel(new ModelArtifactReference(11L, "risk.mlbundle", "bucket", "key", null, 3L, "abc123"),
-                "legacy", ModelRuntimeState.READY);
+                "e".repeat(64), ModelRuntimeState.READY);
     }
 
     private User user() {

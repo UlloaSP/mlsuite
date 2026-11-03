@@ -95,6 +95,27 @@ class SchemaMappingValidationHttpTest extends PublicPredictionFixture {
     }
 
     @Test
+    void aReportReadingABareOutputPositionServesEveryModelAndIsSaved() throws Exception {
+        saveVersion(formSchema(field("Age", Map.of("risk-forest", "age", "risk-net", 0)), report("Risk", 0)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void aReportThatReadsNoOutputIsRefused() throws Exception {
+        Map<String, Object> unmapped = Map.of("kind", "classifier", "label", "Risk");
+        Map<String, Object> nullMapped = new LinkedHashMap<>(unmapped);
+        nullMapped.put("mappedTo", null);
+
+        for (Map<String, Object> report : List.of(unmapped, nullMapped, report("Risk", true), report("Risk", List.of(0)))) {
+            saveVersion(formSchema(field("Age", Map.of("risk-forest", "age", "risk-net", 0)), report))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.issues.length()").value(1))
+                    .andExpect(jsonPath("$.issues[0].pointer").value("/reports/0/mappedTo"))
+                    .andExpect(jsonPath("$.issues[0].message").value("Report \"Risk\" maps to no bound model."));
+        }
+    }
+
+    @Test
     void aStoredSchemaMappedByNameStillRunsAndOpensAsAChange() throws Exception {
         run(bookmark.getPublicId(), request(Map.of("in0", 52)));
 

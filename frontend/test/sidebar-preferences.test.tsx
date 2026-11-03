@@ -5,16 +5,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 // @vitest-environment jsdom
 
-import { createStore } from "jotai";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { MobileSidebarTrigger } from "@/app/components/MobileSidebarTrigger";
 import { Sidebar } from "@/app/components/app-sidebar/Sidebar";
 import { SidebarProvider } from "@/app/components/app-sidebar/SidebarContext";
-import {
-  locationDisplayAtom,
-  navigationPositionAtom,
-  sidebarStyleAtom,
-} from "@/shared/ui/sidebar-preferences";
 import { click, mount } from "./support/dom";
 
 const matchMedia = (matches: boolean) =>
@@ -37,55 +31,69 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/** The preferences as a freshly loaded page reads them from storage. */
+const loadPreferences = () => {
+  vi.resetModules();
+  return import("@/shared/ui/sidebar-preferences");
+};
+
 describe("sidebar preferences", () => {
-  test("defaults to right and persists left", () => {
-    const store = createStore();
-    const unsubscribe = store.sub(navigationPositionAtom, () => undefined);
+  test("defaults to right and persists left", async () => {
+    const { navigationPositionAtom } = await loadPreferences();
 
-    expect(store.get(navigationPositionAtom)).toBe("right");
-    store.set(navigationPositionAtom, "left");
-    expect(store.get(navigationPositionAtom)).toBe("left");
+    expect(navigationPositionAtom.get()).toBe("right");
+    navigationPositionAtom.set("left");
+    expect(navigationPositionAtom.get()).toBe("left");
     expect(localStorage.getItem("ui/sidebar-position")).toBe(JSON.stringify("left"));
-    store.set(navigationPositionAtom, "top");
+    navigationPositionAtom.set("top");
     expect(localStorage.getItem("ui/sidebar-position")).toBe(JSON.stringify("top"));
-    store.set(navigationPositionAtom, "bottom");
-    expect(store.get(navigationPositionAtom)).toBe("bottom");
-
-    unsubscribe();
+    navigationPositionAtom.set("bottom");
+    expect(navigationPositionAtom.get()).toBe("bottom");
   });
 
-  test("falls back to right for an invalid stored value", () => {
+  test("falls back to right for an invalid stored value", async () => {
     localStorage.setItem("ui/sidebar-position", JSON.stringify("center"));
-    const store = createStore();
-    const unsubscribe = store.sub(navigationPositionAtom, () => undefined);
+    const { navigationPositionAtom } = await loadPreferences();
 
-    expect(store.get(navigationPositionAtom)).toBe("right");
-
-    unsubscribe();
+    expect(navigationPositionAtom.get()).toBe("right");
   });
 
-  test("location defaults to the top breadcrumb, persists a choice, and rejects unknown ones", () => {
+  test("follows another tab's choice and ignores one that is not valid", async () => {
+    const { navigationPositionAtom } = await loadPreferences();
+    const changeElsewhere = (value: string | null) =>
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: "ui/sidebar-position",
+          newValue: value,
+          storageArea: localStorage,
+        }),
+      );
+
+    changeElsewhere(JSON.stringify("top"));
+    expect(navigationPositionAtom.get()).toBe("top");
+    changeElsewhere(JSON.stringify("center"));
+    expect(navigationPositionAtom.get()).toBe("right");
+    changeElsewhere(JSON.stringify("left"));
+    changeElsewhere(null);
+    expect(navigationPositionAtom.get()).toBe("right");
+  });
+
+  test("location defaults to the top breadcrumb, persists a choice, and rejects unknown ones", async () => {
     localStorage.setItem("ui/location-display", JSON.stringify("tree-left"));
-    const store = createStore();
-    const unsubscribe = store.sub(locationDisplayAtom, () => undefined);
+    const { locationDisplayAtom } = await loadPreferences();
 
-    expect(store.get(locationDisplayAtom)).toBe("breadcrumb-top");
-    store.set(locationDisplayAtom, "off");
+    expect(locationDisplayAtom.get()).toBe("breadcrumb-top");
+    locationDisplayAtom.set("off");
     expect(localStorage.getItem("ui/location-display")).toBe(JSON.stringify("off"));
-
-    unsubscribe();
   });
 
-  test("defaults to a fixed sidebar and persists floating", () => {
+  test("defaults to a fixed sidebar and persists floating", async () => {
     localStorage.setItem("ui/sidebar-style", JSON.stringify("docked"));
-    const store = createStore();
-    const unsubscribe = store.sub(sidebarStyleAtom, () => undefined);
+    const { sidebarStyleAtom } = await loadPreferences();
 
-    expect(store.get(sidebarStyleAtom)).toBe("fixed");
-    store.set(sidebarStyleAtom, "floating");
+    expect(sidebarStyleAtom.get()).toBe("fixed");
+    sidebarStyleAtom.set("floating");
     expect(localStorage.getItem("ui/sidebar-style")).toBe(JSON.stringify("floating"));
-
-    unsubscribe();
   });
 
   test("insets a floating sidebar from the viewport on the chosen side", async () => {

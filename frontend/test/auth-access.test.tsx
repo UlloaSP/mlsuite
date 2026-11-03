@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { act } from "react";
-import { useLocation } from "react-router";
+import { useLocation } from "@tanstack/react-router";
 import { greetingFor } from "@/app/pages/auth-landing/authLandingCopy";
 import { useAuthAccess } from "@/app/pages/auth-landing/useAuthAccess";
 import { click, mount } from "./support/dom";
@@ -28,7 +28,10 @@ function AccessProbe() {
 }
 
 const probe = () => host.querySelector<HTMLElement>("[data-phase]")!;
-const advance = (ms: number) => act(() => vi.advanceTimersByTime(ms));
+const advance = (ms: number) =>
+  act(() => {
+    vi.advanceTimersByTime(ms);
+  });
 
 beforeEach(async () => {
   vi.useFakeTimers();

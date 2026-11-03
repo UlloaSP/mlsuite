@@ -11,9 +11,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import org.springframework.stereotype.Service;
 
@@ -23,8 +24,10 @@ import dev.ulloasp.mlsuite.schema.application.dto.SchemaDraftMergeSide;
 
 @Service
 public class SchemaDraftDiffService {
-    private static final ObjectMapper CANONICAL_JSON = new ObjectMapper()
-            .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+    // Jackson 2's bytes (a character outside the BMP as an escaped surrogate pair) keep fingerprints unchanged.
+    private static final ObjectMapper CANONICAL_JSON = JsonMapper.builderWithJackson2Defaults()
+            .enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
+            .build();
 
     public SchemaDraftDiffDto diff(Long baseVersionId, Long currentVersionId,
             Map<String, Object> base, Map<String, Object> draft, Map<String, Object> current) {
@@ -188,7 +191,7 @@ public class SchemaDraftDiffService {
         try {
             byte[] json = CANONICAL_JSON.writeValueAsBytes(value);
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(json));
-        } catch (JsonProcessingException | NoSuchAlgorithmException exception) {
+        } catch (JacksonException | NoSuchAlgorithmException exception) {
             throw new IllegalStateException("Cannot fingerprint schema document", exception);
         }
     }

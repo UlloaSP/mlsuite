@@ -5,8 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { PencilLine, Save, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
-import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
+import { toast } from "@/shared/ui/toast";
 import {
   useDeleteApiClientMutation,
   useUpdateApiClientMutation,
@@ -50,7 +50,7 @@ export function ApiClientSettingsTab({ client }: { client: ApiClientDto }) {
     try {
       await remove.mutateAsync(client.client.id);
       toast.success(`${client.client.name} was deleted`);
-      void navigate("/api-access/clients");
+      void navigate({ to: "/api-access/clients" });
     } catch {
       // The tab shows the mutation error.
     }
@@ -82,7 +82,7 @@ export function ApiClientSettingsTab({ client }: { client: ApiClientDto }) {
       </section>
       <ApiClientFormDialog
         title="Edit client"
-        summary="The name is unique in this organization whatever its case."
+        summary="The name is unique in this workspace whatever its case."
         defaults={{ name: client.client.name, description: client.client.description }}
         open={editing}
         pending={update.isPending}

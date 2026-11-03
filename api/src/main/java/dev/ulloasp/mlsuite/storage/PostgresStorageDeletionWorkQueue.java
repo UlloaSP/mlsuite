@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.storage;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -33,12 +34,14 @@ public class PostgresStorageDeletionWorkQueue implements StorageDeletionWorkQueu
                     processing_token = ?
                 FROM candidates
                 WHERE target.id = candidates.id
-                RETURNING target.id, target.bucket, target.object_key
+                RETURNING target.id, target.organization_id, target.bucket, target.object_key, target.object_version_id
                 """,
                 (result, row) -> new StorageDeletionWorkItem(
                         result.getLong("id"),
+                        result.getObject("organization_id", Long.class),
                         result.getString("bucket"),
-                        result.getString("object_key")),
+                        result.getString("object_key"),
+                        result.getString("object_version_id")),
                 staleAfterSeconds,
                 batchSize,
                 claimToken);
@@ -60,8 +63,8 @@ public class PostgresStorageDeletionWorkQueue implements StorageDeletionWorkQueu
 
     @Override
     @Transactional
-    public void fail(Long id, String claimToken, String error, int maxAttempts) {
-        jdbcTemplate.update("""
+    public boolean fail(Long id, String claimToken, String error, int maxAttempts) {
+        return jdbcTemplate.query("""
                 UPDATE storage_deletion_task
                 SET attempts = attempts + 1,
                     status = CASE WHEN attempts + 1 >= ? THEN 'FAILED' ELSE 'PENDING' END,
@@ -71,6 +74,18 @@ public class PostgresStorageDeletionWorkQueue implements StorageDeletionWorkQueu
                     processing_started_at = NULL,
                     processing_token = NULL
                 WHERE id = ? AND status = 'RUNNING' AND processing_token = ?
-                """, maxAttempts, error, id, claimToken);
+                RETURNING status
+                """, (result, row) -> "FAILED".equals(result.getString(1)), maxAttempts, error, id, claimToken)
+                .stream().findFirst().orElse(false);
+    }
+
+    @Override
+    @Transactional
+    public int pruneCompleted(OffsetDateTime before, int batchSize) {
+        return jdbcTemplate.update("""
+                DELETE FROM storage_deletion_task WHERE id IN (
+                    SELECT id FROM storage_deletion_task
+                    WHERE status = 'COMPLETED' AND completed_at < ?
+                    ORDER BY completed_at LIMIT ?)""", before, batchSize);
     }
 }

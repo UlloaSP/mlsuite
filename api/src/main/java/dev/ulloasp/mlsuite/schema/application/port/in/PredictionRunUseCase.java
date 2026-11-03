@@ -13,5 +13,9 @@ public interface PredictionRunUseCase {
 
     PredictionRun getRun(Long userId, Long runId);
 
+    /** Removes the run, from any review it is in, with its results and answers. */
     void deleteRun(Long userId, Long runId);
+
+    /** The same for several runs of the organization, all of them or none; returns how many went. */
+    int deleteRuns(Long userId, List<Long> runIds);
 }

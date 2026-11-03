@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useParams } from "react-router";
+import { getRouteApi } from "@tanstack/react-router";
 import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/workspace.queries";
 import { AuditLog } from "@/features/workspace/components/AuditLog";
 import { organizationRouteErrorStatus } from "@/features/workspace/lib/organization-route-error";
@@ -13,9 +13,11 @@ import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
 
-/** What members and platform administrators changed in the organization, for roles that may read it. */
+const route = getRouteApi("/protected/app/workspace/organizations/$organizationId/audit-log");
+
+/** Who did what in the organization, for roles that may read it. */
 export function AuditLogPage() {
-  const { organizationId = "" } = useParams();
+  const { organizationId } = route.useParams();
   const id = Number(organizationId);
   const dashboard = useOrganizationAdminDashboardQuery(id);
 
@@ -30,7 +32,7 @@ export function AuditLogPage() {
       <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
           title="Audit log"
-          description="Who changed invitations, roles and API access in this organization, and when. Actions platform administrators take on its resources are kept here too."
+          description="Who did what here and when: people, API clients, public visitors, platform administrators and the system's own work. Entries are kept for 7 days by default."
           breadcrumbs={[{ label: "Audit log" }]}
         />
         {dashboard.data ? (

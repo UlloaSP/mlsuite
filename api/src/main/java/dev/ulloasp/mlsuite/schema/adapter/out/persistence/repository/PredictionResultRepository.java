@@ -14,8 +14,6 @@ public interface PredictionResultRepository extends JpaRepository<PredictionResu
 
     List<PredictionResult> findByRunIdInOrderByRunIdAscIdAsc(Collection<Long> runIds);
 
-    void deleteByRun_Id(Long runId);
-
     @Query("""
             SELECT r FROM PredictionResult r
             WHERE r.id = :id

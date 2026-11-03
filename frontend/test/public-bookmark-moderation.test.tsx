@@ -1,16 +1,17 @@
 // @vitest-environment jsdom
 import { QueryClient } from "@tanstack/react-query";
 import { act } from "react";
-import { createMemoryRouter, Route, RouterProvider, Routes, type RouteObject } from "react-router";
+import { createMemoryHistory, RouterProvider, type AnyRoute } from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { useNavigationItems } from "@/app/components/use-navigation-items";
-import { protectedPages } from "@/app/router/protected-routes";
+import { createAppRouter } from "@/app/router/routes";
 import { AdminPublicBookmarksPage } from "@/features/admin/pages/admin-public-bookmarks-page";
 import type { ModeratedBookmarkDto } from "@/shared/api/openapi.gen";
 import { changeValue, click, mount, searchDelay } from "./support/dom";
 
 const session = vi.hoisted(() => ({ role: "SUPERADMIN" }));
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (original) => ({
+  ...(await original<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({ data: { id: 1, systemRole: session.role }, error: null, isLoading: false }),
   useCurrentUserIsSuperadmin: () => session.role === "SUPERADMIN",
 }));
@@ -18,6 +19,10 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   useWorkspaceContext: () => ({
     data: { currentOrganization: { id: 3 }, permissions: { canViewModels: true } },
   }),
+}));
+// The route tests open the real route table; the app shell around its pages is not under test.
+vi.mock("@/app/layouts/AppShellLayout", () => ({
+  AppShellFrame: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 const AT = "2026-10-01T10:00:00Z";
@@ -31,6 +36,7 @@ const bookmark = (overrides: Partial<ModeratedBookmarkDto>): ModeratedBookmarkDt
   schemaArchived: false,
   organizationName: "Acme Health",
   organizationLogoUrl: null,
+  organizationKind: "TEAM",
   version: 2,
   versionName: "Baseline",
   publicId: "acme-public-id",
@@ -44,6 +50,7 @@ const globex = bookmark({
   schemaName: "Churn",
   organizationName: "Globex",
   organizationLogoUrl: null,
+  organizationKind: "TEAM",
   version: 1,
   versionName: null,
   publicId: "globex-public-id",
@@ -55,6 +62,7 @@ const archived = bookmark({
   schemaArchived: true,
   organizationName: "Globex",
   organizationLogoUrl: null,
+  organizationKind: "TEAM",
   publicId: "globex-archived-id",
 });
 
@@ -112,12 +120,8 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 const openPage = async ({ pending = false } = {}) => {
-  const view = await mount(
-    <Routes>
-      <Route path={ROUTE} element={<AdminPublicBookmarksPage />} />
-    </Routes>,
-    { route: ROUTE, queryClient: newClient() },
-  );
+  const routes = { [ROUTE]: <AdminPublicBookmarksPage /> };
+  const view = await mount(null, { route: ROUTE, routes, queryClient: newClient() });
   await settle();
   if (!pending) await loaded(view.host);
   return view.host;
@@ -273,11 +277,14 @@ describe("public bookmark moderation page", () => {
 });
 
 describe("moderation access", () => {
-  const guardOf = (path: string): RouteObject | undefined =>
-    protectedPages.find((route) => route.children?.some((child) => child.path === path));
+  const router = createAppRouter(new QueryClient());
+  /** The id of the pathless guard route the page at `path` sits under. */
+  const guardOf = (path: string) =>
+    (router.routesByPath as Record<string, AnyRoute | undefined>)[path]?.parentRoute.options.id;
   const openRoute = async () => {
-    const router = createMemoryRouter(protectedPages, { initialEntries: [ROUTE] });
-    const { host } = await mount(<RouterProvider router={router} />, { queryClient: newClient() });
+    const client = newClient();
+    const app = createAppRouter(client, createMemoryHistory({ initialEntries: [ROUTE] }));
+    const { host } = await mount(<RouterProvider router={app} />, { queryClient: client });
     // The page is a lazy route: wait for whichever page it resolves to, then for its list.
     for (let turn = 0; turn < 200 && !host.querySelector("h1"); turn += 1) await flush();
     await settle();
@@ -286,9 +293,9 @@ describe("moderation access", () => {
   };
 
   test("the route is registered with the other superadmin pages", () => {
-    const guard = guardOf("admin/public-bookmarks");
-    expect(guard).toBeDefined();
-    expect(guard).toBe(guardOf("admin/users"));
+    const guard = guardOf(ROUTE);
+    expect(guard).toBe("superadmin");
+    expect(guard).toBe(guardOf("/admin/users"));
   });
 
   test("a superadmin reaches the page through the route", async () => {

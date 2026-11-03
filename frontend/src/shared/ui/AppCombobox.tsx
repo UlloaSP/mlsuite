@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { useDebouncer } from "@tanstack/react-pacer/debouncer";
 import { ChevronDown } from "lucide-react";
 import { Popover } from "radix-ui";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -51,8 +52,13 @@ export function AppCombobox<TId extends string | number = number>({
   onChange: (item: AppComboboxItem<TId> | null) => void;
 } & RemoteComboboxProps<TId>) {
   const listboxId = useId();
-  const fieldRef = useRef<HTMLLabelElement>(null);
-  const searchTimer = useRef<number | undefined>(undefined);
+  const fieldRef = useRef<HTMLLabelElement | null>(null);
+  // The modal dialog around the field, if any: the list renders in its top layer.
+  const [dialog, setDialog] = useState<HTMLElement | null>(null);
+  const attachField = (node: HTMLLabelElement | null) => {
+    fieldRef.current = node;
+    setDialog(node?.closest<HTMLElement>('[role="dialog"]') ?? null);
+  };
   const startAtChoice = useRef(false);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -73,23 +79,17 @@ export function AppCombobox<TId extends string | number = number>({
     [items, normalizedQuery, onSearchChange],
   );
   const expanded = open && !disabled;
-  const dialog = expanded ? fieldRef.current?.closest<HTMLElement>('[role="dialog"]') : undefined;
   // A failed remote request adds one "Retry" option after the loaded ones.
   const optionCount = filtered.length + (remote.error ? 1 : 0);
   const optionId = (index: number) => `${listboxId}-option-${index}`;
-  const search = (text: string, delayMs = 0) => {
-    window.clearTimeout(searchTimer.current);
-    if (!onSearchChange) return;
-    if (delayMs === 0) onSearchChange(text);
-    else searchTimer.current = window.setTimeout(() => onSearchChange(text), delayMs);
+  const typedSearch = useDebouncer((text: string) => onSearchChange?.(text), {
+    wait: SEARCH_DEBOUNCE_MS,
+  });
+  // Opening the list asks for every option at once; only typing waits.
+  const resetSearch = () => {
+    typedSearch.cancel();
+    onSearchChange?.("");
   };
-  useEffect(() => () => window.clearTimeout(searchTimer.current), []);
-  useEffect(() => {
-    if (!open && value == null && picked) {
-      setPicked(null);
-      setQuery("");
-    }
-  }, [open, value, picked]);
   // Pointer and focus on the field itself never dismiss its own list.
   const keepField = (event: Event) => {
     if (fieldRef.current?.contains(event.target as Node)) event.preventDefault();
@@ -101,9 +101,11 @@ export function AppCombobox<TId extends string | number = number>({
     setOpen(false);
   };
   const openList = () => {
+    // A choice the owner has since cleared is forgotten, with its text.
+    if (value == null) setPicked(null);
     setOpen(true);
     setQuery(onSearchChange ? "" : (selected?.label ?? ""));
-    search("");
+    resetSearch();
     setActiveIndex(0);
     startAtChoice.current = true;
   };
@@ -126,7 +128,7 @@ export function AppCombobox<TId extends string | number = number>({
     >
       <Popover.Anchor asChild>
         <label
-          ref={fieldRef}
+          ref={attachField}
           className={cx(
             "inline-flex w-full items-center gap-3 rounded-control border border-line bg-surface px-3 text-sm text-fg-secondary transition",
             CONTROL_HEIGHT.md,
@@ -135,7 +137,7 @@ export function AppCombobox<TId extends string | number = number>({
           )}
         >
           <input
-            value={open ? query : (selected?.label ?? query)}
+            value={open ? query : (selected?.label ?? (picked ? "" : query))}
             disabled={disabled}
             placeholder={placeholder}
             role="combobox"
@@ -153,7 +155,7 @@ export function AppCombobox<TId extends string | number = number>({
             onChange={(event) => {
               setQuery(event.target.value);
               startAtChoice.current = false;
-              search(event.target.value, SEARCH_DEBOUNCE_MS);
+              typedSearch.maybeExecute(event.target.value);
               onChange(null);
               setOpen(true);
               setActiveIndex(0);
@@ -188,7 +190,7 @@ export function AppCombobox<TId extends string | number = number>({
       {/* In the top layer, so no scroll container, menu or virtual row clips or covers it. Inside a
           modal dialog that layer is the dialog itself: its scroll lock only lets its own content
           scroll, by wheel and by touch. */}
-      <Popover.Portal container={dialog}>
+      <Popover.Portal container={dialog ?? undefined}>
         <Popover.Content
           role="presentation"
           align="start"

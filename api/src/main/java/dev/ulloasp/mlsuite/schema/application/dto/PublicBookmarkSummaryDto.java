@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.schema.application.dto;
 import java.time.OffsetDateTime;
 
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationLogoUrl;
+import dev.ulloasp.mlsuite.organization.domain.model.OrganizationKind;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 
 import jakarta.annotation.Nullable;
@@ -21,6 +22,9 @@ public record PublicBookmarkSummaryDto(
         int reportCount,
         String organizationName,
         @Nullable String organizationLogoUrl,
+        OrganizationKind organizationKind,
+        /** Where the publisher's profile answers, for a person who keeps one public. */
+        @Nullable String publisherHandle,
         OffsetDateTime updatedAt) {
 
     public static PublicBookmarkSummaryDto from(SchemaBookmark bookmark, int inputCount, int reportCount) {
@@ -32,6 +36,8 @@ public record PublicBookmarkSummaryDto(
                 reportCount,
                 bookmark.getSchema().getOrganization().getName(),
                 OrganizationLogoUrl.of(bookmark.getSchema().getOrganization()),
+                bookmark.getSchema().getOrganization().getKind(),
+                bookmark.getSchema().getOrganization().profileHandle(),
                 bookmark.getUpdatedAt());
     }
 }

@@ -2,7 +2,7 @@ package dev.ulloasp.mlsuite.schema.application.dto;
 
 import java.util.List;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackType;
 import jakarta.validation.Valid;

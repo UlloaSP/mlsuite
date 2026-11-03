@@ -10,6 +10,6 @@ const tone = {
   REVOKED: "danger",
 } as const;
 
-export function StatusBadge({ value }: { value: keyof typeof tone | string }) {
+export function StatusBadge({ value }: { value: string }) {
   return <AppBadge tone={tone[value as keyof typeof tone] ?? "neutral"}>{value}</AppBadge>;
 }

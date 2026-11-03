@@ -5,8 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { FileCode2 } from "lucide-react";
 import { useRef, useState } from "react";
-import { useNavigate } from "react-router";
-import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
+import { toast } from "@/shared/ui/toast";
 import { useUploadPluginMutation } from "@/features/plugins/api/plugin.mutations";
 import { PluginUploadCard } from "@/features/plugins/components/PluginUploadCard";
 import { PluginUploadSummary } from "@/features/plugins/components/PluginUploadSummary";
@@ -67,7 +67,7 @@ export function UploadPluginPage() {
     if (failed) return;
     toast.success(`${queue.length} plugin${queue.length === 1 ? "" : "s"} uploaded.`);
     // Invalid files stay on screen so their reason is not lost.
-    if (items.every((item) => item.status !== "invalid")) void navigate("/plugins");
+    if (items.every((item) => item.status !== "invalid")) void navigate({ to: "/plugins" });
   };
 
   const count = (predicate: (item: PluginUploadItem) => boolean) => items.filter(predicate).length;

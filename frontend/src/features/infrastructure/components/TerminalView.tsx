@@ -3,7 +3,7 @@ import { AppPageHeader } from "@/shared/ui/PageHeader";
 
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
-import { useAtomValue } from "jotai";
+import { useSelector } from "@tanstack/react-store";
 import { SquareTerminal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AppBadge } from "@/shared/ui/AppBadge";
@@ -39,7 +39,7 @@ export function TerminalView({
   const socketRef = useRef<WebSocket | null>(null);
   const sessionRef = useRef<string | null>(null);
   const { mutateAsync: createTerminalSession, isPending } = useTerminalSession();
-  const typography = useAtomValue(typographyAtom);
+  const typography = useSelector(typographyAtom);
   const [status, setStatus] = useState("idle");
   // react-doctor-disable-next-line react-doctor/rerender-state-only-in-handlers -- Requested service gates terminal session lifecycle and effect resubscription.
   const [requestedService, setRequestedService] = useState<string | null>(null);

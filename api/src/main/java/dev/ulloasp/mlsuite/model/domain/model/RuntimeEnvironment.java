@@ -19,15 +19,13 @@ import lombok.NoArgsConstructor;
  * The environment models run in: a Python version and exact distributions, as a bundle's lock
  * names them, plus the mlbundle release that wrote the bundle. Models that need the same files
  * share it. A row is never changed or removed, so every stored result keeps saying what computed
- * it; {@link #LEGACY} is the frozen environment of bundles written before locks.
+ * it.
  */
 @Entity
 @Table(name = "runtime_environment")
 @Getter
 @NoArgsConstructor
 public class RuntimeEnvironment {
-
-    public static final String LEGACY = "legacy";
 
     @Id
     @Column(name = "environment_key", length = 64)
@@ -61,9 +59,5 @@ public class RuntimeEnvironment {
         this.pythonVersion = pythonVersion;
         this.packages = packages;
         this.lockToml = lockToml;
-    }
-
-    public boolean isLegacy() {
-        return LEGACY.equals(key);
     }
 }

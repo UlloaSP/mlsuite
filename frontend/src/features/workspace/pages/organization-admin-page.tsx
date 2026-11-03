@@ -1,4 +1,4 @@
-import { useParams } from "react-router";
+import { getRouteApi } from "@tanstack/react-router";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
 import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
@@ -6,9 +6,11 @@ import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/wor
 import { OrganizationOverview } from "@/features/workspace/components/overview/OrganizationOverview";
 import { organizationRouteErrorStatus } from "@/features/workspace/lib/organization-route-error";
 
+const route = getRouteApi("/protected/app/workspace/organizations/$organizationId");
+
 /** Any organization's overview by id; the same dashboard as /workspace for the active one. */
 export function OrganizationAdminPage() {
-  const { organizationId = "" } = useParams();
+  const { organizationId } = route.useParams();
   const id = Number(organizationId);
   const dashboard = useOrganizationAdminDashboardQuery(id);
   const { data: context } = useWorkspaceContext();

@@ -1,13 +1,11 @@
-import { useEffect } from "react";
-import { useSearchParams } from "react-router";
 import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
+import { useSearchUpdate } from "@/shared/lib/use-search-update";
 
-type CatalogControlsOptions<TFilter extends string, TSort extends string> = {
-  initialFilter: TFilter;
-  initialSort: TSort;
-  filters: readonly TFilter[];
-  sorts: readonly TSort[];
-  normalizeQuery?: (query: string) => string;
+/** A catalog's search, filter and sort as its route validated them from the URL. */
+export type CatalogSearch<TFilter extends string, TSort extends string> = {
+  q: string;
+  filter: TFilter;
+  sort: TSort;
 };
 
 export type CatalogControls<TFilter extends string, TSort extends string> = {
@@ -20,60 +18,26 @@ export type CatalogControls<TFilter extends string, TSort extends string> = {
   sort: TSort;
 };
 
-export function useCatalogControls<TFilter extends string, TSort extends string>({
-  initialFilter,
-  initialSort,
-  filters,
-  sorts,
-  normalizeQuery = (query) => query.trim(),
-}: CatalogControlsOptions<TFilter, TSort>): CatalogControls<TFilter, TSort> {
-  const [params, setParams] = useSearchParams();
-  const query = params.get("q") ?? "";
-  const filterParam = params.get("filter");
-  const sortParam = params.get("sort");
-  const filter = filters.includes(filterParam as TFilter)
-    ? (filterParam as TFilter)
-    : initialFilter;
-  const sort = sorts.includes(sortParam as TSort) ? (sortParam as TSort) : initialSort;
-  const search = useDebouncedValue(normalizeQuery(query));
+const trimQuery = (query: string) => query.trim();
 
-  useEffect(() => {
-    if (!filterParam || filters.includes(filterParam as TFilter)) return;
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current);
-        next.delete("filter");
-        return next;
-      },
-      { replace: true },
-    );
-  }, [filterParam, filters, setParams]);
+/**
+ * The controls of a catalog whose search, filter and sort live in the URL. Typing replaces the
+ * history entry and reaches the server after a pause; a new filter or sort is a new entry.
+ */
+export function useCatalogControls<TFilter extends string, TSort extends string>(
+  { q, filter, sort }: CatalogSearch<TFilter, TSort>,
+  normalizeQuery: (query: string) => string = trimQuery,
+): CatalogControls<TFilter, TSort> {
+  const update = useSearchUpdate<CatalogSearch<TFilter, TSort>>();
+  const search = useDebouncedValue(normalizeQuery(q));
 
-  const update = (values: Record<string, string | null>, replace = false) => {
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current);
-        Object.entries(values).forEach(([key, value]) => {
-          if (value) next.set(key, value);
-          else next.delete(key);
-        });
-        return next;
-      },
-      { replace },
-    );
+  return {
+    filter,
+    query: q,
+    search,
+    setFilter: (value) => update({ filter: value }, { replace: false }),
+    setQuery: (value) => update({ q: value }),
+    setSort: (value) => update({ sort: value }, { replace: false }),
+    sort,
   };
-
-  const setQuery = (value: string) => {
-    update({ q: value || null }, true);
-  };
-
-  const setFilter = (value: TFilter) => {
-    update({ filter: value === initialFilter ? null : value });
-  };
-
-  const setSort = (value: TSort) => {
-    update({ sort: value === initialSort ? null : value });
-  };
-
-  return { filter, query, search, setFilter, setQuery, setSort, sort };
 }

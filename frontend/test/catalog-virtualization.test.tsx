@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { act } from "react";
+import { act, useEffect } from "react";
 import { QueryClient } from "@tanstack/react-query";
-import { Route, Routes, useNavigate } from "react-router";
+import { useRouter, type RouterHistory } from "@tanstack/react-router";
 import { beforeEach, afterEach, expect, test, vi } from "vite-plus/test";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { infiniteCatalogOptions, useInfiniteCatalog } from "@/shared/api/infinite-catalog";
@@ -14,7 +14,7 @@ const key = ["test", "catalog", "infinite"];
 let requests: number[];
 let release: (() => void) | undefined;
 let delayed = false;
-let navigate: ReturnType<typeof useNavigate>;
+let history: RouterHistory;
 let frames: FrameRequestCallback[];
 const options = () => ({
   queryKey: key,
@@ -53,16 +53,16 @@ function RemoteList() {
     </CatalogListPanel>
   );
 }
-function RoutesWithMemory() {
+/** The app shell's scroll memory around the matched page; `history` drives navigation. */
+function ScrollMemory() {
   useScrollMemory();
-  navigate = useNavigate();
-  return (
-    <Routes>
-      <Route path="/list" element={<RemoteList />} />
-      <Route path="/detail" element={<p>Detail</p>} />
-    </Routes>
-  );
+  const router = useRouter();
+  useEffect(() => {
+    history = router.history;
+  });
+  return null;
 }
+const pages = { "/list": <RemoteList />, "/detail": <p>Detail</p> };
 const settle = async () => {
   for (let i = 0; i < 8; i++)
     await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
@@ -95,18 +95,22 @@ afterEach(() => vi.unstubAllGlobals());
 test("restores cold cache beyond the old one-second window and fetches enough pages", async () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   await client.fetchInfiniteQuery({ ...infiniteCatalogOptions(options()), pages: 4 });
-  const { host } = await mount(<RoutesWithMemory />, { route: "/list", queryClient: client });
+  const { host } = await mount(<ScrollMemory />, {
+    route: "/list",
+    routes: pages,
+    queryClient: client,
+  });
   await settle();
   const list = host.querySelector<HTMLElement>("[data-scroll-memory]")!;
   await act(async () => {
     list.scrollTop = 8000;
     list.dispatchEvent(new Event("scroll"));
   });
-  await act(async () => navigate("/detail"));
+  await act(async () => history.push("/detail"));
   client.removeQueries({ queryKey: key });
   requests = [];
   delayed = true;
-  await act(async () => navigate(-1));
+  await act(async () => history.back());
   await frame();
   expect(host.querySelector<HTMLElement>("[data-scroll-memory]")?.dataset.catalogRestoreTop).toBe(
     "8000",
@@ -199,15 +203,19 @@ test("a list that cannot grow to its remembered offset settles instead of waitin
     pages: [{ items: items.slice(0, 5), page: 0, size: 24, totalItems: 5, hasNext: false }],
     pageParams: [0],
   });
-  const { host } = await mount(<RoutesWithMemory />, { route: "/list", queryClient: client });
+  const { host } = await mount(<ScrollMemory />, {
+    route: "/list",
+    routes: pages,
+    queryClient: client,
+  });
   await settle();
   const list = () => host.querySelector<HTMLElement>("[data-scroll-memory]")!;
   await act(async () => {
     list().scrollTop = 8000;
     list().dispatchEvent(new Event("scroll"));
   });
-  await act(async () => navigate("/detail"));
-  await act(async () => navigate(-1));
+  await act(async () => history.push("/detail"));
+  await act(async () => history.back());
   await frame();
   expect(frames.length).toBe(1);
 
@@ -216,8 +224,8 @@ test("a list that cannot grow to its remembered offset settles instead of waitin
   expect(frames.length).toBe(0);
   expect(host.querySelector("[data-catalog-restore-top]")).toBeNull();
 
-  await act(async () => navigate("/detail"));
-  await act(async () => navigate(-1));
+  await act(async () => history.push("/detail"));
+  await act(async () => history.back());
   await frame();
   expect(frames.length).toBe(1);
   await act(async () => {

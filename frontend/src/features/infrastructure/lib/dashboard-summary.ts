@@ -8,7 +8,7 @@ export type DashboardAlert = {
   id: string;
   title: string;
   detail: string;
-  tone: "danger" | "warning" | "accent" | "success";
+  tone: "danger" | "warning" | "success";
 };
 
 export function countHealthyServices(services: ServiceStatusDto[]): number {
@@ -22,7 +22,6 @@ export function countProblemServices(services: ServiceStatusDto[]): number {
 export function buildDashboardAlerts(
   overview: InfrastructureOverviewDto,
   streamConnected: boolean,
-  selectedService: string | null,
 ): DashboardAlert[] {
   const alerts: DashboardAlert[] = [];
   if (!streamConnected) {
@@ -41,17 +40,6 @@ export function buildDashboardAlerts(
       detail: `${service.status}${service.health ? ` • ${service.health}` : ""}${service.uptime ? ` • ${service.uptime}` : ""}`,
       tone: service.status === "missing" ? "danger" : "warning",
     });
-  }
-  if (selectedService) {
-    const service = overview.services.find((item) => item.name === selectedService);
-    if (service && !service.terminalEnabled) {
-      alerts.push({
-        id: "shell",
-        title: "Shell not available",
-        detail: `${service.name} cannot open an interactive terminal session.`,
-        tone: "accent",
-      });
-    }
   }
   if (alerts.length) {
     return alerts;

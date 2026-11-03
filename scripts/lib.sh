@@ -6,7 +6,8 @@ MLSUITE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 
 # Keep these pins identical to docker-compose.yml; deploy/test_compose_parity.py checks them.
 POSTGRES_IMAGE=postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
-MINIO_IMAGE=ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
+RUSTFS_IMAGE=rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2
+RC_IMAGE=rustfs/rc:v0.1.36@sha256:ab024bfebee49a750ce886b4c70963ccd9ddaa03f491704a90710641d7a26699
 
 # env_value KEY [FILE] — last value of KEY in FILE (default $ENV_FILE); fails when unset.
 env_value() {

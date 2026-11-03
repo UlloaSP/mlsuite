@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { MultiFileDiff, UnresolvedFile, type FileContents } from "@pierre/diffs/react";
-import { useAtomValue } from "jotai";
+import { useSelector } from "@tanstack/react-store";
 import { useMemo } from "react";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { cx } from "@/shared/ui/cx";
@@ -35,7 +35,7 @@ export function SchemaMergeDiffViewer({
   className,
   onResolve,
 }: Props) {
-  const theme = useAtomValue(themeWithHtmlAtom);
+  const theme = useSelector(themeWithHtmlAtom);
   const selectableChanges = useMemo(() => changes.filter((change) => change.conflict), [changes]);
   const currentFile = useMemo<FileContents>(() => {
     const contents = stringifySchema(currentDocument);

@@ -7,7 +7,7 @@
     <svg viewBox="0 0 760 330" role="img" aria-labelledby="architecture-title">
       <title id="architecture-title">
         The browser calls nginx, which serves the React app and proxies /api to the Spring API. The
-        API stores state in PostgreSQL and model files in MinIO, sends artifacts and inputs to the
+        API stores state in PostgreSQL and model files in RustFS, sends artifacts and inputs to the
         Python runtime, and reads Docker Compose through the operations agent.
       </title>
       <defs>
@@ -36,7 +36,7 @@
       <text x="390" y="293" text-anchor="middle" class="small">application state</text>
 
       <rect x="480" y="250" width="120" height="56" rx="10" class="box-subtle"></rect>
-      <text x="540" y="275" text-anchor="middle" class="title">minio</text>
+      <text x="540" y="275" text-anchor="middle" class="title">rustfs</text>
       <text x="540" y="293" text-anchor="middle" class="small">model files</text>
 
       <rect x="405" y="24" width="120" height="56" rx="10" class="box-subtle"></rect>

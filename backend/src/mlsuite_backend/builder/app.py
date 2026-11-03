@@ -2,7 +2,8 @@
 
 The API asks it to build the environment a model needs and to remove one no model uses. It
 accepts a lock only when the allowlist grants all of it, checked here again whatever the caller
-checked, and builds one environment at a time. It never loads a model.
+checked, and only when the index vouches for every release it names; it builds one environment
+at a time and never loads a model.
 """
 
 import asyncio
@@ -15,7 +16,7 @@ from pydantic import BaseModel
 
 from .. import environments, policy
 from ..config import ENVIRONMENT_ROOT
-from .install import BuildFailed, build, remove
+from .install import BuildFailed, ReleasesRefused, build, remove
 
 
 class BuildRequest(BaseModel):
@@ -57,12 +58,20 @@ def create_builder_app() -> FastAPI:
         async with _one_at_a_time:
             try:
                 return await asyncio.to_thread(build, lock, request.writerVersion, policy.allowlist(), ENVIRONMENT_ROOT)
+            except ReleasesRefused as error:
+                raise HTTPException(
+                    status_code=422,
+                    detail={
+                        "message": "The environment needs package releases MLsuite does not install",
+                        "refused": error.refused,
+                    },
+                ) from None
             except BuildFailed as error:
                 raise HTTPException(status_code=502, detail=f"Could not install the environment: {error}") from None
 
     @app.delete("/environments/{key}", status_code=204)
     async def remove_environment(key: str) -> Response:
-        if not environments.is_key(key) or key == environments.LEGACY:
+        if not environments.is_key(key):
             raise HTTPException(status_code=400, detail="Invalid environment key")
         async with _one_at_a_time:
             await asyncio.to_thread(remove, key, ENVIRONMENT_ROOT)

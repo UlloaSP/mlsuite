@@ -10,7 +10,7 @@ from fastapi import WebSocket
 
 from .compose import ComposeGateway, ComposeError
 from .config import Settings
-from .metrics import MetricsBuffer, collect_metrics
+from .metrics import MetricsBuffer, collect_metrics, machine_load
 from .terminal import TerminalManager
 
 
@@ -36,12 +36,16 @@ class AgentState:
         self.service_task: asyncio.Task[None] | None = None
         self.cleanup_task: asyncio.Task[None] | None = None
         self._latest_services: list[dict[str, Any]] = []
+        self._compose_failed = False
+        # Notified when the first dashboard connects, so both loops switch to its cadence at once.
+        self._watched = asyncio.Condition()
 
     async def start(self) -> None:
         try:
             self._latest_services = await self.compose.service_snapshot()
         except ComposeError:
             self._latest_services = []
+            self._compose_failed = True
         self.metrics.append(collect_metrics(self._latest_services))
         self.sampler_task = asyncio.create_task(self._sample_loop())
         self.service_task = asyncio.create_task(self._service_loop())
@@ -71,15 +75,41 @@ class AgentState:
             },
             "services": self._latest_services,
             "history": {
-                "sampleIntervalSeconds": self.settings.sample_interval_seconds,
+                "sampleIntervalSeconds": self.sample_interval(),
                 "retentionMinutes": self.settings.retention_minutes,
                 "points": list(self.metrics.points),
             },
         }
 
+    def load(self) -> dict[str, float | None] | None:
+        """The machine's load, or None while nothing here says what the stack is doing."""
+        measured = any(service.get("cpuPercent") is not None for service in self._latest_services)
+        if self._compose_failed or not measured:
+            return None
+        return machine_load(self.metrics.points[-1]["cpuPercent"])
+
+    def sample_interval(self) -> int:
+        """Seconds between samples: fast while a dashboard watches, as slow as alerts allow otherwise."""
+        return self.settings.sample_interval_seconds if self.clients else self.settings.idle_interval_seconds
+
+    def service_interval(self) -> int:
+        return self.settings.service_interval_seconds if self.clients else self.settings.idle_interval_seconds
+
+    async def _pause(self, seconds: int) -> None:
+        """Waits `seconds`, or less when a first dashboard connects meanwhile."""
+        async with self._watched:
+            try:
+                await asyncio.wait_for(self._watched.wait(), timeout=seconds)
+            except TimeoutError:
+                pass
+
     async def register_client(self, websocket: WebSocket) -> StreamClient:
         client = StreamClient(websocket)
+        first = not self.clients
         self.clients.add(client)
+        if first:
+            async with self._watched:
+                self._watched.notify_all()
         await client.queue.put({"type": "overview.snapshot", "payload": await self.snapshot()})
         return client
 
@@ -104,14 +134,16 @@ class AgentState:
                     "payload": {"aggregate": point, "services": self._latest_services},
                 }
             )
-            await asyncio.sleep(self.settings.sample_interval_seconds)
+            await self._pause(self.sample_interval())
 
     async def _service_loop(self) -> None:
         while True:
-            await asyncio.sleep(5)
+            await self._pause(self.service_interval())
             try:
                 self._latest_services = await self.compose.service_snapshot()
+                self._compose_failed = False
             except ComposeError as error:
+                self._compose_failed = True
                 await self.broadcast({"type": "error", "message": str(error)})
 
     async def _cleanup_loop(self) -> None:

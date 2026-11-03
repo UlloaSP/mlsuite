@@ -51,7 +51,7 @@ class ReleaseManifestTest(unittest.TestCase):
             checksum = (output / "release.json.sha256").read_text()
             self.assertEqual(checksum, hashlib.sha256(content).hexdigest() + "  release.json\n")
             compose = (output / "docker-compose.release.yml").read_text()
-            for service in ("artifact-migrate", "db-migrate", "spring-app",
+            for service in ("artifact-prune", "db-migrate", "spring-app",
                             "py-analyzer", "runtime-builder", "frontend", "ops-agent"):
                 self.assertIn(f"  {service}:\n", compose)
             for image in data["images"].values():

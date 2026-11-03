@@ -2,6 +2,7 @@ package dev.ulloasp.mlsuite.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import java.util.Map;
 import java.util.Set;
@@ -48,6 +49,49 @@ class PostgresStorageDeletionWorkQueueTest {
         dataSource.setPassword(POSTGRES.getPassword());
         jdbc = new JdbcTemplate(dataSource);
         queue = new PostgresStorageDeletionWorkQueue(jdbc);
+    }
+
+    @Test
+    void askingTwiceIsOneTaskAndAskingAfterItEndedStartsItOver() {
+        jdbc.update("TRUNCATE storage_deletion_task RESTART IDENTITY");
+        StorageDeletionQueue tasks = new StorageDeletionQueue(mock(StorageDeletionTaskRepository.class), jdbc);
+
+        tasks.enqueue(1L, "models", "same", "v1");
+        tasks.enqueue(1L, "models", "same", "v1");
+        tasks.enqueue(1L, "models", "same", "v2");
+        tasks.enqueue(1L, "models", "same", null);
+        tasks.enqueue(1L, "models", "same", null);
+        assertEquals(3, jdbc.queryForObject("SELECT count(*) FROM storage_deletion_task", Integer.class));
+
+        jdbc.update("UPDATE storage_deletion_task SET status = 'COMPLETED', completed_at = now()");
+        tasks.enqueue(1L, "models", "same", null);
+        assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM storage_deletion_task WHERE status = 'PENDING'", Integer.class));
+    }
+
+    @Test
+    void aClaimCarriesTheVersionItRemoves() {
+        jdbc.update("TRUNCATE storage_deletion_task RESTART IDENTITY");
+        jdbc.update("INSERT INTO storage_deletion_task (bucket, object_key, object_version_id) VALUES ('models', 'k', 'v9')");
+
+        assertEquals("v9", queue.claim(1, 300, "worker").get(0).versionId());
+    }
+
+    @Test
+    void completedTasksArePrunedInBatchesOncePastTheCutoff() {
+        jdbc.update("TRUNCATE storage_deletion_task RESTART IDENTITY");
+        for (int index = 1; index <= 3; index++) {
+            jdbc.update("INSERT INTO storage_deletion_task (bucket, object_key, status, completed_at)"
+                    + " VALUES ('models', ?, 'COMPLETED', now() - interval '10 days')", "old-" + index);
+        }
+        jdbc.update("INSERT INTO storage_deletion_task (bucket, object_key, status, completed_at)"
+                + " VALUES ('models', 'recent', 'COMPLETED', now())");
+        jdbc.update("INSERT INTO storage_deletion_task (bucket, object_key, created_at) VALUES ('models', 'open', now() - interval '10 days')");
+        var cutoff = java.time.OffsetDateTime.now().minusDays(7);
+
+        assertEquals(2, queue.pruneCompleted(cutoff, 2));
+        assertEquals(1, queue.pruneCompleted(cutoff, 2));
+        assertEquals(0, queue.pruneCompleted(cutoff, 2));
+        assertEquals(2, jdbc.queryForObject("SELECT count(*) FROM storage_deletion_task", Integer.class));
     }
 
     @Test

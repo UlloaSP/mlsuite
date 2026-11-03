@@ -16,6 +16,10 @@ import dev.ulloasp.mlsuite.apiaccess.adapter.out.persistence.repository.ApiClien
 import dev.ulloasp.mlsuite.apiaccess.domain.exception.ApiErrorCode;
 import dev.ulloasp.mlsuite.apiaccess.domain.exception.ApiProblem;
 import dev.ulloasp.mlsuite.apiaccess.domain.model.ApiCaller;
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
@@ -24,6 +28,7 @@ import dev.ulloasp.mlsuite.schema.application.service.BookmarkPublishability;
 import dev.ulloasp.mlsuite.schema.application.service.PublicBookmarkService;
 import dev.ulloasp.mlsuite.schema.application.service.PublicForm;
 import dev.ulloasp.mlsuite.schema.application.service.PublicRunReports;
+import dev.ulloasp.mlsuite.schema.application.service.SnapshotRunGuard;
 import dev.ulloasp.mlsuite.schema.domain.model.BoundModel;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultStatus;
@@ -55,6 +60,8 @@ public class ApiRunService {
     private final PredictionResultRepository resultRepository;
     private final ModelRepository modelRepository;
     private final BookmarkPublishability publishability;
+    private final SnapshotRunGuard guard;
+    private final AuditLogService auditLog;
 
     /** The key's holder; a missing key is answered like a wrong one. */
     @Transactional(readOnly = true)
@@ -82,6 +89,9 @@ public class ApiRunService {
                 .orElseThrow(() -> new ApiProblem(ApiErrorCode.BOOKMARK_NOT_FOUND,
                         "This client was not given a bookmark with this id."));
         SchemaVersion version = bookmark.getVersion();
+        if (guard.purging(version.getId())) {
+            throw new ApiProblem(ApiErrorCode.BOOKMARK_NOT_RUNNABLE, "This bookmark's model is being deleted.");
+        }
         List<BoundModel> models = publishability.models(version);
         if (models.size() != 1) {
             throw new ApiProblem(ApiErrorCode.BOOKMARK_NOT_RUNNABLE,
@@ -101,7 +111,7 @@ public class ApiRunService {
         });
         BoundModel model = models.get(0);
         return new ApiRunPlan(caller, target, version.getId(), version.getVersion(), version.getName(), model.id(),
-                model.name(), modelRepository.findArtifactSha256(model.id()).orElse(null),
+                model.name(), modelRepository.findArtifactSha256(model.id()).orElseThrow(),
                 PublicForm.of(version.getFormSchema(), models).reportRoutes(), features);
     }
 
@@ -123,6 +133,10 @@ public class ApiRunService {
         // A key revoked while its run was in the runtime has nothing left to mark; the run stands
         // under the name its client had when the call was accepted.
         keyRepository.markUsed(plan.caller().keyId(), now);
+        auditLog.record(AuditActor.apiClient(plan.caller().clientName()), plan.caller().organizationId(),
+                AuditAction.PREDICTION_RUN, bookmark.getId(), AuditDetails.of("runId", run.getId(),
+                        "clientId", plan.caller().clientId(), "modelId", plan.modelId(),
+                        "schemaVersionId", plan.versionId(), "status", run.getStatus()));
         return run.getId();
     }
 

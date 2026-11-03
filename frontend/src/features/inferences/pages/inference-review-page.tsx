@@ -1,6 +1,7 @@
 import { RotateCcw, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
-import { Link, useParams } from "react-router";
+import { getRouteApi } from "@tanstack/react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { useInference } from "@/features/inferences/api/inference-api";
 import { useReviewAssignment } from "@/features/inferences/api/inference-review-catalog";
 import { ReviewAssignmentFacts } from "@/features/inferences/components/ReviewAssignmentFacts";
@@ -16,6 +17,7 @@ import { AppPage } from "@/shared/ui/AppPage";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { AppSurface } from "@/shared/ui/AppSurface";
+import { appHref } from "@/shared/lib/app-href";
 import { appButtonClass } from "@/shared/ui/button-styles";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 
@@ -24,17 +26,13 @@ type Props = {
   renderAnswers: (inferenceId: string, reviewerId: number, reviewerName: string) => ReactNode;
 };
 
+const route = getRouteApi(
+  "/protected/app/can-manage-reviews/inferences/$inferenceId/reviews/$reviewRunId/reviewers/$reviewerId",
+);
+
 /** One reviewer's assignment on an inference: its state and dates, their answers, and its actions. */
 export function InferenceReviewPage({ renderAnswers }: Props) {
-  const {
-    inferenceId = "",
-    reviewRunId = "",
-    reviewerId = "",
-  } = useParams<{
-    inferenceId: string;
-    reviewRunId: string;
-    reviewerId: string;
-  }>();
+  const { inferenceId, reviewRunId, reviewerId } = route.useParams();
   const inference = useInference(inferenceId).data;
   const assignments = useReviewAssignment(Number(inferenceId), reviewRunId, reviewerId);
   const assignment = assignments.data;
@@ -60,9 +58,9 @@ export function InferenceReviewPage({ renderAnswers }: Props) {
           title="Review unavailable"
           description="This assignment no longer includes the inference, or it could not be loaded."
           action={
-            <Link to={reviewsHref} className={appButtonClass()}>
+            <AppLink {...appHref(reviewsHref)} className={appButtonClass()}>
               Back to reviews
-            </Link>
+            </AppLink>
           }
         />
       </AppPage>

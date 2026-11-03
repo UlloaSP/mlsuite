@@ -13,21 +13,14 @@ import { type ModelAction, ModelActionsMenu } from "./ModelActionsMenu";
 import { ModelMetric } from "./ModelMetric";
 import type { ModelDto } from "@/shared/api/openapi.gen";
 
-const getModelIcon = (type: string) => {
-  switch (type) {
-    case "classifier":
-      return Database;
-    case "regressor":
-      return TrendingUp;
-    default:
-      return Database;
-  }
-};
+const modelIcon = (type: string) =>
+  type === "regressor" ? <TrendingUp size={18} /> : <Database size={18} />;
 
 type ModelListItemProps = {
   canDelete: boolean;
   canDuplicate: boolean;
   canEdit: boolean;
+  canPurge?: boolean;
   item: ModelDto;
   schemaCount: number;
   /** The detail page this row opens. */
@@ -39,11 +32,11 @@ export function ModelListItem({
   canDelete,
   canDuplicate,
   canEdit,
+  canPurge = false,
   item,
   to,
   onAction,
 }: ModelListItemProps) {
-  const Icon = getModelIcon(item.type);
   const modifier = modifierName(item.updatedByName, item.updatedByEmail);
 
   return (
@@ -52,7 +45,7 @@ export function ModelListItem({
       titleAccessory={<ModelRuntimeBadge state={item.runtimeState} />}
       icon={
         <div className="flex size-10 items-center justify-center rounded-control bg-surface-muted text-accent">
-          <Icon size={18} />
+          {modelIcon(item.type)}
         </div>
       }
       description={getModelAlgorithmLabel(item)}
@@ -76,12 +69,13 @@ export function ModelListItem({
       }
       to={to}
       actions={
-        canDelete || canDuplicate || canEdit ? (
+        canDelete || canDuplicate || canEdit || canPurge ? (
           <ModelActionsMenu
             archived={Boolean(item.archivedAt)}
             canDelete={canDelete}
             canDuplicate={canDuplicate}
             canEdit={canEdit}
+            canPurge={canPurge}
             modelName={item.name}
             onAction={(action) => onAction(action, item)}
           />

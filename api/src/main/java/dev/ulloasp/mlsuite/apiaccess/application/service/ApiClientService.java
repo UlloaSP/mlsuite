@@ -14,6 +14,8 @@ import dev.ulloasp.mlsuite.apiaccess.application.dto.CreateApiClientRequest;
 import dev.ulloasp.mlsuite.apiaccess.application.dto.UpdateApiClientRequest;
 import dev.ulloasp.mlsuite.apiaccess.application.port.in.ApiClientUseCase;
 import dev.ulloasp.mlsuite.apiaccess.domain.model.ApiClient;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
 import dev.ulloasp.mlsuite.util.PageDto;
@@ -59,7 +61,7 @@ public class ApiClientService implements ApiClientUseCase {
         }
         ApiClient client = clientRepository.save(new ApiClient(organization, name, description(request.description()),
                 clients.memberName(userId)));
-        clients.audit(client, userId, "API_CLIENT_CREATE", "API_CLIENT", client.getId(), name);
+        clients.audit(client, userId, AuditAction.API_CLIENT_CREATE, client.getId(), AuditDetails.of("name", name));
         return clients.detail(client);
     }
 
@@ -71,16 +73,17 @@ public class ApiClientService implements ApiClientUseCase {
         if (clientRepository.existsByOrganizationIdAndNameIgnoreCaseAndIdNot(organization.getId(), name, clientId)) {
             throw duplicate(name);
         }
+        clients.audit(client, userId, AuditAction.API_CLIENT_UPDATE, clientId,
+                AuditDetails.of("client", name, "name", AuditDetails.changed(client.getName(), name)));
         client.setName(name);
         client.setDescription(description(request.description()));
-        clients.audit(client, userId, "API_CLIENT_UPDATE", "API_CLIENT", clientId, name);
         return clients.detail(clientRepository.saveAndFlush(client));
     }
 
     @Override
     public void deleteClient(Long userId, Long clientId) {
         ApiClient client = clients.require(clients.manageable(userId), clientId);
-        clients.audit(client, userId, "API_CLIENT_DELETE", "API_CLIENT", clientId, client.getName());
+        clients.audit(client, userId, AuditAction.API_CLIENT_DELETE, clientId, AuditDetails.of("name", client.getName()));
         clientRepository.delete(client);
     }
 

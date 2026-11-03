@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.invitation.application.dto;
 
+import dev.ulloasp.mlsuite.user.application.dto.UserAvatarUrl;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
 import jakarta.annotation.Nullable;
@@ -15,6 +16,6 @@ public record InvitationCandidateDto(
                 user.getId(),
                 user.getFullName(),
                 user.getEmail(),
-                user.getAvatarUrl());
+                UserAvatarUrl.of(user));
     }
 }

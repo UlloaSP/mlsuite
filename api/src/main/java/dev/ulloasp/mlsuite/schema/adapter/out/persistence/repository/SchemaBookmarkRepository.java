@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.time.OffsetDateTime;
@@ -23,7 +24,7 @@ public interface SchemaBookmarkRepository
 
     String PREDICT_SCOPE = """
             FROM SchemaBookmark b WHERE b.schema.organization.id = :organizationId
-            AND b.schema.archivedAt IS NULL
+            AND b.schema.archivedAt IS NULL AND b.schema.purgingAt IS NULL
             AND (:filter = 'all' OR b.version.version <
                 (SELECT MAX(v.version) FROM SchemaVersion v WHERE v.schema = b.schema))
             AND (lower(b.name) LIKE :search ESCAPE '!'
@@ -56,10 +57,13 @@ public interface SchemaBookmarkRepository
     String PUBLISHED = """
             b.visibility = dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility.PUBLIC
             AND b.schema.archivedAt IS NULL
+            AND b.schema.purgingAt IS NULL AND b.schema.organization.purgingAt IS NULL
             """;
 
     void deleteBySchemaId(Long schemaId);
     List<SchemaBookmark> findBySchemaIdOrderByNameAsc(Long schemaId);
+
+    List<SchemaBookmark> findByVersionId(Long schemaVersionId);
 
     @Query("""
             SELECT b FROM SchemaBookmark b
@@ -98,6 +102,29 @@ public interface SchemaBookmarkRepository
             )
             """)
     Page<SchemaBookmark> findPublishedPage(String search, Pageable pageable);
+
+    /** Whether an account publishes anything, which shows the picture of the person behind it. */
+    @Query("SELECT COUNT(b) > 0 FROM SchemaBookmark b WHERE b.schema.organization.id = :organizationId AND " + PUBLISHED)
+    boolean existsPublished(Long organizationId);
+
+    /** What an account publishes and has not pinned, for the profile of the person behind it. */
+    @Query("SELECT b FROM SchemaBookmark b WHERE b.schema.organization.id = :organizationId AND " + PUBLISHED + """
+            AND NOT EXISTS (SELECT 1 FROM ProfilePin pin WHERE pin.bookmark = b)
+            AND (:search = '' OR lower(b.name) LIKE lower(concat('%', :search, '%')))
+            """)
+    Page<SchemaBookmark> findPublishedUnpinned(Long organizationId, String search, Pageable pageable);
+
+    /** The account's readable bookmarks among {@code publicIds}: all a pin may point at. */
+    @Query("""
+            SELECT b FROM SchemaBookmark b
+            WHERE b.publicId IN :publicIds AND b.schema.organization.id = :organizationId AND
+            """ + PUBLISHED)
+    List<SchemaBookmark> findPublishedIn(Collection<String> publicIds, Long organizationId);
+
+    /** A person's pins in their order; losing a bookmark drops its pin, so this is only a safeguard. */
+    @Query("SELECT b FROM ProfilePin pin JOIN pin.bookmark b WHERE pin.userId = :userId AND " + PUBLISHED
+            + " ORDER BY pin.slot")
+    List<SchemaBookmark> findPinnedBy(Long userId);
 
     /** Every bookmark flagged public on the instance, whether or not its schema is archived. */
     @Query("""

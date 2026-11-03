@@ -5,10 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -18,6 +18,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.data.domain.PageImpl;
@@ -26,11 +27,10 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.mockito.Mock;
-import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
@@ -44,9 +44,7 @@ import dev.ulloasp.mlsuite.plugin.domain.model.StoredPlugin;
 import dev.ulloasp.mlsuite.storage.ArtifactHash;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StorageProperties;
-import dev.ulloasp.mlsuite.storage.StoredObjectItem;
 import dev.ulloasp.mlsuite.storage.StoredObject;
-import dev.ulloasp.mlsuite.storage.StoredObjectMetadata;
 import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
@@ -68,7 +66,7 @@ class PluginServiceImplTest {
     @Mock
     private OrganizationRepository organizations;
 
-    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    private final ObjectMapper objectMapper = new JsonMapper();
     private PluginServiceImpl service;
     private Map<String, byte[]> objects;
 
@@ -77,8 +75,7 @@ class PluginServiceImplTest {
         StorageProperties storageProperties = new StorageProperties();
         storageProperties.setBucket("bucket");
         PluginObjectReader reader = new PluginObjectReader(
-                objectStorageService, storageProperties, objectMapper, pluginMetadataRepository, deletionQueue,
-                organizations);
+                objectStorageService, storageProperties, objectMapper, pluginMetadataRepository, deletionQueue);
         service = new PluginServiceImpl(
                 objectStorageService,
                 storageProperties,
@@ -88,7 +85,7 @@ class PluginServiceImplTest {
                 pluginMetadataRepository,
                 deletionQueue,
                 reader,
-                organizations);
+                organizations, mock(AuditLogService.class));
         objects = Map.of(
                 "organizations/41/plugins/items/field.json", bytes(plugin(
                         "field", "alpha.ts", "export default defineFieldKind({ kind: \"alpha-field\" });")),
@@ -102,29 +99,28 @@ class PluginServiceImplTest {
         lenient().when(organizations.lockById(41L)).thenReturn(Optional.of(organization));
     }
 
+    /** Each plugin's row pins version v1 of its object and that object's SHA-256. */
     private void prepareStoredObjects() {
-        when(objectStorageService.list("organizations/41/plugins/items/"))
-                .thenReturn(objects.keySet().stream()
-                        .map(key -> new StoredObjectItem("bucket", key, objects.get(key).length, "etag", now()))
-                        .toList());
-        when(objectStorageService.inspectOptional(eq("bucket"), anyString(), any()))
-                .thenAnswer(invocation -> {
-                    String key = invocation.getArgument(1);
-                    byte[] bytes = objects.get(key);
-                    return bytes == null ? Optional.empty() : Optional.of(
-                            new StoredObjectMetadata("bucket", key, bytes.length, "etag", "v1", null));
-                });
-        when(objectStorageService.loadOptional(eq("bucket"), anyString(), any()))
+        lenient().when(pluginMetadataRepository.findByIdAndOrganizationId(anyString(), eq(41L)))
+                .thenAnswer(invocation -> Optional.of(row(invocation.getArgument(0))));
+        when(objectStorageService.loadOptional(eq("bucket"), anyString(), eq("v1")))
                 .thenAnswer(invocation -> Optional.ofNullable(objects.get(invocation.getArgument(1))));
+    }
+
+    private PluginMetadata row(String id) {
+        String key = "organizations/41/plugins/items/" + id + ".json";
+        PluginMetadata row = new PluginMetadata();
+        row.setId(id);
+        row.setObjectKey(key);
+        row.setStorageVersionId("v1");
+        row.setSha256(ArtifactHash.sha256(objects.getOrDefault(key, new byte[0])));
+        row.setUpdatedBy(new User());
+        return row;
     }
 
     /** The page the database answers with: these rows, in this order, out of {@code total} matching ones. */
     private void catalogAnswers(long total, String... ids) {
-        List<PluginMetadata> rows = Arrays.stream(ids).map(id -> {
-            PluginMetadata row = new PluginMetadata();
-            row.setId(id);
-            return row;
-        }).toList();
+        List<PluginMetadata> rows = Arrays.stream(ids).map(this::row).toList();
         when(pluginMetadataRepository.findCatalogPage(eq(41L), anyString(), anyString(), anyString(), any()))
                 .thenAnswer(invocation -> new PageImpl<>(rows, invocation.getArgument(4), total));
     }
@@ -147,21 +143,7 @@ class PluginServiceImplTest {
     }
 
     @Test
-    void indexesLegacyObjectsOnceAndLoadsOnlyTheRequestedPageAfterwards() {
-        prepareStoredObjects();
-        catalogAnswers(30, "field");
-
-        assertEquals(1, service.list(7L, 0, 1, "all", "", "updated").items().size());
-        assertEquals(1, service.list(7L, 1, 1, "all", "", "updated").items().size());
-
-        verify(objectStorageService).list("organizations/41/plugins/items/");
-        verify(organizations).save(any());
-        verify(objectStorageService, times(5)).loadOptional(eq("bucket"), anyString(), eq("v1"));
-    }
-
-    @Test
     void stats_CountsPluginTypesSeparatelyFromPagedList() {
-        prepareStoredObjects();
         when(pluginMetadataRepository.countByOrganizationIdAndPluginType(41L, "field")).thenReturn(1L);
         when(pluginMetadataRepository.countByOrganizationIdAndPluginType(41L, "report")).thenReturn(1L);
         var stats = service.stats(7L);
@@ -192,24 +174,6 @@ class PluginServiceImplTest {
     }
 
     @Test
-    void listEstablishesStoredJsonIdentityWhenMetadataIsMissing() {
-        prepareStoredObjects();
-        catalogAnswers(0);
-        service.list(7L, 0, 10, "all", "", "name");
-
-        ArgumentCaptor<PluginMetadata> captor = ArgumentCaptor.forClass(PluginMetadata.class);
-        verify(pluginMetadataRepository, atLeastOnce()).save(captor.capture());
-        PluginMetadata field = captor.getAllValues().stream()
-                .filter(item -> "field".equals(item.getId()))
-                .findFirst()
-                .orElseThrow();
-        byte[] content = objects.get("organizations/41/plugins/items/field.json");
-        assertEquals(content.length, field.getSizeBytes());
-        assertEquals(ArtifactHash.sha256(content), field.getSha256());
-        assertEquals("v1", field.getStorageVersionId());
-    }
-
-    @Test
     void deletedPluginStaysAbsentWhileObjectDeletionIsQueued() {
         prepareStoredObjects();
         // The page was read before the deletion removed the plugin's row.
@@ -224,7 +188,7 @@ class PluginServiceImplTest {
         PageDto<PluginDto> page = service.list(7L, 0, 10, "all", "", "name");
 
         assertEquals(List.of("invalid", "report"), page.items().stream().map(PluginDto::id).toList());
-        verify(deletionQueue).enqueue("bucket", "organizations/41/plugins/items/field.json", null);
+        verify(deletionQueue).enqueue(41L, "bucket", "organizations/41/plugins/items/field.json", null);
     }
 
     @Test
@@ -258,7 +222,7 @@ class PluginServiceImplTest {
 
     private StoredPlugin plugin(String id, String fileName, String source) {
         return new StoredPlugin(id, fileName, "application/typescript", source.length(), now(), now(),
-                "Alice", "alice@example.com", null, source);
+                "Alice", "alice@example.com", source);
     }
 
     private OffsetDateTime now() {

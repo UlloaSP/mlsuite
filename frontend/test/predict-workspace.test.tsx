@@ -6,11 +6,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // @vitest-environment jsdom
 
 import { act } from "react";
-import { createMemoryRouter, RouterProvider, useLocation } from "react-router";
+import { RouterProvider, useLocation } from "@tanstack/react-router";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
 import { PredictPage } from "@/features/schemas/pages/predict-page";
 import { BookmarkWorkspacePage } from "@/features/schemas/pages/bookmark-workspace-page";
-import { click, mount } from "./support/dom";
+import { click, createTestRouter, mount } from "./support/dom";
 import type { PredictBookmarkDto, SchemaBookmarkDto } from "@/shared/api/openapi.gen";
 
 const state = vi.hoisted(() => ({
@@ -24,7 +24,8 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   useCurrentOrganizationId: () => 3,
   useWorkspaceContext: () => ({ data: { permissions: { canRunPredictions: state.canRun } } }),
 }));
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({ data: { id: "user-1" } }),
 }));
 vi.mock("@/features/schemas/api/schema-prediction-mutations", () => ({
@@ -111,7 +112,7 @@ const bookmark = (id: number, name: string, schemaName: string): SchemaBookmarkD
 });
 
 function InferencesProbe() {
-  return <p>Inferences {useLocation().search}</p>;
+  return <p>Inferences {useLocation().searchStr}</p>;
 }
 
 let container: HTMLDivElement;
@@ -120,17 +121,11 @@ beforeEach(() => {
 });
 
 async function renderAt(path: string) {
-  const router = createMemoryRouter(
-    [
-      { path: "/predict", element: <PredictPage /> },
-      { path: "/inferences", element: <InferencesProbe /> },
-      {
-        path: "/predict/:bookmarkId",
-        element: <BookmarkWorkspacePage />,
-      },
-    ],
-    { initialEntries: [path] },
-  );
+  const router = createTestRouter(path, {
+    "/predict": <PredictPage />,
+    "/inferences": <InferencesProbe />,
+    "/predict/$bookmarkId": <BookmarkWorkspacePage />,
+  });
   ({ host: container } = await mount(<RouterProvider router={router} />));
   return router;
 }
@@ -182,11 +177,11 @@ test("pins the snapshot the page opened with and offers to switch when the bookm
 
   state.bookmark = { ...state.bookmark, versionId: 2, version: 2 };
   // Any re-render (here a URL change) sees the moved bookmark.
-  await act(async () => router.navigate("/predict/7?from=9"));
+  await act(async () => router.navigate({ href: "/predict/7?from=9" }));
   expect(container.textContent).toContain("now points to v2");
   expect(state.requestedVersions.at(-1)).toBe(1);
 
-  await act(async () => router.navigate("/predict/7"));
+  await act(async () => router.navigate({ href: "/predict/7" }));
   await click("Use v2", container);
   expect(container.textContent).toContain("Form for snapshot 2");
   expect(container.textContent).not.toContain("now points to");

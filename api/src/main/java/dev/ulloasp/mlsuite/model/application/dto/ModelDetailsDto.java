@@ -20,8 +20,8 @@ import jakarta.annotation.Nullable;
 public record ModelDetailsDto(
         Map<String, Object> manifest,
         @Nullable List<FeatureImportanceDto> featureImportances,
-        @Nullable Long sizeBytes,
-        @Nullable String sha256,
+        long sizeBytes,
+        String sha256,
         RuntimeEnvironmentDto environment) {
 
     public static ModelDetailsDto toDto(Model model, RuntimeEnvironment environment) {

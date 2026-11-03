@@ -1,65 +1,72 @@
 package dev.ulloasp.mlsuite.audit.domain.model;
 
 import java.time.OffsetDateTime;
+import java.util.Map;
+import java.util.UUID;
 
-import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-import dev.ulloasp.mlsuite.organization.domain.model.Organization;
-import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.ForeignKey;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
+/**
+ * One line of the audit log, read-only here: AuditLogService alone writes entries, in plain SQL.
+ * It keeps ids without foreign keys and the names they had, so an entry outlives what it names.
+ */
 @Entity
 @Getter
-@Setter
 @NoArgsConstructor
 @Table(name = "audit_event")
 public class AuditEvent {
 
-    public AuditEvent(Organization organization, User actor, String action, String targetType, String targetId, String metadata) {
-        this.organization = organization;
-        this.actor = actor;
-        this.action = action;
-        this.targetType = targetType;
-        this.targetId = targetId;
-        this.metadata = metadata;
-    }
-
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "organization_id", nullable = false, foreignKey = @ForeignKey(name = "fk_audit_org"))
-    private Organization organization;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "actor_kind", nullable = false, length = 20)
+    private AuditActorKind actorKind;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "actor_user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_audit_actor"))
-    private User actor;
+    @Column(name = "actor_user_id")
+    private Long actorUserId;
 
+    @Column(name = "actor_label", nullable = false)
+    private String actorLabel;
+
+    /** Null on a platform event, which belongs to no organization. */
+    @Column(name = "organization_id")
+    private Long organizationId;
+
+    @Column(name = "organization_label")
+    private String organizationLabel;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "action", nullable = false, length = 120)
-    private String action;
+    private AuditAction action;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "target_type", nullable = false, length = 80)
-    private String targetType;
+    private AuditTargetType targetType;
 
     @Column(name = "target_id", length = 120)
     private String targetId;
 
-    @Column(name = "metadata", length = 1000)
-    private String metadata;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "metadata", columnDefinition = "jsonb")
+    private Map<String, Object> metadata;
 
-    @CreationTimestamp
+    @Column(name = "ip", length = 64)
+    private String ip;
+
+    @Column(name = "request_id")
+    private UUID requestId;
+
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime createdAt;
 }

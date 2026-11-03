@@ -5,10 +5,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 // @vitest-environment jsdom
 
-import { Provider, createStore } from "jotai";
 import { navigationPositionAtom, sidebarStyleAtom } from "@/shared/ui/sidebar-preferences";
 import { act } from "react";
-import { useLocation } from "react-router";
+import { useLocation } from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { AppShellFrame } from "@/app/layouts/AppShellLayout";
 import { SidebarNavigation } from "@/app/components/SidebarNavigation";
@@ -16,7 +15,8 @@ import { Navbar } from "@/app/components/navbar/Navbar";
 import { SidebarProvider } from "@/app/components/app-sidebar/SidebarContext";
 import { mount } from "./support/dom";
 
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({
     data: {
       userName: "ada",
@@ -35,7 +35,8 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   }),
   useWorkspaceContext: () => ({
     data: {
-      currentOrganization: { id: 7, name: "Acme", slug: "acme" },
+      currentOrganization: { id: 7, name: "Acme", kind: "TEAM", slug: "acme" },
+      user: { avatarUrl: null },
       organizations: [{ id: 7, name: "Acme", slug: "acme" }],
       permissions: {
         canViewModels: true,
@@ -53,23 +54,29 @@ vi.mock("@/features/workspace/api/workspace.mutations", () => ({
   useSelectOrganization: () => ({ mutateAsync: vi.fn() }),
 }));
 vi.mock("@/app/components/AppGlobalSearch", () => ({ AppGlobalSearch: () => null }));
+const openAlerts = vi.hoisted(() => ({ count: 0 }));
+vi.mock("@/features/infrastructure/api/infrastructure.queries", () => ({
+  useOpenSystemAlertCount: (enabled: boolean) => ({ data: enabled ? openAlerts.count : undefined }),
+}));
 
 function LocationProbe() {
   return <output data-testid="location">{useLocation().pathname}</output>;
 }
 
-async function render(node: React.ReactNode, store = createStore()) {
+async function render(node: React.ReactNode) {
   const { host } = await mount(
-    <Provider store={store}>
+    <>
       {node}
       <LocationProbe />
-    </Provider>,
+    </>,
     { route: "/home" },
   );
   return host;
 }
 
 beforeEach(() => {
+  navigationPositionAtom.set("right");
+  sidebarStyleAtom.set("fixed");
   localStorage.clear();
   vi.stubGlobal(
     "matchMedia",
@@ -82,6 +89,22 @@ afterEach(() => {
 });
 
 describe("navigation bar", () => {
+  test("marks Infra with the open alerts, in words as well as a number", async () => {
+    openAlerts.count = 2;
+    const container = await render(
+      <SidebarProvider open onOpenChange={() => undefined}>
+        <Navbar position="top" />
+      </SidebarProvider>,
+    );
+    openAlerts.count = 0;
+
+    const infra = container.querySelector('[data-user-guide-item="nav:Infra"]')!;
+    expect(infra.textContent).toContain("2 open alerts");
+    expect(
+      container.querySelector('[data-user-guide-item="nav:Models"]')?.textContent,
+    ).not.toContain("open");
+  });
+
   test("lists the same entries as the sidebar, with menus for sections that have children", async () => {
     const container = await render(
       <SidebarProvider open onOpenChange={() => undefined}>
@@ -105,6 +128,8 @@ describe("navigation bar", () => {
       "nav:Users",
       "nav:Moderation",
       "nav:API traffic",
+      "nav:Purges",
+      "nav:Audit log",
       "nav:Infra",
     ]);
     expect(entries[1].previousElementSibling?.getAttribute("aria-hidden")).toBe("true");
@@ -130,13 +155,11 @@ describe("navigation bar", () => {
   });
 
   test("follows the shared collapsed state and points menus toward the screen", async () => {
-    const store = createStore();
-    store.set(sidebarStyleAtom, "floating");
+    sidebarStyleAtom.set("floating");
     const container = await render(
       <SidebarProvider open={false} onOpenChange={() => undefined}>
         <Navbar position="bottom" />
       </SidebarProvider>,
-      store,
     );
 
     const bar = container.querySelector<HTMLElement>("header")!;
@@ -184,6 +207,8 @@ describe("navigation bar", () => {
       "nav:Users",
       "nav:Moderation",
       "nav:API traffic",
+      "nav:Purges",
+      "nav:Audit log",
       "nav:Infra",
     ]);
     expect(
@@ -201,21 +226,31 @@ describe("navigation bar", () => {
     );
 
     act(() => {
-      window.dispatchEvent(
-        new KeyboardEvent("keydown", { altKey: true, code: "Digit2", key: "2" }),
+      document.body.dispatchEvent(
+        new KeyboardEvent("keydown", { altKey: true, bubbles: true, code: "Digit2", key: "2" }),
       );
     });
 
     expect(container.querySelector('[data-testid="location"]')?.textContent).toBe("/predict");
+
+    // The physical key decides: the numpad digit opens the same entry as the top row.
+    act(() => {
+      document.body.dispatchEvent(
+        new KeyboardEvent("keydown", { altKey: true, bubbles: true, code: "Numpad1", key: "End" }),
+      );
+    });
+    const first = container.querySelector('[aria-keyshortcuts="Alt+1"]');
+    expect(container.querySelector('[data-testid="location"]')?.textContent).toBe(
+      first?.getAttribute("href"),
+    );
   });
 
   test("places the bar at the chosen edge instead of the sidebar", async () => {
-    // Stored preferences are read once, when the module loads; set them on the store.
-    const store = createStore();
-    store.set(navigationPositionAtom, "bottom");
-    store.set(sidebarStyleAtom, "floating");
+    // Stored preferences are read once, when the module loads; set them on the atoms.
+    navigationPositionAtom.set("bottom");
+    sidebarStyleAtom.set("floating");
 
-    const container = await render(<AppShellFrame>Content</AppShellFrame>, store);
+    const container = await render(<AppShellFrame>Content</AppShellFrame>);
     const shell = container.querySelector<HTMLElement>("[data-navigation-position]")!;
     const bar = shell.querySelector("header[data-app-sidebar]")!;
 

@@ -5,7 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Tooltip } from "radix-ui";
 import { Fragment, type ReactNode } from "react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
+import { appHref } from "@/shared/lib/app-href";
 import {
   isTrail,
   useBreadcrumbTrail,
@@ -79,13 +80,13 @@ export function LocationRail({ side }: { side: "left" | "right" }) {
                         {tick}
                       </span>
                     ) : (
-                      <Link
+                      <AppLink
                         aria-label={label}
-                        to={level.to}
+                        {...appHref(level.to)}
                         className={cx(SEGMENT_HIT, "cursor-pointer", FOCUS_RING)}
                       >
                         {tick}
-                      </Link>
+                      </AppLink>
                     )}
                   </Tooltip.Trigger>
                   <Tooltip.Portal>

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Tags } from "lucide-react";
-import { useParams } from "react-router";
+import { getRouteApi } from "@tanstack/react-router";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { useSchema } from "@/features/schemas/api/schema-queries";
@@ -26,15 +26,12 @@ const SORTS: Array<{ value: BookmarkSort; label: string }> = [
   { value: "version", label: "Version" },
 ];
 
+const route = getRouteApi("/protected/app/can-view-models/schemas/$schemaId/bookmarks");
+
 export function SchemaBookmarksPage() {
-  const { schemaId } = useParams<{ schemaId: string }>();
+  const { schemaId } = route.useParams();
   const { data: schema } = useSchema(schemaId);
-  const controls = useCatalogControls<BookmarkFilter, BookmarkSort>({
-    filters: FILTERS.map(({ value }) => value),
-    initialFilter: "all",
-    initialSort: "updated",
-    sorts: SORTS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const bookmarksQuery = useBookmarkCatalog(schemaId, {
     search: controls.search,
     filter: controls.filter,

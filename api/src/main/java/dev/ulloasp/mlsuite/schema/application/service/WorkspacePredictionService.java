@@ -10,9 +10,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.ModelRuntimeClient;
 import dev.ulloasp.mlsuite.model.application.service.WorkspaceRuntimeSlots;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
@@ -32,8 +36,8 @@ import lombok.RequiredArgsConstructor;
  * refuses, or a runtime that fails, gives a failed result, sealed the same way; among many records
  * each succeeds or fails on its own.
  *
- * <p>This class is deliberately not transactional, and its endpoints are left out of open-in-view
- * (see OpenInViewConfig): the run first takes its member's place in the workspace share's queue,
+ * <p>This class is deliberately not transactional (and open-in-view is off): the run first takes
+ * its member's place in the workspace share's queue,
  * so a run that cannot be served is turned away before any database work; then the plan is read
  * and returned, and the run waits for a slot and calls the runtime with no connection held. A
  * batch takes one place and one slot, like a single record.
@@ -49,14 +53,20 @@ public class WorkspacePredictionService implements WorkspacePredictionUseCase {
     private final ModelRuntimeClient runtime;
     private final PredictionAttestations attestations;
     private final ObjectMapper objectMapper;
+    private final AuditLogService auditLog;
 
     @Override
     public WorkspacePredictionDto predict(Long userId, Long bookmarkId, WorkspacePredictionRequest request) {
+        AttestedPrediction prediction;
         try (RuntimeSlots.Admission admission = slots.admit(userId)) {
             Plan plan = planner.plan(userId, bookmarkId, request.schemaVersionId(), request.modelId());
             // The explanation shares the prediction's slot.
-            return sealed(admission.run(() -> perform(plan, request.modelInput())));
+            prediction = admission.run(() -> perform(plan, request.modelInput()));
         }
+        auditLog.record(AuditActor.user(userId), prediction.organizationId(), AuditAction.PREDICTION_RUN, bookmarkId,
+                AuditDetails.of("modelId", prediction.modelId(), "schemaVersionId", prediction.schemaVersionId(),
+                        "status", prediction.status()));
+        return sealed(prediction);
     }
 
     private WorkspacePredictionDto sealed(AttestedPrediction prediction) {
@@ -143,7 +153,7 @@ public class WorkspacePredictionService implements WorkspacePredictionUseCase {
     private String json(Object input) {
         try {
             return objectMapper.writeValueAsString(input);
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             throw new IllegalArgumentException("The model input is not serializable as JSON", ex);
         }
     }

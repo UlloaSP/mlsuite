@@ -16,11 +16,15 @@ from pathlib import Path
 _SOURCE = str(Path(__file__).resolve().parents[1])
 sys.path.insert(0, _SOURCE)
 
+from mlsuite_worker import limits  # noqa: E402
+
+# Before mlbundle or any model library is imported, and so before any model runs.
+limits.apply()
+
 from mlsuite_worker.commands import (  # noqa: E402
     CommandError,
     LoadedBundles,
     explanation_input,
-    metadata,
     verify,
 )
 from mlsuite_worker.rows import predict_rows  # noqa: E402
@@ -40,8 +44,6 @@ def _handle(bundles: LoadedBundles, request: dict) -> object:
         case "verify":
             samples = mlbundle.inspect(request["path"]).samples or []
             return verify(bundle, list(samples), request["checked"])
-        case "metadata":
-            return metadata(bundle, request["filename"])
         case "explanation_input":
             return explanation_input(bundle, request["record"])
     raise CommandError(400, f"Unknown operation {request['op']!r}")
@@ -53,14 +55,22 @@ def main() -> None:
     sys.stdout = sys.stderr
     bundles = LoadedBundles(int(os.environ.get("MLSUITE_BUNDLE_CACHE_BYTES", "0")) or 512 * 1024 * 1024)
     for line in sys.stdin:
+        retire = False
         try:
             answer = {"ok": True, "result": _handle(bundles, json.loads(line))}
         except CommandError as error:
             answer = {"ok": False, "status": error.status, "detail": error.detail}
         except Exception as error:  # noqa: BLE001 - one request's failure is its answer, not the worker's end
-            answer = {"ok": False, "status": 500, "detail": f"{type(error).__name__}: {error}"}
+            reached = limits.breach(error)
+            retire = reached is not None
+            detail = reached or f"{type(error).__name__}: {error}"
+            answer = {"ok": False, "status": limits.STATUS if retire else 500, "detail": detail, "retire": retire}
         answers.write(json.dumps(answer) + "\n")
         answers.flush()
+        if retire:
+            # Past a bound the model may have left memory, files or processes behind: the runtime
+            # starts a fresh worker and ends whatever this one started.
+            return
 
 
 if __name__ == "__main__":

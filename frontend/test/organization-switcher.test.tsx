@@ -7,7 +7,7 @@ import type { OrganizationDto, WorkspaceCurrentContextDto } from "@/shared/api/o
 import { mount } from "./support/dom";
 
 const organization = (id: number, name: string): OrganizationDto =>
-  ({ id, name, slug: name.toLowerCase(), logoUrl: null }) as OrganizationDto;
+  ({ id, name, kind: "TEAM", slug: name.toLowerCase(), logoUrl: null }) as OrganizationDto;
 
 const catalog = vi.hoisted(() => ({
   items: [] as unknown[],
@@ -41,6 +41,7 @@ vi.mock("@/features/workspace/api/workspace.mutations", () => ({
 const context = {
   currentOrganization: organization(7, "Acme"),
   permissions: {},
+  user: { avatarUrl: null },
 } as unknown as WorkspaceCurrentContextDto;
 
 const openMenu = () =>
@@ -69,9 +70,9 @@ beforeEach(() => {
 test("lists the member's organizations as menu entries and switches on choosing one", async () => {
   await openMenu();
 
-  expect(entries()).toEqual(["Acmeacme", "Globexglobex"]);
+  expect(entries()).toEqual(["Acmeacme", "Globexglobex", "Organizations", "New organization"]);
   // Everything fits one page, so there is nothing to search for.
-  expect(document.querySelector('input[aria-label="Search organization"]')).toBeNull();
+  expect(document.querySelector('input[aria-label="Search accounts"]')).toBeNull();
 
   await act(async () => {
     document.querySelectorAll<HTMLElement>('[role="menuitem"]')[1]!.click();
@@ -83,7 +84,7 @@ test("offers search and fetches the next page near the end when memberships exce
   catalog.hasNextPage = true;
   await openMenu();
 
-  expect(document.querySelector('input[aria-label="Search organization"]')).not.toBeNull();
+  expect(document.querySelector('input[aria-label="Search accounts"]')).not.toBeNull();
   const list = document.querySelector<HTMLElement>('[role="group"]')!;
   await act(async () => {
     list.dispatchEvent(new Event("scroll", { bubbles: true }));
@@ -96,7 +97,7 @@ test("a failed list offers a retry instead of an empty switcher", async () => {
   catalog.error = new Error("offline");
   await openMenu();
 
-  expect(entries()).toEqual(["Could not load organizations. Retry"]);
+  expect(entries()[0]).toBe("Could not load accounts. Retry");
   await act(async () => {
     document.querySelector<HTMLElement>('[role="menuitem"]')!.click();
   });

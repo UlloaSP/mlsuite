@@ -3,172 +3,118 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { RouteObject } from "react-router";
-import { page, reviewAccess, superadmin, workspace } from "./lazy-route";
+import { notificationsSearch } from "@/features/notifications/pages/notification-search";
+import { ownProfileSearch, settingsSearch } from "@/features/user/pages/user-search";
+import { organizationAdminDashboardQueryOptions } from "@/features/workspace/api/workspace.queries";
+import {
+  auditSearch,
+  invitationsSearch,
+  membersSearch,
+  organizationsSearch,
+  rolesSearch,
+} from "@/features/workspace/pages/workspace-search";
+import { superadminRoutes } from "./admin-routes";
+import {
+  appRoute,
+  canCreateModelsRoute,
+  canEditModelsRoute,
+  canManagePluginsRoute,
+  canManageReviewsRoute,
+  canViewApiAccessRoute,
+  canViewModelsRoute,
+  canViewPluginsRoute,
+  canViewWorkspaceRoute,
+  protectedRoute,
+  reviewAccessRoute,
+  teamOrganizationRoute,
+} from "./layout-routes";
+import { page, searchPage } from "./lazy-route";
+import { prefetchForMember } from "./route-loaders";
+import { workspaceRoutes } from "./workspace-routes";
 
 const reviewsPage = () =>
   import("@/features/reviews/pages/reviews-page").then((m) => m.ReviewsPage);
 
-export const protectedPages: RouteObject[] = [
-  page("home", () =>
+const ORGANIZATION = "workspace/organizations/$organizationId";
+
+const accountRoutes = [
+  page(appRoute, "home", () =>
     import("@/app/pages/authenticated-home-page").then((m) => m.AuthenticatedHomePage),
   ),
-  page("profile", () => import("@/features/user/pages/profilePage").then((m) => m.ProfilePage)),
-  page("settings", () => import("@/features/user/pages/SettingsPage").then((m) => m.SettingsPage)),
-  page("notifications", () =>
-    import("@/features/workspace/pages/notifications-page").then((m) => m.NotificationsPage),
+  searchPage(appRoute, "profile", ownProfileSearch, () =>
+    import("@/features/user/pages/own-profile-page").then((m) => m.OwnProfilePage),
   ),
-  page("workspace/organizations/:organizationId", () =>
-    import("@/features/workspace/pages/organization-admin-page").then(
-      (m) => m.OrganizationAdminPage,
+  searchPage(appRoute, "settings", settingsSearch, () =>
+    import("@/features/user/pages/SettingsPage").then((m) => m.SettingsPage),
+  ),
+  searchPage(appRoute, "notifications", notificationsSearch, () =>
+    import("@/app/pages/NotificationsRoutePage").then((m) => m.NotificationsRoutePage),
+  ),
+  searchPage(appRoute, "workspace/organizations", organizationsSearch, () =>
+    import("@/features/workspace/pages/organizations-route-page").then(
+      (m) => m.OrganizationsRoutePage,
     ),
   ),
-  page("workspace/organizations/:organizationId/members", () =>
-    import("@/features/workspace/pages/members-page").then((m) => m.MembersPage),
+  page(appRoute, "workspace/organizations/create", () =>
+    import("@/app/router/create-organization-route").then((m) => m.CreateOrganizationRoute),
   ),
-  page("workspace/organizations/:organizationId/invitations", () =>
-    import("@/features/workspace/pages/invitations-page").then((m) => m.InvitationsPage),
+  page(
+    appRoute,
+    ORGANIZATION,
+    () =>
+      import("@/features/workspace/pages/organization-admin-page").then(
+        (m) => m.OrganizationAdminPage,
+      ),
+    ({ queryClient, params: { organizationId } }) =>
+      prefetchForMember(queryClient, () =>
+        queryClient.prefetchQuery(organizationAdminDashboardQueryOptions(Number(organizationId))),
+      ),
   ),
-  page("workspace/organizations/:organizationId/roles", () =>
-    import("@/features/workspace/pages/roles-page").then((m) => m.RolesPage),
-  ),
-  page("workspace/organizations/:organizationId/audit-log", () =>
+  searchPage(appRoute, `${ORGANIZATION}/audit-log`, auditSearch, () =>
     import("@/features/workspace/pages/audit-log-page").then((m) => m.AuditLogPage),
   ),
-  page("workspace/organizations/:organizationId/settings", () =>
+];
+
+const teamOrganizationRoutes = teamOrganizationRoute.addChildren([
+  searchPage(teamOrganizationRoute, `${ORGANIZATION}/members`, membersSearch, () =>
+    import("@/features/workspace/pages/members-page").then((m) => m.MembersPage),
+  ),
+  searchPage(teamOrganizationRoute, `${ORGANIZATION}/invitations`, invitationsSearch, () =>
+    import("@/features/workspace/pages/invitations-page").then((m) => m.InvitationsPage),
+  ),
+  searchPage(teamOrganizationRoute, `${ORGANIZATION}/roles`, rolesSearch, () =>
+    import("@/features/workspace/pages/roles-page").then((m) => m.RolesPage),
+  ),
+  page(teamOrganizationRoute, `${ORGANIZATION}/settings`, () =>
     import("@/features/workspace/pages/organization-settings-page").then(
       (m) => m.OrganizationSettingsPage,
     ),
   ),
-  reviewAccess([
-    page("review", reviewsPage),
-    page("review/:reviewId", reviewsPage),
-    page("review/:reviewId/runs/:reviewRunId", reviewsPage),
-  ]),
-  superadmin([
-    page("workspace/organizations", () =>
-      import("@/features/workspace/pages/organizations-page").then((m) => m.OrganizationsPage),
-    ),
-    page("workspace/organizations/create", () =>
-      import("@/app/router/create-organization-route").then((m) => m.CreateOrganizationRoute),
-    ),
-    page("admin/users", () =>
-      import("@/features/admin/pages/admin-users-page").then((m) => m.AdminUsersPage),
-    ),
-    page("admin/users/create", () =>
-      import("@/features/admin/pages/create-admin-user-page").then((m) => m.CreateAdminUserPage),
-    ),
-    page("admin/public-bookmarks", () =>
-      import("@/features/admin/pages/admin-public-bookmarks-page").then(
-        (m) => m.AdminPublicBookmarksPage,
-      ),
-    ),
-    page("admin/api-traffic", () =>
-      import("@/features/api-access/pages/admin-api-traffic-page").then(
-        (m) => m.AdminApiTrafficPage,
-      ),
-    ),
-    page("admin/infrastructure", () =>
-      import("@/features/infrastructure/pages/admin-infrastructure-page").then(
-        (m) => m.AdminInfrastructurePage,
-      ),
-    ),
-  ]),
-  workspace("canViewWorkspace", [
-    page("workspace", () =>
-      import("@/features/workspace/pages/workspace-home-page").then((m) => m.WorkspaceHomePage),
-    ),
-  ]),
-  workspace("canViewModels", [
-    page("models", () => import("@/features/models/pages/models-page").then((m) => m.ModelsPage)),
-    page("models/:modelId", () =>
-      import("@/features/models/pages/model-detail-page").then((m) => m.ModelDetailPage),
-    ),
-    page("inferences", () =>
-      import("@/app/pages/InferencesRoutePage").then((m) => m.InferencesRoutePage),
-    ),
-    page("inferences/:inferenceId", () =>
-      import("@/app/pages/InferenceDetailRoutePage").then((m) => m.InferenceDetailRoutePage),
-    ),
-    page("schemas", () =>
-      import("@/features/schemas/pages/schemas-page").then((m) => m.SchemasPage),
-    ),
-    page("schemas/:schemaId", () =>
-      import("@/features/schemas/pages/schema-detail-page").then((m) => m.SchemaDetailPage),
-    ),
-    page("schemas/:schemaId/changes", () =>
-      import("@/features/schemas/pages/schema-changes-page").then((m) => m.SchemaChangesPage),
-    ),
-    page("schemas/:schemaId/bookmarks", () =>
-      import("@/features/schemas/pages/schema-bookmarks-page").then((m) => m.SchemaBookmarksPage),
-    ),
-    page("schemas/:schemaId/snapshots", () =>
-      import("@/features/schemas/pages/schema-snapshots-page").then((m) => m.SchemaSnapshotsPage),
-    ),
-    page("schemas/:schemaId/versions/:versionId", () =>
-      import("@/features/schemas/pages/schema-snapshot-detail-page").then(
-        (m) => m.SchemaSnapshotDetailPage,
-      ),
-    ),
-    page("predict", () =>
-      import("@/features/schemas/pages/predict-page").then((m) => m.PredictPage),
-    ),
-    page("predict/:bookmarkId", () =>
-      import("@/features/schemas/pages/bookmark-workspace-page").then(
-        (m) => m.BookmarkWorkspacePage,
-      ),
-    ),
-  ]),
-  workspace("canViewApiAccess", [
-    page("api-access", () =>
-      import("@/features/api-access/pages/api-overview-page").then((m) => m.ApiOverviewPage),
-    ),
-    page("api-access/clients", () =>
-      import("@/features/api-access/pages/api-clients-page").then((m) => m.ApiClientsPage),
-    ),
-    page("api-access/clients/:clientId", () =>
-      import("@/features/api-access/pages/api-client-page").then((m) => m.ApiClientPage),
-    ),
-    page("api-access/requests", () =>
-      import("@/features/api-access/pages/api-requests-page").then((m) => m.ApiRequestsPage),
-    ),
-    page("api-access/docs", () =>
-      import("@/features/api-access/pages/api-docs-page").then((m) => m.ApiDocsPage),
-    ),
-  ]),
-  workspace("canCreateModels", [
-    page("models/create", () =>
-      import("@/features/models/pages/create-model-page").then((m) => m.CreateModelPage),
-    ),
-  ]),
-  workspace("canEditModels", [
-    page("schemas/create", () =>
-      import("@/app/router/create-schema-route").then((m) => m.CreateSchemaRoute),
-    ),
-    page("schemas/:schemaId/drafts/:draftId", () =>
-      import("@/features/schemas/pages/schema-draft-editor-route").then(
-        (m) => m.SchemaDraftEditorRoute,
-      ),
-    ),
-    page("schemas/:schemaId/drafts/:draftId/conflicts", () =>
-      import("@/features/schemas/pages/schema-draft-conflict-page").then(
-        (m) => m.SchemaDraftConflictPage,
-      ),
-    ),
-  ]),
-  workspace("canManageReviews", [
-    page("inferences/:inferenceId/reviews/:reviewRunId/reviewers/:reviewerId", () =>
-      import("@/app/pages/InferenceReviewRoutePage").then((m) => m.InferenceReviewRoutePage),
-    ),
-  ]),
-  workspace("canViewPlugins", [
-    page("plugins", () =>
-      import("@/features/plugins/pages/PluginCatalogPage").then((m) => m.PluginCatalogPage),
-    ),
-  ]),
-  workspace("canManagePlugins", [
-    page("plugins/upload", () =>
-      import("@/features/plugins/pages/UploadPluginPage").then((m) => m.UploadPluginPage),
-    ),
-  ]),
+]);
+
+const reviewAccessRoutes = reviewAccessRoute.addChildren([
+  page(reviewAccessRoute, "review", reviewsPage),
+  page(reviewAccessRoute, "review/$reviewId", reviewsPage),
+  page(reviewAccessRoute, "review/$reviewId/runs/$reviewRunId", reviewsPage),
+]);
+
+const permissionRoutes = [
+  canViewWorkspaceRoute.addChildren(workspaceRoutes.canViewWorkspace),
+  canViewModelsRoute.addChildren(workspaceRoutes.canViewModels),
+  canViewApiAccessRoute.addChildren(workspaceRoutes.canViewApiAccess),
+  canCreateModelsRoute.addChildren(workspaceRoutes.canCreateModels),
+  canEditModelsRoute.addChildren(workspaceRoutes.canEditModels),
+  canManageReviewsRoute.addChildren(workspaceRoutes.canManageReviews),
+  canViewPluginsRoute.addChildren(workspaceRoutes.canViewPlugins),
+  canManagePluginsRoute.addChildren(workspaceRoutes.canManagePlugins),
 ];
+
+export const protectedRoutes = protectedRoute.addChildren([
+  appRoute.addChildren([
+    ...accountRoutes,
+    teamOrganizationRoutes,
+    reviewAccessRoutes,
+    superadminRoutes,
+    ...permissionRoutes,
+  ]),
+]);

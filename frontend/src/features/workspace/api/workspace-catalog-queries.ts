@@ -1,13 +1,12 @@
 import { appFetch } from "@/shared/api/http";
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useInfiniteCatalog, type CatalogPage } from "@/shared/api/infinite-catalog";
 import type {
   MemberCatalogDto,
   InvitationCatalogDto,
-  InvitationDto,
   InvitationCandidateDto,
   OrganizationMembershipRowDto,
-  PageDtoAuditEventDto,
+  AuditEventPageDto,
   PermissionGroupDto,
   RoleCatalogMetadataDto,
   RoleDefinitionDto,
@@ -20,11 +19,12 @@ import {
   organizationInvitationsQueryKey,
   organizationInvitationCandidatesQueryKey,
   organizationRolesQueryKey,
-  PENDING_INVITATIONS_QUERY_KEY,
+  PLATFORM_AUDIT_EVENTS_QUERY_KEY,
 } from "./workspace.keys";
 
 type Controls = { search: string; filter?: string; sort?: string };
-const params = (page: number, controls: Controls) =>
+type AuditControls = Record<string, string>;
+const params = (page: number, controls: Controls | AuditControls) =>
   new URLSearchParams({ page: String(page), size: "24", ...controls });
 
 export function useMemberCatalog(id: number, controls: Controls, enabled = true) {
@@ -51,8 +51,8 @@ export function useMemberFilterRoleCatalog(id: number, search: string, enabled: 
   });
 }
 
-export function useMemberFilterRole(id: number, roleId: string) {
-  return useQuery({
+export const memberFilterRoleQueryOptions = (id: number, roleId: string) =>
+  queryOptions({
     queryKey: [...organizationMembersQueryKey(id), "roles", "detail", roleId],
     queryFn: ({ signal }) =>
       appFetch<CatalogPage<RoleSummaryDto>>(
@@ -61,7 +61,9 @@ export function useMemberFilterRole(id: number, roleId: string) {
       ),
     enabled: Boolean(id) && roleId !== "ALL",
   });
-}
+
+export const useMemberFilterRole = (id: number, roleId: string) =>
+  useQuery(memberFilterRoleQueryOptions(id, roleId));
 
 export function useInvitationCatalog(id: number, controls: Controls) {
   return useInfiniteCatalog({
@@ -76,15 +78,27 @@ export function useInvitationCatalog(id: number, controls: Controls) {
 }
 
 /** Every visit reads the log afresh: actions across the product add to it. */
-export function useAuditEventCatalog(id: number, controls: Controls, enabled = true) {
+export function useAuditEventCatalog(id: number, controls: AuditControls, enabled = true) {
   return useInfiniteCatalog({
     queryKey: [...organizationAuditEventsQueryKey(id), "infinite", controls],
     queryFn: (page, signal) =>
-      appFetch<PageDtoAuditEventDto>(
+      appFetch<AuditEventPageDto>(
         `/api/organizations/${id}/audit-events/catalog?${params(page, controls)}`,
         { signal },
       ),
     enabled: Boolean(id) && enabled,
+    staleTime: 0,
+  });
+}
+
+/** The log of every organization and of the platform itself, read afresh like an organization's. */
+export function usePlatformAuditEventCatalog(controls: AuditControls) {
+  return useInfiniteCatalog({
+    queryKey: [...PLATFORM_AUDIT_EVENTS_QUERY_KEY, "infinite", controls],
+    queryFn: (page, signal) =>
+      appFetch<AuditEventPageDto>(`/api/admin/audit-events/catalog?${params(page, controls)}`, {
+        signal,
+      }),
     staleTime: 0,
   });
 }
@@ -126,27 +140,16 @@ export const useRoleTemplateCatalog = (id: number, search: string, enabled = tru
 export const usePermissionCatalog = (id: number, search: string, enabled = true) =>
   useRoleResource<PermissionGroupDto>(id, "permissions", search, enabled);
 
-export function useRoleCatalogMetadata(id: number, enabled = true) {
-  return useQuery({
+export const roleCatalogMetadataQueryOptions = (id: number) =>
+  queryOptions({
     queryKey: [...organizationRolesQueryKey(id), "metadata"],
     queryFn: ({ signal }) =>
       appFetch<RoleCatalogMetadataDto>(`/api/organizations/${id}/roles/metadata`, { signal }),
-    enabled: Boolean(id) && enabled,
+    enabled: Boolean(id),
   });
-}
 
-export function usePendingInvitationCatalog(search: string) {
-  return useInfiniteCatalog({
-    queryKey: [...PENDING_INVITATIONS_QUERY_KEY, "infinite", search],
-    queryFn: (page, signal) =>
-      appFetch<CatalogPage<InvitationDto>>(
-        `/api/invitations/pending/catalog?${params(page, { search })}`,
-        { signal },
-      ),
-    staleTime: 30_000,
-    refetchInterval: 60_000,
-  });
-}
+export const useRoleCatalogMetadata = (id: number, enabled = true) =>
+  useQuery({ ...roleCatalogMetadataQueryOptions(id), enabled: Boolean(id) && enabled });
 
 export function useOwnerCandidateCatalog(id: number, search: string, enabled = true) {
   return useInfiniteCatalog({

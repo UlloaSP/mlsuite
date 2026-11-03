@@ -1,17 +1,15 @@
 import { useCallback, useEffect, useMemo } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
 import { useSubmitSchemaReviewInboxMutation } from "@/features/reviews/api/review-mutations";
 import {
-  reviewInboxItemQueryKey,
   useReviewInboxCatalog,
   useReviewInboxItem,
   useReviewCatalogContext,
   useReviewFirstRun,
 } from "@/features/reviews/api/review-catalog";
-import { useQueryClient } from "@tanstack/react-query";
-import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { SCHEMA_REVIEW_INBOX_QUERY_KEY } from "@/features/reviews/api/review-keys";
+import { useCan } from "@/capabilities/workspace-context/workspace-context";
 import { ReviewStepContextPanel } from "@/features/reviews/components/ReviewStepContextPanel";
 import { ReviewUnavailable } from "@/features/reviews/components/ReviewUnavailable";
 import { SchemaReviewRunDetailPanel } from "@/features/reviews/components/SchemaReviewRunDetailPanel";
@@ -20,6 +18,7 @@ import {
   type ReviewRailItem,
 } from "@/features/reviews/components/SchemaReviewRunRail";
 import { HttpError } from "@/shared/api/http";
+import { appButtonClass } from "@/shared/ui/button-styles";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
@@ -31,10 +30,16 @@ import { AppPageHeader } from "@/shared/ui/PageHeader";
 const gone = (error: unknown) => error instanceof HttpError && error.status === 404;
 
 export function ReviewsPage() {
-  const { reviewId, reviewRunId } = useParams<{ reviewId?: string; reviewRunId?: string }>();
+  const { reviewId, reviewRunId } = useParams({ strict: false });
   const navigate = useNavigate();
+  const canManage = useCan("canManageReviews");
   const inbox = useReviewInboxCatalog();
-  const requested = useReviewInboxItem(reviewId, reviewRunId);
+  // An item opened from the inbox shows at once; its own request only refreshes it.
+  const requested = useReviewInboxItem(
+    reviewId,
+    reviewRunId,
+    inbox.data?.items.find((item) => item.reviewId === reviewId && item.publicId === reviewRunId),
+  );
   const first = useReviewFirstRun(reviewId, Boolean(reviewId && !reviewRunId));
   const failure = [inbox.error, requested.error, first.error].find(
     (error) => error && !gone(error),
@@ -53,34 +58,40 @@ export function ReviewsPage() {
   const leaving = !resolving && !selected && Boolean(reviewId ?? reviewRunId);
   const showLoader = useStableLoading(resolving || leaving);
   const submitMutation = useSubmitSchemaReviewInboxMutation();
-  const qc = useQueryClient();
-  const org = useCurrentOrganizationId() ?? "none";
-  const selectedVersion = useMemo(
-    () => (selectedReview ? toExecutableSchemaVersion(selectedReview.schemaVersion) : undefined),
-    [selectedReview],
-  );
+  // One review whose snapshot cannot run is that review's problem: the inbox stays usable.
+  const prepared = useMemo(() => {
+    if (!selectedReview) return undefined;
+    try {
+      return { version: toExecutableSchemaVersion(selectedReview.schemaVersion) };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : String(error) };
+    }
+  }, [selectedReview]);
   const open = useCallback(
-    (item: ReviewRailItem, replace = false) => {
-      // The tray already holds the item, so opening it never waits for a request.
-      qc.setQueryData(reviewInboxItemQueryKey(org, item.reviewId, item.publicId), item);
-      void navigate(`/review/${item.reviewId}/runs/${item.publicId}`, {
+    (item: Pick<ReviewRailItem, "reviewId" | "publicId">, replace = false) => {
+      void navigate({
+        to: "/review/$reviewId/runs/$reviewRunId",
+        params: { reviewId: item.reviewId, reviewRunId: item.publicId },
         replace,
         viewTransition: false,
       });
     },
-    [navigate, org, qc],
+    [navigate],
   );
 
+  // The run the URL should name; `selected` itself is rebuilt on some renders, its ids are not.
+  const selectedReviewId = selected?.reviewId;
+  const selectedRunId = selected?.publicId;
   useEffect(() => {
     if (resolving || failure) return;
-    if (!selected) {
+    if (!selectedReviewId || !selectedRunId) {
       if (reviewId || reviewRunId)
-        void navigate("/review", { replace: true, viewTransition: false });
+        void navigate({ to: "/review", replace: true, viewTransition: false });
       return;
     }
-    if (selected.reviewId === reviewId && selected.publicId === reviewRunId) return;
-    open(selected, true);
-  }, [resolving, failure, navigate, open, reviewId, reviewRunId, selected]);
+    if (selectedReviewId === reviewId && selectedRunId === reviewRunId) return;
+    open({ reviewId: selectedReviewId, publicId: selectedRunId }, true);
+  }, [resolving, failure, navigate, open, reviewId, reviewRunId, selectedReviewId, selectedRunId]);
 
   if (inbox.error instanceof HttpError && inbox.error.status === 403) {
     return <ReviewUnavailable title="Access denied" description="Your role cannot review." />;
@@ -93,6 +104,13 @@ export function ReviewsPage() {
         <AppPageHeader
           title="Review inbox"
           description="Review the inferences assigned to you across every schema."
+          actions={
+            canManage ? (
+              <AppLink to="/review/manage" className={appButtonClass({ variant: "secondary" })}>
+                Manage reviews
+              </AppLink>
+            ) : null
+          }
         />
         {showLoader ? (
           <AppLoadingState label="Loading review inbox…" rows={3} />
@@ -109,14 +127,13 @@ export function ReviewsPage() {
             <section className="flex min-w-0 flex-col gap-6 xl:overflow-y-auto 2xl:flex-row 2xl:items-start">
               <ReviewStepContextPanel />
               <div className="min-w-0 flex-1">
-                {selectedReview ? (
+                {prepared?.error ? (
+                  <AppEmptyState title="Review cannot be shown" description={prepared.error} />
+                ) : prepared?.version ? (
                   <SchemaReviewRunDetailPanel
                     reviewId={selected.reviewId}
                     reviewRunId={selected.publicId}
-                    version={selectedVersion ?? selectedReview.schemaVersion}
-                    onReviewChanged={() =>
-                      qc.invalidateQueries({ queryKey: SCHEMA_REVIEW_INBOX_QUERY_KEY(org) })
-                    }
+                    version={prepared.version}
                   />
                 ) : (
                   // The tray stays in place while another review's snapshot loads.
@@ -133,7 +150,8 @@ export function ReviewsPage() {
               submitting={submitMutation.isPending}
               onSubmitRevision={() =>
                 submitMutation.mutate(undefined, {
-                  onSuccess: () => navigate("/review", { replace: true, viewTransition: false }),
+                  onSuccess: () =>
+                    navigate({ to: "/review", replace: true, viewTransition: false }),
                 })
               }
             />

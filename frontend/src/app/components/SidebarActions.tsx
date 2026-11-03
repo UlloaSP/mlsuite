@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Search } from "lucide-react";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom, useSelector } from "@tanstack/react-store";
 import { globalSearchOpenAtom } from "@/shared/ui/ui-state";
 import { AppShortcut } from "@/shared/ui/AppShortcut";
 import { shortcutBindingsAtom, shortcutToAria } from "@/shared/ui/shortcut-state";
@@ -16,7 +16,7 @@ import { useSidebar } from "./app-sidebar/SidebarContext";
 
 export function SidebarActions() {
   const [searchOpen, setSearchOpen] = useAtom(globalSearchOpenAtom);
-  const bindings = useAtomValue(shortcutBindingsAtom);
+  const bindings = useSelector(shortcutBindingsAtom);
   const { collapsed } = useSidebar();
 
   return (

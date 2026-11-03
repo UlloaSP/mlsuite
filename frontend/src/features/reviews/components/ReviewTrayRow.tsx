@@ -10,7 +10,6 @@ type ReviewTrayRowProps = {
 };
 
 export function ReviewTrayRow({ item, tone, active, onSelect }: ReviewTrayRowProps) {
-  const enteredAt = item.stateEnteredAt ?? item.run.createdAt;
   return (
     <button
       type="button"
@@ -25,7 +24,8 @@ export function ReviewTrayRow({ item, tone, active, onSelect }: ReviewTrayRowPro
         {item.schemaName} · {item.run.name}
       </span>
       <span className="mt-1.5 block text-xs text-fg-secondary">
-        {tone === "revision" ? "Feedback saved" : "Entered pending"} · {formatTimestamp(enteredAt)}
+        {tone === "revision" ? "Feedback saved" : "Entered pending"} ·{" "}
+        {formatTimestamp(item.stateEnteredAt)}
       </span>
       <span
         className={cx(

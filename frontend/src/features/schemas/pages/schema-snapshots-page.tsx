@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { GitCommitHorizontal } from "lucide-react";
 import { useState } from "react";
-import { useParams } from "react-router";
+import { getRouteApi } from "@tanstack/react-router";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { useSchema } from "@/features/schemas/api/schema-queries";
@@ -32,19 +32,16 @@ const SORTS: Array<{ value: SnapshotSort; label: string }> = [
   { value: "name", label: "Name" },
 ];
 
+const route = getRouteApi("/protected/app/can-view-models/schemas/$schemaId/snapshots");
+
 export function SchemaSnapshotsPage() {
-  const { schemaId } = useParams<{ schemaId: string }>();
+  const { schemaId } = route.useParams();
   const { data: schema } = useSchema(schemaId);
   const { data: workspace } = useWorkspaceContext();
   const [bookmarkTarget, setBookmarkTarget] = useState<SchemaVersionDto | null>(null);
   const [changeTarget, setChangeTarget] = useState<SchemaVersionDto | null>(null);
   const [cloneTarget, setCloneTarget] = useState<SchemaVersionDto | null>(null);
-  const controls = useCatalogControls<SnapshotFilter, SnapshotSort>({
-    filters: FILTERS.map(({ value }) => value),
-    initialFilter: "all",
-    initialSort: "created",
-    sorts: SORTS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const versionsQuery = useSnapshotCatalog(schemaId, {
     search: controls.search,
     filter: controls.filter,

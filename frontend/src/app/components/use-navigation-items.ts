@@ -3,8 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useLocation } from "react-router";
+import { useLocation } from "@tanstack/react-router";
 import { useUser } from "@/capabilities/workspace-context/session";
+import { useOpenSystemAlertCount } from "@/features/infrastructure/api/infrastructure.queries";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { EXPLORE_NAVIGATION_ITEM } from "./explore-navigation";
@@ -38,6 +39,7 @@ export function useNavigationItems() {
 
   const canViewModels = Boolean(permissions?.canViewModels);
   const superadmin = user?.systemRole === "SUPERADMIN";
+  const { data: openAlerts = 0 } = useOpenSystemAlertCount(superadmin);
   const entries: Array<NavigationItem & { visible: boolean }> = [
     {
       visible: canViewModels,
@@ -124,12 +126,21 @@ export function useNavigationItems() {
           label: "API traffic",
           children: API_TRAFFIC_CHILDREN,
         },
+        { root: "/admin/purges", to: "/admin/purges", icon: SECTION_ICONS.purges, label: "Purges" },
+        { root: "/admin/audit", to: "/admin/audit", icon: SECTION_ICONS.audit, label: "Audit log" },
         {
           root: "/admin/infrastructure",
           to: "/admin/infrastructure",
           icon: SECTION_ICONS.infrastructure,
           label: "Infra",
           children: INFRA_CHILDREN,
+          attention:
+            openAlerts > 0
+              ? {
+                  count: openAlerts,
+                  label: `${openAlerts} open ${openAlerts === 1 ? "alert" : "alerts"}`,
+                }
+              : undefined,
         },
       ]
     : [];
@@ -160,7 +171,7 @@ export function useNavigationItems() {
     // Section memory belongs to the organization's sections, so the public feed is not one.
     activeRoot: [...navigation, ...administration].find(isParentActive)?.root,
     isParentActive,
-    currentPath: `${location.pathname}${location.search}`,
+    currentPath: `${location.pathname}${location.searchStr}`,
     pathname: location.pathname,
   };
 }

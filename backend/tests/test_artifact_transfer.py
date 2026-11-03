@@ -8,7 +8,15 @@ import pytest
 from mlsuite_backend import artifacts
 from mlsuite_backend.artifact_store import ArtifactStore
 from tests.client import client
-from tests.helpers import make_regressor, make_tree, run_fields, run_request, serialize_bundle, sha256_of
+from tests.helpers import (
+    environment_of,
+    make_regressor,
+    make_tree,
+    run_fields,
+    run_request,
+    serialize_bundle,
+    sha256_of,
+)
 
 RECORD = json.dumps({"rooms": 3, "area": 60})
 UNKNOWN = "0" * 64
@@ -78,7 +86,9 @@ def test_a_malformed_hash_is_refused(value: str) -> None:
 
 def test_a_run_without_a_hash_or_an_environment_is_refused() -> None:
     upload = serialize_bundle(make_regressor())
-    without_hash = client.post("/predict", files={"model_file": upload}, data={"environment": "legacy", "data": RECORD})
+    without_hash = client.post(
+        "/predict", files={"model_file": upload}, data={"environment": environment_of(upload), "data": RECORD}
+    )
     without_environment = client.post("/predict", data={"artifact_sha256": sha256_of(upload), "data": RECORD})
 
     assert without_hash.status_code == 422
@@ -88,7 +98,7 @@ def test_a_run_without_a_hash_or_an_environment_is_refused() -> None:
 def test_an_artifact_sent_for_a_run_must_be_a_bundle() -> None:
     upload = ("model.txt", BytesIO(b"nope"), "text/plain")
     response = client.post("/predict", files={"model_file": upload}, data={
-        "artifact_sha256": sha256_of(upload), "environment": "legacy", "data": RECORD,
+        "artifact_sha256": sha256_of(upload), "environment": "a" * 64, "data": RECORD,
     })
 
     assert response.status_code == 400

@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// @vitest-environment-options {"url": "http://localhost/"}
 import { serviceHealthCategory } from "@/features/infrastructure/lib/status";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import {
@@ -12,7 +14,7 @@ import {
   resolveSelectedService,
 } from "@/features/infrastructure/lib/infrastructure-state";
 import type { InfrastructureOverviewDto } from "@/features/infrastructure/api/infrastructure.types";
-import { buildWebSocketUrl } from "@/features/infrastructure/lib/infrastructure-socket";
+import { buildWebSocketUrl } from "@/shared/api/websocket-url";
 import {
   filterAndSortServices,
   serviceStatusCounts,
@@ -30,6 +32,11 @@ import {
   serviceLogsQueryOptions,
 } from "@/features/infrastructure/api/infrastructure.queries";
 import { HttpError } from "@/shared/api/http";
+import { OverviewChartPanel } from "@/features/infrastructure/components/OverviewChartPanel";
+import { Sparkline } from "@/features/infrastructure/components/Sparkline";
+import { formatTimestamp } from "@/features/infrastructure/lib/formatters";
+import { act } from "react";
+import { mount } from "./support/dom";
 
 const service = {
   name: "spring-app",
@@ -112,12 +119,10 @@ describe("infra helpers", () => {
     expect(countHealthyServices(services)).toBe(1);
     expect(countProblemServices(services)).toBe(5);
     expect(
-      buildDashboardAlerts({ ...overview, services }, true, null).some(
-        (alert) => alert.id === "healthy",
-      ),
+      buildDashboardAlerts({ ...overview, services }, true).some((alert) => alert.id === "healthy"),
     ).toBe(false);
-    expect(buildDashboardAlerts({ ...overview, services: [] }, true, null)).toEqual([]);
-    expect(buildDashboardAlerts(overview, true, null)[0].id).toBe("healthy");
+    expect(buildDashboardAlerts({ ...overview, services: [] }, true)).toEqual([]);
+    expect(buildDashboardAlerts(overview, true)[0].id).toBe("healthy");
   });
 
   it("filters, sorts, and counts service rows", () => {
@@ -261,12 +266,10 @@ describe("infra helpers", () => {
         ],
       },
       false,
-      "frontend",
     );
 
     expect(alerts.some((alert) => alert.id === "stream")).toBe(true);
     expect(alerts.some((alert) => alert.id === "frontend")).toBe(true);
-    expect(alerts.some((alert) => alert.id === "shell")).toBe(true);
   });
 
   it("preserves infrastructure query and transport contracts", async () => {
@@ -286,6 +289,11 @@ describe("infra helpers", () => {
     await closeTerminalSession("term-1");
 
     expect(infrastructureOverviewQueryOptions().queryKey).toEqual(infrastructureKeys.all);
+    // Read again every few seconds only while the live stream is down.
+    expect(infrastructureOverviewQueryOptions(false).refetchInterval).toBe(5000);
+    expect(infrastructureOverviewQueryOptions(true).refetchInterval).toBe(false);
+    expect(serviceLogsQueryOptions("spring-app", false).refetchInterval).toBe(5000);
+    expect(serviceLogsQueryOptions("spring-app", true).refetchInterval).toBe(false);
     expect(serviceLogsQueryOptions("spring-app").queryKey).toEqual(
       infrastructureKeys.logs("spring-app"),
     );
@@ -318,5 +326,58 @@ describe("infra helpers", () => {
     controller.abort(cancellation);
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(cancellation));
     await expect(getInfrastructureOverview(controller.signal)).rejects.toBe(cancellation);
+  });
+});
+
+describe("overview chart", () => {
+  it("draws the enabled layers on a percent axis and lists each one's value in its tooltip", async () => {
+    const { host } = await mount(
+      <OverviewChartPanel overview={overview} streamConnected chartRange="1h" />,
+      { route: "/admin/infrastructure" },
+    );
+    const chart = host.querySelector<SVGSVGElement>(
+      'svg[aria-label="Service aggregate load, last 1h"]',
+    )!;
+    expect(chart.querySelector("desc")?.textContent).toBe("CPU, RAM");
+    expect(chart.querySelector('[data-ts-key="y-tick-label:number:100"]')?.textContent).toBe(
+      "100.0%",
+    );
+
+    await act(async () => chart.focus());
+
+    const tooltip = host.querySelector(".ts-chart-tooltip");
+    const at = formatTimestamp("2026-05-07T00:00:00Z");
+    expect(tooltip?.textContent).toBe(`${at}CPU10.0%RAM20.0%`);
+    expect(tooltip?.getAttribute("aria-label")).toBe(`${at}\nCPU: 10.0%\nRAM: 20.0%`);
+  });
+
+  it("grows the percent axis past 100% when summed CPU passes it", async () => {
+    const [point] = overview.history.points;
+    const { host } = await mount(
+      <OverviewChartPanel
+        overview={{
+          ...overview,
+          history: { ...overview.history, points: [{ ...point, cpuPercent: 250 }] },
+        }}
+        streamConnected
+        chartRange="1h"
+      />,
+      { route: "/admin/infrastructure" },
+    );
+    const labels = [...host.querySelectorAll('[data-ts-key^="y-tick-label:number:"]')].map(
+      (label) => label.textContent,
+    );
+
+    expect(labels.at(-1)).toBe("250.0%");
+  });
+
+  it("draws a KPI sparkline as a bare line in the KPI's color", async () => {
+    const { host } = await mount(
+      <Sparkline data={[{ v: 1 }, { v: 3 }, { v: 2 }]} color="var(--color-chart-3)" />,
+    );
+    const lines = host.querySelectorAll(".ts-chart__line path");
+
+    expect([...lines].map((line) => line.getAttribute("stroke"))).toEqual(["var(--color-chart-3)"]);
+    expect(host.querySelector(".ts-chart__axes, .ts-chart__grid")).toBeNull();
   });
 });

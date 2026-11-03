@@ -33,10 +33,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
@@ -59,6 +58,8 @@ import dev.ulloasp.mlsuite.security.auth.AuthenticatedUserPrincipal;
 import dev.ulloasp.mlsuite.security.auth.SessionAccountCheck;
 import dev.ulloasp.mlsuite.security.identity.PublicCaller;
 import dev.ulloasp.mlsuite.storage.ArtifactHash;
+import dev.ulloasp.mlsuite.support.PostgresDatabase;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.EntityManager;
@@ -76,12 +77,6 @@ import jakarta.persistence.EntityManager;
         "server.port=0",
         "analyzer.url=http://runtime.invalid",
         "cors.allow-origins=http://localhost:5173",
-        "storage.endpoint=http://storage.invalid",
-        "storage.access-key=test",
-        "storage.secret-key=test",
-        "storage.bucket=test",
-        "storage.auto-create-bucket=false",
-        "storage.deletion.enabled=false",
         "mlsuite.public-prediction.max-model-size-mb=1",
         "mlsuite.public-prediction.max-concurrent=1",
         "mlsuite.workspace-prediction.max-concurrent=1",
@@ -95,26 +90,9 @@ import jakarta.persistence.EntityManager;
 @Testcontainers(disabledWithoutDocker = true)
 public abstract class PublicPredictionFixture {
 
-    /**
-     * One database for every test class on this fixture: the Spring context is cached across
-     * them, so the container must outlive each class rather than be started and stopped per class.
-     */
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:18.6")
-            .withDatabaseName("mlsuite")
-            .withUsername("mlsuite")
-            .withPassword("mlsuite");
-
-    static {
-        POSTGRES.start();
-    }
-
     @DynamicPropertySource
     static void databaseProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
-        registry.add("spring.flyway.user", POSTGRES::getUsername);
-        registry.add("spring.flyway.password", POSTGRES::getPassword);
+        PostgresDatabase.register(registry);
     }
 
     private static final AtomicInteger SEQUENCE = new AtomicInteger();
@@ -196,11 +174,9 @@ public abstract class PublicPredictionFixture {
     }
 
     private Model model(User owner, String name, String fileName, byte[] bytes) {
-        Model model = new Model(owner, name, "classifier", "Estimator", fileName, bytes);
+        Model model = new Model(owner, name, "classifier", "Estimator", fileName);
         model.setOrganization(organization);
-        model.setModelSizeBytes((long) bytes.length);
-        model.setArtifactSha256(ArtifactHash.sha256(bytes));
-        entityManager.persist(model);
+        entityManager.persist(TestFixtures.storedArtifact(model, bytes));
         return model;
     }
 

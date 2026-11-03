@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.schema.review.application.dto.ReviewAssignmentCountsDto;
+import dev.ulloasp.mlsuite.schema.review.application.dto.ManagedReviewDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.ReviewCatalogSummaryDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.ReviewInboxCatalogDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.ReviewInboxItemDto;
@@ -25,6 +26,11 @@ import lombok.RequiredArgsConstructor;
 public class SchemaReviewCatalogController {
     private final SchemaReviewCatalogUseCase catalog;
     private final SchemaReviewManagementUseCase management;
+
+    @GetMapping("/managed/catalog")
+    public PageDto<ManagedReviewDto> managedCatalog(CurrentUser user, @ModelAttribute CatalogRequest request) {
+        return catalog.managed(user.userId(), request);
+    }
 
     @GetMapping("/inbox/runs/catalog")
     public ReviewInboxCatalogDto inboxRunCatalog(CurrentUser user, @ModelAttribute CatalogRequest request) {

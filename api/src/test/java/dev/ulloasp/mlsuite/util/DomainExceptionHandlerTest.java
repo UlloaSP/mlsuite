@@ -14,7 +14,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.mock.http.MockHttpInputMessage;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.schema.domain.exception.RuntimeBusyException;
@@ -41,6 +45,32 @@ class DomainExceptionHandlerTest {
         assertEquals(403, response.getBody().status());
         assertEquals("Access denied", response.getBody().message());
         assertEquals("/api/schema-reviews/missing", response.getBody().path());
+    }
+
+    @Test
+    void handleUnservedRequest_KeepsTheStatusTheFrameworkGaveTheCallersMistake() {
+        DomainExceptionHandler handler = new DomainExceptionHandler();
+        when(request.getRequestURI()).thenReturn("/api/models");
+
+        assertEquals(HttpStatus.BAD_REQUEST, handler.handleUnservedRequest(
+                new MissingServletRequestPartException("modelFile"), request).getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, handler.handleUnservedRequest(
+                new MissingServletRequestParameterException("name", "String"), request).getStatusCode());
+        assertEquals(HttpStatus.UNSUPPORTED_MEDIA_TYPE, handler.handleUnservedRequest(
+                new HttpMediaTypeNotSupportedException("text/plain"), request).getStatusCode());
+    }
+
+    @Test
+    void handleUnreadableMultipart_IsTheCallersMistake() {
+        DomainExceptionHandler handler = new DomainExceptionHandler();
+        when(request.getRequestURI()).thenReturn("/api/models");
+
+        ResponseEntity<ErrorDto> response = handler.handleUnreadableMultipart(
+                new MultipartException("Current request is not a multipart request"), request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("This endpoint does not accept this request.", response.getBody().message());
     }
 
     @Test

@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Plus } from "lucide-react";
-import { useNavigate, useParams } from "react-router";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { HttpError } from "@/shared/api/http";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
@@ -24,9 +24,11 @@ import { useModel, useModelDetails } from "@/features/models/api/model.queries";
 import { readModelManifest } from "@/features/models/lib/model-manifest";
 import { formatTimestamp } from "@/shared/lib/date-time";
 
+const route = getRouteApi("/protected/app/can-view-models/models/$modelId");
+
 export function ModelDetailPage() {
   const navigate = useNavigate();
-  const { modelId } = useParams<{ modelId: string }>();
+  const { modelId } = route.useParams();
   const { data: user, error } = useUser();
   const { data: workspace } = useWorkspaceContext();
   const modelQuery = useModel(modelId);
@@ -55,7 +57,11 @@ export function ModelDetailPage() {
                 : "The model could not be loaded. Try again in a moment."
             }
             action={
-              <AppButton type="button" variant="secondary" onClick={() => navigate("/models")}>
+              <AppButton
+                type="button"
+                variant="secondary"
+                onClick={() => navigate({ to: "/models" })}
+              >
                 Back to models
               </AppButton>
             }
@@ -83,7 +89,9 @@ export function ModelDetailPage() {
                 canEditModels && !model.archivedAt ? (
                   <AppButton
                     type="button"
-                    onClick={() => navigate(`/schemas/create?modelId=${model.id}`)}
+                    onClick={() =>
+                      navigate({ to: "/schemas/create", search: { modelId: String(model.id) } })
+                    }
                   >
                     <Plus size={16} /> New schema
                   </AppButton>

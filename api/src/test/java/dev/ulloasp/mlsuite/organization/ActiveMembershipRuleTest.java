@@ -22,7 +22,7 @@ import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.Invitat
 import dev.ulloasp.mlsuite.invitation.application.usecase.InvitationManagementService;
 import dev.ulloasp.mlsuite.invitation.domain.model.Invitation;
 import dev.ulloasp.mlsuite.invitation.domain.model.InvitationStatus;
-import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
+import dev.ulloasp.mlsuite.notification.application.service.NotificationService;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
@@ -30,7 +30,6 @@ import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
-import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
@@ -39,7 +38,6 @@ import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceBootstrapService;
 
 class ActiveMembershipRuleTest {
 
@@ -49,12 +47,10 @@ class ActiveMembershipRuleTest {
         Organization organization = organization(41L);
         OrganizationMembership membership = membership(organization, user, MembershipStatus.ACTIVE);
         UserLookupService users = mock();
-        WorkspaceBootstrapService bootstrap = mock();
         OrganizationRepository organizations = mock();
         OrganizationMembershipRepository memberships = mock();
-        WorkspaceAccessService access = new WorkspaceAccessService(users, bootstrap, organizations, memberships);
+        WorkspaceAccessService access = new WorkspaceAccessService(users, organizations, memberships);
         when(users.requireById(7L)).thenReturn(user);
-        when(bootstrap.ensureCurrentOrganization(user)).thenReturn(organization);
         when(organizations.findById(41L)).thenReturn(Optional.of(organization));
         when(memberships.findActiveByOrganizationIdAndUserId(41L, 7L)).thenReturn(Optional.of(membership));
 
@@ -62,26 +58,6 @@ class ActiveMembershipRuleTest {
 
         when(memberships.findActiveByOrganizationIdAndUserId(41L, 7L)).thenReturn(Optional.empty());
         assertThrows(OrganizationAccessDeniedException.class, () -> access.requireMembership(7L, 41L));
-    }
-
-    @Test
-    void bootstrapReplacesStaleCurrentOrganizationWithAnActiveOne() {
-        User user = user(7L);
-        user.setCurrentOrganization(organization(40L));
-        Organization activeOrganization = organization(41L);
-        OrganizationMembership active = membership(activeOrganization, user, MembershipStatus.ACTIVE);
-        OrganizationRepository organizations = mock();
-        OrganizationMembershipRepository memberships = mock();
-        UserRepository users = mock();
-        ModelRepository models = mock();
-        WorkspaceBootstrapService bootstrap = new WorkspaceBootstrapService(
-                organizations, memberships, users, models, mock(RoleSeedService.class));
-        when(memberships.findActiveByUserId(7L)).thenReturn(List.of(active));
-        when(models.findByUserIdAndOrganizationIdIsNull(7L)).thenReturn(List.of());
-
-        assertSame(activeOrganization, bootstrap.ensureCurrentOrganization(user));
-        assertSame(activeOrganization, user.getCurrentOrganization());
-        verify(users).save(user);
     }
 
     @ParameterizedTest
@@ -97,6 +73,7 @@ class ActiveMembershipRuleTest {
                 viewer,
                 user(8L),
                 OffsetDateTime.now().plusDays(1));
+        invitation.setId(5L);
         OrganizationMembership inactive = membership(organization, user, inactiveStatus);
         inactive.setId(9L);
         InvitationRepository invitations = mock();
@@ -111,7 +88,8 @@ class ActiveMembershipRuleTest {
                 mock(WorkspaceAuthorizationService.class),
                 mock(AuditLogService.class),
                 mock(RoleDefinitionRepository.class),
-                mock(UserRepository.class));
+                mock(UserRepository.class),
+                mock(NotificationService.class));
         when(users.requireById(7L)).thenReturn(user);
         when(invitations.findById(5L)).thenReturn(Optional.of(invitation));
         when(memberships.findByOrganizationIdAndUserId(41L, 7L)).thenReturn(Optional.of(inactive));
@@ -139,6 +117,7 @@ class ActiveMembershipRuleTest {
                 viewer,
                 user(8L),
                 OffsetDateTime.now().plusDays(1));
+        invitation.setId(5L);
         OrganizationMembership active = membership(organization, user, MembershipStatus.ACTIVE);
         active.setRoleDefinition(admin);
         InvitationRepository invitations = mock();
@@ -153,7 +132,8 @@ class ActiveMembershipRuleTest {
                 mock(WorkspaceAuthorizationService.class),
                 mock(AuditLogService.class),
                 mock(RoleDefinitionRepository.class),
-                mock(UserRepository.class));
+                mock(UserRepository.class),
+                mock(NotificationService.class));
         when(users.requireById(7L)).thenReturn(user);
         when(invitations.findById(5L)).thenReturn(Optional.of(invitation));
         when(memberships.findByOrganizationIdAndUserId(41L, 7L)).thenReturn(Optional.of(active));

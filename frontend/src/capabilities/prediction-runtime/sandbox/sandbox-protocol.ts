@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { z } from "zod";
+import { INTERFACE_FONTS, MONOSPACE_FONTS } from "@/shared/ui/font-catalog";
 
 /**
  * The messages between the app and the plugin sandbox, an iframe with an opaque origin that is
@@ -39,7 +40,11 @@ export const sandboxThemeSchema = z.object({
   mode: z.enum(["light", "dark"]),
   tokens: z.record(z.string().regex(/^--[\w-]+$/), z.string()),
   /** The stylesheet the app's font families come from. */
-  fonts: z.url({ protocol: /^https$/, hostname: /^fonts\.googleapis\.com$/ }).optional(),
+  // The interface and monospace fonts in effect, whose faces the sandbox loads itself.
+  fonts: z.object({
+    interface: z.enum(INTERFACE_FONTS.map((font) => font.value)),
+    monospace: z.enum(MONOSPACE_FONTS.map((font) => font.value)),
+  }),
 });
 
 export type SandboxTheme = z.infer<typeof sandboxThemeSchema>;

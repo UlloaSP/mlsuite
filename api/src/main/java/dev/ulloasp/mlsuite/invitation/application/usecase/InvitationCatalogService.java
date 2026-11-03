@@ -18,6 +18,8 @@ import dev.ulloasp.mlsuite.invitation.application.dto.InvitationCatalogDto;
 import dev.ulloasp.mlsuite.invitation.application.dto.InvitationDto;
 import dev.ulloasp.mlsuite.invitation.domain.model.Invitation;
 import dev.ulloasp.mlsuite.invitation.domain.model.InvitationStatus;
+import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
+import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.domain.model.User;
@@ -33,6 +35,11 @@ import lombok.RequiredArgsConstructor;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class InvitationCatalogService {
+
+    /** Why a personal account invites nobody. */
+    static final String NO_INVITATIONS = "A personal account has one member. Create an organization to invite people.";
+
+    private final OrganizationRepository organizationRepository;
     private final UserLookupService users;
     private final InvitationRepository invitationRepository;
     private final UserRepository userRepository;
@@ -50,6 +57,9 @@ public class InvitationCatalogService {
 
     public PageDto<InvitationCandidateDto> candidates(Long userId, Long organizationId, CatalogRequest request) {
         authorization.require(userId, organizationId, PermissionKey.INVITE_MEMBERS);
+        organizationRepository.findById(organizationId)
+                .orElseThrow(() -> new OrganizationNotFoundException(organizationId))
+                .requireTeam(NO_INVITATIONS);
         Page<User> page = userRepository.findInvitationCandidates(organizationId,
                 CatalogPages.likeLiteral(request.search()),
                 CatalogPages.pageable(request, Sort.by(Sort.Order.asc("email").ignoreCase(), Sort.Order.asc("id"))));

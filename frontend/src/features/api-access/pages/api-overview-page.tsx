@@ -3,12 +3,12 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { getRouteApi } from "@tanstack/react-router";
 import { useCan } from "@/capabilities/workspace-context/workspace-context";
-import type { UsagePeriod } from "@/features/api-access/api/api-access.api";
 import { useApiClientCatalog, useApiUsage } from "@/features/api-access/api/api-access.queries";
 import { CreateApiClientButton } from "@/features/api-access/components/CreateApiClientButton";
-import { USAGE_PERIODS, UsagePanel } from "@/features/api-access/components/UsagePanel";
-import { useSearchParamState } from "@/shared/lib/use-search-param-state";
+import { UsagePanel } from "@/features/api-access/components/UsagePanel";
+import { useSearchUpdate } from "@/shared/lib/use-search-update";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPage } from "@/shared/ui/AppPage";
@@ -18,13 +18,18 @@ import { SECTION_ICONS } from "@/shared/ui/section-icons";
 
 const ApiIcon = SECTION_ICONS.api;
 
+const route = getRouteApi("/protected/app/can-view-api-access/api-access");
+
 /**
  * How the organization's API is used, read from its request log. An organization without
  * clients is told what a client is instead of being shown empty charts.
  */
 export function ApiOverviewPage() {
   const canManage = useCan("canManageApiAccess");
-  const [period, setPeriod] = useSearchParamState<UsagePeriod>("period", "day", USAGE_PERIODS);
+  const search = route.useSearch();
+  const updateSearch = useSearchUpdate<typeof search>();
+  const period = search.period;
+  const setPeriod = (value: typeof period) => updateSearch({ period: value });
   const clients = useApiClientCatalog({ size: 1, search: "", filter: "all", sort: "updated" });
   const hasClients = (clients.data?.totalItems ?? 0) > 0;
   const usage = useApiUsage(period, undefined, hasClients);
@@ -34,7 +39,7 @@ export function ApiOverviewPage() {
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
           title="API"
-          description="Outside software runs this organization's bookmarks through the client API with its own keys."
+          description="Outside software runs this workspace's bookmarks through the client API with its own keys."
           actions={canManage ? <CreateApiClientButton /> : undefined}
         />
         {clients.isLoading ? (

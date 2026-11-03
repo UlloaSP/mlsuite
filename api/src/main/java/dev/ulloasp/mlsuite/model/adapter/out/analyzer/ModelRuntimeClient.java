@@ -16,7 +16,6 @@ import dev.ulloasp.mlsuite.model.application.runtime.ModelPreparingException;
 import dev.ulloasp.mlsuite.model.application.runtime.ModelUnavailableException;
 import dev.ulloasp.mlsuite.model.application.runtime.RunnableModel;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
-import dev.ulloasp.mlsuite.storage.ArtifactHash;
 import dev.ulloasp.mlsuite.storage.ArtifactSource;
 import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
 import dev.ulloasp.mlsuite.storage.ModelArtifactReference;
@@ -72,18 +71,14 @@ public class ModelRuntimeClient {
 
     private Map<String, Object> send(String path, RunnableModel model, Map<String, String> jsonFields) {
         ModelArtifactReference artifact = model.artifact();
-        if (artifact.sha256() != null) {
-            try {
-                return analyzerClient.post(path, parts(artifact.sha256(), model, jsonFields).build());
-            } catch (AnalyzerServiceException ex) {
-                if (ex.getStatus() != ARTIFACT_NOT_LOADED) throw ex;
-                log.info("The runtime does not hold the artifact of model {}; sending it", artifact.modelId());
-            }
+        try {
+            return analyzerClient.post(path, parts(artifact.sha256(), model, jsonFields).build());
+        } catch (AnalyzerServiceException ex) {
+            if (ex.getStatus() != ARTIFACT_NOT_LOADED) throw ex;
+            log.info("The runtime does not hold the artifact of model {}; sending it", artifact.modelId());
         }
         ArtifactSource source = artifactReader.source(artifact);
-        // A model stored before artifacts were hashed is named by the hash of its bytes, read once more.
-        String sha256 = artifact.sha256() != null ? artifact.sha256() : ArtifactHash.sha256(source);
-        MultipartBodyBuilder parts = parts(sha256, model, jsonFields);
+        MultipartBodyBuilder parts = parts(artifact.sha256(), model, jsonFields);
         parts.part("model_file", new StreamedArtifact(source, artifact.fileName()))
                 .filename(artifact.fileName())
                 .contentType(MediaType.APPLICATION_OCTET_STREAM);

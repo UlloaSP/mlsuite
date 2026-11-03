@@ -3,9 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { atom } from "jotai";
-import { atomWithStorage } from "jotai/utils";
-import { validatedStorage } from "@/shared/lib/validated-storage";
+import type { ReadonlyAtom } from "@tanstack/react-store";
+import { createPersistedAtom } from "@/shared/lib/persisted-atom";
 
 import {
   INTERFACE_FONTS,
@@ -63,17 +62,12 @@ const applyTypography = (preferences: TypographyPreferences) => {
   root.style.setProperty("--font-mono", MONOSPACE_STACKS[preferences.monospaceFont]);
 };
 
-const storedTypographyAtom = atomWithStorage(
-  STORAGE_KEY,
-  DEFAULTS,
-  validatedStorage(isTypographyPreferences),
-  { getOnInit: true },
-);
+const storedTypographyAtom = createPersistedAtom(STORAGE_KEY, DEFAULTS, isTypographyPreferences);
 
-export const typographyAtom = atom(
-  (get) => get(storedTypographyAtom),
-  (_, set, preferences: TypographyPreferences) => {
-    set(storedTypographyAtom, preferences);
-    applyTypography(preferences);
-  },
-);
+export const typographyAtom: ReadonlyAtom<TypographyPreferences> = storedTypographyAtom;
+
+/** Persists the preferences and applies them to the document. */
+export const setTypography = (preferences: TypographyPreferences) => {
+  storedTypographyAtom.set(preferences);
+  applyTypography(preferences);
+};

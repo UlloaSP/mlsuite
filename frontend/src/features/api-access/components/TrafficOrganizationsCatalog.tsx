@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { getRouteApi } from "@tanstack/react-router";
 import { Building2 } from "lucide-react";
 import { useApiTrafficOrganizations } from "@/features/api-access/api/api-traffic.queries";
 import { TrafficOrganizationEntry } from "@/features/api-access/components/TrafficOrganizationEntry";
@@ -15,14 +16,13 @@ const PAGE_SIZE = 24;
 const FILTERS = [{ value: "all" as const, label: "All" }];
 const SORTS = [{ value: "name" as const, label: "Name" }];
 
-/** The organizations with API clients, by name, each with its month against its limit. */
+const route = getRouteApi("/protected/app/superadmin/admin/api-traffic");
+
+/** The accounts with API clients, personal ones among them, by name, each with its month against its limit. */
 export function TrafficOrganizationsCatalog() {
-  const controls = useCatalogControls<"all", "name">({
-    filters: ["all"],
-    initialFilter: "all",
-    initialSort: "name",
-    sorts: ["name"],
-  });
+  // Accounts are only searched; the page's filter and sort belong to its clients tab.
+  const q = route.useSearch({ select: (search) => search.q });
+  const controls = useCatalogControls({ q, filter: "all", sort: "name" });
   const query = useApiTrafficOrganizations({
     size: PAGE_SIZE,
     search: controls.search,
@@ -31,19 +31,19 @@ export function TrafficOrganizationsCatalog() {
   const items = query.data?.items ?? [];
 
   return (
-    <section aria-label="Organizations" className="flex min-h-0 flex-1 flex-col">
+    <section aria-label="Accounts" className="flex min-h-0 flex-1 flex-col">
       <CatalogToolbar
         filter={controls.filter}
-        filterLabel="Filter organizations"
+        filterLabel="Filter accounts"
         filters={FILTERS}
         onFilterChange={controls.setFilter}
         onQueryChange={controls.setQuery}
         onSortChange={controls.setSort}
-        placeholder="Search by organization"
+        placeholder="Search by account"
         query={controls.query}
         resultCount={query.data?.totalItems ?? 0}
         sort={controls.sort}
-        sortLabel="Sort organizations"
+        sortLabel="Sort accounts"
         sortOptions={SORTS}
       />
       <CatalogListPanel
@@ -53,15 +53,15 @@ export function TrafficOrganizationsCatalog() {
         isBusy={query.isLoading || query.isFetching}
         isLoading={query.isLoading}
         itemCount={items.length}
-        loadingLabel="Loading organizations…"
+        loadingLabel="Loading accounts…"
         onLoadMore={query.fetchNextPage}
         onRetry={() => void (query.isFetchNextPageError ? query.fetchNextPage() : query.refetch())}
         emptyState={{
           icon: <Building2 size={22} />,
-          title: controls.search ? "No matching organizations" : "No organization has API clients",
+          title: controls.search ? "No matching accounts" : "No account has API clients",
           description: controls.search
             ? "Try another search term."
-            : "Organizations appear here once they create a client.",
+            : "Accounts appear here once they create a client.",
         }}
       >
         {items.map((organization) => (

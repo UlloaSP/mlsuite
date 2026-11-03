@@ -1,4 +1,3 @@
-import { createStore } from "jotai";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 const storage = () => {
@@ -24,12 +23,11 @@ describe("typography preferences", () => {
     vi.stubGlobal("localStorage", localStorage);
     vi.stubGlobal("window", { localStorage });
     vi.stubGlobal("document", { documentElement });
-    const { typographyAtom } = await import("@/shared/ui/typography-state");
-    const store = createStore();
-    const unsubscribe = store.sub(typographyAtom, () => undefined);
+    const { setTypography, typographyAtom } = await import("@/shared/ui/typography-state");
+    const { unsubscribe } = typographyAtom.subscribe(() => undefined);
 
-    expect(store.get(typographyAtom).interfaceFont).toBe("manrope");
-    store.set(typographyAtom, {
+    expect(typographyAtom.get().interfaceFont).toBe("manrope");
+    setTypography({
       interfaceFont: "ibm-plex-sans",
       interfaceSize: 17,
       monospaceFont: "jetbrains-mono",
@@ -46,11 +44,11 @@ describe("typography preferences", () => {
     expect(style.setProperty).toHaveBeenCalledWith("--code-font-size", "15px");
     expect(style.setProperty).toHaveBeenCalledWith(
       "--font-sans",
-      "'IBM Plex Sans', Arial, sans-serif",
+      "'IBM Plex Sans Variable', Arial, sans-serif",
     );
     expect(style.setProperty).toHaveBeenCalledWith(
       "--font-mono",
-      "'JetBrains Mono', Consolas, ui-monospace, monospace",
+      "'JetBrains Mono Variable', Consolas, ui-monospace, monospace",
     );
     expect(localStorage.getItem("ui/typography")).toContain('"interfaceFont":"ibm-plex-sans"');
     unsubscribe();

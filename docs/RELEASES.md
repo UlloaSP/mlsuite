@@ -54,10 +54,10 @@ it does not perform independent cryptographic verification of attestations.
 
 The Compose asset provides all application service references and platform; the
 base production override deliberately contains no fallback application images. The
-single API image is reused by `db-migrate`, `artifact-migrate`, and `spring-app`
+single API image is reused by `db-migrate`, `artifact-prune`, and `spring-app`
 so migrations always run from the exact digest being promoted.
 It is intended to accompany `docker-compose.yml` and `docker-compose.prod.yml`;
-PostgreSQL, MinIO, secrets,
+PostgreSQL, RustFS, secrets,
 volumes, networking and host requirements are outside this application manifest.
 You can inspect the selected images without starting services:
 
@@ -72,9 +72,14 @@ the cutover wizard and ops-agent then consume the same digest-pinned configurati
 The base production Compose file gates the API on a one-shot Flyway migration
 and deep readiness checks. The operator must still provide environment-specific
 backup, restore, promotion and rollback orchestration; follow the production
-database and artifact rollout in `README.md` before starting the release.
+database rollout in `README.md` before starting the release.
+Releases carry one Flyway baseline, so an installation created before it cannot be
+upgraded: wipe its PostgreSQL and RustFS volumes, including `pg_data` and
+`rustfs_data` on a Compose host, before the first start. Object storage is
+mandatory: `STORAGE_ENABLED`, `STORAGE_RETAIN_INLINE_COPY`, `FLYWAY_BASELINE_*`,
+`DB_LEGACY_*` and `ARTIFACT_MIGRATION_*` no longer exist and can leave `.env`.
 The initial on-premise contract is `local-single-disk`. The cutover wizard creates
-a coordinated local PostgreSQL plus MinIO backup, verifies it through an isolated
+a coordinated local PostgreSQL plus RustFS backup, verifies it through an isolated
 restore rehearsal, rejects a rehearsal that exceeds `RECOVERY_RTO_MINUTES`, and
 requires explicit acceptance that loss of the only disk is unrecoverable. Its
 RPO/RTO apply only to logical recovery; this is not PITR or disaster recovery. Add
@@ -105,6 +110,39 @@ Docker base images and Actions are pinned to reviewed digests/SHAs. Build cache
 is scoped by service. Package repositories and build metadata can still change;
 this does not claim byte-for-byte reproducible rebuilding. Promotion must reuse
 the manifest digests rather than rebuild from the same source commit.
+
+## Automatic deployment
+
+The `deploy:shelob` GitLab job runs `scripts/deploy-release.sh` on the server after each
+push to `main`. What runs there is the published release of that commit, never a build
+of its source:
+
+1. `deploy/check_env.py` refuses an `.env` missing what the Compose files use without a
+   default, naming the variables and never their values.
+2. `deploy/fetch_release.py` waits up to 30 minutes for the release. One that is never
+   published stops the deployment: the commit failed its tests or its image scans. The
+   release of the running commit is fetched too, to roll back to.
+3. Every image, of both releases, is pulled.
+4. The running release is backed up with `scripts/create-local-backup.sh`, which stops the
+   application while it copies PostgreSQL and RustFS. A backup that fails stops the deployment.
+5. The stack is replaced and must report ready within five minutes.
+
+A failure in the first three steps leaves the running release untouched, and a failed backup
+restarts it. A release that does not become ready is replaced by the previous one, and the job
+still fails.
+
+On a host where nothing of the Compose project runs, there is nothing to return to: the previous
+commit's release is neither fetched nor needed, and the backup runs only if the PostgreSQL volume
+exists. A release that does not become ready there is stopped with `docker compose down`, which
+keeps the volumes, and the job fails. Migrations do not roll back: a release that migrated the database and left a schema
+the previous one cannot run on needs the backup, whose path the job prints.
+
+Each deployment therefore takes a backup, under the limits of `LOCAL_BACKUP_*`: it covers a
+deployment that goes wrong, not the data written between deployments or the loss of the disk, and
+the newest `LOCAL_BACKUP_RETENTION_COUNT` are kept, so frequent deployments shorten how far back
+they reach.
+
+The images are public, so the server needs no registry credentials.
 
 ## Verification limits for the introducing PR
 

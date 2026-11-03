@@ -5,13 +5,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ChevronsUpDown } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
-import { useLocation } from "react-router";
+import { useLocation } from "@tanstack/react-router";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
-import { OrganizationMark } from "@/shared/ui/OrganizationMark";
 import type { SidebarPosition } from "@/shared/ui/sidebar-preferences";
 import { SidebarLabel } from "./app-sidebar/SidebarLabel";
 import { SidebarMenuButton } from "./app-sidebar/SidebarMenuButton";
 import { useSidebar } from "./app-sidebar/SidebarContext";
+import { NamespaceMark } from "./NamespaceMark";
 import { OrganizationMenuContent } from "./OrganizationMenuContent";
 import {
   SIDEBAR_MENU_TILE,
@@ -43,11 +43,11 @@ export function SidebarOrganizationHeader({ side }: { side: SidebarPosition }) {
               className={sidebarMenuTrigger(collapsed)}
               title={organization.name}
             >
-              <OrganizationMark
+              <NamespaceMark
                 className={SIDEBAR_MENU_TILE}
                 fallbackClassName="bg-fg text-fg-inverse"
                 iconSize={16}
-                logoUrl={organization.logoUrl}
+                organization={organization}
               />
               <SidebarLabel className={collapsed ? "w-0 flex-none text-left" : "flex-1 text-left"}>
                 <span className="block truncate text-sm font-semibold">{organization.name}</span>

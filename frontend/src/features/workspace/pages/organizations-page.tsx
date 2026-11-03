@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Search, Plus } from "lucide-react";
-import { useNavigate } from "react-router";
-import { toast } from "sonner";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
+import { toast } from "@/shared/ui/toast";
 import { emitErrorFromUnknown } from "@/shared/api/error-notifications";
 import {
   useDeleteOrganizationMutation,
@@ -49,15 +49,12 @@ const SORT_OPTIONS: Array<{ value: OrganizationSortMode; label: string }> = [
   { value: "name", label: "Name" },
 ];
 
+const route = getRouteApi("/protected/app/workspace/organizations");
+
 export function OrganizationsPage() {
   const navigate = useNavigate();
   const { data: user, error } = useUser();
-  const controls = useCatalogControls<OrganizationFilterMode, OrganizationSortMode>({
-    filters: FILTERS.map(({ value }) => value),
-    initialFilter: "all",
-    initialSort: "updated",
-    sorts: SORT_OPTIONS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const updateMutation = useUpdateOrganizationMutation();
   const deleteMutation = useDeleteOrganizationMutation();
   const transferMutation = useTransferOrganizationOwnershipMutation();
@@ -98,7 +95,10 @@ export function OrganizationsPage() {
         breadcrumbs: [{ label: "Organizations" }],
         description: "Search, review, and maintain organization workspaces.",
         actions: (
-          <AppButton type="button" onClick={() => navigate("/workspace/organizations/create")}>
+          <AppButton
+            type="button"
+            onClick={() => navigate({ to: "/workspace/organizations/create" })}
+          >
             <Plus size={16} /> New organization
           </AppButton>
         ),
@@ -117,7 +117,10 @@ export function OrganizationsPage() {
       emptyDescription="Create the first organization for models, schemas, plugins, and members."
       filteredEmptyDescription="Try another search term."
       emptyAction={
-        <AppButton type="button" onClick={() => navigate("/workspace/organizations/create")}>
+        <AppButton
+          type="button"
+          onClick={() => navigate({ to: "/workspace/organizations/create" })}
+        >
           <Plus size={16} /> New organization
         </AppButton>
       }

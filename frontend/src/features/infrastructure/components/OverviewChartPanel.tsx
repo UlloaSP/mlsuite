@@ -3,19 +3,16 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useSearchParamState } from "@/shared/lib/use-search-param-state";
+import { getRouteApi } from "@tanstack/react-router";
+import { areaY, defineChart, lineY } from "@tanstack/charts";
+import { crosshair } from "@tanstack/charts/crosshair";
+import { decorative } from "@tanstack/charts/mark/decorative";
+import { Chart } from "@tanstack/charts/react/tooltip";
+import { scaleLinear } from "@tanstack/charts/scales/linear";
+import { scalePoint } from "@tanstack/charts/scales/point";
+import { tooltip } from "@tanstack/charts/tooltip";
+import { useSearchUpdate } from "@/shared/lib/use-search-update";
 import { useState } from "react";
-// react-doctor-disable-next-line react-doctor/prefer-dynamic-import -- Overview chart is first-viewport dashboard content.
-import {
-  Area,
-  CartesianGrid,
-  ComposedChart,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { formatTimestamp } from "@/features/infrastructure/lib/formatters";
@@ -30,6 +27,8 @@ import {
 import { ChartTooltip } from "./ChartTooltip";
 import { AppCheckbox } from "@/shared/ui/AppCheckbox";
 
+const route = getRouteApi("/protected/app/superadmin/admin/infrastructure");
+
 export function OverviewChartPanel({
   overview,
   streamConnected,
@@ -39,7 +38,10 @@ export function OverviewChartPanel({
   streamConnected: boolean;
   chartRange: string;
 }) {
-  const [chartService, setChartService] = useSearchParamState<string>("service", "all");
+  const search = route.useSearch();
+  const updateSearch = useSearchUpdate<typeof search>();
+  const chartService = search.service;
+  const setChartService = (value: typeof chartService) => updateSearch({ service: value });
   const [layers, setLayers] = useState<Record<ChartLayer, boolean>>({
     cpu: true,
     ram: true,
@@ -55,6 +57,80 @@ export function OverviewChartPanel({
   const curValue = (key: ChartValueKey) =>
     chartPoints.length > 0 ? chartPoints[chartPoints.length - 1][key] : null;
   const toggleLayer = (key: ChartLayer) => setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
+  const layerEntries = Object.entries(LAYER_CONFIG) as [ChartLayer, typeof LAYER_CONFIG.cpu][];
+  const shown = layerEntries.filter(([key]) => layers[key]).map(([, cfg]) => cfg);
+  const peak = chartPoints.reduce(
+    (max, point) => shown.reduce((top, cfg) => Math.max(top, point[cfg.dataKey]), max),
+    0,
+  );
+  const guideLine = { stroke: "var(--color-line)", strokeOpacity: 1 };
+  const definition = defineChart({
+    marks: [
+      crosshair({ x: guideLine, y: false }),
+      ...shown.flatMap((cfg) => [
+        ...(cfg.area
+          ? [
+              decorative(
+                areaY(chartPoints, {
+                  id: `${cfg.dataKey}-area`,
+                  x: "timestamp",
+                  y1: 0,
+                  y2: cfg.dataKey,
+                  fill: cfg.color,
+                  fillOpacity: 0.08,
+                }),
+              ),
+            ]
+          : []),
+        lineY(chartPoints, {
+          id: cfg.dataKey,
+          x: "timestamp",
+          y: cfg.dataKey,
+          z: () => cfg.label,
+          stroke: cfg.color,
+          strokeWidth: cfg.area ? 1 : 2,
+        }),
+      ]),
+    ],
+    scales: {
+      x: {
+        scale: () => scalePoint<string>(),
+        axis: {
+          line: guideLine,
+          ticks: { size: 0, format: formatTimestamp },
+          tickLabels: { fontSize: 10, opacity: 1, thin: { minGap: 50 } },
+        },
+      },
+      y: {
+        // Summed CPU can pass 100%; the axis grows to fit it instead of drawing off the chart.
+        scale: scaleLinear().domain([0, axisMode === "bytes" ? peak || 1 : Math.max(100, peak)]),
+        nice: axisMode === "bytes" || peak > 100,
+        grid: { ...guideLine, strokeDasharray: "2 4" },
+        axis: {
+          line: guideLine,
+          ticks: { line: guideLine, format: (v: number) => formatChartValue(axisMode, v) },
+          tickLabels: { fontSize: 10, opacity: 1 },
+        },
+      },
+    },
+    theme: { muted: "var(--color-fg-muted)" },
+    focus: "group-x",
+    maxFocusDistance: Number.POSITIVE_INFINITY,
+    tooltip: {
+      use: tooltip,
+      sort: "color-domain",
+      items: [
+        { channel: "x", text: (point) => formatTimestamp(point.datum.timestamp) },
+        {
+          channel: "y",
+          text: (point) => {
+            const cfg = shown.find((layer) => layer.label === point.group);
+            return cfg ? formatChartValue(cfg.unit, point.datum[cfg.dataKey]) : null;
+          },
+        },
+      ],
+    },
+  });
 
   return (
     <div className="flex flex-col overflow-hidden rounded-card border border-line bg-surface">
@@ -89,78 +165,34 @@ export function OverviewChartPanel({
         </div>
       </div>
       <div className="flex flex-wrap gap-4 border-b border-line px-5 py-2.5">
-        {(Object.entries(LAYER_CONFIG) as [ChartLayer, typeof LAYER_CONFIG.cpu][]).map(
-          ([key, cfg]) => (
-            <label
-              key={key}
-              className="flex cursor-pointer select-none items-center gap-2 text-xs text-fg-secondary"
-            >
-              <AppCheckbox
-                aria-label={`Show ${cfg.label} layer`}
-                checked={layers[key]}
-                onChange={() => toggleLayer(key)}
-              />
-              <span
-                className="inline-block size-2.5 rounded-sm"
-                style={{ background: cfg.color }}
-              />
-              {cfg.label}
-              <span className="font-mono text-fg-muted">
-                {formatChartValue(cfg.unit, curValue(cfg.dataKey) as number | null)}
-              </span>
-            </label>
-          ),
-        )}
+        {layerEntries.map(([key, cfg]) => (
+          <label
+            key={key}
+            className="flex cursor-pointer select-none items-center gap-2 text-xs text-fg-secondary"
+          >
+            <AppCheckbox
+              aria-label={`Show ${cfg.label} layer`}
+              checked={layers[key]}
+              onChange={() => toggleLayer(key)}
+            />
+            <span className="inline-block size-2.5 rounded-sm" style={{ background: cfg.color }} />
+            {cfg.label}
+            <span className="font-mono text-fg-muted">
+              {formatChartValue(cfg.unit, curValue(cfg.dataKey) as number | null)}
+            </span>
+          </label>
+        ))}
       </div>
       {/* The chart grows with its row (next to the signals panel) instead of a fixed height. */}
       <div className="flex flex-1 flex-col px-3 pb-3 pt-2">
         <div className="min-h-60 flex-1">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={chartPoints} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
-              <CartesianGrid stroke="var(--color-line)" strokeDasharray="2 4" vertical={false} />
-              <XAxis
-                dataKey="timestamp"
-                tickFormatter={formatTimestamp}
-                minTickGap={50}
-                tick={{ fill: "var(--color-fg-muted)", fontSize: 10 }}
-                stroke="var(--color-line)"
-              />
-              <YAxis
-                domain={axisMode === "bytes" ? [0, "auto"] : [0, 100]}
-                tickFormatter={(v: number) => formatChartValue(axisMode, v)}
-                tick={{ fill: "var(--color-fg-muted)", fontSize: 10 }}
-                stroke="var(--color-line)"
-                width={46}
-              />
-              <Tooltip content={<ChartTooltip />} />
-              {(Object.entries(LAYER_CONFIG) as [ChartLayer, typeof LAYER_CONFIG.cpu][]).map(
-                ([key, cfg]) =>
-                  layers[key] && cfg.area ? (
-                    <Area
-                      key={key}
-                      type="monotone"
-                      dataKey={cfg.dataKey}
-                      name={cfg.label}
-                      stroke={cfg.color}
-                      fill={cfg.color}
-                      fillOpacity={0.08}
-                    />
-                  ) : (
-                    layers[key] && (
-                      <Line
-                        key={key}
-                        type="monotone"
-                        dataKey={cfg.dataKey}
-                        name={cfg.label}
-                        stroke={cfg.color}
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                    )
-                  ),
-              )}
-            </ComposedChart>
-          </ResponsiveContainer>
+          <Chart
+            definition={definition}
+            ariaLabel={`Service aggregate load, last ${chartRange}`}
+            ariaDescription={shown.map((cfg) => cfg.label).join(", ")}
+            style={{ height: "100%" }}
+            renderTooltipBody={({ points }) => <ChartTooltip points={points} />}
+          />
         </div>
       </div>
       <div className="flex items-center justify-between border-t border-line px-5 py-2.5 text-xs text-fg-secondary">

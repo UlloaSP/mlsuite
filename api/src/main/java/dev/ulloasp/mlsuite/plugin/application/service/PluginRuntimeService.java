@@ -22,6 +22,7 @@ public class PluginRuntimeService implements ListPluginRuntimeSourcesUseCase {
     private final PluginMetadataRepository metadata;
 
     @Override
+    @Transactional(readOnly = true)
     public List<PluginRuntimeSourceDto> list(Long userId) {
         Long organizationId = access.requireCurrentOrganization(userId).getId();
         var permissions = authorization.workspacePermissions(userId, organizationId);
@@ -29,7 +30,11 @@ public class PluginRuntimeService implements ListPluginRuntimeSourcesUseCase {
                 && !permissions.canManageReviews() && !permissions.canViewPlugins()) {
             throw new OrganizationAccessDeniedException(organizationId);
         }
-        return objects.list(organizationId).stream().map(PluginRuntimeSourceDto::from).toList();
+        return metadata.findByOrganizationIdOrderByIdAsc(organizationId).stream()
+                .map(objects::readPinned)
+                .flatMap(Optional::stream)
+                .map(PluginRuntimeSourceDto::from)
+                .toList();
     }
 
     @Override

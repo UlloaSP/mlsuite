@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { BookOpen, BrainCircuit, FileJson2, GitCommitHorizontal } from "lucide-react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
 import { appButtonClass } from "@/shared/ui/button-styles";
@@ -53,13 +53,14 @@ export function AccessBookmarkRow({ bookmark, disabled, onRevoke }: Props) {
         ) : null}
       </div>
       <div className="flex items-center gap-2">
-        <Link
-          to={`/api-access/docs?bookmark=${bookmark.id}`}
+        <AppLink
+          to="/api-access/docs"
+          search={{ bookmark: String(bookmark.id) }}
           className={appButtonClass({ size: "sm", variant: "secondary" })}
         >
           <BookOpen size={14} />
           Docs
-        </Link>
+        </AppLink>
         {onRevoke ? (
           <AppButton
             size="sm"

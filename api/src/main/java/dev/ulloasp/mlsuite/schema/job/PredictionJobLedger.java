@@ -12,10 +12,11 @@ import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -29,14 +30,26 @@ import lombok.RequiredArgsConstructor;
 class PredictionJobLedger {
 
     private static final String JOB_COLUMNS = "j.id, j.schema_bookmark_id, j.schema_version_id, j.status, j.total_rows, "
-            + "j.done_rows, j.failed_rows, u.full_name, j.created_at, j.updated_at, j.finished_at";
+            + "j.done_rows, j.failed_rows, COALESCE(u.full_name, '" + DeletedUser.NAME + "'), j.created_at, j.updated_at, j.finished_at";
     private static final String OPEN = "('QUEUED', 'RUNNING')";
+    private static final String FINISHED = " RETURNING id, organization_id, schema_bookmark_id,"
+            + " (SELECT b.name FROM schema_bookmark b WHERE b.id = schema_bookmark_id), created_by_user_id,"
+            + " total_rows, done_rows, failed_rows, (SELECT o.name FROM organization o WHERE o.id = organization_id)";
 
     private final JdbcTemplate jdbc;
     private final ObjectMapper objectMapper;
 
-    /** A claimed job: what its worker needs to run it as the member who started it. */
-    record Claim(Long id, Long organizationId, Long bookmarkId, Long schemaVersionId, Long userId) {
+    /**
+     * A claimed job: what its worker needs to run it as the member who started it, null once they
+     * are gone. {@code started} tells a job's first claim from one that came back after a busy
+     * runtime or a lost lease.
+     */
+    record Claim(Long id, Long organizationId, Long bookmarkId, Long schemaVersionId, Long userId, boolean started) {
+    }
+
+    /** A job this statement ended: what telling the member who started it takes. */
+    record FinishedJob(Long id, Long organizationId, Long bookmarkId, String bookmarkName, Long userId, int totalRows,
+            int doneRows, int failedRows, String organizationName) {
     }
 
     /** A row still to run, with the record each model receives. */
@@ -72,13 +85,13 @@ class PredictionJobLedger {
     }
 
     List<PredictionJobDto> list(Long organizationId, Long bookmarkId, int limit) {
-        return jdbc.query("SELECT " + JOB_COLUMNS + " FROM prediction_job j JOIN app_user u ON u.id = j.created_by_user_id"
+        return jdbc.query("SELECT " + JOB_COLUMNS + " FROM prediction_job j LEFT JOIN app_user u ON u.id = j.created_by_user_id"
                 + " WHERE j.organization_id = ? AND j.schema_bookmark_id = ? ORDER BY j.id DESC LIMIT ?",
                 PredictionJobLedger::job, organizationId, bookmarkId, limit);
     }
 
     Optional<PredictionJobDto> find(Long organizationId, Long jobId) {
-        return jdbc.query("SELECT " + JOB_COLUMNS + " FROM prediction_job j JOIN app_user u ON u.id = j.created_by_user_id"
+        return jdbc.query("SELECT " + JOB_COLUMNS + " FROM prediction_job j LEFT JOIN app_user u ON u.id = j.created_by_user_id"
                 + " WHERE j.organization_id = ? AND j.id = ?", PredictionJobLedger::job, organizationId, jobId)
                 .stream().findFirst();
     }
@@ -89,9 +102,16 @@ class PredictionJobLedger {
                         rs.getString(3)), jobId);
     }
 
-    boolean cancel(Long organizationId, Long jobId) {
-        return jdbc.update("UPDATE prediction_job SET status = 'CANCELLED', lease_owner = NULL, lease_expires_at = NULL,"
-                + " finished_at = now(), updated_at = now() WHERE id = ? AND organization_id = ? AND status IN " + OPEN,
+    /** Cancels an open job; empty once it has finished. */
+    Optional<FinishedJob> cancel(Long organizationId, Long jobId) {
+        return jdbc.query("UPDATE prediction_job SET status = 'CANCELLED', lease_owner = NULL, lease_expires_at = NULL,"
+                + " finished_at = now(), updated_at = now() WHERE id = ? AND organization_id = ? AND status IN " + OPEN
+                + FINISHED, PredictionJobLedger::finished, jobId, organizationId).stream().findFirst();
+    }
+
+    /** Removes a finished job and its rows; false while it is open. */
+    boolean delete(Long organizationId, Long jobId) {
+        return jdbc.update("DELETE FROM prediction_job WHERE id = ? AND organization_id = ? AND status NOT IN " + OPEN,
                 jobId, organizationId) == 1;
     }
 
@@ -108,13 +128,16 @@ class PredictionJobLedger {
 
     Optional<Claim> claim(String worker, int leaseSeconds) {
         return jdbc.query("""
-                UPDATE prediction_job SET status = 'RUNNING', lease_owner = ?, updated_at = now(),
+                WITH next AS (SELECT id, status FROM prediction_job WHERE status IN ('QUEUED', 'RUNNING')
+                              AND (lease_expires_at IS NULL OR lease_expires_at < now())
+                              ORDER BY id LIMIT 1 FOR UPDATE SKIP LOCKED)
+                UPDATE prediction_job j SET status = 'RUNNING', lease_owner = ?, updated_at = now(),
                     lease_expires_at = now() + make_interval(secs => ?)
-                WHERE id = (SELECT id FROM prediction_job WHERE status IN ('QUEUED', 'RUNNING')
-                            AND (lease_expires_at IS NULL OR lease_expires_at < now())
-                            ORDER BY id LIMIT 1 FOR UPDATE SKIP LOCKED)
-                RETURNING id, organization_id, schema_bookmark_id, schema_version_id, created_by_user_id""",
-                (rs, n) -> new Claim(rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getLong(4), rs.getLong(5)),
+                FROM next WHERE j.id = next.id
+                RETURNING j.id, j.organization_id, j.schema_bookmark_id, j.schema_version_id, j.created_by_user_id,
+                    next.status = 'QUEUED'""",
+                (rs, n) -> new Claim(rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getLong(4),
+                        rs.getObject(5, Long.class), rs.getBoolean(6)),
                 worker, leaseSeconds).stream().findFirst();
     }
 
@@ -159,10 +182,16 @@ class PredictionJobLedger {
         refreshCounts(jobId, 0);
     }
 
-    void complete(Long jobId, String worker) {
-        jdbc.update("UPDATE prediction_job SET status = 'COMPLETED', lease_owner = NULL, lease_expires_at = NULL,"
-                + " finished_at = now(), updated_at = now() WHERE id = ? AND lease_owner = ? AND status = 'RUNNING'",
-                jobId, worker);
+    /** Ends the job for the worker holding it; empty when that is no longer this worker. */
+    Optional<FinishedJob> complete(Long jobId, String worker) {
+        return jdbc.query("UPDATE prediction_job SET status = 'COMPLETED', lease_owner = NULL, lease_expires_at = NULL,"
+                + " finished_at = now(), updated_at = now() WHERE id = ? AND lease_owner = ? AND status = 'RUNNING'"
+                + FINISHED, PredictionJobLedger::finished, jobId, worker).stream().findFirst();
+    }
+
+    boolean cancelled(Long jobId) {
+        return !jdbc.queryForList("SELECT id FROM prediction_job WHERE id = ? AND status = 'CANCELLED'", Long.class,
+                jobId).isEmpty();
     }
 
     /** Hands the job back to be claimed at once, by this worker or another. */
@@ -180,6 +209,11 @@ class PredictionJobLedger {
                 rs.getObject(11, OffsetDateTime.class));
     }
 
+    private static FinishedJob finished(ResultSet rs, int rowNumber) throws SQLException {
+        return new FinishedJob(rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getString(4),
+                rs.getObject(5, Long.class), rs.getInt(6), rs.getInt(7), rs.getInt(8), rs.getString(9));
+    }
+
     private PendingRow pendingRow(ResultSet rs, int rowNumber) throws SQLException {
         List<CreatePredictionJobRequest.PredictionJobModelInput> models = read(rs.getString(4), new TypeReference<>() {
         });
@@ -192,7 +226,7 @@ class PredictionJobLedger {
     private String json(Object value) {
         try {
             return objectMapper.writeValueAsString(value);
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             throw new IllegalArgumentException("A bulk row is not serializable as JSON", ex);
         }
     }
@@ -200,7 +234,7 @@ class PredictionJobLedger {
     private <T> T read(String json, TypeReference<T> type) {
         try {
             return objectMapper.readValue(json, type);
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             throw new IllegalStateException("A stored bulk row is not valid JSON", ex);
         }
     }

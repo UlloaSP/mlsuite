@@ -7,6 +7,7 @@ import { useState } from "react";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
 import { formatTimestamp } from "@/shared/lib/date-time";
+import { useActionDialog } from "@/shared/ui/use-action-dialog";
 import {
   isOpenJob,
   usePredictionJobAction,
@@ -28,9 +29,21 @@ export function BulkJobEntry({ bookmarkId, job }: { bookmarkId: string; job: Pre
   const failures = usePredictionJobFailures(job.id, showFailures);
   const handled = job.doneRows + job.failedRows;
   const open = isOpenJob(job);
+  const { confirm, dialog } = useActionDialog();
+  const remove = async () => {
+    const confirmed = await confirm({
+      title: "Delete this bulk upload?",
+      description:
+        "The uploaded rows and their results here go. The inferences it saved stay in Inferences.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (confirmed) action.mutate({ jobId: job.id, action: "delete" });
+  };
 
   return (
     <li className="flex flex-col gap-2 border-t border-line py-3 first:border-t-0">
+      {dialog}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <AppBadge tone={TONES[job.status]}>{job.status}</AppBadge>
@@ -69,6 +82,16 @@ export function BulkJobEntry({ bookmarkId, job }: { bookmarkId: string; job: Pre
               Retry failed rows
             </AppButton>
           ) : null}
+          {open ? null : (
+            <AppButton
+              size="sm"
+              variant="ghost"
+              disabled={action.isPending}
+              onClick={() => void remove()}
+            >
+              Delete
+            </AppButton>
+          )}
         </div>
       </div>
       <div

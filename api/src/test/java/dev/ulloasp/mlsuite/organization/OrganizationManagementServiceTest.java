@@ -9,6 +9,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,8 +21,9 @@ import org.mockito.Mock;
 import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
@@ -96,7 +98,7 @@ class OrganizationManagementServiceTest {
                 roleSeedService,
                 roleDefinitionRepository,
                 organizationDeletionService,
-                organizationStatsService);
+                organizationStatsService, mock(AuditLogService.class));
     }
 
     @Test
@@ -163,6 +165,9 @@ class OrganizationManagementServiceTest {
         OrganizationMembership newest = membership(2L, OrganizationRole.MEMBER, MembershipStatus.ACTIVE);
         when(membershipRepository.findActiveByOrganizationIdOrderByCreatedAtAsc(41L))
                 .thenReturn(List.of(oldest, newest));
+        MembershipActionsDto none = new MembershipActionsDto(false, false, List.of());
+        when(workspaceAuthorizationService.organizationMemberActions(7L, 41L, List.of(oldest, newest)))
+                .thenReturn(List.of(none, none));
 
         var result = service.getAdminDashboard(7L, 41L);
 

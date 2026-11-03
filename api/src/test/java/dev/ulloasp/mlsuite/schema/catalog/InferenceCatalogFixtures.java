@@ -3,11 +3,11 @@ package dev.ulloasp.mlsuite.schema.catalog;
 import java.io.IOException;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import dev.ulloasp.mlsuite.schema.application.dto.InferenceTableDto;
 import dev.ulloasp.mlsuite.schema.catalog.InferenceRowProjector.Row;
@@ -17,7 +17,7 @@ final class InferenceCatalogFixtures {
 
     static final String AGE = "2:input:age";
     static final String SCORE = "2:output:1:score";
-    static final ObjectMapper JSON = new ObjectMapper().registerModule(new JavaTimeModule());
+    static final ObjectMapper JSON = new JsonMapper();
     static final InferenceCatalogText TEXT = InferenceCatalogText.of("en-US");
 
     private InferenceCatalogFixtures() {
@@ -31,7 +31,7 @@ final class InferenceCatalogFixtures {
 
     /** A copy of one fixture's table payload: two runs of one schema, the newest first. */
     static ObjectNode data(int index) throws IOException {
-        return all().get(index).get("data").deepCopy();
+        return (ObjectNode) all().get(index).get("data").deepCopy();
     }
 
     /** The first fixture's newest snapshot with one run per age, numbered and dated oldest first, without results. */
@@ -40,7 +40,7 @@ final class InferenceCatalogFixtures {
         JsonNode template = data.at("/runs/0");
         ArrayNode runs = data.putArray("runs");
         for (int index = 0; index < ages.length; index++) {
-            ObjectNode run = template.deepCopy();
+            ObjectNode run = (ObjectNode) template.deepCopy();
             object(run, "/summary").put("id", index + 1).put("name", "Case " + (index + 1))
                     .put("createdAt", "2026-07-" + String.format("%02d", index + 1) + "T08:00:00Z");
             run.putObject("inputData").set("age", JSON.valueToTree(ages[index]));

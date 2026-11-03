@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import { act } from "react";
-import { Provider, createStore } from "jotai";
 import { expect, test, vi } from "vite-plus/test";
 import { AppGlobalSearch } from "@/app/components/AppGlobalSearch";
 import type { SearchResponseDto } from "@/shared/api/openapi.gen";
@@ -14,14 +13,8 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
 }));
 
 async function searchFor(query: string) {
-  const store = createStore();
-  store.set(globalSearchOpenAtom, true);
-  await mount(
-    <Provider store={store}>
-      <AppGlobalSearch />
-    </Provider>,
-    { route: "/" },
-  );
+  globalSearchOpenAtom.set(true);
+  await mount(<AppGlobalSearch />, { route: "/" });
   await changeValue(document.querySelector<HTMLInputElement>("#global-search")!, query);
   await searchDelay();
   await act(async () => new Promise((resolve) => setTimeout(resolve, 50)));

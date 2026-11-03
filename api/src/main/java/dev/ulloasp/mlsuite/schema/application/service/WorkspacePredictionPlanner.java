@@ -32,6 +32,7 @@ public class WorkspacePredictionPlanner {
     private final SchemaBookmarkRepository bookmarkRepository;
     private final BookmarkPublishability publishability;
     private final ModelRepository modelRepository;
+    private final SnapshotRunGuard guard;
 
     /** One bound model's run for an organization's snapshot, with the snapshot's report routes. */
     public record Plan(Long organizationId, Long schemaVersionId, RunnableModel model,
@@ -62,6 +63,7 @@ public class WorkspacePredictionPlanner {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "The bookmark moved to another snapshot; reload before running");
         }
+        guard.requireRunnable(version.getId());
         List<BoundModel> models = publishability.models(version);
         if (models.stream().noneMatch(model -> model.id().equals(modelId))) throw notBound();
         RunnableModel model = modelRepository.findRunnableModel(modelId, organizationId)

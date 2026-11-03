@@ -9,10 +9,11 @@ model and form that produced it.
 
 ## The objects
 
-**Organization**
-: The workspace that owns models, schemas, bookmarks, inferences, reviews, plugins, API clients and
-  members. Everything in the app belongs to the organization chosen in the switcher. Every account
-  gets a personal organization when it is created.
+**Personal account and organization**
+: Who owns models, schemas, bookmarks, inferences, reviews, plugins and API clients. Everything in
+  the app belongs to the account chosen in the switcher: your personal account, which every user
+  has and which is theirs alone, or an organization, which anyone can create to share work with
+  its members.
 
 **Model**
 : A trained model uploaded as an `.mlbundle` file. MLsuite stores the file, its SHA-256 and what the

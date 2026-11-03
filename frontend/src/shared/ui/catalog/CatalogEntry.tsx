@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
+import { appHref } from "@/shared/lib/app-href";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 
@@ -72,9 +73,9 @@ export function CatalogEntry({
       )}
     >
       {to ? (
-        <Link to={to} className={cx(OPEN_CLASS, FOCUS_RING)}>
+        <AppLink {...appHref(to)} className={cx(OPEN_CLASS, FOCUS_RING)}>
           {body}
-        </Link>
+        </AppLink>
       ) : onOpen ? (
         <button type="button" onClick={onOpen} className={cx(OPEN_CLASS, FOCUS_RING)}>
           {body}

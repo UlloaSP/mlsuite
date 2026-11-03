@@ -37,16 +37,18 @@ import dev.ulloasp.mlsuite.storage.StoredObject;
 import dev.ulloasp.mlsuite.storage.StoredObjectVerification;
 
 /**
- * An uploaded bundle goes from the upload's temporary file to the runtime, the object store and
- * the database's copy as streams: storing a 48 MB bundle allocates far less than one copy of it
- * on the thread that stores it, and both copies are the bundle the hash names.
+ * An uploaded bundle goes from the upload's temporary file to the runtime and the object store as
+ * streams: storing a 48 MB bundle allocates far less than one copy of it on the thread that stores
+ * it, and the stored object is the bundle the hash names, which the model's row records.
  */
 class ModelUploadStreamingTest extends PublicPredictionFixture {
 
     private static final int SIZE = 48 * 1024 * 1024;
     private static final Map<String, Object> INSPECTION = Map.of("type", "classifier", "specificType", "Forest",
             "fileName", "big.mlbundle", "schema", Map.of("fields", List.of(), "reports", List.of()),
-            "manifest", Map.of("writer_version", "0.2.1"), "environment", Map.of("key", "legacy"));
+            "manifest", Map.of("writer_version", "0.3.1"), "environment", Map.of("key", "c".repeat(64),
+                    "environmentId", "d".repeat(64), "writerVersion", "0.3.1", "pythonVersion", "3.14.7",
+                    "packages", List.of(), "lock", "lock-version = \"1.0\""));
 
     @MockitoBean ObjectStorageService storage;
     @Autowired ModelUploadUseCase uploads;
@@ -71,7 +73,7 @@ class ModelUploadStreamingTest extends PublicPredictionFixture {
         }
         sha256 = HexFormat.of().formatHex(digest.digest());
         when(analyzer.inspect(any())).thenReturn(INSPECTION);
-        // The store reads what it is given as MinIO does, a buffer at a time, and remembers its hash.
+        // The store reads what it is given as an S3 client does, a buffer at a time, and remembers its hash.
         when(storage.store(anyString(), anyString(), anyString(), any(InputStream.class), anyLong(), anyString()))
                 .thenAnswer(call -> {
                     StoredObjectVerification read = drain(call.getArgument(3));
@@ -98,13 +100,13 @@ class ModelUploadStreamingTest extends PublicPredictionFixture {
         assertTrue(allocated < SIZE / 2, "allocated " + allocated + " bytes to store a " + SIZE + " byte bundle");
         assertEquals(SIZE, stored[0].sizeBytes());
         assertEquals(sha256, stored[0].sha256());
-        Map<String, Object> row = jdbc.queryForMap("SELECT octet_length(model_file) AS size, "
-                + "encode(sha256(model_file), 'hex') AS sha, artifact_sha256, artifact_state FROM model WHERE id = ?",
-                model.getId());
-        assertEquals((long) SIZE, ((Number) row.get("size")).longValue());
-        assertEquals(sha256, row.get("sha"));
+        Map<String, Object> row = jdbc.queryForMap("SELECT model_size_bytes, artifact_sha256, storage_bucket, "
+                + "storage_version_id, storage_etag FROM model WHERE id = ?", model.getId());
+        assertEquals((long) SIZE, ((Number) row.get("model_size_bytes")).longValue());
         assertEquals(sha256, row.get("artifact_sha256"));
-        assertEquals("VERIFIED", row.get("artifact_state"));
+        assertEquals("models", row.get("storage_bucket"));
+        assertEquals("v1", row.get("storage_version_id"));
+        assertEquals("etag", row.get("storage_etag"));
     }
 
     private static StoredObjectVerification drain(InputStream in) {

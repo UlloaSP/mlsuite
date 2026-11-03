@@ -8,8 +8,8 @@ package dev.ulloasp.mlsuite.model.domain.exception;
 import java.nio.charset.StandardCharsets;
 import org.springframework.web.client.RestClientResponseException;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Wraps any error coming from the external Analyzer (FastAPI) service,
@@ -62,19 +62,18 @@ public class AnalyzerServiceException extends RuntimeException {
         if (body == null || body.isBlank())
             return "";
         try {
-            ObjectMapper om = new ObjectMapper();
-            JsonNode root = om.readTree(body);
+            JsonNode root = JsonMapper.shared().readTree(body);
             JsonNode detail = root.get("detail");
             if (detail == null || detail.isNull())
                 return "";
-            if (detail.isTextual())
-                return detail.asText();
+            if (detail.isString())
+                return detail.asString();
             // An environment the allowlist refuses: {"message": "...", "refused": ["name==version", ...]}.
-            if (detail.isObject() && detail.path("message").isTextual() && detail.path("refused").isArray()) {
-                StringBuilder sb = new StringBuilder(detail.get("message").asText()).append(": ");
+            if (detail.isObject() && detail.path("message").isString() && detail.path("refused").isArray()) {
+                StringBuilder sb = new StringBuilder(detail.get("message").asString()).append(": ");
                 for (int index = 0; index < detail.get("refused").size(); index++) {
                     if (index > 0) sb.append(", ");
-                    sb.append(detail.get("refused").get(index).asText());
+                    sb.append(detail.get("refused").get(index).asString());
                 }
                 return sb.toString();
             }
@@ -82,7 +81,7 @@ public class AnalyzerServiceException extends RuntimeException {
                 // Join messages from validation error array
                 StringBuilder sb = new StringBuilder();
                 for (JsonNode n : detail) {
-                    String msg = n.hasNonNull("msg") ? n.get("msg").asText() : n.toString();
+                    String msg = n.hasNonNull("msg") ? n.get("msg").asString() : n.toString();
                     if (!msg.isBlank()) {
                         if (sb.length() > 0)
                             sb.append("; ");

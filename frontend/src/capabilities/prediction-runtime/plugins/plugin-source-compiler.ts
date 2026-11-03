@@ -3,11 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { Diagnostic } from "typescript";
+import { transform } from "sucrase";
 import * as zod from "zod";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
-
-type TypeScriptModule = typeof import("typescript");
 
 type CompileSpec = {
   plugin: "field" | "report";
@@ -24,45 +22,35 @@ const hashString = (value: string): string => {
   return hash.toString(36);
 };
 
-const formatDiagnostics = (ts: TypeScriptModule, diagnostics: readonly Diagnostic[]): string =>
-  diagnostics.length === 0
-    ? "Unknown TypeScript error."
-    : diagnostics
-        .map((diagnostic) => {
-          const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
-          if (!diagnostic.file || diagnostic.start === undefined) return message;
-          const position = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
-          return `L${position.line + 1}:C${position.character + 1} ${message}`;
-        })
-        .join("\n");
+/** A syntax error as "L<line>:C<column> <message>", as the plugin editors show it. */
+const syntaxError = (error: unknown): Error => {
+  if (!(error instanceof Error)) return new Error(String(error));
+  const loc = (error as Error & { loc?: { line: number; column: number } }).loc;
+  // Sucrase ends its message with the position it also gives as loc.
+  const message = error.message.replace(/ \(\d+:\d+\)$/, "");
+  return new Error(loc ? `L${loc.line}:C${loc.column} ${message}` : message);
+};
 
-const transpileSource = async (
+/**
+ * Strips a plugin's TypeScript types (Sucrase checks syntax, not types) and keeps its ES module
+ * and modern syntax as written.
+ */
+const transpileSource = (
   source: string,
   defineName: string,
   zodKey: string,
   defineKey: string,
-): Promise<string> => {
-  const ts = await import("typescript");
+): string => {
   // Plugin sources use `z` and the define helper as free identifiers. Blob-URL modules
   // cannot import bundled chunks, so bind both to per-source globals set around the import.
   const shimmed = `const ${defineName} = (value) => globalThis[${JSON.stringify(defineKey)}](value);
 const z = globalThis[${JSON.stringify(zodKey)}];
 ${source}`;
-  const result = ts.transpileModule(shimmed, {
-    compilerOptions: {
-      target: ts.ScriptTarget.ES2022,
-      module: ts.ModuleKind.ESNext,
-      moduleResolution: ts.ModuleResolutionKind.Bundler,
-      strict: true,
-      isolatedModules: true,
-      useDefineForClassFields: true,
-    },
-    reportDiagnostics: true,
-  });
-  if ((result.diagnostics?.length ?? 0) > 0) {
-    throw new Error(formatDiagnostics(ts, result.diagnostics ?? []));
+  try {
+    return transform(shimmed, { transforms: ["typescript"], disableESTransforms: true }).code;
+  } catch (error) {
+    throw syntaxError(error);
   }
-  return result.outputText;
 };
 
 const assertDefinition = (value: unknown, { plugin, defineName }: CompileSpec): void => {
@@ -97,7 +85,7 @@ const importDefinition = async (source: string, spec: CompileSpec): Promise<unkn
   const kind = spec.plugin.toUpperCase();
   const zodKey = `__MLSUITE_CUSTOM_${kind}_ZOD___${hash}`;
   const defineKey = `__MLSUITE_DEFINE_${kind}_KIND__${hash}`;
-  const outputText = await transpileSource(source, spec.defineName, zodKey, defineKey);
+  const outputText = transpileSource(source, spec.defineName, zodKey, defineKey);
   const url = URL.createObjectURL(new Blob([outputText], { type: "text/javascript" }));
   const globals = globalThis as Record<string, unknown>;
   try {

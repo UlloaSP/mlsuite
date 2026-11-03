@@ -31,6 +31,7 @@ public interface SchemaRepository extends JpaRepository<Schema, Long> {
     @Query("""
             SELECT s FROM Schema s
             WHERE s.organization.id = :organizationId
+            AND s.purgingAt IS NULL
             AND (:includeArchived = true OR s.archivedAt IS NULL)
             AND (:archivedOnly = false OR s.archivedAt IS NOT NULL)
             AND (

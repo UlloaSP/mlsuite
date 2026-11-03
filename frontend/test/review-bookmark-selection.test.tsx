@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act } from "react";
+import { act, useEffect } from "react";
 import { expect, test } from "vite-plus/test";
 import { useReviewRunSelection } from "@/capabilities/review-creation/useReviewRunSelection";
 import type { ReviewCandidate } from "@/capabilities/review-creation/review-creation-api";
@@ -47,7 +47,10 @@ const candidates: ReviewCandidate[] = [
 ];
 let selection: ReturnType<typeof useReviewRunSelection>;
 function Harness({ items }: { items: ReviewCandidate[] }) {
-  selection = useReviewRunSelection(items);
+  const current = useReviewRunSelection(items);
+  useEffect(() => {
+    selection = current;
+  });
   return null;
 }
 async function render(items = candidates) {

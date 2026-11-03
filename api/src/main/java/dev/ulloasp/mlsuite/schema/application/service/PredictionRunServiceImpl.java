@@ -6,9 +6,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
-import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
-import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionRunRequest;
@@ -29,18 +31,22 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
     private final UserLookupService userLookupService;
     private final SchemaBookmarkRepository bookmarkRepository;
     private final PredictionRunRepository runRepository;
-    private final PredictionResultRepository resultRepository;
-    private final PredictionResultFeedbackRepository feedbackRepository;
+    private final PredictionRunDeletion deletion;
+    private final SnapshotRunGuard guard;
     private final WorkspaceAuthorizationService authorizationService;
     private final PredictionAttestations attestations;
     private final PredictionRunStore runStore;
+    private final AuditLogService auditLog;
 
     @Override
     public PredictionRun createRunForBookmark(Long userId, Long schemaBookmarkId, CreatePredictionRunRequest request) {
         User user = userLookupService.requireById(userId);
         Long organizationId = requireRunPredictions(userId);
         SchemaBookmark bookmark = requireBookmark(schemaBookmarkId, organizationId);
-        return createRun(organizationId, user, bookmark, request);
+        PredictionRun run = createRun(organizationId, user, bookmark, request);
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.PREDICTION_RUN_SAVE, run.getId(),
+                AuditDetails.of("name", run.getName(), "bookmarkId", schemaBookmarkId, "status", run.getStatus()));
+        return run;
     }
 
     @Override
@@ -49,7 +55,11 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
         User user = userLookupService.requireById(userId);
         Long organizationId = requireRunPredictions(userId);
         SchemaBookmark bookmark = requireBookmark(schemaBookmarkId, organizationId);
-        return requests.stream().map(request -> createRun(organizationId, user, bookmark, request).getId()).toList();
+        List<Long> runIds = requests.stream()
+                .map(request -> createRun(organizationId, user, bookmark, request).getId()).toList();
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.PREDICTION_RUN_BATCH_CREATE,
+                schemaBookmarkId, AuditDetails.of("runs", runIds.size()));
+        return runIds;
     }
 
     @Override
@@ -64,13 +74,22 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
         Long organizationId = requireRunPredictions(userId);
         PredictionRun run = runRepository.findByIdAndOrganizationId(runId, organizationId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Prediction run not found"));
-        if (runRepository.isIncludedInReview(runId)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Inference cannot be deleted while it belongs to a review");
+        PredictionRunDeletion.Deleted deleted = deletion.delete(userId, List.of(runId));
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.PREDICTION_RUN_DELETE, runId,
+                AuditDetails.of("name", run.getName(), "answers", deleted.answers(), "reviews", deleted.reviews()));
+    }
+
+    @Override
+    public int deleteRuns(Long userId, List<Long> runIds) {
+        Long organizationId = requireRunPredictions(userId);
+        List<Long> distinct = runIds.stream().distinct().toList();
+        if (runRepository.countByIdsAndOrganizationId(distinct, organizationId) != distinct.size()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Prediction run not found");
         }
-        feedbackRepository.deleteByResult_Run_Id(runId);
-        resultRepository.deleteByRun_Id(runId);
-        runRepository.delete(run);
+        PredictionRunDeletion.Deleted deleted = deletion.delete(userId, distinct);
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.PREDICTION_RUN_BATCH_DELETE, organizationId,
+                AuditDetails.of("runs", distinct.size(), "answers", deleted.answers(), "reviews", deleted.reviews()));
+        return distinct.size();
     }
 
     private Long requireRead(Long userId) {
@@ -96,6 +115,7 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "The bookmark moved to another snapshot; reload before saving");
         }
+        guard.requireRunnable(bookmark.getVersion().getId());
         List<AttestedPrediction> results = request.results().stream()
                 .map(result -> attestations.open(result.attestation()))
                 .toList();

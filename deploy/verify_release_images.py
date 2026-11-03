@@ -16,7 +16,7 @@ APP_SERVICES = {
     "py-analyzer",
     "runtime-builder",
     "db-migrate",
-    "artifact-migrate",
+    "artifact-prune",
     "spring-app",
     "frontend",
 }
@@ -33,7 +33,7 @@ def validate_release_config(config: dict) -> None:
         if "build" in service:
             raise ValueError(f"{name} must not contain a production build context")
     api_images = {services[name]["image"] for name in (
-        "db-migrate", "artifact-migrate", "spring-app"
+        "db-migrate", "artifact-prune", "spring-app"
     )}
     if len(api_images) != 1:
         raise ValueError("database, artifact and API services must use the same image digest")

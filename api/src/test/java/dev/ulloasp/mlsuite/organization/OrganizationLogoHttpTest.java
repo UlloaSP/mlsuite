@@ -33,6 +33,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.organization.adapter.in.web.OrganizationLogoController;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationDto;
+import dev.ulloasp.mlsuite.organization.domain.model.OrganizationKind;
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationLogoService;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationLogo;
@@ -133,7 +134,7 @@ class OrganizationLogoHttpTest {
     }
 
     private static OrganizationDto organization(String logoUrl) {
-        return new OrganizationDto(ORG_ID, "acme", "Acme", null, logoUrl, REPLACED, REPLACED);
+        return new OrganizationDto(ORG_ID, "acme", "Acme", OrganizationKind.TEAM, null, logoUrl, REPLACED, REPLACED);
     }
 
     private static AbstractMockHttpServletRequestBuilder<?> signedIn(AbstractMockHttpServletRequestBuilder<?> request) {

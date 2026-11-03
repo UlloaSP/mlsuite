@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
@@ -66,7 +66,7 @@ export function CreateSchemaPage({
           },
         })
       ).id;
-      void navigate(`/schemas/${schemaId}`);
+      void navigate({ to: "/schemas/$schemaId", params: { schemaId: String(schemaId) } });
     } catch (error) {
       setSubmitError(
         `Schema create failed: ${error instanceof Error ? error.message : String(error)}`,

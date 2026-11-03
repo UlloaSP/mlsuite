@@ -24,8 +24,8 @@ import dev.ulloasp.mlsuite.user.domain.model.User;
 
 /** An organization's roles, role templates and permissions, paged over PostgreSQL. */
 class RoleListCatalogTest extends PublicPredictionFixture {
-    /** Four system roles, thirty analyst roles, the inviter's and the outsider's. */
-    private static final int ROLES = 36;
+    /** Four system roles and the Reviewer, thirty analyst roles, the inviter's and the outsider's. */
+    private static final int ROLES = 37;
 
     @Autowired RoleSeedService roleSeedService;
     private String organizationPath;
@@ -41,7 +41,7 @@ class RoleListCatalogTest extends PublicPredictionFixture {
     void seedRolesAndMembers() {
         organizationPath = "/api/organizations/" + organization.getId();
         inTransaction(() -> {
-            roleSeedService.ensureOrganizationRoles(organization);
+            roleSeedService.createOrganizationRoles(organization);
             join(entityManager.find(User.class, owner.getId()),
                     roleSeedService.orgRole(organization, OrganizationRole.OWNER));
             for (int i = 0; i < 30; i++) {
@@ -56,19 +56,6 @@ class RoleListCatalogTest extends PublicPredictionFixture {
             outsider = user("outsider");
             join(outsider, role("Outsider", PermissionKey.VIEW_MODELS));
         });
-    }
-
-    @Test
-    void roleCatalogCanSeedAMissingSystemRoleAndPersistIt() throws Exception {
-        inTransaction(() -> entityManager.createQuery(
-                "SELECT r FROM RoleDefinition r WHERE r.organization.id = :org AND r.systemKey = 'MEMBER'",
-                RoleDefinition.class).setParameter("org", organization.getId()).getResultList()
-                .forEach(entityManager::remove));
-        for (int read = 0; read < 2; read++) {
-            mockMvc.perform(asOwner(get(organizationPath + "/roles/catalog").param("search", "member")))
-                    .andExpect(status().isOk()).andExpect(jsonPath("$.totalItems").value(1))
-                    .andExpect(jsonPath("$.items[0].systemKey").value("MEMBER"));
-        }
     }
 
     @Test
@@ -88,7 +75,7 @@ class RoleListCatalogTest extends PublicPredictionFixture {
                 .andExpect(jsonPath("$.items[4].actions.canEdit").value(true))
                 .andExpect(jsonPath("$.items[5].userCount").value(0));
         mockMvc.perform(asOwner(get(path).param("size", "24").param("page", "1")))
-                .andExpect(jsonPath("$.items.length()").value(12))
+                .andExpect(jsonPath("$.items.length()").value(13))
                 .andExpect(jsonPath("$.hasNext").value(false));
         mockMvc.perform(asOwner(get(path).param("search", "ANALYST 2")))
                 .andExpect(jsonPath("$.totalItems").value(10));

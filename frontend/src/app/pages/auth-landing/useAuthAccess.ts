@@ -3,9 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useReducedMotion } from "motion/react";
+import { useMediaQuery } from "@/shared/ui/use-media-query";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 
 /** 0 idle, 1 pass torn while the request runs, 2 overlay revealed after success. */
 export type AuthPhase = 0 | 1 | 2;
@@ -18,7 +18,7 @@ const REDUCED_WELCOME_MS = 1000;
 
 export function useAuthAccess(destination: string) {
   const navigate = useNavigate();
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const [phase, setPhase] = useState<AuthPhase>(0);
   const [reveal, setReveal] = useState<AuthReveal>({ x: 0, y: 0, radius: 1600 });
   const startedAt = useRef(0);
@@ -55,7 +55,7 @@ export function useAuthAccess(destination: string) {
     afterTear(() => {
       setPhase(2);
       later(
-        () => void navigate(destination, { replace: true }),
+        () => void navigate({ href: destination, replace: true }),
         reduceMotion ? REDUCED_WELCOME_MS : WELCOME_MS,
       );
     });

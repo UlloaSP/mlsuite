@@ -19,13 +19,14 @@ import dev.ulloasp.mlsuite.model.application.runtime.ModelUnavailableException;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.schema.application.service.PublicModelRuntime;
 import dev.ulloasp.mlsuite.schema.application.service.RuntimeSlots;
+import dev.ulloasp.mlsuite.security.identity.RequestOrigin;
 import lombok.RequiredArgsConstructor;
 
 /**
  * Runs a bookmark for an API client. The client's record goes to the runtime as sent, under the
  * model's own feature names: the runtime alone checks it against the model. Like the public
- * runs, nothing here is transactional and the endpoint is left out of open-in-view, so no
- * connection is held while the runtime works.
+ * runs, nothing here is transactional (and open-in-view is off), so no connection is held while
+ * the runtime works.
  *
  * <p>Every call made with a valid key is logged under the id it is answered with, whatever its
  * outcome; a call without one belongs to no organization and is not. A record the runtime
@@ -45,7 +46,7 @@ public class ApiPredictionService implements ApiPredictionUseCase {
 
     @Override
     public ApiPredictionDto predict(String secret, String bookmarkId, ApiPredictionRequest request) {
-        UUID requestId = UUID.randomUUID();
+        UUID requestId = RequestOrigin.currentRequestId();
         long started = System.nanoTime();
         ApiCaller caller = runs.authenticate(secret);
         ApiTarget target = null;

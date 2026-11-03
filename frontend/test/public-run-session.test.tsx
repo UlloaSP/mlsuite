@@ -6,7 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // @vitest-environment jsdom
 import { QueryClient } from "@tanstack/react-query";
 import { act } from "react";
-import { Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { buttonByText, click, mount } from "./support/dom";
 import {
@@ -58,6 +57,8 @@ const bookmark: PublicBookmarkDto = {
   reportCount: 1,
   organizationName: "Acme Health",
   organizationLogoUrl: null,
+  organizationKind: "TEAM",
+  publisherHandle: null,
   formSchema: {
     fields: [{ kind: "number", label: "Age", mappedTo: "in0", defaultValue: 52 }],
     reports: [
@@ -136,15 +137,11 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 async function openPage() {
-  const view = await mount(
-    <Routes>
-      <Route path="/explore/:publicId" element={<PublicBookmarkPage />} />
-    </Routes>,
-    {
-      route: `/explore/${PUBLIC_ID}`,
-      queryClient: new QueryClient({ defaultOptions: { queries: { retry: false } } }),
-    },
-  );
+  const view = await mount(null, {
+    route: `/explore/${PUBLIC_ID}`,
+    routes: { "/explore/$publicId": <PublicBookmarkPage /> },
+    queryClient: new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+  });
   const page = await answers[RUNS_PATH]![0]!.clone().json();
   await vi.waitFor(
     async () => {

@@ -56,7 +56,18 @@ export function AuthFormPanel({
           </div>
         ) : (
           <div className="flex flex-col gap-2.5">
-            <AuthField {...field} name="fullName" autoComplete="name" placeholder="Full name" />
+            {/* The pass has a fixed height: two names share a row so it keeps room for an error. */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <AuthField {...field} name="fullName" autoComplete="name" placeholder="Full name" />
+              <AuthField
+                {...field}
+                name="username"
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
+                placeholder="Username"
+              />
+            </div>
             <AuthField
               {...field}
               name="email"

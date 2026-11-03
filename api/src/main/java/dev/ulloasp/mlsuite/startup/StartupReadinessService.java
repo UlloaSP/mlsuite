@@ -30,12 +30,12 @@ public class StartupReadinessService {
     }
 
     public StartupReadinessDto check() {
-        List<Dependency> dependencies = List.of(
-                database(),
-                probe("py-analyzer", analyzerUrl + "/health"),
-                probe("ops-agent", opsAgentProperties.baseUrl() + "/health"));
-        boolean ready = dependencies.stream().allMatch(Dependency::ready);
-        return new StartupReadinessDto(ready, dependencies);
+        Dependency database = database();
+        Dependency analyzer = probe("py-analyzer", analyzerUrl + "/health");
+        Dependency opsAgent = probe("ops-agent", opsAgentProperties.baseUrl() + "/health");
+        // Reported but not required: everything but the Infra page runs without the ops agent, and
+        // a superadmin needs the app to see that it is away.
+        return new StartupReadinessDto(database.ready() && analyzer.ready(), List.of(database, analyzer, opsAgent));
     }
 
     private Dependency database() {

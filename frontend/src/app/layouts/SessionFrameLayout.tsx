@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Outlet } from "react-router";
+import { Outlet } from "@tanstack/react-router";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";

@@ -3,14 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
-import {
-  usePublicRunCatalog,
-  usePublicRunDetail,
-  publicRunCatalogKey,
-  publicRunDetailOptions,
-} from "@/features/explore/api/public-catalog-api";
+import { usePublicRunCatalog, usePublicRunDetail } from "@/features/explore/api/public-catalog-api";
 import { PublicBookmarkForm } from "@/features/explore/components/PublicBookmarkForm";
 import { PublicRunSession } from "@/features/explore/components/PublicRunSession";
 import { PublicRunView } from "@/features/explore/components/PublicRunView";
@@ -34,24 +28,22 @@ const NO_RUNS: PublicRunDto[] = [];
  * visitor goes back. The form is hidden, not unmounted, meanwhile: its values stay.
  */
 export function PublicBookmarkPanel({ bookmark }: Props) {
-  const queryClient = useQueryClient();
   const runsQuery = usePublicRunCatalog(bookmark.publicId);
   const runs = runsQuery.data?.items ?? NO_RUNS;
   const [viewingId, setViewingId] = useState<number | null>(null);
   const [latestId, setLatestId] = useState<number | null>(null);
-  const viewingQuery = usePublicRunDetail(bookmark.publicId, viewingId);
+  const viewingQuery = usePublicRunDetail(
+    bookmark.publicId,
+    viewingId,
+    runs.find((run) => run.id === viewingId),
+  );
   const viewing = viewingQuery.data ?? null;
   const latest = usePublicRunDetail(bookmark.publicId, latestId).data ?? null;
 
-  const onRun = useCallback(
-    (run: PublicRunDto) => {
-      queryClient.setQueryData(publicRunDetailOptions(bookmark.publicId, run.id).queryKey, run);
-      void queryClient.invalidateQueries({ queryKey: publicRunCatalogKey(bookmark.publicId) });
-      setLatestId(run.id);
-      setViewingId(null);
-    },
-    [bookmark.publicId, queryClient],
-  );
+  const onRun = useCallback((run: PublicRunDto) => {
+    setLatestId(run.id);
+    setViewingId(null);
+  }, []);
   // Whether a run's review is complete follows from its kept answers; read once per run list.
   const reviewed = useMemo(() => {
     const byId = new Map(
@@ -102,10 +94,7 @@ export function PublicBookmarkPanel({ bookmark }: Props) {
         loading={runsQuery.isPending}
         reviewed={reviewed}
         selectedId={viewing?.id ?? latest?.id ?? null}
-        onSelect={(run) => {
-          queryClient.setQueryData(publicRunDetailOptions(bookmark.publicId, run.id).queryKey, run);
-          setViewingId(run.id);
-        }}
+        onSelect={(run) => setViewingId(run.id)}
       />
     </div>
   );

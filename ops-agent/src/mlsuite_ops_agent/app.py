@@ -10,6 +10,7 @@ import json
 from fastapi import Depends, FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 
+from .backups import backup_failing, backup_root
 from .compose import ComposeError
 from .config import SETTINGS
 from .models import ServiceActionRequest, ServiceLogsSnapshot, TerminalSessionRequest, TerminalSessionResponse
@@ -73,6 +74,17 @@ def create_app() -> FastAPI:
     async def overview() -> dict[str, object]:
         return await state.snapshot()
 
+    @app.get("/internal/load", dependencies=[Depends(verify_request)])
+    async def load() -> JSONResponse:
+        reading = state.load()
+        if reading is None:
+            return JSONResponse(status_code=503, content={"detail": "No service is reporting."})
+        return JSONResponse(content=reading)
+
+    @app.get("/internal/backup", dependencies=[Depends(verify_request)])
+    async def backup() -> dict[str, bool | None]:
+        return {"failing": backup_failing(backup_root(SETTINGS.backup_root))}
+
     @app.post("/internal/services/{service_name}/actions", dependencies=[Depends(verify_request)])
     async def service_action(service_name: str, request: ServiceActionRequest) -> dict[str, str]:
         await state.compose.action(service_name, request.action)
@@ -90,6 +102,11 @@ def create_app() -> FastAPI:
             sessionId=session.session_id,
             wsPath=f"/internal/terminal/{session.session_id}",
         )
+
+    @app.get("/internal/terminal/sessions", dependencies=[Depends(verify_request)])
+    async def terminal_sessions() -> dict[str, list[str]]:
+        """Every session the agent has, attached or not: the API records the end of the others."""
+        return {"sessionIds": list(state.terminals.sessions)}
 
     @app.delete("/internal/terminal/sessions/{session_id}", dependencies=[Depends(verify_request)])
     async def close_terminal_session(session_id: str) -> dict[str, str]:

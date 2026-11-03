@@ -1,6 +1,6 @@
-import { useAtom } from "jotai";
+import { useSelector } from "@tanstack/react-store";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import type { FieldConfig } from "mlform/runtime";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { ReviewWithoutQuestionnaire } from "./ReviewWithoutQuestionnaire";
@@ -31,8 +31,14 @@ type Props = {
   run: PredictionRunDto;
   version: SchemaVersionDto;
   feedback: PredictionResultFeedbackDto[];
-  onSaved: () => Promise<unknown> | unknown;
+  onSaved: () => unknown;
 };
+
+/** A scalar answer as written; anything else as its JSON, so "1" and 1 match one option. */
+const answerText = (value: unknown): string =>
+  typeof value === "string" || typeof value === "number" || typeof value === "boolean"
+    ? String(value)
+    : JSON.stringify(value);
 
 const displayValue = (value: unknown, field?: FieldConfig): string => {
   if (value === null || value === undefined || value === "") return "Not answered";
@@ -47,11 +53,12 @@ const displayValue = (value: unknown, field?: FieldConfig): string => {
     );
     const matchingOption =
       options.find(
-        (option: { label: string; value: unknown }) => String(option.value) === String(value),
+        (option: { label: string; value: unknown }) =>
+          answerText(option.value) === answerText(value),
       ) ?? options[Number(value)];
     if (matchingOption) return matchingOption.label;
   }
-  return typeof value === "object" ? JSON.stringify(value) : String(value);
+  return answerText(value);
 };
 
 export function SchemaReviewCombinedFeedbackForm({
@@ -62,7 +69,7 @@ export function SchemaReviewCombinedFeedbackForm({
   feedback,
   onSaved,
 }: Props) {
-  const [theme] = useAtom(themeWithHtmlAtom);
+  const theme = useSelector(themeWithHtmlAtom);
   const { mutateAsync: saveFeedback } = useSaveSchemaReviewFeedbackMutation(reviewId, reviewRunId);
   const [editing, setEditing] = useReducer((_: boolean, next: boolean) => next, false);
   const [submitting, setSubmitting] = useState(false);

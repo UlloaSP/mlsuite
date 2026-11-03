@@ -4,13 +4,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMemo, type PropsWithChildren } from "react";
-import { Link, useLocation } from "react-router";
+import { useLocation } from "@tanstack/react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { EXPLORE_PATH } from "@/app/components/explore-navigation";
 import {
   AccountEntryContext,
   type AccountEntry,
 } from "@/capabilities/workspace-context/account-entry";
-import { registerHref, signInHref } from "@/capabilities/workspace-context/session";
+import { registerLink, signInLink } from "@/capabilities/workspace-context/session";
 import { BreadcrumbProvider } from "@/shared/ui/breadcrumb/BreadcrumbProvider";
 import { appButtonClass } from "@/shared/ui/button-styles";
 import { cx } from "@/shared/ui/cx";
@@ -28,10 +29,9 @@ import { FrameContent } from "./FrameContent";
  * Pages reach the same ways in through AccountEntryContext.
  */
 export function PublicFrame({ children }: PropsWithChildren) {
-  const location = useLocation();
-  const returnTo = `${location.pathname}${location.search}`;
+  const returnTo = useLocation({ select: (location) => location.pathname + location.searchStr });
   const entry = useMemo<AccountEntry>(
-    () => ({ signInHref: signInHref(returnTo), registerHref: registerHref(returnTo) }),
+    () => ({ signIn: signInLink(returnTo), register: registerLink(returnTo) }),
     [returnTo],
   );
 
@@ -39,7 +39,7 @@ export function PublicFrame({ children }: PropsWithChildren) {
     <BreadcrumbProvider>
       <div className="flex h-dvh w-screen flex-col overflow-clip bg-surface text-fg">
         <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line px-4 sm:px-6">
-          <Link
+          <AppLink
             to={EXPLORE_PATH}
             aria-label="MLsuite"
             className={cx("flex shrink-0 items-center gap-2 rounded-control text-xl", FOCUS_RING)}
@@ -49,17 +49,17 @@ export function PublicFrame({ children }: PropsWithChildren) {
             <span className="max-[359px]:hidden">
               <MLSuiteWordmark />
             </span>
-          </Link>
+          </AppLink>
           <nav aria-label="Account" className="flex shrink-0 items-center gap-2">
-            <Link
-              to={entry.signInHref}
+            <AppLink
+              {...entry.signIn}
               className={appButtonClass({ size: "sm", variant: "secondary" })}
             >
               Sign in
-            </Link>
-            <Link to={entry.registerHref} className={appButtonClass({ size: "sm" })}>
+            </AppLink>
+            <AppLink {...entry.register} className={appButtonClass({ size: "sm" })}>
               Create account
-            </Link>
+            </AppLink>
           </nav>
         </header>
         <main className="flex min-h-0 min-w-0 flex-1 flex-col">

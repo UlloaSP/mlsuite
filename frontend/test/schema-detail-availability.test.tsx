@@ -39,7 +39,7 @@ test.each([["schema", SchemaDetailPage, "/schemas", "No published snapshots"]] a
     vi.useFakeTimers();
     vi.setSystemTime(0);
     state.query = { data: undefined, isLoading: true, isError: false };
-    const { host: container, rerender } = await mount(<Page />, { route: "/" });
+    const { host: container, rerender } = await mount(<Page />, { route: "/schemas/7" });
     expect(container.textContent).toContain("Loading");
     expect(container.textContent).not.toContain("unavailable");
     void act(() => vi.advanceTimersByTime(LOADING_REVEAL_DELAY_MS + 1));

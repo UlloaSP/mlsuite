@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.nio.charset.StandardCharsets;
@@ -13,12 +14,10 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
-import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
-import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.plugin.application.service.PluginObjectReader;
 import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginMetadata;
@@ -28,34 +27,29 @@ import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StorageProperties;
 import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
 
+/** A plugin is read as its row pins it: that exact version, and only bytes with its SHA-256. */
 class PluginObjectReaderTest {
 
     private static final String KEY = "organizations/41/plugins/items/plugin.json";
     private final ObjectStorageService storage = mock(ObjectStorageService.class);
     private final PluginMetadataRepository metadata = mock(PluginMetadataRepository.class);
     private final StorageDeletionQueue deletionQueue = mock(StorageDeletionQueue.class);
-    private final OrganizationRepository organizations = mock(OrganizationRepository.class);
     private PluginObjectReader reader;
 
     @BeforeEach
     void setUp() {
         StorageProperties properties = new StorageProperties();
         properties.setBucket("plugins");
-        Organization organization = new Organization();
-        organization.setId(41L);
-        when(organizations.lockById(41L)).thenReturn(Optional.of(organization));
         reader = new PluginObjectReader(
-                storage, properties, new ObjectMapper().registerModule(new JavaTimeModule()), metadata,
-                deletionQueue, organizations);
+                storage, properties, new JsonMapper(), metadata,
+                deletionQueue);
     }
 
     @Test
     void loadRejectsContentThatDoesNotMatchPersistedIdentity() {
-        byte[] expected = pluginJson("safe");
-        byte[] tampered = pluginJson("tampered");
-        PluginMetadata record = metadata(expected);
-        when(storage.loadOptional("plugins", KEY, "v1")).thenReturn(Optional.of(tampered));
-        when(metadata.findByObjectKeyAndOrganizationId(KEY, 41L)).thenReturn(Optional.of(record));
+        PluginMetadata record = metadata(pluginJson("safe"));
+        when(storage.loadOptional("plugins", KEY, "v1")).thenReturn(Optional.of(pluginJson("tampered")));
+        when(metadata.findByIdAndOrganizationId("plugin", 41L)).thenReturn(Optional.of(record));
 
         assertThrows(ArtifactIntegrityException.class, () -> reader.load(41L, "plugin"));
     }
@@ -65,127 +59,35 @@ class PluginObjectReaderTest {
         byte[] bytes = pluginJson("safe");
         PluginMetadata record = metadata(bytes);
         when(storage.loadOptional("plugins", KEY, "v1")).thenReturn(Optional.of(bytes));
-        when(metadata.findByObjectKeyAndOrganizationId(KEY, 41L))
-                .thenReturn(Optional.of(record));
+        when(metadata.findByIdAndOrganizationId("plugin", 41L)).thenReturn(Optional.of(record));
 
         assertEquals("plugin", reader.load(41L, "plugin").id());
         verify(metadata, never()).save(record);
     }
 
     @Test
-    void loadRepairsLegacySourceSizeAfterHashVerification() {
-        byte[] bytes = pluginJson("safe");
-        PluginMetadata record = metadata(bytes);
-        record.setSizeBytes(1);
-        when(storage.loadOptional("plugins", KEY, "v1")).thenReturn(Optional.of(bytes));
-        when(metadata.findByObjectKeyAndOrganizationId(KEY, 41L)).thenReturn(Optional.of(record));
+    void anObjectWithoutARowIsNoPlugin() {
+        when(metadata.findByIdAndOrganizationId("plugin", 41L)).thenReturn(Optional.empty());
 
-        assertEquals("plugin", reader.load(41L, "plugin").id());
-        assertEquals(bytes.length, record.getSizeBytes());
-        verify(metadata).save(record);
-    }
-
-    @Test
-    void loadEstablishesIdentityForLegacyMetadataWithoutHash() {
-        byte[] bytes = pluginJson("safe");
-        PluginMetadata record = metadata(bytes);
-        record.setSha256(null);
-        record.setSizeBytes(1);
-        when(storage.loadOptional("plugins", KEY, "v1")).thenReturn(Optional.of(bytes));
-        when(metadata.findByObjectKeyAndOrganizationId(KEY, 41L)).thenReturn(Optional.of(record));
-
-        assertEquals("plugin", reader.load(41L, "plugin").id());
-        assertEquals(bytes.length, record.getSizeBytes());
-        assertEquals(ArtifactHash.sha256(bytes), record.getSha256());
-        verify(metadata).save(record);
-    }
-
-    @Test
-    void loadDoesNotTrustInvalidLegacyContent() {
-        byte[] invalid = "not-json".getBytes(StandardCharsets.UTF_8);
-        PluginMetadata record = metadata(invalid);
-        record.setSha256(null);
-        when(storage.loadOptional("plugins", KEY, "v1")).thenReturn(Optional.of(invalid));
-        when(metadata.findByObjectKeyAndOrganizationId(KEY, 41L)).thenReturn(Optional.of(record));
-
-        assertThrows(IllegalStateException.class, () -> reader.load(41L, "plugin"));
-        verify(metadata, never()).save(record);
+        assertThrows(PluginNotFoundException.class, () -> reader.load(41L, "plugin"));
+        verifyNoInteractions(storage);
     }
 
     @Test
     void loadDistinguishesAMissingObjectFromCorruptContent() {
-        when(storage.loadOptional("plugins", KEY, null)).thenReturn(Optional.empty());
+        when(metadata.findByIdAndOrganizationId("plugin", 41L)).thenReturn(Optional.of(metadata(pluginJson("safe"))));
+        when(storage.loadOptional("plugins", KEY, "v1")).thenReturn(Optional.empty());
 
         assertThrows(PluginNotFoundException.class, () -> reader.load(41L, "plugin"));
     }
 
     @Test
     void loadHidesAnObjectWhoseDeletionWasRequested() {
+        when(metadata.findByIdAndOrganizationId("plugin", 41L)).thenReturn(Optional.of(metadata(pluginJson("safe"))));
         when(deletionQueue.isDeletionRequested("plugins", KEY)).thenReturn(true);
 
         assertThrows(PluginNotFoundException.class, () -> reader.load(41L, "plugin"));
-        verify(storage, never()).loadOptional("plugins", KEY, null);
-    }
-
-    @Test
-    void loadRejectsAPluginWhoseIdentityDoesNotMatchItsObjectKey() {
-        byte[] mismatched = new String(pluginJson("safe"), StandardCharsets.UTF_8)
-                .replace("\"id\":\"plugin\"", "\"id\":\"other\"")
-                .getBytes(StandardCharsets.UTF_8);
-        PluginMetadata record = metadata(mismatched);
-        record.setSha256(null);
-        when(storage.loadOptional("plugins", KEY, "v1")).thenReturn(Optional.of(mismatched));
-        when(metadata.findByObjectKeyAndOrganizationId(KEY, 41L)).thenReturn(Optional.of(record));
-
-        assertThrows(ArtifactIntegrityException.class, () -> reader.load(41L, "plugin"));
-        verify(metadata, never()).save(record);
-    }
-
-    @Test
-    void loadRejectsMetadataWhoseIdentityDoesNotMatchItsObjectKey() {
-        byte[] bytes = pluginJson("safe");
-        PluginMetadata record = metadata(bytes);
-        record.setId("other");
-        when(storage.loadOptional("plugins", KEY, "v1")).thenReturn(Optional.of(bytes));
-        when(metadata.findByObjectKeyAndOrganizationId(KEY, 41L)).thenReturn(Optional.of(record));
-
-        assertThrows(ArtifactIntegrityException.class, () -> reader.load(41L, "plugin"));
-        verify(metadata, never()).save(record);
-    }
-
-    @Test
-    void loadRepairsAndThenUsesTheResolvedVersionForLegacyMetadata() {
-        byte[] bytes = pluginJson("safe");
-        PluginMetadata record = metadata(bytes);
-        record.setStorageVersionId(null);
-        when(storage.loadOptional("plugins", KEY, "legacy-v1")).thenReturn(Optional.of(bytes));
-        when(storage.inspectOptional("plugins", KEY, null)).thenReturn(Optional.of(
-                new dev.ulloasp.mlsuite.storage.StoredObjectMetadata(
-                        "plugins", KEY, bytes.length, "etag", "legacy-v1", ArtifactHash.sha256(bytes))));
-        when(metadata.findByObjectKeyAndOrganizationId(KEY, 41L)).thenReturn(Optional.of(record));
-
-        assertEquals("plugin", reader.load(41L, "plugin").id());
-        assertEquals("legacy-v1", record.getStorageVersionId());
-        verify(metadata).save(record);
-    }
-
-    @Test
-    void loadRewritesAnUnversionedLegacyPluginBeforePersistingItsIdentity() {
-        byte[] bytes = pluginJson("safe");
-        PluginMetadata record = metadata(bytes);
-        record.setStorageVersionId(null);
-        when(storage.inspectOptional("plugins", KEY, null)).thenReturn(Optional.of(
-                new dev.ulloasp.mlsuite.storage.StoredObjectMetadata(
-                        "plugins", KEY, bytes.length, "etag", null, ArtifactHash.sha256(bytes))));
-        when(storage.loadOptional("plugins", KEY, null)).thenReturn(Optional.of(bytes));
-        when(storage.store(KEY, "plugin.ts", "application/json", bytes)).thenReturn(
-                new dev.ulloasp.mlsuite.storage.StoredObject(
-                        "plugins", KEY, bytes.length, "etag-2", "version-2", ArtifactHash.sha256(bytes)));
-        when(metadata.findByObjectKeyAndOrganizationId(KEY, 41L)).thenReturn(Optional.of(record));
-
-        assertEquals("plugin", reader.load(41L, "plugin").id());
-        assertEquals("version-2", record.getStorageVersionId());
-        verify(metadata).save(record);
+        verifyNoInteractions(storage);
     }
 
     private PluginMetadata metadata(byte[] bytes) {

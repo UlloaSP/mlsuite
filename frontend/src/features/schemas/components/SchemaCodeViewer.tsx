@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtomValue } from "jotai";
+import { useSelector } from "@tanstack/react-store";
 import type { OnMount } from "@monaco-editor/react";
 import { lazy, Suspense, useEffect, useRef } from "react";
 import { cx } from "@/shared/ui/cx";
@@ -26,7 +26,7 @@ const MonacoEditor = lazy(loadLocalMonacoEditor);
 
 export function SchemaCodeViewer({ value, className }: Props) {
   const appearance = useEditorAppearance();
-  const typography = useAtomValue(typographyAtom);
+  const typography = useSelector(typographyAtom);
   const monacoRef = useRef<MonacoNamespace | null>(null);
 
   const mount: OnMount = (_editor, monacoNs) => {

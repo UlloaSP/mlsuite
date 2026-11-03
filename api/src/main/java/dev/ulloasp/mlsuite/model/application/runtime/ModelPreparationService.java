@@ -5,6 +5,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
@@ -22,6 +26,7 @@ public class ModelPreparationService {
     private final ModelRepository models;
     private final ModelPreparationLedger ledger;
     private final EntityManager entityManager;
+    private final AuditLogService auditLog;
 
     @Transactional
     public Model retry(Long userId, Long modelId) {
@@ -32,6 +37,8 @@ public class ModelPreparationService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Only a model whose environment could not be prepared can be prepared again.");
         }
+        auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.MODEL_ENVIRONMENT_RETRY, modelId,
+                AuditDetails.of("name", model.getName()));
         // The ledger wrote the row directly; the managed entity reads it again.
         entityManager.refresh(model);
         return model;

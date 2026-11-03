@@ -1,9 +1,9 @@
 import { Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Dialog } from "radix-ui";
-import { useAtom } from "jotai";
 import { useEffect, useMemo, useReducer, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
+import { useAtom } from "@tanstack/react-store";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { searchQueryOptions } from "@/features/search/api/search.queries";
 import { SearchResultGroup } from "@/features/search/components/SearchResultGroup";
@@ -35,7 +35,7 @@ export function AppGlobalSearch() {
     query: "",
     activeIndex: 0,
   });
-  const debouncedQuery = useDebouncedValue(query, 180);
+  const debouncedQuery = useDebouncedValue(query);
   const organizationId = useCurrentOrganizationId();
   const { data, isError, isFetching } = useQuery(
     searchQueryOptions(organizationId, debouncedQuery),
@@ -55,7 +55,13 @@ export function AppGlobalSearch() {
   }, [open]);
 
   const showPanel = query.trim().length >= 2 || isFetching;
-  let offset = 0;
+  // Each group's first index in the flat list the arrow keys walk.
+  const groupOffsets: number[] = [];
+  let resultCount = 0;
+  for (const group of data?.groups ?? []) {
+    groupOffsets.push(resultCount);
+    resultCount += group.results.length;
+  }
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
@@ -99,7 +105,7 @@ export function AppGlobalSearch() {
                     const result = flatResults[activeIndex];
                     if (result) {
                       setOpen(false);
-                      void navigate(result.href);
+                      void navigate({ href: result.href });
                     }
                   }
                 }}
@@ -122,20 +128,16 @@ export function AppGlobalSearch() {
                   <AppCopy className="px-6 py-5">No results.</AppCopy>
                 ) : (
                   <div className="py-4">
-                    {data.groups.map((group) => {
-                      const groupOffset = offset;
-                      offset += group.results.length;
-                      return (
-                        <SearchResultGroup
-                          key={group.label}
-                          group={group}
-                          activeIndex={activeIndex}
-                          offset={groupOffset}
-                          onHover={(value) => dispatch({ type: "active", value })}
-                          onSelect={() => setOpen(false)}
-                        />
-                      );
-                    })}
+                    {data.groups.map((group, index) => (
+                      <SearchResultGroup
+                        key={group.label}
+                        group={group}
+                        activeIndex={activeIndex}
+                        offset={groupOffsets[index]}
+                        onHover={(value) => dispatch({ type: "active", value })}
+                        onSelect={() => setOpen(false)}
+                      />
+                    ))}
                   </div>
                 )
               ) : (

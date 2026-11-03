@@ -17,6 +17,7 @@ import dev.ulloasp.mlsuite.schema.application.dto.SchemaModelBindingDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaVersionDto;
 import dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogMetadataDto.Option;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
+import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
 import dev.ulloasp.mlsuite.util.CatalogPages;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
 import dev.ulloasp.mlsuite.util.PageDto;
@@ -136,12 +137,15 @@ class InferenceCatalogQueries {
     List<PredictionResultFeedbackDto> feedback(Collection<Long> runIds) {
         return entities.createQuery("SELECT new " + DTO + """
                 PredictionResultFeedbackDto(
-                    f.id, r.id, u.id, u.fullName, u.email, f.type, f.order, f.value, f.createdAt, f.updatedAt)
+                    f.id, r.id, u.id,
+                    CASE WHEN u.id IS NULL AND f.visitor IS NULL THEN :deletedUser ELSE u.fullName END,
+                    u.email, f.type, f.order, f.value, f.createdAt, f.updatedAt)
                 FROM PredictionResultFeedback f JOIN f.result r LEFT JOIN f.user u
                 WHERE r.run.id IN :runIds
                 ORDER BY r.run.id ASC, r.id ASC, f.type ASC, f.order ASC, f.id ASC
                 """, PredictionResultFeedbackDto.class)
                 .setParameter("runIds", runIds)
+                .setParameter("deletedUser", DeletedUser.NAME)
                 .getResultList();
     }
 

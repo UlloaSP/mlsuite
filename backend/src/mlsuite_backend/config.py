@@ -29,16 +29,26 @@ RUNTIME_WORKERS = _positive_int("RUNTIME_WORKERS", 2)
 BUNDLE_CACHE_BYTES = _positive_int("RUNTIME_BUNDLE_CACHE_MB", 512) * 1024 * 1024
 # A worker answering nothing for this long is stopped, and its request fails.
 WORKER_TIMEOUT_SECONDS = _positive_int("RUNTIME_WORKER_TIMEOUT_SECONDS", 300)
+# What one worker's model may take: address space (a single-threaded worker with scikit-learn and
+# pandas loaded uses about 370 MB of it), open files, and processes and threads, which the kernel
+# counts for the runtime's user as a whole. A model past one fails alone and its worker retires.
+WORKER_MEMORY_BYTES = _positive_int("RUNTIME_WORKER_MEMORY_MB", 4096) * 1024 * 1024
+WORKER_OPEN_FILES = _positive_int("RUNTIME_WORKER_OPEN_FILES", 1024)
+WORKER_PROCESSES = _positive_int("RUNTIME_WORKER_PROCESSES", 512)
 # Where the runtime keeps the verified artifacts its workers read.
 ARTIFACT_DIRECTORY = Path(tempfile.gettempdir()) / "mlsuite-artifacts"
 # Built environments, one directory per environment key; the builder writes, the runtime reads.
 ENVIRONMENT_ROOT = Path(os.environ.get("RUNTIME_ENVIRONMENT_ROOT") or "/var/lib/mlsuite/environments")
-# The frozen environment that serves bundles written before locks existed (mlbundle 0.2.1).
-LEGACY_PYTHON = Path(os.environ.get("RUNTIME_LEGACY_PYTHON") or "/opt/mlsuite/legacy/bin/python")
 ALLOWLIST_PATH = Path(
     os.environ.get("RUNTIME_ALLOWLIST") or Path(__file__).resolve().parents[2] / "environment-allowlist.toml"
 )
 # The index the builder installs from, whatever URLs a lock names.
 PACKAGE_INDEX_URL = os.environ.get("RUNTIME_PACKAGE_INDEX_URL") or "https://pypi.org/simple"
+# Where the builder reads each release's upload time, yanked state and known vulnerabilities:
+# PyPI's JSON API, {URL}/{name}/{version}/json.
+PACKAGE_METADATA_URL = (os.environ.get("RUNTIME_PACKAGE_METADATA_URL") or "https://pypi.org/pypi").rstrip("/")
+# A release younger than this is not installed yet: a hijacked upload is usually found and yanked
+# within days.
+PACKAGE_MIN_AGE_DAYS = _positive_int("RUNTIME_PACKAGE_MIN_AGE_DAYS", 7)
 UV_BINARY = os.environ.get("RUNTIME_UV") or "uv"
 VENV_PYTHON = Path("Scripts/python.exe") if sys.platform == "win32" else Path("bin/python")

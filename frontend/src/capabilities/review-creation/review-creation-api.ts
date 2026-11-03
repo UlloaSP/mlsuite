@@ -1,4 +1,4 @@
-import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
+import { mutationOptions, queryOptions, useMutation } from "@tanstack/react-query";
 import { appFetch, json } from "@/shared/api/http";
 import { useInfiniteCatalog } from "@/shared/api/infinite-catalog";
 import type { CatalogSelectionPageDto, CreateSchemaReviewRequest } from "@/shared/api/openapi.gen";
@@ -51,21 +51,22 @@ export const groupReviewCandidates = (candidates: ReviewCandidate[]): ReviewCand
   return [...groups.values()];
 };
 
-export function useCreateReviewMutation(organizationId: number | string) {
-  const queryClient = useQueryClient();
-  return useMutation({
+const createReviewMutation = (organizationId: number | string) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
     mutationFn: (request: CreateSchemaReviewRequest) =>
       appFetch<void>("/api/schema-reviews", json("POST", request)),
-    onSuccess: () =>
+    onSuccess: (_data, _request, _result, { client }) =>
       Promise.all([
-        queryClient.invalidateQueries({ queryKey: REVIEWS_ROOT_QUERY_KEY(organizationId) }),
-        queryClient.invalidateQueries({
+        client.invalidateQueries({ queryKey: REVIEWS_ROOT_QUERY_KEY(organizationId) }),
+        client.invalidateQueries({
           queryKey: INFERENCE_REVIEW_ASSIGNMENTS_ROOT_QUERY_KEY(organizationId),
         }),
       ]),
   });
-}
+
+export const useCreateReviewMutation = (organizationId: number | string) =>
+  useMutation(createReviewMutation(organizationId));
 
 /** What a selection dialog browses: an explicit set of inferences, their facets, or reviewers. */
 export type SelectionRequest = {

@@ -34,7 +34,7 @@ export function BulkJobsDialog({ open, onClose, bookmarkId, version, jobs }: Pro
   };
   const handleFile = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) void upload.start(file);
+    if (file) upload.start(file);
   };
   const items = jobs.data ?? [];
 

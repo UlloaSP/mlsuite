@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom, useSelector } from "@tanstack/react-store";
 import type { PropsWithChildren } from "react";
 import {
   isSidebarPosition,
@@ -28,17 +28,22 @@ import {
 } from "@/features/schemas/lib/inference-session-store";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useNavigationItems } from "@/app/components/use-navigation-items";
+import { useNotificationToasts } from "@/features/notifications/lib/use-notification-toasts";
+import { useUserEvents } from "@/features/notifications/lib/use-user-events";
 
 export function AppShellFrame({ children }: PropsWithChildren) {
   const [collapsed, setCollapsed] = useAtom(sidebarCollapsedAtom);
-  const position = useAtomValue(navigationPositionAtom);
+  const position = useSelector(navigationPositionAtom);
   const vertical = isSidebarPosition(position);
-  const floating = useAtomValue(sidebarStyleAtom) === "floating";
+  const floating = useSelector(sidebarStyleAtom) === "floating";
   useDisplayShortcuts();
   useQuietScrollbars(floating);
   useWarnOnUnsavedInferences();
-  useScopeInferenceSessionsToUser(useUser().data?.id);
+  const userId = useUser().data?.id;
+  useScopeInferenceSessionsToUser(userId);
+  useUserEvents(userId !== undefined);
   useRecordSectionLocation(useNavigationItems().activeRoot);
+  useNotificationToasts();
 
   return (
     <BreadcrumbProvider>

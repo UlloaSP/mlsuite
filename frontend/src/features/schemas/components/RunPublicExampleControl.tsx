@@ -4,7 +4,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { useCan } from "@/capabilities/workspace-context/workspace-context";
 import { useSetBookmarkExampleMutation } from "@/features/schemas/api/schema-mutations";
 import { useSchemaBookmark } from "@/features/schemas/api/schema-queries";

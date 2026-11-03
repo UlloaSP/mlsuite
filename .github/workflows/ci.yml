@@ -54,6 +54,8 @@ jobs:
           cache: true
           run-install: false
       - run: vp install --frozen-lockfile
+      # Formatting, lint and types; warnings are reported without failing the job.
+      - run: vp check
       - run: vp test --run
         env:
           # Let jsdom supply browser storage instead of Node 26's incomplete global.
@@ -90,7 +92,6 @@ jobs:
 
           expected = {
               "dev.ulloasp.mlsuite.storage.FlywayMigrationTest": 2,
-              "dev.ulloasp.mlsuite.storage.PostgresArtifactMigrationQueueTest": 1,
               "dev.ulloasp.mlsuite.storage.PostgresStorageDeletionWorkQueueTest": 2,
               "dev.ulloasp.mlsuite.model.ModelOptimisticLockTest": 1,
           }
@@ -133,9 +134,6 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '${{ matrix.component }}/uv.lock'
       - run: uv sync --locked --extra dev
-      # The runtime's tests run bundles without a lock in its frozen legacy environment.
-      - if: matrix.component == 'backend'
-        run: uv sync --locked --directory legacy
       - run: uv run --locked --extra dev pytest tests --junitxml=test-results.xml
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
@@ -204,7 +202,7 @@ jobs:
         run: |
           docker compose --env-file .env.example -f docker-compose.yml -f docker-compose.dev.yml --profile operations config --quiet
           python3 deploy/test_compose_parity.py
-      - name: Verify PostgreSQL role upgrade
+      - name: Verify PostgreSQL role provisioning
         run: bash deploy/postgres/test-provision-roles.sh
       - name: Verify non-empty backup restore lifecycle
         run: bash deploy/test-backup-restore.sh
@@ -216,6 +214,8 @@ jobs:
         run: sudo bash deploy/test-backup-timer-install.sh
       - name: Verify recovery RTO gate
         run: bash deploy/test-recovery-rto.sh
+      - name: Verify a deployment keeps or restores the running release
+        run: bash deploy/test-deploy-release.sh
       - name: Validate release contracts and failure handling
         run: python3 -m unittest discover -s .github/tests -p 'test_release_*.py'
       - name: Require the image security gate and shared scan policy

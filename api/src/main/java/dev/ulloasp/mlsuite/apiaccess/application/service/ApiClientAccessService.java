@@ -17,6 +17,8 @@ import dev.ulloasp.mlsuite.apiaccess.application.dto.IssuedApiClientKeyDto;
 import dev.ulloasp.mlsuite.apiaccess.application.port.in.ApiClientAccessUseCase;
 import dev.ulloasp.mlsuite.apiaccess.domain.model.ApiClient;
 import dev.ulloasp.mlsuite.apiaccess.domain.model.ApiClientKey;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
@@ -49,8 +51,8 @@ public class ApiClientAccessService implements ApiClientAccessUseCase {
         String secret = ApiKeySecrets.issue();
         ApiClientKey key = keyRepository.save(new ApiClientKey(client, name, ApiKeySecrets.prefix(secret),
                 ApiKeySecrets.hash(secret), clients.memberName(userId)));
-        clients.audit(client, userId, "API_KEY_ISSUE", "API_CLIENT_KEY", key.getId(),
-                "%s: %s (%s)".formatted(client.getName(), name, key.getKeyPrefix()));
+        clients.audit(client, userId, AuditAction.API_KEY_ISSUE, key.getId(),
+                AuditDetails.of("client", client.getName(), "key", name, "prefix", key.getKeyPrefix()));
         return new IssuedApiClientKeyDto(ApiClientKeyDto.from(key), secret);
     }
 
@@ -59,8 +61,8 @@ public class ApiClientAccessService implements ApiClientAccessUseCase {
         ApiClient client = clients.require(clients.manageable(userId), clientId);
         ApiClientKey key = keyRepository.findByIdAndClientId(keyId, client.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "API key not found"));
-        clients.audit(client, userId, "API_KEY_REVOKE", "API_CLIENT_KEY", keyId,
-                "%s: %s (%s)".formatted(client.getName(), key.getName(), key.getKeyPrefix()));
+        clients.audit(client, userId, AuditAction.API_KEY_REVOKE, keyId,
+                AuditDetails.of("client", client.getName(), "key", key.getName(), "prefix", key.getKeyPrefix()));
         keyRepository.delete(key);
     }
 
@@ -81,8 +83,8 @@ public class ApiClientAccessService implements ApiClientAccessUseCase {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema bookmark not found"));
         if (bookmark.getPublicId() == null) bookmark.setPublicId(UUID.randomUUID().toString());
         if (client.getBookmarks().add(bookmark)) {
-            clients.audit(client, userId, "API_ACCESS_GRANT", "API_CLIENT", clientId,
-                    "%s: %s".formatted(client.getName(), bookmark.getName()));
+            clients.audit(client, userId, AuditAction.API_ACCESS_GRANT, clientId,
+                    AuditDetails.of("client", client.getName(), "bookmark", bookmark.getName()));
         }
         return clients.detail(client);
     }
@@ -93,8 +95,8 @@ public class ApiClientAccessService implements ApiClientAccessUseCase {
         client.getBookmarks().stream().filter(bookmark -> bookmark.getId().equals(bookmarkId)).findFirst()
                 .ifPresent(bookmark -> {
                     client.getBookmarks().remove(bookmark);
-                    clients.audit(client, userId, "API_ACCESS_REVOKE", "API_CLIENT", clientId,
-                            "%s: %s".formatted(client.getName(), bookmark.getName()));
+                    clients.audit(client, userId, AuditAction.API_ACCESS_REVOKE, clientId,
+                            AuditDetails.of("client", client.getName(), "bookmark", bookmark.getName()));
                 });
         return clients.detail(client);
     }

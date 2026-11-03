@@ -1,5 +1,10 @@
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { renderToStaticMarkup } from "react-dom/server";
-import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vite-plus/test";
 import { ProtectedRoute } from "@/app/router/ProtectedRoute";
 import { StartupGate } from "@/app/startup/StartupGate";
@@ -13,7 +18,8 @@ vi.mock("@/app/startup/startup-query", () => ({
   useStartupReadinessQuery: () => ({ data: undefined }),
   useStartupServicesQuery: () => ({ data: undefined }),
 }));
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({ data: undefined, error: null, isLoading: true }),
 }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
@@ -80,13 +86,14 @@ describe("loading skeletons", () => {
     expect(count(markup, "rounded-card")).toBe(3);
   });
 
-  it("shows the same viewport skeleton while checking readiness and loading the session", () => {
+  it("shows the same viewport skeleton while checking readiness and loading the session", async () => {
     const startup = renderToStaticMarkup(<StartupGate>Ready</StartupGate>);
-    const protectedRoute = renderToStaticMarkup(
-      <MemoryRouter>
-        <ProtectedRoute />
-      </MemoryRouter>,
-    );
+    const router = createRouter({
+      routeTree: createRootRoute({ component: ProtectedRoute }),
+      history: createMemoryHistory({ initialEntries: ["/models"] }),
+    });
+    await router.load();
+    const protectedRoute = renderToStaticMarkup(<RouterProvider router={router} />);
 
     expect(startup).toContain("h-svh");
     expect(startup).toContain(">Loading MLsuite…</span>");

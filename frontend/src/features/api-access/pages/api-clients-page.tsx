@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { getRouteApi } from "@tanstack/react-router";
 import { useApiClientCatalog } from "@/features/api-access/api/api-access.queries";
 import { ApiClientEntry } from "@/features/api-access/components/ApiClientEntry";
 import { CreateApiClientButton } from "@/features/api-access/components/CreateApiClientButton";
@@ -30,15 +31,12 @@ const SORTS: Array<{ value: Sort; label: string }> = [
 
 const ClientsIcon = SECTION_ICONS.api;
 
+const route = getRouteApi("/protected/app/can-view-api-access/api-access/clients");
+
 /** The organization's API clients: outside software that runs its bookmarks with keys. */
 export function ApiClientsPage() {
   const canManage = useCan("canManageApiAccess");
-  const controls = useCatalogControls<Filter, Sort>({
-    filters: FILTERS.map(({ value }) => value),
-    initialFilter: "all",
-    initialSort: "updated",
-    sorts: SORTS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const query = useApiClientCatalog({
     size: PAGE_SIZE,
     search: controls.search,
@@ -52,7 +50,7 @@ export function ApiClientsPage() {
       controls={controls}
       header={{
         title: "Clients",
-        description: "Outside software that runs this organization's bookmarks with its own keys.",
+        description: "Outside software that runs this workspace's bookmarks with its own keys.",
         breadcrumbs: [{ label: "API", to: "/api-access" }, { label: "Clients" }],
         actions: canManage ? <CreateApiClientButton /> : undefined,
       }}

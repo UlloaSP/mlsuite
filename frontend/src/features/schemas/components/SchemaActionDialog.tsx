@@ -7,11 +7,11 @@ import { useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppTextField } from "@/shared/ui/AppTextField";
-import type { SchemaAction } from "./SchemaActionsMenu";
+import type { SchemaDialogAction } from "./SchemaActionsMenu";
 import type { SchemaCatalogItemDto } from "@/shared/api/openapi.gen";
 
 type Props = {
-  action: SchemaAction;
+  action: SchemaDialogAction;
   disabled: boolean;
   error?: string;
   item: SchemaCatalogItemDto;
@@ -47,7 +47,7 @@ const copy = {
     submit: "Delete",
     description: "Delete only works when no prediction runs or reviews reference this schema.",
   },
-} satisfies Record<SchemaAction, { title: string; submit: string; description: string }>;
+} satisfies Record<SchemaDialogAction, { title: string; submit: string; description: string }>;
 
 export function SchemaActionDialog({ action, disabled, error, item, onCancel, onConfirm }: Props) {
   const needsName = action === "edit" || action === "duplicate";

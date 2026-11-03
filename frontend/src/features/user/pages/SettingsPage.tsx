@@ -9,42 +9,38 @@ FIRST VIEWPORT: Standard header followed by color-scheme previews and the preset
 FORM: One calm settings document; route-owned, responsive, and free of duplicate navigation.
 */
 
+import { getRouteApi } from "@tanstack/react-router";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppTabPanel, AppTabs } from "@/shared/ui/AppTabs";
 import { cx } from "@/shared/ui/cx";
 import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
-import { useSearchParams } from "react-router";
+import { useSearchUpdate } from "@/shared/lib/use-search-update";
+import type { SETTINGS_SECTIONS } from "@/features/user/pages/user-search";
+import { SettingsAccountSection } from "@/features/user/components/SettingsAccountSection";
 import { SettingsAppearanceSection } from "@/features/user/components/SettingsAppearanceSection";
 import { SettingsKeybindingsSection } from "@/features/user/components/SettingsKeybindingsSection";
 import { SettingsLayoutSection } from "@/features/user/components/SettingsLayoutSection";
 import { SettingsTypographySection } from "@/features/user/components/SettingsTypographySection";
 
-type SettingsSection = "appearance" | "typography" | "keybindings" | "layout";
+type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 const SECTIONS = [
   { label: "Appearance", value: "appearance" },
   { label: "Typography", value: "typography" },
   { label: "Keybindings", value: "keybindings" },
   { label: "Layout", value: "layout" },
+  { label: "Account", value: "account" },
 ] satisfies { label: string; value: SettingsSection }[];
 
-const isSettingsSection = (value: string | null): value is SettingsSection =>
-  SECTIONS.some((section) => section.value === value);
+const route = getRouteApi("/protected/app/settings");
 
 export function SettingsPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const requestedSection = searchParams.get("section");
-  const section: SettingsSection = isSettingsSection(requestedSection)
-    ? requestedSection
-    : "appearance";
-  const setSection = (next: SettingsSection) => {
-    const updated = new URLSearchParams(searchParams);
-    if (next === "appearance") updated.delete("section");
-    else updated.set("section", next);
-    setSearchParams(updated);
-  };
+  const search = route.useSearch();
+  const updateSearch = useSearchUpdate<typeof search>();
+  const { section } = search;
+  const setSection = (next: SettingsSection) => updateSearch({ section: next }, { replace: false });
   return (
     <AppPage>
       {/* Header and tabs stay put; only the active section scrolls. */}
@@ -73,9 +69,13 @@ export function SettingsPage() {
               {section === "typography" ? <SettingsTypographySection /> : null}
               {section === "keybindings" ? <SettingsKeybindingsSection /> : null}
               {section === "layout" ? <SettingsLayoutSection /> : null}
-              <p className="mt-10 border-t border-line pt-5 text-xs text-fg-muted">
-                Preferences are saved in this browser and apply immediately.
-              </p>
+              {section === "account" ? (
+                <SettingsAccountSection />
+              ) : (
+                <p className="mt-10 border-t border-line pt-5 text-xs text-fg-muted">
+                  Preferences are saved in this browser and apply immediately.
+                </p>
+              )}
             </main>
           </AppTabPanel>
         </AppTabs>

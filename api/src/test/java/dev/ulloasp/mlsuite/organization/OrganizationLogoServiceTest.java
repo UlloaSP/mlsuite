@@ -13,6 +13,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -33,6 +34,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationLogoRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationDto;
@@ -61,7 +63,7 @@ class OrganizationLogoServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new OrganizationLogoService(access, authorization, organizations, logos);
+        service = new OrganizationLogoService(access, authorization, organizations, logos, mock(AuditLogService.class));
         organization = organization(ORG_ID);
     }
 

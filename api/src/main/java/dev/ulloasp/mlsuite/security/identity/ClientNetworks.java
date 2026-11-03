@@ -34,9 +34,13 @@ public class ClientNetworks {
 
     /** The caller key of the request's network, {@code address:<hash>}. */
     public String key(HttpServletRequest request) {
+        return "address:" + hash(network(address(request)));
+    }
+
+    /** The client's address. Only the audit log keeps it, for as long as it keeps an entry. */
+    public static String address(HttpServletRequest request) {
         String header = request.getHeader(CLIENT_ADDRESS_HEADER);
-        String address = header == null || header.isBlank() ? request.getRemoteAddr() : header.strip();
-        return "address:" + hash(network(address));
+        return header == null || header.isBlank() ? request.getRemoteAddr() : header.strip();
     }
 
     private static String network(String address) {

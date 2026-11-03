@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
@@ -66,7 +66,7 @@ class RequestOrganizationHttpTest extends PublicPredictionFixture {
         // ...but it is in the one this tab names.
         JsonNode forest = json(mockMvc.perform(predict().header(HEADER, named)).andExpect(status().isOk()));
         JsonNode net = json(mockMvc.perform(predictNet().header(HEADER, named)).andExpect(status().isOk()));
-        JsonNode saved = json(mockMvc.perform(save(forest.get("attestation").asText(), net.get("attestation").asText())
+        JsonNode saved = json(mockMvc.perform(save(forest.get("attestation").asString(), net.get("attestation").asString())
                 .header(HEADER, named)).andExpect(status().isCreated()));
 
         PredictionRun run = entityManager.find(PredictionRun.class, saved.get("id").asLong());

@@ -11,8 +11,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.client.RestClient;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
 
 import dev.ulloasp.mlsuite.admin.infrastructure.OpsAgentClient;
@@ -26,7 +27,7 @@ class OpsAgentActionClientTest {
     @BeforeEach
     void setUp() throws Exception {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        client = new OpsAgentClient(new ObjectMapper(), new OpsAgentProperties(
+        client = new OpsAgentClient(RestClient.builder(), new ObjectMapper(), new OpsAgentProperties(
                 "http://127.0.0.1:" + server.getAddress().getPort(), "qa-test-secret"));
     }
 
@@ -38,7 +39,9 @@ class OpsAgentActionClientTest {
     @Test
     void waitsForServiceActionBeyondDefaultTenSecondReadTimeout() {
         AtomicReference<String> payload = new AtomicReference<>();
+        AtomicReference<String> secret = new AtomicReference<>();
         server.createContext("/internal/services/py-analyzer/actions", exchange -> {
+            secret.set(exchange.getRequestHeaders().getFirst("X-MLSuite-Ops-Secret"));
             payload.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             try {
                 Thread.sleep(11_000);
@@ -52,6 +55,20 @@ class OpsAgentActionClientTest {
 
         assertDoesNotThrow(() -> client.action("py-analyzer", "START"));
         assertEquals("{\"action\":\"START\"}", payload.get());
+        assertEquals("qa-test-secret", secret.get());
+    }
+
+    @Test
+    void readsTheMachinesLoadAndFailsWhenTheAgentCannotSay() {
+        server.createContext("/internal/load", exchange -> {
+            byte[] body = "{\"detail\":\"No service is reporting.\"}".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(503, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.close();
+        });
+        server.start();
+
+        assertEquals(503, assertThrows(OpsAgentException.class, client::load).getStatus());
     }
 
     @Test

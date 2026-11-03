@@ -1,3 +1,4 @@
+import { useMutation } from "@tanstack/react-query";
 import { ClipboardCheck } from "lucide-react";
 import { useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -20,41 +21,31 @@ export function ReviewCreationButton({
   variant = "primary",
 }: Props) {
   const [open, setOpen] = useState(false);
-  const [snapshot, setSnapshot] = useState<ReviewCandidate[]>();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-  const show = async () => {
-    setLoading(true);
-    setError(false);
-    try {
-      setSnapshot(await loadCandidates());
-      setOpen(true);
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const selection = useMutation({
+    mutationFn: loadCandidates,
+    onSuccess: () => setOpen(true),
+    meta: { errorHandledLocally: true },
+  });
 
   return (
     <>
       <AppButton
         type="button"
         variant={variant}
-        disabled={loading || count === 0}
-        onClick={() => void show()}
+        disabled={selection.isPending || count === 0}
+        onClick={() => selection.mutate()}
       >
         <ClipboardCheck size={16} />
-        {loading ? "Preparing review…" : "Create review"}
+        {selection.isPending ? "Preparing review…" : "Create review"}
       </AppButton>
-      {error ? (
+      {selection.isError ? (
         <span role="alert" className="text-sm text-danger-fg">
           Could not load review selection. Try again.
         </span>
       ) : null}
-      {open && snapshot ? (
+      {open && selection.data ? (
         <ReviewCreationDialog
-          candidates={snapshot}
+          candidates={selection.data}
           organizationId={organizationId}
           onClose={() => setOpen(false)}
         />

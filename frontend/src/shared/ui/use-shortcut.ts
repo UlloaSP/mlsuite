@@ -3,28 +3,28 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtomValue } from "jotai";
-import { useEffect, useEffectEvent } from "react";
-import {
-  isTypingTarget,
-  matchesShortcut,
-  shortcutBindingsAtom,
-  type ShortcutId,
-} from "./shortcut-state";
+import { useHotkeys, type UseHotkeyDefinition } from "@tanstack/react-hotkeys";
+import { useSelector } from "@tanstack/react-store";
+import { shortcutBindingsAtom, type ShortcutBinding, type ShortcutId } from "./shortcut-state";
 
-/** Runs `handler` when the user's binding for `id` is pressed outside a text field. */
+/** A binding's "mod" is Ctrl or Cmd on every platform, so it registers as both. */
+const chords = ({ key, mod, alt, shift }: ShortcutBinding) =>
+  mod
+    ? [
+        { key, ctrl: true, alt, shift },
+        { key, meta: true, alt, shift },
+      ]
+    : [{ key, alt, shift }];
+
+/**
+ * Runs `handler` when the user's binding for `id` is pressed outside a text field. useHotkeys
+ * re-registers its definitions after every render, so the handler is always the current one.
+ */
 export function useShortcut(id: ShortcutId, handler: () => void) {
-  const bindings = useAtomValue(shortcutBindingsAtom);
-  const onShortcut = useEffectEvent(handler);
-  const binding = bindings[id];
+  const binding = useSelector(shortcutBindingsAtom, (bindings) => bindings[id]);
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (isTypingTarget(event.target) || !matchesShortcut(event, binding)) return;
-      event.preventDefault();
-      onShortcut();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [binding]);
+  useHotkeys(
+    chords(binding).map((hotkey): UseHotkeyDefinition => ({ hotkey, callback: handler })),
+    { ignoreInputs: true, stopPropagation: false },
+  );
 }

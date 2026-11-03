@@ -3,8 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { atomWithStorage } from "jotai/utils";
-import { validatedStorage } from "@/shared/lib/validated-storage";
+import { createPersistedAtom } from "@/shared/lib/persisted-atom";
 
 /** The edge a vertical sidebar occupies. */
 export type SidebarPosition = "left" | "right";
@@ -13,25 +12,25 @@ export type NavigationPosition = SidebarPosition | "top" | "bottom";
 /** Fixed spans the viewport edge; floating is an inset panel on the page background. Applies to every position. */
 export type SidebarStyle = "fixed" | "floating";
 
-const choiceStorage = <T extends string>(choices: readonly T[]) =>
-  validatedStorage((value: unknown): value is T => choices.includes(value as T));
+const oneOf =
+  <T extends string>(choices: readonly T[]) =>
+  (value: unknown): value is T =>
+    choices.includes(value as T);
 
 export const isSidebarPosition = (position: NavigationPosition): position is SidebarPosition =>
   position === "left" || position === "right";
 
 // Stored under the original key: saved left/right choices stay valid.
-export const navigationPositionAtom = atomWithStorage<NavigationPosition>(
+export const navigationPositionAtom = createPersistedAtom<NavigationPosition>(
   "ui/sidebar-position",
   "right",
-  choiceStorage<NavigationPosition>(["left", "right", "top", "bottom"]),
-  { getOnInit: true },
+  oneOf<NavigationPosition>(["left", "right", "top", "bottom"]),
 );
 
-export const sidebarStyleAtom = atomWithStorage<SidebarStyle>(
+export const sidebarStyleAtom = createPersistedAtom<SidebarStyle>(
   "ui/sidebar-style",
   "fixed",
-  choiceStorage<SidebarStyle>(["fixed", "floating"]),
-  { getOnInit: true },
+  oneOf<SidebarStyle>(["fixed", "floating"]),
 );
 
 /** Where the current page's breadcrumb trail is shown, if anywhere. */
@@ -42,15 +41,8 @@ export type LocationDisplay =
   | "rail-right"
   | "off";
 
-export const locationDisplayAtom = atomWithStorage<LocationDisplay>(
+export const locationDisplayAtom = createPersistedAtom<LocationDisplay>(
   "ui/location-display",
   "breadcrumb-top",
-  choiceStorage<LocationDisplay>([
-    "breadcrumb-top",
-    "breadcrumb-bottom",
-    "rail-left",
-    "rail-right",
-    "off",
-  ]),
-  { getOnInit: true },
+  oneOf<LocationDisplay>(["breadcrumb-top", "breadcrumb-bottom", "rail-left", "rail-right", "off"]),
 );

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ArrowLeft, Home, RotateCw } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useRouter } from "@tanstack/react-router";
 import { AppPage } from "./AppPage";
 import { MLSuiteMark } from "./MLSuiteMark";
 import { MLSuiteWordmark } from "./MLSuiteWordmark";
@@ -45,6 +45,8 @@ type RouteStatusPageProps = {
   homePath?: string;
   homeLabel?: string;
   onReload?: () => void;
+  /** Offered in place of going home, for a failure that asking again can cure. */
+  onRetry?: () => void;
 };
 
 const reloadApplication = () => window.location.reload();
@@ -54,8 +56,9 @@ export function RouteStatusPage({
   homePath = "/workspace",
   homeLabel = "Go to workspace",
   onReload = reloadApplication,
+  onRetry,
 }: RouteStatusPageProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [label, light, heavy, description] = errorContent[status];
   // Only a page whose files failed to download is cured by loading the application again.
   const reloads = status === "module-load";
@@ -83,18 +86,27 @@ export function RouteStatusPage({
                 <RotateCw className="size-[17px]" />
                 Reload application
               </button>
+            ) : onRetry ? (
+              <button type="button" className="route-status-action" data-primary onClick={onRetry}>
+                <RotateCw className="size-[17px]" />
+                Try again
+              </button>
             ) : (
               <button
                 type="button"
                 className="route-status-action"
                 data-primary
-                onClick={() => navigate(homePath)}
+                onClick={() => void router.navigate({ href: homePath })}
               >
                 <Home className="size-[17px]" />
                 {homeLabel}
               </button>
             )}
-            <button type="button" className="route-status-action" onClick={() => navigate(-1)}>
+            <button
+              type="button"
+              className="route-status-action"
+              onClick={() => router.history.back()}
+            >
               <ArrowLeft className="size-4" />
               Go back
             </button>
@@ -119,7 +131,7 @@ function useReloadCountdown(active: boolean, onReload: () => void) {
     if (!active) return;
     const timeout = window.setTimeout(() => {
       if (seconds > 1) {
-        setSeconds(seconds - 1);
+        setSeconds((current) => current - 1);
         return;
       }
       onReload();

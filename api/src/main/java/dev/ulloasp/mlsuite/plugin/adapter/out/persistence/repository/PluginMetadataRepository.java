@@ -46,9 +46,12 @@ public interface PluginMetadataRepository extends JpaRepository<PluginMetadata, 
 
     Optional<PluginMetadata> findByIdAndOrganizationId(String id, Long organizationId);
 
-    Optional<PluginMetadata> findByObjectKeyAndOrganizationId(String objectKey, Long organizationId);
-
     long countByOrganizationId(Long organizationId);
 
+    /** The plugins a person was the last to write. */
+    List<PluginMetadata> findByUpdatedByIdOrderByIdAsc(Long userId, Pageable pageable);
+
     List<PluginMetadata> findByOrganizationIdAndKindInOrderByIdAsc(Long organizationId, Collection<String> kinds);
+
+    List<PluginMetadata> findByOrganizationIdOrderByIdAsc(Long organizationId);
 }

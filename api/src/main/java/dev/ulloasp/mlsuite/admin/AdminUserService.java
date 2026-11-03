@@ -1,21 +1,22 @@
 package dev.ulloasp.mlsuite.admin;
 
 import org.springframework.data.domain.Page;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceBootstrapService;
+import dev.ulloasp.mlsuite.workspace.application.service.PersonalAccountService;
 import jakarta.persistence.criteria.Predicate;
 import dev.ulloasp.mlsuite.util.PageDto;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,8 @@ public class AdminUserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final WorkspaceBootstrapService workspaceBootstrapService;
+    private final PersonalAccountService personalAccountService;
+    private final AuditLogService auditLog;
 
     public AdminUserPageDto list(int page, int size, String search, String sort, String role) {
         Page<User> users = userRepository.findAll(
@@ -39,53 +41,57 @@ public class AdminUserService {
                 users.hasNext());
     }
 
-    public AdminUserDto create(AdminCreateUserRequest request) {
+    public AdminUserDto create(Long actorId, AdminCreateUserRequest request) {
         String email = request.email().trim().toLowerCase();
         if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new UserAlreadyExistsException(email);
         }
         User user = new User(
-                username(request.username(), email),
+                personalAccountService.claimHandle(request.username()),
                 email,
                 passwordEncoder.encode(request.password()),
                 request.fullName().trim(),
                 role(request.systemRole()));
         user.setEnabled(request.enabled() == null || request.enabled());
         userRepository.save(user);
-        workspaceBootstrapService.ensureCurrentOrganization(user);
+        personalAccountService.open(user);
+        auditLog.record(AuditActor.user(actorId), null, AuditAction.USER_CREATE, user.getId(),
+                AuditDetails.of("email", email, "username", user.getUsername(), "role", user.getSystemRole(),
+                        "enabled", user.isEnabled()));
         return AdminUserDto.from(user);
     }
 
-    public AdminUserDto update(Long id, AdminUpdateUserRequest request) {
+    public AdminUserDto update(Long actorId, Long id, AdminUpdateUserRequest request) {
         User user = user(id);
         SystemRole nextRole = request.systemRole() == null ? user.getSystemRole() : role(request.systemRole());
         boolean nextEnabled = request.enabled() == null ? user.isEnabled() : request.enabled();
         guardLastSuperadmin(user, nextRole, nextEnabled);
+        String previousName = user.getFullName();
+        String previousUsername = user.getUsername();
+        SystemRole previousRole = user.getSystemRole();
+        boolean wasEnabled = user.isEnabled();
         if (request.fullName() != null && !request.fullName().isBlank()) {
             user.setFullName(request.fullName().trim());
         }
         if (request.username() != null && !request.username().isBlank()) {
-            user.setUsername(request.username().trim());
+            personalAccountService.renameHandle(user, request.username());
         }
+        personalAccountService.followOwner(user);
         user.setSystemRole(nextRole);
         user.setEnabled(nextEnabled);
+        auditLog.record(AuditActor.user(actorId), null, AuditAction.USER_UPDATE, id, AuditDetails.of("email", user.getEmail(),
+                "name", AuditDetails.changed(previousName, user.getFullName()),
+                "username", AuditDetails.changed(previousUsername, user.getUsername()),
+                "role", AuditDetails.changed(previousRole, nextRole),
+                "enabled", AuditDetails.changed(wasEnabled, nextEnabled)));
         return AdminUserDto.from(user);
     }
 
-    public void resetPassword(Long id, AdminPasswordRequest request) {
-        user(id).setPasswordHash(passwordEncoder.encode(request.password()));
-    }
-
-    public void delete(Long id) {
+    public void resetPassword(Long actorId, Long id, AdminPasswordRequest request) {
         User user = user(id);
-        guardLastSuperadmin(user, SystemRole.USER, false);
-        try {
-            userRepository.deleteAllByIdInBatch(java.util.List.of(id));
-            userRepository.flush();
-        } catch (DataIntegrityViolationException error) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "User is referenced by protected records. Remove those references before deleting the user.", error);
-        }
+        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        auditLog.record(AuditActor.user(actorId), null, AuditAction.USER_PASSWORD_RESET, id,
+                AuditDetails.of("email", user.getEmail()));
     }
 
     private User user(Long id) {
@@ -105,10 +111,6 @@ public class AdminUserService {
             return SystemRole.USER;
         }
         return SystemRole.valueOf(role.trim().toUpperCase());
-    }
-
-    private String username(String username, String email) {
-        return username == null || username.isBlank() ? email.substring(0, email.indexOf("@")) : username.trim();
     }
 
     private Specification<User> filter(String search, String role) {

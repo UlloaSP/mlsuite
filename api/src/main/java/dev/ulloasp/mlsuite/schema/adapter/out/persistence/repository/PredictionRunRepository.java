@@ -49,9 +49,6 @@ public interface PredictionRunRepository
     @Query("SELECT r FROM PredictionRun r WHERE r.id = :id AND r.schemaVersion.schema.organization.id = :organizationId")
     Optional<PredictionRun> findByIdAndOrganizationId(Long id, Long organizationId);
 
-    @Query("SELECT COUNT(rr) > 0 FROM SchemaReviewRun rr WHERE rr.run.id = :runId")
-    boolean isIncludedInReview(Long runId);
-
     @Query("""
             SELECT r FROM PredictionRun r
             WHERE r.schemaVersion.schema.organization.id = :organizationId
@@ -63,6 +60,8 @@ public interface PredictionRunRepository
     List<PredictionRun> searchByOrganizationId(Long organizationId, String search, Pageable pageable);
 
     boolean existsBySchemaVersionIdAndName(Long schemaVersionId, String name);
+
+    long countBySchemaVersionId(Long schemaVersionId);
 
     /** A visitor's runs of one bookmark, newest first: their session on its public page. */
     List<PredictionRun> findByVisitorIdAndSchemaBookmarkIdOrderByCreatedAtDescIdDesc(

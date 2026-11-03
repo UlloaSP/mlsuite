@@ -1,9 +1,9 @@
 package dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository;
 
+import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,7 +14,12 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackType;
 
 public interface PredictionResultFeedbackRepository extends JpaRepository<PredictionResultFeedback, Long> {
 
-    void deleteByResult_Run_Id(Long runId);
+    /** Every answer on these runs, by anyone and in any review. */
+    List<PredictionResultFeedback> findByResultRunIdIn(Collection<Long> runIds);
+
+    /** The runs answered in a review. */
+    @Query("SELECT DISTINCT f.result.run.id FROM PredictionResultFeedback f WHERE f.review.id = :reviewId")
+    List<Long> findRunIdsAnsweredIn(Long reviewId);
 
     @Query("""
             SELECT f FROM PredictionResultFeedback f
@@ -65,10 +70,18 @@ public interface PredictionResultFeedbackRepository extends JpaRepository<Predic
 
     boolean existsByResultRunIdAndUserIdAndReviewId(Long runId, Long userId, Long reviewId);
 
-    /** Which of the review runs the user has answered at least once, in their own review. */
+    /** When a reviewer last saved feedback on a review run. */
+    interface FeedbackSaved {
+        Long getReviewRunId();
+
+        OffsetDateTime getSavedAt();
+    }
+
+    /** The review runs among these that the reviewer answered, each with when they last saved. */
     @Query("""
-            SELECT DISTINCT rr.id FROM SchemaReviewRun rr, PredictionResultFeedback f
+            SELECT rr.id AS reviewRunId, MAX(f.updatedAt) AS savedAt FROM SchemaReviewRun rr, PredictionResultFeedback f
             WHERE rr.id IN :reviewRunIds AND f.result.run = rr.run AND f.review = rr.review AND f.user.id = :userId
+            GROUP BY rr.id
             """)
-    Set<Long> findReviewRunIdsAnsweredBy(Collection<Long> reviewRunIds, Long userId);
+    List<FeedbackSaved> findFeedbackSaved(Collection<Long> reviewRunIds, Long userId);
 }

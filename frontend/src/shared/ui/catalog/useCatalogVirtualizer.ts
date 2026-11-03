@@ -45,7 +45,8 @@ export function useCatalogVirtualizer(
   const columnCount = layout === "grid" ? columns : 1;
   // The router names each history entry in `history.state.key`; the same entry is the same visit.
   const visit: unknown = (globalThis.history?.state as { key?: unknown } | null)?.key;
-  const sizesKey = memoryKey ? `${String(visit ?? "")}:${memoryKey}:${columnCount}` : null;
+  const visitKey = typeof visit === "string" ? visit : "";
+  const sizesKey = memoryKey ? `${visitKey}:${memoryKey}:${columnCount}` : null;
   const virtualizer = useVirtualizer<HTMLElement, HTMLElement>({
     count: Math.ceil(items.length / columnCount),
     getScrollElement: () => scrollRef.current,

@@ -1,9 +1,16 @@
 // @vitest-environment jsdom
 import { focusManager } from "@tanstack/react-query";
 import { act, useEffect } from "react";
-import { Route, Routes } from "react-router";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { SessionFrameLayout } from "@/app/layouts/SessionFrameLayout";
+import { HttpError } from "@/shared/api/http";
 import { mount } from "./support/dom";
 
 const profile = vi.hoisted(() => ({ calls: 0 }));
@@ -13,7 +20,13 @@ vi.mock("@/capabilities/workspace-context/session-api", async (original) => ({
     profile.calls += 1;
     // As over the network: the answer takes a moment, during which the query is fetching.
     return new Promise((_, reject) =>
-      setTimeout(() => reject(Object.assign(new Error("Unauthorized"), { status: 401 })), 20),
+      setTimeout(
+        () =>
+          reject(
+            new HttpError({ status: 401, message: "Unauthorized", path: "/api/me", timestamp: "" }),
+          ),
+        20,
+      ),
     );
   },
 }));
@@ -26,6 +39,25 @@ function FormBeingFilled() {
   return <input aria-label="Age" />;
 }
 
+const openPublicPage = () => {
+  const root = createRootRoute();
+  const frame = createRoute({
+    getParentRoute: () => root,
+    id: "session-frame",
+    component: SessionFrameLayout,
+  });
+  const bookmark = createRoute({
+    getParentRoute: () => frame,
+    path: "/explore/$publicId",
+    component: FormBeingFilled,
+  });
+  const router = createRouter({
+    routeTree: root.addChildren([frame.addChildren([bookmark])]),
+    history: createMemoryHistory({ initialEntries: ["/explore/some-bookmark"] }),
+  });
+  return mount(<RouterProvider router={router} />);
+};
+
 const settle = () => act(() => new Promise((resolve) => setTimeout(resolve, 50)));
 
 afterEach(() => {
@@ -36,14 +68,7 @@ afterEach(() => {
 
 describe("public frame of a visitor without a session", () => {
   test("coming back to the window asks for the session again without unmounting the page", async () => {
-    const { host } = await mount(
-      <Routes>
-        <Route element={<SessionFrameLayout />}>
-          <Route path="/explore/:publicId" element={<FormBeingFilled />} />
-        </Route>
-      </Routes>,
-      { route: "/explore/some-bookmark" },
-    );
+    const { host } = await openPublicPage();
     await settle();
     const input = host.querySelector<HTMLInputElement>('input[aria-label="Age"]')!;
     input.value = "40";

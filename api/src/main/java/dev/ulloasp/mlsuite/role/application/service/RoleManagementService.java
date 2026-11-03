@@ -3,11 +3,15 @@ package dev.ulloasp.mlsuite.role.application.service;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
@@ -32,6 +36,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RoleManagementService implements RoleManagementUseCase {
 
+    private static final String NO_ROLES = "A personal account has no roles to manage.";
+
     private final WorkspaceAuthorizationService authorizationService;
     private final RoleCatalogService catalogService;
     private final RoleDefinitionRepository roleRepository;
@@ -46,12 +52,14 @@ public class RoleManagementService implements RoleManagementUseCase {
     public RoleDefinitionDto create(Long userId, Long organizationId, CreateRoleRequest request) {
         authorizationService.require(userId, organizationId, PermissionKey.MANAGE_MEMBER_ROLES);
         var org = organizationRepository.findById(organizationId).orElseThrow(() -> new OrganizationNotFoundException(organizationId));
+        org.requireTeam(NO_ROLES);
         RoleDefinition role = new RoleDefinition(org, RoleScope.ORGANIZATION, request.name().strip(), uniqueSlug(organizationId, request.name()), null);
         role.setDescription(request.description());
         role.setCreatedBy(userLookupService.requireById(userId));
         role.setPermissions(parsePermissions(userId, organizationId, request.permissionKeys()));
         RoleDefinition saved = roleRepository.save(role);
-        auditLogService.record(org, role.getCreatedBy(), "ROLE_CREATE", "ROLE", saved.getId().toString(), saved.getName());
+        auditLogService.record(AuditActor.user(userId), organizationId, AuditAction.ROLE_CREATE, saved.getId(),
+                AuditDetails.of("name", saved.getName(), "permissions", permissionNames(saved)));
         return catalogService.toDto(userId, organizationId, saved);
     }
 
@@ -65,13 +73,8 @@ public class RoleManagementService implements RoleManagementUseCase {
                 request.name() == null || request.name().isBlank() ? template.getName() : request.name(),
                 template.getDescription(),
                 keys));
-        auditLogService.record(
-                organizationRepository.findById(organizationId).orElseThrow(),
-                userLookupService.requireById(userId),
-                "ROLE_FROM_TEMPLATE",
-                "ROLE",
-                dto.id().toString(),
-                template.getName());
+        auditLogService.record(AuditActor.user(userId), organizationId, AuditAction.ROLE_FROM_TEMPLATE, dto.id(),
+                AuditDetails.of("template", template.getName()));
         return dto;
     }
 
@@ -82,10 +85,14 @@ public class RoleManagementService implements RoleManagementUseCase {
         if (role.isLocked()) {
             throw new IllegalArgumentException("Locked role cannot be edited.");
         }
+        String previousName = role.getName();
+        String previousPermissions = permissionNames(role);
         role.setName(request.name().strip());
         role.setDescription(request.description());
         role.setPermissions(parsePermissions(userId, organizationId, request.permissionKeys()));
-        auditLogService.record(role.getOrganization(), userLookupService.requireById(userId), "ROLE_UPDATE", "ROLE", roleId.toString(), role.getName());
+        auditLogService.record(AuditActor.user(userId), organizationId, AuditAction.ROLE_UPDATE, roleId,
+                AuditDetails.of("role", role.getName(), "name", AuditDetails.changed(previousName, role.getName()),
+                        "permissions", AuditDetails.changed(previousPermissions, permissionNames(role))));
         return catalogService.toDto(userId, organizationId, roleRepository.save(role));
     }
 
@@ -98,7 +105,8 @@ public class RoleManagementService implements RoleManagementUseCase {
         copy.setCreatedBy(userLookupService.requireById(userId));
         copy.setPermissions(new LinkedHashSet<>(source.getPermissions()));
         RoleDefinition saved = roleRepository.save(copy);
-        auditLogService.record(source.getOrganization(), copy.getCreatedBy(), "ROLE_DUPLICATE", "ROLE", saved.getId().toString(), source.getName());
+        auditLogService.record(AuditActor.user(userId), organizationId, AuditAction.ROLE_DUPLICATE, saved.getId(),
+                AuditDetails.of("name", saved.getName(), "source", source.getName()));
         return catalogService.toDto(userId, organizationId, saved);
     }
 
@@ -116,12 +124,19 @@ public class RoleManagementService implements RoleManagementUseCase {
             assignedInvitations.forEach(invitation -> invitation.setRoleDefinition(replacement));
         }
         roleRepository.delete(role);
-        auditLogService.record(role.getOrganization(), userLookupService.requireById(userId), "ROLE_DELETE", "ROLE", roleId.toString(), role.getName());
+        auditLogService.record(AuditActor.user(userId), organizationId, AuditAction.ROLE_DELETE, roleId,
+                AuditDetails.of("name", role.getName()));
+    }
+
+    private static String permissionNames(RoleDefinition role) {
+        return role.getPermissions().stream().map(Enum::name).sorted().collect(Collectors.joining(", "));
     }
 
     private RoleDefinition requireRole(Long organizationId, Long roleId) {
-        return roleRepository.findByIdAndOrganizationId(roleId, organizationId)
+        RoleDefinition role = roleRepository.findByIdAndOrganizationId(roleId, organizationId)
                 .orElseThrow(() -> new IllegalArgumentException("Role does not exist."));
+        role.getOrganization().requireTeam(NO_ROLES);
+        return role;
     }
 
     private Set<PermissionKey> parsePermissions(Long userId, Long orgId, List<String> keys) {

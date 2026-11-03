@@ -5,7 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
+import { appHref } from "@/shared/lib/app-href";
 import { AppKbd } from "@/shared/ui/AppKbd";
 import { AppTooltip } from "@/shared/ui/AppTooltip";
 import { useMediaQuery } from "@/shared/ui/use-media-query";
@@ -14,6 +15,7 @@ import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { SidebarMenuLink } from "@/app/components/SidebarMenuLink";
 import { sidebarMenuContent } from "@/app/components/sidebar-menu-styles";
 import { RESTORE_SCROLL_STATE } from "@/app/layouts/use-scroll-memory";
+import { NavigationIcon } from "@/app/components/NavigationIcon";
 import { isChildActive, type NavigationItem } from "@/app/components/sidebar-navigation-support";
 import { NavbarLabel } from "./NavbarLabel";
 
@@ -46,7 +48,6 @@ export function NavbarItem({
   shortcut: number;
   showShortcut: boolean;
 }) {
-  const Icon = item.icon;
   // Labels show from lg up unless compact; otherwise a tooltip names the icon.
   const labelShown = useMediaQuery("(min-width: 1024px)") && !compact;
   const tooltipSide = menuSide === "top" ? "top" : "bottom";
@@ -54,7 +55,7 @@ export function NavbarItem({
   const Chevron = menuSide === "top" ? ChevronUp : ChevronDown;
   const face = (
     <>
-      <Icon size={17} className="shrink-0" />
+      <NavigationIcon item={item} size={17} />
       {/* Hidden labels only collapse in width, so assistive tech still reads them. */}
       <NavbarLabel compact={compact}>{item.label}</NavbarLabel>
       {showShortcut && !compact ? (
@@ -79,16 +80,16 @@ export function NavbarItem({
 
   if (!item.children?.length) {
     return withTooltip(
-      <Link
+      <AppLink
         {...common}
-        to={item.to}
+        {...appHref(item.to)}
         state={RESTORE_SCROLL_STATE}
         viewTransition
         aria-current={active ? "page" : undefined}
         className={itemClass(active)}
       >
         {face}
-      </Link>,
+      </AppLink>,
     );
   }
 
@@ -116,7 +117,7 @@ export function NavbarItem({
               active={isChildActive(child, currentPath, pathname)}
               icon={child.icon}
               label={child.label}
-              to={child.to}
+              {...appHref(child.to)}
             />
           ))}
         </DropdownMenu.Content>

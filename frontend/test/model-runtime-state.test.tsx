@@ -2,7 +2,6 @@
 
 import { act } from "react";
 import { QueryClient, QueryObserver } from "@tanstack/react-query";
-import { Route, Routes } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { modelKeys } from "@/features/models/api/model.keys";
 import {
@@ -35,7 +34,8 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
     data: { permissions: { canEditModels: mocks.canEditModels }, currentOrganization: { id: 7 } },
   }),
 }));
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({ data: { id: 1 }, error: null }),
 }));
 
@@ -64,7 +64,6 @@ const NUMPY_REFUSED = "The environment needs packages MLsuite does not install: 
 
 const locked: RuntimeEnvironmentDto = {
   key: "env-locked",
-  legacy: false,
   pythonVersion: "3.12.7",
   writerVersion: "0.3.0",
   packages: [{ name: "scikit-learn", version: "1.5.2" }],
@@ -205,17 +204,15 @@ async function openFailedModel() {
       : {
           manifest: {},
           featureImportances: null,
-          sizeBytes: null,
-          sha256: null,
+          sizeBytes: 4096,
+          sha256: "abc123",
           environment: locked,
         },
   );
-  const view = await mount(
-    <Routes>
-      <Route path="/models/:modelId" element={<ModelDetailPage />} />
-    </Routes>,
-    { route: "/models/12" },
-  );
+  const view = await mount(null, {
+    route: "/models/12",
+    routes: { "/models/$modelId": <ModelDetailPage /> },
+  });
   await settle();
   // Let useStableLoading release the skeleton once the response has rendered.
   await act(async () => {

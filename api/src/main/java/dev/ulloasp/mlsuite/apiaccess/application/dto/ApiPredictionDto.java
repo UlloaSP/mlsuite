@@ -26,7 +26,7 @@ public record ApiPredictionDto(
     public record ApiPredictionSnapshot(int version, @Nullable String name) {
     }
 
-    public record ApiPredictionModel(String name, @Nullable String sha256) {
+    public record ApiPredictionModel(String name, String sha256) {
     }
 
     /**

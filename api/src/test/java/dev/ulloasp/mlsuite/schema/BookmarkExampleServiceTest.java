@@ -22,8 +22,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
@@ -42,6 +43,7 @@ import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkExampleDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaBookmarkExampleDto;
 import dev.ulloasp.mlsuite.schema.application.service.BookmarkPublishability;
 import dev.ulloasp.mlsuite.schema.application.service.PublicBookmarkService;
+import dev.ulloasp.mlsuite.schema.application.service.SnapshotRunGuard;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaBookmarkExampleService;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaBookmarkServiceImpl;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkExampleStatus;
@@ -80,13 +82,13 @@ class BookmarkExampleServiceTest {
         when(access.requireCurrentOrganization(USER_ID)).thenReturn(organization);
         var authorization = new WorkspaceAuthorizationService(access, mock(RoleDefinitionRepository.class));
         stored = BookmarkExampleFixtures.stored(examples);
-        service = new SchemaBookmarkExampleService(bookmarks, runs, examples, authorization);
+        service = new SchemaBookmarkExampleService(bookmarks, runs, examples, authorization, mock(AuditLogService.class));
         // No snapshot here binds a model, so nothing stands between these bookmarks and being public.
         var publishability = new BookmarkPublishability(mock(SchemaModelBindingRepository.class), 50);
         bookmarkService = new SchemaBookmarkServiceImpl(mock(SchemaRepository.class), versions, bookmarks,
-                authorization, publishability);
+                authorization, publishability, mock(AuditLogService.class));
         publicService = new PublicBookmarkService(bookmarks, examples, publishability,
-                mock(ListPluginRuntimeSourcesUseCase.class));
+                mock(SnapshotRunGuard.class), mock(ListPluginRuntimeSourcesUseCase.class));
         bookmark.setPublicId(PUBLIC_ID);
         when(bookmarks.findByIdAndOrganizationId(BOOKMARK_ID, ORG_ID)).thenReturn(Optional.of(bookmark));
         // The public lookup answers only while the bookmark is published, as the query does.

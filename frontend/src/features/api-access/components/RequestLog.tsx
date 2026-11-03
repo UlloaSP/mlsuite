@@ -9,11 +9,12 @@ import { RequestEntry } from "@/features/api-access/components/RequestEntry";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { CatalogToolbar } from "@/shared/ui/catalog/CatalogToolbar";
 import { getCatalogErrorMessage } from "@/shared/ui/catalog/catalogPageUtils";
-import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
+import { useCatalogControls, type CatalogSearch } from "@/shared/ui/catalog/useCatalogControls";
+import type { REQUEST_OUTCOMES } from "@/features/api-access/pages/api-access-search";
 
 const PAGE_SIZE = 50;
 
-export type RequestOutcome = "all" | "succeeded" | "rejected" | "failed" | "errors";
+export type RequestOutcome = (typeof REQUEST_OUTCOMES)[number];
 
 const OUTCOMES: Array<{ value: RequestOutcome; label: string }> = [
   { value: "all", label: "All" },
@@ -30,13 +31,15 @@ const SORTS = [{ value: "newest", label: "Newest first" }] as const;
  * first, searched by request id, client, bookmark or problem code. Outcome and search live in
  * the URL.
  */
-export function RequestLog({ clientId }: { clientId?: number }) {
-  const controls = useCatalogControls<RequestOutcome, "newest">({
-    filters: OUTCOMES.map(({ value }) => value),
-    initialFilter: "all",
-    initialSort: "newest",
-    sorts: ["newest"],
-  });
+export function RequestLog({
+  clientId,
+  search,
+}: {
+  clientId?: number;
+  /** The page's search, which holds the log's params. */
+  search: CatalogSearch<RequestOutcome, "newest">;
+}) {
+  const controls = useCatalogControls(search);
   const query = useApiRequestCatalog(
     { size: PAGE_SIZE, search: controls.search, filter: controls.filter },
     clientId,

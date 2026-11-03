@@ -18,8 +18,9 @@ import java.util.Set;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import dev.ulloasp.mlsuite.schema.catalog.InferenceRowProjector.Row;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +43,7 @@ public class InferenceRows {
      * a run shows: rows of another version are not current, and the refresh projects them again.
      */
     static final int PROJECTION_VERSION = 1;
-    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper JSON = JsonMapper.shared();
     /** How each snapshot's models are named now, as a row records it. */
     private static final String STAMPS = """
             WITH stamps AS (SELECT b.schema_version_id AS id, string_agg(b.model_id || ':' || m.name, ',' ORDER BY b.id) AS models
@@ -227,7 +228,7 @@ public class InferenceRows {
     private static String json(Object value) {
         try {
             return JSON.writeValueAsString(value);
-        } catch (JsonProcessingException unwritable) {
+        } catch (JacksonException unwritable) {
             throw new IllegalStateException(unwritable);
         }
     }
@@ -235,7 +236,7 @@ public class InferenceRows {
     private static Object parse(String json) {
         try {
             return JSON.readValue(json, Object.class);
-        } catch (JsonProcessingException unreadable) {
+        } catch (JacksonException unreadable) {
             throw new IllegalStateException(unreadable);
         }
     }

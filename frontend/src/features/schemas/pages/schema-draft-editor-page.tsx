@@ -3,12 +3,13 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useSearchParamState } from "@/shared/lib/use-search-param-state";
-import { useAtom, useSetAtom } from "jotai";
+import { useSearchUpdate } from "@/shared/lib/use-search-update";
 import { GitCompareArrows, PencilLine, Save } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
-import { toast } from "sonner";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
+import { useAtom, useSelector } from "@tanstack/react-store";
+import { AppLink } from "@/shared/ui/AppLink";
+import { toast } from "@/shared/ui/toast";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { withSeriesColumns } from "@/capabilities/prediction-runtime/mlform/series-schema";
 import {
@@ -26,33 +27,31 @@ import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSegmentedControl } from "@/shared/ui/AppSegmentedControl";
 import { AppSurface } from "@/shared/ui/AppSurface";
-import {
-  schemaAtom,
-  schemaErrorsAtom,
-  schemaMappingIssuesAtom,
-  schemaTextAtom,
-} from "@/features/schemas/lib/editor-atoms";
+import { useEditorAtoms } from "@/features/schemas/lib/editor-atoms";
 import { refusedMappings } from "@/features/schemas/lib/schema-mapping-issues";
 import { EditorWrapper } from "@/features/schemas/components/EditorWrapper";
 import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
 import { SchemaFormPreview } from "@/features/schemas/components/SchemaFormPreview";
 import { SchemaCodeViewer } from "@/features/schemas/components/SchemaCodeViewer";
 
-const EDITOR_VIEWS = ["code", "preview"] as const;
-type EditorView = (typeof EDITOR_VIEWS)[number];
+const route = getRouteApi("/protected/app/can-edit-models/schemas/$schemaId/drafts/$draftId");
 
 export function SchemaDraftEditorPage() {
-  const { schemaId, draftId } = useParams<{ schemaId: string; draftId: string }>();
+  const { schemaId, draftId } = route.useParams();
   const navigate = useNavigate();
   const { data: schemaDto } = useSchema(schemaId);
   const { data: draft } = useSchemaDraft(draftId);
   const { data: diff } = useSchemaDraftDiff(draftId);
   const updateMutation = useUpdateSchemaDraftMutation(draftId ?? "");
-  const [schema, setSchema] = useAtom(schemaAtom);
-  const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
-  const [schemaErrors] = useAtom(schemaErrorsAtom);
-  const setMappingIssues = useSetAtom(schemaMappingIssuesAtom);
-  const [editorView, setEditorView] = useSearchParamState<EditorView>("view", "code", EDITOR_VIEWS);
+  const atoms = useEditorAtoms();
+  const [schema, setSchema] = useAtom(atoms.schema);
+  const [schemaText, setSchemaText] = useAtom(atoms.schemaText);
+  const schemaErrors = useSelector(atoms.schemaErrors);
+  const setMappingIssues = atoms.schemaMappingIssues.set;
+  const search = route.useSearch();
+  const updateSearch = useSearchUpdate<typeof search>();
+  const editorView = search.view;
+  const setEditorView = (value: typeof editorView) => updateSearch({ view: value });
   const [renameOpen, setRenameOpen] = useState(false);
 
   const editorHasErrors = Array.isArray(schemaErrors) && schemaErrors.length > 0;
@@ -94,7 +93,10 @@ export function SchemaDraftEditorPage() {
     if (!schemaId || !draftId) return;
     const saved = await save();
     if (!saved) return;
-    void navigate(`/schemas/${schemaId}/drafts/${draftId}/conflicts`);
+    void navigate({
+      to: "/schemas/$schemaId/drafts/$draftId/conflicts",
+      params: { schemaId, draftId },
+    });
   };
 
   const rename = async (nextName: string) => {
@@ -123,9 +125,13 @@ export function SchemaDraftEditorPage() {
             title={draft.name}
             description="This change has been published and is read-only."
             actions={
-              <Link to={`/schemas/${draft.schemaId}/snapshots`} className={appButtonClass()}>
+              <AppLink
+                to="/schemas/$schemaId/snapshots"
+                params={{ schemaId: String(draft.schemaId) }}
+                className={appButtonClass()}
+              >
                 View snapshots
-              </Link>
+              </AppLink>
             }
           />
           <SchemaCodeViewer

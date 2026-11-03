@@ -9,12 +9,16 @@ GitHub is the canonical source repository. Feature work targets `develop`; promo
 The workflow verifies:
 
 - committed-secret history with the repository scanner;
-- frontend locked install, tests, TypeScript, and production build;
+- frontend locked install, `vp check` (formatting, lint and types), tests, and production build;
 - documentation site locked install, link tests, Astro check and build, and a Wrangler dry run (it never uploads);
 - Maven tests and API packaging;
 - backend and ops-agent locked Python tests;
 - production Docker builds and Trivy scans for frontend, API, backend and ops-agent;
 - Compose resolution and immutable-release contract tests.
+
+`deploy/test-deploy-release.sh` runs a deployment against a fake Docker: a valid release, the
+backup that precedes it, each failure that must leave the running release in place, and the
+rollback.
 
 CI uses hosted Ubuntu runners, read-only repository permissions, and no deployment secrets. Actions are pinned to full commit SHAs. A skipped, cancelled, or failed dependency does not satisfy the aggregate check.
 
@@ -24,7 +28,7 @@ They build locally without publishing or registry credentials. The shared
 and scanner failures. JSON reports remain available for 30 days, including failures.
 Publication uses the same policy against each exact candidate digest.
 
-Full frontend formatting and lint are not required until the existing baseline is clean. Do not add a required gate that the repository cannot pass, and do not hide failures with `continue-on-error`.
+`vp check` fails on formatting and on lint or type errors; lint and type warnings are reported without failing it, and the existing warnings are not yet cleaned up. Do not add a required gate that the repository cannot pass, and do not hide failures with `continue-on-error`.
 
 ## Branch protection
 

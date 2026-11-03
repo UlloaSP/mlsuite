@@ -7,16 +7,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.JsonNodeFactory;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -49,6 +51,10 @@ import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewAssignee;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewRun;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewRunSubmission;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewState;
+import dev.ulloasp.mlsuite.notification.application.service.NotificationService;
+import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
+import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
+import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -65,12 +71,15 @@ class SchemaReviewManagementServiceTest {
     @Mock private InferenceRows inferenceRows;
     @Mock private WorkspaceAccessService workspaceAccess;
     @Mock private WorkspaceAuthorizationService authorization;
+    @Mock private NotificationService notifications;
+    @Mock private UserRepository users;
     private SchemaReviewManagementService service;
 
     @BeforeEach
     void setUp() {
         service = new SchemaReviewManagementService(reviews, reviewRuns, submissions, assignees,
-                runs, feedback, new FeedbackHistory(feedback, revisions, inferenceRows), workspaceAccess, authorization);
+                runs, feedback, new FeedbackHistory(feedback, revisions, inferenceRows), inferenceRows, workspaceAccess,
+                authorization, mock(AuditLogService.class), notifications, users);
     }
 
     @Test
@@ -93,7 +102,7 @@ class SchemaReviewManagementServiceTest {
 
         assertEquals(SchemaReviewState.COMPLETED, status.reviewState());
         assertEquals(12L, status.reviewer().id());
-        assertEquals(12L, status.createdBy().id());
+        assertEquals(status.reviewer().fullName(), status.createdBy().fullName());
         assertEquals(submission.getSubmittedAt(), status.submittedAt());
         verify(authorization).require(7L, 41L, PermissionKey.MANAGE_REVIEWS);
     }
@@ -119,11 +128,37 @@ class SchemaReviewManagementServiceTest {
         stubReopen(organization, review, reviewRun, reviewer.getId());
         when(submissions.findByReviewRunIdAndUserId(null, 12L)).thenReturn(Optional.of(submission));
 
+        User manager = new User("lead", "lead@example.test", "x", "Grace Lead", SystemRole.USER);
+        when(users.findById(7L)).thenReturn(Optional.of(manager));
+
         service.reopen(7L, review.getPublicId(), reviewRun.getPublicId(), 12L);
 
         verify(submissions).delete(submission);
         verifyNoInteractions(feedback);
         verify(authorization).require(7L, 41L, PermissionKey.MANAGE_REVIEWS);
+        // The reviewer hears that the run is back in their inbox, and where.
+        verify(notifications).notify(12L, 41L, NotificationKind.REVIEW_REOPENED, review.getPublicId(), Map.of(
+                "organizationName", organization.getName(), "schemaName", review.getSchema().getName(),
+                "runName", run.getName(), "reviewRunId", reviewRun.getPublicId(), "actorName", "Grace Lead"));
+    }
+
+    @Test
+    void reopen_OfTheirOwnSubmissionNotifiesNobody() {
+        Organization organization = organization();
+        User reviewer = reviewer();
+        PredictionRun run = run(organization);
+        SchemaReview review = review(organization, run.getSchemaVersion(), OffsetDateTime.now().plusDays(1));
+        SchemaReviewRun reviewRun = new SchemaReviewRun(review, run);
+        when(workspaceAccess.requireCurrentOrganization(12L)).thenReturn(organization);
+        when(reviews.findByPublicIdAndOrganizationId(review.getPublicId(), 41L)).thenReturn(Optional.of(review));
+        when(reviewRuns.findByReviewIdAndPublicId(88L, reviewRun.getPublicId())).thenReturn(Optional.of(reviewRun));
+        when(assignees.existsByReviewIdAndUserId(88L, 12L)).thenReturn(true);
+        when(submissions.findByReviewRunIdAndUserId(null, 12L))
+                .thenReturn(Optional.of(new SchemaReviewRunSubmission(reviewRun, reviewer, OffsetDateTime.now())));
+
+        service.reopen(12L, review.getPublicId(), reviewRun.getPublicId(), 12L);
+
+        verifyNoInteractions(notifications);
     }
 
     @Test

@@ -1,0 +1,54 @@
+package dev.ulloasp.mlsuite.notification.domain.model;
+
+/**
+ * What happened. Each kind is about one type of target and carries its own payload labels, besides
+ * the organizationName every notification about an organization has.
+ */
+public enum NotificationKind {
+    /** bookmarkId, bookmarkName, totalRows, doneRows, failedRows. */
+    PREDICTION_JOB_COMPLETED(NotificationTargetType.PREDICTION_JOB),
+    /** As PREDICTION_JOB_COMPLETED, with failedRows above zero. */
+    PREDICTION_JOB_COMPLETED_WITH_FAILURES(NotificationTargetType.PREDICTION_JOB),
+    /** As PREDICTION_JOB_COMPLETED, plus the reason the system stopped it. */
+    PREDICTION_JOB_STOPPED(NotificationTargetType.PREDICTION_JOB),
+    /** As PREDICTION_JOB_COMPLETED, plus actorName: another member cancelled it. */
+    PREDICTION_JOB_CANCELLED(NotificationTargetType.PREDICTION_JOB),
+    /** modelName. */
+    MODEL_READY(NotificationTargetType.MODEL),
+    /** modelName, reason. */
+    MODEL_FAILED(NotificationTargetType.MODEL),
+    /** inviterName, roleName. */
+    INVITATION_RECEIVED(NotificationTargetType.INVITATION),
+    /** inviteeName. */
+    INVITATION_ACCEPTED(NotificationTargetType.INVITATION),
+    /** inviteeName. */
+    INVITATION_DECLINED(NotificationTargetType.INVITATION),
+    /** inviterName, roleName: a superadmin's invitation is accepted on the spot. */
+    ORGANIZATION_JOINED(NotificationTargetType.ORGANIZATION),
+    /** schemaName, assignerName. */
+    REVIEW_ASSIGNED(NotificationTargetType.REVIEW),
+    /** schemaName, runName, reviewRunId, actorName: a manager reopened a run the reviewer had submitted. */
+    REVIEW_REOPENED(NotificationTargetType.REVIEW),
+    /** organizationName: a superadmin deleted the organization, which is gone. */
+    ORGANIZATION_PURGED(NotificationTargetType.ORGANIZATION),
+    /** scope, targetLabel. */
+    PURGE_COMPLETED(NotificationTargetType.PURGE_JOB),
+    /** scope, targetLabel, reason. */
+    PURGE_FAILED(NotificationTargetType.PURGE_JOB),
+    /** label, unit, severity, value, threshold: about the platform, sent to every enabled superadmin. */
+    SYSTEM_ALERT_RAISED(NotificationTargetType.SYSTEM_ALERT),
+    /** As SYSTEM_ALERT_RAISED, at its critical threshold. */
+    SYSTEM_ALERT_ESCALATED(NotificationTargetType.SYSTEM_ALERT),
+    /** As SYSTEM_ALERT_RAISED, at its clear threshold. */
+    SYSTEM_ALERT_RESOLVED(NotificationTargetType.SYSTEM_ALERT);
+
+    private final NotificationTargetType targetType;
+
+    NotificationKind(NotificationTargetType targetType) {
+        this.targetType = targetType;
+    }
+
+    public NotificationTargetType targetType() {
+        return targetType;
+    }
+}

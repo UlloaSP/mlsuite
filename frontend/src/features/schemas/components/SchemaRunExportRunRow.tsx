@@ -17,8 +17,12 @@ type Props = {
   onToggleRunReviewer: (runId: number, reviewer: string) => void;
 };
 
-const valueText = (value: unknown) =>
-  typeof value === "object" && value !== null ? JSON.stringify(value) : String(value ?? "");
+const valueText = (value: unknown) => {
+  if (value === undefined || value === null) return "";
+  return typeof value === "object"
+    ? JSON.stringify(value)
+    : String(value as string | number | boolean);
+};
 
 export function SchemaRunExportRunRow({
   summary,

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Ban, KeyRound, RotateCcw } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { useApiClientStatusMutation } from "@/features/api-access/api/api-traffic.queries";
 import { ApiClientStatusBadge } from "@/features/api-access/components/ApiClientStatusBadge";
 import { SuspendClientDialog } from "@/features/api-access/components/SuspendClientDialog";
@@ -13,7 +13,7 @@ import { failureMessage, formatCount, formatShare } from "@/features/api-access/
 import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
-import { OrganizationMark } from "@/shared/ui/OrganizationMark";
+import { PublisherMark } from "@/shared/ui/PublisherMark";
 import { useActionDialog } from "@/shared/ui/use-action-dialog";
 import type { AdminApiClientDto } from "@/shared/api/openapi.gen";
 
@@ -58,10 +58,12 @@ export function TrafficClientEntry({ client }: { client: AdminApiClientDto }) {
         title={client.name}
         titleAccessory={<ApiClientStatusBadge status={client.status} />}
         icon={
-          <OrganizationMark
+          <PublisherMark
             className="mt-0.5 size-5 rounded-sm"
             iconSize={16}
+            kind={client.organizationKind}
             logoUrl={client.organizationLogoUrl}
+            name={client.organizationName}
           />
         }
         description={client.suspensionReason ?? undefined}

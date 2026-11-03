@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ArrowRight, GitCommitHorizontal, Tag } from "lucide-react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
@@ -31,8 +31,9 @@ export function PredictBookmarkCard({ bookmark }: { bookmark: PredictBookmarkDto
   const extraModels = bookmark.models.length - VISIBLE_MODELS;
 
   return (
-    <Link
-      to={`/predict/${bookmark.id}`}
+    <AppLink
+      to="/predict/$bookmarkId"
+      params={{ bookmarkId: String(bookmark.id) }}
       aria-label={`Predict with ${bookmark.name} (${bookmark.schemaName})`}
       className={cx(
         "group flex h-full flex-col gap-4 rounded-card border border-line bg-surface p-5 transition hover:border-line-strong hover:shadow-hover",
@@ -100,6 +101,6 @@ export function PredictBookmarkCard({ bookmark }: { bookmark: PredictBookmarkDto
           <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
         </span>
       </footer>
-    </Link>
+    </AppLink>
   );
 }

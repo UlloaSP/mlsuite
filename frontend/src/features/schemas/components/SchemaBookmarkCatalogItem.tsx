@@ -13,10 +13,12 @@ import {
   PencilLine,
   Play,
   Tag,
+  Trash2,
 } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
-import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
+import { AppLink } from "@/shared/ui/AppLink";
+import { toast } from "@/shared/ui/toast";
 import { isHttpError } from "@/shared/api/http";
 import { useCan } from "@/capabilities/workspace-context/workspace-context";
 import { AppActionsMenu, type AppMenuAction } from "@/shared/ui/AppActionsMenu";
@@ -27,6 +29,7 @@ import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
 import { useActionDialog } from "@/shared/ui/use-action-dialog";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
+import { useDeleteSchemaContent } from "@/features/schemas/api/schema-content-deletion";
 import { useSetBookmarkVisibilityMutation } from "@/features/schemas/api/schema-mutations";
 import { BookmarkEditDialog } from "@/features/schemas/components/BookmarkEditDialog";
 import { BookmarkExamplesDialog } from "@/features/schemas/components/BookmarkExamplesDialog";
@@ -48,6 +51,7 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
   const canViewApiAccess = useCan("canViewApiAccess");
   const navigate = useNavigate();
   const visibility = useSetBookmarkVisibilityMutation();
+  const deletion = useDeleteSchemaContent(bookmark.schemaId, "schema-bookmarks");
   const { confirm, dialog } = useActionDialog();
   const [examplesOpen, setExamplesOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -80,6 +84,16 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
       confirmLabel: "Publish",
     });
     if (confirmed) setVisibility("PUBLIC");
+  };
+
+  const remove = async () => {
+    const confirmed = await confirm({
+      title: `Delete ${bookmark.name}?`,
+      description: `${publicPath ? "Its public page goes, and " : ""}its public examples, API access and finished bulk uploads go with it. The inferences made from it stay.`,
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (confirmed) deletion.mutate(bookmark.id);
   };
 
   const copyLink = async () => {
@@ -136,7 +150,8 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
             label: "API access",
             icon: SECTION_ICONS.api,
             // Clients run bookmarks through the API section, which documents this one's endpoint.
-            onSelect: () => void navigate(`/api-access/docs?bookmark=${bookmark.id}`),
+            onSelect: () =>
+              void navigate({ to: "/api-access/docs", search: { bookmark: String(bookmark.id) } }),
           },
         ]
       : []),
@@ -157,6 +172,19 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
                 disabled: visibility.isPending,
                 onSelect: () => void publish(),
               },
+        ]
+      : []),
+    // A public bookmark goes unpublished first, which takes the right to publish.
+    ...(canEdit && (canPublish || !publicPath)
+      ? [
+          {
+            key: "delete",
+            label: "Delete",
+            icon: Trash2,
+            tone: "danger" as const,
+            disabled: deletion.isPending,
+            onSelect: () => void remove(),
+          },
         ]
       : []),
   ];
@@ -192,10 +220,14 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
         }
         actions={
           <>
-            <Link to={workspacePath} className={appButtonClass({ size: "sm" })}>
+            <AppLink
+              to="/predict/$bookmarkId"
+              params={{ bookmarkId: String(bookmark.id) }}
+              className={appButtonClass({ size: "sm" })}
+            >
               <Play size={14} />
               Predict
-            </Link>
+            </AppLink>
             <AppActionsMenu actions={actions} label={`Open actions for ${bookmark.name}`} />
           </>
         }

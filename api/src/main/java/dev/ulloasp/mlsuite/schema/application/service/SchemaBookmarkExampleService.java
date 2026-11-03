@@ -10,6 +10,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkExampleRepository;
@@ -37,6 +41,7 @@ public class SchemaBookmarkExampleService implements SchemaBookmarkExampleUseCas
     private final PredictionRunRepository runRepository;
     private final SchemaBookmarkExampleRepository exampleRepository;
     private final WorkspaceAuthorizationService authorizationService;
+    private final AuditLogService auditLog;
 
     @Override
     public List<SchemaBookmarkExampleDto> listExamples(Long userId, Long bookmarkId) {
@@ -66,14 +71,19 @@ public class SchemaBookmarkExampleService implements SchemaBookmarkExampleUseCas
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Only runs of the snapshot the bookmark points to can be its examples");
         }
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.BOOKMARK_EXAMPLE_MARK, bookmarkId,
+                AuditDetails.of("bookmark", bookmark.getName(), "runId", runId));
         return SchemaBookmarkExampleDto.from(exampleRepository.findByBookmarkIdAndRunId(bookmarkId, runId)
                 .orElseGet(() -> exampleRepository.save(candidate)));
     }
 
     @Override
     public void unmarkExample(Long userId, Long bookmarkId, Long runId) {
-        requireBookmark(bookmarkId, organizationId(userId, PermissionKey.PUBLISH_BOOKMARKS));
+        Long organizationId = organizationId(userId, PermissionKey.PUBLISH_BOOKMARKS);
+        SchemaBookmark bookmark = requireBookmark(bookmarkId, organizationId);
         exampleRepository.deleteByBookmarkIdAndRunId(bookmarkId, runId);
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.BOOKMARK_EXAMPLE_UNMARK, bookmarkId,
+                AuditDetails.of("bookmark", bookmark.getName(), "runId", runId));
     }
 
     @Override

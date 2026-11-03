@@ -1,4 +1,4 @@
-import { useParams } from "react-router";
+import { getRouteApi } from "@tanstack/react-router";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -11,8 +11,12 @@ import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/wor
 import { organizationRouteErrorStatus } from "@/features/workspace/lib/organization-route-error";
 import { InvitationCatalog } from "@/features/workspace/components/InvitationCatalog";
 
+const route = getRouteApi(
+  "/protected/app/team-organization/workspace/organizations/$organizationId/invitations",
+);
+
 export function InvitationsPage() {
-  const { organizationId = "" } = useParams();
+  const { organizationId } = route.useParams();
   const id = Number(organizationId);
   const dashboard = useOrganizationAdminDashboardQuery(id);
   const permissions = dashboard.data?.permissions;

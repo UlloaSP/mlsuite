@@ -6,7 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { FileJson2, History } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate, useSearchParams } from "react-router";
+import { getRouteApi, Navigate } from "@tanstack/react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -23,6 +24,8 @@ import { SchemaRunBulkUploadButton } from "@/features/schemas/components/SchemaR
 import { bookmarkInferencesHref } from "@/features/schemas/lib/bookmark-inferences-href";
 import { useInferenceSession } from "@/features/schemas/lib/use-inference-session";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
+
+const route = getRouteApi("/protected/app/can-view-models/predict/$bookmarkId");
 
 /**
  * Running a bookmark: its form, and the session of runs to keep or discard.
@@ -45,10 +48,9 @@ export function BookmarkWorkspace({ bookmarkId }: { bookmarkId: string }) {
   // The History count comes from the Predict catalog, which refreshes when runs are saved.
   const runCount = useBookmarkStatistics(bookmarkId).data?.runCount;
   const session = useInferenceSession(bookmarkId, pinnedVersionId);
-  const [params] = useSearchParams();
   // "Predict again" asks for a run's inputs with ?from=; the form keeps that source
   // until another is asked for.
-  const requestedSource = params.get("from") ?? undefined;
+  const requestedSource = route.useSearch({ select: (search) => search.from });
   const [formSource, setFormSource] = useState(requestedSource);
   if (requestedSource && requestedSource !== formSource) setFormSource(requestedSource);
   const { detachForm } = session;
@@ -62,9 +64,9 @@ export function BookmarkWorkspace({ bookmarkId }: { bookmarkId: string }) {
           title="Bookmark unavailable"
           description="It may have been removed or belong to another organization."
           action={
-            <Link to="/predict" className={appButtonClass()}>
+            <AppLink to="/predict" className={appButtonClass()}>
               Back to Predict
-            </Link>
+            </AppLink>
           }
         />
       </AppPage>
@@ -72,7 +74,7 @@ export function BookmarkWorkspace({ bookmarkId }: { bookmarkId: string }) {
 
   // Members who cannot run predictions only have the history to look at.
   if (!canRun && bookmark) {
-    return <Navigate to={bookmarkInferencesHref(bookmark)} replace />;
+    return <Navigate {...bookmarkInferencesHref(bookmark)} replace />;
   }
 
   return (
@@ -91,8 +93,8 @@ export function BookmarkWorkspace({ bookmarkId }: { bookmarkId: string }) {
           ]}
           actions={
             <>
-              <Link
-                to={bookmarkInferencesHref(bookmark)}
+              <AppLink
+                {...bookmarkInferencesHref(bookmark)}
                 className={appButtonClass({ variant: "secondary" })}
               >
                 <History size={16} />
@@ -100,18 +102,19 @@ export function BookmarkWorkspace({ bookmarkId }: { bookmarkId: string }) {
                 {runCount !== undefined ? (
                   <span className="tabular-nums text-fg-muted">{runCount}</span>
                 ) : null}
-              </Link>
+              </AppLink>
               {version && canRun ? (
                 <SchemaRunBulkUploadButton bookmarkId={bookmarkId} version={version} />
               ) : null}
               {bookmark ? (
-                <Link
-                  to={`/schemas/${bookmark.schemaId}`}
+                <AppLink
+                  to="/schemas/$schemaId"
+                  params={{ schemaId: String(bookmark.schemaId) }}
                   className={appButtonClass({ variant: "secondary" })}
                 >
                   <FileJson2 size={16} />
                   Schema
-                </Link>
+                </AppLink>
               ) : null}
             </>
           }

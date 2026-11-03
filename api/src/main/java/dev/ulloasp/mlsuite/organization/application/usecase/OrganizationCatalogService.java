@@ -10,6 +10,7 @@ import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelReposit
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationCatalogItemDto;
+import dev.ulloasp.mlsuite.user.application.dto.UserAvatarUrl;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
@@ -53,7 +54,7 @@ public class OrganizationCatalogService {
                 organization,
                 owner != null ? owner.getUser().getFullName() : null,
                 owner != null ? owner.getUser().getEmail() : null,
-                owner != null ? owner.getUser().getAvatarUrl() : null,
+                owner != null ? UserAvatarUrl.of(owner.getUser()) : null,
                 modelRepository.countByOrganizationId(id),
                 schemaRepository.countByOrganizationId(id),
                 pluginRepository.countByOrganizationId(id),

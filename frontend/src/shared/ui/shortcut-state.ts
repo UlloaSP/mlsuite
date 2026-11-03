@@ -3,8 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { atomWithStorage } from "jotai/utils";
-import { validatedStorage } from "@/shared/lib/validated-storage";
+import { createPersistedAtom } from "@/shared/lib/persisted-atom";
 
 export type ShortcutId = "global-search" | "toggle-theme" | "toggle-fullscreen" | "toggle-sidebar";
 export type ShortcutBinding = {
@@ -14,15 +13,6 @@ export type ShortcutBinding = {
   shift: boolean;
 };
 export type ShortcutBindings = Record<ShortcutId, ShortcutBinding>;
-export type ShortcutEvent = {
-  key: string;
-  code?: string;
-  altKey?: boolean;
-  ctrlKey?: boolean;
-  metaKey?: boolean;
-  shiftKey?: boolean;
-};
-
 export const SHORTCUT_ACTIONS = [
   { id: "global-search", label: "Global search", description: "Open workspace search." },
   {
@@ -96,25 +86,11 @@ export const isShortcutBindings = (value: unknown): value is ShortcutBindings =>
   );
 };
 
-export const shortcutBindingsAtom = atomWithStorage(
+export const shortcutBindingsAtom = createPersistedAtom(
   STORAGE_KEY,
   DEFAULT_SHORTCUTS,
-  validatedStorage(isShortcutBindings),
-  { getOnInit: true },
+  isShortcutBindings,
 );
-
-export const isTypingTarget = (target: EventTarget | null) =>
-  target instanceof HTMLElement &&
-  (target.tagName === "INPUT" ||
-    target.tagName === "TEXTAREA" ||
-    target.tagName === "SELECT" ||
-    target.isContentEditable);
-
-export const matchesShortcut = (event: ShortcutEvent, binding: ShortcutBinding) =>
-  event.key.toLowerCase() === binding.key &&
-  Boolean(event.ctrlKey || event.metaKey) === binding.mod &&
-  Boolean(event.altKey) === binding.alt &&
-  Boolean(event.shiftKey) === binding.shift;
 
 export const bindingFromKeyboardEvent = (event: KeyboardEvent): ShortcutBinding | null => {
   if (event.key.length !== 1 || (!event.ctrlKey && !event.metaKey && !event.altKey)) return null;

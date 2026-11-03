@@ -3,8 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { useRouter, useRouterState, type RouterHistory } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
-import { useLocation, useNavigationType } from "react-router";
+
+type HistoryAction = Parameters<Parameters<RouterHistory["subscribe"]>[0]>[0]["action"]["type"];
 
 // Content that is only laying out gets a moment; a catalog fetching its pages gets longer.
 const MAX_SETTLE_MS = 1_000;
@@ -28,11 +30,23 @@ const wantsRestore = (state: unknown) =>
  * is still loading to become tall enough.
  */
 export function useScrollMemory() {
-  const location = useLocation();
-  const navigationType = useNavigationType();
+  // The page shown: useLocation() moves to the next address while that page still loads.
+  const location = useRouterState({ select: (state) => state.resolvedLocation ?? state.location });
+  const history = useRouter().history;
+  // How the current entry was reached; the first one is loaded, as back and forward are.
+  const lastAction = useRef<HistoryAction>("GO");
   const positions = useRef(new Map<string, Record<string, number>>());
   const byUrl = useRef(new Map<string, Record<string, number>>());
-  const url = `${location.pathname}${location.search}`;
+  const url = `${location.pathname}${location.searchStr}`;
+  const key = location.state.__TSR_key ?? url;
+
+  useEffect(
+    () =>
+      history.subscribe(({ action }) => {
+        lastAction.current = action.type;
+      }),
+    [history],
+  );
 
   useEffect(() => {
     const remember = (event: Event) => {
@@ -40,18 +54,20 @@ export function useScrollMemory() {
       if (!(element instanceof HTMLElement)) return;
       const name = element.dataset.scrollMemory;
       if (!name || element.dataset.catalogRestoreTop) return;
-      const entry = positions.current.get(location.key) ?? {};
+      const entry = positions.current.get(key) ?? {};
       entry[name] = element.scrollTop;
-      positions.current.set(location.key, entry);
+      positions.current.set(key, entry);
       byUrl.current.set(url, { ...entry });
     };
     document.addEventListener("scroll", remember, { capture: true, passive: true });
     return () => document.removeEventListener("scroll", remember, { capture: true });
-  }, [location.key, url]);
+  }, [key, url]);
 
   useEffect(() => {
     // A new visit starts at the top even when the next page reuses the same
     // container; REPLACE (tabs and filters kept in the URL) leaves scroll alone.
+    const action = lastAction.current;
+    const navigationType = action === "PUSH" || action === "REPLACE" ? action : "POP";
     const resuming = navigationType === "PUSH" && wantsRestore(location.state);
     if (navigationType === "PUSH" && !resuming) {
       document.querySelectorAll<HTMLElement>("[data-scroll-memory]").forEach((element) => {
@@ -60,7 +76,7 @@ export function useScrollMemory() {
       return;
     }
     if (navigationType !== "POP" && !resuming) return;
-    const saved = resuming ? byUrl.current.get(url) : positions.current.get(location.key);
+    const saved = resuming ? byUrl.current.get(url) : positions.current.get(key);
     if (!saved) return;
     const pending = new Map(Object.entries(saved));
     const startedAt = performance.now();
@@ -104,5 +120,5 @@ export function useScrollMemory() {
       cancel();
       inputs.forEach((input) => document.removeEventListener(input, cancel, { capture: true }));
     };
-  }, [location.key, location.state, navigationType, url]);
+  }, [key, location.state, url]);
 }

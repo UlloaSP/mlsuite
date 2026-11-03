@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // @vitest-environment jsdom
 
 import { QueryClient } from "@tanstack/react-query";
-import { act } from "react";
+import { act, useState, type ComponentProps } from "react";
 import { beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { PredictionRunDetails } from "@/features/schemas/components/PredictionRunDetails";
 import { changeValue, mount } from "./support/dom";
@@ -110,6 +110,14 @@ vi.mock("@/capabilities/prediction-runtime/reports/SchemaRunReportRenderer", () 
   }) => <div data-output="">{`${result.modelId} ${JSON.stringify(report)}`}</div>,
 }));
 
+type DetailsProps = Omit<ComponentProps<typeof PredictionRunDetails>, "tab" | "onTabChange">;
+
+/** The details with the tab their page would keep in its URL. */
+function Details(props: DetailsProps) {
+  const [tab, setTab] = useState<ComponentProps<typeof PredictionRunDetails>["tab"]>("inputs");
+  return <PredictionRunDetails {...props} tab={tab} onTabChange={setTab} />;
+}
+
 describe("prediction run details", () => {
   beforeEach(() => {
     queryState.refetch.mockReset();
@@ -118,7 +126,7 @@ describe("prediction run details", () => {
 
   const renderPage = async (withReviews = true) => {
     const { host } = await mount(
-      <PredictionRunDetails
+      <Details
         runId="run-1"
         bookmarkName="Ward bookmark"
         reviews={

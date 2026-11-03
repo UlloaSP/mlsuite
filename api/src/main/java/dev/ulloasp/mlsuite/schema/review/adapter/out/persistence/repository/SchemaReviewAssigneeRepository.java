@@ -4,12 +4,17 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewAssignee;
 
 public interface SchemaReviewAssigneeRepository extends JpaRepository<SchemaReviewAssignee, Long> {
     boolean existsByReviewIdAndUserId(Long reviewId, Long userId);
+
+    @Modifying
+    @Query("DELETE FROM SchemaReviewAssignee assignee WHERE assignee.review.id = :reviewId")
+    void deleteByReview(Long reviewId);
 
     List<SchemaReviewAssignee> findByReviewIdOrderByIdAsc(Long reviewId);
 

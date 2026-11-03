@@ -9,21 +9,20 @@ import java.util.HexFormat;
 
 /**
  * Hashes an artifact as it is read and, at its end, checks it against the identity it must
- * match, so a copy written from it is verified without holding it. The end is the expected size
- * when there is one, since writers that know the size read no further. A mismatch fails the read
- * that reaches the end, before whoever writes the copy can finish it.
+ * match, so a copy written from it is verified without holding it. The end is the expected size,
+ * since writers that know the size read no further. A mismatch fails the read that reaches the
+ * end, before whoever writes the copy can finish it.
  */
 public final class VerifyingInputStream extends FilterInputStream {
 
     private final String artifact;
-    private final Long expectedSize;
+    private final long expectedSize;
     private final String expectedSha256;
     private final MessageDigest digest;
     private long size;
     private boolean checked;
 
-    /** {@code expectedSha256} may be null for an artifact stored before artifacts were hashed. */
-    public VerifyingInputStream(InputStream in, String artifact, Long expectedSize, String expectedSha256) {
+    public VerifyingInputStream(InputStream in, String artifact, long expectedSize, String expectedSha256) {
         super(in);
         this.artifact = artifact;
         this.expectedSize = expectedSize;
@@ -72,7 +71,7 @@ public final class VerifyingInputStream extends FilterInputStream {
     }
 
     private boolean atExpectedEnd() {
-        return expectedSize != null && size >= expectedSize;
+        return size >= expectedSize;
     }
 
     private void check() throws IOException {

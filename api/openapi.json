@@ -25,6 +25,13 @@
             "format": "int64",
             "type": "integer"
           },
+          "organizationKind": {
+            "enum": [
+              "PERSONAL",
+              "TEAM"
+            ],
+            "type": "string"
+          },
           "organizationLogoUrl": {
             "type": [
               "string",
@@ -69,6 +76,7 @@
           "lastUsedAt",
           "name",
           "organizationId",
+          "organizationKind",
           "organizationLogoUrl",
           "organizationName",
           "status",
@@ -87,6 +95,13 @@
           },
           "customLimit": {
             "type": "boolean"
+          },
+          "kind": {
+            "enum": [
+              "PERSONAL",
+              "TEAM"
+            ],
+            "type": "string"
           },
           "logoUrl": {
             "type": [
@@ -113,6 +128,7 @@
         "required": [
           "clientCount",
           "customLimit",
+          "kind",
           "logoUrl",
           "monthCalls",
           "monthlyLimit",
@@ -153,16 +169,14 @@
           "username": {
             "maxLength": 50,
             "minLength": 0,
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           }
         },
         "required": [
           "email",
           "fullName",
-          "password"
+          "password",
+          "username"
         ],
         "type": "object"
       },
@@ -612,10 +626,7 @@
             "type": "string"
           },
           "sha256": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           }
         },
         "required": [
@@ -891,7 +902,19 @@
         "properties": {
           "id": {
             "format": "int64",
-            "type": "integer"
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "kind": {
+            "enum": [
+              "USER",
+              "SYSTEM",
+              "API_CLIENT",
+              "VISITOR"
+            ],
+            "type": "string"
           },
           "name": {
             "type": "string"
@@ -899,6 +922,7 @@
         },
         "required": [
           "id",
+          "kind",
           "name"
         ],
         "type": "object"
@@ -906,6 +930,120 @@
       "AuditEventDto": {
         "properties": {
           "action": {
+            "enum": [
+              "ORGANIZATION_CREATE",
+              "ORGANIZATION_UPDATE",
+              "ORGANIZATION_DELETE",
+              "ORGANIZATION_LOGO_REPLACE",
+              "ORGANIZATION_LOGO_REMOVE",
+              "OWNERSHIP_TRANSFER",
+              "MEMBER_ROLE_CHANGE",
+              "MEMBER_REMOVE",
+              "INVITATION_CREATE",
+              "INVITATION_RESEND",
+              "INVITATION_REVOKE",
+              "INVITATION_ACCEPT",
+              "INVITATION_DECLINE",
+              "ROLE_CREATE",
+              "ROLE_FROM_TEMPLATE",
+              "ROLE_DUPLICATE",
+              "ROLE_UPDATE",
+              "ROLE_DELETE",
+              "API_CLIENT_CREATE",
+              "API_CLIENT_UPDATE",
+              "API_CLIENT_DELETE",
+              "API_KEY_ISSUE",
+              "API_KEY_REVOKE",
+              "API_ACCESS_GRANT",
+              "API_ACCESS_REVOKE",
+              "API_CLIENT_SUSPEND",
+              "API_CLIENT_REINSTATE",
+              "API_CALL_LIMIT_SET",
+              "MODEL_UPLOAD",
+              "MODEL_RENAME",
+              "MODEL_ARCHIVE",
+              "MODEL_RESTORE",
+              "MODEL_ENVIRONMENT_RETRY",
+              "MODEL_DUPLICATE",
+              "MODEL_DELETE",
+              "MODEL_EXPLAIN",
+              "MODEL_PREPARATION_READY",
+              "MODEL_PREPARATION_FAILED",
+              "SCHEMA_CREATE",
+              "SCHEMA_RENAME",
+              "SCHEMA_ARCHIVE",
+              "SCHEMA_RESTORE",
+              "SCHEMA_DUPLICATE",
+              "SCHEMA_DELETE",
+              "SCHEMA_VERSION_CREATE",
+              "SCHEMA_VERSION_DELETE",
+              "SCHEMA_DRAFT_CREATE",
+              "SCHEMA_DRAFT_UPDATE",
+              "SCHEMA_DRAFT_MERGE",
+              "SCHEMA_DRAFT_PUBLISH",
+              "SCHEMA_DRAFT_DELETE",
+              "BOOKMARK_CREATE",
+              "BOOKMARK_MOVE",
+              "BOOKMARK_UPDATE",
+              "BOOKMARK_PUBLISH",
+              "BOOKMARK_UNPUBLISH",
+              "BOOKMARK_EXAMPLE_MARK",
+              "BOOKMARK_EXAMPLE_UNMARK",
+              "BOOKMARK_MODERATION_UNPUBLISH",
+              "BOOKMARK_DELETE",
+              "PREDICTION_RUN",
+              "PREDICTION_RUN_SAVE",
+              "PREDICTION_RUN_BATCH_CREATE",
+              "PREDICTION_RUN_DELETE",
+              "PREDICTION_RUN_BATCH_DELETE",
+              "PREDICTION_JOB_START",
+              "PREDICTION_JOB_CANCEL",
+              "PREDICTION_JOB_RETRY",
+              "PREDICTION_JOB_DELETE",
+              "PREDICTION_JOB_CLAIMED",
+              "PREDICTION_JOB_COMPLETED",
+              "PREDICTION_JOB_CANCELLED",
+              "REVIEW_CREATE",
+              "REVIEW_FEEDBACK_CREATE",
+              "REVIEW_FEEDBACK_UPDATE",
+              "REVIEW_SUBMIT",
+              "REVIEW_SUBMIT_PENDING",
+              "REVIEW_REOPEN",
+              "REVIEW_RESPONSE_DELETE",
+              "REVIEW_DELETE",
+              "PUBLIC_FEEDBACK_SAVE",
+              "PLUGIN_UPLOAD",
+              "PLUGIN_DELETE",
+              "USER_CREATE",
+              "USER_UPDATE",
+              "USER_PASSWORD_RESET",
+              "USER_DELETE",
+              "USER_PROFILE_UPDATE",
+              "USER_HANDLE_CHANGE",
+              "USER_AVATAR_REPLACE",
+              "USER_AVATAR_REMOVE",
+              "USER_PASSWORD_CHANGE",
+              "INFRASTRUCTURE_SERVICE_ACTION",
+              "TERMINAL_SESSION_OPEN",
+              "TERMINAL_SESSION_CLOSE",
+              "AUTH_LOGIN",
+              "AUTH_LOGIN_FAILED",
+              "AUTH_LOGOUT",
+              "AUTH_REGISTER",
+              "PURGE_REQUEST",
+              "PURGE_RETRY",
+              "PURGE_COMPLETED",
+              "PURGE_FAILED",
+              "STORAGE_DELETION_FAILED",
+              "STORAGE_DELETION_RETENTION_PRUNE",
+              "API_REQUEST_RETENTION_PRUNE",
+              "AUDIT_RETENTION_PRUNE",
+              "NOTIFICATION_RETENTION_PRUNE",
+              "SYSTEM_ALERT_RAISED",
+              "SYSTEM_ALERT_ESCALATED",
+              "SYSTEM_ALERT_RESOLVED",
+              "SYSTEM_ALERT_RETENTION_PRUNE"
+            ],
             "type": "string"
           },
           "actor": {
@@ -919,7 +1057,34 @@
             "format": "int64",
             "type": "integer"
           },
+          "ip": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "metadata": {
+            "additionalProperties": { },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "organizationId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "organizationName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "requestId": {
+            "format": "uuid",
             "type": [
               "string",
               "null"
@@ -932,6 +1097,32 @@
             ]
           },
           "targetType": {
+            "enum": [
+              "API_CLIENT",
+              "API_CLIENT_KEY",
+              "API_REQUEST_LOG",
+              "AUDIT_LOG",
+              "INFRASTRUCTURE_SERVICE",
+              "INVITATION",
+              "MODEL",
+              "NOTIFICATION_LOG",
+              "ORGANIZATION",
+              "ORGANIZATION_MEMBER",
+              "PLUGIN",
+              "PREDICTION_JOB",
+              "PREDICTION_RUN",
+              "PURGE_JOB",
+              "REVIEW",
+              "ROLE",
+              "SCHEMA",
+              "SCHEMA_BOOKMARK",
+              "SCHEMA_DRAFT",
+              "SCHEMA_VERSION",
+              "STORAGE_OBJECT",
+              "SYSTEM_ALERT",
+              "TERMINAL_SESSION",
+              "USER"
+            ],
             "type": "string"
           }
         },
@@ -940,9 +1131,41 @@
           "actor",
           "createdAt",
           "id",
+          "ip",
           "metadata",
+          "organizationId",
+          "organizationName",
+          "requestId",
           "targetId",
           "targetType"
+        ],
+        "type": "object"
+      },
+      "AuditEventPageDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuditEventDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size"
         ],
         "type": "object"
       },
@@ -969,15 +1192,13 @@
           "username": {
             "maxLength": 50,
             "minLength": 0,
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           }
         },
         "required": [
           "email",
-          "password"
+          "password",
+          "username"
         ],
         "type": "object"
       },
@@ -1110,6 +1331,25 @@
           "search",
           "size",
           "timeZone"
+        ],
+        "type": "object"
+      },
+      "ChangePasswordRequest": {
+        "properties": {
+          "currentPassword": {
+            "maxLength": 128,
+            "minLength": 0,
+            "type": "string"
+          },
+          "newPassword": {
+            "maxLength": 128,
+            "minLength": 10,
+            "type": "string"
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
         ],
         "type": "object"
       },
@@ -1595,6 +1835,47 @@
         ],
         "type": "object"
       },
+      "DeleteAccountRequest": {
+        "properties": {
+          "password": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "password"
+        ],
+        "type": "object"
+      },
+      "DeletePredictionRunsRequest": {
+        "properties": {
+          "runIds": {
+            "items": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "maxItems": 500,
+            "minItems": 0,
+            "type": "array"
+          }
+        },
+        "required": [
+          "runIds"
+        ],
+        "type": "object"
+      },
+      "DeletedPredictionRunsDto": {
+        "properties": {
+          "deleted": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "deleted"
+        ],
+        "type": "object"
+      },
       "Dependency": {
         "properties": {
           "message": {
@@ -1710,10 +1991,7 @@
             "type": "string"
           },
           "createdByName": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           },
           "publicId": {
             "type": "string"
@@ -2097,6 +2375,57 @@
         ],
         "type": "object"
       },
+      "ManagedReviewDto": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdByName": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "reviewers": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "runs": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "schemaName": {
+            "type": "string"
+          },
+          "schemaVersion": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "schemaVersionName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "createdAt",
+          "createdByName",
+          "expiresAt",
+          "id",
+          "reviewers",
+          "runs",
+          "schemaName",
+          "schemaVersion",
+          "schemaVersionName"
+        ],
+        "type": "object"
+      },
       "MemberCatalogDto": {
         "properties": {
           "hasNext": {
@@ -2176,17 +2505,11 @@
             "type": "object"
           },
           "sha256": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           },
           "sizeBytes": {
             "format": "int64",
-            "type": [
-              "integer",
-              "null"
-            ]
+            "type": "integer"
           }
         },
         "required": [
@@ -2264,7 +2587,10 @@
             ]
           },
           "updatedByEmail": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "updatedByName": {
             "type": "string"
@@ -2304,6 +2630,13 @@
           "name": {
             "type": "string"
           },
+          "organizationKind": {
+            "enum": [
+              "PERSONAL",
+              "TEAM"
+            ],
+            "type": "string"
+          },
           "organizationLogoUrl": {
             "type": [
               "string",
@@ -2340,6 +2673,7 @@
         "required": [
           "id",
           "name",
+          "organizationKind",
           "organizationLogoUrl",
           "organizationName",
           "publicId",
@@ -2360,6 +2694,85 @@
         },
         "required": [
           "versionId"
+        ],
+        "type": "object"
+      },
+      "NotificationDto": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "PREDICTION_JOB_COMPLETED",
+              "PREDICTION_JOB_COMPLETED_WITH_FAILURES",
+              "PREDICTION_JOB_STOPPED",
+              "PREDICTION_JOB_CANCELLED",
+              "MODEL_READY",
+              "MODEL_FAILED",
+              "INVITATION_RECEIVED",
+              "INVITATION_ACCEPTED",
+              "INVITATION_DECLINED",
+              "ORGANIZATION_JOINED",
+              "REVIEW_ASSIGNED",
+              "REVIEW_REOPENED",
+              "ORGANIZATION_PURGED",
+              "PURGE_COMPLETED",
+              "PURGE_FAILED",
+              "SYSTEM_ALERT_RAISED",
+              "SYSTEM_ALERT_ESCALATED",
+              "SYSTEM_ALERT_RESOLVED"
+            ],
+            "type": "string"
+          },
+          "organizationId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "payload": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "readAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "targetId": {
+            "type": "string"
+          },
+          "targetType": {
+            "enum": [
+              "PREDICTION_JOB",
+              "MODEL",
+              "INVITATION",
+              "ORGANIZATION",
+              "REVIEW",
+              "PURGE_JOB",
+              "SYSTEM_ALERT"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "kind",
+          "organizationId",
+          "payload",
+          "readAt",
+          "targetId",
+          "targetType"
         ],
         "type": "object"
       },
@@ -2530,7 +2943,10 @@
             ]
           },
           "updatedByEmail": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "updatedByName": {
             "type": "string"
@@ -2574,6 +2990,13 @@
             "format": "int64",
             "type": "integer"
           },
+          "kind": {
+            "enum": [
+              "PERSONAL",
+              "TEAM"
+            ],
+            "type": "string"
+          },
           "logoUrl": {
             "type": [
               "string",
@@ -2595,6 +3018,7 @@
           "createdAt",
           "description",
           "id",
+          "kind",
           "logoUrl",
           "name",
           "slug",
@@ -2634,6 +3058,12 @@
             "format": "int64",
             "type": "integer"
           },
+          "profileHandle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "roleDefinition": {
             "$ref": "#/components/schemas/RoleSummaryDto"
           },
@@ -2657,6 +3087,7 @@
           "fullName",
           "id",
           "organizationId",
+          "profileHandle",
           "roleDefinition",
           "status",
           "userId"
@@ -2692,6 +3123,12 @@
             "format": "int64",
             "type": "integer"
           },
+          "profileHandle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "role": {
             "$ref": "#/components/schemas/RoleSummaryDto"
           },
@@ -2716,9 +3153,41 @@
           "fullName",
           "id",
           "organizationId",
+          "profileHandle",
           "role",
           "status",
           "userId"
+        ],
+        "type": "object"
+      },
+      "OwnProfileDto": {
+        "properties": {
+          "inferences": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "models": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "plugins": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/PublicProfileDto"
+          },
+          "schemas": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "inferences",
+          "models",
+          "plugins",
+          "profile",
+          "schemas"
         ],
         "type": "object"
       },
@@ -2887,39 +3356,6 @@
         ],
         "type": "object"
       },
-      "PageDtoAuditEventDto": {
-        "properties": {
-          "hasNext": {
-            "type": "boolean"
-          },
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/AuditEventDto"
-            },
-            "type": "array"
-          },
-          "page": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "size": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "totalItems": {
-            "format": "int64",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "hasNext",
-          "items",
-          "page",
-          "size",
-          "totalItems"
-        ],
-        "type": "object"
-      },
       "PageDtoInferenceCatalogRowDto": {
         "properties": {
           "hasNext": {
@@ -3019,6 +3455,39 @@
         ],
         "type": "object"
       },
+      "PageDtoManagedReviewDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ManagedReviewDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
       "PageDtoModelDto": {
         "properties": {
           "hasNext": {
@@ -3060,6 +3529,39 @@
           "items": {
             "items": {
               "$ref": "#/components/schemas/ModeratedBookmarkDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoNotificationDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationDto"
             },
             "type": "array"
           },
@@ -3390,6 +3892,39 @@
           "items": {
             "items": {
               "$ref": "#/components/schemas/PublicRunDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoPurgeJobDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PurgeJobDto"
             },
             "type": "array"
           },
@@ -3848,12 +4383,6 @@
             "format": "date-time",
             "type": "string"
           },
-          "updatedByAvatarUrl": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "updatedByEmail": {
             "type": [
               "string",
@@ -3877,7 +4406,6 @@
           "sizeBytes",
           "source",
           "updatedAt",
-          "updatedByAvatarUrl",
           "updatedByEmail",
           "updatedByName"
         ],
@@ -4175,10 +4703,7 @@
             "type": "string"
           },
           "environmentKey": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           },
           "errorJson": {
             "additionalProperties": { },
@@ -4619,6 +5144,13 @@
           "name": {
             "type": "string"
           },
+          "organizationKind": {
+            "enum": [
+              "PERSONAL",
+              "TEAM"
+            ],
+            "type": "string"
+          },
           "organizationLogoUrl": {
             "type": [
               "string",
@@ -4632,6 +5164,12 @@
             "type": "string"
           },
           "publicationNote": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "publisherHandle": {
             "type": [
               "string",
               "null"
@@ -4655,10 +5193,12 @@
           "formSchema",
           "inputCount",
           "name",
+          "organizationKind",
           "organizationLogoUrl",
           "organizationName",
           "publicId",
           "publicationNote",
+          "publisherHandle",
           "reportCount",
           "updatedAt",
           "version"
@@ -4700,6 +5240,13 @@
           "name": {
             "type": "string"
           },
+          "organizationKind": {
+            "enum": [
+              "PERSONAL",
+              "TEAM"
+            ],
+            "type": "string"
+          },
           "organizationLogoUrl": {
             "type": [
               "string",
@@ -4711,6 +5258,12 @@
           },
           "publicId": {
             "type": "string"
+          },
+          "publisherHandle": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "reportCount": {
             "format": "int32",
@@ -4725,9 +5278,11 @@
           "description",
           "inputCount",
           "name",
+          "organizationKind",
           "organizationLogoUrl",
           "organizationName",
           "publicId",
+          "publisherHandle",
           "reportCount",
           "updatedAt"
         ],
@@ -4778,6 +5333,100 @@
         "required": [
           "values",
           "version"
+        ],
+        "type": "object"
+      },
+      "PublicProfileDto": {
+        "properties": {
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "company": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "handle": {
+            "type": "string"
+          },
+          "joinedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "links": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "organizations": {
+            "items": {
+              "$ref": "#/components/schemas/PublicProfileOrganizationDto"
+            },
+            "type": "array"
+          },
+          "pinned": {
+            "items": {
+              "$ref": "#/components/schemas/PublicBookmarkSummaryDto"
+            },
+            "type": "array"
+          },
+          "website": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "avatarUrl",
+          "bio",
+          "company",
+          "fullName",
+          "handle",
+          "joinedAt",
+          "links",
+          "location",
+          "organizations",
+          "pinned",
+          "website"
+        ],
+        "type": "object"
+      },
+      "PublicProfileOrganizationDto": {
+        "properties": {
+          "logoUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "logoUrl",
+          "name"
         ],
         "type": "object"
       },
@@ -4932,6 +5581,185 @@
         },
         "required": [
           "expectedDraftRevision"
+        ],
+        "type": "object"
+      },
+      "PurgeJobDto": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": "object"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "finishedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "phase": {
+            "enum": [
+              "PREPARE",
+              "JOBS",
+              "FEEDBACK",
+              "REVIEWS",
+              "RESULTS",
+              "RUNS",
+              "SCHEMA_CONTENT",
+              "VERSIONS",
+              "MODELS",
+              "PLUGINS",
+              "MEMBERS",
+              "ACCOUNT",
+              "FINISH"
+            ],
+            "type": "string"
+          },
+          "phaseCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "phaseNumber": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "requestedByLabel": {
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "ORGANIZATION",
+              "USER",
+              "SCHEMA",
+              "MODEL"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "QUEUED",
+              "RUNNING",
+              "COMPLETED",
+              "FAILED"
+            ],
+            "type": "string"
+          },
+          "targetId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "targetLabel": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "counts",
+          "createdAt",
+          "error",
+          "finishedAt",
+          "id",
+          "phase",
+          "phaseCount",
+          "phaseNumber",
+          "requestedByLabel",
+          "scope",
+          "status",
+          "targetId",
+          "targetLabel",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "PurgePreviewDto": {
+        "properties": {
+          "confirmation": {
+            "type": "string"
+          },
+          "counts": {
+            "additionalProperties": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": "object"
+          },
+          "refusal": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scope": {
+            "enum": [
+              "ORGANIZATION",
+              "USER",
+              "SCHEMA",
+              "MODEL"
+            ],
+            "type": "string"
+          },
+          "targetId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "targetLabel": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirmation",
+          "counts",
+          "refusal",
+          "scope",
+          "targetId",
+          "targetLabel"
+        ],
+        "type": "object"
+      },
+      "RequestPurgeRequest": {
+        "properties": {
+          "confirmation": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "ORGANIZATION",
+              "USER",
+              "SCHEMA",
+              "MODEL"
+            ],
+            "type": "string"
+          },
+          "targetId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "confirmation",
+          "scope",
+          "targetId"
         ],
         "type": "object"
       },
@@ -5354,9 +6182,6 @@
           "key": {
             "type": "string"
           },
-          "legacy": {
-            "type": "boolean"
-          },
           "packages": {
             "items": {
               "$ref": "#/components/schemas/EnvironmentPackageDto"
@@ -5372,7 +6197,6 @@
         },
         "required": [
           "key",
-          "legacy",
           "packages",
           "pythonVersion",
           "writerVersion"
@@ -5566,10 +6390,7 @@
             ]
           },
           "updatedByName": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           }
         },
         "required": [
@@ -5979,7 +6800,7 @@
             "type": "string"
           },
           "createdBy": {
-            "$ref": "#/components/schemas/SchemaReviewReviewerDto"
+            "$ref": "#/components/schemas/SchemaReviewCreatorDto"
           },
           "expired": {
             "type": "boolean"
@@ -6057,8 +6878,32 @@
         ],
         "type": "object"
       },
+      "SchemaReviewCreatorDto": {
+        "properties": {
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fullName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "fullName"
+        ],
+        "type": "object"
+      },
       "SchemaReviewReviewerDto": {
         "properties": {
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "email": {
             "type": "string"
           },
@@ -6071,6 +6916,7 @@
           }
         },
         "required": [
+          "avatarUrl",
           "email",
           "fullName",
           "id"
@@ -6328,6 +7174,180 @@
         ],
         "type": "object"
       },
+      "SystemAlertDto": {
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "label": {
+            "type": "string"
+          },
+          "latestValue": {
+            "format": "double",
+            "type": "number"
+          },
+          "raisedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "resolvedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "severity": {
+            "enum": [
+              "WARNING",
+              "CRITICAL"
+            ],
+            "type": "string"
+          },
+          "signal": {
+            "enum": [
+              "PREDICTION_ROWS_PENDING",
+              "PREDICTION_OLDEST_AGE",
+              "MODELS_PREPARING",
+              "RUNTIME_QUEUE",
+              "RUNTIME_REJECTIONS",
+              "STORAGE_DELETIONS_FAILED",
+              "HOST_CPU",
+              "HOST_RAM",
+              "HOST_DISK",
+              "OPS_AGENT",
+              "BACKUP_FAILED"
+            ],
+            "type": "string"
+          },
+          "threshold": {
+            "format": "double",
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "value": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "latestValue",
+          "raisedAt",
+          "resolvedAt",
+          "severity",
+          "signal",
+          "threshold",
+          "unit",
+          "value"
+        ],
+        "type": "object"
+      },
+      "SystemAlertSignalDto": {
+        "properties": {
+          "clearThreshold": {
+            "format": "double",
+            "type": "number"
+          },
+          "criticalThreshold": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "signal": {
+            "enum": [
+              "PREDICTION_ROWS_PENDING",
+              "PREDICTION_OLDEST_AGE",
+              "MODELS_PREPARING",
+              "RUNTIME_QUEUE",
+              "RUNTIME_REJECTIONS",
+              "STORAGE_DELETIONS_FAILED",
+              "HOST_CPU",
+              "HOST_RAM",
+              "HOST_DISK",
+              "OPS_AGENT",
+              "BACKUP_FAILED"
+            ],
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "value": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "warningThreshold": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "clearThreshold",
+          "criticalThreshold",
+          "label",
+          "signal",
+          "unit",
+          "value",
+          "warningThreshold"
+        ],
+        "type": "object"
+      },
+      "SystemAlertsDto": {
+        "properties": {
+          "open": {
+            "items": {
+              "$ref": "#/components/schemas/SystemAlertDto"
+            },
+            "type": "array"
+          },
+          "opsAgentReporting": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "recent": {
+            "items": {
+              "$ref": "#/components/schemas/SystemAlertDto"
+            },
+            "type": "array"
+          },
+          "sampledAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "signals": {
+            "items": {
+              "$ref": "#/components/schemas/SystemAlertSignalDto"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "open",
+          "opsAgentReporting",
+          "recent",
+          "sampledAt",
+          "signals"
+        ],
+        "type": "object"
+      },
       "TerminalSessionRequest": {
         "properties": {
           "cols": {
@@ -6411,6 +7431,18 @@
         ],
         "type": "object"
       },
+      "UnreadNotificationCountDto": {
+        "properties": {
+          "count": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count"
+        ],
+        "type": "object"
+      },
       "UpdateApiClientRequest": {
         "properties": {
           "description": {
@@ -6482,6 +7514,23 @@
         "required": [
           "feedbackId",
           "value"
+        ],
+        "type": "object"
+      },
+      "UpdateProfilePinsRequest": {
+        "properties": {
+          "publicIds": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 6,
+            "minItems": 0,
+            "type": "array"
+          }
+        },
+        "required": [
+          "publicIds"
         ],
         "type": "object"
       },
@@ -6575,9 +7624,97 @@
         ],
         "type": "object"
       },
+      "UpdateUserProfileRequest": {
+        "properties": {
+          "bio": {
+            "maxLength": 280,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "company": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fullName": {
+            "maxLength": 150,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "handle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "links": {
+            "items": {
+              "maxLength": 255,
+              "minLength": 0,
+              "type": "string"
+            },
+            "maxItems": 4,
+            "minItems": 0,
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "location": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "profilePublic": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "profileShowsOrganizations": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "website": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
       "UserDto": {
         "properties": {
           "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "company": {
             "type": [
               "string",
               "null"
@@ -6599,6 +7736,24 @@
             "format": "int64",
             "type": "integer"
           },
+          "links": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "profilePublic": {
+            "type": "boolean"
+          },
+          "profileShowsOrganizations": {
+            "type": "boolean"
+          },
           "systemRole": {
             "enum": [
               "USER",
@@ -6608,17 +7763,30 @@
           },
           "userName": {
             "type": "string"
+          },
+          "website": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
           "avatarUrl",
+          "bio",
+          "company",
           "createdAt",
           "email",
           "enabled",
           "fullName",
           "id",
+          "links",
+          "location",
+          "profilePublic",
+          "profileShowsOrganizations",
           "systemRole",
-          "userName"
+          "userName",
+          "website"
         ],
         "type": "object"
       },
@@ -6900,6 +8068,26 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/admin/alerts": {
+      "get": {
+        "operationId": "systemAlerts",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemAlertsDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "system-alert-controller"
+        ]
+      }
+    },
     "/api/admin/api-traffic/clients": {
       "get": {
         "operationId": "listApiTrafficClients",
@@ -7172,6 +8360,167 @@
         ]
       }
     },
+    "/api/admin/audit-events/catalog": {
+      "get": {
+        "operationId": "platformAuditEventCatalog",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "actorKind",
+            "required": false,
+            "schema": {
+              "enum": [
+                "USER",
+                "SYSTEM",
+                "API_CLIENT",
+                "VISITOR"
+              ],
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "actor",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "targetType",
+            "required": false,
+            "schema": {
+              "enum": [
+                "API_CLIENT",
+                "API_CLIENT_KEY",
+                "API_REQUEST_LOG",
+                "AUDIT_LOG",
+                "INFRASTRUCTURE_SERVICE",
+                "INVITATION",
+                "MODEL",
+                "NOTIFICATION_LOG",
+                "ORGANIZATION",
+                "ORGANIZATION_MEMBER",
+                "PLUGIN",
+                "PREDICTION_JOB",
+                "PREDICTION_RUN",
+                "PURGE_JOB",
+                "REVIEW",
+                "ROLE",
+                "SCHEMA",
+                "SCHEMA_BOOKMARK",
+                "SCHEMA_DRAFT",
+                "SCHEMA_VERSION",
+                "STORAGE_OBJECT",
+                "SYSTEM_ALERT",
+                "TERMINAL_SESSION",
+                "USER"
+              ],
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "organization",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditEventPageDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "audit-log-controller"
+        ]
+      }
+    },
     "/api/admin/infrastructure/overview": {
       "get": {
         "operationId": "overview",
@@ -7320,7 +8669,7 @@
     },
     "/api/admin/public-bookmarks": {
       "get": {
-        "operationId": "list_11",
+        "operationId": "list_12",
         "parameters": [
           {
             "in": "query",
@@ -7406,6 +8755,174 @@
         },
         "tags": [
           "public-bookmark-moderation-controller"
+        ]
+      }
+    },
+    "/api/admin/purges": {
+      "get": {
+        "operationId": "list_7",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoPurgeJobDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "purge-controller"
+        ]
+      },
+      "post": {
+        "operationId": "request",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestPurgeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurgeJobDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "purge-controller"
+        ]
+      }
+    },
+    "/api/admin/purges/preview": {
+      "get": {
+        "operationId": "preview_1",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "scope",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ORGANIZATION",
+                "USER",
+                "SCHEMA",
+                "MODEL"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "targetId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurgePreviewDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "purge-controller"
+        ]
+      }
+    },
+    "/api/admin/purges/{jobId}/retry": {
+      "post": {
+        "operationId": "retry_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurgeJobDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "purge-controller"
         ]
       }
     },
@@ -7571,28 +9088,6 @@
       }
     },
     "/api/admin/users/{id}": {
-      "delete": {
-        "operationId": "delete_4",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "format": "int64",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        },
-        "tags": [
-          "admin-user-controller"
-        ]
-      },
       "patch": {
         "operationId": "update_3",
         "parameters": [
@@ -8873,6 +10368,164 @@
         ]
       }
     },
+    "/api/notifications/catalog": {
+      "get": {
+        "operationId": "catalog",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoNotificationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "notification-controller"
+        ]
+      }
+    },
+    "/api/notifications/read": {
+      "delete": {
+        "operationId": "deleteRead",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "notification-controller"
+        ]
+      }
+    },
+    "/api/notifications/read-all": {
+      "post": {
+        "operationId": "markAllRead",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "notification-controller"
+        ]
+      }
+    },
+    "/api/notifications/unread-count": {
+      "get": {
+        "operationId": "unreadCount",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadNotificationCountDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "notification-controller"
+        ]
+      }
+    },
+    "/api/notifications/{notificationId}": {
+      "delete": {
+        "operationId": "delete_7",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notificationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "notification-controller"
+        ]
+      }
+    },
+    "/api/notifications/{notificationId}/read": {
+      "post": {
+        "operationId": "markRead",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notificationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "notification-controller"
+        ]
+      }
+    },
     "/api/organizations": {
       "get": {
         "operationId": "listOrganizations",
@@ -9161,6 +10814,95 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "actorKind",
+            "required": false,
+            "schema": {
+              "enum": [
+                "USER",
+                "SYSTEM",
+                "API_CLIENT",
+                "VISITOR"
+              ],
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "actor",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "targetType",
+            "required": false,
+            "schema": {
+              "enum": [
+                "API_CLIENT",
+                "API_CLIENT_KEY",
+                "API_REQUEST_LOG",
+                "AUDIT_LOG",
+                "INFRASTRUCTURE_SERVICE",
+                "INVITATION",
+                "MODEL",
+                "NOTIFICATION_LOG",
+                "ORGANIZATION",
+                "ORGANIZATION_MEMBER",
+                "PLUGIN",
+                "PREDICTION_JOB",
+                "PREDICTION_RUN",
+                "PURGE_JOB",
+                "REVIEW",
+                "ROLE",
+                "SCHEMA",
+                "SCHEMA_BOOKMARK",
+                "SCHEMA_DRAFT",
+                "SCHEMA_VERSION",
+                "STORAGE_OBJECT",
+                "SYSTEM_ALERT",
+                "TERMINAL_SESSION",
+                "USER"
+              ],
+              "type": [
+                "string",
+                "null"
+              ]
+            }
           }
         ],
         "responses": {
@@ -9168,7 +10910,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageDtoAuditEventDto"
+                  "$ref": "#/components/schemas/AuditEventPageDto"
                 }
               }
             },
@@ -9542,7 +11284,7 @@
     },
     "/api/organizations/{organizationId}/logo": {
       "delete": {
-        "operationId": "remove",
+        "operationId": "remove_1",
         "parameters": [
           {
             "in": "path",
@@ -9571,7 +11313,7 @@
         ]
       },
       "put": {
-        "operationId": "replace",
+        "operationId": "replace_1",
         "parameters": [
           {
             "in": "path",
@@ -10704,7 +12446,7 @@
     },
     "/api/plugins/runtime": {
       "get": {
-        "operationId": "list_10",
+        "operationId": "list_11",
         "responses": {
           "200": {
             "content": {
@@ -10746,6 +12488,28 @@
       }
     },
     "/api/prediction-jobs/{jobId}": {
+      "delete": {
+        "operationId": "delete_5",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-job-controller"
+        ]
+      },
       "get": {
         "operationId": "get_7",
         "parameters": [
@@ -10874,7 +12638,7 @@
     },
     "/api/prediction-result-feedback": {
       "get": {
-        "operationId": "list_9",
+        "operationId": "list_10",
         "parameters": [
           {
             "in": "query",
@@ -10974,6 +12738,36 @@
         },
         "tags": [
           "prediction-result-feedback-controller"
+        ]
+      }
+    },
+    "/api/prediction-runs/batch-delete": {
+      "post": {
+        "operationId": "deleteMany",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeletePredictionRunsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedPredictionRunsDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-run-controller"
         ]
       }
     },
@@ -11102,7 +12896,7 @@
     },
     "/api/prediction-runs/{runId}": {
       "delete": {
-        "operationId": "delete_5",
+        "operationId": "delete_4",
         "parameters": [
           {
             "in": "path",
@@ -11186,7 +12980,7 @@
     },
     "/api/public/bookmarks": {
       "get": {
-        "operationId": "list_8",
+        "operationId": "list_9",
         "parameters": [
           {
             "in": "query",
@@ -11707,7 +13501,7 @@
     },
     "/api/public/organizations/{organizationId}/logo": {
       "get": {
-        "operationId": "read",
+        "operationId": "read_1",
         "parameters": [
           {
             "in": "path",
@@ -11734,6 +13528,118 @@
         },
         "tags": [
           "organization-logo-controller"
+        ]
+      }
+    },
+    "/api/public/users/{handle}": {
+      "get": {
+        "operationId": "profile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "handle",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicProfileDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-profile-controller"
+        ]
+      }
+    },
+    "/api/public/users/{handle}/bookmarks": {
+      "get": {
+        "operationId": "bookmarks",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "handle",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoPublicBookmarkSummaryDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-profile-controller"
+        ]
+      }
+    },
+    "/api/public/users/{userId}/avatar": {
+      "get": {
+        "operationId": "read",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "format": "byte",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "user-avatar-controller"
         ]
       }
     },
@@ -11905,6 +13811,28 @@
       }
     },
     "/api/schema-bookmarks/{bookmarkId}": {
+      "delete": {
+        "operationId": "deleteBookmark",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-content-deletion-controller"
+        ]
+      },
       "get": {
         "operationId": "get_1",
         "parameters": [
@@ -12015,7 +13943,7 @@
     },
     "/api/schema-bookmarks/{bookmarkId}/examples": {
       "get": {
-        "operationId": "list_7",
+        "operationId": "list_8",
         "parameters": [
           {
             "in": "path",
@@ -12521,6 +14449,28 @@
       }
     },
     "/api/schema-drafts/{draftId}": {
+      "delete": {
+        "operationId": "deleteDraft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draftId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-content-deletion-controller"
+        ]
+      },
       "get": {
         "operationId": "get",
         "parameters": [
@@ -13175,6 +15125,93 @@
         ]
       }
     },
+    "/api/schema-reviews/managed/catalog": {
+      "get": {
+        "operationId": "managedCatalog",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoManagedReviewDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-catalog-controller"
+        ]
+      }
+    },
+    "/api/schema-reviews/{reviewId}": {
+      "delete": {
+        "operationId": "delete_6",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reviewId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-controller"
+        ]
+      }
+    },
     "/api/schema-reviews/{reviewId}/runs/{reviewRunId}": {
       "get": {
         "operationId": "detail",
@@ -13421,6 +15458,28 @@
       }
     },
     "/api/schema-versions/{versionId}": {
+      "delete": {
+        "operationId": "deleteVersion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "versionId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-content-deletion-controller"
+        ]
+      },
       "get": {
         "operationId": "get_3",
         "parameters": [
@@ -14305,6 +16364,27 @@
       }
     },
     "/api/users/me": {
+      "delete": {
+        "operationId": "deleteAccount",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "user-controller"
+        ]
+      },
       "get": {
         "operationId": "getProfile",
         "responses": {
@@ -14313,6 +16393,214 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "user-controller"
+        ]
+      },
+      "patch": {
+        "operationId": "updateProfile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "user-controller"
+        ]
+      }
+    },
+    "/api/users/me/avatar": {
+      "delete": {
+        "operationId": "remove",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "user-avatar-controller"
+        ]
+      },
+      "put": {
+        "operationId": "replace",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "avatar": {
+                    "format": "binary",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "avatar"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "user-avatar-controller"
+        ]
+      }
+    },
+    "/api/users/me/bookmarks": {
+      "get": {
+        "operationId": "ownBookmarks",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "default": "",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoPublicBookmarkSummaryDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "user-controller"
+        ]
+      }
+    },
+    "/api/users/me/password": {
+      "post": {
+        "operationId": "change",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "password-change-controller"
+        ]
+      }
+    },
+    "/api/users/me/pins": {
+      "put": {
+        "operationId": "replacePins",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfilePinsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnProfileDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "user-controller"
+        ]
+      }
+    },
+    "/api/users/me/profile": {
+      "get": {
+        "operationId": "ownProfile",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnProfileDto"
                 }
               }
             },

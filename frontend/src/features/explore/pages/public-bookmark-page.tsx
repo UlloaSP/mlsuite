@@ -4,14 +4,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router";
+import { getRouteApi } from "@tanstack/react-router";
 import {
   isPublicBookmarkMissing,
   publicBookmarkQueryOptions,
 } from "@/features/explore/api/public-bookmark-api";
 import { PublicBookmarkPanel } from "@/features/explore/components/PublicBookmarkPanel";
 import { PublicationNote } from "@/features/explore/components/PublicationNote";
-import { PublicFormSize } from "@/features/explore/components/PublicFormSize";
+import { PublicFormSize } from "@/capabilities/public-bookmarks/PublicFormSize";
+import { PublisherName } from "@/capabilities/public-bookmarks/PublisherName";
 import { WorkspaceBookmarkLink } from "@/features/explore/components/WorkspaceBookmarkLink";
 import { formatDate } from "@/shared/lib/date-time";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -20,11 +21,13 @@ import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { cx } from "@/shared/ui/cx";
-import { OrganizationMark } from "@/shared/ui/OrganizationMark";
+import { PublisherMark } from "@/shared/ui/PublisherMark";
 import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 
 const FACT = "inline-flex items-center gap-1.5";
+
+const route = getRouteApi("/session-frame/explore/$publicId");
 
 /**
  * A published bookmark, the same for anonymous visitors and members of any organization:
@@ -36,7 +39,7 @@ const FACT = "inline-flex items-center gap-1.5";
  * it, on narrow ones the page scrolls.
  */
 export function PublicBookmarkPage() {
-  const { publicId = "" } = useParams<{ publicId: string }>();
+  const { publicId } = route.useParams();
   const query = useQuery(publicBookmarkQueryOptions(publicId));
   const bookmark = query.data;
 
@@ -80,12 +83,16 @@ export function PublicBookmarkPage() {
         <dl className="flex shrink-0 flex-wrap items-center gap-x-5 gap-y-2 text-sm text-fg-secondary">
           <div className={FACT}>
             <dt className="sr-only">Published by</dt>
-            <OrganizationMark
+            <PublisherMark
               className="size-5 rounded-sm"
               iconSize={14}
+              kind={bookmark.organizationKind}
               logoUrl={bookmark.organizationLogoUrl}
+              name={bookmark.organizationName}
             />
-            <dd>{bookmark.organizationName}</dd>
+            <dd className="min-w-0">
+              <PublisherName handle={bookmark.publisherHandle} name={bookmark.organizationName} />
+            </dd>
           </div>
           <PublicFormSize inputCount={bookmark.inputCount} reportCount={bookmark.reportCount} />
           <div className={FACT}>

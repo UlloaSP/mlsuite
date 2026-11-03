@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useRef, useState } from "react";
-import { useNavigate } from "react-router";
-import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
+import { toast } from "@/shared/ui/toast";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppFileDropArea } from "@/shared/ui/AppFileDropArea";
@@ -97,7 +97,7 @@ export function CreateModelPage() {
             : `MLsuite is preparing the environments of ${preparing} new models; each can run once it is ready.`,
       });
     }
-    void navigate("/models");
+    void navigate({ to: "/models" });
   };
 
   const saveOne = async (id: number) => {

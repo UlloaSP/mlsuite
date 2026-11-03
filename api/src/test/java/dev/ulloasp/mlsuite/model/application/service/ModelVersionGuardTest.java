@@ -13,23 +13,17 @@ import dev.ulloasp.mlsuite.model.domain.model.Model;
 class ModelVersionGuardTest {
 
     @Test
-    void compatibilityWindowAcceptsAnOlderClientWithoutAVersion() {
-        Model model = modelAtVersion(4L);
-
-        assertDoesNotThrow(() -> ModelVersionGuard.requireCurrent(model, null, false));
-    }
-
-    @Test
-    void strictModeRequiresAVersionAndStillRejectsAStaleOne() {
+    void aChangeNeedsTheCurrentVersion() {
         Model model = modelAtVersion(4L);
 
         var missing = assertThrows(ResponseStatusException.class,
-                () -> ModelVersionGuard.requireCurrent(model, null, true));
+                () -> ModelVersionGuard.requireCurrent(model, null));
         var stale = assertThrows(ResponseStatusException.class,
-                () -> ModelVersionGuard.requireCurrent(model, 3L, true));
+                () -> ModelVersionGuard.requireCurrent(model, 3L));
 
         assertEquals(HttpStatus.PRECONDITION_REQUIRED, missing.getStatusCode());
         assertEquals(HttpStatus.CONFLICT, stale.getStatusCode());
+        assertDoesNotThrow(() -> ModelVersionGuard.requireCurrent(model, 4L));
     }
 
     private Model modelAtVersion(long version) {

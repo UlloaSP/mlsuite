@@ -5,10 +5,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Plus, Search } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
-import { toast } from "sonner";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
+import { toast } from "@/shared/ui/toast";
 import {
-  useDeleteAdminUser,
   useResetAdminUserPassword,
   useUpdateAdminUser,
 } from "@/features/admin/api/admin-user.mutations";
@@ -40,15 +39,12 @@ const SORT_OPTIONS: Array<{ value: UserSortMode; label: string }> = [
   { value: "oldest", label: "Oldest" },
 ];
 
+const route = getRouteApi("/protected/app/superadmin/admin/users");
+
 export function AdminUsersPage() {
   const navigate = useNavigate();
   const { data: user, error } = useUser();
-  const controls = useCatalogControls<UserRoleFilter, UserSortMode>({
-    filters: FILTERS.map(({ value }) => value),
-    initialFilter: "all",
-    initialSort: "current",
-    sorts: SORT_OPTIONS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const pageQuery = useAdminUserCatalog({
     role: controls.filter,
     search: controls.search,
@@ -57,10 +53,8 @@ export function AdminUsersPage() {
   });
   const updateUser = useUpdateAdminUser();
   const resetPassword = useResetAdminUserPassword();
-  const deleteUser = useDeleteAdminUser();
   const [resetTarget, setResetTarget] = useState<ResetTarget>(null);
-  const isActionPending =
-    updateUser.isPending || resetPassword.isPending || deleteUser.isPending || pageQuery.isLoading;
+  const isActionPending = updateUser.isPending || resetPassword.isPending || pageQuery.isLoading;
 
   const update = async (
     row: AdminUserDto,
@@ -69,11 +63,6 @@ export function AdminUsersPage() {
     // Failures propagate: the tile shows them inline in a dialog, or as a toast for the switch.
     await updateUser.mutateAsync({ id: row.id, payload });
     toast.success("User updated.");
-  };
-  const remove = async (row: AdminUserDto) => {
-    // Failures propagate to the delete dialog, which stays open and shows them.
-    await deleteUser.mutateAsync(row.id);
-    toast.success("User deleted.");
   };
   const submitResetPassword = (nextPassword: string) => {
     if (!resetTarget) return;
@@ -99,7 +88,7 @@ export function AdminUsersPage() {
           description: "Search, filter, and maintain platform users.",
           breadcrumbs: [{ label: "Users" }],
           actions: (
-            <AppButton type="button" onClick={() => navigate("/admin/users/create")}>
+            <AppButton type="button" onClick={() => navigate({ to: "/admin/users/create" })}>
               <Plus size={16} />
               New user
             </AppButton>
@@ -123,7 +112,6 @@ export function AdminUsersPage() {
             key={row.id}
             disabled={isActionPending}
             item={row}
-            onDelete={() => remove(row)}
             onResetPassword={() => setResetTarget({ id: row.id, fullName: row.fullName })}
             onUpdate={(payload) => update(row, payload)}
           />

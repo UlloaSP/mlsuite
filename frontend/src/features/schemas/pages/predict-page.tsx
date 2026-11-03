@@ -1,3 +1,4 @@
+import { getRouteApi } from "@tanstack/react-router";
 import { usePredictCatalog } from "@/features/schemas/api/schema-catalog-queries";
 /*
 SPDX-License-Identifier: MIT
@@ -5,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Play } from "lucide-react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { PredictBookmarkCard } from "@/features/schemas/components/PredictBookmarkCard";
 import { appButtonClass } from "@/shared/ui/button-styles";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
@@ -26,14 +27,11 @@ const SORTS: Array<{ value: LauncherSort; label: string }> = [
   { value: "recent", label: "Recently run" },
 ];
 
+const route = getRouteApi("/protected/app/can-view-models/predict");
+
 /** Every bookmark of the organization, ready to run: one click opens its workspace. */
 export function PredictPage() {
-  const controls = useCatalogControls<LauncherFilter, LauncherSort>({
-    filters: FILTERS.map(({ value }) => value),
-    initialFilter: "all",
-    initialSort: "schema",
-    sorts: SORTS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const query = usePredictCatalog({
     search: controls.search,
     filter: controls.filter,
@@ -63,10 +61,10 @@ export function PredictPage() {
       filteredEmptyTitle="No matching bookmarks"
       emptyDescription="Bookmark a published snapshot of a schema to run it from here."
       emptyAction={
-        <Link to="/schemas" className={appButtonClass()}>
+        <AppLink to="/schemas" className={appButtonClass()}>
           <SchemasIcon size={16} />
           Open schemas
-        </Link>
+        </AppLink>
       }
       filteredEmptyDescription="Try another search or show every bookmark."
       renderItem={(bookmark) => <PredictBookmarkCard key={bookmark.id} bookmark={bookmark} />}

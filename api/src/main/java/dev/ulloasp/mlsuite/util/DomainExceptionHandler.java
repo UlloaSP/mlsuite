@@ -6,8 +6,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 package dev.ulloasp.mlsuite.util;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -21,12 +23,15 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.ErrorResponse;
+import org.springframework.web.HttpMediaTypeException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
@@ -34,10 +39,12 @@ import dev.ulloasp.mlsuite.model.domain.exception.ModelAlreadyExistsException;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelNotFromUserException;
 import dev.ulloasp.mlsuite.invitation.domain.exception.InvitationNotFoundException;
+import dev.ulloasp.mlsuite.organization.domain.exception.HandleTakenException;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
-import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAlreadyExistsException;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
+import dev.ulloasp.mlsuite.organization.domain.exception.PersonalAccountException;
 import dev.ulloasp.mlsuite.admin.infrastructure.OpsAgentException;
+import dev.ulloasp.mlsuite.notification.domain.exception.NotificationNotFoundException;
 import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicRunLimitDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaMappingErrorDto;
@@ -52,6 +59,9 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestControllerAdvice
 public class DomainExceptionHandler {
 
+    private static final Set<String> HANDLE_CONSTRAINTS = Set.of("uq_app_user_username", "uq_organization_slug");
+    private static final String UNSERVED_REQUEST = "This endpoint does not accept this request.";
+
     // ---- 404 NOT FOUND ----
 
     @ExceptionHandler({
@@ -59,7 +69,8 @@ public class DomainExceptionHandler {
             PluginNotFoundException.class,
             UserDoesNotExistException.class,
             OrganizationNotFoundException.class,
-            InvitationNotFoundException.class
+            InvitationNotFoundException.class,
+            NotificationNotFoundException.class
     })
     public ResponseEntity<ErrorDto> handleNotFound(RuntimeException ex, HttpServletRequest req) {
         return respond(HttpStatus.NOT_FOUND, ex, req);
@@ -70,7 +81,8 @@ public class DomainExceptionHandler {
     @ExceptionHandler({
             ModelAlreadyExistsException.class,
             UserAlreadyExistsException.class,
-            OrganizationAlreadyExistsException.class,
+            HandleTakenException.class,
+            PersonalAccountException.class,
             OptimisticLockingFailureException.class
     })
     public ResponseEntity<ErrorDto> handleConflict(RuntimeException ex, HttpServletRequest req) {
@@ -82,10 +94,16 @@ public class DomainExceptionHandler {
             DataIntegrityViolationException ex,
             HttpServletRequest req) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ErrorDto.of(
-                        HttpStatus.CONFLICT.value(),
-                        "Request conflicts with the current persisted state.",
-                        req.getRequestURI()));
+                .body(ErrorDto.of(HttpStatus.CONFLICT.value(), dataConflictMessage(ex), req.getRequestURI()));
+    }
+
+    /** Two requests can pass the check for a free handle at once; the database then decides between them. */
+    private static String dataConflictMessage(DataIntegrityViolationException ex) {
+        if (ex.getCause() instanceof ConstraintViolationException violation
+                && HANDLE_CONSTRAINTS.contains(String.valueOf(violation.getConstraintName()))) {
+            return "That handle was just taken.";
+        }
+        return "Request conflicts with the current persisted state.";
     }
 
     // ---- 403 FORBIDDEN ----
@@ -163,12 +181,24 @@ public class DomainExceptionHandler {
                         req.getRequestURI()));
     }
 
-    /** A route or method the API does not serve is answered as such, not as a server failure. */
-    @ExceptionHandler({ NoResourceFoundException.class, HttpRequestMethodNotSupportedException.class })
-    public ResponseEntity<ErrorDto> handleUnservedRoute(ErrorResponse ex, HttpServletRequest req) {
+    /** A request no endpoint can take (route, method, media type, a missing part) is not a server failure. */
+    @ExceptionHandler({
+            NoResourceFoundException.class,
+            HttpRequestMethodNotSupportedException.class,
+            HttpMediaTypeException.class,
+            ServletRequestBindingException.class
+    })
+    public ResponseEntity<ErrorDto> handleUnservedRequest(ErrorResponse ex, HttpServletRequest req) {
         HttpStatusCode status = ex.getStatusCode();
         return ResponseEntity.status(status)
-                .body(ErrorDto.of(status.value(), "This endpoint does not accept this request.", req.getRequestURI()));
+                .body(ErrorDto.of(status.value(), UNSERVED_REQUEST, req.getRequestURI()));
+    }
+
+    /** Multipart parsing failed, or the request is not multipart at all; a size limit has its own handler. */
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<ErrorDto> handleUnreadableMultipart(MultipartException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorDto.of(HttpStatus.BAD_REQUEST.value(), UNSERVED_REQUEST, req.getRequestURI()));
     }
 
     // ---- Analyzer (dynamic status) ----

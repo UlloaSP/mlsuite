@@ -17,7 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
@@ -77,7 +77,7 @@ class ReviewScopedFeedbackHttpTest extends PublicPredictionFixture {
         List<PredictionResultFeedback> left = answers();
         assertEquals(1, left.size());
         assertEquals(second, left.get(0).getId());
-        assertEquals("low", left.get(0).getValue().get("output-feedback-assessment").asText());
+        assertEquals("low", left.get(0).getValue().get("output-feedback-assessment").asString());
         // The removed answer is not gone from the record.
         JsonNode history = history();
         assertEquals(List.of("CREATED", "CREATED", "DELETED"), changes(history));
@@ -85,11 +85,11 @@ class ReviewScopedFeedbackHttpTest extends PublicPredictionFixture {
         assertEquals(owner.getId(), history.get(2).get("changedByUserId").asLong());
         assertEquals(reviews.get(0).getId(), history.get(2).get("reviewId").asLong());
         // Who answered, who removed it and in which review, named as people tell them apart.
-        assertEquals(owner.getFullName(), history.get(2).get("userName").asText());
-        assertEquals(owner.getFullName(), history.get(2).get("changedByName").asText());
-        assertEquals(reviews.get(0).getPublicId(), history.get(2).at("/review/publicId").asText());
-        assertEquals(reviews.get(1).getPublicId(), history.get(1).at("/review/publicId").asText());
-        assertEquals(owner.getFullName(), history.get(2).at("/review/createdByName").asText());
+        assertEquals(owner.getFullName(), history.get(2).get("userName").asString());
+        assertEquals(owner.getFullName(), history.get(2).get("changedByName").asString());
+        assertEquals(reviews.get(0).getPublicId(), history.get(2).at("/review/publicId").asString());
+        assertEquals(reviews.get(1).getPublicId(), history.get(1).at("/review/publicId").asString());
+        assertEquals(owner.getFullName(), history.get(2).at("/review/createdByName").asString());
     }
 
     @Test
@@ -105,8 +105,8 @@ class ReviewScopedFeedbackHttpTest extends PublicPredictionFixture {
 
         JsonNode history = history();
         assertEquals(List.of("CREATED", "UPDATED"), changes(history));
-        assertEquals("high", history.get(0).at("/value/output-feedback-assessment").asText());
-        assertEquals("low", history.get(1).at("/value/output-feedback-assessment").asText());
+        assertEquals("high", history.get(0).at("/value/output-feedback-assessment").asString());
+        assertEquals("low", history.get(1).at("/value/output-feedback-assessment").asString());
     }
 
     @Test
@@ -154,7 +154,7 @@ class ReviewScopedFeedbackHttpTest extends PublicPredictionFixture {
 
     private static List<String> changes(JsonNode history) {
         List<String> changes = new ArrayList<>();
-        history.forEach(revision -> changes.add(revision.get("change").asText()));
+        history.forEach(revision -> changes.add(revision.get("change").asString()));
         return changes;
     }
 }

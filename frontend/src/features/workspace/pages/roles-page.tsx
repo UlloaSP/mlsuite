@@ -2,14 +2,14 @@ import { useRoleCatalogMetadata } from "@/features/workspace/api/workspace-catal
 import { PermissionCatalog } from "@/features/workspace/components/PermissionCatalog";
 import { Copy, Plus } from "lucide-react";
 import { useState } from "react";
-import { useParams } from "react-router";
+import { getRouteApi } from "@tanstack/react-router";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppTabs } from "@/shared/ui/AppTabs";
 import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
-import { useUrlFilters } from "@/shared/lib/use-url-filters";
+import { useSearchUpdate } from "@/shared/lib/use-search-update";
 import { useRoleMutations } from "@/features/workspace/api/role.mutations";
 import { RoleDetailsDialog } from "@/features/workspace/components/RoleDetailsDialog";
 import { RoleForm } from "@/features/workspace/components/RoleForm";
@@ -20,8 +20,12 @@ import { RolesCatalog, type RolesTab } from "@/features/workspace/components/Rol
 import type { RoleDefinitionDto, RoleTemplateDto } from "@/shared/api/openapi.gen";
 
 // react-doctor-disable-next-line react-doctor/prefer-useReducer -- Dialog, tab, and search state are separate controls with separate lifetimes.
+const route = getRouteApi(
+  "/protected/app/team-organization/workspace/organizations/$organizationId/roles",
+);
+
 export function RolesPage() {
-  const { organizationId = "" } = useParams();
+  const { organizationId } = route.useParams();
   const id = Number(organizationId);
   const dashboard = useOrganizationAdminDashboardQuery(id);
   const permissions = dashboard.data?.permissions;
@@ -32,12 +36,11 @@ export function RolesPage() {
   );
   const rolesQuery = useRoleCatalogMetadata(id, canAccessRoles);
   const data = rolesQuery.data;
-  const tabFilter = useUrlFilters({ tab: "roles", q: "" });
-  const requestedTab = tabFilter.values.tab;
-  const tab: RolesTab =
-    requestedTab === "templates" || requestedTab === "permissions" ? requestedTab : "roles";
+  const search = route.useSearch();
+  const updateSearch = useSearchUpdate<typeof search>();
+  const { tab } = search;
   // Each tab searches a different catalog, so switching tabs clears the search.
-  const setTab = (value: RolesTab) => tabFilter.setFilters({ tab: value, q: "" });
+  const setTab = (value: RolesTab) => updateSearch({ tab: value, q: "" });
   const [selected, setSelected] = useState<RoleDefinitionDto | null>(null);
   const [editing, setEditing] = useState<RoleDefinitionDto | null>(null);
   const [template, setTemplate] = useState<RoleTemplateDto | null>(null);

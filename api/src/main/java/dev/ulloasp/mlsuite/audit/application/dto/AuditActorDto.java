@@ -1,11 +1,13 @@
 package dev.ulloasp.mlsuite.audit.application.dto;
 
-import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActorKind;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditEvent;
+import jakarta.annotation.Nullable;
 
-/** Who acted: a member, or a platform administrator acting on the organization's resources. */
-public record AuditActorDto(Long id, String name) {
+/** Who acted, by the name the entry kept: a person, the system, an API client or a visitor. */
+public record AuditActorDto(AuditActorKind kind, @Nullable Long id, String name) {
 
-    public static AuditActorDto from(User user) {
-        return new AuditActorDto(user.getId(), user.getFullName());
+    public static AuditActorDto from(AuditEvent event) {
+        return new AuditActorDto(event.getActorKind(), event.getActorUserId(), event.getActorLabel());
     }
 }

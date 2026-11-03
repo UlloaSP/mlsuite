@@ -54,7 +54,7 @@ public class WorkspaceContextService implements WorkspaceContextUseCase {
             return new WorkspaceContextDto(
                     WorkspaceUserDto.from(user),
                     List.of(OrganizationMembershipDto.from(currentMembership)),
-                    organizationRepository.findAll().stream().map(OrganizationDto::from).toList(),
+                    organizationRepository.findAdministeredBy(userId).stream().map(OrganizationDto::from).toList(),
                     OrganizationDto.from(currentOrganization),
                     OrganizationMembershipDto.from(currentMembership),
                     workspaceAuthorizationService.workspacePermissions(userId, currentOrganization.getId()));
@@ -85,8 +85,7 @@ public class WorkspaceContextService implements WorkspaceContextUseCase {
 
     private WorkspaceCurrentContextDto currentContext(Long userId, Organization currentOrganization) {
         User user = workspaceAccessService.requireUser(userId);
-        boolean superadmin = workspaceAccessService.isSuperadmin(userId);
-        OrganizationMembership currentMembership = superadmin
+        OrganizationMembership currentMembership = workspaceAccessService.isSuperadmin(userId)
                 ? ownerMembership(user, currentOrganization)
                 : workspaceAccessService.requireMembership(userId, currentOrganization.getId());
         return new WorkspaceCurrentContextDto(
@@ -94,7 +93,7 @@ public class WorkspaceContextService implements WorkspaceContextUseCase {
                 OrganizationDto.from(currentOrganization),
                 OrganizationMembershipDto.from(currentMembership),
                 workspaceAuthorizationService.workspacePermissions(userId, currentOrganization.getId()),
-                superadmin ? 1 : membershipRepository.countByUserIdAndStatus(userId, MembershipStatus.ACTIVE));
+                membershipRepository.countActiveTeamsByUserId(userId));
     }
 
     @Override
@@ -103,12 +102,14 @@ public class WorkspaceContextService implements WorkspaceContextUseCase {
         return currentContext(userId, select(userId, request.organizationId()));
     }
 
+    /** {@code filter=team} leaves the personal account out, which otherwise leads the list. */
     @Override
     public PageDto<OrganizationDto> organizations(Long userId, CatalogRequest request) {
         workspaceAccessService.requireUser(userId);
         Page<Organization> page = organizationRepository.findAccessiblePage(userId,
-                workspaceAccessService.isSuperadmin(userId), CatalogPages.likeLiteral(request.search()),
-                CatalogPages.pageable(request, Sort.by("name", "id")));
+                workspaceAccessService.isSuperadmin(userId), request.filter().equalsIgnoreCase("team"),
+                CatalogPages.likeLiteral(request.search()),
+                CatalogPages.pageable(request, Sort.by("kind", "name", "id")));
         return PageDto.of(page, page.getContent().stream().map(OrganizationDto::from).toList());
     }
 

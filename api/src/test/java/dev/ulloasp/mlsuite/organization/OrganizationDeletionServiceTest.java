@@ -1,10 +1,14 @@
 package dev.ulloasp.mlsuite.organization;
 
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import dev.ulloasp.mlsuite.support.PostgresDatabase;
 import static org.junit.jupiter.api.Assertions.*;
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationDeletionService;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
 import dev.ulloasp.mlsuite.organization.domain.model.*;
 import dev.ulloasp.mlsuite.role.domain.model.*;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import dev.ulloasp.mlsuite.user.domain.model.*;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import jakarta.persistence.EntityManager;
@@ -20,16 +24,17 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.web.server.ResponseStatusException;
 
 @DataJpaTest(properties = {
-    "spring.profiles.active=test", "logging.file.name=target/org-delete-test.log",
-    "spring.datasource.url=jdbc:h2:mem:orgdelete;MODE=PostgreSQL;INIT=CREATE DOMAIN IF NOT EXISTS TIMESTAMPTZ AS TIMESTAMP WITH TIME ZONE",
-    "spring.datasource.driver-class-name=org.h2.Driver",
-    "spring.datasource.username=sa", "spring.datasource.password=",
-    "spring.jpa.hibernate.ddl-auto=create-drop", "spring.flyway.enabled=false"
+    "spring.profiles.active=test", "logging.file.name=target/org-delete-test.log"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(OrganizationDeletionService.class)
 @ContextConfiguration(classes = OrganizationDeletionServiceTest.PersistenceConfig.class)
 class OrganizationDeletionServiceTest {
+
+    @DynamicPropertySource
+    static void database(DynamicPropertyRegistry registry) {
+        PostgresDatabase.registerRolledBack(registry);
+    }
     @Configuration
     @EntityScan("dev.ulloasp.mlsuite")
     @EnableJpaRepositories("dev.ulloasp.mlsuite")
@@ -82,8 +87,7 @@ class OrganizationDeletionServiceTest {
         model.setSpecificType("DecisionTreeClassifier");
         model.setUser(owner);
         model.setOrganization(org);
-        model.setModelFile(new byte[0]);
-        entityManager.persist(model);
+        entityManager.persist(TestFixtures.storedArtifact(model, new byte[] { 1 }));
         entityManager.flush();
 
         var error = assertThrows(ResponseStatusException.class, () -> service.delete(org.getId()));

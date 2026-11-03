@@ -6,9 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // @vitest-environment jsdom
 import { QueryClient } from "@tanstack/react-query";
 import { act } from "react";
-import { Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
-import { PublicBookmarkCard } from "@/features/explore/components/PublicBookmarkCard";
+import { PublicBookmarkCard } from "@/capabilities/public-bookmarks/PublicBookmarkCard";
 import { noteSegments } from "@/features/explore/lib/publication-note-links";
 import { PublicBookmarkPage } from "@/features/explore/pages/public-bookmark-page";
 import type { PublicBookmarkDto, PublicBookmarkSummaryDto } from "@/shared/api/openapi.gen";
@@ -38,6 +37,8 @@ const summary = (overrides: Partial<PublicBookmarkSummaryDto> = {}): PublicBookm
   reportCount: 1,
   organizationName: "Acme Health",
   organizationLogoUrl: LOGO,
+  organizationKind: "TEAM",
+  publisherHandle: null,
   updatedAt: AT,
   ...overrides,
 });
@@ -85,15 +86,11 @@ async function page(dto: PublicBookmarkDto) {
     }
     return Promise.resolve(json(dto));
   });
-  const view = await mount(
-    <Routes>
-      <Route path="/explore/:publicId" element={<PublicBookmarkPage />} />
-    </Routes>,
-    {
-      route: `/explore/${PUBLIC_ID}`,
-      queryClient: new QueryClient({ defaultOptions: { queries: { retry: false } } }),
-    },
-  );
+  const view = await mount(null, {
+    route: `/explore/${PUBLIC_ID}`,
+    routes: { "/explore/$publicId": <PublicBookmarkPage /> },
+    queryClient: new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+  });
   await settle();
   return view.host;
 }

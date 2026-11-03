@@ -13,18 +13,18 @@ require_restore_name() {
 destroy_from_state() {
   local state_file=$1
   [[ -f "$state_file" ]] || { echo "restore state not found: $state_file" >&2; exit 1; }
-  local api postgres minio postgres_volume minio_volume network
+  local api postgres rustfs postgres_volume rustfs_volume network
   api=$(read_state RESTORE_API_CONTAINER "$state_file")
   postgres=$(read_state RESTORE_POSTGRES_CONTAINER "$state_file")
-  minio=$(read_state RESTORE_MINIO_CONTAINER "$state_file")
+  rustfs=$(read_state RESTORE_RUSTFS_CONTAINER "$state_file")
   postgres_volume=$(read_state RESTORE_POSTGRES_VOLUME "$state_file")
-  minio_volume=$(read_state RESTORE_MINIO_VOLUME "$state_file")
+  rustfs_volume=$(read_state RESTORE_RUSTFS_VOLUME "$state_file")
   network=$(read_state RESTORE_NETWORK "$state_file")
-  for resource in "$api" "$postgres" "$minio" "$postgres_volume" "$minio_volume" "$network"; do
+  for resource in "$api" "$postgres" "$rustfs" "$postgres_volume" "$rustfs_volume" "$network"; do
     require_restore_name "$resource"
   done
-  docker rm -f "$api" "$postgres" "$minio" >/dev/null 2>&1 || true
-  docker volume rm "$postgres_volume" "$minio_volume" >/dev/null 2>&1 || true
+  docker rm -f "$api" "$postgres" "$rustfs" >/dev/null 2>&1 || true
+  docker volume rm "$postgres_volume" "$rustfs_volume" >/dev/null 2>&1 || true
   docker network rm "$network" >/dev/null 2>&1 || true
   rm -f -- "$state_file"
   echo "Isolated restore resources removed."
@@ -45,7 +45,7 @@ if command -v cygpath >/dev/null 2>&1; then
   export MSYS_NO_PATHCONV=1
 fi
 [[ -s "$BACKUP_DIR/postgres.dump" ]] || { echo "missing postgres.dump" >&2; exit 1; }
-[[ -s "$BACKUP_DIR/minio-data.tar.gz" ]] || { echo "missing MinIO volume backup" >&2; exit 1; }
+[[ -s "$BACKUP_DIR/rustfs-data.tar.gz" ]] || { echo "missing RustFS volume backup" >&2; exit 1; }
 [[ -s "$BACKUP_DIR/backup.manifest" && -s "$BACKUP_DIR/storage.bucket" ]] || { echo "missing backup manifest" >&2; exit 1; }
 (cd "$BACKUP_DIR" && sha256sum --check backup.manifest)
 storage_bucket=$(tr -d '\r\n' < "$BACKUP_DIR/storage.bucket")
@@ -54,33 +54,32 @@ storage_bucket=$(tr -d '\r\n' < "$BACKUP_DIR/storage.bucket")
 suffix="$$-$RANDOM"
 network="mlsuite-restore-network-$suffix"
 postgres="mlsuite-restore-postgres-$suffix"
-minio="mlsuite-restore-minio-$suffix"
+rustfs="mlsuite-restore-rustfs-$suffix"
 api="mlsuite-restore-api-$suffix"
 postgres_volume="mlsuite-restore-postgres-$suffix"
-minio_volume="mlsuite-restore-minio-$suffix"
+rustfs_volume="mlsuite-restore-rustfs-$suffix"
 state_file="$BACKUP_DIR/restore.env"
 [[ ! -e "$state_file" ]] || { echo "restore state already exists: $state_file" >&2; exit 1; }
 
 cleanup() {
-  docker rm -f "$api" "$postgres" "$minio" >/dev/null 2>&1 || true
-  docker volume rm "$postgres_volume" "$minio_volume" >/dev/null 2>&1 || true
+  docker rm -f "$api" "$postgres" "$rustfs" >/dev/null 2>&1 || true
+  docker volume rm "$postgres_volume" "$rustfs_volume" >/dev/null 2>&1 || true
   docker network rm "$network" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT INT TERM
 
 docker network create "$network" >/dev/null
 docker volume create "$postgres_volume" >/dev/null
-docker volume create "$minio_volume" >/dev/null
-docker run --rm -v "$minio_volume:/data" -v "$BACKUP_DIR:/backup:ro" "$POSTGRES_IMAGE" \
-  sh -c 'tar -C /data -xzf /backup/minio-data.tar.gz'
+docker volume create "$rustfs_volume" >/dev/null
+docker run --rm -v "$rustfs_volume:/data" -v "$BACKUP_DIR:/backup:ro" "$POSTGRES_IMAGE" \
+  sh -c 'tar -C /data -xzf /backup/rustfs-data.tar.gz'
 docker run -d --name "$postgres" --network "$network" -p 127.0.0.1::5432 \
   -e POSTGRES_DB=restored -e POSTGRES_USER=restore -e POSTGRES_PASSWORD=restore-pass \
   -e PGDATA=/var/lib/postgresql/data/pgdata \
   -v "$postgres_volume:/var/lib/postgresql/data" "$POSTGRES_IMAGE" >/dev/null
-docker run -d --name "$minio" --network "$network" -p 127.0.0.1::9000 \
-  -e MINIO_ROOT_USER=restore -e MINIO_ROOT_PASSWORD=restore-secret \
-  -v "$minio_volume:/data" "$MINIO_IMAGE" \
-  server /data >/dev/null
+docker run -d --name "$rustfs" --network "$network" -p 127.0.0.1::9000 \
+  -e RUSTFS_ACCESS_KEY=restore -e RUSTFS_SECRET_KEY=restore-secret \
+  -v "$rustfs_volume:/data" "$RUSTFS_IMAGE" >/dev/null
 
 for _ in $(seq 1 30); do
   if docker exec "$postgres" sh -c '[ "$(cat /proc/1/comm)" = postgres ]' >/dev/null 2>&1 \
@@ -92,31 +91,36 @@ docker exec "$postgres" pg_isready -U restore -d restored >/dev/null
 docker cp "$BACKUP_DIR/postgres.dump" "$postgres:/tmp/postgres.dump"
 docker exec "$postgres" pg_restore -U restore -d restored --no-owner --no-privileges /tmp/postgres.dump
 
+for _ in $(seq 1 30); do
+  if docker exec "$rustfs" curl -fs http://localhost:9000/health/ready >/dev/null 2>&1; then break; fi
+  sleep 1
+done
+docker exec "$rustfs" curl -fs http://localhost:9000/health/ready >/dev/null
 docker run --rm --network "$network" \
-  --entrypoint /bin/sh "$MINIO_IMAGE" -c "
+  --entrypoint /bin/sh "$RC_IMAGE" -c "
     set -eu
-    until mc alias set target http://$minio:9000 restore restore-secret >/dev/null 2>&1; do sleep 1; done
-    mc ls target/$storage_bucket >/dev/null
-    version_info=\$(mc version info target/$storage_bucket)
-    case \"\$version_info\" in *[Ee]nabled*) ;; *) echo \"\$version_info\" >&2; exit 1;; esac
+    rc alias set target http://$rustfs:9000 restore restore-secret --bucket-lookup path >/dev/null
+    rc object list target/$storage_bucket >/dev/null
+    version_info=\$(rc bucket version info target/$storage_bucket)
+    case \"\$version_info\" in *Enabled*) ;; *) echo \"\$version_info\" >&2; exit 1;; esac
   "
 
 if [[ "$KEEP_RESTORE" == true ]]; then
   db_port=$(docker port "$postgres" 5432/tcp | head -n 1); db_port=${db_port##*:}
-  minio_port=$(docker port "$minio" 9000/tcp | head -n 1); minio_port=${minio_port##*:}
+  rustfs_port=$(docker port "$rustfs" 9000/tcp | head -n 1); rustfs_port=${rustfs_port##*:}
   cat > "$state_file" <<EOF
 RESTORE_NETWORK=$network
 RESTORE_POSTGRES_CONTAINER=$postgres
-RESTORE_MINIO_CONTAINER=$minio
+RESTORE_RUSTFS_CONTAINER=$rustfs
 RESTORE_API_CONTAINER=$api
 RESTORE_POSTGRES_VOLUME=$postgres_volume
-RESTORE_MINIO_VOLUME=$minio_volume
+RESTORE_RUSTFS_VOLUME=$rustfs_volume
 RESTORE_DB_HOST=host.docker.internal
 RESTORE_DB_PORT=$db_port
 RESTORE_DB_NAME=restored
 RESTORE_DB_USER=restore
 RESTORE_DB_PASS=restore-pass
-RESTORE_STORAGE_ENDPOINT=http://host.docker.internal:$minio_port
+RESTORE_STORAGE_ENDPOINT=http://host.docker.internal:$rustfs_port
 RESTORE_STORAGE_ACCESS_KEY=restore
 RESTORE_STORAGE_SECRET_KEY=restore-secret
 RESTORE_STORAGE_BUCKET=$storage_bucket
@@ -124,5 +128,5 @@ EOF
   trap - EXIT INT TERM
   echo "Isolated restore retained. State: $state_file"
 else
-  echo "Isolated PostgreSQL restore and versioned MinIO restore completed successfully."
+  echo "Isolated PostgreSQL restore and versioned RustFS restore completed successfully."
 fi

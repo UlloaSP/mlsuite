@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUpRight } from "lucide-react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { workspaceBookmarkQueryOptions } from "@/features/explore/api/public-bookmark-api";
 import { appButtonClass } from "@/shared/ui/button-styles";
@@ -26,12 +26,13 @@ export function WorkspaceBookmarkLink({ publicId }: { publicId: string }) {
 
   if (!bookmark.data) return null;
   return (
-    <Link
-      to={`/predict/${bookmark.data.id}`}
+    <AppLink
+      to="/predict/$bookmarkId"
+      params={{ bookmarkId: String(bookmark.data.id) }}
       className={appButtonClass({ variant: "secondary", size: "sm" })}
     >
       <ArrowUpRight size={14} aria-hidden="true" />
       Open in workspace
-    </Link>
+    </AppLink>
   );
 }

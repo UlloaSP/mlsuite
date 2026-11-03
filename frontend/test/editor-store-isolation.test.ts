@@ -1,21 +1,16 @@
-import { createStore } from "jotai";
 import { expect, test } from "vite-plus/test";
-import {
-  editorCheckErrorsAtom,
-  schemaAtom,
-  schemaTextAtom,
-} from "@/features/schemas/lib/editor-atoms";
+import { createEditorAtoms } from "@/features/schemas/lib/editor-atoms";
 
 test("keeps schema editor state isolated per draft store", () => {
-  const firstDraft = createStore();
-  const secondDraft = createStore();
-  firstDraft.set(schemaTextAtom, "draft one");
-  firstDraft.set(schemaAtom, { fields: [] });
-  firstDraft.set(editorCheckErrorsAtom, [
+  const firstDraft = createEditorAtoms();
+  const secondDraft = createEditorAtoms();
+  firstDraft.schemaText.set("draft one");
+  firstDraft.schema.set({ fields: [] });
+  firstDraft.editorCheckErrors.set([
     { line: 1, column: 1, path: "fields", message: "invalid", severity: "error" },
   ]);
 
-  expect(secondDraft.get(schemaTextAtom)).toBe("");
-  expect(secondDraft.get(schemaAtom)).toBeNull();
-  expect(secondDraft.get(editorCheckErrorsAtom)).toEqual([]);
+  expect(secondDraft.schemaText.get()).toBe("");
+  expect(secondDraft.schema.get()).toBeNull();
+  expect(secondDraft.editorCheckErrors.get()).toEqual([]);
 });

@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.role.application.dto.RoleSummaryDto;
+import dev.ulloasp.mlsuite.user.application.dto.UserAvatarUrl;
 
 import jakarta.annotation.Nullable;
 
@@ -15,6 +16,8 @@ public record OrganizationMembershipDto(
         String fullName,
         String email,
         @Nullable String avatarUrl,
+        /** The handle of their profile, while anyone may read it. */
+        @Nullable String profileHandle,
         RoleSummaryDto roleDefinition,
         MembershipStatus status,
         @Nullable OffsetDateTime createdAt) {
@@ -26,7 +29,8 @@ public record OrganizationMembershipDto(
                 membership.getUser().getId(),
                 membership.getUser().getFullName(),
                 membership.getUser().getEmail(),
-                membership.getUser().getAvatarUrl(),
+                UserAvatarUrl.of(membership.getUser()),
+                membership.getUser().visibleHandle(),
                 RoleSummaryDto.from(membership.getRoleDefinition()),
                 membership.getStatus(),
                 membership.getCreatedAt());

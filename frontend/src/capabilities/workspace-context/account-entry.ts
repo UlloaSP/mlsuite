@@ -4,9 +4,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { createContext, useContext } from "react";
+import type { registerLink, signInLink } from "./session";
 
 /** Where a visitor without a session signs in or registers, coming back to the page they are on. */
-export type AccountEntry = { signInHref: string; registerHref: string };
+export type AccountEntry = {
+  signIn: ReturnType<typeof signInLink>;
+  register: ReturnType<typeof registerLink>;
+};
 
 /**
  * Provided by the frame of a visitor without a session and absent for a signed-in member,

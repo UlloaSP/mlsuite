@@ -1,16 +1,16 @@
 package dev.ulloasp.mlsuite.organization.application.usecase;
 
-import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationLogoRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationDto;
@@ -18,6 +18,7 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundExc
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationLogo;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
+import dev.ulloasp.mlsuite.util.SquareImage;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import lombok.RequiredArgsConstructor;
@@ -35,21 +36,17 @@ public class OrganizationLogoService {
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final OrganizationRepository organizationRepository;
     private final OrganizationLogoRepository logoRepository;
+    private final AuditLogService auditLog;
 
     public OrganizationDto replace(Long userId, Long organizationId, MultipartFile upload) {
         workspaceAuthorizationService.require(userId, organizationId, PermissionKey.EDIT_ORGANIZATION);
         Organization organization = requireOrganization(organizationId);
-        if (upload == null || upload.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Upload a PNG or JPG image.");
-        }
-        if (upload.getSize() > OrganizationLogoImage.MAX_UPLOAD_BYTES) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The logo must be at most 2 MB.");
-        }
-        OrganizationLogoImage.Normalized logo = OrganizationLogoImage.normalize(bytes(upload));
+        SquareImage.Normalized logo = SquareImage.normalize(upload, "logo");
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         logoRepository.save(new OrganizationLogo(organizationId, logo.content(), logo.contentType(), now));
         organization.setLogoUpdatedAt(now);
         organization.setUpdatedBy(workspaceAccessService.requireUser(userId));
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.ORGANIZATION_LOGO_REPLACE, organizationId);
         return OrganizationDto.from(organizationRepository.save(organization));
     }
 
@@ -59,6 +56,7 @@ public class OrganizationLogoService {
         logoRepository.deleteById(organizationId);
         organization.setLogoUpdatedAt(null);
         organization.setUpdatedBy(workspaceAccessService.requireUser(userId));
+        auditLog.record(AuditActor.user(userId), organizationId, AuditAction.ORGANIZATION_LOGO_REMOVE, organizationId);
         return OrganizationDto.from(organizationRepository.save(organization));
     }
 
@@ -68,15 +66,9 @@ public class OrganizationLogoService {
     }
 
     private Organization requireOrganization(Long organizationId) {
-        return organizationRepository.findById(organizationId)
+        Organization organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
-    }
-
-    private static byte[] bytes(MultipartFile upload) {
-        try {
-            return upload.getBytes();
-        } catch (IOException failure) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The image could not be read.");
-        }
+        organization.requireTeam("A personal account is pictured by its owner, not by a logo.");
+        return organization;
     }
 }

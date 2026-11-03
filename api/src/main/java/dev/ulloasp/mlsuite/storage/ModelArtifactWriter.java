@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
-import dev.ulloasp.mlsuite.model.domain.model.ModelArtifactState;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -16,96 +16,42 @@ import lombok.RequiredArgsConstructor;
 public class ModelArtifactWriter {
 
     private final ObjectStorageService objectStorageService;
-    private final StorageProperties properties;
 
     /**
      * Streams the artifact into the object store, checking as it goes that it is the one
-     * {@code sha256} names, then checks the stored object and points the model at it.
+     * {@code sha256} names, then checks the stored object and points the model at it. The model
+     * has no id yet, since its row is written naming the object, so its key has an id of its own.
      */
     public StoredObject storeAndAttach(Model model, ArtifactSource source, String sha256, String contentType) {
-        requirePersisted(model);
+        String artifact = "model " + model.getName();
         String objectKey = objectKey(model, sha256);
         StoredObject stored;
-        try (InputStream in = new VerifyingInputStream(
-                source.open(), "model " + model.getId(), source.sizeBytes(), sha256)) {
+        try (InputStream in = new VerifyingInputStream(source.open(), artifact, source.sizeBytes(), sha256)) {
             stored = objectStorageService.store(objectKey, model.getFileName(), contentType, in, source.sizeBytes(), sha256);
         } catch (IOException ex) {
-            throw new ObjectStorageException("The artifact of model " + model.getId() + " could not be read", ex);
+            throw new ObjectStorageException("The artifact of " + artifact + " could not be read", ex);
         }
         try {
-            ArtifactIntegrityVerifier.verifyRequired(
-                    "model " + model.getId(), source.sizeBytes(), sha256,
+            ArtifactIntegrityVerifier.verify(artifact, source.sizeBytes(), sha256,
                     objectStorageService.verify(stored.bucket(), stored.objectKey(), stored.versionId()));
         } catch (RuntimeException failure) {
             deleteExactVersion(stored, failure);
             throw failure;
         }
 
-        attach(model, stored.bucket(), stored.objectKey(), stored.etag(), stored.versionId(), stored.sizeBytes(), sha256);
-        return stored;
-    }
-
-    public boolean attachExisting(Model model, byte[] bytes) {
-        requirePersisted(model);
-        String sha256 = ArtifactHash.sha256(bytes);
-        String objectKey = objectKey(model, sha256);
-        var existing = objectStorageService.inspectOptional(properties.getBucket(), objectKey, null);
-        if (existing.isEmpty()) {
-            return false;
-        }
-        StoredObjectMetadata metadata = existing.get();
-        if (metadata.versionId() == null || metadata.versionId().isBlank()) {
-            return false;
-        }
-        try {
-            ArtifactIntegrityVerifier.verifyRequired(
-                    "model " + model.getId(), (long) bytes.length, sha256,
-                    objectStorageService.verify(metadata.bucket(), metadata.objectKey(), metadata.versionId()));
-        } catch (ArtifactIntegrityException mismatch) {
-            return false;
-        }
-        attach(
-                model,
-                metadata.bucket(),
-                metadata.objectKey(),
-                metadata.etag(),
-                metadata.versionId(),
-                metadata.sizeBytes(),
-                sha256);
-        return true;
-    }
-
-    private void requirePersisted(Model model) {
-        if (model.getId() == null || model.getOrganization() == null) {
-            throw new IllegalStateException("Model must be persisted before storing its artifact");
-        }
-    }
-
-    private void attach(
-            Model model,
-            String bucket,
-            String objectKey,
-            String etag,
-            String versionId,
-            long sizeBytes,
-            String sha256) {
-        model.setStorageBucket(bucket);
-        model.setStorageObjectKey(objectKey);
-        model.setStorageEtag(etag);
-        model.setStorageVersionId(versionId);
-        model.setModelSizeBytes(sizeBytes);
+        model.setStorageBucket(stored.bucket());
+        model.setStorageObjectKey(stored.objectKey());
+        model.setStorageEtag(stored.etag());
+        model.setStorageVersionId(stored.versionId());
+        model.setModelSizeBytes(stored.sizeBytes());
         model.setArtifactSha256(sha256);
-        model.setArtifactState(ModelArtifactState.VERIFIED);
         model.setArtifactVerifiedAt(OffsetDateTime.now(ZoneOffset.UTC));
-        model.setArtifactMigrationError(null);
-        if (!properties.isRetainInlineCopy()) {
-            model.setModelFile(new byte[0]);
-        }
+        return stored;
     }
 
     private String objectKey(Model model, String sha256) {
         return "organizations/" + model.getOrganization().getId()
-                + "/models/" + model.getId()
+                + "/models/" + UUID.randomUUID()
                 + "/artifacts/" + sha256 + "/"
                 + sanitize(model.getFileName());
     }

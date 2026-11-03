@@ -16,15 +16,6 @@ public interface ObjectStorageService {
             long sizeBytes,
             String sha256);
 
-    default StoredObject store(
-            String objectKey,
-            String fileName,
-            String contentType,
-            InputStream inputStream,
-            long sizeBytes) {
-        return store(objectKey, fileName, contentType, inputStream, sizeBytes, null);
-    }
-
     default StoredObject store(String objectKey, String fileName, String contentType, byte[] bytes) {
         return store(
                 objectKey,
@@ -38,7 +29,7 @@ public interface ObjectStorageService {
     /** Reads an object as a stream; the caller closes it. */
     InputStream open(String bucket, String objectKey, String versionId);
 
-    /** Reads a whole object into memory: for small objects and the offline artifact migration. */
+    /** Reads a whole object into memory: for small objects only. */
     default byte[] load(String bucket, String objectKey, String versionId) {
         try (InputStream in = open(bucket, objectKey, versionId)) {
             return in.readAllBytes();
@@ -56,4 +47,7 @@ public interface ObjectStorageService {
     List<StoredObjectItem> list(String prefix);
 
     void delete(String bucket, String objectKey, String versionId);
+
+    /** Removes every stored version of the key and its delete markers, leaving nothing to restore. */
+    void deleteAllVersions(String bucket, String objectKey);
 }

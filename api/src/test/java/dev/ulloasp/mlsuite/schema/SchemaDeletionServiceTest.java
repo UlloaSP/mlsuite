@@ -1,5 +1,8 @@
 package dev.ulloasp.mlsuite.schema;
 
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import dev.ulloasp.mlsuite.support.PostgresDatabase;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
@@ -14,6 +17,7 @@ import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReview;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import dev.ulloasp.mlsuite.user.domain.model.*;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.*;
@@ -28,18 +32,24 @@ import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 
 @DataJpaTest(properties = {
-    "spring.profiles.active=test", "logging.file.name=target/schema-delete-test.log",
-    "spring.datasource.url=jdbc:h2:mem:schemadelete;MODE=PostgreSQL;INIT=CREATE DOMAIN IF NOT EXISTS TIMESTAMPTZ AS TIMESTAMP WITH TIME ZONE",
-    "spring.datasource.driver-class-name=org.h2.Driver",
-    "spring.datasource.username=sa", "spring.datasource.password=",
-    "spring.jpa.hibernate.ddl-auto=create-drop", "spring.flyway.enabled=false"
+    "spring.profiles.active=test", "logging.file.name=target/schema-delete-test.log"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(SchemaServiceImpl.class)
 @ContextConfiguration(classes = SchemaDeletionServiceTest.PersistenceConfig.class)
 class SchemaDeletionServiceTest {
+
+    @DynamicPropertySource
+    static void database(DynamicPropertyRegistry registry) {
+        PostgresDatabase.registerRolledBack(registry);
+    }
+
+    @MockitoBean AuditLogService auditLog;
     @Configuration
     @EntityScan("dev.ulloasp.mlsuite")
     @EnableJpaRepositories("dev.ulloasp.mlsuite")
@@ -76,8 +86,8 @@ class SchemaDeletionServiceTest {
         var model = new Model();
         model.setName("QA model"); model.setFileName("qa.mlbundle");
         model.setType("classifier"); model.setSpecificType("DecisionTreeClassifier");
-        model.setUser(owner); model.setOrganization(org); model.setModelFile(new byte[0]);
-        entityManager.persist(model);
+        model.setUser(owner); model.setOrganization(org);
+        entityManager.persist(TestFixtures.storedArtifact(model, new byte[] { 1 }));
         entityManager.persist(new SchemaModelBinding(version, model, Map.of()));
         entityManager.persist(new SchemaBookmark(schema, version, "QA bookmark"));
         var draft = new SchemaDraft(schema, version, "QA draft", Map.of(), List.of());

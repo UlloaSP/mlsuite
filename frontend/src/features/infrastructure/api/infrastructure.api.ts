@@ -6,12 +6,16 @@ import type {
 } from "./infrastructure.types";
 import type {
   ServiceActionRequest,
+  SystemAlertsDto,
   TerminalSessionRequest,
   TerminalSessionResponse,
 } from "@/shared/api/openapi.gen";
 
 export const getInfrastructureOverview = (signal?: AbortSignal) =>
   appFetch<InfrastructureOverviewDto>("/api/admin/infrastructure/overview", { signal });
+
+export const getSystemAlerts = (signal?: AbortSignal) =>
+  appFetch<SystemAlertsDto>("/api/admin/alerts", { signal });
 
 export const getServiceLogsSnapshot = (serviceName: string, tail = 200, signal?: AbortSignal) =>
   appFetch<ServiceLogsSnapshotDto>(

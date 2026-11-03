@@ -22,14 +22,19 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.fasterxml.jackson.core.util.DefaultIndenter;
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-import com.fasterxml.jackson.core.util.Separators;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.core.util.DefaultIndenter;
+import tools.jackson.core.util.DefaultPrettyPrinter;
+import tools.jackson.core.util.Separators;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import dev.ulloasp.mlsuite.admin.AdminOwnerCatalogService;
 import dev.ulloasp.mlsuite.admin.AdminUserService;
+import dev.ulloasp.mlsuite.admin.alert.SystemAlertService;
+import dev.ulloasp.mlsuite.admin.purge.PurgeRequestService;
+import dev.ulloasp.mlsuite.schema.application.port.in.SchemaContentDeletionUseCase;
+import dev.ulloasp.mlsuite.user.application.port.in.DeleteAccountUseCase;
 import dev.ulloasp.mlsuite.admin.infrastructure.InfrastructureService;
 import dev.ulloasp.mlsuite.admin.moderation.PublicBookmarkModerationService;
 import dev.ulloasp.mlsuite.apiaccess.application.port.in.ApiClientAccessUseCase;
@@ -45,6 +50,7 @@ import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
 import dev.ulloasp.mlsuite.model.application.runtime.ModelPreparationService;
 import dev.ulloasp.mlsuite.model.application.runtime.RuntimeEnvironments;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelUploadUseCase;
+import dev.ulloasp.mlsuite.notification.application.port.in.NotificationUseCase;
 import dev.ulloasp.mlsuite.organization.application.port.in.OrganizationManagementUseCase;
 import dev.ulloasp.mlsuite.organization.application.usecase.MemberCatalogService;
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationCatalogService;
@@ -79,8 +85,11 @@ import dev.ulloasp.mlsuite.schema.review.application.port.in.SchemaReviewManagem
 import dev.ulloasp.mlsuite.schema.review.application.port.in.SchemaReviewUseCase;
 import dev.ulloasp.mlsuite.search.application.port.in.SearchWorkspaceUseCase;
 import dev.ulloasp.mlsuite.security.auth.AuthService;
+import dev.ulloasp.mlsuite.security.auth.PasswordChangeService;
 import dev.ulloasp.mlsuite.startup.StartupReadinessService;
 import dev.ulloasp.mlsuite.user.application.port.in.GetCurrentUserProfileUseCase;
+import dev.ulloasp.mlsuite.user.application.port.in.PublicProfileUseCase;
+import dev.ulloasp.mlsuite.user.application.port.in.UserProfileUseCase;
 import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase;
 
 /**
@@ -101,7 +110,9 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
         SpringDocWebMvcConfiguration.class })
 @Import(OpenApiContractConventions.class)
 @MockitoBean(types = {
-        AdminOwnerCatalogService.class, AdminUserService.class, AnalyzerUseCase.class, ApiClientAccessUseCase.class,
+        AdminOwnerCatalogService.class, AdminUserService.class, SystemAlertService.class, AnalyzerUseCase.class,
+        ApiClientAccessUseCase.class, DeleteAccountUseCase.class, PurgeRequestService.class,
+        SchemaContentDeletionUseCase.class,
         ApiClientUseCase.class, ApiPredictionUseCase.class, ApiTrafficUseCase.class, ApiUsageUseCase.class,
         AuditLogUseCase.class, AuthService.class, AuthenticationManager.class, BookmarkListCatalogUseCase.class,
         CatalogSelectionService.class, GetCurrentUserProfileUseCase.class,
@@ -109,10 +120,11 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
         InferenceFacetCatalogService.class,
         InfrastructureService.class, InvitationCatalogService.class, InvitationManagementUseCase.class,
         ListPluginRuntimeSourcesUseCase.class, MemberCatalogService.class, ModelCatalogUseCase.class, ModelUploadUseCase.class,
-        ModelPreparationService.class, RuntimeEnvironments.class,
+        ModelPreparationService.class, NotificationUseCase.class, RuntimeEnvironments.class,
         OrganizationCatalogService.class, OrganizationLogoService.class,
         OrganizationManagementUseCase.class,
-        PluginCatalogUseCase.class, PredictBookmarkCatalogUseCase.class, PredictionResultFeedbackUseCase.class,
+        PasswordChangeService.class, PluginCatalogUseCase.class, PredictBookmarkCatalogUseCase.class,
+        PredictionResultFeedbackUseCase.class, PublicProfileUseCase.class,
         PredictionJobService.class, PredictionResultRepository.class, PredictionRunUseCase.class, PublicBookmarkModerationService.class,
         PublicBookmarkUseCase.class, PublicPredictionUseCase.class, PublicRunUseCase.class, RoleCatalogUseCase.class,
         RoleListCatalogUseCase.class, RoleManagementUseCase.class, SchemaBookmarkExampleUseCase.class,
@@ -120,7 +132,7 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
         SchemaCreationUseCase.class, SchemaDraftUseCase.class, SchemaRepositoryCatalogUseCase.class,
         SchemaReviewCatalogUseCase.class, SchemaReviewManagementUseCase.class,
         SchemaReviewUseCase.class, SchemaVersionUseCase.class, SearchWorkspaceUseCase.class,
-        StartupReadinessService.class, WorkspaceContextUseCase.class,
+        StartupReadinessService.class, UserProfileUseCase.class, WorkspaceContextUseCase.class,
         WorkspacePredictionUseCase.class })
 class OpenApiContractTest {
 
@@ -152,15 +164,15 @@ class OpenApiContractTest {
     }
 
     /** Sorted keys, two-space indentation, and LF endings keep the committed file diff-friendly. */
-    private static String canonical(String json) throws Exception {
-        ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
+    private static String canonical(String json) {
+        ObjectMapper mapper = JsonMapper.builder().enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS).build();
         DefaultIndenter indenter = new DefaultIndenter("  ", "\n");
         DefaultPrettyPrinter printer = new DefaultPrettyPrinter()
                 .withSeparators(Separators.createDefaultInstance()
-                        .withObjectFieldValueSpacing(Separators.Spacing.AFTER));
-        printer.indentObjectsWith(indenter);
-        printer.indentArraysWith(indenter);
-        return mapper.writer(printer).writeValueAsString(mapper.readValue(json, Object.class)) + "\n";
+                        .withObjectNameValueSpacing(Separators.Spacing.AFTER))
+                .withObjectIndenter(indenter)
+                .withArrayIndenter(indenter);
+        return mapper.writer().with(printer).writeValueAsString(mapper.readValue(json, Object.class)) + "\n";
     }
 
     private static String firstDifference(String committed, String actual) {

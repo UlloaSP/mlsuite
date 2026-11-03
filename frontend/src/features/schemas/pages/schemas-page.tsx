@@ -5,8 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Search, Plus } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
-import { toast } from "sonner";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
+import { toast } from "@/shared/ui/toast";
 import {
   useArchiveSchemaMutation,
   useRestoreSchemaMutation,
@@ -21,8 +21,10 @@ import { AppButton } from "@/shared/ui/AppButton";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
-import type { SchemaAction } from "@/features/schemas/components/SchemaActionsMenu";
+import type { SchemaDialogAction } from "@/features/schemas/components/SchemaActionsMenu";
 import { SchemaActionDialog } from "@/features/schemas/components/SchemaActionDialog";
+import { PurgeDialog } from "@/capabilities/purge/PurgeDialog";
+import { useCurrentUserIsSuperadmin } from "@/capabilities/workspace-context/session";
 import { SchemaListItem } from "@/features/schemas/components/SchemaListItem";
 import type { SchemaCatalogItemDto } from "@/shared/api/openapi.gen";
 
@@ -41,17 +43,14 @@ const SORT_OPTIONS: Array<{ value: SchemaSortMode; label: string }> = [
   { value: "name", label: "Name" },
 ];
 
+const route = getRouteApi("/protected/app/can-view-models/schemas");
+
 export function SchemasPage() {
   const navigate = useNavigate();
   const { data: user, error } = useUser();
   const { data: workspace } = useWorkspaceContext();
   const organizationId = workspace?.currentOrganization.id;
-  const controls = useCatalogControls<SchemaStatusFilter, SchemaSortMode>({
-    filters: STATUS_FILTERS.map(({ value }) => value),
-    initialFilter: "active",
-    initialSort: "updated",
-    sorts: SORT_OPTIONS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const renameMutation = useRenameSchemaMutation();
   const archiveMutation = useArchiveSchemaMutation();
   const restoreMutation = useRestoreSchemaMutation();
@@ -64,10 +63,12 @@ export function SchemasPage() {
     controls.filter,
   );
   const [dialog, setDialog] = useState<{
-    action: SchemaAction;
+    action: SchemaDialogAction;
     schema: SchemaCatalogItemDto;
   } | null>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
+  const [purgeTarget, setPurgeTarget] = useState<number | null>(null);
+  const canPurge = useCurrentUserIsSuperadmin();
 
   const canCreateSchemas = workspace?.permissions.canCreateModels ?? false;
   const canDeleteSchemas = workspace?.permissions.canDeleteModels ?? false;
@@ -126,7 +127,7 @@ export function SchemasPage() {
             workspace?.currentOrganization.name ?? "the current workspace"
           }.`,
           actions: canCreateSchemas ? (
-            <AppButton type="button" onClick={() => navigate("/schemas/create")}>
+            <AppButton type="button" onClick={() => navigate({ to: "/schemas/create" })}>
               <Plus size={16} /> New schema
             </AppButton>
           ) : null,
@@ -146,7 +147,7 @@ export function SchemasPage() {
         filteredEmptyDescription="Try another search term or status."
         emptyAction={
           canCreateSchemas ? (
-            <AppButton type="button" onClick={() => navigate("/schemas/create")}>
+            <AppButton type="button" onClick={() => navigate({ to: "/schemas/create" })}>
               <Plus size={16} /> New schema
             </AppButton>
           ) : undefined
@@ -156,12 +157,18 @@ export function SchemasPage() {
             key={schema.id}
             canDelete={canDeleteSchemas}
             canEdit={canEditSchemas}
+            canPurge={canPurge}
             item={schema}
             to={`/schemas/${schema.id}`}
-            onAction={(action) => setDialog({ action, schema })}
+            onAction={(action) =>
+              action === "purge" ? setPurgeTarget(schema.id) : setDialog({ action, schema })
+            }
           />
         )}
       />
+      {purgeTarget === null ? null : (
+        <PurgeDialog scope="SCHEMA" targetId={purgeTarget} onClose={() => setPurgeTarget(null)} />
+      )}
       {dialog ? (
         <SchemaActionDialog
           key={`${dialog.action}-${dialog.schema.id}`}

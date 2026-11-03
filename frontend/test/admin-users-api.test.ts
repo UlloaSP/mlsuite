@@ -3,7 +3,6 @@ import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { HttpError } from "@/shared/api/http";
 import {
   createUser,
-  deleteUser,
   listUsers,
   resetPassword,
   updateUser,
@@ -59,10 +58,14 @@ describe("admin users API", () => {
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    await createUser({ email: user.email, fullName: user.fullName, password: "secret" });
+    await createUser({
+      email: user.email,
+      fullName: user.fullName,
+      password: "secret",
+      username: "ada",
+    });
     await updateUser(user.id, { enabled: false });
     await resetPassword(user.id, "replacement");
-    await deleteUser(user.id);
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
@@ -81,11 +84,6 @@ describe("admin users API", () => {
         method: "POST",
         body: JSON.stringify({ password: "replacement" }),
       }),
-    );
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      4,
-      "http://localhost/api/admin/users/7",
-      expect.objectContaining({ method: "DELETE" }),
     );
   });
 

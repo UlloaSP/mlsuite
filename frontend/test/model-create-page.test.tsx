@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { useLocation } from "@tanstack/react-router";
 import { act } from "react";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
 import { CreateModelPage } from "@/features/models/pages/create-model-page";
@@ -7,16 +8,12 @@ import { changeValue, click, mount, type Mounted } from "./support/dom";
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
-  navigate: vi.fn(),
   error: vi.fn(),
   success: vi.fn(),
 }));
-vi.mock("react-router", async (original) => ({
-  ...(await original<typeof import("react-router")>()),
-  useNavigate: () => mocks.navigate,
-}));
 vi.mock("sonner", () => ({ toast: { error: mocks.error, success: mocks.success } }));
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({ data: { id: 1 } }),
 }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
@@ -31,9 +28,21 @@ let container: HTMLDivElement;
 beforeEach(async () => {
   vi.clearAllMocks();
   mocks.create.mockResolvedValue({ model: { runtimeState: "READY" } });
-  view = await mount(<CreateModelPage />, { route: "/" });
+  view = await mount(
+    <>
+      <CreateModelPage />
+      <Location />
+    </>,
+    { route: "/models/new" },
+  );
   container = view.host;
 });
+
+function Location() {
+  return <output>{useLocation().pathname}</output>;
+}
+/** Where the page has sent the member; it stays on the upload page until every bundle saves. */
+const address = () => container.querySelector("output")?.textContent;
 
 const upload = async (...names: string[]) => {
   const input = container.querySelector<HTMLInputElement>(
@@ -53,7 +62,7 @@ test("saves all valid models and returns to catalog", async () => {
   await upload("first.mlbundle", "second.mlbundle");
   await saveAll();
   expect(mocks.create).toHaveBeenCalledTimes(2);
-  expect(mocks.navigate).toHaveBeenCalledWith("/models");
+  expect(address()).toBe("/models");
 });
 test("uploads a bundle once, when it is saved, under its name", async () => {
   await upload("risk.mlbundle");
@@ -69,7 +78,7 @@ test("keeps a bundle the runtime rejects listed, to fix or remove", async () => 
   mocks.create.mockRejectedValueOnce(new Error("Cannot load bundle"));
   await upload("broken.mlbundle");
   await saveAll();
-  expect(mocks.navigate).not.toHaveBeenCalled();
+  expect(address()).toBe("/models/new");
   expect(container.textContent).toContain("broken.mlbundle");
 });
 test("names the nameless bundles Save all leaves unsaved, and keeps them", async () => {
@@ -77,7 +86,7 @@ test("names the nameless bundles Save all leaves unsaved, and keeps them", async
   await blankFirstName();
   await saveAll();
   expect(mocks.create).toHaveBeenCalledTimes(1);
-  expect(mocks.navigate).not.toHaveBeenCalled();
+  expect(address()).toBe("/models/new");
   expect(mocks.error).toHaveBeenCalledWith("Name this bundle to save it: first.mlbundle");
   const unnamed = container.querySelector<HTMLInputElement>('input[aria-label^="Rename"]')!;
   expect(unnamed.value).toBe("");
@@ -98,13 +107,13 @@ test("retains other incomplete bundles after an individual save", async () => {
   )!;
   await click(save);
   expect(mocks.create).toHaveBeenCalledTimes(1);
-  expect(mocks.navigate).not.toHaveBeenCalled();
+  expect(address()).toBe("/models/new");
 });
 test("stays on upload page when persistence fails", async () => {
   await upload("first.mlbundle");
   mocks.create.mockRejectedValueOnce(new Error("Save failed"));
   await saveAll();
-  expect(mocks.navigate).not.toHaveBeenCalled();
+  expect(address()).toBe("/models/new");
 });
 test.each(["model.joblib", "model.onnx", "data.csv"])(
   "reports %s as unsupported without listing it",
@@ -122,18 +131,18 @@ test("a saved bundle whose environment is being prepared says so", async () => {
   )!;
   await click(save);
   expect(container.textContent).toContain("Its environment is being prepared.");
-  expect(mocks.navigate).not.toHaveBeenCalled();
+  expect(address()).toBe("/models/new");
 
   await saveAll();
   expect(mocks.success).toHaveBeenCalledWith("Model saved", {
     description:
       "MLsuite is preparing the environment of the new model; it can run once it is ready.",
   });
-  expect(mocks.navigate).toHaveBeenCalledWith("/models");
+  expect(address()).toBe("/models");
 });
 test("ready models are saved without a preparation notice", async () => {
   await upload("first.mlbundle");
   await saveAll();
   expect(mocks.success).not.toHaveBeenCalled();
-  expect(mocks.navigate).toHaveBeenCalledWith("/models");
+  expect(address()).toBe("/models");
 });

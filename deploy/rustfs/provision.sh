@@ -1,0 +1,46 @@
+#!/bin/sh
+set -eu
+
+: "${STORAGE_ENDPOINT:?STORAGE_ENDPOINT is required}"
+: "${RUSTFS_ACCESS_KEY:?RUSTFS_ACCESS_KEY is required}"
+: "${RUSTFS_SECRET_KEY:?RUSTFS_SECRET_KEY is required}"
+: "${STORAGE_ACCESS_KEY:?STORAGE_ACCESS_KEY is required}"
+: "${STORAGE_SECRET_KEY:?STORAGE_SECRET_KEY is required}"
+: "${STORAGE_BUCKET:?STORAGE_BUCKET is required}"
+
+[ "$RUSTFS_ACCESS_KEY" != "$STORAGE_ACCESS_KEY" ] || {
+  echo "RustFS root and application users must differ" >&2
+  exit 1
+}
+case "$STORAGE_BUCKET" in
+  *[!a-z0-9.-]*|'') echo "Invalid storage bucket" >&2; exit 1 ;;
+esac
+
+rc alias set local "$STORAGE_ENDPOINT" "$RUSTFS_ACCESS_KEY" "$RUSTFS_SECRET_KEY" --bucket-lookup path
+rc bucket create --ignore-existing "local/$STORAGE_BUCKET"
+rc bucket version enable "local/$STORAGE_BUCKET"
+version_info=$(rc bucket version info "local/$STORAGE_BUCKET")
+case "$version_info" in
+  *Enabled*) printf '%s\n' "$version_info" ;;
+  *) printf '%s\n' "$version_info" >&2; exit 1 ;;
+esac
+
+printf '{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetBucketLocation", "s3:ListBucket", "s3:ListBucketVersions", "s3:ListBucketMultipartUploads"],
+      "Resource": ["arn:aws:s3:::%s"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:AbortMultipartUpload", "s3:DeleteObject", "s3:DeleteObjectVersion", "s3:GetObject", "s3:GetObjectVersion", "s3:ListMultipartUploadParts", "s3:PutObject"],
+      "Resource": ["arn:aws:s3:::%s/*"]
+    }
+  ]
+}\n' "$STORAGE_BUCKET" "$STORAGE_BUCKET" > /tmp/mlsuite-app-policy.json
+
+rc admin policy create local mlsuite-app /tmp/mlsuite-app-policy.json
+rc admin user add local "$STORAGE_ACCESS_KEY" "$STORAGE_SECRET_KEY"
+rc admin policy attach local mlsuite-app --user "$STORAGE_ACCESS_KEY"

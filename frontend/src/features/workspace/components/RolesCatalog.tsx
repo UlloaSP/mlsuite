@@ -1,7 +1,9 @@
+import { getRouteApi } from "@tanstack/react-router";
 import { Fragment } from "react";
 import { AppSearchField } from "@/shared/ui/AppSearchField";
 import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
-import { useUrlFilters } from "@/shared/lib/use-url-filters";
+import { useSearchFilters } from "@/shared/lib/use-search-filters";
+import { rolesSearch } from "@/features/workspace/pages/workspace-search";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
@@ -13,6 +15,10 @@ import { RoleRow } from "./RoleRow";
 import type { RoleDefinitionDto, RoleTemplateDto } from "@/shared/api/openapi.gen";
 
 export type RolesTab = "roles" | "templates" | "permissions";
+
+const route = getRouteApi(
+  "/protected/app/team-organization/workspace/organizations/$organizationId/roles",
+);
 
 export function RolesCatalog({
   organizationId,
@@ -27,7 +33,7 @@ export function RolesCatalog({
   onRole: (role: RoleDefinitionDto) => void;
   onTemplate: (template: RoleTemplateDto) => void;
 }) {
-  const filters = useUrlFilters({ q: "" });
+  const filters = useSearchFilters(route.useSearch(), rolesSearch);
   const query = filters.values.q;
   const search = useDebouncedValue(query.trim());
   const roles = useRoleCatalog(organizationId, search, tab === "roles");

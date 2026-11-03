@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import { act } from "react";
-import { Routes, Route } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { MembersPage } from "@/features/workspace/pages/members-page";
 import { click, mount, changeValue, searchDelay } from "./support/dom";
@@ -74,12 +73,10 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 async function render(search = "") {
-  const view = await mount(
-    <Routes>
-      <Route path="/organizations/:organizationId/members" element={<MembersPage />} />
-    </Routes>,
-    { route: `/organizations/3/members${search}` },
-  );
+  const view = await mount(null, {
+    route: `/workspace/organizations/3/members${search}`,
+    routes: { "/workspace/organizations/$organizationId/members": <MembersPage /> },
+  });
   await settle();
   return view.host;
 }

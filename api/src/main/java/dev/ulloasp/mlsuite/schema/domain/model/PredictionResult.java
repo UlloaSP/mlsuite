@@ -78,8 +78,8 @@ public class PredictionResult {
     @Column(name = "error_json")
     private Map<String, Object> errorJson;
 
-    /** The runtime environment that computed this result; none for results stored before environments. */
-    @Column(name = "environment_key", length = 64, updatable = false)
+    /** The runtime environment that computed this result. */
+    @Column(name = "environment_key", nullable = false, length = 64, updatable = false)
     private String environmentKey;
 
     @CreationTimestamp

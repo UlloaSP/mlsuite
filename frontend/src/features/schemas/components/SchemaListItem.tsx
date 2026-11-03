@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { CalendarDays, FileJson, Rows3, ScrollText } from "lucide-react";
+import { PersonAvatar } from "@/shared/ui/PersonAvatar";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { modifierName } from "@/shared/lib/relative-time";
 import { AppBadge } from "@/shared/ui/AppBadge";
@@ -15,6 +16,7 @@ import type { SchemaCatalogItemDto } from "@/shared/api/openapi.gen";
 type SchemaListItemProps = {
   canDelete: boolean;
   canEdit: boolean;
+  canPurge?: boolean;
   item: SchemaCatalogItemDto;
   onAction: (action: SchemaAction) => void;
   /** The detail page this row opens. */
@@ -27,7 +29,14 @@ const metrics = [
   { key: "reportCount", label: "Reports", icon: ScrollText },
 ] as const;
 
-export function SchemaListItem({ canDelete, canEdit, item, onAction, to }: SchemaListItemProps) {
+export function SchemaListItem({
+  canDelete,
+  canEdit,
+  canPurge,
+  item,
+  onAction,
+  to,
+}: SchemaListItemProps) {
   const modifier = modifierName(item.updatedByName, item.updatedByEmail);
   return (
     <CatalogEntry
@@ -38,17 +47,12 @@ export function SchemaListItem({ canDelete, canEdit, item, onAction, to }: Schem
       metadata={
         <>
           <span className="inline-flex items-center gap-2">
-            {item.updatedByAvatarUrl ? (
-              <img
-                src={item.updatedByAvatarUrl}
-                alt=""
-                className="size-5 rounded-full object-cover"
-              />
-            ) : (
-              <span className="grid size-5 place-items-center rounded-full bg-surface-muted text-3xs font-semibold text-fg-secondary">
-                {modifier.slice(0, 1).toUpperCase()}
-              </span>
-            )}
+            <PersonAvatar
+              avatarUrl={item.updatedByAvatarUrl}
+              className="size-5 rounded-full text-3xs"
+              fallbackClassName="bg-surface-muted text-fg-secondary"
+              name={modifier}
+            />
             <span className="max-w-[180px] truncate">By {modifier}</span>
           </span>
           <span className="inline-flex items-center gap-1">
@@ -72,6 +76,7 @@ export function SchemaListItem({ canDelete, canEdit, item, onAction, to }: Schem
           archived={Boolean(item.archivedAt)}
           canDelete={canDelete}
           canEdit={canEdit}
+          canPurge={canPurge}
           onAction={onAction}
           schemaName={item.name}
         />

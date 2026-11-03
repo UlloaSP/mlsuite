@@ -95,7 +95,7 @@ def test_at_the_bound_with_every_worker_busy_a_request_waits() -> None:
     assert log == ["start a", "stop a", "start b"]
 
 
-def test_a_worker_that_died_is_not_reused() -> None:
+def test_a_worker_that_died_is_ended_with_what_it_started_and_not_reused() -> None:
     log: list[str] = []
 
     async def scenario():
@@ -106,7 +106,8 @@ def test_a_worker_that_died_is_not_reused() -> None:
             return dead is fresh
 
     assert not run_async(scenario)
-    assert log == ["start a", "start a"]
+    # Stopping it ends its process group: whatever its model started goes with it.
+    assert log == ["start a", "stop a", "start a"]
 
 
 def test_a_worker_that_cannot_start_frees_its_place() -> None:

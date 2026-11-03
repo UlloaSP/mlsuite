@@ -5,7 +5,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import { Link, useParams } from "react-router";
+import { getRouteApi } from "@tanstack/react-router";
+import { useSearchUpdate } from "@/shared/lib/use-search-update";
+import { AppLink } from "@/shared/ui/AppLink";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppButton } from "@/shared/ui/AppButton";
 import { appButtonClass } from "@/shared/ui/button-styles";
@@ -24,8 +26,12 @@ import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
 import { SchemaSnapshotPreviewPanel } from "@/features/schemas/components/SchemaSnapshotPreviewPanel";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
+const route = getRouteApi("/protected/app/can-view-models/schemas/$schemaId");
+
 export function SchemaDetailPage() {
-  const { schemaId } = useParams<{ schemaId: string }>();
+  const search = route.useSearch();
+  const updateSearch = useSearchUpdate<typeof search>();
+  const { schemaId } = route.useParams();
   const { data: schema, isLoading, isError } = useSchema(schemaId);
   const showLoader = useStableLoading(isLoading);
   const versionsQuery = useSnapshotCatalog(schemaId, {
@@ -44,9 +50,9 @@ export function SchemaDetailPage() {
           title="Schema unavailable"
           description="The schema could not be loaded. It may no longer exist or you may not have access."
           action={
-            <Link to="/schemas" className={appButtonClass()}>
+            <AppLink to="/schemas" className={appButtonClass()}>
               Back to schemas
-            </Link>
+            </AppLink>
           }
         />
       </AppPage>
@@ -76,7 +82,11 @@ export function SchemaDetailPage() {
         {!schemaId ? null : versionsQuery.isLoading ? (
           <AppLoadingState label="Loading latest snapshot…" rows={2} />
         ) : latestVersion ? (
-          <SchemaSnapshotPreviewPanel version={latestVersion} />
+          <SchemaSnapshotPreviewPanel
+            version={latestVersion}
+            mode={search.view}
+            onModeChange={(view) => updateSearch({ view })}
+          />
         ) : (
           <AppPanel className="flex flex-col gap-3">
             <AppSectionTitle>No published snapshots</AppSectionTitle>

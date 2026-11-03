@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.springframework.http.HttpStatus;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,8 +50,10 @@ class PredictionRunCatalogTest {
     @Mock private PredictionRunRepository runs;
     @Mock private PredictionResultRepository results;
     @Mock private PredictionResultFeedbackRepository feedback;
+    @Mock private dev.ulloasp.mlsuite.schema.application.service.PredictionRunDeletion deletion;
     @Mock private ModelRepository models;
     @Mock private WorkspaceAuthorizationService authorization;
+    @Mock private AuditLogService auditLog;
     @InjectMocks private PredictionRunServiceImpl service;
     private CurrentUser user;
 
@@ -61,28 +64,13 @@ class PredictionRunCatalogTest {
         lenient().when(users.requireById(7L)).thenReturn(new User());
         lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization);
         when(runs.findByIdAndOrganizationId(12L, 41L)).thenReturn(java.util.Optional.of(run));
+        when(deletion.delete(7L, java.util.List.of(12L)))
+                .thenReturn(new dev.ulloasp.mlsuite.schema.application.service.PredictionRunDeletion.Deleted(0, 0));
 
         service.deleteRun(7L, 12L);
 
         verify(authorization).requireCurrent(7L, PermissionKey.RUN_PREDICTIONS);
-        verify(feedback).deleteByResult_Run_Id(12L);
-        verify(results).deleteByRun_Id(12L);
-        verify(runs).delete(run);
-    }
-
-    @Test
-    void rejectsDeletingInferenceIncludedInReview() {
-        Organization organization = organization();
-        PredictionRun run = new PredictionRun();
-        lenient().when(users.requireById(7L)).thenReturn(new User());
-        lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization);
-        when(runs.findByIdAndOrganizationId(12L, 41L)).thenReturn(java.util.Optional.of(run));
-        when(runs.isIncludedInReview(12L)).thenReturn(true);
-
-        assertThrows(ResponseStatusException.class, () -> service.deleteRun(7L, 12L));
-
-        verify(results, never()).deleteByRun_Id(12L);
-        verify(runs, never()).delete(run);
+        verify(deletion).delete(7L, java.util.List.of(12L));
     }
 
     @Test

@@ -3,9 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { getRouteApi } from "@tanstack/react-router";
 import { Search, Upload } from "lucide-react";
-import { Link } from "react-router";
-import { toast } from "sonner";
+import { AppLink } from "@/shared/ui/AppLink";
+import { toast } from "@/shared/ui/toast";
 import { useDeletePluginMutation } from "@/features/plugins/api/plugin.mutations";
 import {
   usePluginCatalogPageQuery,
@@ -36,17 +37,14 @@ const SORT_OPTIONS = (Object.entries(SORT_LABELS) as Array<[SortMode, string]>).
   ([value, label]) => ({ value, label }),
 );
 
+const route = getRouteApi("/protected/app/can-view-plugins/plugins");
+
 export function PluginCatalogPage() {
   const { data: user, error } = useUser();
   const { data: workspace } = useWorkspaceContext();
   const organizationId = workspace?.currentOrganization.id;
   const canManagePlugins = workspace?.permissions.canManagePlugins ?? false;
-  const controls = useCatalogControls<TypeFilter, SortMode>({
-    filters: TYPE_FILTERS.map(({ value }) => value),
-    initialFilter: "all",
-    initialSort: "updated",
-    sorts: SORT_OPTIONS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const deleteMutation = useDeletePluginMutation();
   const statsQuery = usePluginCatalogStatsQuery(organizationId);
   const pageQuery = usePluginCatalogPageQuery(
@@ -99,10 +97,10 @@ export function PluginCatalogPage() {
             "View and manage workspace plugins that extend MLForm with custom field and report renderers.",
           breadcrumbs: [{ label: "Plugins" }],
           actions: canManagePlugins ? (
-            <Link className={appButtonClass()} to="/plugins/upload">
+            <AppLink className={appButtonClass()} to="/plugins/upload">
               <Upload size={16} />
               Upload plugins
-            </Link>
+            </AppLink>
           ) : null,
         }}
         isActionPending={deleteMutation.isPending}

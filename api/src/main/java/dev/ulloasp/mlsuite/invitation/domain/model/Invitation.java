@@ -63,8 +63,9 @@ public class Invitation {
     @Column(name = "status", nullable = false, length = 32)
     private InvitationStatus status;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "invited_by_user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_invitation_invited_by"))
+    /** Null once the person who invited is gone. */
+    @ManyToOne
+    @JoinColumn(name = "invited_by_user_id", foreignKey = @ForeignKey(name = "fk_invitation_invited_by"))
     private User invitedBy;
 
     @Column(name = "expires_at", nullable = false, columnDefinition = "TIMESTAMPTZ")

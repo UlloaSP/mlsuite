@@ -11,6 +11,7 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -29,8 +31,6 @@ import dev.ulloasp.mlsuite.model.application.runtime.RuntimeEnvironments;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.domain.model.ModelRuntimeState;
 import dev.ulloasp.mlsuite.storage.ArtifactSource;
-import dev.ulloasp.mlsuite.storage.ModelArtifactInlineCopy;
-import dev.ulloasp.mlsuite.storage.StorageProperties;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelAlreadyExistsException;
 import dev.ulloasp.mlsuite.model.application.upload.BundleInspection;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
@@ -41,7 +41,9 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModel
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
 import dev.ulloasp.mlsuite.storage.ModelArtifactWriter;
+import dev.ulloasp.mlsuite.storage.ObjectStorageException;
 import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -58,7 +60,6 @@ class ModelServiceTest {
     @Mock private ModelArtifactWriter artifactWriter;
     @Mock private ModelArtifactContentReader artifactReader;
     @Mock private StorageDeletionQueue deletionQueue;
-    @Mock private ModelArtifactInlineCopy inlineCopy;
     @Mock private RuntimeEnvironments environments;
 
     private ModelServiceImpl service;
@@ -75,10 +76,8 @@ class ModelServiceTest {
                 artifactWriter,
                 artifactReader,
                 deletionQueue,
-                inlineCopy,
-                new StorageProperties(),
                 environments,
-                false);
+                mock(AuditLogService.class));
         lenient().when(environments.register(any())).thenAnswer(call -> call.<BundleInspection.Environment>getArgument(0).key());
         lenient().when(workspaceAuthorizationService.requireCurrent(eq(3L), any(PermissionKey[].class))).thenReturn(organization());
     }
@@ -111,7 +110,7 @@ class ModelServiceTest {
 
         assertThrows(ModelAlreadyExistsException.class, () -> service.requireCreatable(3L, "demo"));
         assertThrows(ModelAlreadyExistsException.class,
-                () -> service.createModel(3L, "demo", inspection(List.of()), ArtifactSource.of("x".getBytes()), "sha-x", "application/octet-stream"));
+                () -> service.createModel(3L, "demo", inspection(), TestFixtures.artifact("x".getBytes()), "sha-x", "application/octet-stream"));
     }
 
     @Test
@@ -158,7 +157,7 @@ class ModelServiceTest {
 
         service.deleteModel(3L, 9L, 0L);
 
-        verify(deletionQueue).enqueue("models", model.getStorageObjectKey(), "version-7");
+        verify(deletionQueue).enqueue(41L, "models", model.getStorageObjectKey(), "version-7");
         verify(modelRepository).delete(model);
         verify(objectStorageService, never()).delete(anyString(), anyString(), any());
         verify(environments).releaseWhenUnused(model.getEnvironmentKey());
@@ -188,7 +187,7 @@ class ModelServiceTest {
         source.setArtifactSha256("sha-source");
         source.setModelSizeBytes(5L);
         when(artifactReader.source(dev.ulloasp.mlsuite.storage.ModelArtifactReference.of(source)))
-                .thenReturn(ArtifactSource.of("bytes".getBytes()));
+                .thenReturn(TestFixtures.artifact("bytes".getBytes()));
         org.mockito.Mockito.doAnswer(invocation -> {
             Model copy = invocation.getArgument(0);
             copy.setStorageBucket("bucket");
@@ -203,7 +202,6 @@ class ModelServiceTest {
         assertEquals("copy", copy.getName());
         assertEquals("new-key", copy.getStorageObjectKey());
         assertEquals("Alice", copy.getUpdatedBy().getFullName());
-        verify(inlineCopy).write(eq(copy.getId()), any(ArtifactSource.class), eq("sha-source"));
     }
 
     @Test
@@ -212,44 +210,20 @@ class ModelServiceTest {
         when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
         when(modelRepository.saveAndFlush(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Model result = service.createModel(3L, "demo",
-                inspection(List.of(Map.of("feature", "age", "importance", 62.5))), ArtifactSource.of("x".getBytes()), "sha-x", "application/octet-stream");
+        Model result = service.createModel(3L, "demo", inspection(), TestFixtures.artifact("x".getBytes()), "sha-x",
+                "application/octet-stream");
 
         assertEquals("demo", result.getName());
         assertEquals("model.mlbundle", result.getFileName());
         assertEquals("rf", result.getSpecificType());
         assertEquals(Map.of("fields", List.of(), "reports", List.of()), result.getInputSchema());
         assertEquals(Map.of("writer_version", "0.1.0a3"), result.getBundleManifest());
-        assertEquals(List.of(Map.of("feature", "age", "importance", 62.5)), result.getFeatureImportances());
-        // The inline copy is written last, from the stream, after the entity's final flush.
-        var order = inOrder(modelRepository, artifactWriter, inlineCopy);
+        // Importances are read once the model loads in its environment.
+        assertNull(result.getFeatureImportances());
+        // The row is written once, naming the object already stored.
+        var order = inOrder(modelRepository, artifactWriter);
         order.verify(artifactWriter).storeAndAttach(any(), any(), eq("sha-x"), eq("application/octet-stream"));
         order.verify(modelRepository).saveAndFlush(any(Model.class));
-        order.verify(inlineCopy).write(any(), any(ArtifactSource.class), eq("sha-x"));
-    }
-
-    @Test
-    void createModel_StoresAModelWhoseBundleHasNoImportances() throws Exception {
-        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
-        when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
-        when(modelRepository.saveAndFlush(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        Model result = service.createModel(3L, "demo", inspection(null), ArtifactSource.of("x".getBytes()), "sha-x", "application/octet-stream");
-
-        assertNull(result.getFeatureImportances());
-        assertEquals(Map.of("writer_version", "0.1.0a3"), result.getBundleManifest());
-    }
-
-    @Test
-    void createModel_RunsABundleWithoutALockAtOnceInTheLegacyEnvironment() {
-        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
-        when(modelRepository.saveAndFlush(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        Model result = service.createModel(3L, "demo", inspection(null), ArtifactSource.of("x".getBytes()), "sha-x",
-                "application/octet-stream");
-
-        assertEquals("legacy", result.getEnvironmentKey());
-        assertEquals(ModelRuntimeState.READY, result.getRuntimeState());
     }
 
     @Test
@@ -259,9 +233,9 @@ class ModelServiceTest {
         BundleInspection.Environment locked = new BundleInspection.Environment("e".repeat(64), "i".repeat(64), "0.3.0",
                 "3.14.7", List.of(Map.of("name", "scikit-learn", "version", "1.9.1")), "lock-version = \"1.0\"");
         BundleInspection inspection = new BundleInspection("clf", "rf", "model.mlbundle",
-                Map.of("fields", List.of(), "reports", List.of()), Map.of("writer_version", "0.3.0"), null, locked);
+                Map.of("fields", List.of(), "reports", List.of()), Map.of("writer_version", "0.3.0"), locked);
 
-        Model result = service.createModel(3L, "demo", inspection, ArtifactSource.of("x".getBytes()), "sha-x",
+        Model result = service.createModel(3L, "demo", inspection, TestFixtures.artifact("x".getBytes()), "sha-x",
                 "application/octet-stream");
 
         verify(environments).register(locked);
@@ -275,20 +249,41 @@ class ModelServiceTest {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
         when(modelRepository.saveAndFlush(any(Model.class))).thenThrow(failure);
+        org.mockito.Mockito.doAnswer(invocation -> {
+            Model model = invocation.getArgument(0);
+            model.setStorageBucket("bucket");
+            model.setStorageObjectKey("key");
+            model.setStorageVersionId("v1");
+            return null;
+        }).when(artifactWriter).storeAndAttach(any(Model.class), any(ArtifactSource.class), eq("sha-x"),
+                eq("application/octet-stream"));
 
         assertEquals(failure, assertThrows(RuntimeException.class, () -> service.createModel(3L, "demo",
-                inspection(List.of()), ArtifactSource.of("x".getBytes()), "sha-x", "application/octet-stream")));
-        verify(artifactWriter, never()).storeAndAttach(any(), any(), any(), any());
-        verify(inlineCopy, never()).write(any(), any(), any());
+                inspection(), TestFixtures.artifact("x".getBytes()), "sha-x", "application/octet-stream")));
+        verify(objectStorageService).delete("bucket", "key", "v1");
     }
 
-    private static BundleInspection inspection(List<Map<String, Object>> importances) {
+    @Test
+    void createModel_WritesNoRowWhenTheArtifactCannotBeStored() {
+        ObjectStorageException failure = new ObjectStorageException("store failed");
+        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
+        when(artifactWriter.storeAndAttach(any(Model.class), any(ArtifactSource.class), eq("sha-x"),
+                eq("application/octet-stream"))).thenThrow(failure);
+
+        assertEquals(failure, assertThrows(ObjectStorageException.class, () -> service.createModel(3L, "demo",
+                inspection(), TestFixtures.artifact("x".getBytes()), "sha-x", "application/octet-stream")));
+        verify(modelRepository, never()).saveAndFlush(any());
+        verify(objectStorageService, never()).delete(any(), any(), any());
+    }
+
+    private static BundleInspection inspection() {
         return new BundleInspection("clf", "rf", "model.mlbundle", Map.of("fields", List.of(), "reports", List.of()),
-                Map.of("writer_version", "0.1.0a3"), importances, LEGACY);
+                Map.of("writer_version", "0.1.0a3"), LOCKED);
     }
 
-    private static final BundleInspection.Environment LEGACY =
-            new BundleInspection.Environment("legacy", null, null, null, List.of(), null);
+    private static final BundleInspection.Environment LOCKED = new BundleInspection.Environment("e".repeat(64),
+            "i".repeat(64), "0.3.1", "3.14.7", List.of(Map.of("name", "scikit-learn", "version", "1.9.1")),
+            "lock-version = \"1.0\"");
 
     private User user() {
         User user = new User();

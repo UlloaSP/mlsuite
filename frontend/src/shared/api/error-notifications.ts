@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { HttpError, isHttpError } from "@/shared/api/http";
 import type { ErrorDto } from "@/shared/api/openapi.gen";
 

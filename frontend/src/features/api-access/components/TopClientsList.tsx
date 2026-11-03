@@ -3,8 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { formatCount, formatShare } from "@/features/api-access/lib/api-format";
+import { appHref } from "@/shared/lib/app-href";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import type { ApiClientCalls } from "@/shared/api/openapi.gen";
 
@@ -28,12 +29,12 @@ export function TopClientsList({ clients, clientHref }: Props) {
         >
           <span className="min-w-0 truncate">
             {clientHref ? (
-              <Link
-                to={clientHref(client.clientId)}
+              <AppLink
+                {...appHref(clientHref(client.clientId))}
                 className="font-semibold text-fg hover:underline"
               >
                 {client.clientName}
-              </Link>
+              </AppLink>
             ) : (
               <span className="font-semibold text-fg">{client.clientName}</span>
             )}

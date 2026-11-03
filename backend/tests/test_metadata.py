@@ -1,3 +1,5 @@
+import io
+import zipfile
 from io import BytesIO
 
 import mlbundle
@@ -9,9 +11,9 @@ from mlsuite_backend.policy import parse_allowlist
 from tests.client import client
 from tests.helpers import (
     environment_of,
-    legacy_bundle,
     make_onnx_classifier,
     make_positional_regressor,
+    make_tree,
     make_xgboost_classifier,
     serialize_bundle,
 )
@@ -50,8 +52,6 @@ def test_metadata_describes_model_and_the_environment_it_needs() -> None:
         "library": "xgboost",
         "features": ["age", "income"],
         "featureSource": "model",
-        # Read once the model loads in its environment (see test_verify).
-        "featureImportances": None,
     }
 
 
@@ -72,9 +72,9 @@ def test_metadata_refuses_a_bundle_whose_environment_is_not_allowed(monkeypatch)
     lock = mlbundle.inspect(upload[1].getvalue()).environment_lock
     granted = [package for package in lock.packages if package.name != "onnxruntime"]
     allowlist = parse_allowlist(
-        f'python = ["{lock.python_version}"]\n'
+        f'python = "=={lock.python_version}"\n'
         f'[mlbundle]\n"{mlbundle.__version__}" = "{"0" * 64}"\n'
-        "[packages]\n" + "".join(f'{package.name} = ["{package.version}"]\n' for package in granted)
+        "[packages]\n" + "".join(f'{package.name} = "=={package.version}"\n' for package in granted)
     )
     monkeypatch.setattr(policy, "allowlist", lambda: allowlist)
 
@@ -83,18 +83,25 @@ def test_metadata_refuses_a_bundle_whose_environment_is_not_allowed(monkeypatch)
     assert response.status_code == 422
     assert response.json()["detail"] == {
         "message": "The bundle needs packages MLsuite does not install",
-        "refused": [f"onnxruntime=={lock.version('onnxruntime')}"],
+        "refused": [f"onnxruntime=={lock.version('onnxruntime')} (not a package MLsuite installs)"],
     }
 
 
-def test_a_bundle_without_a_lock_is_read_in_the_legacy_environment() -> None:
-    response = client.post("/metadata", files={"model_file": legacy_bundle("legacy-tree")})
-    assert response.status_code == 200, response.text
-    payload = response.json()
-    assert payload["environment"] == {"key": "legacy"}
-    assert payload["manifest"]["writer_version"] == "0.2.1"
-    assert payload["specificType"] == "DecisionTreeClassifier"
-    assert [item["feature"] for item in payload["featureImportances"]] == ["age", "income"]
+def test_a_bundle_without_a_lock_is_refused() -> None:
+    # A bundle mlbundle wrote before bundles carried a lock has no pylock.toml.
+    original = serialize_bundle(make_tree())[1].getvalue()
+    stripped = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(original)) as source, zipfile.ZipFile(stripped, "w") as target:
+        for member in source.infolist():
+            if member.filename != "pylock.toml":
+                target.writestr(member, source.read(member))
+
+    response = client.post(
+        "/metadata", files={"model_file": ("tree.mlbundle", io.BytesIO(stripped.getvalue()), "application/octet-stream")}
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"].startswith("Cannot load bundle:")
 
 
 @pytest.mark.parametrize("filename", ["model.txt", "model.joblib", "model.onnx"])

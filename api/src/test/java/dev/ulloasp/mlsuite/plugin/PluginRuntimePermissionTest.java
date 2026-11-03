@@ -44,12 +44,15 @@ class PluginRuntimePermissionTest {
     void runtimePermissionLoadsOnlyCurrentOrganizationSources(PermissionKey permission) {
         membership(permission);
         var time = OffsetDateTime.now();
-        when(objects.list(41L)).thenReturn(List.of(new StoredPlugin("qa", "qa.ts", "text/typescript", 12,
-                time, time, "private name", "private@example.test", "private avatar", "export default {}")));
+        PluginMetadata row = new PluginMetadata();
+        when(metadata.findByOrganizationIdOrderByIdAsc(41L)).thenReturn(List.of(row));
+        when(objects.readPinned(row)).thenReturn(Optional.of(new StoredPlugin("qa", "qa.ts", "text/typescript", 12,
+                time, time, "private name", "private@example.test", "export default {}")));
         var result = runtime.list(3L);
         assertEquals("export default {}", result.getFirst().source());
         assertEquals(7, result.getFirst().getClass().getRecordComponents().length);
-        verify(objects).list(41L);
+        verify(metadata).findByOrganizationIdOrderByIdAsc(41L);
+        verify(objects).readPinned(row);
         verifyNoMoreInteractions(objects);
         if (permission != PermissionKey.VIEW_PLUGINS) {
             assertThrows(OrganizationAccessDeniedException.class, () -> authorization.require(3L, 41L, PermissionKey.VIEW_PLUGINS));
@@ -64,7 +67,7 @@ class PluginRuntimePermissionTest {
         when(metadata.findByOrganizationIdAndKindInOrderByIdAsc(41L, Set.of("number", "body-map", "risk-gauge")))
                 .thenReturn(List.of(used, gone));
         when(objects.readPinned(used)).thenReturn(Optional.of(new StoredPlugin("body", "body.ts",
-                "text/typescript", 12, time, time, "private name", "private@example.test", "private avatar",
+                "text/typescript", 12, time, time, "private name", "private@example.test",
                 "export default {}")));
         // A plugin queued for deletion is simply not served.
         when(objects.readPinned(gone)).thenReturn(Optional.empty());

@@ -3,9 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getProfile, login, logout, openDocument, register } from "./session-api";
-import { actInOrganization } from "@/shared/api/http";
+import { mutationOptions, queryOptions, useMutation, useQuery } from "@tanstack/react-query";
+import { linkOptions } from "@tanstack/react-router";
+import { deleteAccount, getProfile, login, logout, openDocument, register } from "./session-api";
+import { actInOrganization, isHttpError } from "@/shared/api/http";
 import type { UserDto } from "@/shared/api/openapi.gen";
 
 export const USER_QUERY_KEY = ["user"] as const;
@@ -16,34 +17,25 @@ export const userQueryOptions = () =>
     queryFn: ({ signal }) => getProfile(signal),
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
+    // No session is an answer, not a failure to retry.
+    retry: (count, error) =>
+      !(isHttpError(error) && [401, 403].includes(error.status)) && count < 2,
   });
 
-export const useUser = () =>
-  useQuery({
-    ...userQueryOptions(),
-    retry: (count, error) => {
-      const status =
-        (error as { status?: number; response?: { status?: number } }).status ??
-        (error as { response?: { status?: number } }).response?.status;
-      return status !== 401 && status !== 403 && count < 2;
-    },
-  });
+export const useUser = () => useQuery(userQueryOptions());
 
 export const useCurrentUserIsSuperadmin = () => useUser().data?.systemRole === "SUPERADMIN";
 
 /** The one address of the sign-in and register screen. */
 export const SIGN_IN_PATH = "/login";
 
-/** The search param naming which of the screen's two forms is open; signing in when absent. */
-export const AUTH_MODE_PARAM = "mode";
-
 /** The sign-in screen, set to come back to `returnTo` once signed in. */
-export const signInHref = (returnTo: string) =>
-  `${SIGN_IN_PATH}?returnTo=${encodeURIComponent(returnTo)}`;
+export const signInLink = (returnTo: string) =>
+  linkOptions({ to: SIGN_IN_PATH, search: { returnTo } });
 
 /** The same screen on its registration form, set to come back to `returnTo` once registered. */
-export const registerHref = (returnTo: string) =>
-  `${signInHref(returnTo)}&${AUTH_MODE_PARAM}=register`;
+export const registerLink = (returnTo: string) =>
+  linkOptions({ to: SIGN_IN_PATH, search: { returnTo, mode: "register" } });
 
 // Any origin serves as the site here: only whether the browser would leave it matters.
 const SITE_ORIGIN = "https://mlsuite.invalid";
@@ -62,31 +54,44 @@ export const safeReturnTo = (value: string | null | undefined, fallback: string)
   value?.startsWith("/") && staysOnSite(value) ? value : fallback;
 
 /** Signs in through `authenticate` and adopts the returned user as the session. */
-const useSessionMutation = <Payload>(authenticate: (payload: Payload) => Promise<UserDto>) => {
-  const queryClient = useQueryClient();
-  return useMutation({
+const sessionMutation = <Payload>(authenticate: (payload: Payload) => Promise<UserDto>) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
     mutationFn: authenticate,
-    onSuccess: (user) => {
+    onSuccess: (user, _payload, _result, { client }) => {
       // A new session starts where its account last worked, not where the previous one did.
       actInOrganization(null);
-      queryClient.setQueryData(USER_QUERY_KEY, user);
-      void queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
+      client.setQueryData(USER_QUERY_KEY, user);
+      void client.invalidateQueries({ queryKey: USER_QUERY_KEY });
     },
   });
-};
 
-export const useLogin = () => useSessionMutation(login);
+const loginMutation = sessionMutation(login);
 
-export const useRegister = () => useSessionMutation(register);
+const registerMutation = sessionMutation(register);
+
+/** Closes the account and leaves as signing out does: nothing it loaded outlives the session. */
+const deleteAccountMutation = mutationOptions({
+  meta: { errorHandledLocally: true },
+  mutationFn: deleteAccount,
+  onSuccess: () => openDocument(SIGN_IN_PATH),
+});
+
+export const useDeleteAccount = () => useMutation(deleteAccountMutation);
+
+export const useLogin = () => useMutation(loginMutation);
+
+export const useRegister = () => useMutation(registerMutation);
 
 /**
  * Signs out because the member asked to, then loads `destination` as a new document: nothing
  * the member loaded outlives the session, and no page still on screen sees it end. A session
  * that ends on its own is not this: the page it ended on asks to sign in and come back.
  */
-export const useLogout = (destination: string) =>
-  useMutation({
+const logoutMutation = (destination: string) =>
+  mutationOptions({
     mutationFn: logout,
     onSuccess: () => openDocument(destination),
   });
+
+export const useLogout = (destination: string) => useMutation(logoutMutation(destination));

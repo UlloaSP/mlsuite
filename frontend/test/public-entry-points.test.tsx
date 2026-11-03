@@ -1,11 +1,10 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { getDefaultStore } from "jotai";
 import { act, type PropsWithChildren } from "react";
-import { createMemoryRouter, Route, RouterProvider, Routes, useLocation } from "react-router";
+import { createMemoryHistory, RouterProvider, useLocation } from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { AuthLandingPage } from "@/app/pages/AuthLandingPage";
-import { routes } from "@/app/router/routes";
+import { createAppRouter } from "@/app/router/routes";
 import { safeReturnTo } from "@/capabilities/workspace-context/session";
 import {
   inferenceSessionsAtom,
@@ -51,6 +50,8 @@ const SUMMARY: PublicBookmarkSummaryDto = {
   reportCount: 0,
   organizationName: "Acme Health",
   organizationLogoUrl: null,
+  organizationKind: "TEAM",
+  publisherHandle: null,
   updatedAt: "2026-10-01T10:00:00Z",
 };
 const BOOKMARK: PublicBookmarkDto = {
@@ -61,8 +62,8 @@ const BOOKMARK: PublicBookmarkDto = {
 };
 const USER = { id: 9, fullName: "Ada Lovelace", email: "ada@acme.test", systemRole: "USER" };
 const WORKSPACE = {
-  currentOrganization: { id: 3, name: "Ada Lovelace Personal", slug: "ada" },
-  organizations: [{ id: 3, name: "Ada Lovelace Personal", slug: "ada" }],
+  currentOrganization: { id: 3, name: "Ada Lovelace", kind: "PERSONAL", slug: "ada" },
+  organizations: [{ id: 3, name: "Ada Lovelace", kind: "PERSONAL", slug: "ada" }],
   permissions: {},
 };
 
@@ -114,18 +115,18 @@ const settle = async () => {
   }
 };
 const open = async (entry: string) => {
-  const router = createMemoryRouter(routes, { initialEntries: [entry] });
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const router = createAppRouter(client, createMemoryHistory({ initialEntries: [entry] }));
   const { host } = await mount(
     <QueryClientProvider client={client}>
       <RouterProvider router={router} />
     </QueryClientProvider>,
   );
   await settle();
-  const url = () => `${router.state.location.pathname}${router.state.location.search}`;
+  const url = () => `${router.state.location.pathname}${router.state.location.searchStr}`;
   /** What the browser's back button does. */
   const back = async () => {
-    await act(async () => router.navigate(-1));
+    await act(async () => router.history.back());
     await settle();
   };
   return { host, url, back, client };
@@ -149,6 +150,7 @@ const registerHref = (returnTo: string) => `${signInHref(returnTo)}&mode=registe
 const authenticate = async (host: ParentNode) => {
   for (const [name, value] of [
     ["fullName", USER.fullName],
+    ["username", "ada"],
     ["email", USER.email],
     ["password", "correct-horse-battery"],
   ]) {
@@ -240,7 +242,7 @@ describe("auth screen", () => {
 
     const register = await open(registerHref("/explore"));
     expect(authForm(register.host)).toEqual({
-      fields: ["fullName", "email", "password"],
+      fields: ["fullName", "username", "email", "password"],
       submit: "Create account",
     });
   });
@@ -330,7 +332,12 @@ describe("coming back after authenticating", () => {
     expect(api.posts).toEqual([
       {
         path: "/api/auth/register",
-        body: { email: USER.email, password: "correct-horse-battery", fullName: USER.fullName },
+        body: {
+          email: USER.email,
+          password: "correct-horse-battery",
+          fullName: USER.fullName,
+          username: "ada",
+        },
       },
     ]);
   });
@@ -355,8 +362,8 @@ describe("coming back after authenticating", () => {
   );
 
   function Destination() {
-    const { pathname, search } = useLocation();
-    return <output>{`${pathname}${search}`}</output>;
+    const { pathname, searchStr } = useLocation();
+    return <output>{`${pathname}${searchStr}`}</output>;
   }
 
   test.each([
@@ -368,15 +375,11 @@ describe("coming back after authenticating", () => {
     [registerHref("https://example.com")],
     [registerHref("//example.com")],
   ])("authenticating at %j, with no page to return to, opens Explore", async (entry) => {
-    const { host } = await mount(
-      <QueryClientProvider client={new QueryClient()}>
-        <Routes>
-          <Route path="/login" element={<AuthLandingPage />} />
-          <Route path="*" element={<Destination />} />
-        </Routes>
-      </QueryClientProvider>,
-      { route: entry },
-    );
+    const { host } = await mount(null, {
+      route: entry,
+      routes: { "/login": <AuthLandingPage />, $: <Destination /> },
+      queryClient: new QueryClient(),
+    });
     await authenticate(host);
 
     expect(api.posts).toHaveLength(1);
@@ -384,13 +387,13 @@ describe("coming back after authenticating", () => {
   });
 
   test("a session that expired on a workspace page returns to that page", async () => {
-    const { host, url } = await open("/profile?tab=security");
-    expect(url()).toBe(signInHref("/profile?tab=security"));
+    const { host, url } = await open("/profile?view=edit");
+    expect(url()).toBe(signInHref("/profile?view=edit"));
 
     await authenticate(host);
 
     expect(api.posts.map((post) => post.path)).toEqual(["/api/auth/login"]);
-    expect(url()).toBe("/profile?tab=security");
+    expect(url()).toBe("/profile?view=edit");
   });
 });
 
@@ -433,9 +436,8 @@ describe("leaving the session", () => {
   });
 
   test("unsaved inferences are asked about in the app before signing out, never by the browser", async () => {
-    const store = getDefaultStore();
     const run = { key: "run-1", state: "ready" } as SessionEntry;
-    store.set(inferenceSessionsAtom, { "1:bookmark": [run] });
+    inferenceSessionsAtom.set({ "1:bookmark": [run] });
     try {
       Object.assign(api, { signedIn: true });
       shell.accountMenu = true;
@@ -447,17 +449,17 @@ describe("leaving the session", () => {
       await click("Cancel");
       await settle();
       expect(api.posts).toEqual([]);
-      expect(store.get(inferenceSessionsAtom)).toEqual({ "1:bookmark": [run] });
+      expect(inferenceSessionsAtom.get()).toEqual({ "1:bookmark": [run] });
 
       await signOut();
       await click("Discard and sign out");
       await settle();
       // Nothing unsaved is left for the browser to warn about when the new document loads.
-      expect(store.get(inferenceSessionsAtom)).toEqual({});
+      expect(inferenceSessionsAtom.get()).toEqual({});
       expect(api.posts.map((post) => post.path)).toEqual(["/api/logout"]);
       expect(documents.opened).toEqual(["/explore"]);
     } finally {
-      store.set(inferenceSessionsAtom, {});
+      inferenceSessionsAtom.set({});
     }
   });
 

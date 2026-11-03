@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom, useSelector } from "@tanstack/react-store";
 import { lazy, Suspense, useCallback, useEffect, useRef } from "react";
 import { typographyAtom } from "@/shared/ui/typography-state";
 import { useQuery } from "@tanstack/react-query";
@@ -11,11 +11,7 @@ import { predictionCatalogQueryOptions } from "@/capabilities/prediction-runtime
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { type EditorErrorCard, getMarkerMessage } from "@/features/schemas/lib/schema-diagnostics";
 import { loadLocalMonacoEditor } from "@/capabilities/editor/load-local-monaco-editor";
-import {
-  editorCheckErrorsAtom,
-  schemaAtom,
-  schemaTextAtom,
-} from "@/features/schemas/lib/editor-atoms";
+import { useEditorAtoms } from "@/features/schemas/lib/editor-atoms";
 import { useMappingIssueMarkers } from "@/features/schemas/lib/use-mapping-issue-markers";
 import { useSchemaCompatValidation } from "@/features/schemas/lib/use-schema-compat-validation";
 import {
@@ -33,11 +29,12 @@ const MonacoEditor = lazy(loadLocalMonacoEditor);
 
 export function EditorBody() {
   const organizationId = useCurrentOrganizationId() ?? "none";
-  const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
-  const [, setSchema] = useAtom(schemaAtom);
-  const [, setSchemaErrors] = useAtom(editorCheckErrorsAtom);
+  const atoms = useEditorAtoms();
+  const [schemaText, setSchemaText] = useAtom(atoms.schemaText);
+  const setSchema = atoms.schema.set;
+  const setSchemaErrors = atoms.editorCheckErrors.set;
   const appearance = useEditorAppearance();
-  const typography = useAtomValue(typographyAtom);
+  const typography = useSelector(typographyAtom);
   const { data: catalog, error: catalogError } = useQuery(
     predictionCatalogQueryOptions(organizationId),
   );

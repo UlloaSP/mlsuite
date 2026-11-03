@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ArrowRight, Settings } from "lucide-react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { RoleBadge } from "@/features/workspace/components/RoleBadge";
 import { lifecycleStages } from "@/features/workspace/lib/workspace-overview";
 import type { AppBreadcrumbItem } from "@/shared/ui/AppBreadcrumbs";
@@ -60,7 +60,8 @@ export function OrganizationOverview({
   const basePath = `/workspace/organizations/${organization.id}`;
   const data = dashboard.data;
   const stages = lifecycleStages(permissions, data?.stats, { linked: isCurrent });
-  const showPeople = permissions.canViewMembers || permissions.canViewInvitations;
+  const personal = organization.kind === "PERSONAL";
+  const showPeople = !personal && (permissions.canViewMembers || permissions.canViewInvitations);
 
   return (
     <AppPage>
@@ -70,22 +71,25 @@ export function OrganizationOverview({
           title={organization.name}
           description={
             organization.description ||
-            `Everything ${organization.slug} runs, from uploaded models to reviewed predictions.`
+            `Everything ${personal ? "you run" : `${organization.slug} runs`}, from uploaded models to reviewed predictions.`
           }
           actions={
-            <>
-              {permissions.canViewOrganization ? (
-                <Link
-                  to={`${basePath}/settings`}
-                  viewTransition
-                  className={appButtonClass({ variant: "secondary" })}
-                >
-                  <Settings size={15} />
-                  Settings
-                </Link>
-              ) : null}
-              {role ? <RoleBadge value={role} /> : null}
-            </>
+            personal ? null : (
+              <>
+                {permissions.canViewOrganization ? (
+                  <AppLink
+                    to="/workspace/organizations/$organizationId/settings"
+                    params={{ organizationId: String(organization.id) }}
+                    viewTransition
+                    className={appButtonClass({ variant: "secondary" })}
+                  >
+                    <Settings size={15} />
+                    Settings
+                  </AppLink>
+                ) : null}
+                {role ? <RoleBadge value={role} /> : null}
+              </>
+            )
           }
         />
 
@@ -140,7 +144,7 @@ export function OrganizationOverview({
 
         {/* Plugins live under the active organization, so only its overview links there. */}
         {permissions.canViewPlugins && isCurrent ? (
-          <Link
+          <AppLink
             to="/plugins"
             viewTransition
             className={cx(
@@ -156,14 +160,14 @@ export function OrganizationOverview({
               <span className="block text-xs text-fg-secondary">
                 {data === undefined
                   ? "Extensions for forms and reports."
-                  : `${data.stats.totalPlugins} in this organization, extending forms and reports.`}
+                  : `${data.stats.totalPlugins} here, extending forms and reports.`}
               </span>
             </span>
             <ArrowRight
               size={15}
               className="text-fg-muted transition group-hover:translate-x-0.5 group-hover:text-fg"
             />
-          </Link>
+          </AppLink>
         ) : null}
       </AppSurface>
     </AppPage>

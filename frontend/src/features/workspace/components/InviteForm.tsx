@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { AppCombobox } from "@/shared/ui/AppCombobox";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppCopy } from "@/shared/ui/AppCopy";
@@ -22,19 +22,15 @@ export function InviteForm({
   const roleQuery = useRoleCatalog(organizationId, roleSearch, true, "invitable");
   const candidates = candidateQuery.data?.items ?? [];
   const roleOptions = roleQuery.data?.items ?? [];
+  // The starting role is Member, or the first invitable role when there is none. It comes from the
+  // unfiltered list, which the role field's own query shares until someone searches roles.
+  const unfilteredRoles = useRoleCatalog(organizationId, "", true, "invitable").data?.items ?? [];
+  const defaultRole =
+    unfilteredRoles.find((role) => role.systemKey === "MEMBER") ?? unfilteredRoles[0] ?? null;
   const [candidate, setCandidate] = useState<InvitationCandidateDto | null>(null);
-  const [selectedRole, setSelectedRole] = useState<RoleDefinitionDto | null>(null);
-  const initializedDefault = useRef(false);
-  const defaultRole = useRef<RoleDefinitionDto | null>(null);
-  useEffect(() => {
-    // The starting role is Member, or the first invitable role when there is none.
-    const preferred = roleOptions.find((role) => role.systemKey === "MEMBER") ?? roleOptions[0];
-    if (!initializedDefault.current && preferred && roleSearch === "") {
-      initializedDefault.current = true;
-      defaultRole.current = preferred;
-      setSelectedRole(preferred);
-    }
-  }, [roleOptions, roleSearch]);
+  // The role picked in the field: undefined until someone picks (the default applies), null if cleared.
+  const [pickedRole, setPickedRole] = useState<RoleDefinitionDto | null | undefined>(undefined);
+  const selectedRole = pickedRole === undefined ? defaultRole : pickedRole;
   const noRoles =
     roleSearch === "" && !roleQuery.isPlaceholderData && roleQuery.data?.totalItems === 0;
   const selectedRoleId = selectedRole?.id ?? null;
@@ -54,7 +50,7 @@ export function InviteForm({
       setCandidate(null);
       setSearch("");
       setRoleSearch("");
-      setSelectedRole(defaultRole.current);
+      setPickedRole(undefined);
     });
   };
 
@@ -84,7 +80,7 @@ export function InviteForm({
         items={roleOptions.map((role) => ({ id: role.id, label: role.name }))}
         placeholder="Search role"
         onChange={(role) =>
-          setSelectedRole(roleOptions.find((option) => option.id === role?.id) ?? null)
+          setPickedRole(roleOptions.find((option) => option.id === role?.id) ?? null)
         }
       />
       <AppButton type="button" className="w-full lg:w-auto" disabled={!canSubmit} onClick={submit}>

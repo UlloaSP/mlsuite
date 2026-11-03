@@ -3,38 +3,43 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { AppBadge } from "@/shared/ui/AppBadge";
+import type { ReactNode } from "react";
+import type { AppBreadcrumbItem } from "@/shared/ui/AppBreadcrumbs";
+import { PersonAvatar } from "@/shared/ui/PersonAvatar";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 
-export type ProfileHeaderProps = {
-  imageUrl: string | null;
+/** Who a profile is about: their picture and name, and the handle their page answers at. */
+export function ProfileHeader({
+  actions,
+  avatarUrl,
+  breadcrumbs,
+  className,
+  handle,
+  name,
+}: {
+  actions?: ReactNode;
+  avatarUrl: string | null;
+  breadcrumbs?: AppBreadcrumbItem[];
+  className?: string;
+  handle: string;
   name: string;
-  provider: string;
-};
-
-export function ProfileHeader({ imageUrl, name, provider }: ProfileHeaderProps) {
+}) {
   return (
     <AppPageHeader
-      breadcrumbs={[{ label: "Profile" }]}
+      breadcrumbs={breadcrumbs}
+      className={className}
       title={
         <span className="flex min-w-0 items-center gap-4">
-          {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt=""
-              className="size-14 shrink-0 rounded-full border border-line object-cover"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <span className="grid size-14 shrink-0 place-items-center rounded-full bg-accent-subtle text-xl font-semibold tracking-normal text-accent-strong">
-              {name.slice(0, 2).toUpperCase()}
-            </span>
-          )}
-          <span className="min-w-0 truncate">{name}</span>
+          <PersonAvatar
+            avatarUrl={avatarUrl}
+            className="size-14 rounded-full border border-line text-xl tracking-normal"
+            name={name}
+          />
+          <span className="min-w-0 break-words">{name}</span>
         </span>
       }
-      description={provider}
-      actions={<AppBadge tone="accent">Workspace identity</AppBadge>}
+      description={`@${handle}`}
+      actions={actions}
     />
   );
 }

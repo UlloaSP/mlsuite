@@ -1,6 +1,6 @@
 # Shared service topology. Always combine this file with the dev or prod image override.
 
-# Settings shared by the API image's migrate, artifact-migrate and server modes.
+# Settings shared by the API image's migrate, artifact-prune and server modes.
 x-api-env: &api-env
   SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
   LOG_PATH: ${LOG_PATH}
@@ -41,7 +41,7 @@ networks:
 
 volumes:
   pg_data:
-  minio_data:
+  rustfs_data:
   # The environments the builder installs and the runtime runs models in. A cache: lost, it is
   # rebuilt from the bundles' locks, so it is not backed up.
   runtime_environments:
@@ -62,6 +62,8 @@ services:
       OPS_AGENT_TERMINAL_IDLE_MINUTES: ${OPS_AGENT_TERMINAL_IDLE_MINUTES}
       OPS_AGENT_TERMINAL_MAX_SESSIONS: ${OPS_AGENT_TERMINAL_MAX_SESSIONS}
       OPS_AGENT_LOG_TAIL_LINES: ${OPS_AGENT_LOG_TAIL_LINES}
+      # Read in the checkout mounted below; a root outside it leaves the backup alert unknown.
+      OPS_AGENT_BACKUP_ROOT: ${LOCAL_BACKUP_ROOT:-backups}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./:/workspace:ro
@@ -99,10 +101,6 @@ services:
       PGDATABASE: ${DB_PROD}
       PGUSER: ${DB_ADMIN_USER}
       PGPASSWORD: ${DB_ADMIN_PASS}
-      DB_ADMIN_USER: ${DB_ADMIN_USER}
-      DB_ADMIN_PASS: ${DB_ADMIN_PASS}
-      DB_LEGACY_OWNER: ${DB_LEGACY_OWNER}
-      DB_LEGACY_PASS: ${DB_LEGACY_PASS}
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
       DB_MIGRATION_USER: ${DB_MIGRATION_USER}
@@ -123,9 +121,14 @@ services:
       CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
       RUNTIME_WORKERS: ${RUNTIME_WORKERS:-2}
       RUNTIME_BUNDLE_CACHE_MB: ${RUNTIME_BUNDLE_CACHE_MB:-512}
+      RUNTIME_WORKER_MEMORY_MB: ${RUNTIME_WORKER_MEMORY_MB:-4096}
+      RUNTIME_WORKER_OPEN_FILES: ${RUNTIME_WORKER_OPEN_FILES:-1024}
+      RUNTIME_WORKER_PROCESSES: ${RUNTIME_WORKER_PROCESSES:-512}
     volumes:
       - runtime_environments:/var/lib/mlsuite/environments:ro
     mem_limit: ${RUNTIME_MEMORY_LIMIT:-6g}
+    # Reaps what a model's processes leave behind once their worker is ended.
+    init: true
     healthcheck:
       test: [ "CMD", "/app/.venv/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:${PYTHON_PORT}/health', timeout=4)" ]
       interval: 15s
@@ -142,6 +145,8 @@ services:
       RUNTIME_BUILDER_HOST: ${RUNTIME_BUILDER_HOST}
       RUNTIME_BUILDER_PORT: ${RUNTIME_BUILDER_PORT}
       RUNTIME_PACKAGE_INDEX_URL: ${RUNTIME_PACKAGE_INDEX_URL:-https://pypi.org/simple}
+      RUNTIME_PACKAGE_METADATA_URL: ${RUNTIME_PACKAGE_METADATA_URL:-https://pypi.org/pypi}
+      RUNTIME_PACKAGE_MIN_AGE_DAYS: ${RUNTIME_PACKAGE_MIN_AGE_DAYS:-7}
     volumes:
       - runtime_environments:/var/lib/mlsuite/environments
     mem_limit: ${RUNTIME_BUILDER_MEMORY_LIMIT:-2g}
@@ -155,16 +160,17 @@ services:
     restart: unless-stopped
     logging: *logging
 
-  minio:
-    image: ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
-    command: server /data --console-address "${MINIO_CONSOLE_ADDRESS}"
+  rustfs:
+    image: rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY}
+      RUSTFS_CONSOLE_ENABLE: "false"
+      RUSTFS_OBS_LOG_DIRECTORY: ""
     volumes:
-      - minio_data:/data
+      - rustfs_data:/data
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/ready" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/health/ready" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -172,20 +178,20 @@ services:
     restart: unless-stopped
     logging: *logging
 
-  minio-init:
-    image: ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
+  rustfs-init:
+    image: rustfs/rc:v0.1.36@sha256:ab024bfebee49a750ce886b4c70963ccd9ddaa03f491704a90710641d7a26699
     entrypoint: [ "/bin/sh", "/config/provision.sh" ]
     environment:
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY}
       STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
       STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
       STORAGE_BUCKET: ${STORAGE_BUCKET}
     volumes:
-      - ./deploy/minio/provision.sh:/config/provision.sh:ro
+      - ./deploy/rustfs/provision.sh:/config/provision.sh:ro
     depends_on:
-      minio:
+      rustfs:
         condition: service_healthy
     networks: [ data ]
     restart: "no"
@@ -198,8 +204,6 @@ services:
       DB_MIGRATION_USER: ${DB_MIGRATION_USER}
       DB_MIGRATION_PASS: ${DB_MIGRATION_PASS}
       FLYWAY_ENABLED: "true"
-      FLYWAY_BASELINE_ON_MIGRATE: ${FLYWAY_BASELINE_ON_MIGRATE:-false}
-      FLYWAY_BASELINE_VERSION: ${FLYWAY_BASELINE_VERSION:-1}
     depends_on:
       db-provision:
         condition: service_completed_successfully
@@ -209,27 +213,23 @@ services:
     restart: "no"
     logging: *logging
 
-  artifact-migrate:
+  artifact-prune:
     profiles: [ operations ]
     environment:
       <<: *api-pool-env
-      MLSUITE_MODE: artifact-migrate
+      MLSUITE_MODE: artifact-prune
       FLYWAY_ENABLED: "false"
-      STORAGE_ENABLED: "true"
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
       STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
       STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
       STORAGE_BUCKET: ${STORAGE_BUCKET}
       STORAGE_AUTO_CREATE_BUCKET: "false"
-      STORAGE_RETAIN_INLINE_COPY: "true"
-      ARTIFACT_MIGRATION_COMMAND: ${ARTIFACT_MIGRATION_COMMAND:-status}
-      ARTIFACT_MIGRATION_MAX_ATTEMPTS: ${ARTIFACT_MIGRATION_MAX_ATTEMPTS:-5}
-      ARTIFACT_MIGRATION_STALE_AFTER_SECONDS: ${ARTIFACT_MIGRATION_STALE_AFTER_SECONDS:-900}
-      ARTIFACT_MIGRATION_ORPHAN_GRACE_SECONDS: ${ARTIFACT_MIGRATION_ORPHAN_GRACE_SECONDS:-86400}
+      ARTIFACT_ORPHAN_GRACE_SECONDS: ${ARTIFACT_ORPHAN_GRACE_SECONDS:-86400}
+      ARTIFACT_JOB: ${ARTIFACT_JOB:-prune}
     depends_on:
       db-migrate:
         condition: service_completed_successfully
-      minio-init:
+      rustfs-init:
         condition: service_completed_successfully
     networks: [ data ]
     extra_hosts:
@@ -245,17 +245,16 @@ services:
       CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
       ANALYZER_BASE_URL: ${ANALYZER_BASE_URL}
       RUNTIME_BUILDER_BASE_URL: ${RUNTIME_BUILDER_BASE_URL}
-      STORAGE_ENABLED: ${STORAGE_ENABLED}
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
       STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
       STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
       STORAGE_BUCKET: ${STORAGE_BUCKET}
       STORAGE_AUTO_CREATE_BUCKET: ${STORAGE_AUTO_CREATE_BUCKET}
-      STORAGE_RETAIN_INLINE_COPY: ${STORAGE_RETAIN_INLINE_COPY}
       STORAGE_DELETION_ENABLED: ${STORAGE_DELETION_ENABLED}
       STORAGE_DELETION_BATCH_SIZE: ${STORAGE_DELETION_BATCH_SIZE:-20}
       STORAGE_DELETION_STALE_AFTER_SECONDS: ${STORAGE_DELETION_STALE_AFTER_SECONDS:-300}
-      MODEL_MUTATIONS_REQUIRE_VERSION: ${MODEL_MUTATIONS_REQUIRE_VERSION:-true}
+      STORAGE_DELETION_RETENTION_DAYS: ${STORAGE_DELETION_RETENTION_DAYS:-7}
+      PURGE_BATCH_SIZE: ${PURGE_BATCH_SIZE:-1000}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
       PREDICTION_ATTESTATION_SECRET: ${PREDICTION_ATTESTATION_SECRET}
       PUBLIC_PREDICTION_MAX_MODEL_SIZE_MB: ${PUBLIC_PREDICTION_MAX_MODEL_SIZE_MB:-50}
@@ -273,6 +272,39 @@ services:
       API_ACCESS_REQUESTS_PER_MINUTE: ${API_ACCESS_REQUESTS_PER_MINUTE:-60}
       API_ACCESS_MONTHLY_CALLS: ${API_ACCESS_MONTHLY_CALLS:-10000}
       API_ACCESS_REQUEST_RETENTION_DAYS: ${API_ACCESS_REQUEST_RETENTION_DAYS:-90}
+      NOTIFICATIONS_RETENTION_DAYS: ${NOTIFICATIONS_RETENTION_DAYS:-30}
+      AUDIT_RETENTION_DAYS: ${AUDIT_RETENTION_DAYS:-7}
+      ALERTS_EVALUATE_SECONDS: ${ALERTS_EVALUATE_SECONDS:-15}
+      ALERTS_SUSTAIN_SECONDS: ${ALERTS_SUSTAIN_SECONDS:-120}
+      ALERTS_CLEAR_SECONDS: ${ALERTS_CLEAR_SECONDS:-300}
+      ALERTS_RETENTION_DAYS: ${ALERTS_RETENTION_DAYS:-30}
+      ALERTS_PREDICTION_ROWS_WARNING: ${ALERTS_PREDICTION_ROWS_WARNING:-20000}
+      ALERTS_PREDICTION_ROWS_CRITICAL: ${ALERTS_PREDICTION_ROWS_CRITICAL:-100000}
+      ALERTS_PREDICTION_ROWS_CLEAR: ${ALERTS_PREDICTION_ROWS_CLEAR:-10000}
+      ALERTS_PREDICTION_AGE_SECONDS_WARNING: ${ALERTS_PREDICTION_AGE_SECONDS_WARNING:-900}
+      ALERTS_PREDICTION_AGE_SECONDS_CRITICAL: ${ALERTS_PREDICTION_AGE_SECONDS_CRITICAL:-3600}
+      ALERTS_PREDICTION_AGE_SECONDS_CLEAR: ${ALERTS_PREDICTION_AGE_SECONDS_CLEAR:-300}
+      ALERTS_MODELS_PREPARING_WARNING: ${ALERTS_MODELS_PREPARING_WARNING:-10}
+      ALERTS_MODELS_PREPARING_CRITICAL: ${ALERTS_MODELS_PREPARING_CRITICAL:-50}
+      ALERTS_MODELS_PREPARING_CLEAR: ${ALERTS_MODELS_PREPARING_CLEAR:-3}
+      ALERTS_RUNTIME_QUEUE_WARNING: ${ALERTS_RUNTIME_QUEUE_WARNING:-100}
+      ALERTS_RUNTIME_QUEUE_CRITICAL: ${ALERTS_RUNTIME_QUEUE_CRITICAL:-500}
+      ALERTS_RUNTIME_QUEUE_CLEAR: ${ALERTS_RUNTIME_QUEUE_CLEAR:-20}
+      ALERTS_RUNTIME_REJECTIONS_PER_MINUTE_WARNING: ${ALERTS_RUNTIME_REJECTIONS_PER_MINUTE_WARNING:-10}
+      ALERTS_RUNTIME_REJECTIONS_PER_MINUTE_CRITICAL: ${ALERTS_RUNTIME_REJECTIONS_PER_MINUTE_CRITICAL:-120}
+      ALERTS_RUNTIME_REJECTIONS_PER_MINUTE_CLEAR: ${ALERTS_RUNTIME_REJECTIONS_PER_MINUTE_CLEAR:-1}
+      ALERTS_STORAGE_DELETIONS_FAILED_WARNING: ${ALERTS_STORAGE_DELETIONS_FAILED_WARNING:-1}
+      ALERTS_STORAGE_DELETIONS_FAILED_CRITICAL: ${ALERTS_STORAGE_DELETIONS_FAILED_CRITICAL:-50}
+      ALERTS_STORAGE_DELETIONS_FAILED_CLEAR: ${ALERTS_STORAGE_DELETIONS_FAILED_CLEAR:-1}
+      ALERTS_CPU_PERCENT_WARNING: ${ALERTS_CPU_PERCENT_WARNING:-85}
+      ALERTS_CPU_PERCENT_CRITICAL: ${ALERTS_CPU_PERCENT_CRITICAL:-95}
+      ALERTS_CPU_PERCENT_CLEAR: ${ALERTS_CPU_PERCENT_CLEAR:-70}
+      ALERTS_RAM_PERCENT_WARNING: ${ALERTS_RAM_PERCENT_WARNING:-85}
+      ALERTS_RAM_PERCENT_CRITICAL: ${ALERTS_RAM_PERCENT_CRITICAL:-95}
+      ALERTS_RAM_PERCENT_CLEAR: ${ALERTS_RAM_PERCENT_CLEAR:-70}
+      ALERTS_DISK_PERCENT_WARNING: ${ALERTS_DISK_PERCENT_WARNING:-85}
+      ALERTS_DISK_PERCENT_CRITICAL: ${ALERTS_DISK_PERCENT_CRITICAL:-95}
+      ALERTS_DISK_PERCENT_CLEAR: ${ALERTS_DISK_PERCENT_CLEAR:-80}
       AUTH_MAX_LOGIN_FAILURES: ${AUTH_MAX_LOGIN_FAILURES:-10}
       AUTH_MAX_REGISTRATIONS: ${AUTH_MAX_REGISTRATIONS:-5}
       MLSUITE_SUPERADMIN_EMAIL: ${MLSUITE_SUPERADMIN_EMAIL}
@@ -292,7 +324,7 @@ services:
         condition: service_healthy
       db-migrate:
         condition: service_completed_successfully
-      minio-init:
+      rustfs-init:
         condition: service_completed_successfully
     healthcheck:
       test: [ "CMD-SHELL", "wget -q -O - http://localhost:${SPRING_PORT}/actuator/health/readiness >/dev/null" ]

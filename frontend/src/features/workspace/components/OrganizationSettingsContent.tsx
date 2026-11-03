@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
@@ -200,7 +200,7 @@ export function OrganizationSettingsContent({
           onCancel={() => setDeleteOpen(false)}
           onConfirm={async () => {
             await remove.mutateAsync(id);
-            void navigate("/workspace");
+            void navigate({ to: "/workspace" });
           }}
         />
       ) : null}

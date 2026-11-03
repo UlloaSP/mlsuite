@@ -14,7 +14,6 @@ public record StoredPlugin(
         OffsetDateTime updatedAt,
         String updatedByName,
         String updatedByEmail,
-        String updatedByAvatarUrl,
         String source) {
 }
 

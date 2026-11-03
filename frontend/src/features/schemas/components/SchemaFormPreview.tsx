@@ -29,7 +29,12 @@ type Props = {
 export function SchemaFormPreview({ schema }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<SandboxedPreview | null>(null);
-  const [mountError, setMountError] = useState<string | null>(null);
+  // The failure of a schema and plugins shown; once either changes, it no longer applies.
+  const [failure, setFailure] = useState<{
+    schema: unknown;
+    plugins: unknown;
+    message: string;
+  } | null>(null);
   const catalog = useSchemaPluginCatalog(schema, useCurrentOrganizationId() ?? "none");
   const showCatalogLoading = useStableLoading(catalog.needsPlugins && catalog.status === "loading");
   const ready = !catalog.needsPlugins || catalog.status === "ready";
@@ -38,10 +43,7 @@ export function SchemaFormPreview({ schema }: Props) {
   const shown = !showCatalogLoading && ready;
   useEffect(() => {
     if (!shown || !containerRef.current) return;
-    const preview = openSandboxedPreview({
-      container: containerRef.current,
-      onMountError: (error) => setMountError(error.message),
-    });
+    const preview = openSandboxedPreview({ container: containerRef.current });
     previewRef.current = preview;
     return () => {
       preview.close();
@@ -51,9 +53,16 @@ export function SchemaFormPreview({ schema }: Props) {
 
   useEffect(() => {
     if (!shown) return;
-    setMountError(null);
-    previewRef.current?.show(schema, plugins);
+    previewRef.current?.show(schema, plugins).catch((error: unknown) =>
+      setFailure({
+        schema,
+        plugins,
+        message: error instanceof Error ? error.message : "The preview could not be drawn.",
+      }),
+    );
   }, [plugins, schema, shown]);
+  const mountError =
+    failure && failure.schema === schema && failure.plugins === plugins ? failure.message : null;
 
   if (showCatalogLoading) return <AppLoadingState compact label="Loading plugin catalog." />;
   if (!ready) {

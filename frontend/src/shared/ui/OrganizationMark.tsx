@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Building2 } from "lucide-react";
 import { apiUrl } from "@/shared/api/http";
+import { personInitials } from "@/shared/lib/person-initials";
 import { cx } from "./cx";
 
 /**
@@ -17,6 +18,7 @@ export function OrganizationMark({
   fallbackClassName,
   iconSize,
   logoUrl,
+  personalName,
 }: {
   /** Size and radius of the box, e.g. "size-8 rounded-lg". */
   className: string;
@@ -24,6 +26,8 @@ export function OrganizationMark({
   fallbackClassName?: string;
   iconSize: number;
   logoUrl: string | null | undefined;
+  /** The person whose personal account this is: their initials stand in for the icon. */
+  personalName?: string;
 }) {
   if (logoUrl) {
     return (
@@ -40,7 +44,11 @@ export function OrganizationMark({
       aria-hidden="true"
       className={cx("grid shrink-0 place-items-center", className, fallbackClassName)}
     >
-      <Building2 size={iconSize} />
+      {personalName ? (
+        <span className="font-semibold">{personInitials(personalName)}</span>
+      ) : (
+        <Building2 size={iconSize} />
+      )}
     </span>
   );
 }

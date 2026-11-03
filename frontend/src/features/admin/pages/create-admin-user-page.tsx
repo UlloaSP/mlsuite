@@ -5,8 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router";
-import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
+import { toast } from "@/shared/ui/toast";
 import { useCreateAdminUser } from "@/features/admin/api/admin-user.mutations";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -29,6 +29,7 @@ export function CreateAdminUserPage() {
   const createUser = useCreateAdminUser();
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<SystemRole>("USER");
   const [visible, setVisible] = useState(false);
@@ -39,11 +40,11 @@ export function CreateAdminUserPage() {
   const submit = (event: FormEvent) => {
     event.preventDefault();
     createUser.mutate(
-      { email, fullName, password, systemRole: role },
+      { email, fullName, password, systemRole: role, username },
       {
         onSuccess: () => {
           toast.success("User created.");
-          void navigate("/admin/users");
+          void navigate({ to: "/admin/users" });
         },
       },
     );
@@ -77,6 +78,16 @@ export function CreateAdminUserPage() {
               placeholder="Ada Lovelace"
             />
           </AppFieldLabel>
+          <AppFieldLabel label="Username">
+            <AppTextField
+              required
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              placeholder="ada-lovelace"
+              autoCapitalize="none"
+              spellCheck={false}
+            />
+          </AppFieldLabel>
           <AppFieldLabel label="Password">
             <div className="flex gap-2">
               <AppTextField
@@ -107,7 +118,11 @@ export function CreateAdminUserPage() {
           </AppFieldLabel>
           {createUser.error ? <AppInlineAlert>{createUser.error.message}</AppInlineAlert> : null}
           <div className="flex justify-end gap-2 pt-2">
-            <AppButton type="button" variant="secondary" onClick={() => navigate("/admin/users")}>
+            <AppButton
+              type="button"
+              variant="secondary"
+              onClick={() => navigate({ to: "/admin/users" })}
+            >
               Cancel
             </AppButton>
             <AppButton type="submit" disabled={createUser.isPending}>

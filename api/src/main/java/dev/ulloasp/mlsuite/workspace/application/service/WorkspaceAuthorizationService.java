@@ -34,6 +34,7 @@ public class WorkspaceAuthorizationService {
 
     public Set<PermissionKey> effectiveOrganizationPermissions(Long userId, Long organizationId) {
         if (workspaceAccessService.isSuperadmin(userId)) {
+            workspaceAccessService.requireNotPurging(organizationId);
             return EnumSet.allOf(PermissionKey.class);
         }
         return workspaceAccessService.requireMembership(userId, organizationId).getRoleDefinition().getPermissions();
@@ -64,9 +65,20 @@ public class WorkspaceAuthorizationService {
     }
 
     public MembershipActionsDto organizationMemberActions(Long actorUserId, Long organizationId, OrganizationMembership target) {
+        return organizationMemberActions(actorUserId, organizationId, List.of(target)).getFirst();
+    }
+
+    /**
+     * What the actor may do to each member, in order. The actor's permissions and the roles to
+     * choose from are read once for the whole list, not once per member.
+     */
+    public List<MembershipActionsDto> organizationMemberActions(Long actorUserId, Long organizationId,
+            List<OrganizationMembership> targets) {
         WorkspacePermissionsDto workspace = workspacePermissions(actorUserId, organizationId);
-        MembershipActionsDto flags = organizationMemberActionFlags(actorUserId, workspace, target);
-        if (!flags.canChangeRole()) {
+        List<MembershipActionsDto> flags = targets.stream()
+                .map(target -> organizationMemberActionFlags(actorUserId, workspace, target))
+                .toList();
+        if (flags.stream().noneMatch(MembershipActionsDto::canChangeRole)) {
             return flags;
         }
         var roles = roleDefinitionRepository.findByOrganizationIdAndScopeOrderByLockedDescNameAsc(organizationId, RoleScope.ORGANIZATION)
@@ -74,7 +86,9 @@ public class WorkspaceAuthorizationService {
                 .filter(role -> !OrganizationRole.OWNER.name().equals(role.getSystemKey()))
                 .map(RoleSummaryDto::from)
                 .toList();
-        return new MembershipActionsDto(true, flags.canRemove(), roles);
+        return flags.stream()
+                .map(actions -> actions.canChangeRole() ? new MembershipActionsDto(true, actions.canRemove(), roles) : actions)
+                .toList();
     }
 
     /** What the actor may do to the member, without the roles to choose from: a catalog pages those apart. */

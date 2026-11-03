@@ -3,9 +3,11 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { getRouteApi } from "@tanstack/react-router";
 import { Search, Plus } from "lucide-react";
-import { Link } from "react-router";
-import { toast } from "sonner";
+import { useState } from "react";
+import { AppLink } from "@/shared/ui/AppLink";
+import { toast } from "@/shared/ui/toast";
 import {
   useArchiveModelMutation,
   useRestoreModelMutation,
@@ -21,6 +23,8 @@ import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import type { ModelAction } from "@/features/models/components/ModelActionsMenu";
+import { PurgeDialog } from "@/capabilities/purge/PurgeDialog";
+import { useCurrentUserIsSuperadmin } from "@/capabilities/workspace-context/session";
 import { ModelListItem } from "@/features/models/components/ModelListItem";
 import { useActionDialog } from "@/shared/ui/use-action-dialog";
 import type { ModelDto } from "@/shared/api/openapi.gen";
@@ -40,16 +44,13 @@ const SORT_OPTIONS: Array<{ value: ModelSortMode; label: string }> = [
   { value: "algorithm", label: "Algorithm" },
 ];
 
+const route = getRouteApi("/protected/app/can-view-models/models");
+
 export function ModelsPage() {
   const { data: user, error } = useUser();
   const { data: workspace } = useWorkspaceContext();
   const organizationId = workspace?.currentOrganization.id;
-  const controls = useCatalogControls<ModelStatusFilter, ModelSortMode>({
-    filters: STATUS_FILTERS.map(({ value }) => value),
-    initialFilter: "active",
-    initialSort: "updated",
-    sorts: SORT_OPTIONS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const renameMutation = useRenameModelMutation();
   const archiveMutation = useArchiveModelMutation();
   const restoreMutation = useRestoreModelMutation();
@@ -67,8 +68,11 @@ export function ModelsPage() {
   const canEditModels = workspace?.permissions.canEditModels ?? false;
 
   const actionDialog = useActionDialog();
+  const [purgeTarget, setPurgeTarget] = useState<number | null>(null);
+  const canPurge = useCurrentUserIsSuperadmin();
   // Mutation failures are reported by the global mutation error handler.
   const handleAction = async (action: ModelAction, model: ModelDto) => {
+    if (action === "purge") setPurgeTarget(model.id);
     if (action === "edit") {
       const name = await actionDialog.prompt({
         title: "Rename model",
@@ -152,9 +156,9 @@ export function ModelsPage() {
             workspace?.currentOrganization.name ?? "the current workspace"
           }.`,
           actions: canCreateModels ? (
-            <Link className={appButtonClass()} to="/models/create">
+            <AppLink className={appButtonClass()} to="/models/create">
               <Plus size={16} /> New model
-            </Link>
+            </AppLink>
           ) : null,
         }}
         isActionPending={isActionPending}
@@ -168,13 +172,13 @@ export function ModelsPage() {
         emptyIcon={<Search size={22} />}
         emptyTitle="No models yet"
         filteredEmptyTitle="No matching models"
-        emptyDescription="Create your first model to start building schemas."
+        emptyDescription="Upload your first model to start building schemas."
         filteredEmptyDescription="Try another search term or status."
         emptyAction={
           canCreateModels ? (
-            <Link className={appButtonClass()} to="/models/create">
+            <AppLink className={appButtonClass()} to="/models/create">
               <Plus size={16} /> New model
-            </Link>
+            </AppLink>
           ) : undefined
         }
         renderItem={(model) => (
@@ -183,6 +187,7 @@ export function ModelsPage() {
             canDelete={canDeleteModels}
             canDuplicate={canCreateModels}
             canEdit={canEditModels}
+            canPurge={canPurge}
             item={model}
             schemaCount={hasSchema(model) ? 1 : 0}
             to={`/models/${model.id}`}
@@ -193,6 +198,9 @@ export function ModelsPage() {
         )}
       />
       {actionDialog.dialog}
+      {purgeTarget === null ? null : (
+        <PurgeDialog scope="MODEL" targetId={purgeTarget} onClose={() => setPurgeTarget(null)} />
+      )}
     </>
   );
 }

@@ -11,16 +11,20 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.admin.infrastructure.InfrastructureController;
 import dev.ulloasp.mlsuite.admin.infrastructure.InfrastructureService;
 import dev.ulloasp.mlsuite.admin.infrastructure.ServiceActionRequest;
 import dev.ulloasp.mlsuite.admin.infrastructure.TerminalSessionRequest;
 import dev.ulloasp.mlsuite.admin.infrastructure.TerminalSessionResponse;
+import dev.ulloasp.mlsuite.security.identity.CurrentUser;
+import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 
 @ExtendWith(MockitoExtension.class)
 class InfrastructureControllerTest {
+
+    private static final CurrentUser ROOT = new CurrentUser(1L, "root", SystemRole.SUPERADMIN);
 
     @Mock
     private InfrastructureService infrastructureService;
@@ -46,10 +50,10 @@ class InfrastructureControllerTest {
 
     @Test
     void action_DelegatesToService() {
-        var response = controller.action("spring-app", new ServiceActionRequest("RESTART"));
+        var response = controller.action(ROOT, "spring-app", new ServiceActionRequest("RESTART"));
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        verify(infrastructureService).action("spring-app", new ServiceActionRequest("RESTART"));
+        verify(infrastructureService).action(1L, "spring-app", new ServiceActionRequest("RESTART"));
     }
 
     @Test
@@ -60,15 +64,15 @@ class InfrastructureControllerTest {
         var response = controller.logs("spring-app", 50);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("one", response.getBody().path("lines").get(0).asText());
+        assertEquals("one", response.getBody().path("lines").get(0).asString());
     }
 
     @Test
     void createTerminalSession_RewritesPublicPath() {
-        when(infrastructureService.createTerminalSession(new TerminalSessionRequest("spring-app", 120, 40)))
+        when(infrastructureService.createTerminalSession(1L, new TerminalSessionRequest("spring-app", 120, 40)))
                 .thenReturn(new TerminalSessionResponse("abc", "/api/admin/infrastructure/terminal/abc"));
 
-        var response = controller.createTerminalSession(new TerminalSessionRequest("spring-app", 120, 40));
+        var response = controller.createTerminalSession(ROOT, new TerminalSessionRequest("spring-app", 120, 40));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("/api/admin/infrastructure/terminal/abc", response.getBody().wsPath());
@@ -76,9 +80,9 @@ class InfrastructureControllerTest {
 
     @Test
     void closeTerminalSession_DelegatesToService() {
-        var response = controller.closeTerminalSession("abc");
+        var response = controller.closeTerminalSession(ROOT, "abc");
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        verify(infrastructureService).closeTerminalSession("abc");
+        verify(infrastructureService).closeTerminalSession(1L, "abc");
     }
 }

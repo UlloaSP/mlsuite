@@ -10,6 +10,12 @@ import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkSummaryDto;
 import dev.ulloasp.mlsuite.util.PageDto;
 
 public interface PublicBookmarkUseCase {
+
+    /** What a person keeps at the top of their profile, in their order. */
+    List<PublicBookmarkSummaryDto> getPinnedBookmarks(Long userId);
+
+    /** The rest of what an account publishes, for the profile of the person behind it. */
+    PageDto<PublicBookmarkSummaryDto> getUnpinnedBookmarkPage(Long organizationId, int page, int size, String search);
     /** The published bookmark behind a public id, readable without a session. */
     PublicBookmarkDto getPublishedBookmark(String publicId);
 
