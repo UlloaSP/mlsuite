@@ -6,9 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
-import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleTemplateRepository;
 import dev.ulloasp.mlsuite.role.application.dto.PermissionDto;
@@ -32,8 +30,6 @@ import lombok.RequiredArgsConstructor;
 public class RoleCatalogService implements RoleCatalogUseCase {
 
     private final WorkspaceAuthorizationService authorizationService;
-    private final OrganizationRepository organizationRepository;
-    private final RoleSeedService roleSeedService;
     private final RoleDefinitionRepository roleRepository;
     private final RoleTemplateRepository templateRepository;
     private final OrganizationMembershipRepository membershipRepository;
@@ -48,11 +44,9 @@ public class RoleCatalogService implements RoleCatalogUseCase {
         return new RolesResponseDto(roles, templates(), catalog(), stats(roles));
     }
 
-    /** Who may read an organization's roles; reading them first seeds the roles every organization has. */
+    /** Who may read an organization's roles. */
     void requireReadable(Long userId, Long organizationId) {
         authorizationService.require(userId, organizationId, PermissionKey.VIEW_MEMBERS, PermissionKey.INVITE_MEMBERS, PermissionKey.MANAGE_MEMBER_ROLES);
-        roleSeedService.ensureOrganizationRoles(organizationRepository.findById(organizationId)
-                .orElseThrow(() -> new OrganizationNotFoundException(organizationId)));
     }
 
     public List<PermissionGroupDto> catalog() {

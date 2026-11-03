@@ -80,8 +80,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
                 request.description(),
                 actor));
         organization.setUpdatedBy(actor);
-        roleSeedService.ensureOrganizationRoles(organization);
-        roleSeedService.reviewerRole(organization);
+        roleSeedService.createOrganizationRoles(organization);
         membershipRepository.save(new OrganizationMembership(
                 organization, owner, roleSeedService.orgRole(organization, OrganizationRole.OWNER), MembershipStatus.ACTIVE));
         auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.ORGANIZATION_CREATE,
@@ -150,8 +149,6 @@ public class OrganizationManagementService implements OrganizationManagementUseC
     @Override
     public List<OrganizationMembershipRowDto> listMembers(Long userId, Long organizationId) {
         workspaceAuthorizationService.require(userId, organizationId, PermissionKey.VIEW_MEMBERS);
-        roleSeedService.ensureOrganizationRoles(organizationRepository.findById(organizationId)
-                .orElseThrow(() -> new dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException(organizationId)));
         List<OrganizationMembership> members = membershipRepository.findActiveByOrganizationIdOrderByCreatedAtAsc(organizationId);
         List<MembershipActionsDto> actions = workspaceAuthorizationService.organizationMemberActions(userId, organizationId, members);
         return IntStream.range(0, members.size())
@@ -223,7 +220,6 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         if (currentOwner.getId().equals(nextOwner.getId())) {
             return OrganizationMembershipDto.from(currentOwner);
         }
-        roleSeedService.ensureOrganizationRoles(nextOwner.getOrganization());
         currentOwner.setRoleDefinition(roleSeedService.orgRole(nextOwner.getOrganization(), OrganizationRole.ADMIN));
         nextOwner.setRoleDefinition(roleSeedService.orgRole(nextOwner.getOrganization(), OrganizationRole.OWNER));
         nextOwner.getOrganization().setUpdatedBy(workspaceAccessService.requireUser(userId));

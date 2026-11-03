@@ -294,15 +294,9 @@ class BookmarkPublishingServiceTest {
 
     @ParameterizedTest
     @EnumSource(OrganizationRole.class)
-    void existingOwnerAndAdminRolesGainThePermissionAtStartup(OrganizationRole role) {
-        RoleDefinition existing = TestFixtures.role(organization, role.name(), PermissionKey.VIEW_MODELS);
-        when(roles.findByOrganizationIdAndSystemKey(ORG_ID, role.name())).thenReturn(Optional.of(existing));
-        when(roles.save(existing)).thenReturn(existing);
-        var seed = new RoleSeedService(mock(OrganizationRepository.class), roles, mock(RoleTemplateRepository.class));
-
-        boolean granted = seed.orgRole(organization, role).getPermissions().contains(PermissionKey.PUBLISH_BOOKMARKS);
-
-        assertEquals(role == OrganizationRole.OWNER || role == OrganizationRole.ADMIN, granted);
+    void onlyOwnersAndAdminsMayPublishBookmarks(OrganizationRole role) {
+        assertEquals(role == OrganizationRole.OWNER || role == OrganizationRole.ADMIN,
+                RoleSeedService.systemPermissions(role).contains(PermissionKey.PUBLISH_BOOKMARKS));
     }
 
     private SchemaBookmark stored(SchemaBookmark bookmark) {
