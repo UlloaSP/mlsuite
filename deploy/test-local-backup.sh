@@ -86,6 +86,7 @@ grep -Fxq 'physical_disk_failure_covered=false' "$destination/recovery.scope"
 [[ -f "$backup_root/.backup.lock" ]]
 grep -q 'stop frontend spring-app' "$calls"
 grep -q 'stop rustfs' "$calls"
+grep -q 'up -d --wait postgres rustfs' "$calls"
 if grep -q 'up -d --no-deps spring-app' "$calls"; then exit 1; fi
 attempt() { sed -n "s/^$1=//p" "$backup_root/last-attempt"; }
 [[ "$(attempt result)" == succeeded && "$(attempt backup)" == "$(basename "$destination")" ]]
