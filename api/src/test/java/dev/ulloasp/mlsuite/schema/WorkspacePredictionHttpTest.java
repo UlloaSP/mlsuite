@@ -34,7 +34,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.MultiValueMap;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.zaxxer.hikari.HikariDataSource;
 
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
@@ -62,26 +62,26 @@ class WorkspacePredictionHttpTest extends PublicPredictionFixture {
     void aSavedRunKeepsWhatTheServerPredicted() throws Exception {
         JsonNode forest = predict(forestModel.getId());
         JsonNode net = predict(netModel.getId());
-        assertEquals("SUCCESS", forest.get("status").asText());
-        assertEquals("high", forest.at("/output/reports/1/prediction").asText());
+        assertEquals("SUCCESS", forest.get("status").asString());
+        assertEquals("high", forest.at("/output/reports/1/prediction").asString());
 
-        JsonNode saved = json(mockMvc.perform(save("case-1", forest.get("attestation").asText(),
-                net.get("attestation").asText())).andExpect(status().isCreated()).andReturn());
+        JsonNode saved = json(mockMvc.perform(save("case-1", forest.get("attestation").asString(),
+                net.get("attestation").asString())).andExpect(status().isCreated()).andReturn());
 
         JsonNode read = json(mockMvc.perform(signedIn(get("/api/prediction-runs/{id}", saved.get("id").asLong()),
                 owner.getId())).andExpect(status().isOk()).andReturn());
-        assertEquals("SUCCESS", read.get("status").asText());
+        assertEquals("SUCCESS", read.get("status").asString());
         for (JsonNode result : read.get("results")) {
             JsonNode predicted = result.get("modelId").asLong() == forestModel.getId() ? forest : net;
             assertEquals(predicted.get("output"), result.get("output"));
             assertEquals(predicted.get("modelInput"), result.get("modelInput"));
-            assertEquals("SUCCESS", result.get("status").asText());
+            assertEquals("SUCCESS", result.get("status").asString());
         }
     }
 
     @Test
     void aChangedOutputIsRefusedAndNothingIsSaved() throws Exception {
-        String seal = predict(forestModel.getId()).get("attestation").asText();
+        String seal = predict(forestModel.getId()).get("attestation").asString();
         String payload = new String(Base64.getUrlDecoder().decode(seal.substring(0, seal.indexOf('.'))),
                 StandardCharsets.UTF_8);
         String tampered = Base64.getUrlEncoder().withoutPadding()
@@ -89,7 +89,7 @@ class WorkspacePredictionHttpTest extends PublicPredictionFixture {
                 + seal.substring(seal.indexOf('.'));
         long runs = count("PredictionRun");
 
-        mockMvc.perform(save("case-2", tampered, predict(netModel.getId()).get("attestation").asText()))
+        mockMvc.perform(save("case-2", tampered, predict(netModel.getId()).get("attestation").asString()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(
                         "A prediction result was not produced by this server; run the inference again before saving"));
@@ -121,7 +121,7 @@ class WorkspacePredictionHttpTest extends PublicPredictionFixture {
         JsonNode forest = predict(forestModel.getId());
 
         List<String> explained = new ArrayList<>();
-        forest.at("/output/reports").forEach(report -> explained.add(report.path("explanation").asText(null)));
+        forest.at("/output/reports").forEach(report -> explained.add(report.path("explanation").asString(null)));
         assertTrue(explained.contains("age > 50"), explained::toString);
         assertEquals(2, sent.size());
         for (MultiValueMap<String, HttpEntity<?>> parts : sent) {

@@ -1,6 +1,5 @@
 package dev.ulloasp.mlsuite.admin.infrastructure;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
@@ -16,8 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Calls the ops agent with its shared secret. Every call and the WebSocket bridges share one JDK
@@ -85,21 +85,21 @@ public class OpsAgentClient {
         String payload;
         try {
             payload = objectMapper.writeValueAsString(request);
-        } catch (IOException ex) {
+        } catch (JacksonException ex) {
             throw new OpsAgentException(502, "Cannot encode terminal session request.");
         }
         JsonNode response = readJson(calls.post().uri("/internal/terminal/sessions")
                 .contentType(MediaType.APPLICATION_JSON).body(payload));
         return new TerminalSessionResponse(
-                response.path("sessionId").asText(),
-                response.path("wsPath").asText());
+                response.path("sessionId").asString(),
+                response.path("wsPath").asString());
     }
 
     /** The terminal sessions the agent has now, attached or not. */
     public Set<String> terminalSessionIds() {
         Set<String> ids = new HashSet<>();
         readJson(quickCalls.get().uri("/internal/terminal/sessions"))
-                .path("sessionIds").forEach(id -> ids.add(id.asText()));
+                .path("sessionIds").forEach(id -> ids.add(id.asString()));
         return ids;
     }
 
@@ -119,7 +119,7 @@ public class OpsAgentClient {
         String body = send(request);
         try {
             return objectMapper.readTree(body);
-        } catch (IOException ex) {
+        } catch (JacksonException ex) {
             throw new OpsAgentException(502, "Ops agent unavailable.");
         }
     }
@@ -154,8 +154,8 @@ public class OpsAgentClient {
 
     private String extractMessage(String body) {
         try {
-            return objectMapper.readTree(body).path("detail").asText("Ops agent error.");
-        } catch (IOException ex) {
+            return objectMapper.readTree(body).path("detail").asString("Ops agent error.");
+        } catch (JacksonException ex) {
             return body == null || body.isBlank() ? "Ops agent error." : body;
         }
     }

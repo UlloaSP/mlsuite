@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 /**
  * A session's runs are saved a batch at a time, each from the seals of predictions the server
@@ -62,7 +62,7 @@ class WorkspaceRunsBatchHttpTest extends PublicPredictionFixture {
         return json(mockMvc.perform(signedIn(post("/api/schema-bookmarks/{id}/predictions", bookmark.getId())
                 .contentType(MediaType.APPLICATION_JSON).content(body), owner.getId()))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8))
-                .get("attestation").asText();
+                .get("attestation").asString();
     }
 
     private Map<String, Object> run(String name, List<String> seals) {

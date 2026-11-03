@@ -350,12 +350,8 @@ class SystemAlertTest extends PublicPredictionFixture {
     }
 
     private void cpuAt(double percent) {
-        try {
-            when(opsAgent.load()).thenReturn(objectMapper.readTree(
-                    "{\"cpuPercent\":" + percent + ",\"ramPercent\":1,\"diskPercent\":1}"));
-        } catch (java.io.IOException impossible) {
-            throw new IllegalStateException(impossible);
-        }
+        when(opsAgent.load()).thenReturn(objectMapper.readTree(
+                "{\"cpuPercent\":" + percent + ",\"ramPercent\":1,\"diskPercent\":1}"));
     }
 
     private void evaluateAt(long seconds) {

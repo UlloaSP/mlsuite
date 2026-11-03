@@ -11,7 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.admin.infrastructure.InfrastructureController;
 import dev.ulloasp.mlsuite.admin.infrastructure.InfrastructureService;
@@ -64,7 +64,7 @@ class InfrastructureControllerTest {
         var response = controller.logs("spring-app", 50);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("one", response.getBody().path("lines").get(0).asText());
+        assertEquals("one", response.getBody().path("lines").get(0).asString());
     }
 
     @Test

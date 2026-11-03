@@ -7,7 +7,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReview;
 import dev.ulloasp.mlsuite.user.domain.model.User;

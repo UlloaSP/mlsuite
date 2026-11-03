@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
@@ -153,7 +153,7 @@ public class WorkspacePredictionService implements WorkspacePredictionUseCase {
     private String json(Object input) {
         try {
             return objectMapper.writeValueAsString(input);
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             throw new IllegalArgumentException("The model input is not serializable as JSON", ex);
         }
     }

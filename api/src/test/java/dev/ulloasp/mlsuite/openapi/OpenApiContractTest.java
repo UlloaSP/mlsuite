@@ -22,11 +22,12 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.fasterxml.jackson.core.util.DefaultIndenter;
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-import com.fasterxml.jackson.core.util.Separators;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.core.util.DefaultIndenter;
+import tools.jackson.core.util.DefaultPrettyPrinter;
+import tools.jackson.core.util.Separators;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import dev.ulloasp.mlsuite.admin.AdminOwnerCatalogService;
 import dev.ulloasp.mlsuite.admin.AdminUserService;
@@ -163,15 +164,15 @@ class OpenApiContractTest {
     }
 
     /** Sorted keys, two-space indentation, and LF endings keep the committed file diff-friendly. */
-    private static String canonical(String json) throws Exception {
-        ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
+    private static String canonical(String json) {
+        ObjectMapper mapper = JsonMapper.builder().enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS).build();
         DefaultIndenter indenter = new DefaultIndenter("  ", "\n");
         DefaultPrettyPrinter printer = new DefaultPrettyPrinter()
                 .withSeparators(Separators.createDefaultInstance()
-                        .withObjectFieldValueSpacing(Separators.Spacing.AFTER));
-        printer.indentObjectsWith(indenter);
-        printer.indentArraysWith(indenter);
-        return mapper.writer(printer).writeValueAsString(mapper.readValue(json, Object.class)) + "\n";
+                        .withObjectNameValueSpacing(Separators.Spacing.AFTER))
+                .withObjectIndenter(indenter)
+                .withArrayIndenter(indenter);
+        return mapper.writer().with(printer).writeValueAsString(mapper.readValue(json, Object.class)) + "\n";
     }
 
     private static String firstDifference(String committed, String actual) {

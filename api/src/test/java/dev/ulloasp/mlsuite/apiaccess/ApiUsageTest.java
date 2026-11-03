@@ -18,7 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
 import dev.ulloasp.mlsuite.apiaccess.application.service.ApiRequestRetention;
@@ -66,7 +66,7 @@ class ApiUsageTest extends ApiAccessFixture {
         mockMvc.perform(predicting(secret, FEATURES));
 
         JsonNode day = read(member(get("/api/api-access/usage")));
-        assertEquals("day", day.get("period").asText());
+        assertEquals("day", day.get("period").asString());
         assertEquals(5, day.get("calls").asLong());
         assertEquals(3, day.get("rejected").asLong());
         assertEquals(1, day.get("failed").asLong());
@@ -74,11 +74,11 @@ class ApiUsageTest extends ApiAccessFixture {
         assertEquals(24, day.get("series").size());
         JsonNode last = day.get("series").get(23);
         assertEquals(OffsetDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.HOURS).toInstant(),
-                OffsetDateTime.parse(last.get("start").asText()).toInstant());
+                OffsetDateTime.parse(last.get("start").asString()).toInstant());
         assertEquals(1, last.get("succeeded").asLong());
         assertEquals(3, day.at("/series/18/rejected").asLong() + day.at("/series/17/rejected").asLong()
                 + day.at("/series/19/rejected").asLong());
-        assertEquals("Lab2Pressure", day.at("/topClients/0/clientName").asText());
+        assertEquals("Lab2Pressure", day.at("/topClients/0/clientName").asString());
         assertEquals(4, day.get("recentFailures").size());
         assertEquals(1, day.at("/month/calls").asLong());
         assertEquals(10000, day.at("/month/limit").asInt());

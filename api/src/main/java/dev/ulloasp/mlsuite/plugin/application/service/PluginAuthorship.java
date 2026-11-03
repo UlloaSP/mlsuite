@@ -1,6 +1,6 @@
 package dev.ulloasp.mlsuite.plugin.application.service;
 
-import java.io.IOException;
+import tools.jackson.core.JacksonException;
 import java.util.List;
 
 import org.springframework.data.domain.PageRequest;
@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginMetadata;
@@ -71,7 +71,7 @@ public class PluginAuthorship {
     private byte[] bytes(StoredPlugin plugin) {
         try {
             return mapper.writeValueAsBytes(plugin);
-        } catch (IOException ex) {
+        } catch (JacksonException ex) {
             throw new IllegalStateException("Could not serialize plugin.", ex);
         }
     }

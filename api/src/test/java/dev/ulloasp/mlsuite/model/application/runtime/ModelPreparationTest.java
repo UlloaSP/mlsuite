@@ -255,7 +255,7 @@ class ModelPreparationTest extends PublicPredictionFixture {
         String prediction = mockMvc.perform(signedIn(post("/api/schema-bookmarks/{id}/predictions",
                 bookmark.getId()), owner.getId()).contentType(MediaType.APPLICATION_JSON).content(request))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        return Map.of("attestation", objectMapper.readTree(prediction).get("attestation").asText());
+        return Map.of("attestation", objectMapper.readTree(prediction).get("attestation").asString());
     }
 
     private int entries(String action) {

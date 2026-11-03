@@ -14,8 +14,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.plugin.application.service.PluginObjectReader;
@@ -41,7 +41,7 @@ class PluginObjectReaderTest {
         StorageProperties properties = new StorageProperties();
         properties.setBucket("plugins");
         reader = new PluginObjectReader(
-                storage, properties, new ObjectMapper().registerModule(new JavaTimeModule()), metadata,
+                storage, properties, new JsonMapper(), metadata,
                 deletionQueue);
     }
 

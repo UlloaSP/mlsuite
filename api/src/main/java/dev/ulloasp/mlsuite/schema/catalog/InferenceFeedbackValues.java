@@ -12,7 +12,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionResultFeedbackDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaVersionDto;
@@ -23,7 +24,7 @@ import dev.ulloasp.mlsuite.schema.catalog.InferenceReportValues.Produced;
 /** A run's feedback as the table shows it: whether it is complete, and each reviewer's answers. */
 final class InferenceFeedbackValues {
 
-    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper JSON = JsonMapper.shared();
 
     record Answer(String id, String label, String value) {
     }

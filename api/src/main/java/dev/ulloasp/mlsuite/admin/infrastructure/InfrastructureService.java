@@ -2,7 +2,7 @@ package dev.ulloasp.mlsuite.admin.infrastructure;
 
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;

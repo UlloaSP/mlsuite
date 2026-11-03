@@ -14,7 +14,7 @@ import java.util.EnumSet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
@@ -43,7 +43,7 @@ class ArchiveRestoreHttpTest extends PublicPredictionFixture {
         assertNotNull(stored(forestModel.getId()).getArchivedAt());
 
         mockMvc.perform(signedIn(post("/api/models/{id}/restore", forestModel.getId())
-                .param("version", archived.get("version").asText()), owner.getId()))
+                .param("version", archived.get("version").asString()), owner.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.archivedAt").isEmpty());
 

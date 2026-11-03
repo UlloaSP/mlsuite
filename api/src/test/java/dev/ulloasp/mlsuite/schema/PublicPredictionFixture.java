@@ -35,7 +35,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
 import dev.ulloasp.mlsuite.model.domain.model.Model;

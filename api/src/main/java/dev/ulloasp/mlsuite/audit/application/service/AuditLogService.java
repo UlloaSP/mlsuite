@@ -6,8 +6,9 @@ import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
@@ -30,7 +31,7 @@ public class AuditLogService {
     private static final int MAX_LABEL = 255;
     private static final int MAX_TARGET_ID = 120;
     private static final String DELETED_ACCOUNT = "Deleted account";
-    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper JSON = JsonMapper.shared();
 
     private final JdbcTemplate jdbc;
 
@@ -71,7 +72,7 @@ public class AuditLogService {
         if (details.isEmpty()) return null;
         try {
             return JSON.writeValueAsString(details);
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             throw new IllegalArgumentException("Audit details are not serializable as JSON", ex);
         }
     }

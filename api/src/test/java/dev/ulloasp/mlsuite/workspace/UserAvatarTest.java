@@ -53,7 +53,7 @@ class UserAvatarTest extends ProfileFixture {
 
     private String url(User user) throws Exception {
         String body = mockMvc.perform(as(user, get(ME))).andReturn().getResponse().getContentAsString();
-        return objectMapper.readTree(body).get("avatarUrl").asText();
+        return objectMapper.readTree(body).get("avatarUrl").asString();
     }
 
     @Test

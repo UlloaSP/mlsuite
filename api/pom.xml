@@ -17,7 +17,7 @@
 
     <properties>
         <java.version>25</java.version>
-        <!-- shortcut: Jackson 2 preserves existing JSON contracts; migrate before Boot removes its support. -->
+        <!-- Above Boot's managed versions for Jackson security fixes. Flyway and springdoc's swagger-core still bring Jackson 2. -->
         <jackson-2-bom.version>2.21.7</jackson-2-bom.version>
         <jackson-bom.version>3.1.7</jackson-bom.version>
         <tomcat.version>11.0.26</tomcat.version>
@@ -68,11 +68,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-jackson2</artifactId>
         </dependency>
 
         <dependency>

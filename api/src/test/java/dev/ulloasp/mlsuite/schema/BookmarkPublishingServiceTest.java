@@ -24,8 +24,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
@@ -175,7 +175,7 @@ class BookmarkPublishingServiceTest {
                 "reports", List.of(
                         Map.of("kind", "classifier", "label", "Risk", "id", "out0", "mappedTo", "out0"))),
                 view.formSchema());
-        ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        ObjectMapper mapper = new JsonMapper();
         assertEquals(Set.of("publicId", "name", "description", "publicationNote", "version", "inputCount",
                 "reportCount", "organizationName", "organizationLogoUrl", "organizationKind", "publisherHandle",
                 "formSchema", "updatedAt"),

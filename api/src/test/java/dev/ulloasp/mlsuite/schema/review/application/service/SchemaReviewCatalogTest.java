@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
@@ -135,7 +135,7 @@ class SchemaReviewCatalogTest extends PublicPredictionFixture {
             String body = inbox(owner, "size", "10", "page", String.valueOf(page))
                     .andExpect(jsonPath("$.hasNext").value(page < 2))
                     .andReturn().getResponse().getContentAsString();
-            objectMapper.readTree(body).get("items").forEach(item -> paged.add(item.get("publicId").asText()));
+            objectMapper.readTree(body).get("items").forEach(item -> paged.add(item.get("publicId").asString()));
         }
         assertEquals(28, paged.size());
         assertEquals(28, new TreeSet<>(paged).size());
@@ -167,7 +167,7 @@ class SchemaReviewCatalogTest extends PublicPredictionFixture {
     }
 
     private static Instant stateEnteredAt(JsonNode item) {
-        return OffsetDateTime.parse(item.get("stateEnteredAt").asText()).toInstant();
+        return OffsetDateTime.parse(item.get("stateEnteredAt").asString()).toInstant();
     }
 
     @Test

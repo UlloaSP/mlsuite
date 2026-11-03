@@ -1,12 +1,12 @@
 package dev.ulloasp.mlsuite.plugin.application.service;
 
-import java.io.IOException;
+import tools.jackson.core.JacksonException;
 import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
@@ -61,7 +61,7 @@ public class PluginObjectReader {
     private StoredPlugin decode(byte[] bytes) {
         try {
             return mapper.readValue(bytes, StoredPlugin.class);
-        } catch (IOException error) {
+        } catch (JacksonException error) {
             throw new IllegalStateException("Could not deserialize plugin.", error);
         }
     }

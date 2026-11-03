@@ -9,8 +9,8 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.RuntimeBuilderClient;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
@@ -80,7 +80,7 @@ public class RuntimeEnvironments {
     private String json(BundleInspection.Environment environment) {
         try {
             return objectMapper.writeValueAsString(environment.packages());
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             throw new IllegalStateException("Environment packages are not serializable", ex);
         }
     }

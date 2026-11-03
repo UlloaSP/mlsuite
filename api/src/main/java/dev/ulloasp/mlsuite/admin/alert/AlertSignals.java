@@ -11,7 +11,7 @@ import java.util.Map;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.admin.infrastructure.OpsAgentClient;
 import dev.ulloasp.mlsuite.admin.infrastructure.OpsAgentException;

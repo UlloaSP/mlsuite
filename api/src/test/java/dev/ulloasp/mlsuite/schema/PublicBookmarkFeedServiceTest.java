@@ -30,8 +30,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
@@ -182,7 +182,7 @@ class PublicBookmarkFeedServiceTest {
 
     @Test
     void aCardCarriesNothingBeyondWhatItShows() throws Exception {
-        ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        ObjectMapper mapper = new JsonMapper();
         PublicBookmarkSummaryDto card = service.getPublishedBookmarkPage(0, 24, "cardio", "updated").items().get(0);
 
         assertEquals(Set.of("publicId", "name", "description", "inputCount", "reportCount",
