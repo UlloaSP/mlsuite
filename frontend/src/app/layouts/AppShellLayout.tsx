@@ -29,6 +29,7 @@ import {
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useNavigationItems } from "@/app/components/use-navigation-items";
 import { useNotificationToasts } from "@/features/notifications/lib/use-notification-toasts";
+import { useUserEvents } from "@/features/notifications/lib/use-user-events";
 
 export function AppShellFrame({ children }: PropsWithChildren) {
   const [collapsed, setCollapsed] = useAtom(sidebarCollapsedAtom);
@@ -38,7 +39,9 @@ export function AppShellFrame({ children }: PropsWithChildren) {
   useDisplayShortcuts();
   useQuietScrollbars(floating);
   useWarnOnUnsavedInferences();
-  useScopeInferenceSessionsToUser(useUser().data?.id);
+  const userId = useUser().data?.id;
+  useScopeInferenceSessionsToUser(userId);
+  useUserEvents(userId !== undefined);
   useRecordSectionLocation(useNavigationItems().activeRoot);
   useNotificationToasts();
 

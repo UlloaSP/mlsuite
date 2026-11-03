@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Map;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -35,16 +36,19 @@ public class NotificationService implements NotificationUseCase {
     private static final Sort NEWEST_FIRST = Sort.by(Sort.Direction.DESC, "id");
 
     private final NotificationRepository notifications;
+    private final ApplicationEventPublisher events;
 
     /**
      * Writes one notification. {@code organizationId} is null for one about the platform itself;
      * {@code targetId} is the id of what {@code kind.targetType()} names; {@code payload} holds the
-     * labels that draw it (see NotificationKind). Fails without a surrounding transaction.
+     * labels that draw it (see NotificationKind). Fails without a surrounding transaction; once it
+     * commits, the recipient's open tabs are told (NotificationsChangedPush).
      */
     @Transactional(propagation = Propagation.MANDATORY)
     public void notify(Long recipientUserId, Long organizationId, NotificationKind kind, String targetId,
             Map<String, Object> payload) {
         notifications.save(new Notification(recipientUserId, organizationId, kind, targetId, payload));
+        events.publishEvent(new NotificationsChanged(recipientUserId));
     }
 
     /** What told the recipient about the target was dealt with: it stops counting as unread. */

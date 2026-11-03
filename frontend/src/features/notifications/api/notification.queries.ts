@@ -9,8 +9,11 @@ import {
   type NotificationFilter,
 } from "./notifications.api";
 
-/** How often the shell asks whether anything happened. */
-const UNREAD_POLL_MS = 30_000;
+/**
+ * The API pushes every new notification to the member's open tabs (useUserEvents); this slow
+ * read only catches what a socket that never came back would miss.
+ */
+const UNREAD_SAFETY_POLL_MS = 5 * 60_000;
 
 // A person's inbox follows them across organizations, so its keys name the user, not a tenant.
 export const NOTIFICATIONS_QUERY_KEY = ["notifications"] as const;
@@ -38,7 +41,7 @@ export const unreadNotificationCountQueryOptions = (userId: number | undefined) 
     select: (unread) => unread.count,
     enabled: userId !== undefined,
     staleTime: 0,
-    refetchInterval: UNREAD_POLL_MS,
+    refetchInterval: UNREAD_SAFETY_POLL_MS,
     // A missed poll is not worth an error: the badge keeps its last count until the next one.
     meta: { errorHandledLocally: true },
   });

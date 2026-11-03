@@ -14,7 +14,7 @@ import {
   resolveSelectedService,
 } from "@/features/infrastructure/lib/infrastructure-state";
 import type { InfrastructureOverviewDto } from "@/features/infrastructure/api/infrastructure.types";
-import { buildWebSocketUrl } from "@/features/infrastructure/lib/infrastructure-socket";
+import { buildWebSocketUrl } from "@/shared/api/websocket-url";
 import {
   filterAndSortServices,
   serviceStatusCounts,
