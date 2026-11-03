@@ -8,6 +8,9 @@ overrides:
   dompurify: ^3.4.16
   zod: 4.6.6
 
+patchedDependencies:
+  '@pierre/diffs@1.4.3': 37fcb3a1de936bda63dfe3df6881fd7b4372f65371ea24c1d402915006aa6cb4
+
 importers:
 
   .:
@@ -17,7 +20,7 @@ importers:
         version: 4.7.0(monaco-editor@0.56.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@pierre/diffs':
         specifier: ^1.4.3
-        version: 1.4.3(@shikijs/themes@4.4.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        version: 1.4.3(patch_hash=37fcb3a1de936bda63dfe3df6881fd7b4372f65371ea24c1d402915006aa6cb4)(@shikijs/themes@4.4.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@tanstack/charts':
         specifier: 1.1.0
         version: 1.1.0(lit@3.3.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(solid-js@1.9.18)
@@ -85,7 +88,7 @@ importers:
         specifier: ^2.0.8
         version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       sucrase:
-        specifier: 3.35.1
+        specifier: ^3.35.1
         version: 3.35.1
       zod:
         specifier: 4.6.6
@@ -3567,7 +3570,7 @@ snapshots:
 
   '@oxlint/plugins@1.88.0': {}
 
-  '@pierre/diffs@1.4.3(@shikijs/themes@4.4.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+  '@pierre/diffs@1.4.3(patch_hash=37fcb3a1de936bda63dfe3df6881fd7b4372f65371ea24c1d402915006aa6cb4)(@shikijs/themes@4.4.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
       '@pierre/theme': 2.0.0
       '@pierre/theming': 1.0.1(@pierre/theme@2.0.0)(@shikijs/themes@4.4.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(shiki@4.4.3)

@@ -6,6 +6,7 @@ RUN npm install -g vite-plus@1.3.0
 ARG VITE_BACKEND_URL
 ENV VITE_BACKEND_URL=${VITE_BACKEND_URL}
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY patches ./patches
 RUN vp install --ignore-scripts --frozen-lockfile
 COPY . .
 RUN vp run build
