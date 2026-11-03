@@ -11,7 +11,6 @@ import {
 
 /** How often the shell asks whether anything happened. */
 const UNREAD_POLL_MS = 30_000;
-const PENDING_POLL_MS = 60_000;
 
 // A person's inbox follows them across organizations, so its keys name the user, not a tenant.
 export const NOTIFICATIONS_QUERY_KEY = ["notifications"] as const;
@@ -47,7 +46,11 @@ export const unreadNotificationCountQueryOptions = (userId: number | undefined) 
 export const useUnreadNotificationCount = () =>
   useQuery(unreadNotificationCountQueryOptions(useUser().data?.id));
 
-/** Invitations waiting for this account's answer, whatever became of what announced them. */
+/**
+ * Invitations waiting for this account's answer, whatever became of what announced them. Every
+ * invitation is announced by a notification, so they are read again whenever the unread count
+ * changes (useNotificationToasts) rather than polled.
+ */
 export const pendingInvitationsQueryOptions = (userId: number | undefined) =>
   queryOptions({
     queryKey: [...PENDING_INVITATIONS_QUERY_KEY, userId],
@@ -55,7 +58,6 @@ export const pendingInvitationsQueryOptions = (userId: number | undefined) =>
     select: (pending) => pending.items,
     enabled: userId !== undefined,
     staleTime: 0,
-    refetchInterval: PENDING_POLL_MS,
     meta: { errorHandledLocally: true },
   });
 
