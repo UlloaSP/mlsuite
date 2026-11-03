@@ -1,5 +1,8 @@
 package dev.ulloasp.mlsuite.schema;
 
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import dev.ulloasp.mlsuite.support.PostgresDatabase;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
@@ -34,16 +37,17 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 
 @DataJpaTest(properties = {
-    "spring.profiles.active=test", "logging.file.name=target/schema-delete-test.log",
-    "spring.datasource.url=jdbc:h2:mem:schemadelete;MODE=PostgreSQL;INIT=CREATE DOMAIN IF NOT EXISTS TIMESTAMPTZ AS TIMESTAMP WITH TIME ZONE",
-    "spring.datasource.driver-class-name=org.h2.Driver",
-    "spring.datasource.username=sa", "spring.datasource.password=",
-    "spring.jpa.hibernate.ddl-auto=create-drop", "spring.flyway.enabled=false"
+    "spring.profiles.active=test", "logging.file.name=target/schema-delete-test.log"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(SchemaServiceImpl.class)
 @ContextConfiguration(classes = SchemaDeletionServiceTest.PersistenceConfig.class)
 class SchemaDeletionServiceTest {
+
+    @DynamicPropertySource
+    static void database(DynamicPropertyRegistry registry) {
+        PostgresDatabase.register(registry);
+    }
 
     @MockitoBean AuditLogService auditLog;
     @Configuration
