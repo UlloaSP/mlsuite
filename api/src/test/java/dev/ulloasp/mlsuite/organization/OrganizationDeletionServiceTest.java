@@ -33,7 +33,7 @@ class OrganizationDeletionServiceTest {
 
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry registry) {
-        PostgresDatabase.register(registry);
+        PostgresDatabase.registerRolledBack(registry);
     }
     @Configuration
     @EntityScan("dev.ulloasp.mlsuite")

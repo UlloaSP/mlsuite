@@ -59,7 +59,7 @@ class PublicBookmarkModerationServiceTest {
 
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry registry) {
-        PostgresDatabase.register(registry);
+        PostgresDatabase.registerRolledBack(registry);
     }
 
     @Configuration
