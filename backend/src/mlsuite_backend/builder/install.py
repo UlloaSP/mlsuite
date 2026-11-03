@@ -1,10 +1,12 @@
 """Installing one environment: a managed CPython and exactly the lock's wheels for this platform.
 
-Every file comes from the configured index and must carry a SHA-256 the lock (or, for mlbundle,
-the allowlist) names; the URLs in a lock are never used, so an author cannot point the builder
-at other files. Nothing is built from source, nothing outside the lock is resolved, and the
-environment's interpreter is never started here: a package's code first runs in a worker, which
-has no network. The environment appears under its key only once complete.
+Every locked release is first checked on the index (see releases): one too new, yanked or with a
+known vulnerability refuses the whole environment before anything is downloaded. Every file comes
+from the configured index and must carry a SHA-256 the lock (or, for mlbundle, the allowlist)
+names; the URLs in a lock are never used, so an author cannot point the builder at other files.
+Nothing is built from source, nothing outside the lock is resolved, and the environment's
+interpreter is never started here: a package's code first runs in a worker, which has no network.
+The environment appears under its key only once complete.
 """
 
 import json
@@ -13,14 +15,15 @@ import shutil
 import subprocess
 import sysconfig
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import mlbundle
 
 from .. import environments
-from ..config import PACKAGE_INDEX_URL, UV_BINARY, VENV_PYTHON
+from ..config import PACKAGE_INDEX_URL, PACKAGE_MIN_AGE_DAYS, UV_BINARY, VENV_PYTHON
 from ..policy import Allowlist
+from . import releases
 
 # uv output kept in a failure, enough to name the package that failed.
 _ERROR_TAIL = 2000
@@ -28,6 +31,24 @@ _ERROR_TAIL = 2000
 
 class BuildFailed(Exception):
     """uv could not install the environment; trying again may succeed (an index outage)."""
+
+
+class ReleasesRefused(Exception):
+    """The index does not vouch for some locked releases; each is named with the reason."""
+
+    def __init__(self, refused: list[str]) -> None:
+        super().__init__("; ".join(refused))
+        self.refused = refused
+
+
+def check_releases(lock: mlbundle.EnvironmentLock, platform: str) -> None:
+    """Refuses the environment unless the index vouches for every release it would install."""
+    try:
+        refused = releases.problems(lock, platform, datetime.now(UTC), timedelta(days=PACKAGE_MIN_AGE_DAYS))
+    except releases.IndexUnavailable as error:
+        raise BuildFailed(str(error)) from error
+    if refused:
+        raise ReleasesRefused(refused)
 
 
 def requirements(lock: mlbundle.EnvironmentLock, writer_version: str, allowed: Allowlist, platform: str) -> str:
@@ -59,6 +80,7 @@ def build(lock: mlbundle.EnvironmentLock, writer_version: str, allowed: Allowlis
     target = environments.directory(key, root)
     if (target / environments.READY_FILE).is_file():
         return environments.read_ready(key, root)
+    check_releases(lock, sysconfig.get_platform())
     staging = root / ".staging" / f"{key}-{uuid.uuid4().hex}"
     staging.mkdir(parents=True)
     try:

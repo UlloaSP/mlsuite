@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Export the bundle corpus that proves the allowlist: python export_corpus.py OUTPUT.
 
-Each scikit-learn version the allowlist grants gets an environment, and so does each other model
-library, so a version added there is covered without touching this harness. Every other package
-is held to its allowlisted version: a model trained on anything newer would be refused on upload.
-Models that mlbundle refuses to export are recorded as failures, not errors: the corpus states
-what can be uploaded at all.
+scikit-learn gets an environment at each end of its allowlisted range (the lower bound and the
+newest release inside it), and each other model library gets one, so a widened range is covered
+without touching this harness. Every package is held to its allowlisted range, so the resolver
+picks the newest release MLsuite would install. Models that mlbundle refuses to export are
+recorded as failures, not errors: the corpus states what can be uploaded at all.
 """
 
 from __future__ import annotations
@@ -20,18 +20,28 @@ import tomllib
 
 HERE = Path(__file__).resolve().parent
 ALLOWLIST = HERE.parents[1] / "backend" / "environment-allowlist.toml"
+# The builder's default RUNTIME_PACKAGE_MIN_AGE_DAYS.
+MIN_AGE_DAYS = 14
 
 
 def version_key(version: str) -> tuple[int, ...]:
     return tuple(int(part) for part in version.split("."))
 
 
+def lower_bound(allowed: str) -> str:
+    """The version a range starts at: its ">=" clause, which every package range has."""
+    for clause in allowed.split(","):
+        if clause.strip().startswith(">="):
+            return clause.strip()[2:].strip()
+    raise ValueError(f"The range {allowed!r} has no lower bound")
+
+
 def environments(allowlist: dict) -> dict[str, tuple[str, list[str]]]:
     """The exporter and the requirements of each environment."""
-    packages = allowlist["packages"]
+    sklearn = allowlist["packages"]["scikit-learn"]
     found = {
-        f"sk-{version}": ("export_sklearn.py", ["sklearn"], [f"scikit-learn=={version}"])
-        for version in packages["scikit-learn"]
+        f"sk-{lower_bound(sklearn)}": ("export_sklearn.py", ["sklearn"], [f"scikit-learn=={lower_bound(sklearn)}"]),
+        "sk-newest": ("export_sklearn.py", ["sklearn"], [f"scikit-learn{sklearn}"]),
     }
     for library in ("xgboost", "catboost", "onnx"):
         found[library] = (f"export_{library}.py", [library, "sklearn"] if library == "xgboost" else [library], [])
@@ -43,9 +53,8 @@ def environments(allowlist: dict) -> dict[str, tuple[str, list[str]]]:
 
 
 def constraints(allowlist: dict) -> str:
-    """Pins for every package with one allowlisted version; environments pin the others."""
-    pins = [f"{name}=={versions[0]}" for name, versions in allowlist["packages"].items() if len(versions) == 1]
-    return "\n".join(pins) + "\n"
+    """Every package's allowlisted range, so nothing MLsuite would refuse is installed."""
+    return "".join(f"{name}{allowed}\n" for name, allowed in allowlist["packages"].items())
 
 
 def export(name: str, script: str, requirements: list[str], python: str, pins: Path, output: Path, work: Path) -> None:
@@ -53,6 +62,8 @@ def export(name: str, script: str, requirements: list[str], python: str, pins: P
     subprocess.run(["uv", "venv", "--quiet", "--python", python, str(environment)], check=True)
     interpreter = environment / "bin" / "python"
     subprocess.run(["uv", "pip", "install", "--quiet", "--python", str(interpreter),
+                    # The builder installs no release younger than this; neither does the corpus.
+                    "--exclude-newer", f"{MIN_AGE_DAYS} days",
                     "--constraint", str(pins), *requirements], check=True)
     subprocess.run([str(interpreter), str(HERE / script), name, str(output)], check=True)
 

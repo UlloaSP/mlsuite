@@ -82,6 +82,8 @@ equivalent roles yourself; the migration role must be able to install `pg_trgm`.
 | `RUNTIME_MEMORY_LIMIT` | `6g` | Memory the runtime, its workers included, may use. |
 | `RUNTIME_BUILDER_BASE_URL` | `http://runtime-builder:8001` | How the API reaches the environment builder. |
 | `RUNTIME_PACKAGE_INDEX_URL` | `https://pypi.org/simple` | The only index the builder installs from; a mirror works, since every file is checked against the lock's SHA-256 and the lock's URLs are never used. |
+| `RUNTIME_PACKAGE_METADATA_URL` | `https://pypi.org/pypi` | The PyPI JSON API the builder asks about each locked release before installing it; with a mirror that has no JSON API, keep it on PyPI. If it cannot be reached, the build fails and is tried again. |
+| `RUNTIME_PACKAGE_MIN_AGE_DAYS` | `14` | A release published fewer days ago is not installed yet; the model's preparation fails with the date it becomes installable. |
 | `RUNTIME_BUILDER_MEMORY_LIMIT` | `2g` | Memory the builder may use. |
 
 ## Public runs and the client API

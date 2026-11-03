@@ -14,9 +14,10 @@ approves or declines a synthetic loan application.
 
 MLsuite accepts models only as `.mlbundle` files written by
 [MLbundle](https://docs.mlbundle.eshkra.dev/) 0.3 or later, which lock the exact Python and
-packages the model was trained with. Export with versions the instance's
-`backend/environment-allowlist.toml` names (MLbundle 0.3.1, scikit-learn 1.9.1 and CPython 3.14 at
-the time of writing); a bundle that needs anything else is refused.
+packages the model was trained with. Export with versions inside the ranges the instance's
+`backend/environment-allowlist.toml` grants (MLbundle 0.3.1, CPython 3.14 and scikit-learn 1.7.2
+up to the next major release at the time of writing); releases published in the last 14 days are
+not installed yet, and a bundle that needs anything else is refused.
 
 ```bash
 python -m pip install "mlbundle[sklearn,schema]==0.3.1" "scikit-learn==1.9.1" pandas

@@ -44,5 +44,11 @@ ALLOWLIST_PATH = Path(
 )
 # The index the builder installs from, whatever URLs a lock names.
 PACKAGE_INDEX_URL = os.environ.get("RUNTIME_PACKAGE_INDEX_URL") or "https://pypi.org/simple"
+# Where the builder reads each release's upload time, yanked state and known vulnerabilities:
+# PyPI's JSON API, {URL}/{name}/{version}/json.
+PACKAGE_METADATA_URL = (os.environ.get("RUNTIME_PACKAGE_METADATA_URL") or "https://pypi.org/pypi").rstrip("/")
+# A release younger than this is not installed yet: a hijacked upload is usually found and yanked
+# within days.
+PACKAGE_MIN_AGE_DAYS = _positive_int("RUNTIME_PACKAGE_MIN_AGE_DAYS", 14)
 UV_BINARY = os.environ.get("RUNTIME_UV") or "uv"
 VENV_PYTHON = Path("Scripts/python.exe") if sys.platform == "win32" else Path("bin/python")

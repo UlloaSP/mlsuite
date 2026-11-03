@@ -74,7 +74,7 @@ def test_metadata_refuses_a_bundle_whose_environment_is_not_allowed(monkeypatch)
     allowlist = parse_allowlist(
         f'python = ["{lock.python_version}"]\n'
         f'[mlbundle]\n"{mlbundle.__version__}" = "{"0" * 64}"\n'
-        "[packages]\n" + "".join(f'{package.name} = ["{package.version}"]\n' for package in granted)
+        "[packages]\n" + "".join(f'{package.name} = "=={package.version}"\n' for package in granted)
     )
     monkeypatch.setattr(policy, "allowlist", lambda: allowlist)
 
@@ -83,7 +83,7 @@ def test_metadata_refuses_a_bundle_whose_environment_is_not_allowed(monkeypatch)
     assert response.status_code == 422
     assert response.json()["detail"] == {
         "message": "The bundle needs packages MLsuite does not install",
-        "refused": [f"onnxruntime=={lock.version('onnxruntime')}"],
+        "refused": [f"onnxruntime=={lock.version('onnxruntime')} (not a package MLsuite installs)"],
     }
 
 
