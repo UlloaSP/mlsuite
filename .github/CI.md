@@ -63,6 +63,6 @@ See [the release contract](../docs/RELEASES.md) for image identity, verification
 
 ## GitLab
 
-`.github/workflows/mirror-gitlab.yml` mirrors canonical GitHub refs. GitLab CI repeats component and configuration checks before deployment so the target forge verifies the exact mirrored commit it receives.
+`.github/workflows/mirror-gitlab.yml` mirrors canonical GitHub refs. GitLab CI does not rerun the component test suites: deployment uses the commit's published release, which exists only after GitHub CI passed. It runs the secret scan and configuration checks before `deploy:shelob`.
 
-Keep check commands aligned across both systems. GitLab deployment credentials must remain protected and separate from GitHub CI.
+Keep those checks aligned across both systems. GitLab deployment credentials must remain protected and separate from GitHub CI.
