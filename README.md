@@ -98,26 +98,31 @@ with `training_data=` to infer the fields from the training frame; otherwise
 every feature is a number field.
 
 Each model runs in its own environment. A bundle from mlbundle 0.3 or later carries
-`pylock.toml`, the exact Python and distributions it was trained with; MLsuite
-accepts it only when `backend/environment-allowlist.toml` names that Python, that
-mlbundle release and every locked package at its exact version, then installs the
-environment once (models needing the same files share it) and loads the model
-there before anyone runs it. Until then the model is *preparing*; a bundle that
-cannot load or predict its samples there is *failed* with the reason, and a member
-who may edit models can have it prepared again. A bundle without a lock (written
-before mlbundle 0.3) is refused. Every stored result keeps the environment that computed it. To allow a new version, add
-it to the allowlist on `develop`, then run the manual `allowlist:corpus` and
-`allowlist:shelob` GitLab jobs: they export a bundle of every model family with
-each allowlisted scikit-learn version and check that it reproduces its predictions on the
-production host.
+`pylock.toml`, the exact Python and distributions it was trained with, and its
+environment holds exactly those versions. MLsuite accepts a bundle only when
+`backend/environment-allowlist.toml` names that Python and that mlbundle release
+exactly, and every locked package at a version inside its range: packages with
+native code are held to the major line that was validated, pure-Python packages
+need only a lower bound, and pre-releases are never installed. Before installing,
+the builder checks each release on the package index and refuses one published
+fewer than 14 days ago (`RUNTIME_PACKAGE_MIN_AGE_DAYS`), yanked, or with a known
+vulnerability. It installs the environment once (models needing the same files
+share it) and loads the model there before anyone runs it. Until then the model is
+*preparing*; a bundle that cannot load or predict its samples there is *failed*
+with the reason, and a member who may edit models can have it prepared again. A
+bundle without a lock (written before mlbundle 0.3) is refused. Every stored result
+keeps the environment that computed it. To widen a range to a new major line, change
+it on `develop`, then run the manual `allowlist:corpus` and `allowlist:shelob`
+GitLab jobs: they export a bundle of every model family at both ends of the
+scikit-learn range and check that it reproduces its predictions on the production
+host.
 
 Fields map to the model's own feature names; a model without them takes its
 features by position, so its fields map to `0`, `1`, …. One-hot columns are
 grouped with the separator the bundle was exported with. Every model output has
-its own report, mapped to the output's position. A scikit-learn bundle loads only
-with the scikit-learn version that exported it, which is the version pinned in
-`backend/pyproject.toml`. Crystal Tree explanations apply to supported
-decision-tree estimators only.
+its own report, mapped to the output's position. A scikit-learn bundle loads with
+the scikit-learn version that exported it, the one its lock pins. Crystal Tree
+explanations apply to supported decision-tree estimators only.
 
 ## Getting started
 
