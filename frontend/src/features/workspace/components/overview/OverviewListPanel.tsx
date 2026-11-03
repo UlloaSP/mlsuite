@@ -5,7 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ArrowRight } from "lucide-react";
 import type { ReactNode } from "react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
+import { appHref } from "@/shared/lib/app-href";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
@@ -40,8 +41,8 @@ export function OverviewListPanel({
         <ul className="divide-y divide-line">{children}</ul>
       )}
       <footer className="mt-auto border-t border-line px-5 py-3">
-        <Link
-          to={to}
+        <AppLink
+          {...appHref(to)}
           viewTransition
           className={cx(
             "inline-flex items-center gap-1.5 rounded text-xs font-semibold text-accent-strong hover:underline",
@@ -50,7 +51,7 @@ export function OverviewListPanel({
         >
           {linkLabel}
           <ArrowRight size={13} />
-        </Link>
+        </AppLink>
       </footer>
     </section>
   );

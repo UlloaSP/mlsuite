@@ -9,7 +9,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { GitCompareArrows, Plus } from "lucide-react";
 import { useState } from "react";
-import { useParams } from "react-router";
+import { useParams } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
@@ -39,7 +39,7 @@ const SORTS: Array<{ value: ChangeSort; label: string }> = [
 ];
 
 export function SchemaChangesPage() {
-  const { schemaId } = useParams<{ schemaId: string }>();
+  const { schemaId } = useParams({ strict: false });
   const { data: schema } = useSchema(schemaId);
   const [changeBase, setChangeBase] = useState<SchemaVersionDto | null>(null);
   const [renameTarget, setRenameTarget] = useState<SchemaDraftDto | null>(null);

@@ -4,7 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ArrowRight } from "lucide-react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
+import { appHref } from "@/shared/lib/app-href";
 import { AppSkeleton } from "@/shared/ui/AppSkeleton";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
@@ -34,13 +35,13 @@ export function LifecycleStageCard({ stage, step }: { stage: LifecycleStage; ste
       <h3 className="mt-4 text-sm font-semibold text-fg">
         {/* The title link covers the card; the empty-state action sits above it. */}
         {stage.to ? (
-          <Link
-            to={stage.to}
+          <AppLink
+            {...appHref(stage.to)}
             viewTransition
             className={cx("rounded after:absolute after:inset-0 after:rounded-card", FOCUS_RING)}
           >
             {stage.label}
-          </Link>
+          </AppLink>
         ) : (
           stage.label
         )}
@@ -65,8 +66,8 @@ export function LifecycleStageCard({ stage, step }: { stage: LifecycleStage; ste
 
       <div className="mt-auto pt-3">
         {empty && stage.emptyAction ? (
-          <Link
-            to={stage.emptyAction.to}
+          <AppLink
+            {...appHref(stage.emptyAction.to)}
             viewTransition
             className={cx(
               "relative z-10 inline-flex items-center gap-1.5 rounded text-xs font-semibold text-accent-strong hover:underline",
@@ -75,7 +76,7 @@ export function LifecycleStageCard({ stage, step }: { stage: LifecycleStage; ste
           >
             {stage.emptyAction.label}
             <ArrowRight size={13} />
-          </Link>
+          </AppLink>
         ) : stage.to ? (
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-fg-muted transition group-hover:text-fg">
             Open {stage.label.toLowerCase()}

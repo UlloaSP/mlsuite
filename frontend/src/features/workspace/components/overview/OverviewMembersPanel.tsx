@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Link } from "react-router";
-import { profilePath } from "@/shared/lib/profile-path";
+import { AppLink } from "@/shared/ui/AppLink";
+import { profileLink } from "@/shared/lib/profile-link";
 import { formatCompactRelativeTime } from "@/shared/lib/relative-time";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
@@ -41,15 +41,15 @@ export function OverviewMembersPanel({
             />
             <span className="min-w-0 flex-1">
               {member.profileHandle ? (
-                <Link
-                  to={profilePath(member.profileHandle)}
+                <AppLink
+                  {...profileLink(member.profileHandle)}
                   className={cx(
                     "block truncate rounded-sm text-sm font-medium text-fg hover:underline",
                     FOCUS_RING,
                   )}
                 >
                   {name}
-                </Link>
+                </AppLink>
               ) : (
                 <span className="block truncate text-sm font-medium text-fg">{name}</span>
               )}

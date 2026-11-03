@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Copy } from "lucide-react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useDuplicateSchemaMutation } from "@/features/schemas/api/schema-mutations";
 import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
@@ -32,7 +32,7 @@ export function CloneSchemaDialog({ schemaId, schemaName, version, onClose }: Pr
       });
       onClose();
       toast.success("Schema created from snapshot");
-      void navigate(`/schemas/${copy.id}`);
+      void navigate({ to: "/schemas/$schemaId", params: { schemaId: String(copy.id) } });
     } catch {
       // The dialog shows the mutation error and stays open for a retry.
     }

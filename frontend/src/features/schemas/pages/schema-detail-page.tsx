@@ -5,7 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import { Link, useParams } from "react-router";
+import { useParams } from "@tanstack/react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppButton } from "@/shared/ui/AppButton";
 import { appButtonClass } from "@/shared/ui/button-styles";
@@ -25,7 +26,7 @@ import { SchemaSnapshotPreviewPanel } from "@/features/schemas/components/Schema
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 export function SchemaDetailPage() {
-  const { schemaId } = useParams<{ schemaId: string }>();
+  const { schemaId } = useParams({ strict: false });
   const { data: schema, isLoading, isError } = useSchema(schemaId);
   const showLoader = useStableLoading(isLoading);
   const versionsQuery = useSnapshotCatalog(schemaId, {
@@ -44,9 +45,9 @@ export function SchemaDetailPage() {
           title="Schema unavailable"
           description="The schema could not be loaded. It may no longer exist or you may not have access."
           action={
-            <Link to="/schemas" className={appButtonClass()}>
+            <AppLink to="/schemas" className={appButtonClass()}>
               Back to schemas
-            </Link>
+            </AppLink>
           }
         />
       </AppPage>

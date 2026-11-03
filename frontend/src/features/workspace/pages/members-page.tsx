@@ -1,4 +1,4 @@
-import { useParams } from "react-router";
+import { useParams } from "@tanstack/react-router";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { MemberRoleFilter } from "@/features/workspace/components/MemberRoleFilter";
@@ -19,7 +19,7 @@ import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/wor
 import { organizationRouteErrorStatus } from "@/features/workspace/lib/organization-route-error";
 
 export function MembersPage() {
-  const { organizationId = "" } = useParams();
+  const { organizationId = "" } = useParams({ strict: false });
   const id = Number(organizationId);
   const dashboard = useOrganizationAdminDashboardQuery(id);
   const filters = useUrlFilters({ q: "", role: "ALL" });

@@ -1,16 +1,29 @@
 import { SEARCH_DEBOUNCE_MS } from "@/shared/lib/use-debounced-value";
 import { catalogViewport } from "./catalog-viewport";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { act, type ReactNode } from "react";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Outlet,
+  RouterProvider,
+} from "@tanstack/react-router";
+import { act, createContext, useContext, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter } from "react-router";
+import { parseSearch, stringifySearch } from "@/app/router/search-params";
 import { afterEach, beforeEach, vi } from "vite-plus/test";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 export type MountOptions = {
-  /** Wraps the tree in a MemoryRouter starting at this entry. */
+  /** Wraps the tree in a memory router starting at this entry. */
   route?: string;
+  /**
+   * The pages that router matches, by path (`/review/$reviewId`); the mounted tree stays
+   * rendered around them. Without pages, every address shows the tree alone.
+   */
+  routes?: Record<string, ReactNode>;
   /** Wraps the tree in a QueryClientProvider for this client. */
   queryClient?: QueryClient;
 };
@@ -37,9 +50,45 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
-const wrap = (ui: ReactNode, { route, queryClient }: MountOptions): ReactNode => {
-  const routed =
-    route === undefined ? ui : <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>;
+const MountedTree = createContext<ReactNode>(null);
+
+function TestRoot() {
+  return (
+    <>
+      {useContext(MountedTree)}
+      <Outlet />
+    </>
+  );
+}
+
+/** A memory router at `route` whose root renders the mounted tree around the matched page. */
+export function createTestRouter(route: string, routes: Record<string, ReactNode> = { $: null }) {
+  const root = createRootRoute({ component: TestRoot });
+  const pages = Object.entries(routes).map(([path, element]) =>
+    createRoute({ getParentRoute: () => root, path, component: () => element }),
+  );
+  return createRouter({
+    routeTree: root.addChildren(pages),
+    history: createMemoryHistory({ initialEntries: [route] }),
+    parseSearch,
+    stringifySearch,
+  });
+}
+
+const routers = new WeakMap<MountOptions, ReturnType<typeof createTestRouter>>();
+
+const wrap = (ui: ReactNode, options: MountOptions): ReactNode => {
+  const { route, routes, queryClient } = options;
+  let routed = ui;
+  if (route !== undefined) {
+    const router = routers.get(options) ?? createTestRouter(route, routes);
+    routers.set(options, router);
+    routed = (
+      <MountedTree.Provider value={ui}>
+        <RouterProvider router={router} />
+      </MountedTree.Provider>
+    );
+  }
   return queryClient ? (
     <QueryClientProvider client={queryClient}>{routed}</QueryClientProvider>
   ) : (

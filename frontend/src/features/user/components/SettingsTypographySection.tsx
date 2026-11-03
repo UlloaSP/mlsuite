@@ -3,18 +3,23 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtom } from "jotai";
+import { useSelector } from "@tanstack/react-store";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppSwitch } from "@/shared/ui/AppSwitch";
 import { INTERFACE_FONTS, MONOSPACE_FONTS } from "@/shared/ui/font-catalog";
-import { INTERFACE_SIZES, MONOSPACE_SIZES, typographyAtom } from "@/shared/ui/typography-state";
+import {
+  INTERFACE_SIZES,
+  MONOSPACE_SIZES,
+  setTypography,
+  typographyAtom,
+} from "@/shared/ui/typography-state";
 import { FontChoiceGrid } from "./FontChoiceGrid";
 
 const sizeOptions = (values: readonly number[]) =>
   values.map((value) => ({ label: `${value} px`, value: String(value) }));
 
 export function SettingsTypographySection() {
-  const [typography, setTypography] = useAtom(typographyAtom);
+  const typography = useSelector(typographyAtom);
   const update = <TKey extends keyof typeof typography>(
     key: TKey,
     value: (typeof typography)[TKey],

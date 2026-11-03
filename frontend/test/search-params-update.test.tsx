@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { act } from "react";
-import { useLocation } from "react-router";
+import { useLocation } from "@tanstack/react-router";
 import { expect, test } from "vite-plus/test";
 import { useSearchParamState } from "@/shared/lib/use-search-param-state";
 import { useUrlFilters } from "@/shared/lib/use-url-filters";
@@ -30,7 +30,7 @@ function Catalog() {
   return null;
 }
 function Url() {
-  return <output>{useLocation().search}</output>;
+  return <output>{useLocation().searchStr}</output>;
 }
 
 const render = async (route: string) => {

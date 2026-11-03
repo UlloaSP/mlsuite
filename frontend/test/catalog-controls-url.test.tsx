@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "vite-plus/test";
 import { act } from "react";
-import { useLocation } from "react-router";
+import { useLocation } from "@tanstack/react-router";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { mount } from "./support/dom";
 
@@ -21,7 +21,7 @@ function CatalogControlsProbe() {
       data-filter={controls.filter}
       data-query={controls.query}
       data-sort={controls.sort}
-      data-url={location.search}
+      data-url={location.searchStr}
     >
       <button type="button" onClick={() => controls.setFilter("active")}>
         default filter

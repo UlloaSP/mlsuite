@@ -1,14 +1,9 @@
-import {
-  publicRunCatalogKey,
-  publicRunDetailOptions,
-} from "@/features/explore/api/public-catalog-api";
 /*
 SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAtom } from "jotai";
+import { useSelector } from "@tanstack/react-store";
 import { useMemo, useState } from "react";
 import {
   buildCombinedFeedbackQuestionnaire,
@@ -19,7 +14,7 @@ import {
   getQuestionnaireFieldDescriptors,
 } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
 import { ReportQuestionnaireMount } from "@/capabilities/prediction-runtime/feedback/ReportQuestionnaireMount";
-import { savePublicRunFeedback } from "@/features/explore/api/public-bookmark-api";
+import { useSavePublicRunFeedback } from "@/features/explore/api/public-catalog-api";
 import {
   buildPublicFeedbackSteps,
   isPublicRunReviewed,
@@ -45,30 +40,22 @@ const LABELS = { submit: "Save review", submitting: "Saving review…" };
  * be changed. No account is needed: the run is the browser's, and so is the review.
  */
 export function PublicRunReview({ publicId, formSchema, run }: Props) {
-  const [theme] = useAtom(themeWithHtmlAtom);
+  const theme = useSelector(themeWithHtmlAtom);
   const [editing, setEditing] = useState(false);
-  const queryClient = useQueryClient();
   const steps = useMemo(() => buildPublicFeedbackSteps(formSchema, run), [formSchema, run]);
   const combined = useMemo(
     () => buildCombinedFeedbackQuestionnaire(steps, { required: true }),
     [steps],
   );
-  const save = useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: (values: Record<string, unknown>) =>
-      savePublicRunFeedback(publicId, run.id, { items: publicFeedbackItems(steps, values) }),
-    onSuccess: (saved) => {
-      queryClient.setQueryData(publicRunDetailOptions(publicId, saved.id).queryKey, saved);
-      void queryClient.invalidateQueries({ queryKey: publicRunCatalogKey(publicId) });
-      setEditing(false);
-    },
-  });
+  const save = useSavePublicRunFeedback(publicId, run.id);
+  const { mutateAsync } = save;
   const transport = useMemo(
     () =>
       createCombinedQuestionnaireTransport(async (values) => {
-        await save.mutateAsync(values);
+        await mutateAsync({ items: publicFeedbackItems(steps, values) });
+        setEditing(false);
       }),
-    [save],
+    [mutateAsync, steps],
   );
 
   if (steps.length === 0) {

@@ -58,7 +58,7 @@ describe("organization inference catalog", () => {
       new URL("../src/features/schemas/api/schema-prediction-mutations.ts", import.meta.url),
       "utf8",
     );
-    expect(manualCreation).toContain("invalidatePredictionRunCollections(qc");
+    expect(manualCreation).toContain("invalidatePredictionRunCollections(client");
   });
 
   test("keeps review candidates grouped by schema snapshot", () => {
@@ -107,8 +107,10 @@ describe("organization inference catalog", () => {
     expect(page).toContain("<ReviewCreationButton");
     expect(page).toContain("renderExportAction?.({ count:");
     expect(page).toContain("<InferenceActionsMenu");
-    expect(page).toContain("?tab=reviews&section=reviews");
-    expect(page).toContain("navigate(`/inferences/${item.id}`)");
+    expect(page).toContain('search: { tab: "reviews", section: "reviews" }');
+    expect(page).toContain(
+      'navigate({ to: "/inferences/$inferenceId", params: { inferenceId: String(item.id) } })',
+    );
     expect(page).not.toContain("PreviewSheet");
     expect(routePage).toContain("<OrganizationInferenceExportButton");
     expect(exportAction).toContain("predictionRunQueryOptions");
@@ -145,7 +147,7 @@ describe("organization inference catalog", () => {
 
   test("registers catalog and canonical detail as protected Inferences destinations", () => {
     const routes = readFileSync(
-      new URL("../src/app/router/protected-routes.ts", import.meta.url),
+      new URL("../src/app/router/workspace-routes.ts", import.meta.url),
       "utf8",
     );
     const sidebar = readFileSync(
@@ -153,8 +155,8 @@ describe("organization inference catalog", () => {
       "utf8",
     );
 
-    expect(routes).toContain('page("inferences", ');
-    expect(routes).toContain('page("inferences/:inferenceId", ');
+    expect(routes).toContain('page(canViewModelsRoute, "inferences", ');
+    expect(routes).toContain('page(canViewModelsRoute, "inferences/$inferenceId", ');
     expect(routes).toContain('import("@/app/pages/InferencesRoutePage")');
     expect(routes).toContain('import("@/app/pages/InferenceDetailRoutePage")');
     expect(sidebar).toContain('to: "/inferences"');

@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtomValue, useSetAtom } from "jotai";
+import { useSelector } from "@tanstack/react-store";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { mergeSchemaRunInputs } from "@/capabilities/prediction-runtime/data/input-display";
@@ -56,18 +56,17 @@ const NO_ENTRIES: SessionEntry[] = [];
 export function useInferenceSession(bookmarkId: string, schemaVersionId: number | undefined) {
   // Keyed by member too: another member signing in on this page never sees these.
   const sessionKey = `${useUser().data?.id ?? "anonymous"}:${bookmarkId}`;
-  const entries = useAtomValue(inferenceSessionsAtom)[sessionKey] ?? NO_ENTRIES;
-  const setSessions = useSetAtom(inferenceSessionsAtom);
+  const entries = useSelector(inferenceSessionsAtom)[sessionKey] ?? NO_ENTRIES;
   const setEntries = useCallback(
     (change: (current: SessionEntry[]) => SessionEntry[]) =>
-      setSessions((all) => {
+      inferenceSessionsAtom.set((all) => {
         const next = change(all[sessionKey] ?? NO_ENTRIES);
         if (next.length > 0) return { ...all, [sessionKey]: next };
         const rest = { ...all };
         delete rest[sessionKey];
         return rest;
       }),
-    [sessionKey, setSessions],
+    [sessionKey],
   );
   // A run still going when the page closes dies with its form; drop it.
   useEffect(

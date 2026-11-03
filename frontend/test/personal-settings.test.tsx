@@ -5,16 +5,26 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 // @vitest-environment jsdom
 
-import { createStore, Provider } from "jotai";
 import { resolve } from "node:path";
 import { act } from "react";
-import { useLocation } from "react-router";
+import { useLocation } from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
-import { protectedPages } from "@/app/router/protected-routes";
+import { appRoute } from "@/app/router/layout-routes";
+import { router } from "@/app/router/routes";
 import { SidebarActions } from "@/app/components/SidebarActions";
 import { SidebarProvider } from "@/app/components/app-sidebar/SidebarContext";
 import { useDisplayShortcuts } from "@/app/layouts/use-display-shortcuts";
 import { SettingsPage } from "@/features/user/pages/SettingsPage";
+import {
+  setContrast,
+  setCustomThemes,
+  setThemeMode,
+  setThemeSelection,
+} from "@/shared/ui/appearance-state";
+import { DEFAULT_SHORTCUTS, shortcutBindingsAtom } from "@/shared/ui/shortcut-state";
+import { navigationPositionAtom, sidebarStyleAtom } from "@/shared/ui/sidebar-preferences";
+import { DEFAULT_THEME_ID } from "@/shared/ui/theme-catalog";
+import { sidebarCollapsedAtom } from "@/shared/ui/ui-state";
 import { changeValue, click, mount } from "./support/dom";
 
 // Importing the plain browser script runs it, as index.html does before the app loads.
@@ -27,7 +37,7 @@ function DisplayShortcuts() {
 
 function LocationProbe() {
   const location = useLocation();
-  return <output data-testid="location">{`${location.pathname}${location.search}`}</output>;
+  return <output data-testid="location">{`${location.pathname}${location.searchStr}`}</output>;
 }
 
 const matchMedia = (matches: boolean) =>
@@ -40,6 +50,15 @@ const matchMedia = (matches: boolean) =>
   }));
 
 beforeEach(async () => {
+  // Each test starts from the defaults a first visit has.
+  setThemeMode("system");
+  setThemeSelection({ light: DEFAULT_THEME_ID, dark: DEFAULT_THEME_ID });
+  setContrast(100);
+  setCustomThemes([]);
+  navigationPositionAtom.set("right");
+  sidebarStyleAtom.set("fixed");
+  sidebarCollapsedAtom.set(false);
+  shortcutBindingsAtom.set(DEFAULT_SHORTCUTS);
   localStorage.clear();
   document.documentElement.className = "";
   document.documentElement.removeAttribute("data-theme-preset");
@@ -74,7 +93,7 @@ describe("personal settings", () => {
 
     const pressThemeShortcut = () =>
       act(() => {
-        window.dispatchEvent(
+        document.body.dispatchEvent(
           new KeyboardEvent("keydown", {
             bubbles: true,
             ctrlKey: true,
@@ -93,13 +112,13 @@ describe("personal settings", () => {
   });
 
   test("exposes the global route and applies theme, contrast, and sidebar choices", async () => {
-    expect(protectedPages.some((route) => route.path === "settings")).toBe(true);
+    expect(router.routesByPath["/settings"].parentRoute).toBe(appRoute);
 
     const { host: container } = await mount(
-      <Provider store={createStore()}>
+      <>
         <SettingsPage />
         <LocationProbe />
-      </Provider>,
+      </>,
       { route: "/" },
     );
 
@@ -186,10 +205,10 @@ describe("personal settings", () => {
 
   test("creates a paired theme and prevents conflicting keybindings", async () => {
     const { host: container } = await mount(
-      <Provider store={createStore()}>
+      <>
         <SettingsPage />
         <LocationProbe />
-      </Provider>,
+      </>,
       { route: "/" },
     );
 

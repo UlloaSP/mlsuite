@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { mutationOptions, useMutation, type QueryClient } from "@tanstack/react-query";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import {
   archiveModel,
@@ -16,67 +16,61 @@ import {
 } from "./model.api";
 import { modelKeys } from "./model.keys";
 import type { CreateModelRequest } from "./model.types";
-import type { ModelDto } from "@/shared/api/openapi.gen";
 
-const useInvalidateModelQueries = () => {
-  const queryClient = useQueryClient();
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return () => queryClient.invalidateQueries({ queryKey: modelKeys.all(organizationId) });
-};
+type OrganizationKey = number | string;
 
-const invalidatingMutationOptions = <TVariables>(
-  mutationFn: (variables: TVariables) => Promise<unknown>,
-  invalidate: () => Promise<void>,
-) => ({
-  mutationFn,
-  onSuccess: () => void invalidate(),
-});
+const invalidateModelQueries = (client: QueryClient, organizationId: OrganizationKey) =>
+  client.invalidateQueries({ queryKey: modelKeys.all(organizationId) });
 
-export const useArchiveModelMutation = () => {
-  const invalidate = useInvalidateModelQueries();
-  return useMutation(invalidatingMutationOptions(archiveModel, invalidate));
-};
+/** Refreshes every model query without holding the mutation until they are read again. */
+const modelMutation = <TData, TVariables>(
+  organizationId: OrganizationKey,
+  mutationFn: (variables: TVariables) => Promise<TData>,
+) =>
+  mutationOptions({
+    mutationFn,
+    onSuccess: (_data, _variables, _result, { client }) =>
+      void invalidateModelQueries(client, organizationId),
+  });
 
-export const useRestoreModelMutation = () => {
-  const invalidate = useInvalidateModelQueries();
-  return useMutation(invalidatingMutationOptions(restoreModel, invalidate));
-};
+const useOrganizationKey = () => useCurrentOrganizationId() ?? "none";
 
-export const useDeleteModelMutation = () => {
-  const invalidate = useInvalidateModelQueries();
-  return useMutation(invalidatingMutationOptions(deleteModel, invalidate));
-};
+export const useArchiveModelMutation = () =>
+  useMutation(modelMutation(useOrganizationKey(), archiveModel));
 
-export const useDuplicateModelMutation = () => {
-  const invalidate = useInvalidateModelQueries();
-  return useMutation(invalidatingMutationOptions(duplicateModel, invalidate));
-};
+export const useRestoreModelMutation = () =>
+  useMutation(modelMutation(useOrganizationKey(), restoreModel));
 
-export const useRenameModelMutation = () => {
-  const invalidate = useInvalidateModelQueries();
-  return useMutation(invalidatingMutationOptions(renameModel, invalidate));
-};
+export const useDeleteModelMutation = () =>
+  useMutation(modelMutation(useOrganizationKey(), deleteModel));
+
+export const useDuplicateModelMutation = () =>
+  useMutation(modelMutation(useOrganizationKey(), duplicateModel));
+
+export const useRenameModelMutation = () =>
+  useMutation(modelMutation(useOrganizationKey(), renameModel));
 
 /**
  * The model answers PREPARING and its page polls from there. A refusal (409: it is no longer
  * failed) still refreshes the model, so the page shows the state that refused it.
  */
-export const useRetryModelEnvironmentMutation = () => {
-  const queryClient = useQueryClient();
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const invalidate = useInvalidateModelQueries();
-  return useMutation({
+const retryModelEnvironmentMutation = (organizationId: OrganizationKey) =>
+  mutationOptions({
     mutationFn: (modelId: number | string) => retryModelEnvironment(modelId),
-    onSuccess: (model: ModelDto) =>
-      queryClient.setQueryData(modelKeys.detail(organizationId, model.id), model),
-    onSettled: () => invalidate(),
+    onSuccess: (model, _modelId, _result, { client }) =>
+      client.setQueryData(modelKeys.detail(organizationId, model.id), model),
+    onSettled: (_model, _error, _modelId, _result, { client }) =>
+      invalidateModelQueries(client, organizationId),
   });
-};
 
-export const useCreateModelMutation = () => {
-  const invalidate = useInvalidateModelQueries();
-  return useMutation({
+export const useRetryModelEnvironmentMutation = () =>
+  useMutation(retryModelEnvironmentMutation(useOrganizationKey()));
+
+const createModelMutation = (organizationId: OrganizationKey) =>
+  mutationOptions({
     mutationFn: (data: CreateModelRequest) => createModel(data),
-    onSuccess: () => invalidate(),
+    onSuccess: (_model, _data, _result, { client }) =>
+      invalidateModelQueries(client, organizationId),
   });
-};
+
+export const useCreateModelMutation = () => useMutation(createModelMutation(useOrganizationKey()));

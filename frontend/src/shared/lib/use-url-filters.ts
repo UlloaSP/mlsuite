@@ -1,12 +1,11 @@
-import { useSearchParams } from "react-router";
-import { useSearchParamsUpdate } from "@/shared/lib/use-search-params-update";
+import { useSearchParamsUpdate, useUrlSearchParams } from "@/shared/lib/url-search-params";
 
 /**
  * Navigable list filters kept in the URL. Defaults and empty values stay out of the URL,
  * and changes replace the history entry.
  */
 export function useUrlFilters<K extends string>(defaults: Record<K, string>) {
-  const [params] = useSearchParams();
+  const params = useUrlSearchParams();
   const update = useSearchParamsUpdate();
   const keys = Object.keys(defaults) as K[];
   const values = Object.fromEntries(

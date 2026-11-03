@@ -4,14 +4,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { m as motion } from "motion/react";
-import { useAtomValue } from "jotai";
+import { useSelector } from "@tanstack/react-store";
 import { useState } from "react";
-import { schemaErrorsAtom } from "@/features/schemas/lib/editor-atoms";
+import { useEditorAtoms } from "@/features/schemas/lib/editor-atoms";
 import { EditorErrorBar } from "./EditorErrorBar";
 import { EditorErrorPanel } from "./EditorErrorPanel";
 
 export function EditorFooter() {
-  const schemaErrors = useAtomValue(schemaErrorsAtom);
+  const schemaErrors = useSelector(useEditorAtoms().schemaErrors);
   const [expandedRequested, setExpandedRequested] = useState(false);
   const expanded = expandedRequested && schemaErrors.length > 0;
 

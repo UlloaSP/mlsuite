@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Paintbrush } from "lucide-react";
-import { useAtom, useAtomValue } from "jotai";
+import { useSelector } from "@tanstack/react-store";
 import { useState } from "react";
 import { AppChoiceCard } from "@/shared/ui/AppChoiceCard";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -12,6 +12,9 @@ import { AppShortcut } from "@/shared/ui/AppShortcut";
 import { shortcutBindingsAtom } from "@/shared/ui/shortcut-state";
 import {
   customThemesAtom,
+  setCustomThemes,
+  setThemeMode,
+  setThemeSelection,
   themeModeAtom,
   themeSelectionAtom,
   type ThemeMode,
@@ -29,11 +32,11 @@ const MODES: { label: string; value: ThemeMode }[] = [
 ];
 
 export function SettingsAppearanceSection() {
-  const [mode, setMode] = useAtom(themeModeAtom);
-  const [selection, setSelection] = useAtom(themeSelectionAtom);
-  const [customThemes, setCustomThemes] = useAtom(customThemesAtom);
+  const mode = useSelector(themeModeAtom);
+  const selection = useSelector(themeSelectionAtom);
+  const customThemes = useSelector(customThemesAtom);
   const [createOpen, setCreateOpen] = useState(false);
-  const bindings = useAtomValue(shortcutBindingsAtom);
+  const bindings = useSelector(shortcutBindingsAtom);
   const themes: Array<{
     value: ThemeId;
     label: string;
@@ -51,15 +54,15 @@ export function SettingsAppearanceSection() {
   ];
   const applyTheme = (themeId: ThemeId, target: "both" | "light" | "dark") => {
     if (target === "both") {
-      setSelection({ light: themeId, dark: themeId });
+      setThemeSelection({ light: themeId, dark: themeId });
       return;
     }
-    setSelection({ ...selection, [target]: themeId });
-    setMode(target);
+    setThemeSelection({ ...selection, [target]: themeId });
+    setThemeMode(target);
   };
   const createTheme = (theme: CustomTheme) => {
     setCustomThemes([...customThemes, theme]);
-    setSelection({ light: theme.id, dark: theme.id });
+    setThemeSelection({ light: theme.id, dark: theme.id });
     setCreateOpen(false);
   };
 
@@ -90,7 +93,7 @@ export function SettingsAppearanceSection() {
               label={option.label}
               name="color-scheme"
               value={option.value}
-              onChange={() => setMode(option.value)}
+              onChange={() => setThemeMode(option.value)}
             >
               <ColorSchemePreview mode={option.value} />
             </AppChoiceCard>

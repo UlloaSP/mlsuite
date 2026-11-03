@@ -1,7 +1,16 @@
 // @vitest-environment jsdom
-import { Route, Routes, useLocation } from "react-router";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  RouterProvider,
+  useLocation,
+} from "@tanstack/react-router";
+import { act } from "react";
 import { beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { ProtectedRoute } from "@/app/router/ProtectedRoute";
+import { parseSearch, stringifySearch } from "@/app/router/search-params";
 import { HttpError } from "@/shared/api/http";
 import { click, mount } from "./support/dom";
 
@@ -14,8 +23,8 @@ const state = vi.hoisted(() => ({
   refetchContext: vi.fn(),
 }));
 
-vi.mock("@/capabilities/workspace-context/session", () => ({
-  signInHref: (returnTo: string) => `/login?returnTo=${encodeURIComponent(returnTo)}`,
+vi.mock("@/capabilities/workspace-context/session", async (original) => ({
+  ...(await original<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({ refetch: vi.fn(), ...state.user }),
 }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
@@ -28,19 +37,36 @@ beforeEach(() => {
 });
 
 function Address() {
-  return <p data-address="">{useLocation().search}</p>;
+  return <p data-address="">{useLocation().searchStr}</p>;
 }
 
-const openProtected = () =>
-  mount(
-    <Routes>
-      <Route element={<ProtectedRoute />}>
-        <Route path="/models" element={<p>Models</p>} />
-      </Route>
-      <Route path="/login" element={<Address />} />
-    </Routes>,
-    { route: "/models" },
-  );
+const openProtected = async () => {
+  const root = createRootRoute();
+  const shell = createRoute({
+    getParentRoute: () => root,
+    id: "protected",
+    component: ProtectedRoute,
+  });
+  const router = createRouter({
+    routeTree: root.addChildren([
+      shell.addChildren([
+        createRoute({
+          getParentRoute: () => shell,
+          path: "/models",
+          component: () => <p>Models</p>,
+        }),
+      ]),
+      createRoute({ getParentRoute: () => root, path: "/login", component: Address }),
+    ]),
+    history: createMemoryHistory({ initialEntries: ["/models"] }),
+    parseSearch,
+    stringifySearch,
+  });
+  const view = await mount(<RouterProvider router={router} />);
+  // A redirect to sign in lands after the first render.
+  await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+  return view;
+};
 
 describe("the protected shell", () => {
   test("an ended session goes to sign in and back", async () => {

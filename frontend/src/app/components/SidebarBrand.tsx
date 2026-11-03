@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtomValue } from "jotai";
-import { Link } from "react-router";
+import { useSelector } from "@tanstack/react-store";
+import { AppLink } from "@/shared/ui/AppLink";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { MLSuiteWordmark } from "@/shared/ui/MLSuiteWordmark";
@@ -28,7 +28,7 @@ const logo = (
 /** Logo row. The sidebar toggle sits on the edge that faces the content. */
 export function SidebarBrand({ side }: { side: SidebarPosition }) {
   const { isMobile, collapsed } = useSidebar();
-  const bindings = useAtomValue(shortcutBindingsAtom);
+  const bindings = useSelector(shortcutBindingsAtom);
   const toggleProps = {
     "aria-keyshortcuts": shortcutToAria(bindings["toggle-sidebar"]),
     "data-user-guide-item": "toggle-sidebar",
@@ -50,7 +50,7 @@ export function SidebarBrand({ side }: { side: SidebarPosition }) {
     <div
       className={cx("mb-2 flex h-12 items-center gap-1", side === "right" && "flex-row-reverse")}
     >
-      <Link
+      <AppLink
         to="/home"
         viewTransition
         data-user-guide-item="brand"
@@ -65,7 +65,7 @@ export function SidebarBrand({ side }: { side: SidebarPosition }) {
         <SidebarLabel aria-hidden="true" className="whitespace-nowrap">
           <MLSuiteWordmark />
         </SidebarLabel>
-      </Link>
+      </AppLink>
       <SidebarTrigger
         {...toggleProps}
         className="size-9 shrink-0 rounded-lg text-fg-secondary hover:bg-surface-hover hover:text-fg"

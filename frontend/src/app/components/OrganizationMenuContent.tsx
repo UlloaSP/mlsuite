@@ -8,7 +8,7 @@ import { DropdownMenu } from "radix-ui";
 import { useCallback, useRef, useState } from "react";
 import { defaultRangeExtractor, useVirtualizer } from "@tanstack/react-virtual";
 import { useLoadMoreNearEnd } from "@/shared/ui/catalog/useLoadMoreNearEnd";
-import { useLocation, useNavigate } from "react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useWorkspaceOrganizationCatalog } from "@/capabilities/workspace-context/workspace-context";
 import { useSelectOrganization } from "@/features/workspace/api/workspace.mutations";
 import type { WorkspaceCurrentContextDto } from "@/shared/api/openapi.gen";
@@ -79,7 +79,7 @@ export function OrganizationMenuContent({
   const location = useLocation();
   const selectOrganization = useSelectOrganization();
   const workspaceLinks = getWorkspaceLinks(context.permissions, context.currentOrganization);
-  const currentPath = `${location.pathname}${location.search}`;
+  const currentPath = `${location.pathname}${location.searchStr}`;
 
   return (
     <DropdownMenu.Portal>
@@ -161,7 +161,7 @@ export function OrganizationMenuContent({
                   )}
                   onSelect={() => {
                     void selectOrganization.mutateAsync(organization.id).then(() => {
-                      void navigate("/home");
+                      void navigate({ to: "/home" });
                     });
                   }}
                 >

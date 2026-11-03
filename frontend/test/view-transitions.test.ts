@@ -1,41 +1,51 @@
-import { describe, expect, it, vi } from "vite-plus/test";
-import type { createBrowserRouter } from "react-router";
-import { enableViewTransitions } from "@/app/router/view-transitions";
+// @vitest-environment jsdom
 
-type AppRouter = ReturnType<typeof createBrowserRouter>;
+import { createMemoryHistory } from "@tanstack/react-router";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { createAppRouter } from "@/app/router/routes";
 
-const createRouter = () => {
-  const navigate = vi.fn();
-  const router = { navigate } as unknown as Pick<AppRouter, "navigate">;
-  enableViewTransitions(router);
-  return { navigate, router };
-};
+// jsdom has no View Transitions API; the router only starts one when the document offers it.
+const startViewTransition = vi.fn((update: () => unknown) => {
+  const updateCallbackDone = Promise.resolve(update()).then(() => undefined);
+  return {
+    finished: updateCallbackDone,
+    ready: Promise.resolve(),
+    updateCallbackDone,
+    skipTransition() {},
+  };
+});
+
+beforeEach(() => {
+  Object.assign(document, { startViewTransition });
+});
+
+afterEach(() => {
+  startViewTransition.mockClear();
+  Reflect.deleteProperty(document, "startViewTransition");
+});
+
+const appRouter = () => createAppRouter(createMemoryHistory({ initialEntries: ["/login"] }));
 
 describe("route view transitions", () => {
-  it("enables view transitions by default for route navigations", () => {
-    const { navigate, router } = createRouter();
-
-    router.navigate("/models");
-
-    expect(navigate).toHaveBeenCalledWith("/models", { viewTransition: true });
+  it("makes every navigation a view transition unless it opts out", () => {
+    expect(appRouter().options.defaultViewTransition).toBe(true);
   });
 
-  it("keeps explicit view transition opt-out", () => {
-    const { navigate, router } = createRouter();
+  it("starts a view transition for a plain navigation", async () => {
+    const router = appRouter();
 
-    router.navigate("/models", { viewTransition: false, replace: true });
+    await router.navigate({ to: "/explore" });
 
-    expect(navigate).toHaveBeenCalledWith("/models", {
-      replace: true,
-      viewTransition: false,
-    });
+    expect(startViewTransition).toHaveBeenCalled();
+    expect(router.state.location.pathname).toBe("/explore");
   });
 
-  it("leaves history delta navigation untouched", () => {
-    const { navigate, router } = createRouter();
+  it("keeps an explicit view transition opt-out", async () => {
+    const router = appRouter();
 
-    router.navigate(-1);
+    await router.navigate({ to: "/explore", replace: true, viewTransition: false });
 
-    expect(navigate).toHaveBeenCalledWith(-1);
+    expect(startViewTransition).not.toHaveBeenCalled();
+    expect(router.state.location.pathname).toBe("/explore");
   });
 });

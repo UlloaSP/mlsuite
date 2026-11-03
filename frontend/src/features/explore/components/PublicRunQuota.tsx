@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { useAccountEntry } from "@/capabilities/workspace-context/account-entry";
 import type { PublicRunQuotaDto } from "@/shared/api/openapi.gen";
 import { formatTimestamp } from "@/shared/lib/date-time";
@@ -31,12 +31,12 @@ export function PublicRunQuota({ quota }: { quota: PublicRunQuotaDto }) {
         {entry ? (
           <>
             {" "}
-            <Link
-              to={entry.signInHref}
+            <AppLink
+              {...entry.signIn}
               className={cx("rounded font-semibold text-accent-strong hover:underline", FOCUS_RING)}
             >
               Sign in
-            </Link>{" "}
+            </AppLink>{" "}
             for a higher limit.
           </>
         ) : null}
@@ -61,15 +61,15 @@ export function PublicRunQuota({ quota }: { quota: PublicRunQuotaDto }) {
       </div>
       {entry ? (
         <div className="flex flex-wrap gap-2">
-          <Link
-            to={entry.signInHref}
+          <AppLink
+            {...entry.signIn}
             className={appButtonClass({ size: "sm", variant: "secondary" })}
           >
             Sign in
-          </Link>
-          <Link to={entry.registerHref} className={appButtonClass({ size: "sm" })}>
+          </AppLink>
+          <AppLink {...entry.register} className={appButtonClass({ size: "sm" })}>
             Create account
-          </Link>
+          </AppLink>
         </div>
       ) : null}
     </div>

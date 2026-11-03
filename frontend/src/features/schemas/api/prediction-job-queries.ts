@@ -3,16 +3,17 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { mutationOptions, useMutation, useQuery } from "@tanstack/react-query";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { organizationQueryKey } from "@/shared/api/organization-query-key";
-import type { PredictionJobDto } from "@/shared/api/openapi.gen";
+import type { CreatePredictionJobRequest, PredictionJobDto } from "@/shared/api/openapi.gen";
 import {
   cancelPredictionJob,
   deletePredictionJob,
   getPredictionJobFailures,
   getPredictionJobs,
   retryPredictionJob,
+  startPredictionJob,
 } from "./prediction-job-api";
 
 /** How often an open job's progress is read while its list is shown. */
@@ -48,10 +49,8 @@ export function usePredictionJobFailures(jobId: number, enabled: boolean) {
 }
 
 /** Cancels, retries or deletes a job; the bookmark's list is read again whatever happens. */
-export function usePredictionJobAction(bookmarkId: string) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const queryClient = useQueryClient();
-  return useMutation({
+const predictionJobActionMutation = (organizationId: number | string, bookmarkId: string) =>
+  mutationOptions({
     mutationFn: async ({
       jobId,
       action,
@@ -63,9 +62,22 @@ export function usePredictionJobAction(bookmarkId: string) {
       else if (action === "retry") await retryPredictionJob(jobId);
       else await deletePredictionJob(jobId);
     },
-    onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: jobsKey(organizationId, bookmarkId) }),
+    onSettled: (_data, _error, _variables, _result, { client }) =>
+      client.invalidateQueries({ queryKey: jobsKey(organizationId, bookmarkId) }),
   });
-}
 
-export const predictionJobsKey = jobsKey;
+export const usePredictionJobAction = (bookmarkId: string) =>
+  useMutation(predictionJobActionMutation(useCurrentOrganizationId() ?? "none", bookmarkId));
+
+/** Sends a bulk upload as a job; the bookmark's list is read again whether or not it started. */
+const startPredictionJobMutation = (organizationId: number | string, bookmarkId: string) =>
+  mutationOptions({
+    // The upload that asked says why a job did not start.
+    meta: { errorHandledLocally: true },
+    mutationFn: (request: CreatePredictionJobRequest) => startPredictionJob(bookmarkId, request),
+    onSettled: (_job, _error, _request, _result, { client }) =>
+      client.invalidateQueries({ queryKey: jobsKey(organizationId, bookmarkId) }),
+  });
+
+export const useStartPredictionJob = (bookmarkId: string) =>
+  useMutation(startPredictionJobMutation(useCurrentOrganizationId() ?? "none", bookmarkId));

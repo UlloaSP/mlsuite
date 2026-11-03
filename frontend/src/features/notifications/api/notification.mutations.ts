@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { mutationOptions, useMutation, type QueryClient } from "@tanstack/react-query";
 import { WORKSPACE_CONTEXT_QUERY_KEY } from "@/capabilities/workspace-context/workspace-context";
 import { NOTIFICATIONS_QUERY_KEY, PENDING_INVITATIONS_QUERY_KEY } from "./notification.queries";
 import {
@@ -10,42 +10,41 @@ import {
   markNotificationRead,
 } from "./notifications.api";
 
-const useInboxMutation = <TVariables>(mutationFn: (variables: TVariables) => Promise<void>) => {
-  const queryClient = useQueryClient();
-  return useMutation({
+const inboxMutation = <TVariables>(mutationFn: (variables: TVariables) => Promise<void>) =>
+  mutationOptions({
     mutationFn,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY }),
+    onSuccess: (_data, _variables, _result, { client }) =>
+      client.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY }),
   });
+
+const markRead = inboxMutation(markNotificationRead);
+const markAllRead = inboxMutation<void>(() => markAllNotificationsRead());
+const deleteOne = inboxMutation(deleteNotification);
+const deleteRead = inboxMutation<void>(() => deleteReadNotifications());
+
+export const useMarkNotificationRead = () => useMutation(markRead);
+export const useMarkAllNotificationsRead = () => useMutation(markAllRead);
+export const useDeleteNotification = () => useMutation(deleteOne);
+export const useDeleteReadNotifications = () => useMutation(deleteRead);
+
+const invalidateAnswered = (client: QueryClient) => {
+  void client.invalidateQueries({ queryKey: PENDING_INVITATIONS_QUERY_KEY });
+  void client.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
 };
 
-export const useMarkNotificationRead = () => useInboxMutation(markNotificationRead);
-export const useMarkAllNotificationsRead = () =>
-  useInboxMutation<void>(() => markAllNotificationsRead());
-export const useDeleteNotification = () => useInboxMutation(deleteNotification);
-export const useDeleteReadNotifications = () =>
-  useInboxMutation<void>(() => deleteReadNotifications());
+const acceptInvitationMutation = mutationOptions({
+  mutationFn: acceptInvitation,
+  onSuccess: (_data, _invitationId, _result, { client }) => {
+    invalidateAnswered(client);
+    void client.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY });
+  },
+});
 
-const useInvalidateAnswered = () => {
-  const queryClient = useQueryClient();
-  return () => {
-    void queryClient.invalidateQueries({ queryKey: PENDING_INVITATIONS_QUERY_KEY });
-    void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
-  };
-};
+const declineInvitationMutation = mutationOptions({
+  mutationFn: declineInvitation,
+  onSuccess: (_data, _invitationId, _result, { client }) => invalidateAnswered(client),
+});
 
-export const useAcceptInvitation = () => {
-  const queryClient = useQueryClient();
-  const invalidateAnswered = useInvalidateAnswered();
-  return useMutation({
-    mutationFn: acceptInvitation,
-    onSuccess: () => {
-      invalidateAnswered();
-      void queryClient.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY });
-    },
-  });
-};
+export const useAcceptInvitation = () => useMutation(acceptInvitationMutation);
 
-export const useDeclineInvitation = () => {
-  const invalidateAnswered = useInvalidateAnswered();
-  return useMutation({ mutationFn: declineInvitation, onSuccess: invalidateAnswered });
-};
+export const useDeclineInvitation = () => useMutation(declineInvitationMutation);

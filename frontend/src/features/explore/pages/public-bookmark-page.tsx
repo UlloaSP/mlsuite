@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router";
+import { useParams } from "@tanstack/react-router";
 import {
   isPublicBookmarkMissing,
   publicBookmarkQueryOptions,
@@ -37,7 +37,7 @@ const FACT = "inline-flex items-center gap-1.5";
  * it, on narrow ones the page scrolls.
  */
 export function PublicBookmarkPage() {
-  const { publicId = "" } = useParams<{ publicId: string }>();
+  const { publicId = "" } = useParams({ strict: false });
   const query = useQuery(publicBookmarkQueryOptions(publicId));
   const bookmark = query.data;
 

@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom, useSelector } from "@tanstack/react-store";
 import type { PropsWithChildren } from "react";
 import {
   isSidebarPosition,
@@ -32,9 +32,9 @@ import { useNotificationToasts } from "@/features/notifications/lib/use-notifica
 
 export function AppShellFrame({ children }: PropsWithChildren) {
   const [collapsed, setCollapsed] = useAtom(sidebarCollapsedAtom);
-  const position = useAtomValue(navigationPositionAtom);
+  const position = useSelector(navigationPositionAtom);
   const vertical = isSidebarPosition(position);
-  const floating = useAtomValue(sidebarStyleAtom) === "floating";
+  const floating = useSelector(sidebarStyleAtom) === "floating";
   useDisplayShortcuts();
   useQuietScrollbars(floating);
   useWarnOnUnsavedInferences();

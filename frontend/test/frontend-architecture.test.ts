@@ -275,6 +275,19 @@ describe("frontend architecture contract", () => {
     expect([...reach("app/main.tsx")].filter(loadsCompiler)).toEqual([]);
   });
 
+  test("links through AppLink, whose current page is only the exact address", () => {
+    const routerImports = /import\s*\{([^}]*)\}\s*from\s*"@tanstack\/react-router"/g;
+    const importsRouterLink = (file: string) =>
+      [...source(file).matchAll(routerImports)].some(([, names]) => /\bLink\b/.test(names));
+
+    expect(
+      sourceFiles()
+        .filter((file) => rel(file) !== "shared/ui/AppLink.tsx")
+        .filter(importsRouterLink)
+        .map(rel),
+    ).toEqual([]);
+  });
+
   test("keeps source modules within the line limit", () => {
     const failures = sourceFiles()
       .filter((file) => rel(file) !== GENERATED_API_TYPES)

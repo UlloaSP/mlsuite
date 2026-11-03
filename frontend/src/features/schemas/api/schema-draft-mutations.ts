@@ -1,5 +1,5 @@
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { mutationOptions, useMutation } from "@tanstack/react-query";
 import {
   createSchemaDraft,
   mergeSchemaDraft,
@@ -16,60 +16,83 @@ import {
 } from "./schema-keys";
 import type { CreateSchemaDraftRequest, SchemaDraftMergeRequest } from "@/shared/api/openapi.gen";
 
-export function useCreateSchemaDraftMutation(schemaId: number | string) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const qc = useQueryClient();
-  return useMutation({
+type OrganizationKey = number | string;
+
+const createSchemaDraftMutation = (organizationId: OrganizationKey, schemaId: number | string) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
     mutationFn: (req: CreateSchemaDraftRequest) => createSchemaDraft(schemaId, req),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: SCHEMA_DRAFTS_QUERY_KEY(organizationId, schemaId) }),
+    onSuccess: (_draft, _req, _result, { client }) =>
+      client.invalidateQueries({ queryKey: SCHEMA_DRAFTS_QUERY_KEY(organizationId, schemaId) }),
   });
-}
 
-export function useUpdateSchemaDraftMutation(draftId: number | string) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const qc = useQueryClient();
-  return useMutation({
+export const useCreateSchemaDraftMutation = (schemaId: number | string) =>
+  useMutation(createSchemaDraftMutation(useCurrentOrganizationId() ?? "none", schemaId));
+
+const updateSchemaDraftMutation = (organizationId: OrganizationKey, draftId: number | string) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
     mutationFn: (req: UpdateSchemaDraftRequest) => updateSchemaDraft(draftId, req),
-    onSuccess: (draft: SchemaDraftDto) => {
-      qc.setQueryData(SCHEMA_DRAFT_QUERY_KEY(organizationId, draftId), draft);
-      void qc.invalidateQueries({ queryKey: SCHEMA_DRAFT_DIFF_QUERY_KEY(organizationId, draftId) });
-      void qc.invalidateQueries({
+    onSuccess: (draft: SchemaDraftDto, _req, _result, { client }) => {
+      client.setQueryData(SCHEMA_DRAFT_QUERY_KEY(organizationId, draftId), draft);
+      void client.invalidateQueries({
+        queryKey: SCHEMA_DRAFT_DIFF_QUERY_KEY(organizationId, draftId),
+      });
+      void client.invalidateQueries({
         queryKey: SCHEMA_DRAFTS_QUERY_KEY(organizationId, draft.schemaId),
       });
     },
   });
-}
 
-export function useMergeSchemaDraftMutation(draftId: number | string, schemaId: number | string) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const qc = useQueryClient();
-  return useMutation({
+export const useUpdateSchemaDraftMutation = (draftId: number | string) =>
+  useMutation(updateSchemaDraftMutation(useCurrentOrganizationId() ?? "none", draftId));
+
+const mergeSchemaDraftMutation = (
+  organizationId: OrganizationKey,
+  draftId: number | string,
+  schemaId: number | string,
+) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
     mutationFn: (request: SchemaDraftMergeRequest) => mergeSchemaDraft(draftId, request),
-    onSuccess: (result) => {
-      qc.setQueryData(SCHEMA_DRAFT_QUERY_KEY(organizationId, draftId), result.draft);
-      qc.setQueryData(SCHEMA_DRAFT_DIFF_QUERY_KEY(organizationId, draftId), result.diff);
-      void qc.invalidateQueries({ queryKey: SCHEMA_DRAFTS_QUERY_KEY(organizationId, schemaId) });
+    onSuccess: (merged, _request, _result, { client }) => {
+      client.setQueryData(SCHEMA_DRAFT_QUERY_KEY(organizationId, draftId), merged.draft);
+      client.setQueryData(SCHEMA_DRAFT_DIFF_QUERY_KEY(organizationId, draftId), merged.diff);
+      void client.invalidateQueries({
+        queryKey: SCHEMA_DRAFTS_QUERY_KEY(organizationId, schemaId),
+      });
     },
   });
-}
 
-export function usePublishSchemaDraftMutation(draftId: number | string, schemaId: number | string) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const qc = useQueryClient();
-  return useMutation({
+export const useMergeSchemaDraftMutation = (draftId: number | string, schemaId: number | string) =>
+  useMutation(mergeSchemaDraftMutation(useCurrentOrganizationId() ?? "none", draftId, schemaId));
+
+const publishSchemaDraftMutation = (
+  organizationId: OrganizationKey,
+  draftId: number | string,
+  schemaId: number | string,
+) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
     mutationFn: (expectedDraftRevision: number) =>
       publishSchemaDraft(draftId, expectedDraftRevision),
-    onSuccess: (result) => {
-      qc.setQueryData(SCHEMA_DRAFT_QUERY_KEY(organizationId, draftId), result.draft);
-      void qc.invalidateQueries({ queryKey: SCHEMA_DRAFTS_QUERY_KEY(organizationId, schemaId) });
-      void qc.invalidateQueries({ queryKey: SCHEMA_VERSIONS_QUERY_KEY(organizationId, schemaId) });
+    onSuccess: (published, _revision, _result, { client }) => {
+      client.setQueryData(SCHEMA_DRAFT_QUERY_KEY(organizationId, draftId), published.draft);
+      void client.invalidateQueries({
+        queryKey: SCHEMA_DRAFTS_QUERY_KEY(organizationId, schemaId),
+      });
+      void client.invalidateQueries({
+        queryKey: SCHEMA_VERSIONS_QUERY_KEY(organizationId, schemaId),
+      });
       // A new snapshot changes which bookmarks point at the latest one.
-      void qc.invalidateQueries({ queryKey: SCHEMA_BOOKMARKS_QUERY_KEY(organizationId, schemaId) });
+      void client.invalidateQueries({
+        queryKey: SCHEMA_BOOKMARKS_QUERY_KEY(organizationId, schemaId),
+      });
     },
   });
-}
+
+export const usePublishSchemaDraftMutation = (
+  draftId: number | string,
+  schemaId: number | string,
+) =>
+  useMutation(publishSchemaDraftMutation(useCurrentOrganizationId() ?? "none", draftId, schemaId));

@@ -2,7 +2,7 @@ import { useRoleCatalogMetadata } from "@/features/workspace/api/workspace-catal
 import { PermissionCatalog } from "@/features/workspace/components/PermissionCatalog";
 import { Copy, Plus } from "lucide-react";
 import { useState } from "react";
-import { useParams } from "react-router";
+import { useParams } from "@tanstack/react-router";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -21,7 +21,7 @@ import type { RoleDefinitionDto, RoleTemplateDto } from "@/shared/api/openapi.ge
 
 // react-doctor-disable-next-line react-doctor/prefer-useReducer -- Dialog, tab, and search state are separate controls with separate lifetimes.
 export function RolesPage() {
-  const { organizationId = "" } = useParams();
+  const { organizationId = "" } = useParams({ strict: false });
   const id = Number(organizationId);
   const dashboard = useOrganizationAdminDashboardQuery(id);
   const permissions = dashboard.data?.permissions;

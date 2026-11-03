@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 
 import { act } from "react";
-import { Route, Routes } from "react-router";
 import { expect, test, vi } from "vite-plus/test";
 import { HttpError } from "@/shared/api/http";
 import { mappingIssueCards, refusedMappings } from "@/features/schemas/lib/schema-mapping-issues";
@@ -54,7 +53,7 @@ vi.mock("@/features/schemas/components/SchemaChangeNameDialog", () => ({
   SchemaChangeNameDialog: () => null,
 }));
 
-import { SchemaDraftEditorPage } from "@/features/schemas/pages/schema-draft-editor-page";
+import { SchemaDraftEditorRoute } from "@/features/schemas/pages/schema-draft-editor-route";
 
 const text = JSON.stringify(formSchema, null, 2);
 
@@ -103,12 +102,10 @@ test("a save refused for another reason shows no mapping error", async () => {
 });
 
 const openEditor = () =>
-  mount(
-    <Routes>
-      <Route path="/schemas/:schemaId/drafts/:draftId" element={<SchemaDraftEditorPage />} />
-    </Routes>,
-    { route: "/schemas/7/drafts/12" },
-  );
+  mount(null, {
+    route: "/schemas/7/drafts/12",
+    routes: { "/schemas/$schemaId/drafts/$draftId": <SchemaDraftEditorRoute /> },
+  });
 
 /** Saves, and lets the save's answer settle. */
 async function save() {

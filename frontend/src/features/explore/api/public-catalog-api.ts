@@ -1,7 +1,12 @@
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { mutationOptions, queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 import { appFetch } from "@/shared/api/http";
 import { useInfiniteCatalog, type CatalogPage } from "@/shared/api/infinite-catalog";
-import type { PublicBookmarkExampleDto, PublicRunDto } from "@/shared/api/openapi.gen";
+import type {
+  PublicBookmarkExampleDto,
+  PublicRunDto,
+  PublicRunFeedbackRequest,
+} from "@/shared/api/openapi.gen";
+import { savePublicRunFeedback } from "./public-bookmark-api";
 const root = (id: string) => ["public", "bookmark", id] as const;
 const path = (id: string) => `/api/public/bookmarks/${encodeURIComponent(id)}`;
 export const publicRunCatalogKey = (id: string) => [...root(id), "runs", "infinite"] as const;
@@ -28,6 +33,18 @@ export const publicRunDetailOptions = (id: string, runId: number | null) =>
   });
 export const usePublicRunDetail = (id: string, runId: number | null) =>
   useQuery(publicRunDetailOptions(id, runId));
+/** The run that comes back with the caller's answers replaces the cached one. */
+const savePublicRunFeedbackMutation = (id: string, runId: number) =>
+  mutationOptions({
+    meta: { errorHandledLocally: true },
+    mutationFn: (request: PublicRunFeedbackRequest) => savePublicRunFeedback(id, runId, request),
+    onSuccess: (saved, _request, _result, { client }) => {
+      client.setQueryData(publicRunDetailOptions(id, saved.id).queryKey, saved);
+      void client.invalidateQueries({ queryKey: publicRunCatalogKey(id) });
+    },
+  });
+export const useSavePublicRunFeedback = (id: string, runId: number) =>
+  useMutation(savePublicRunFeedbackMutation(id, runId));
 export function usePublicExampleCatalog(id: string, search: string) {
   return useInfiniteCatalog({
     queryKey: [...root(id), "examples", "infinite", search],

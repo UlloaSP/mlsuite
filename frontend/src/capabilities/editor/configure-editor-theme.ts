@@ -1,4 +1,4 @@
-import { useAtomValue } from "jotai";
+import { useSelector } from "@tanstack/react-store";
 import {
   contrastAtom,
   customThemesAtom,
@@ -60,10 +60,10 @@ export function applyEditorTheme(monaco: MonacoNamespace, dark: boolean): void {
 
 /** Changes whenever mode, palette, custom themes, or contrast change the tokens. */
 export function useEditorAppearance() {
-  const mode = useAtomValue(themeWithHtmlAtom);
-  const selection = useAtomValue(themeSelectionAtom);
-  const contrast = useAtomValue(contrastAtom);
-  const customThemes = useAtomValue(customThemesAtom);
+  const mode = useSelector(themeWithHtmlAtom);
+  const selection = useSelector(themeSelectionAtom);
+  const contrast = useSelector(contrastAtom);
+  const customThemes = useSelector(customThemesAtom);
   return {
     dark: mode === "dark",
     key: JSON.stringify([mode, selection, contrast, customThemes]),

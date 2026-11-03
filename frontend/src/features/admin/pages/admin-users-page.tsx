@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Plus, Search } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   useResetAdminUserPassword,
@@ -91,7 +91,7 @@ export function AdminUsersPage() {
           description: "Search, filter, and maintain platform users.",
           breadcrumbs: [{ label: "Users" }],
           actions: (
-            <AppButton type="button" onClick={() => navigate("/admin/users/create")}>
+            <AppButton type="button" onClick={() => navigate({ to: "/admin/users/create" })}>
               <Plus size={16} />
               New user
             </AppButton>

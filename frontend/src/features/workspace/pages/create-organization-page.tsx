@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { AtSign } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppCombobox } from "@/shared/ui/AppCombobox";
@@ -85,12 +85,12 @@ export function CreateOrganizationPage({ ownerChoice }: Props) {
           label: "Switch to it",
           onClick: () => {
             void selectOrganization.mutateAsync(created.id).then(() => {
-              void navigate("/home");
+              void navigate({ to: "/home" });
             });
           },
         },
       });
-      void navigate("/workspace/organizations");
+      void navigate({ to: "/workspace/organizations" });
     } catch (error: unknown) {
       setSubmitError(error instanceof Error ? error.message : String(error));
     }
@@ -179,7 +179,7 @@ export function CreateOrganizationPage({ ownerChoice }: Props) {
             <AppButton
               type="button"
               variant="secondary"
-              onClick={() => navigate("/workspace/organizations")}
+              onClick={() => navigate({ to: "/workspace/organizations" })}
             >
               Cancel
             </AppButton>

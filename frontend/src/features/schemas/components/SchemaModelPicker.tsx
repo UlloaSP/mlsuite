@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Search } from "lucide-react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import type { SchemaSourceModel } from "@/features/schemas/lib/merge";
 import { hasModelSchema } from "@/features/schemas/lib/schema-model-selection";
 import { SchemaModelOption } from "./SchemaModelOption";
@@ -87,9 +87,9 @@ export function SchemaModelPicker({
               ? "Try another name or algorithm."
               : "Upload a model first; a schema is generated from its inputs.",
             action: search ? undefined : (
-              <Link className={appButtonClass({ size: "sm" })} to="/models/create">
+              <AppLink className={appButtonClass({ size: "sm" })} to="/models/create">
                 Upload a model
-              </Link>
+              </AppLink>
             ),
           }}
         >

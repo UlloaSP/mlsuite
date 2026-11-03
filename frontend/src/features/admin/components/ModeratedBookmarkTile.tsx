@@ -5,7 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { FileJson2, GitCommitHorizontal, Globe, Lock, Tag } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
+import { appHref } from "@/shared/lib/app-href";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
 import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { AppBadge } from "@/shared/ui/AppBadge";
@@ -85,13 +86,13 @@ export function ModeratedBookmarkTile({
         actions={
           <>
             {publicPath ? (
-              <Link
-                to={publicPath}
+              <AppLink
+                {...appHref(publicPath)}
                 className={appButtonClass({ size: "sm", variant: "secondary" })}
               >
                 <Globe size={14} />
                 Public page
-              </Link>
+              </AppLink>
             ) : null}
             <AppActionsMenu
               label={`Open actions for ${item.name}`}

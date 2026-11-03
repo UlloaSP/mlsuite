@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
+import { createAtom, useAtom, useSelector } from "@tanstack/react-store";
 import { useEffect } from "react";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
 import type { WorkspacePredictionDto } from "@/shared/api/openapi.gen";
@@ -32,10 +32,10 @@ export type SessionEntry = {
  * not by the page, so a session survives switching sections and coming back;
  * a reload or closed tab still ends it.
  */
-export const inferenceSessionsAtom = atom<Record<string, SessionEntry[]>>({});
+export const inferenceSessionsAtom = createAtom<Record<string, SessionEntry[]>>({});
 
 /** Whose sessions the store holds; sessions never outlive a change of member. */
-const sessionsOwnerAtom = atom<number | undefined>(undefined);
+const sessionsOwnerAtom = createAtom<number | undefined>(undefined);
 
 /**
  * Drops the previous member's sessions when a different member signs in on this
@@ -45,25 +45,24 @@ const sessionsOwnerAtom = atom<number | undefined>(undefined);
  */
 export function useScopeInferenceSessionsToUser(userId: number | undefined) {
   const [owner, setOwner] = useAtom(sessionsOwnerAtom);
-  const setSessions = useSetAtom(inferenceSessionsAtom);
 
   useEffect(() => {
     if (!userId || userId === owner) return;
-    if (owner !== undefined) setSessions({});
+    if (owner !== undefined) inferenceSessionsAtom.set({});
     setOwner(userId);
-  }, [owner, setOwner, setSessions, userId]);
+  }, [owner, setOwner, userId]);
 }
 
-const unsavedCountAtom = atom(
-  (get) =>
-    Object.values(get(inferenceSessionsAtom))
+const unsavedCountAtom = createAtom(
+  () =>
+    Object.values(inferenceSessionsAtom.get())
       .flat()
       .filter((entry) => entry.state !== "saved").length,
 );
 
 /** How many runs of a member's session on a bookmark are not saved yet. */
 export function useUnsavedSessionRuns(userId: number | undefined, bookmarkId: string) {
-  const entries = useAtomValue(inferenceSessionsAtom)[`${userId ?? "anonymous"}:${bookmarkId}`];
+  const entries = useSelector(inferenceSessionsAtom)[`${userId ?? "anonymous"}:${bookmarkId}`];
   return entries?.filter((entry) => entry.state !== "saved").length ?? 0;
 }
 
@@ -72,14 +71,13 @@ export function useUnsavedSessionRuns(userId: number | undefined, bookmarkId: st
  * before an action of their own (signing out) loads a new document and loses them.
  */
 export function useUnsavedInferences() {
-  const count = useAtomValue(unsavedCountAtom);
-  const setSessions = useSetAtom(inferenceSessionsAtom);
-  return { count, discard: () => setSessions({}) };
+  const count = useSelector(unsavedCountAtom);
+  return { count, discard: () => inferenceSessionsAtom.set({}) };
 }
 
 /** Lets the browser warn before a reload or closed tab loses unsaved inferences. */
 export function useWarnOnUnsavedInferences() {
-  const unsaved = useAtomValue(unsavedCountAtom);
+  const unsaved = useSelector(unsavedCountAtom);
 
   useEffect(() => {
     if (unsaved === 0) return;

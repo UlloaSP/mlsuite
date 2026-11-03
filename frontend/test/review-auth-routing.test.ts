@@ -1,20 +1,20 @@
+// @vitest-environment jsdom
+
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, test } from "vite-plus/test";
 import { safeReturnTo } from "@/capabilities/workspace-context/session";
-import type { RouteObject } from "react-router";
-import { protectedPages } from "@/app/router/protected-routes";
-
-const paths = (routes: RouteObject[]): string[] =>
-  routes.flatMap((route) => [...(route.path ? [route.path] : []), ...paths(route.children ?? [])]);
+import { canManageReviewsRoute, reviewAccessRoute } from "@/app/router/layout-routes";
+import { router } from "@/app/router/routes";
 
 describe("integrated review authentication and routes", () => {
   test("keeps one fixed login/register page without external-review injection seams", () => {
     const page = readFileSync(
-      new URL("../src/app/pages/AuthLandingPage.tsx", import.meta.url),
+      resolve(import.meta.dirname, "../src/app/pages/AuthLandingPage.tsx"),
       "utf8",
     );
     const form = readFileSync(
-      new URL("../src/app/pages/auth-landing/AuthFormPanel.tsx", import.meta.url),
+      resolve(import.meta.dirname, "../src/app/pages/auth-landing/AuthFormPanel.tsx"),
       "utf8",
     );
 
@@ -25,11 +25,11 @@ describe("integrated review authentication and routes", () => {
 
   test("opens every review route as the direct rail workspace", () => {
     const page = readFileSync(
-      new URL("../src/features/reviews/pages/reviews-page.tsx", import.meta.url),
+      resolve(import.meta.dirname, "../src/features/reviews/pages/reviews-page.tsx"),
       "utf8",
     );
     const routes = readFileSync(
-      new URL("../src/app/router/protected-routes.ts", import.meta.url),
+      resolve(import.meta.dirname, "../src/app/router/protected-routes.ts"),
       "utf8",
     );
 
@@ -42,28 +42,36 @@ describe("integrated review authentication and routes", () => {
     expect(safeReturnTo("/review/review-1/runs/run-1", "/explore")).toBe(
       "/review/review-1/runs/run-1",
     );
-    expect(paths(protectedPages).filter((path) => path.startsWith("review"))).toEqual([
-      "review",
-      "review/:reviewId",
-      "review/:reviewId/runs/:reviewRunId",
-      "review/manage",
+    const reviewPaths = Object.keys(router.routesByPath).filter((path) =>
+      path.startsWith("/review"),
+    );
+    expect(reviewPaths.sort()).toEqual([
+      "/review",
+      "/review/$reviewId",
+      "/review/$reviewId/runs/$reviewRunId",
+      "/review/manage",
     ]);
+    const pages = router.routesByPath;
+    for (const path of ["/review", "/review/$reviewId", "/review/$reviewId/runs/$reviewRunId"]) {
+      expect(pages[path as keyof typeof pages].parentRoute).toBe(reviewAccessRoute);
+    }
+    expect(pages["/review/manage"].parentRoute).toBe(canManageReviewsRoute);
   });
 
   test("recomputes the authorized landing page after switching organizations", () => {
     const organizationHeader = readFileSync(
-      new URL("../src/app/components/OrganizationMenuContent.tsx", import.meta.url),
+      resolve(import.meta.dirname, "../src/app/components/OrganizationMenuContent.tsx"),
       "utf8",
     );
     const authenticatedHome = readFileSync(
-      new URL("../src/app/pages/authenticated-home-page.tsx", import.meta.url),
+      resolve(import.meta.dirname, "../src/app/pages/authenticated-home-page.tsx"),
       "utf8",
     );
 
     expect(organizationHeader).toMatch(
-      /mutateAsync\(organization\.id\)\.then\(\(\) => \{\s*void navigate\("\/home"\);/,
+      /mutateAsync\(organization\.id\)\.then\(\(\) => \{\s*void navigate\(\{ to: "\/home" \}\);/,
     );
-    expect(organizationHeader).not.toContain('navigate("/workspace")');
+    expect(organizationHeader).not.toContain('to: "/workspace"');
     expect(authenticatedHome).toContain("permissions?.canViewWorkspace");
     expect(authenticatedHome).toContain("permissions?.canReview || permissions?.canManageReviews");
     expect(authenticatedHome).toContain('<Navigate to="/review" replace />');

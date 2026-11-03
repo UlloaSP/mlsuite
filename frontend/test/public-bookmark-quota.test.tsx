@@ -1,9 +1,16 @@
 // @vitest-environment jsdom
 import { QueryClient } from "@tanstack/react-query";
 import { act, type PropsWithChildren } from "react";
-import { Route, Routes } from "react-router";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { SessionFrameLayout } from "@/app/layouts/SessionFrameLayout";
+import { parseSearch, stringifySearch } from "@/app/router/search-params";
 import { PublicBookmarkPage } from "@/features/explore/pages/public-bookmark-page";
 import type { PublicBookmarkDto, PublicRunQuotaDto } from "@/shared/api/openapi.gen";
 import { formatTimestamp } from "@/shared/lib/date-time";
@@ -128,18 +135,29 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
+/** The page at its address inside the session frame, as the app routes it. */
+function framedPage(route: string) {
+  const root = createRootRoute();
+  const frame = createRoute({
+    getParentRoute: () => root,
+    id: "frame",
+    component: SessionFrameLayout,
+  });
+  const page = createRoute({
+    getParentRoute: () => frame,
+    path: "/explore/$publicId",
+    component: PublicBookmarkPage,
+  });
+  const history = createMemoryHistory({ initialEntries: [route] });
+  const routeTree = root.addChildren([frame.addChildren([page])]);
+  const router = createRouter({ routeTree, history, parseSearch, stringifySearch });
+  return <RouterProvider router={router} />;
+}
+
 async function openPage() {
-  const view = await mount(
-    <Routes>
-      <Route element={<SessionFrameLayout />}>
-        <Route path="/explore/:publicId" element={<PublicBookmarkPage />} />
-      </Route>
-    </Routes>,
-    {
-      route: PAGE,
-      queryClient: new QueryClient({ defaultOptions: { queries: { retry: false } } }),
-    },
-  );
+  const view = await mount(framedPage(PAGE), {
+    queryClient: new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+  });
   await settle();
   return view.host;
 }

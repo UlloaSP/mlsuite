@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom, useSelector } from "@tanstack/react-store";
 import { AppChoiceCard } from "@/shared/ui/AppChoiceCard";
 import { AppShortcut } from "@/shared/ui/AppShortcut";
 import { AppSwitch } from "@/shared/ui/AppSwitch";
@@ -49,7 +49,7 @@ export function SettingsLayoutSection() {
   const [variant, setVariant] = useAtom(sidebarStyleAtom);
   const [collapsed, setCollapsed] = useAtom(sidebarCollapsedAtom);
   const [location, setLocation] = useAtom(locationDisplayAtom);
-  const bindings = useAtomValue(shortcutBindingsAtom);
+  const bindings = useSelector(shortcutBindingsAtom);
   const { isFullscreen, supported, toggleFullscreen } = useFullscreen();
 
   return (

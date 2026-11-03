@@ -3,8 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
+import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { resolve } from "node:path";
 import { defineConfig } from "vite-plus";
 
@@ -34,7 +35,8 @@ export default defineConfig({
       },
     },
   },
-  plugins: [react(), tailwindcss()],
+  // The React Compiler memoizes components and hooks, so code need not do it by hand.
+  plugins: [react(), babel({ presets: [reactCompilerPreset()] }), tailwindcss()],
   test: { maxWorkers: 4 },
   build: {
     outDir: "./dist",

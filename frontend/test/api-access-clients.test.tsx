@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient } from "@tanstack/react-query";
 import { act } from "react";
-import { Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { ApiClientPage } from "@/features/api-access/pages/api-client-page";
 import { ApiClientsPage } from "@/features/api-access/pages/api-clients-page";
@@ -139,14 +138,12 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 const newClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
+const pages = {
+  "/api-access/clients": <ApiClientsPage />,
+  "/api-access/clients/$clientId": <ApiClientPage />,
+};
 async function open(route: string) {
-  const view = await mount(
-    <Routes>
-      <Route path="/api-access/clients" element={<ApiClientsPage />} />
-      <Route path="/api-access/clients/:clientId" element={<ApiClientPage />} />
-    </Routes>,
-    { route, queryClient: newClient() },
-  );
+  const view = await mount(null, { route, routes: pages, queryClient: newClient() });
   await settle();
   await loaded();
   return view.host;

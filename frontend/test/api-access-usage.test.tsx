@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
 import { QueryClient } from "@tanstack/react-query";
 import { act } from "react";
-import { Route, Routes } from "react-router";
+import type { AnyRoute } from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { useNavigationItems } from "@/app/components/use-navigation-items";
-import { protectedPages } from "@/app/router/protected-routes";
+import { router } from "@/app/router/routes";
 import { AdminApiTrafficPage } from "@/features/api-access/pages/admin-api-traffic-page";
 import { ApiOverviewPage } from "@/features/api-access/pages/api-overview-page";
 import { ApiRequestsPage } from "@/features/api-access/pages/api-requests-page";
+import { formatBucket, USAGE_SERIES } from "@/features/api-access/lib/usage-series";
 import type {
   AdminApiClientDto,
   AdminApiOrganizationDto,
@@ -30,7 +31,8 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
     },
   }),
 }));
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (original) => ({
+  ...(await original<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({ data: { id: 1, systemRole: member.role }, error: null, isLoading: false }),
   useCurrentUserIsSuperadmin: () => member.role === "SUPERADMIN",
 }));
@@ -159,12 +161,8 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 async function open(path: string, element: React.ReactNode, route = path) {
-  const view = await mount(
-    <Routes>
-      <Route path={path} element={element} />
-    </Routes>,
-    { route, queryClient: new QueryClient({ defaultOptions: { queries: { retry: false } } }) },
-  );
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const view = await mount(null, { route, routes: { [path]: element }, queryClient });
   await settle();
   await loaded();
   return view.host;
@@ -207,6 +205,30 @@ describe("API usage", () => {
     expect(requests().find((request) => request.path === "/api/api-access/usage")?.params).toEqual({
       period: "day",
     });
+  });
+
+  test("the usage chart stacks a bucket's outcomes and its tooltip counts each one", async () => {
+    const host = await open("/api-access", <ApiOverviewPage />);
+    const label = "40 calls, by hour and outcome";
+
+    expect(host.querySelector(`[role="img"][aria-label="${label}"]`)).not.toBeNull();
+    const chart = host.querySelector<SVGSVGElement>(`svg[aria-label="${label}"]`)!;
+    expect(chart.querySelectorAll(".ts-chart__grid line").length).toBeGreaterThan(0);
+    expect(
+      [...chart.querySelectorAll(".ts-chart__bar path")].map((bar) => bar.getAttribute("fill")),
+    ).toEqual(USAGE_SERIES.map((series) => series.color));
+
+    await act(async () => chart.focus());
+    await settle();
+
+    const tooltip = host.querySelector(".ts-chart-tooltip");
+    expect(tooltip?.textContent).toContain(formatBucket(AT, true, true));
+    for (const row of ["Succeeded36", "Refused (4xx)3", "Failed (5xx)1"]) {
+      expect(tooltip?.textContent).toContain(row);
+    }
+    expect(tooltip?.getAttribute("aria-label")).toBe(
+      `${formatBucket(AT, true, true)}\nSucceeded: 36\nRefused (4xx): 3\nFailed (5xx): 1`,
+    );
   });
 
   test("an organization without clients is told what a client is, not shown empty charts", async () => {
@@ -308,8 +330,9 @@ describe("API navigation", () => {
   }
   const entries = async () =>
     (await mount(<NavigationProbe />, { route: "/home" })).host.textContent;
+  /** The id of the pathless guard route the page at `path` sits under. */
   const guardOf = (path: string) =>
-    protectedPages.find((route) => route.children?.some((child) => child.path === path));
+    (router.routesByPath as Record<string, AnyRoute | undefined>)[path]?.parentRoute.options.id;
 
   test("members who may view API access find it, and superadmins find the platform's traffic", async () => {
     expect(await entries()).toContain("API→/api-access");
@@ -321,15 +344,16 @@ describe("API navigation", () => {
 
   test("every API page sits behind the view permission, the traffic page with the superadmin pages", () => {
     for (const path of [
-      "api-access",
-      "api-access/clients",
-      "api-access/clients/:clientId",
-      "api-access/requests",
-      "api-access/docs",
+      "/api-access",
+      "/api-access/clients",
+      "/api-access/clients/$clientId",
+      "/api-access/requests",
+      "/api-access/docs",
     ]) {
-      expect(guardOf(path)).toBe(guardOf("api-access"));
+      expect(guardOf(path)).toBe("can-view-api-access");
     }
-    expect(guardOf("api-access")).not.toBe(guardOf("models"));
-    expect(guardOf("admin/api-traffic")).toBe(guardOf("admin/users"));
+    expect(guardOf("/api-access")).not.toBe(guardOf("/models"));
+    expect(guardOf("/admin/api-traffic")).toBe("superadmin");
+    expect(guardOf("/admin/api-traffic")).toBe(guardOf("/admin/users"));
   });
 });

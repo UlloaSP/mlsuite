@@ -7,7 +7,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { QueryClient } from "@tanstack/react-query";
 import { act } from "react";
-import { Route, Routes } from "react-router";
 import { expect, test } from "vite-plus/test";
 import { SchemaBookmarkCatalogItem } from "@/features/schemas/components/SchemaBookmarkCatalogItem";
 import { WORKSPACE_CONTEXT_QUERY_KEY } from "@/capabilities/workspace-context/workspace-context";
@@ -39,16 +38,14 @@ test("opening a bookmark in its schema goes straight to its Predict workspace", 
     currentOrganization: { id: 1 },
     permissions: {},
   });
-  const { host } = await mount(
-    <Routes>
-      <Route
-        path="/schemas/:schemaId/bookmarks"
-        element={<SchemaBookmarkCatalogItem bookmark={bookmark} />}
-      />
-      <Route path="/predict/:bookmarkId" element={<h1>Bookmark workspace</h1>} />
-    </Routes>,
-    { route: "/schemas/1/bookmarks", queryClient },
-  );
+  const { host } = await mount(null, {
+    route: "/schemas/1/bookmarks",
+    routes: {
+      "/schemas/$schemaId/bookmarks": <SchemaBookmarkCatalogItem bookmark={bookmark} />,
+      "/predict/$bookmarkId": <h1>Bookmark workspace</h1>,
+    },
+    queryClient,
+  });
 
   const tile = host.querySelector<HTMLAnchorElement>("article > a");
   const predictLink = [...host.querySelectorAll<HTMLAnchorElement>("article a")].find(

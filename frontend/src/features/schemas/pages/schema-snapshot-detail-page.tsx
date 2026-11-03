@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Copy, Tag } from "lucide-react";
 import { useState } from "react";
-import { useParams } from "react-router";
+import { useParams } from "@tanstack/react-router";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -18,7 +18,7 @@ import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 export function SchemaSnapshotDetailPage() {
-  const { schemaId, versionId } = useParams<{ schemaId: string; versionId: string }>();
+  const { schemaId, versionId } = useParams({ strict: false });
   const { data: schema } = useSchema(schemaId);
   const { data: workspace } = useWorkspaceContext();
   const { data: version } = useSchemaVersion(versionId);

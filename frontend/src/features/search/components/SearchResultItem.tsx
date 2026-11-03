@@ -1,6 +1,7 @@
 import { Search, type LucideIcon } from "lucide-react";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
+import { appHref } from "@/shared/lib/app-href";
 import type { SearchResultDto } from "@/shared/api/openapi.gen";
 
 // Keyed by the result types SearchWorkspaceCandidateFactory emits.
@@ -31,8 +32,8 @@ export function SearchResultItem({
     : "text-fg hover:bg-surface-muted";
 
   return (
-    <Link
-      to={result.href}
+    <AppLink
+      {...appHref(result.href)}
       onMouseEnter={onHover}
       onMouseDown={(event) => event.preventDefault()}
       onClick={onSelect}
@@ -45,6 +46,6 @@ export function SearchResultItem({
           <p className="truncate text-xs text-fg-secondary">{result.subtitle}</p>
         </div>
       </div>
-    </Link>
+    </AppLink>
   );
 }

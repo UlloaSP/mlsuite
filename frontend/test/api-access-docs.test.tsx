@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { QueryClient } from "@tanstack/react-query";
 import { act } from "react";
-import { Route, Routes, useLocation } from "react-router";
+import { useLocation } from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { apiDocsMarkdown, buildApiDocs } from "@/features/api-access/lib/endpoint-docs";
 import { ApiDocsPage } from "@/features/api-access/pages/api-docs-page";
@@ -103,12 +103,11 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 async function openDocs(route = "/api-access/docs") {
-  const view = await mount(
-    <Routes>
-      <Route path="/api-access/docs" element={<ApiDocsPage />} />
-    </Routes>,
-    { route, queryClient: new QueryClient({ defaultOptions: { queries: { retry: false } } }) },
-  );
+  const view = await mount(null, {
+    route,
+    routes: { "/api-access/docs": <ApiDocsPage /> },
+    queryClient: new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+  });
   await settle();
   return view.host;
 }
@@ -229,7 +228,7 @@ describe("a bookmark's way to the client API", () => {
     updatedAt: AT,
   };
   function Location() {
-    return <output>{`${useLocation().pathname}${useLocation().search}`}</output>;
+    return <output>{`${useLocation().pathname}${useLocation().searchStr}`}</output>;
   }
   const openActions = async () => {
     await mount(

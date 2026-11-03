@@ -6,7 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // @vitest-environment jsdom
 
 import { act } from "react";
-import { Route, Routes } from "react-router";
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { InvitationsPage } from "@/features/workspace/pages/invitations-page";
 import { OrganizationSettingsPage } from "@/features/workspace/pages/organization-settings-page";
@@ -136,38 +135,26 @@ describe("organization management", () => {
   });
 
   async function renderSettings() {
-    view = await mount(
-      <Routes>
-        <Route
-          path="/workspace/organizations/:organizationId/settings"
-          element={<OrganizationSettingsPage />}
-        />
-      </Routes>,
-      { route: "/workspace/organizations/7/settings" },
-    );
+    view = await mount(null, {
+      route: "/workspace/organizations/7/settings",
+      routes: { "/workspace/organizations/$organizationId/settings": <OrganizationSettingsPage /> },
+    });
     return view.host;
   }
 
   async function renderInvitations() {
-    view = await mount(
-      <Routes>
-        <Route
-          path="/workspace/organizations/:organizationId/invitations"
-          element={<InvitationsPage />}
-        />
-      </Routes>,
-      { route: "/workspace/organizations/7/invitations" },
-    );
+    view = await mount(null, {
+      route: "/workspace/organizations/7/invitations",
+      routes: { "/workspace/organizations/$organizationId/invitations": <InvitationsPage /> },
+    });
     return view.host;
   }
 
   async function renderRoles() {
-    view = await mount(
-      <Routes>
-        <Route path="/workspace/organizations/:organizationId/roles" element={<RolesPage />} />
-      </Routes>,
-      { route: "/workspace/organizations/7/roles" },
-    );
+    view = await mount(null, {
+      route: "/workspace/organizations/7/roles",
+      routes: { "/workspace/organizations/$organizationId/roles": <RolesPage /> },
+    });
     return view.host;
   }
 

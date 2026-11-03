@@ -5,7 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Ellipsis } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
+import { appHref } from "@/shared/lib/app-href";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import type { BreadcrumbTrailItem } from "./breadcrumb-context";
@@ -36,9 +37,9 @@ export function BreadcrumbEllipsisMenu({ items }: { items: BreadcrumbTrailItem[]
           {items.map((item, index) =>
             item.to ? (
               <DropdownMenu.Item key={item.to} asChild className={MENU_ITEM}>
-                <Link to={item.to}>
+                <AppLink {...appHref(item.to)}>
                   <span className="truncate">{item.label}</span>
-                </Link>
+                </AppLink>
               </DropdownMenu.Item>
             ) : (
               <DropdownMenu.Item

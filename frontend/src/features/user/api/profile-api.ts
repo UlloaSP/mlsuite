@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
+import { mutationOptions, queryOptions, useMutation } from "@tanstack/react-query";
 import { USER_QUERY_KEY } from "@/capabilities/workspace-context/session";
 import { WORKSPACE_CONTEXT_QUERY_KEY } from "@/capabilities/workspace-context/workspace-context";
 import { appFetch, isHttpError, json } from "@/shared/api/http";
@@ -74,71 +74,61 @@ export const useOwnProfileBookmarks = (search: string) =>
  * A person's name, handle and avatar are drawn across the app: in the shell, as their personal
  * account, on what they published, and in every organization's catalogs. All of it follows.
  */
-const useRefreshPerson = () => {
-  const queryClient = useQueryClient();
-  return (user: UserDto) => {
-    queryClient.setQueryData(USER_QUERY_KEY, user);
-    for (const queryKey of [
-      USER_QUERY_KEY,
-      WORKSPACE_CONTEXT_QUERY_KEY,
-      PUBLIC_QUERY_KEY,
-      ["org"],
-    ]) {
-      void queryClient.invalidateQueries({ queryKey });
-    }
-  };
-};
-
-export const useUpdateProfile = () => {
-  const refresh = useRefreshPerson();
-  return useMutation({
+const personMutation = <TVariables>(mutationFn: (variables: TVariables) => Promise<UserDto>) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
-    mutationFn: (request: UpdateUserProfileRequest) =>
-      appFetch<UserDto>(ME, json("PATCH", request)),
-    onSuccess: refresh,
-  });
-};
-
-export const useReplaceAvatar = () => {
-  const refresh = useRefreshPerson();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: (file: File) => {
-      const body = new FormData();
-      body.append("avatar", file);
-      return appFetch<UserDto>(`${ME}/avatar`, { method: "PUT", body });
-    },
-    onSuccess: refresh,
-  });
-};
-
-export const useRemoveAvatar = () => {
-  const refresh = useRefreshPerson();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: () => appFetch<UserDto>(`${ME}/avatar`, { method: "DELETE" }),
-    onSuccess: refresh,
-  });
-};
-
-export const useReplacePins = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: (publicIds: string[]) =>
-      appFetch<OwnProfileDto>(`${ME}/pins`, json("PUT", { publicIds })),
-    onSuccess: (profile) => {
-      queryClient.setQueryData(OWN_PROFILE_QUERY_KEY, profile);
-      void queryClient.invalidateQueries({ queryKey: OWN_PROFILE_QUERY_KEY });
-      void queryClient.invalidateQueries({ queryKey: PUBLIC_QUERY_KEY });
+    mutationFn,
+    onSuccess: (user, _variables, _result, { client }) => {
+      client.setQueryData(USER_QUERY_KEY, user);
+      for (const queryKey of [
+        USER_QUERY_KEY,
+        WORKSPACE_CONTEXT_QUERY_KEY,
+        PUBLIC_QUERY_KEY,
+        ["org"],
+      ]) {
+        void client.invalidateQueries({ queryKey });
+      }
     },
   });
-};
+
+const updateProfileMutation = personMutation((request: UpdateUserProfileRequest) =>
+  appFetch<UserDto>(ME, json("PATCH", request)),
+);
+
+const replaceAvatarMutation = personMutation((file: File) => {
+  const body = new FormData();
+  body.append("avatar", file);
+  return appFetch<UserDto>(`${ME}/avatar`, { method: "PUT", body });
+});
+
+const removeAvatarMutation = personMutation<void>(() =>
+  appFetch<UserDto>(`${ME}/avatar`, { method: "DELETE" }),
+);
+
+export const useUpdateProfile = () => useMutation(updateProfileMutation);
+
+export const useReplaceAvatar = () => useMutation(replaceAvatarMutation);
+
+export const useRemoveAvatar = () => useMutation(removeAvatarMutation);
+
+const replacePinsMutation = mutationOptions({
+  meta: { errorHandledLocally: true },
+  mutationFn: (publicIds: string[]) =>
+    appFetch<OwnProfileDto>(`${ME}/pins`, json("PUT", { publicIds })),
+  onSuccess: (profile, _publicIds, _result, { client }) => {
+    client.setQueryData(OWN_PROFILE_QUERY_KEY, profile);
+    void client.invalidateQueries({ queryKey: OWN_PROFILE_QUERY_KEY });
+    void client.invalidateQueries({ queryKey: PUBLIC_QUERY_KEY });
+  },
+});
+
+export const useReplacePins = () => useMutation(replacePinsMutation);
 
 /** Only the session that asks stays signed in, so nothing on this device needs to change. */
-export const useChangePassword = () =>
-  useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: (request: ChangePasswordRequest) =>
-      appFetch<void>(`${ME}/password`, json("POST", request)),
-  });
+const changePasswordMutation = mutationOptions({
+  meta: { errorHandledLocally: true },
+  mutationFn: (request: ChangePasswordRequest) =>
+    appFetch<void>(`${ME}/password`, json("POST", request)),
+});
+
+export const useChangePassword = () => useMutation(changePasswordMutation);

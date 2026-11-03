@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Search, Plus } from "lucide-react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { emitErrorFromUnknown } from "@/shared/api/error-notifications";
 import {
@@ -98,7 +98,10 @@ export function OrganizationsPage() {
         breadcrumbs: [{ label: "Organizations" }],
         description: "Search, review, and maintain organization workspaces.",
         actions: (
-          <AppButton type="button" onClick={() => navigate("/workspace/organizations/create")}>
+          <AppButton
+            type="button"
+            onClick={() => navigate({ to: "/workspace/organizations/create" })}
+          >
             <Plus size={16} /> New organization
           </AppButton>
         ),
@@ -117,7 +120,10 @@ export function OrganizationsPage() {
       emptyDescription="Create the first organization for models, schemas, plugins, and members."
       filteredEmptyDescription="Try another search term."
       emptyAction={
-        <AppButton type="button" onClick={() => navigate("/workspace/organizations/create")}>
+        <AppButton
+          type="button"
+          onClick={() => navigate({ to: "/workspace/organizations/create" })}
+        >
           <Plus size={16} /> New organization
         </AppButton>
       }

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 
 /** 0 idle, 1 pass torn while the request runs, 2 overlay revealed after success. */
 export type AuthPhase = 0 | 1 | 2;
@@ -55,7 +55,7 @@ export function useAuthAccess(destination: string) {
     afterTear(() => {
       setPhase(2);
       later(
-        () => void navigate(destination, { replace: true }),
+        () => void navigate({ href: destination, replace: true }),
         reduceMotion ? REDUCED_WELCOME_MS : WELCOME_MS,
       );
     });

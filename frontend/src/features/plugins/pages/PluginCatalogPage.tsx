@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Search, Upload } from "lucide-react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { toast } from "sonner";
 import { useDeletePluginMutation } from "@/features/plugins/api/plugin.mutations";
 import {
@@ -99,10 +99,10 @@ export function PluginCatalogPage() {
             "View and manage workspace plugins that extend MLForm with custom field and report renderers.",
           breadcrumbs: [{ label: "Plugins" }],
           actions: canManagePlugins ? (
-            <Link className={appButtonClass()} to="/plugins/upload">
+            <AppLink className={appButtonClass()} to="/plugins/upload">
               <Upload size={16} />
               Upload plugins
-            </Link>
+            </AppLink>
           ) : null,
         }}
         isActionPending={deleteMutation.isPending}

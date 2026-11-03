@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { KeyRound } from "lucide-react";
 import { useState } from "react";
-import { useParams } from "react-router";
+import { useParams } from "@tanstack/react-router";
 import { useCan } from "@/capabilities/workspace-context/workspace-context";
 import { useApiClient, useApiUsage } from "@/features/api-access/api/api-access.queries";
 import type { UsagePeriod } from "@/features/api-access/api/api-access.api";
@@ -32,7 +32,7 @@ type Tab = (typeof TABS)[number];
 
 /** One client: its usage, keys, bookmarks and calls, each a linkable tab. */
 export function ApiClientPage() {
-  const { clientId = "" } = useParams();
+  const { clientId = "" } = useParams({ strict: false });
   const id = Number(clientId);
   const canManage = useCan("canManageApiAccess");
   const [tab, setTab] = useSearchParamState<Tab>("tab", "overview", TABS);

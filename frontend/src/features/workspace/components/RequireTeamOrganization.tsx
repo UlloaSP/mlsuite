@@ -1,6 +1,7 @@
 import type { PropsWithChildren } from "react";
 import { Plus } from "lucide-react";
-import { Link, useParams } from "react-router";
+import { useParams } from "@tanstack/react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/workspace.queries";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
@@ -14,7 +15,7 @@ import { appButtonClass } from "@/shared/ui/button-styles";
  * other outcome of the request is the page's own to show.
  */
 export function RequireTeamOrganization({ children }: PropsWithChildren) {
-  const { organizationId = "" } = useParams();
+  const { organizationId = "" } = useParams({ strict: false });
   const dashboard = useOrganizationAdminDashboardQuery(Number(organizationId));
 
   if (dashboard.isPending) return <AppPageLoader label="Loading…" />;
@@ -28,20 +29,20 @@ export function RequireTeamOrganization({ children }: PropsWithChildren) {
           description="Members, invitations, roles and settings belong to organizations. Create one to work with other people."
           action={
             <div className="flex flex-wrap justify-center gap-2">
-              <Link
+              <AppLink
                 to="/workspace/organizations/create"
                 viewTransition
                 className={appButtonClass()}
               >
                 <Plus size={16} /> New organization
-              </Link>
-              <Link
+              </AppLink>
+              <AppLink
                 to="/workspace"
                 viewTransition
                 className={appButtonClass({ variant: "secondary" })}
               >
                 Back to overview
-              </Link>
+              </AppLink>
             </div>
           }
         />

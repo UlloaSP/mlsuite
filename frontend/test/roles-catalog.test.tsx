@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import { act } from "react";
-import { Route, Routes } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { RolesPage } from "@/features/workspace/pages/roles-page";
 import { click as clickIn, mount } from "./support/dom";
@@ -109,12 +108,10 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 async function render(search = "") {
-  ({ host } = await mount(
-    <Routes>
-      <Route path="/organizations/:organizationId/roles" element={<RolesPage />} />
-    </Routes>,
-    { route: `/organizations/3/roles${search}` },
-  ));
+  ({ host } = await mount(null, {
+    route: `/organizations/3/roles${search}`,
+    routes: { "/organizations/$organizationId/roles": <RolesPage /> },
+  }));
 }
 function hasLabel(label: string) {
   return [...host.querySelectorAll("p, h2")].some(

@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { useQuery } from "@tanstack/react-query";
 import { modelQueryOptions, useModelCatalogPageQuery } from "@/features/models/api/model.queries";
 import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
+import { useUrlSearchParams } from "@/shared/lib/url-search-params";
 import { CreateSchemaPage } from "@/features/schemas/pages/create-schema-page";
 import { initialSchemaModels } from "@/features/schemas/lib/schema-model-selection";
 export function CreateSchemaRoute() {
   const organizationId = useCurrentOrganizationId();
-  const [params] = useSearchParams();
+  const params = useUrlSearchParams();
   const [search, setSearch] = useState("");
   const catalog = useModelCatalogPageQuery(
     organizationId,

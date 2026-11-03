@@ -3,9 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { atom, type WritableAtom } from "jotai";
-import { atomWithStorage } from "jotai/utils";
-import { validatedStorage } from "@/shared/lib/validated-storage";
+import { createAtom, type Atom } from "@tanstack/react-store";
+import { createPersistedAtom } from "@/shared/lib/persisted-atom";
 import {
   DEFAULT_THEME_ID,
   isCustomTheme,
@@ -52,58 +51,68 @@ const isSelectionShape = (value: unknown): value is ThemeSelection =>
   typeof (value as ThemeSelection).light === "string" &&
   typeof (value as ThemeSelection).dark === "string";
 
-const stored = <T>(key: string, initialValue: T, isValid: (value: unknown) => value is T) =>
-  atomWithStorage(key, initialValue, validatedStorage(isValid), { getOnInit: true });
-
-const storedModeAtom = stored<ThemeMode>("ui/color-scheme", "system", isThemeMode);
-const storedSelectionAtom = stored("ui/theme-selection", DEFAULT_SELECTION, isSelectionShape);
-const storedContrastAtom = stored<ContrastLevel>("ui/contrast", 100, isContrastLevel);
-const storedCustomThemesAtom = stored<CustomTheme[]>("ui/custom-themes", [], isCustomThemes);
+const storedModeAtom = createPersistedAtom<ThemeMode>("ui/color-scheme", "system", isThemeMode);
+const storedSelectionAtom = createPersistedAtom(
+  "ui/theme-selection",
+  DEFAULT_SELECTION,
+  isSelectionShape,
+);
+const storedContrastAtom = createPersistedAtom<ContrastLevel>("ui/contrast", 100, isContrastLevel);
+const storedCustomThemesAtom = createPersistedAtom<CustomTheme[]>(
+  "ui/custom-themes",
+  [],
+  isCustomThemes,
+);
 
 const selectionFor = (selection: ThemeSelection, customThemes: readonly CustomTheme[]) =>
   isThemeId(selection.light, customThemes) && isThemeId(selection.dark, customThemes)
     ? selection
     : DEFAULT_SELECTION;
 
-const appearanceAtom = atom<Appearance>((get) => {
-  const customThemes = get(storedCustomThemesAtom);
+const appearanceAtom = createAtom<Appearance>(() => {
+  const customThemes = storedCustomThemesAtom.get();
   return {
-    mode: get(storedModeAtom),
-    selection: selectionFor(get(storedSelectionAtom), customThemes),
-    contrast: get(storedContrastAtom),
+    mode: storedModeAtom.get(),
+    selection: selectionFor(storedSelectionAtom.get(), customThemes),
+    contrast: storedContrastAtom.get(),
     customThemes,
   };
 });
 
-/** Persists one preference, then applies the whole resulting appearance once. */
-const applied = <T>(read: (appearance: Appearance) => T, base: WritableAtom<T, [T], void>) =>
-  atom(
-    (get) => read(get(appearanceAtom)),
-    (get, set, value: T) => {
-      set(base, value);
-      window.__MLSUITE_APPLY_APPEARANCE__?.(get(appearanceAtom));
-    },
-  );
+export const themeModeAtom = createAtom(() => appearanceAtom.get().mode);
+export const themeSelectionAtom = createAtom(() => appearanceAtom.get().selection);
+export const contrastAtom = createAtom(() => appearanceAtom.get().contrast);
+export const customThemesAtom = createAtom(() => appearanceAtom.get().customThemes);
 
-export const themeModeAtom = applied(({ mode }) => mode, storedModeAtom);
-export const themeSelectionAtom = applied(({ selection }) => selection, storedSelectionAtom);
-export const contrastAtom = applied(({ contrast }) => contrast, storedContrastAtom);
-export const customThemesAtom = applied(({ customThemes }) => customThemes, storedCustomThemesAtom);
+/** Persists one preference, then applies the whole resulting appearance once. */
+const applied =
+  <T>(base: Atom<T>) =>
+  (value: T) => {
+    base.set(value);
+    window.__MLSUITE_APPLY_APPEARANCE__?.(appearanceAtom.get());
+  };
+
+export const setThemeMode = applied(storedModeAtom);
+export const setThemeSelection = applied(storedSelectionAtom);
+export const setContrast = applied(storedContrastAtom);
+export const setCustomThemes = applied(storedCustomThemesAtom);
 
 const systemDarkQuery = () => window.matchMedia?.("(prefers-color-scheme: dark)");
-const systemThemeAtom = atom<ResolvedTheme>(systemDarkQuery()?.matches ? "dark" : "light");
-systemThemeAtom.onMount = (setTheme) => {
-  const media = systemDarkQuery();
-  if (!media) return undefined;
-  const sync = () => setTheme(media.matches ? "dark" : "light");
-  media.addEventListener?.("change", sync);
-  return () => media.removeEventListener?.("change", sync);
+let systemThemeAtom: Atom<ResolvedTheme> | undefined;
+
+/** The system scheme, followed from the first time a theme resolves against it. */
+const systemTheme = () => {
+  if (!systemThemeAtom) {
+    const media = systemDarkQuery();
+    const theme = createAtom<ResolvedTheme>(media?.matches ? "dark" : "light");
+    media?.addEventListener?.("change", () => theme.set(media.matches ? "dark" : "light"));
+    systemThemeAtom = theme;
+  }
+  return systemThemeAtom;
 };
 
-export const themeWithHtmlAtom = atom(
-  (get) => {
-    const mode = get(themeModeAtom);
-    return mode === "system" ? get(systemThemeAtom) : mode;
-  },
-  (_, set, mode: ThemeMode) => set(themeModeAtom, mode),
-);
+/** The scheme in effect: the chosen one, or the system's while following it. */
+export const themeWithHtmlAtom = createAtom<ResolvedTheme>(() => {
+  const mode = themeModeAtom.get();
+  return mode === "system" ? systemTheme().get() : mode;
+});

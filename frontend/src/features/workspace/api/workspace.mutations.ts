@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { mutationOptions, useMutation, type QueryClient } from "@tanstack/react-query";
 import { WORKSPACE_CONTEXT_QUERY_KEY } from "@/capabilities/workspace-context/workspace-context";
 import { actInOrganization } from "@/shared/api/http";
 import {
@@ -27,122 +27,115 @@ import type {
   WorkspaceCurrentContextDto,
 } from "@/shared/api/openapi.gen";
 
-const useInvalidateOrganizationQueries = () => {
-  const queryClient = useQueryClient();
-  return async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ORGANIZATION_CATALOG_PAGE_QUERY_KEY }),
-      queryClient.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
-    ]);
-  };
+const invalidateOrganizationQueries = async (client: QueryClient) => {
+  await Promise.all([
+    client.invalidateQueries({ queryKey: ORGANIZATION_CATALOG_PAGE_QUERY_KEY }),
+    client.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
+  ]);
 };
 
-export const useDeleteOrganizationMutation = () => {
-  const queryClient = useQueryClient();
-  const invalidate = useInvalidateOrganizationQueries();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: deleteOrganization,
-    onSuccess: async (_data, organizationId) => {
-      await removeOrganizationCache(queryClient, organizationId);
-      await invalidate();
-    },
-  });
-};
+/** Whatever shows the organization, including its own dashboard, is read again. */
+const invalidateOrganization = (client: QueryClient, organizationId: number) =>
+  Promise.all([
+    client.invalidateQueries({ queryKey: organizationAdminDashboardQueryKey(organizationId) }),
+    invalidateOrganizationQueries(client),
+  ]);
 
-export const useCreateOrganizationMutation = () => {
-  const invalidate = useInvalidateOrganizationQueries();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: createOrganization,
-    onSuccess: () => void invalidate(),
-  });
-};
+const deleteOrganizationMutation = mutationOptions({
+  meta: { errorHandledLocally: true },
+  mutationFn: deleteOrganization,
+  onSuccess: async (_data, organizationId, _result, { client }) => {
+    await removeOrganizationCache(client, organizationId);
+    await invalidateOrganizationQueries(client);
+  },
+});
 
-export const useUpdateOrganizationMutation = () => {
-  const queryClient = useQueryClient();
-  const invalidate = useInvalidateOrganizationQueries();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: ({ id, ...request }: UpdateOrganizationRequest & { id: number }) =>
-      updateOrganization(id, request),
-    onSuccess: async (_data, { id }) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: organizationAdminDashboardQueryKey(id) }),
-        invalidate(),
-      ]);
-    },
-  });
-};
+export const useDeleteOrganizationMutation = () => useMutation(deleteOrganizationMutation);
+
+const createOrganizationMutation = mutationOptions({
+  meta: { errorHandledLocally: true },
+  mutationFn: createOrganization,
+  onSuccess: (_organization, _request, _result, { client }) =>
+    void invalidateOrganizationQueries(client),
+});
+
+export const useCreateOrganizationMutation = () => useMutation(createOrganizationMutation);
+
+const updateOrganizationMutation = mutationOptions({
+  meta: { errorHandledLocally: true },
+  mutationFn: ({ id, ...request }: UpdateOrganizationRequest & { id: number }) =>
+    updateOrganization(id, request),
+  onSuccess: async (_data, { id }, _result, { client }) => {
+    await invalidateOrganization(client, id);
+  },
+});
+
+export const useUpdateOrganizationMutation = () => useMutation(updateOrganizationMutation);
 
 /** The logo is part of the organization: whatever shows the organization is refreshed. */
-const useOrganizationLogoMutation = <TVariables>(
+const organizationLogoMutation = <TVariables>(
   mutationFn: (variables: TVariables) => Promise<OrganizationDto>,
-) => {
-  const queryClient = useQueryClient();
-  const invalidate = useInvalidateOrganizationQueries();
-  return useMutation({
+) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
     mutationFn,
-    onSuccess: async (organization) => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: organizationAdminDashboardQueryKey(organization.id),
-        }),
-        invalidate(),
-      ]);
+    onSuccess: async (organization, _variables, _result, { client }) => {
+      await invalidateOrganization(client, organization.id);
     },
   });
-};
 
-export const useReplaceOrganizationLogoMutation = () =>
-  useOrganizationLogoMutation(({ organizationId, file }: { organizationId: number; file: File }) =>
+const replaceLogoMutation = organizationLogoMutation(
+  ({ organizationId, file }: { organizationId: number; file: File }) =>
     replaceOrganizationLogo(organizationId, file),
-  );
+);
 
-export const useRemoveOrganizationLogoMutation = () =>
-  useOrganizationLogoMutation((organizationId: number) => removeOrganizationLogo(organizationId));
+const removeLogoMutation = organizationLogoMutation((organizationId: number) =>
+  removeOrganizationLogo(organizationId),
+);
 
-export const useSelectOrganization = (meta?: { errorHandledLocally: boolean }) => {
-  const qc = useQueryClient();
-  return useMutation({
+export const useReplaceOrganizationLogoMutation = () => useMutation(replaceLogoMutation);
+
+export const useRemoveOrganizationLogoMutation = () => useMutation(removeLogoMutation);
+
+const selectOrganizationMutation = (meta?: { errorHandledLocally: boolean }) =>
+  mutationOptions({
     meta,
     mutationFn: selectOrganization,
-    onSuccess: async (context) => {
+    onSuccess: async (context, _organizationId, _result, { client }) => {
       // This tab works in the selected organization from now on; other tabs keep theirs.
       actInOrganization(context.currentOrganization.id);
-      const previous = qc.getQueryData<WorkspaceCurrentContextDto>(WORKSPACE_CONTEXT_QUERY_KEY);
+      const previous = client.getQueryData<WorkspaceCurrentContextDto>(WORKSPACE_CONTEXT_QUERY_KEY);
       const previousOrganizationId = previous?.currentOrganization.id;
       if (previousOrganizationId !== undefined) {
-        await removeOrganizationCache(qc, previousOrganizationId);
+        await removeOrganizationCache(client, previousOrganizationId);
       }
-      qc.setQueryData(WORKSPACE_CONTEXT_QUERY_KEY, context);
+      client.setQueryData(WORKSPACE_CONTEXT_QUERY_KEY, context);
     },
   });
-};
+
+export const useSelectOrganization = (meta?: { errorHandledLocally: boolean }) =>
+  useMutation(selectOrganizationMutation(meta));
 
 type TransferOrganizationOwnershipRequest = {
   organizationId: number;
   nextOwnerMembershipId: number;
 };
 
-export const useTransferOrganizationOwnershipMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: ({ organizationId, nextOwnerMembershipId }: TransferOrganizationOwnershipRequest) =>
-      transferOrganizationOwnership(organizationId, nextOwnerMembershipId),
-    onSuccess: async (_data, request) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
-        queryClient.invalidateQueries({
-          queryKey: organizationMembersQueryKey(request.organizationId),
-        }),
-        queryClient.invalidateQueries({
-          queryKey: organizationAdminDashboardQueryKey(request.organizationId),
-        }),
-        queryClient.invalidateQueries({ queryKey: ORGANIZATION_CATALOG_PAGE_QUERY_KEY }),
-      ]);
-    },
-  });
-};
+const transferOwnershipMutation = mutationOptions({
+  meta: { errorHandledLocally: true },
+  mutationFn: ({ organizationId, nextOwnerMembershipId }: TransferOrganizationOwnershipRequest) =>
+    transferOrganizationOwnership(organizationId, nextOwnerMembershipId),
+  onSuccess: async (_data, request, _result, { client }) => {
+    await Promise.all([
+      client.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
+      client.invalidateQueries({ queryKey: organizationMembersQueryKey(request.organizationId) }),
+      client.invalidateQueries({
+        queryKey: organizationAdminDashboardQueryKey(request.organizationId),
+      }),
+      client.invalidateQueries({ queryKey: ORGANIZATION_CATALOG_PAGE_QUERY_KEY }),
+    ]);
+  },
+});
+
+export const useTransferOrganizationOwnershipMutation = () =>
+  useMutation(transferOwnershipMutation);

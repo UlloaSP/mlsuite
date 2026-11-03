@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useCreateApiClientMutation } from "@/features/api-access/api/api-access.mutations";
 import {
@@ -30,7 +30,11 @@ export function CreateApiClientButton() {
     try {
       const created = await create.mutateAsync(details);
       toast.success(`${created.client.name} was created`);
-      void navigate(`/api-access/clients/${created.client.id}?tab=keys`);
+      void navigate({
+        to: "/api-access/clients/$clientId",
+        params: { clientId: String(created.client.id) },
+        search: { tab: "keys" },
+      });
     } catch {
       // The dialog shows the API's words and keeps the input for a retry.
     }

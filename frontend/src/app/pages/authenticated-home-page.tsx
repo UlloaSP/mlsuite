@@ -1,4 +1,4 @@
-import { Navigate } from "react-router";
+import { Navigate } from "@tanstack/react-router";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 
 /** ProtectedRoute renders this only after the workspace context has loaded. */

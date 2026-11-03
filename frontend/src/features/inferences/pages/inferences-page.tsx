@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ReviewCreationButton } from "@/capabilities/review-creation/ReviewCreationButton";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
@@ -171,7 +171,13 @@ export function InferencesPage({
           disabled={deleteInference.isPending}
           inferenceName={item.name}
           onDelete={() => void handleDelete(item)}
-          onReviewStatus={() => navigate(`/inferences/${item.id}?tab=reviews&section=reviews`)}
+          onReviewStatus={() =>
+            navigate({
+              to: "/inferences/$inferenceId",
+              params: { inferenceId: String(item.id) },
+              search: { tab: "reviews", section: "reviews" },
+            })
+          }
         />
       ) : null,
   });
@@ -202,7 +208,9 @@ export function InferencesPage({
   ) : (
     <InferenceTable
       table={table}
-      onOpen={({ item }) => void navigate(`/inferences/${item.id}`)}
+      onOpen={({ item }) =>
+        void navigate({ to: "/inferences/$inferenceId", params: { inferenceId: String(item.id) } })
+      }
       totalItems={totalItems}
       hasNext={Boolean(data.hasNextPage)}
       isFetching={data.isFetching}

@@ -16,7 +16,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { toast } from "sonner";
 import { isHttpError } from "@/shared/api/http";
 import { useCan } from "@/capabilities/workspace-context/workspace-context";
@@ -149,7 +150,8 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
             label: "API access",
             icon: SECTION_ICONS.api,
             // Clients run bookmarks through the API section, which documents this one's endpoint.
-            onSelect: () => void navigate(`/api-access/docs?bookmark=${bookmark.id}`),
+            onSelect: () =>
+              void navigate({ to: "/api-access/docs", search: { bookmark: String(bookmark.id) } }),
           },
         ]
       : []),
@@ -218,10 +220,14 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
         }
         actions={
           <>
-            <Link to={workspacePath} className={appButtonClass({ size: "sm" })}>
+            <AppLink
+              to="/predict/$bookmarkId"
+              params={{ bookmarkId: String(bookmark.id) }}
+              className={appButtonClass({ size: "sm" })}
+            >
               <Play size={14} />
               Predict
-            </Link>
+            </AppLink>
             <AppActionsMenu actions={actions} label={`Open actions for ${bookmark.name}`} />
           </>
         }

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Search, Plus } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { toast } from "sonner";
 import {
   useArchiveModelMutation,
@@ -158,9 +158,9 @@ export function ModelsPage() {
             workspace?.currentOrganization.name ?? "the current workspace"
           }.`,
           actions: canCreateModels ? (
-            <Link className={appButtonClass()} to="/models/create">
+            <AppLink className={appButtonClass()} to="/models/create">
               <Plus size={16} /> New model
-            </Link>
+            </AppLink>
           ) : null,
         }}
         isActionPending={isActionPending}
@@ -178,9 +178,9 @@ export function ModelsPage() {
         filteredEmptyDescription="Try another search term or status."
         emptyAction={
           canCreateModels ? (
-            <Link className={appButtonClass()} to="/models/create">
+            <AppLink className={appButtonClass()} to="/models/create">
               <Plus size={16} /> New model
-            </Link>
+            </AppLink>
           ) : undefined
         }
         renderItem={(model) => (

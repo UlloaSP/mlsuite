@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 
-import { createStore } from "jotai";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
@@ -65,11 +64,10 @@ describe("theme persistence", () => {
 
     const { contrastAtom, themeModeAtom, themeSelectionAtom } =
       await import("@/shared/ui/appearance-state");
-    const store = createStore();
 
-    expect(store.get(themeModeAtom)).toBe("dark");
-    expect(store.get(themeSelectionAtom)).toEqual({ light: "eshkra", dark: "eshkra" });
-    expect(store.get(contrastAtom)).toBe(100);
+    expect(themeModeAtom.get()).toBe("dark");
+    expect(themeSelectionAtom.get()).toEqual({ light: "eshkra", dark: "eshkra" });
+    expect(contrastAtom.get()).toBe(100);
     expect(localStorage.getItem("ui/color-scheme")).toBe(JSON.stringify("dark"));
     expect(localStorage.getItem("ui/contrast")).toBe(JSON.stringify(100));
     expect(root.classList.contains("dark")).toBe(true);
@@ -83,16 +81,15 @@ describe("theme persistence", () => {
 
   it("persists and applies choices, then follows live system theme changes", async () => {
     const setSystemDark = await bootWithSystemTheme(false);
-    const { contrastAtom, themeModeAtom, themeSelectionAtom, themeWithHtmlAtom } =
+    const { setContrast, setThemeMode, setThemeSelection, themeModeAtom, themeWithHtmlAtom } =
       await import("@/shared/ui/appearance-state");
-    const store = createStore();
-    const unsubscribe = store.sub(themeWithHtmlAtom, () => undefined);
+    const { unsubscribe } = themeWithHtmlAtom.subscribe(() => undefined);
 
-    expect(store.get(themeModeAtom)).toBe("system");
-    expect(store.get(themeWithHtmlAtom)).toBe("light");
+    expect(themeModeAtom.get()).toBe("system");
+    expect(themeWithHtmlAtom.get()).toBe("light");
 
-    store.set(themeSelectionAtom, { light: "ocean", dark: "iris" });
-    store.set(contrastAtom, 125);
+    setThemeSelection({ light: "ocean", dark: "iris" });
+    setContrast(125);
     expect(themeData()).toEqual({
       contrast: "125",
       themeDark: "iris",
@@ -105,11 +102,11 @@ describe("theme persistence", () => {
     expect(localStorage.getItem("ui/contrast")).toBe(JSON.stringify(125));
 
     setSystemDark(true);
-    expect(store.get(themeWithHtmlAtom)).toBe("dark");
+    expect(themeWithHtmlAtom.get()).toBe("dark");
     expect(root.classList.contains("dark")).toBe(true);
     expect(root.dataset.themePreset).toBe("iris");
 
-    store.set(themeWithHtmlAtom, "light");
+    setThemeMode("light");
     expect(localStorage.getItem("ui/color-scheme")).toBe(JSON.stringify("light"));
     expect(root.classList.contains("dark")).toBe(false);
     unsubscribe();
@@ -120,7 +117,7 @@ describe("theme persistence", () => {
     await bootWithSystemTheme(false);
     const { themeSelectionAtom } = await import("@/shared/ui/appearance-state");
 
-    expect(createStore().get(themeSelectionAtom)).toEqual({ light: "mlsuite", dark: "ocean" });
+    expect(themeSelectionAtom.get()).toEqual({ light: "mlsuite", dark: "ocean" });
     expect(root.dataset.themePreset).toBe("mlsuite");
   });
 
@@ -128,10 +125,9 @@ describe("theme persistence", () => {
     localStorage.setItem("ui/color-scheme", JSON.stringify("sepia"));
     localStorage.setItem("ui/theme-selection", JSON.stringify({ light: "custom-gone", dark: 1 }));
     const { themeModeAtom, themeSelectionAtom } = await import("@/shared/ui/appearance-state");
-    const store = createStore();
 
-    expect(store.get(themeModeAtom)).toBe("system");
-    expect(store.get(themeSelectionAtom)).toEqual({ light: "eshkra", dark: "eshkra" });
+    expect(themeModeAtom.get()).toBe("system");
+    expect(themeSelectionAtom.get()).toEqual({ light: "eshkra", dark: "eshkra" });
   });
 
   it("applies contrast levels to text, borders, page, and surfaces", () => {

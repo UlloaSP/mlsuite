@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { RotateCcw } from "lucide-react";
-import { useAtom } from "jotai";
+import { useAtom } from "@tanstack/react-store";
 import { useState, type KeyboardEvent } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppKbd } from "@/shared/ui/AppKbd";

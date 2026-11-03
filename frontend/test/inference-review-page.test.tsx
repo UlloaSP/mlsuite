@@ -7,11 +7,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { QueryClient } from "@tanstack/react-query";
 import { act } from "react";
-import { Route, Routes } from "react-router";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
 import { InferenceReviewTile } from "@/features/inferences/components/InferenceReviewTile";
 import { InferenceReviewPage } from "@/features/inferences/pages/inference-review-page";
 import { InferenceReviewStatusSection } from "@/features/inferences/components/InferenceReviewStatusSection";
+import { reviewAssignmentHref } from "@/features/inferences/lib/review-assignment-href";
 import { ReviewerFeedbackAnswers } from "@/features/schemas/components/ReviewerFeedbackAnswers";
 import { click, mount, type Mounted } from "./support/dom";
 import type { SchemaReviewAssignmentStatusDto } from "@/shared/api/openapi.gen";
@@ -85,8 +85,8 @@ beforeEach(() => {
   state.remove.mockReset().mockResolvedValue(undefined);
 });
 
-async function render(node: React.ReactNode, path = "/") {
-  view = await mount(node, { route: path, queryClient: new QueryClient() });
+async function render(node: React.ReactNode, path = "/", routes?: Record<string, React.ReactNode>) {
+  view = await mount(node, { route: path, routes, queryClient: new QueryClient() });
   container = view.host;
   // Query results land after the mount's act; let them render.
   await act(async () => {
@@ -94,40 +94,36 @@ async function render(node: React.ReactNode, path = "/") {
   });
 }
 
-const reviewPage = (
-  <Routes>
-    <Route
-      path="/inferences/:inferenceId/reviews/:reviewRunId/reviewers/:reviewerId"
-      element={
-        <InferenceReviewPage
-          renderAnswers={(id, reviewer) => (
-            <p>
-              Answers of {reviewer} on {id}
-            </p>
-          )}
-        />
-      }
+const reviewPage = {
+  "/inferences/$inferenceId/reviews/$reviewRunId/reviewers/$reviewerId": (
+    <InferenceReviewPage
+      renderAnswers={(id, reviewer) => (
+        <p>
+          Answers of {reviewer} on {id}
+        </p>
+      )}
     />
-  </Routes>
-);
+  ),
+};
 
 test("a tile names reviewer and requester, and shows expiry only while the review is open", async () => {
+  const open = assignment({
+    reviewState: "PENDING",
+    submittedAt: null,
+    reviewer: { id: 5, fullName: "Alan", email: "alan@acme.test", avatarUrl: null },
+  });
   await render(
     <>
       <InferenceReviewTile
         assignment={assignment()}
-        to="/inferences/1/reviews/run-a/reviewers/4"
+        link={reviewAssignmentHref(1, assignment())}
         disabled={false}
         onReopen={vi.fn()}
         onDelete={vi.fn()}
       />
       <InferenceReviewTile
-        assignment={assignment({
-          reviewState: "PENDING",
-          submittedAt: null,
-          reviewer: { id: 5, fullName: "Alan", email: "alan@acme.test", avatarUrl: null },
-        })}
-        to="/inferences/1/reviews/run-a/reviewers/5"
+        assignment={open}
+        link={reviewAssignmentHref(1, open)}
         disabled={false}
         onReopen={vi.fn()}
         onDelete={vi.fn()}
@@ -147,7 +143,7 @@ test("a tile names reviewer and requester, and shows expiry only while the revie
 
 test("the review page shows the assignment, the reviewer's answers and its actions", async () => {
   state.assignments = [assignment()];
-  await render(reviewPage, "/inferences/1/reviews/run-a/reviewers/4");
+  await render(null, "/inferences/1/reviews/run-a/reviewers/4", reviewPage);
 
   expect(container.querySelector("h1")?.textContent).toBe("Grace Hopper");
   expect(container.textContent).toContain("Answers of 4 on 1");
@@ -168,13 +164,13 @@ test("the review page shows the assignment, the reviewer's answers and its actio
 
 test("a pending assignment offers neither reopen nor delete; a missing one explains itself", async () => {
   state.assignments = [assignment({ reviewState: "PENDING", submittedAt: null })];
-  await render(reviewPage, "/inferences/1/reviews/run-a/reviewers/4");
+  await render(null, "/inferences/1/reviews/run-a/reviewers/4", reviewPage);
   const labels = [...container.querySelectorAll("button")].map((b) => b.textContent);
   expect(labels).not.toContain("Reopen");
   expect(labels).not.toContain("Delete response");
 
   await view.unmount();
-  await render(reviewPage, "/inferences/1/reviews/run-a/reviewers/99");
+  await render(null, "/inferences/1/reviews/run-a/reviewers/99", reviewPage);
   expect(container.textContent).toContain("Review unavailable");
 });
 

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUpRight, PencilLine, X } from "lucide-react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { ownProfileQueryOptions, useOwnProfileBookmarks } from "@/features/user/api/profile-api";
 import { ProfileAvatarSettings } from "@/features/user/components/ProfileAvatarSettings";
@@ -15,7 +15,7 @@ import { ProfilePasswordForm } from "@/features/user/components/ProfilePasswordF
 import { ProfilePinsEditor } from "@/features/user/components/ProfilePinsEditor";
 import { ProfileSummary } from "@/features/user/components/ProfileSummary";
 import { ProfileView } from "@/features/user/components/ProfileView";
-import { profilePath } from "@/shared/lib/profile-path";
+import { profileLink } from "@/shared/lib/profile-link";
 import { useSearchParamState } from "@/shared/lib/use-search-param-state";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -78,13 +78,13 @@ export function OwnProfilePage() {
             <>
               {user.profilePublic ? null : <AppBadge>Private</AppBadge>}
               {user.profilePublic && !editing ? (
-                <Link
-                  to={profilePath(profile.handle)}
+                <AppLink
+                  {...profileLink(profile.handle)}
                   className={appButtonClass({ variant: "secondary", size: "sm" })}
                 >
                   <ArrowUpRight size={14} aria-hidden="true" />
                   Public page
-                </Link>
+                </AppLink>
               ) : null}
               <AppButton
                 size="sm"

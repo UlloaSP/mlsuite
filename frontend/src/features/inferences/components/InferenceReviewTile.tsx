@@ -1,5 +1,6 @@
 import { RotateCcw, Trash2 } from "lucide-react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
+import type { reviewAssignmentHref } from "@/features/inferences/lib/review-assignment-href";
 import { assignmentActions } from "@/features/inferences/lib/use-review-assignment-actions";
 import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { cx } from "@/shared/ui/cx";
@@ -12,21 +13,21 @@ import type { SchemaReviewAssignmentStatusDto } from "@/shared/api/openapi.gen";
 type Props = {
   assignment: SchemaReviewAssignmentStatusDto;
   /** The assignment's detail page (its answers). */
-  to: string;
+  link: ReturnType<typeof reviewAssignmentHref>;
   disabled: boolean;
   onDelete: () => void;
   onReopen: () => void;
 };
 
 /** One reviewer assignment: who answers it, its state and dates; opens its answers. */
-export function InferenceReviewTile({ assignment, to, disabled, onDelete, onReopen }: Props) {
+export function InferenceReviewTile({ assignment, link, disabled, onDelete, onReopen }: Props) {
   const { canReopen, canDelete } = assignmentActions(assignment);
 
   return (
     <article className="relative flex min-w-0 flex-col gap-4 rounded-card border border-line bg-surface p-4 transition hover:border-line-strong">
       <div className="flex items-start justify-between gap-3">
-        <Link
-          to={to}
+        <AppLink
+          {...link}
           className={cx(
             "flex min-w-0 items-center gap-3 rounded-control after:absolute after:inset-0 after:rounded-card",
             FOCUS_RING,
@@ -46,7 +47,7 @@ export function InferenceReviewTile({ assignment, to, disabled, onDelete, onReop
               {assignment.reviewer.email}
             </span>
           </span>
-        </Link>
+        </AppLink>
         {/* Above the stretched link, so the menu stays clickable. */}
         <div className="relative z-10">
           <AppActionsMenu

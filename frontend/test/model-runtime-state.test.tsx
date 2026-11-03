@@ -2,7 +2,6 @@
 
 import { act } from "react";
 import { QueryClient, QueryObserver } from "@tanstack/react-query";
-import { Route, Routes } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { modelKeys } from "@/features/models/api/model.keys";
 import {
@@ -210,12 +209,10 @@ async function openFailedModel() {
           environment: locked,
         },
   );
-  const view = await mount(
-    <Routes>
-      <Route path="/models/:modelId" element={<ModelDetailPage />} />
-    </Routes>,
-    { route: "/models/12" },
-  );
+  const view = await mount(null, {
+    route: "/models/12",
+    routes: { "/models/$modelId": <ModelDetailPage /> },
+  });
   await settle();
   // Let useStableLoading release the skeleton once the response has rendered.
   await act(async () => {

@@ -6,7 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // @vitest-environment jsdom
 
 import { act } from "react";
-import { Route, Routes } from "react-router";
 import { beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { OwnProfilePage } from "@/features/user/pages/own-profile-page";
 import { PublicProfilePage } from "@/features/user/pages/public-profile-page";
@@ -102,12 +101,10 @@ beforeEach(() => {
 const settled = () => act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
 
 const publicPage = async (handle: string) => {
-  const view = await mount(
-    <Routes>
-      <Route path="/u/:handle" element={<PublicProfilePage />} />
-    </Routes>,
-    { route: `/u/${handle}` },
-  );
+  const view = await mount(null, {
+    route: `/u/${handle}`,
+    routes: { "/u/$handle": <PublicProfilePage /> },
+  });
   await settled();
   return view;
 };

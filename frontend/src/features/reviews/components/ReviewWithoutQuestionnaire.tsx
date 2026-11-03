@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppCopy } from "@/shared/ui/AppCopy";
-import { submitSchemaReviewRuns } from "@/features/reviews/api/review-api";
+import { useCompleteSchemaReviewRunMutation } from "@/features/reviews/api/review-mutations";
 
 export function ReviewWithoutQuestionnaire({
   reviewId,
@@ -13,11 +13,13 @@ export function ReviewWithoutQuestionnaire({
   reviewRunId: string;
   onCompleted: () => unknown;
 }) {
+  const { mutateAsync: completeRun } = useCompleteSchemaReviewRunMutation(reviewId, reviewRunId);
+  // Held until the page has read the completed item too, so the action cannot be sent twice.
   const [submitting, setSubmitting] = useState(false);
   const complete = async () => {
     setSubmitting(true);
     try {
-      await submitSchemaReviewRuns(reviewId, [reviewRunId]);
+      await completeRun();
       await onCompleted();
       toast.success("Review completed");
     } catch (error) {

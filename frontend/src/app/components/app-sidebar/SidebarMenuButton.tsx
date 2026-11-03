@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtomValue } from "jotai";
+import { useSelector } from "@tanstack/react-store";
 import { Slot } from "radix-ui";
 import { type ComponentProps } from "react";
 import { cx } from "@/shared/ui/cx";
@@ -27,7 +27,7 @@ export function SidebarMenuButton({
   ...props
 }: SidebarMenuButtonProps) {
   const { collapsed } = useSidebar();
-  const position = useAtomValue(navigationPositionAtom);
+  const position = useSelector(navigationPositionAtom);
   const Comp = asChild ? Slot.Root : "button";
 
   const button = (

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Search, Plus } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   useArchiveSchemaMutation,
@@ -130,7 +130,7 @@ export function SchemasPage() {
             workspace?.currentOrganization.name ?? "the current workspace"
           }.`,
           actions: canCreateSchemas ? (
-            <AppButton type="button" onClick={() => navigate("/schemas/create")}>
+            <AppButton type="button" onClick={() => navigate({ to: "/schemas/create" })}>
               <Plus size={16} /> New schema
             </AppButton>
           ) : null,
@@ -150,7 +150,7 @@ export function SchemasPage() {
         filteredEmptyDescription="Try another search term or status."
         emptyAction={
           canCreateSchemas ? (
-            <AppButton type="button" onClick={() => navigate("/schemas/create")}>
+            <AppButton type="button" onClick={() => navigate({ to: "/schemas/create" })}>
               <Plus size={16} /> New schema
             </AppButton>
           ) : undefined

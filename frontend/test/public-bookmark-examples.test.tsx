@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient } from "@tanstack/react-query";
 import { act } from "react";
-import { Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { PublicBookmarkPage } from "@/features/explore/pages/public-bookmark-page";
 import { RunPublicExampleControl } from "@/features/schemas/components/RunPublicExampleControl";
@@ -326,12 +325,11 @@ describe("examples on the public page", () => {
   });
 
   const page = async () => {
-    const view = await mount(
-      <Routes>
-        <Route path="/explore/:publicId" element={<PublicBookmarkPage />} />
-      </Routes>,
-      { route: `/explore/${PUBLIC_ID}`, queryClient: newClient() },
-    );
+    const view = await mount(null, {
+      route: `/explore/${PUBLIC_ID}`,
+      routes: { "/explore/$publicId": <PublicBookmarkPage /> },
+      queryClient: newClient(),
+    });
     await settle();
     return view.host;
   };

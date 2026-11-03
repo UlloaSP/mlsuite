@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { isHttpError } from "@/shared/api/http";
@@ -28,7 +28,7 @@ export function useOpenNotification(selectOrganization: SelectOrganization) {
       if (organizationId !== null && organizationId !== currentOrganizationId) {
         await selectOrganization(organizationId);
       }
-      await navigate(to);
+      await navigate({ href: to });
     } catch (error) {
       if (isHttpError(error) && [403, 404].includes(error.status)) {
         setUnavailable((ids) => new Set(ids).add(id));

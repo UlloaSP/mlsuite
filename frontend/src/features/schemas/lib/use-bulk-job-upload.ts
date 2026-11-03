@@ -12,8 +12,7 @@ import { applySchemaRunInputMapping } from "@/capabilities/prediction-runtime/ml
 import type { PredictionPayloadField } from "@/capabilities/prediction-runtime/mlform/shared";
 import { predictionCatalogQueryOptions } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
 import { prepareSchemaRun } from "@/capabilities/prediction-runtime/sandbox/plugin-sandbox-services";
-import { startPredictionJob } from "@/features/schemas/api/prediction-job-api";
-import { predictionJobsKey } from "@/features/schemas/api/prediction-job-queries";
+import { useStartPredictionJob } from "@/features/schemas/api/prediction-job-queries";
 import { getModelInputBulkSchema } from "@/features/schemas/lib/bulk-upload";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
@@ -39,6 +38,7 @@ const describe = (reasons: readonly string[]) => {
 export function useBulkJobUpload(bookmarkId: string, version: SchemaVersionDto) {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const queryClient = useQueryClient();
+  const { mutateAsync: startJob } = useStartPredictionJob(bookmarkId);
   const [preparing, setPreparing] = useState(false);
 
   const start = async (file: File) => {
@@ -66,7 +66,7 @@ export function useBulkJobUpload(bookmarkId: string, version: SchemaVersionDto) 
       // The schema is normalized with its plugins in the sandbox, as for a single run.
       const run = await prepareSchemaRun(version.formSchema, version.bindings, plugins);
       const fields = run.fields as unknown as PredictionPayloadField[];
-      await startPredictionJob(bookmarkId, {
+      await startJob({
         schemaVersionId: version.id,
         rows: parsed.records.map((record) => ({
           name: record.name,
@@ -82,9 +82,6 @@ export function useBulkJobUpload(bookmarkId: string, version: SchemaVersionDto) 
       toast.error("Bulk upload could not start", { description: errorMessage(error) });
     } finally {
       setPreparing(false);
-      void queryClient.invalidateQueries({
-        queryKey: predictionJobsKey(organizationId, bookmarkId),
-      });
     }
   };
 

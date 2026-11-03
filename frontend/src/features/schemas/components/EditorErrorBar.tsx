@@ -3,10 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtom } from "jotai";
+import { useSelector } from "@tanstack/react-store";
 import { AlertCircle, CheckCircle, ChevronUp } from "lucide-react";
 import { m as motion } from "motion/react";
-import { schemaErrorsAtom } from "@/features/schemas/lib/editor-atoms";
+import { useEditorAtoms } from "@/features/schemas/lib/editor-atoms";
 
 type EditorErrorBarProps = {
   expanded: boolean;
@@ -14,7 +14,7 @@ type EditorErrorBarProps = {
 };
 
 export function EditorErrorBar({ expanded, setExpanded }: EditorErrorBarProps) {
-  const [schemaErrors] = useAtom(schemaErrorsAtom);
+  const schemaErrors = useSelector(useEditorAtoms().schemaErrors);
 
   const hasErrors = schemaErrors.length > 0;
 

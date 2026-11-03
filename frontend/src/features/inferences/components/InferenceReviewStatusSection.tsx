@@ -104,7 +104,7 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
           <InferenceReviewTile
             key={`${assignment.reviewId}:${assignment.reviewRunId}:${assignment.reviewer.id}`}
             assignment={assignment}
-            to={reviewAssignmentHref(inferenceId, assignment)}
+            link={reviewAssignmentHref(inferenceId, assignment)}
             disabled={actions.pending}
             onReopen={() => actions.reopen(assignment)}
             onDelete={() => actions.remove(assignment)}

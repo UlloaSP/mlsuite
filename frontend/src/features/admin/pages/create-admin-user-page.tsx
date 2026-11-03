@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useCreateAdminUser } from "@/features/admin/api/admin-user.mutations";
 import { useUser } from "@/capabilities/workspace-context/session";
@@ -44,7 +44,7 @@ export function CreateAdminUserPage() {
       {
         onSuccess: () => {
           toast.success("User created.");
-          void navigate("/admin/users");
+          void navigate({ to: "/admin/users" });
         },
       },
     );
@@ -118,7 +118,11 @@ export function CreateAdminUserPage() {
           </AppFieldLabel>
           {createUser.error ? <AppInlineAlert>{createUser.error.message}</AppInlineAlert> : null}
           <div className="flex justify-end gap-2 pt-2">
-            <AppButton type="button" variant="secondary" onClick={() => navigate("/admin/users")}>
+            <AppButton
+              type="button"
+              variant="secondary"
+              onClick={() => navigate({ to: "/admin/users" })}
+            >
               Cancel
             </AppButton>
             <AppButton type="submit" disabled={createUser.isPending}>

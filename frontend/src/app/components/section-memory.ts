@@ -3,10 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtom } from "jotai";
-import { atomWithStorage, createJSONStorage } from "jotai/utils";
 import { useEffect, useEffectEvent } from "react";
-import { useLocation } from "react-router";
+import { useLocation } from "@tanstack/react-router";
+import { useAtom } from "@tanstack/react-store";
+import { createPersistedAtom } from "@/shared/lib/persisted-atom";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 
@@ -18,11 +18,9 @@ type SectionVisit = { href: string };
  * "/models?sort=name"), so returning to a section resumes it. Kept per member and
  * organization: another person or organization's pages are not theirs to resume.
  */
-const sectionVisitsAtom = atomWithStorage<Record<string, SectionVisit>>(
+const sectionVisitsAtom = createPersistedAtom<Record<string, SectionVisit>>(
   "ui/section-visits",
   {},
-  createJSONStorage(() => localStorage),
-  { getOnInit: true },
 );
 
 const isVisit = (value: unknown): value is SectionVisit =>
@@ -59,7 +57,7 @@ export function useSectionMemory() {
 export function useRecordSectionLocation(activeRoot: string | undefined) {
   const location = useLocation();
   const { remember } = useSectionMemory();
-  const href = `${location.pathname}${location.search}`;
+  const href = `${location.pathname}${location.searchStr}`;
 
   const record = useEffectEvent(() => {
     if (activeRoot) remember(activeRoot, href);

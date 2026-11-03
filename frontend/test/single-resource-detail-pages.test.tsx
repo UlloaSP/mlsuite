@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { QueryClient } from "@tanstack/react-query";
-import { Route, Routes } from "react-router";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 import { InferenceDetailPage } from "@/features/inferences/pages/inference-detail-page";
 import { ModelDetailPage } from "@/features/models/pages/model-detail-page";
@@ -30,7 +29,7 @@ const httpError = (status: number) =>
 const pages = {
   model: {
     Page: ModelDetailPage,
-    path: "/models/:modelId",
+    path: "/models/$modelId",
     url: "/models/12",
     // The model and what its bundle says about it.
     requests: ["/api/models/12", "/api/models/12/details"],
@@ -50,7 +49,7 @@ const pages = {
   },
   inference: {
     Page: () => <InferenceDetailPage renderData={() => null} />,
-    path: "/inferences/:inferenceId",
+    path: "/inferences/$inferenceId",
     url: "/inferences/31",
     requests: ["/api/prediction-runs/31/summary"],
     record: {
@@ -75,12 +74,7 @@ afterEach(() => {
 
 async function renderPage({ Page, path, url }: (typeof pages)[keyof typeof pages]) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const view = await mount(
-    <Routes>
-      <Route path={path} element={<Page />} />
-    </Routes>,
-    { route: url, queryClient },
-  );
+  const view = await mount(null, { route: url, routes: { [path]: <Page /> }, queryClient });
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
   });

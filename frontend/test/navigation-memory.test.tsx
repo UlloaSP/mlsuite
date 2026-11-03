@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
-import { Provider, createStore, useAtomValue } from "jotai";
 import { act } from "react";
-import { Route, Routes, useLocation, useNavigate } from "react-router";
+import { useLocation, useNavigate, useRouter } from "@tanstack/react-router";
+import { useSelector } from "@tanstack/react-store";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 import { LocationBar } from "@/app/components/LocationBar";
 import { LocationRail } from "@/app/components/LocationRail";
 import { RESTORE_SCROLL_STATE, useScrollMemory } from "@/app/layouts/use-scroll-memory";
 import { useRecordSectionLocation } from "@/app/components/section-memory";
 import { useNavigationItems } from "@/app/components/use-navigation-items";
+import { appHref } from "@/shared/lib/app-href";
 import { useSearchParamState } from "@/shared/lib/use-search-param-state";
 import { BreadcrumbProvider } from "@/shared/ui/breadcrumb/BreadcrumbProvider";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -30,13 +31,18 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
 let view: Mounted | undefined;
 let container: HTMLDivElement;
 afterEach(() => {
+  locationDisplayAtom.set("breadcrumb-top");
   localStorage.clear();
   workspace.organizationId = 7;
   vi.unstubAllGlobals();
 });
 
-async function render(node: React.ReactNode, route = "/") {
-  view = await mount(node, { route });
+async function render(
+  node: React.ReactNode,
+  route = "/",
+  routes?: Record<string, React.ReactNode>,
+) {
+  view = await mount(node, { route, routes });
   container = view.host;
 }
 
@@ -71,7 +77,7 @@ test("the rail draws one line per breadcrumb level and names a level on focus", 
 
 /** What the shell does: the bottom bar only for the bottom display. */
 function ShellBottom() {
-  return useAtomValue(locationDisplayAtom) === "breadcrumb-bottom" ? <LocationBar /> : null;
+  return useSelector(locationDisplayAtom) === "breadcrumb-bottom" ? <LocationBar /> : null;
 }
 
 test("each location display draws the trail in one place only", async () => {
@@ -88,9 +94,8 @@ test("each location display draws the trail in one place only", async () => {
 
   const renderWith = async (display: LocationDisplay) => {
     await view?.unmount();
-    const store = createStore();
-    store.set(locationDisplayAtom, display);
-    await render(<Provider store={store}>{page}</Provider>);
+    locationDisplayAtom.set(display);
+    await render(page);
   };
 
   await renderWith("breadcrumb-top");
@@ -116,7 +121,7 @@ function TabProbe() {
   const location = useLocation();
   return (
     <>
-      <output>{`${tab}|${location.search}`}</output>
+      <output>{`${tab}|${location.searchStr}`}</output>
       <button type="button" onClick={() => setTab("outputs")}>
         outputs
       </button>
@@ -139,27 +144,24 @@ test("view choices live in the URL, with the default left out and unknown values
 
 function ScrollPage({ name }: { name: string }) {
   const navigate = useNavigate();
+  const { history } = useRouter();
   return (
     <div>
       <div data-scroll-memory="page" data-testid={name} />
-      <button type="button" onClick={() => void navigate("/b")}>
+      <button type="button" onClick={() => void navigate(appHref("/b"))}>
         forward
       </button>
-      <button type="button" onClick={() => void navigate(-1)}>
+      <button type="button" onClick={() => history.back()}>
         back
       </button>
     </div>
   );
 }
 
+/** What the shell does around the page the router shows. */
 function Shell() {
   useScrollMemory();
-  return (
-    <Routes>
-      <Route path="/a" element={<ScrollPage name="a" />} />
-      <Route path="/b" element={<ScrollPage name="b" />} />
-    </Routes>
-  );
+  return null;
 }
 
 test("page scroll comes back on back navigation, not on a new visit", async () => {
@@ -168,7 +170,7 @@ test("page scroll comes back on back navigation, not on a new visit", async () =
     return 0;
   });
   vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(2000);
-  await render(<Shell />, "/a");
+  await render(<Shell />, "/a", { "/a": <ScrollPage name="a" />, "/b": <ScrollPage name="b" /> });
   const scroller = () => container.querySelector<HTMLElement>('[data-scroll-memory="page"]')!;
 
   scroller().scrollTop = 480;
@@ -190,13 +192,13 @@ function SectionShell() {
   const location = useLocation();
   return (
     <>
-      <output>{`${location.pathname}${location.search}`}</output>
+      <output>{`${location.pathname}${location.searchStr}`}</output>
       {navigation.map((item) => (
         <button
           key={item.root}
           type="button"
           data-root={item.root}
-          onClick={() => void navigate(item.to)}
+          onClick={() => void navigate(appHref(item.to))}
         >
           {item.to}
         </button>
@@ -206,12 +208,7 @@ function SectionShell() {
 }
 
 test("each navigation section resumes where the member left it, per organization", async () => {
-  await render(
-    <Provider store={createStore()}>
-      <SectionShell />
-    </Provider>,
-    "/predict/7?from=3",
-  );
+  await render(<SectionShell />, "/predict/7?from=3");
   const entry = (root: string) =>
     container.querySelector<HTMLButtonElement>(`[data-root="${root}"]`)!;
 
@@ -233,15 +230,16 @@ test("each navigation section resumes where the member left it, per organization
 
 function SectionScrollPage({ name }: { name: string }) {
   const navigate = useNavigate();
+  const other = name === "a" ? "/b" : "/a";
   return (
     <div>
       <div data-scroll-memory="page" data-testid={name} />
-      <button type="button" onClick={() => void navigate(name === "a" ? "/b" : "/a")}>
+      <button type="button" onClick={() => void navigate(appHref(other))}>
         visit
       </button>
       <button
         type="button"
-        onClick={() => void navigate(name === "a" ? "/b" : "/a", { state: RESTORE_SCROLL_STATE })}
+        onClick={() => void navigate({ ...appHref(other), state: RESTORE_SCROLL_STATE })}
       >
         resume
       </button>
@@ -255,16 +253,10 @@ test("returning to a section restores its scroll; a plain visit starts at the to
     return 0;
   });
   vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(2000);
-  function ScrollShell() {
-    useScrollMemory();
-    return (
-      <Routes>
-        <Route path="/a" element={<SectionScrollPage name="a" />} />
-        <Route path="/b" element={<SectionScrollPage name="b" />} />
-      </Routes>
-    );
-  }
-  await render(<ScrollShell />, "/a");
+  await render(<Shell />, "/a", {
+    "/a": <SectionScrollPage name="a" />,
+    "/b": <SectionScrollPage name="b" />,
+  });
   const scroller = () => container.querySelector<HTMLElement>('[data-scroll-memory="page"]')!;
 
   scroller().scrollTop = 320;
