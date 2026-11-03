@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { getRouteApi, Navigate } from "@tanstack/react-router";
 import type { INFRA_TABS } from "@/features/infrastructure/pages/infrastructure-search";
 import { useQueryClient } from "@tanstack/react-query";
@@ -13,7 +13,6 @@ import { AlertsView } from "@/features/infrastructure/components/AlertsView";
 import { LogsView } from "@/features/infrastructure/components/LogsView";
 import { OverviewView } from "@/features/infrastructure/components/OverviewView";
 import { ServicesView } from "@/features/infrastructure/components/ServicesView";
-import { TerminalView } from "@/features/infrastructure/components/TerminalView";
 import {
   receiveInfrastructureEvent,
   useInfrastructureOverview,
@@ -39,6 +38,13 @@ type InfraTab = (typeof INFRA_TABS)[number];
 
 
 const route = getRouteApi("/protected/app/superadmin/admin/infrastructure");
+
+// Xterm and its stylesheet load only when the Terminal tab is opened.
+const TerminalView = lazy(() =>
+  import("@/features/infrastructure/components/TerminalView").then((m) => ({
+    default: m.TerminalView,
+  })),
+);
 
 export function AdminInfrastructurePage() {
   const { data: user } = useUser();
@@ -153,12 +159,14 @@ export function AdminInfrastructurePage() {
               />
             )}
             {activeTab === "terminal" && (
-              <TerminalView
-                services={overview.services}
-                selectedService={selectedService}
-                terminalEnabled={Boolean(selectedStatus?.terminalEnabled)}
-                onSelectService={handleSelectService}
-              />
+              <Suspense fallback={<AppLoadingState label="Loading terminal…" />}>
+                <TerminalView
+                  services={overview.services}
+                  selectedService={selectedService}
+                  terminalEnabled={Boolean(selectedStatus?.terminalEnabled)}
+                  onSelectService={handleSelectService}
+                />
+              </Suspense>
             )}
           </>
         ) : (
