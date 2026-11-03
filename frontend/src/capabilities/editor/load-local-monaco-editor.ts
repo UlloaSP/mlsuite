@@ -4,14 +4,14 @@ type MonacoEditorModule = {
 
 let editorModulePromise: Promise<MonacoEditorModule> | null = null;
 
-/** Loads Monaco and binds the React wrapper to the bundled local instance. */
+/** Loads Monaco (only what the app uses, see monaco.ts) and binds the React wrapper to it. */
 export function loadLocalMonacoEditor(): Promise<MonacoEditorModule> {
   editorModulePromise ??= Promise.all([
-    import("monaco-editor"),
+    import("./monaco"),
     import("@monaco-editor/react"),
     import("monaco-editor/editor/editor.worker.js?worker"),
     import("monaco-editor/language/json/json.worker.js?worker"),
-  ]).then(([monaco, { Editor, loader }, { default: EditorWorker }, { default: JsonWorker }]) => {
+  ]).then(([{ monaco }, { Editor, loader }, { default: EditorWorker }, { default: JsonWorker }]) => {
     globalThis.MonacoEnvironment = {
       getWorker: (_moduleId, label) => (label === "json" ? new JsonWorker() : new EditorWorker()),
     };

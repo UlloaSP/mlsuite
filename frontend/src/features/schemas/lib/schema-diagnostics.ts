@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { getLocation } from "jsonc-parser";
 // react-doctor-disable-next-line react-doctor/prefer-dynamic-import -- Type-only Monaco import is erased from runtime.
-import type * as Monaco from "monaco-editor";
+import type { editor } from "monaco-editor/editor";
 import { builtinFieldKindsDisplay } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
 import { lineIndex, nodeAt, pointerSegments } from "./json-text-positions";
 
@@ -41,7 +41,7 @@ const getBuiltinFieldKindsMessage = (): string =>
 
 export const getMarkerMessage = (
   content: string,
-  marker: Monaco.editor.IMarker & { startOffset: number },
+  marker: editor.IMarker & { startOffset: number },
   warningSeverity: number,
 ): EditorErrorCard => {
   const pathArr = getLocation(content, marker.startOffset).path;
