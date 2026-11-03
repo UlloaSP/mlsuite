@@ -20,22 +20,32 @@ driver = load("driver")
 ALLOWLIST = {
     "python": ["3.14.2", "3.14.10"],
     "mlbundle": {"0.3.9": "a", "0.3.10": "b"},
-    "packages": {"numpy": ["2.5.4"], "scikit-learn": ["1.8.0", "1.9.1"]},
+    "packages": {"numpy": ">=2.0,<3", "scikit-learn": ">=1.7.2,<2"},
 }
 
 
 class EnvironmentsTest(unittest.TestCase):
-    def test_every_allowlisted_scikit_learn_version_gets_an_environment(self):
+    def test_scikit_learn_gets_an_environment_at_each_end_of_its_range(self):
         found = export_corpus.environments(ALLOWLIST)
-        self.assertEqual(set(found), {"sk-1.8.0", "sk-1.9.1", "xgboost", "catboost", "onnx"})
-        self.assertIn("scikit-learn==1.9.1", found["sk-1.9.1"][1])
+        self.assertEqual(set(found), {"sk-1.7.2", "sk-newest", "xgboost", "catboost", "onnx"})
+        self.assertIn("scikit-learn==1.7.2", found["sk-1.7.2"][1])
+        self.assertIn("scikit-learn>=1.7.2,<2", found["sk-newest"][1])
 
     def test_the_newest_mlbundle_writes_the_corpus(self):
         requirement = export_corpus.environments(ALLOWLIST)["onnx"][1][0]
         self.assertEqual(requirement, "mlbundle[onnx,lock,schema]==0.3.10")
 
-    def test_packages_with_one_version_are_held_to_it(self):
-        self.assertEqual(export_corpus.constraints(ALLOWLIST), "numpy==2.5.4\n")
+    def test_every_package_is_held_to_its_range(self):
+        self.assertEqual(export_corpus.constraints(ALLOWLIST), "numpy>=2.0,<3\nscikit-learn>=1.7.2,<2\n")
+
+    def test_a_range_without_a_lower_bound_is_refused(self):
+        with self.assertRaises(ValueError):
+            export_corpus.lower_bound("<2")
+
+    def test_the_repository_allowlist_gives_scikit_learn_both_ends(self):
+        allowlist = export_corpus.tomllib.loads(export_corpus.ALLOWLIST.read_text(encoding="utf-8"))
+        self.assertTrue({"sk-newest", f"sk-{export_corpus.lower_bound(allowlist['packages']['scikit-learn'])}"}
+                        <= set(export_corpus.environments(allowlist)))
 
     def test_every_environment_has_its_exporter(self):
         for script, _ in export_corpus.environments(ALLOWLIST).values():
