@@ -154,7 +154,8 @@ fi
 
 echo "Stopping application writes for a coordinated local backup." >&2
 "${compose[@]}" stop frontend spring-app >/dev/null
-"${compose[@]}" up -d postgres rustfs >/dev/null
+# On a stopped host these start here, and pg_dump must not run before PostgreSQL accepts connections.
+"${compose[@]}" up -d --wait postgres rustfs >/dev/null
 
 db_user=$(env_value DB_ADMIN_USER)
 db_name=$(env_value DB_PROD)
