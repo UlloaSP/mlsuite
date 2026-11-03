@@ -21,7 +21,7 @@ import tomllib
 HERE = Path(__file__).resolve().parent
 ALLOWLIST = HERE.parents[1] / "backend" / "environment-allowlist.toml"
 # The builder's default RUNTIME_PACKAGE_MIN_AGE_DAYS.
-MIN_AGE_DAYS = 14
+MIN_AGE_DAYS = 7
 
 
 def version_key(version: str) -> tuple[int, ...]:
