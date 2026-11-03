@@ -26,7 +26,9 @@ type Props = {
   renderAnswers: (inferenceId: string, reviewerId: number, reviewerName: string) => ReactNode;
 };
 
-const route = getRouteApi("/protected/app/can-manage-reviews/inferences/$inferenceId/reviews/$reviewRunId/reviewers/$reviewerId");
+const route = getRouteApi(
+  "/protected/app/can-manage-reviews/inferences/$inferenceId/reviews/$reviewRunId/reviewers/$reviewerId",
+);
 
 /** One reviewer's assignment on an inference: its state and dates, their answers, and its actions. */
 export function InferenceReviewPage({ renderAnswers }: Props) {

@@ -41,7 +41,11 @@ export const reviewInboxItemQueryOptions = (
   });
 
 /** One inbox item, shown as `listed` (its row in the inbox) until the server's answer arrives. */
-export const useReviewInboxItem = (reviewId?: string, runId?: string, listed?: ReviewInboxItemDto) =>
+export const useReviewInboxItem = (
+  reviewId?: string,
+  runId?: string,
+  listed?: ReviewInboxItemDto,
+) =>
   useQuery({
     ...reviewInboxItemQueryOptions(useCurrentOrganizationId() ?? "none", reviewId, runId),
     placeholderData: listed,

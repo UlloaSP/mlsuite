@@ -14,7 +14,6 @@ import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppTabPanel, AppTabs } from "@/shared/ui/AppTabs";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 
-
 const route = getRouteApi("/protected/app/superadmin/admin/api-traffic");
 
 /**

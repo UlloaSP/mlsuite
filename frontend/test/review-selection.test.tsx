@@ -41,7 +41,7 @@ const flush = () =>
   });
 test("selects all matching identities beyond loaded pages and preserves selections outside the search", async () => {
   const request = vi.spyOn(http, "appFetch").mockImplementation(async (url, init) => {
-    const body = JSON.parse(String(init?.body));
+    const body = await new Response(init?.body).json();
     const matching = all.filter((item) => `${item.title} ${item.detail}`.includes(body.search));
     if (String(url).endsWith("/ids")) return matching.map((item) => item.id);
     const start = body.page * 24;

@@ -42,5 +42,10 @@ export const API_TRAFFIC_TABS = ["overview", "clients", "organizations"] as cons
 export const apiTrafficSearch = z.object({
   tab: choiceParam(API_TRAFFIC_TABS, "overview"),
   period,
-  ...catalogSearch(["all", "active", "suspended"], "all", ["updated", "name", "organization"], "updated"),
+  ...catalogSearch(
+    ["all", "active", "suspended"],
+    "all",
+    ["updated", "name", "organization"],
+    "updated",
+  ),
 });

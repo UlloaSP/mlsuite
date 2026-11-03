@@ -11,7 +11,9 @@ import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/wor
 import { OrganizationSettingsContent } from "@/features/workspace/components/OrganizationSettingsContent";
 import { organizationRouteErrorStatus } from "@/features/workspace/lib/organization-route-error";
 
-const route = getRouteApi("/protected/app/team-organization/workspace/organizations/$organizationId/settings");
+const route = getRouteApi(
+  "/protected/app/team-organization/workspace/organizations/$organizationId/settings",
+);
 
 export function OrganizationSettingsPage() {
   const { organizationId } = route.useParams();

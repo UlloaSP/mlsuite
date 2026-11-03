@@ -28,7 +28,6 @@ import { appButtonClass } from "@/shared/ui/button-styles";
 import { cx } from "@/shared/ui/cx";
 import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
 
-
 const route = getRouteApi("/protected/app/profile");
 
 /**

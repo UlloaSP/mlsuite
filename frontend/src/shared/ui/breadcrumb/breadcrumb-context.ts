@@ -24,7 +24,13 @@ export const isTrail = (
 export function usePageTrail(items: BreadcrumbTrailItem[]) {
   const publish = useContext(BreadcrumbPublishContext);
   // Labels are ReactNodes; the joined text/paths are a stable enough identity.
-  const signature = items.map((item) => `${String(item.label)}>${item.to ?? ""}`).join("|");
+  const signature = items
+    .map((item) => {
+      const label =
+        typeof item.label === "string" || typeof item.label === "number" ? item.label : "";
+      return `${label}>${item.to ?? ""}`;
+    })
+    .join("|");
 
   const latest = useRef(items);
   useEffect(() => {

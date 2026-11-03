@@ -146,7 +146,10 @@ describe("organization inference catalog", () => {
   });
 
   test("registers catalog and canonical detail as protected Inferences destinations", () => {
-    const routes = readFileSync(new URL("../src/app/router/model-routes.ts", import.meta.url), "utf8");
+    const routes = readFileSync(
+      new URL("../src/app/router/model-routes.ts", import.meta.url),
+      "utf8",
+    );
     const sidebar = readFileSync(
       new URL("../src/app/components/use-navigation-items.ts", import.meta.url),
       "utf8",
@@ -170,7 +173,9 @@ describe("organization inference catalog", () => {
       import.meta.url,
     );
 
-    expect(detail).toContain('route.useSearch({ select: (search) => search.section }) === "reviews"');
+    expect(detail).toContain(
+      'route.useSearch({ select: (search) => search.section }) === "reviews"',
+    );
     expect(detail).toContain('getElementById("reviews")?.scrollIntoView()');
     expect(detail).toContain("<InferenceReviewStatusSection");
     expect(detail).toContain("Loading inference…");

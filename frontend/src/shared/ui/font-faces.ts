@@ -46,7 +46,9 @@ const FACES: Record<Exclude<FontId, "system" | "system-mono">, () => Promise<unk
 /** Fetches the faces of `fonts` that are web fonts; the system stacks need none. */
 export const loadFontFaces = (fonts: readonly string[]) =>
   Promise.all(
-    fonts.map((font) => (Object.hasOwn(FACES, font) ? FACES[font as keyof typeof FACES]() : null)),
+    fonts
+      .filter((font): font is keyof typeof FACES => Object.hasOwn(FACES, font))
+      .map((font) => FACES[font]()),
   );
 
 /** The web fonts this module can load, for the catalog's tests. */

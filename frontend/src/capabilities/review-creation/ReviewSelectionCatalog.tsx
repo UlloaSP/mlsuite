@@ -53,7 +53,9 @@ export function ReviewSelectionCatalog<TId extends SelectionId>({
   const items = catalog.data?.items ?? [];
   const selectAll = useMutation({
     mutationFn: (typed: string) =>
-      queryClient.fetchQuery(selectionIdsQueryOptions(organizationId, { ...request, search: typed })),
+      queryClient.fetchQuery(
+        selectionIdsQueryOptions(organizationId, { ...request, search: typed }),
+      ),
     onSuccess: (ids) => onSelectAll([...new Set([...selectedIds, ...ids.map(idFromString)])]),
     meta: { errorHandledLocally: true },
   });
@@ -68,7 +70,10 @@ export function ReviewSelectionCatalog<TId extends SelectionId>({
         onSelectAll={() => selectAll.mutate(query.trim())}
         selectLabel={query.trim() ? "Select results" : "Select all"}
         selectDisabled={
-          selectAll.isPending || catalog.isLoading || Boolean(catalog.error) || !catalog.data?.totalItems
+          selectAll.isPending ||
+          catalog.isLoading ||
+          Boolean(catalog.error) ||
+          !catalog.data?.totalItems
         }
       />
       <AppTextField

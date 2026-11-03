@@ -58,7 +58,10 @@ describe("theme persistence", () => {
 
   it("reads preferences the boot script validated", async () => {
     localStorage.setItem("ui/color-scheme", JSON.stringify("dark"));
-    localStorage.setItem("ui/theme-selection", JSON.stringify({ light: "invalid", dark: "eshkra" }));
+    localStorage.setItem(
+      "ui/theme-selection",
+      JSON.stringify({ light: "invalid", dark: "eshkra" }),
+    );
     localStorage.setItem("ui/contrast", JSON.stringify(103));
     await bootWithSystemTheme(false);
 

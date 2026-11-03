@@ -18,7 +18,8 @@ export const userQueryOptions = () =>
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
     // No session is an answer, not a failure to retry.
-    retry: (count, error) => !(isHttpError(error) && [401, 403].includes(error.status)) && count < 2,
+    retry: (count, error) =>
+      !(isHttpError(error) && [401, 403].includes(error.status)) && count < 2,
   });
 
 export const useUser = () => useQuery(userQueryOptions());

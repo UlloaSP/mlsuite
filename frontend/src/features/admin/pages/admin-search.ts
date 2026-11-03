@@ -18,5 +18,10 @@ export const adminPurgesSearch = z.object(
 
 /** Accounts: `?q=…&filter=<role>&sort=…`. */
 export const adminUsersSearch = z.object(
-  catalogSearch(["all", "USER", "SUPERADMIN"], "all", ["current", "name", "newest", "oldest"], "current"),
+  catalogSearch(
+    ["all", "USER", "SUPERADMIN"],
+    "all",
+    ["current", "name", "newest", "oldest"],
+    "current",
+  ),
 );

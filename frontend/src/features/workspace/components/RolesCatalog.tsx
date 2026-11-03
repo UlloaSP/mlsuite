@@ -16,7 +16,9 @@ import type { RoleDefinitionDto, RoleTemplateDto } from "@/shared/api/openapi.ge
 
 export type RolesTab = "roles" | "templates" | "permissions";
 
-const route = getRouteApi("/protected/app/team-organization/workspace/organizations/$organizationId/roles");
+const route = getRouteApi(
+  "/protected/app/team-organization/workspace/organizations/$organizationId/roles",
+);
 
 export function RolesCatalog({
   organizationId,

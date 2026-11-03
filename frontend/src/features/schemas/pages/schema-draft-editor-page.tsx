@@ -34,7 +34,6 @@ import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChan
 import { SchemaFormPreview } from "@/features/schemas/components/SchemaFormPreview";
 import { SchemaCodeViewer } from "@/features/schemas/components/SchemaCodeViewer";
 
-
 const route = getRouteApi("/protected/app/can-edit-models/schemas/$schemaId/drafts/$draftId");
 
 export function SchemaDraftEditorPage() {

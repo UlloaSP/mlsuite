@@ -85,7 +85,12 @@ export function ApiClientPage() {
           }
         />
         <SuspensionNotice client={client.client} />
-        <AppTabs aria-label="Client" items={items} value={shown} onChange={(next) => updateSearch({ tab: next })}>
+        <AppTabs
+          aria-label="Client"
+          items={items}
+          value={shown}
+          onChange={(next) => updateSearch({ tab: next })}
+        >
           <AppTabPanel value={shown} className="flex min-h-0 flex-1 flex-col">
             {shown === "overview" ? (
               <UsagePanel

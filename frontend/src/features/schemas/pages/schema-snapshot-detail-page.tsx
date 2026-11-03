@@ -59,11 +59,13 @@ export function SchemaSnapshotDetailPage() {
             ) : null
           }
         />
-        {version ? <SchemaSnapshotPreviewPanel
+        {version ? (
+          <SchemaSnapshotPreviewPanel
             version={version}
             mode={search.view}
             onModeChange={(view) => updateSearch({ view })}
-          /> : null}
+          />
+        ) : null}
       </AppSurface>
       {schemaId ? (
         <>

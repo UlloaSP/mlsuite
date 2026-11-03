@@ -19,7 +19,9 @@ import { MemberTable } from "@/features/workspace/components/MemberTable";
 import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/workspace.queries";
 import { organizationRouteErrorStatus } from "@/features/workspace/lib/organization-route-error";
 
-const route = getRouteApi("/protected/app/team-organization/workspace/organizations/$organizationId/members");
+const route = getRouteApi(
+  "/protected/app/team-organization/workspace/organizations/$organizationId/members",
+);
 
 export function MembersPage() {
   const { organizationId } = route.useParams();

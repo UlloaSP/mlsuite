@@ -40,7 +40,9 @@ export const publicRunDisplayReports = (
   run: Pick<PublicRunDto, "reports">,
 ): PublicRunDisplayReport[] =>
   reportsOf(formSchema).flatMap((config, order): PublicRunDisplayReport[] => {
-    const key = String(config.mappedTo);
+    // A public report's mappedTo is the opaque key the server answers it under.
+    if (typeof config.mappedTo !== "string") return [];
+    const key = config.mappedTo;
     const answer = run.reports.find((report) => report.key === key);
     if (!answer || !isRecord(answer.payload)) return [];
     const payload = answer.payload;

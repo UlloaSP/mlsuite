@@ -180,7 +180,9 @@ test("inputs name what they feed and outputs their position, classes and target"
 });
 
 test("the overview ranks features by importance and names the pipeline", async () => {
-  const { host } = await mount(<ModelDetailTabs model={model} details={details} />, { route: "/models/12" });
+  const { host } = await mount(<ModelDetailTabs model={model} details={details} />, {
+    route: "/models/12",
+  });
 
   expect(host.textContent).toContain("2 inputs");
   expect(host.textContent).toContain("1 output, 2 classes");

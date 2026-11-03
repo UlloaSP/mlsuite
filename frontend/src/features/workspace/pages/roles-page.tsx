@@ -20,7 +20,9 @@ import { RolesCatalog, type RolesTab } from "@/features/workspace/components/Rol
 import type { RoleDefinitionDto, RoleTemplateDto } from "@/shared/api/openapi.gen";
 
 // react-doctor-disable-next-line react-doctor/prefer-useReducer -- Dialog, tab, and search state are separate controls with separate lifetimes.
-const route = getRouteApi("/protected/app/team-organization/workspace/organizations/$organizationId/roles");
+const route = getRouteApi(
+  "/protected/app/team-organization/workspace/organizations/$organizationId/roles",
+);
 
 export function RolesPage() {
   const { organizationId } = route.useParams();

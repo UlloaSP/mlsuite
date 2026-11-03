@@ -11,7 +11,9 @@ import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/wor
 import { organizationRouteErrorStatus } from "@/features/workspace/lib/organization-route-error";
 import { InvitationCatalog } from "@/features/workspace/components/InvitationCatalog";
 
-const route = getRouteApi("/protected/app/team-organization/workspace/organizations/$organizationId/invitations");
+const route = getRouteApi(
+  "/protected/app/team-organization/workspace/organizations/$organizationId/invitations",
+);
 
 export function InvitationsPage() {
   const { organizationId } = route.useParams();

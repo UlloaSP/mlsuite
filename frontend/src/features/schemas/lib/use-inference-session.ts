@@ -200,7 +200,7 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
       })
       .then(
         () => null,
-        (error: unknown) => error,
+        (error: unknown) => (error instanceof Error ? error.message : "The server did not answer."),
       );
     // Runs not saved, by failure or by a batch that never answered, can be saved again.
     setEntries((current) =>
@@ -212,10 +212,11 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
     if (failure !== null) {
       const left = pending.length - saved.size;
       toast.error(`Could not save ${left} inference${left === 1 ? "" : "s"}`, {
-        description: failure instanceof Error ? failure.message : String(failure),
+        description: failure,
       });
     }
-    if (saved.size > 0) toast.success(saved.size === 1 ? "Inference saved" : `${saved.size} inferences saved`);
+    if (saved.size > 0)
+      toast.success(saved.size === 1 ? "Inference saved" : `${saved.size} inferences saved`);
   }, [entries, createRuns, setEntries]);
 
   const rename = useCallback((key: string, name: string) => update(key, { name }), [update]);

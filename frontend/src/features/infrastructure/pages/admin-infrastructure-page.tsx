@@ -36,7 +36,6 @@ import { useActionDialog } from "@/shared/ui/use-action-dialog";
 
 type InfraTab = (typeof INFRA_TABS)[number];
 
-
 const route = getRouteApi("/protected/app/superadmin/admin/infrastructure");
 
 // Xterm and its stylesheet load only when the Terminal tab is opened.

@@ -40,7 +40,9 @@ import type {
   SchemaModelBindingDto,
 } from "@/shared/api/openapi.gen";
 
-const route = getRouteApi("/protected/app/can-edit-models/schemas/$schemaId/drafts/$draftId/conflicts");
+const route = getRouteApi(
+  "/protected/app/can-edit-models/schemas/$schemaId/drafts/$draftId/conflicts",
+);
 
 export function SchemaDraftConflictPage() {
   const { schemaId, draftId } = route.useParams();

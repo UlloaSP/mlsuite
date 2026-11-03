@@ -70,7 +70,7 @@ const toReportResult = (
   report: ReportConfig,
   answered: readonly PublicRunReport[],
 ): ReportResult => {
-  const mappedTo = String(report.mappedTo);
+  const mappedTo = typeof report.mappedTo === "string" ? report.mappedTo : "";
   const answer = answered.find((item) => item.key === mappedTo);
   const normalized = answer && toPublicReportPayload(report, answer.payload);
   if (!normalized) return { backend: BACKEND, mappedTo, status: "skipped", reason: "No result" };
@@ -121,7 +121,8 @@ export const mountPublicRunForm = ({
           request.signal,
         );
         shown = answered ?? shown;
-        if (answered && host && normalized.reports.length > 0) showRunResults(host);
+        // Not awaited: MLForm settles the tab switch only after this submit returns.
+        if (answered && host && normalized.reports.length > 0) void showRunResults(host);
       } catch (error) {
         shown = [];
         onRunError?.(error);

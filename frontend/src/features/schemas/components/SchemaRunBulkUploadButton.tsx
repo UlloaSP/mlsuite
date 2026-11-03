@@ -16,7 +16,6 @@ type Props = {
   version: SchemaVersionDto;
 };
 
-
 const route = getRouteApi("/protected/app/can-view-models/predict/$bookmarkId");
 
 /**

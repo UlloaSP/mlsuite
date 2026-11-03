@@ -23,7 +23,9 @@ test("an empty list accepts dropped files anywhere in its area", async () => {
   const drop = new Event("drop", { bubbles: true, cancelable: true });
   Object.defineProperty(drop, "dataTransfer", { value: { files: [file] } });
 
-  act(() => area.dispatchEvent(drop));
+  act(() => {
+    area.dispatchEvent(drop);
+  });
 
   expect(onFiles).toHaveBeenCalledWith([file]);
 });
@@ -32,8 +34,12 @@ test("clicking or pressing Enter on the area opens the file browser", async () =
   const { area, input } = await render(vi.fn());
   const browse = vi.spyOn(input, "click");
 
-  act(() => area.click());
-  act(() => area.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+  act(() => {
+    area.click();
+  });
+  act(() => {
+    area.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+  });
 
   expect(browse).toHaveBeenCalledTimes(2);
   expect(area.tabIndex).toBe(0);

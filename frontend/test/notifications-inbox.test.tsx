@@ -70,7 +70,7 @@ const answer = (status: number, body?: unknown) =>
   });
 
 const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-  const url = new URL(String(input));
+  const url = new URL(input instanceof Request ? input.url : input);
   const method = init?.method ?? "GET";
   requests.push({ method, path: `${url.pathname}${url.search}` });
   if (failing.has(url.pathname)) return answer(500, { status: 500, message: "The server failed" });

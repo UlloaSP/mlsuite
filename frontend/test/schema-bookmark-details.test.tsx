@@ -62,7 +62,7 @@ const requests = () =>
   fetchMock.mock.calls.map(([url, init]) => ({
     method: init?.method,
     path: new URL(String(url)).pathname,
-    body: JSON.parse(String(init?.body)) as unknown,
+    body: typeof init?.body === "string" ? (JSON.parse(init.body) as unknown) : undefined,
   }));
 const dialog = () => document.body.querySelector<HTMLElement>('[role="dialog"]');
 const nameField = () => dialog()!.querySelector<HTMLInputElement>('input[name="name"]')!;

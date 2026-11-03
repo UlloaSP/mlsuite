@@ -53,7 +53,9 @@ test.each(["DRAFT", "CONFLICT", "PUBLISHED"])(
   "%s change exposes only supported editing actions",
   async (status) => {
     mocks.draft = { ...mocks.draft, status };
-    const { host: container } = await mount(<SchemaDraftEditorRoute />, { route: "/schemas/7/drafts/12" });
+    const { host: container } = await mount(<SchemaDraftEditorRoute />, {
+      route: "/schemas/7/drafts/12",
+    });
     const published = status === "PUBLISHED";
     expect(Boolean(container.querySelector('[aria-label="Editable schema"]'))).toBe(!published);
     expect(Boolean(container.querySelector('[data-testid="readonly"]'))).toBe(published);

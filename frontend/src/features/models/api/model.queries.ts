@@ -41,7 +41,10 @@ export const useModel = (modelId?: number | string) => {
  * What the model's bundle says about it and the environment it runs in. It changes only when the
  * environment becomes ready, and the model's query refreshes it then.
  */
-export const modelDetailsQueryOptions = (organizationId: number | string, modelId: number | string) =>
+export const modelDetailsQueryOptions = (
+  organizationId: number | string,
+  modelId: number | string,
+) =>
   queryOptions({
     queryKey: modelKeys.bundle(organizationId, modelId),
     queryFn: ({ signal }) => getModelDetails(modelId, signal),

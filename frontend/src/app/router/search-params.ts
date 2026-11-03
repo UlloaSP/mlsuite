@@ -14,7 +14,10 @@ export const parseSearch = (search: string): Record<string, string> =>
 export const stringifySearch = (values: Record<string, unknown>): string => {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(values)) {
-    if (value !== undefined && value !== null) params.set(key, String(value));
+    // Validated search values are text; numbers and booleans are written as text too.
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      params.set(key, String(value));
+    }
   }
   const search = params.toString();
   return search ? `?${search}` : "";

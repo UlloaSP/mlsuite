@@ -9,7 +9,9 @@ import { AppToolbar } from "@/shared/ui/AppToolbar";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { usePermissionCatalog } from "@/features/workspace/api/workspace-catalog-queries";
 
-const route = getRouteApi("/protected/app/team-organization/workspace/organizations/$organizationId/roles");
+const route = getRouteApi(
+  "/protected/app/team-organization/workspace/organizations/$organizationId/roles",
+);
 
 export function PermissionCatalog({ organizationId }: { organizationId: number }) {
   const filters = useSearchFilters(route.useSearch(), rolesSearch);

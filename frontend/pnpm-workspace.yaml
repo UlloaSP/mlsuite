@@ -14,7 +14,7 @@ overrides:
 # JSON with the JavaScript engine: the patch builds the core highlighter with that engine and knows
 # only JSON's grammar. Recreate it with `vp exec pnpm patch @pierre/diffs@<version>` when upgrading.
 patchedDependencies:
-  '@pierre/diffs@1.4.3': patches/@pierre__diffs@1.4.3.patch
+  "@pierre/diffs@1.4.3": patches/@pierre__diffs@1.4.3.patch
 
 #  - react-doctor@0.8.1
 #trustPolicy: no-downgrade

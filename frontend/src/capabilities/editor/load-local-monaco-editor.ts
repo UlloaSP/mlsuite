@@ -11,13 +11,15 @@ export function loadLocalMonacoEditor(): Promise<MonacoEditorModule> {
     import("@monaco-editor/react"),
     import("monaco-editor/editor/editor.worker.js?worker"),
     import("monaco-editor/language/json/json.worker.js?worker"),
-  ]).then(([{ monaco }, { Editor, loader }, { default: EditorWorker }, { default: JsonWorker }]) => {
-    globalThis.MonacoEnvironment = {
-      getWorker: (_moduleId, label) => (label === "json" ? new JsonWorker() : new EditorWorker()),
-    };
-    loader.config({ monaco });
-    return { default: Editor };
-  });
+  ]).then(
+    ([{ monaco }, { Editor, loader }, { default: EditorWorker }, { default: JsonWorker }]) => {
+      globalThis.MonacoEnvironment = {
+        getWorker: (_moduleId, label) => (label === "json" ? new JsonWorker() : new EditorWorker()),
+      };
+      loader.config({ monaco });
+      return { default: Editor };
+    },
+  );
 
   return editorModulePromise;
 }

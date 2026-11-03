@@ -18,7 +18,9 @@ import { InvitationCard } from "./InvitationCard";
 
 const statuses = ["ALL", "PENDING", "ACCEPTED", "EXPIRED", "REVOKED"];
 
-const route = getRouteApi("/protected/app/team-organization/workspace/organizations/$organizationId/invitations");
+const route = getRouteApi(
+  "/protected/app/team-organization/workspace/organizations/$organizationId/invitations",
+);
 
 export function InvitationCatalog({
   organizationId,

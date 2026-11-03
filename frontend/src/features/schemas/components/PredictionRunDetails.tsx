@@ -31,7 +31,6 @@ import {
 import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
 import { questionnaireConfigError } from "@/capabilities/prediction-runtime/feedback/questionnaire-config";
 
-
 /** A tab's own scroll area inside the fixed-height page. */
 function ScrollPanel({ children }: { children: ReactNode }) {
   return (
