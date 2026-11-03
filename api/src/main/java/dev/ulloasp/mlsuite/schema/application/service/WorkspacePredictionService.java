@@ -36,8 +36,8 @@ import lombok.RequiredArgsConstructor;
  * refuses, or a runtime that fails, gives a failed result, sealed the same way; among many records
  * each succeeds or fails on its own.
  *
- * <p>This class is deliberately not transactional, and its endpoints are left out of open-in-view
- * (see OpenInViewConfig): the run first takes its member's place in the workspace share's queue,
+ * <p>This class is deliberately not transactional (and open-in-view is off): the run first takes
+ * its member's place in the workspace share's queue,
  * so a run that cannot be served is turned away before any database work; then the plan is read
  * and returned, and the run waits for a slot and calls the runtime with no connection held. A
  * batch takes one place and one slot, like a single record.

@@ -28,8 +28,8 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationS
 import lombok.RequiredArgsConstructor;
 
 /**
- * Runtime calls of workspace members. Nothing here is transactional and these endpoints are left
- * out of open-in-view (see OpenInViewConfig): the caller and model are resolved in short reads,
+ * Runtime calls of workspace members. Nothing here is transactional (and open-in-view is off):
+ * the caller and model are resolved in short reads,
  * and the runtime is called in a {@link WorkspaceRuntimeSlots} slot with no connection held. A
  * call takes its member's place in the share's queue before any database work.
  */

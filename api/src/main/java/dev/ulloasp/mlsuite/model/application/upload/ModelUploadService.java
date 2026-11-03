@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Turns an uploaded bundle into a model, sent once by the browser. Nothing here is transactional
- * and its endpoint is left out of open-in-view (see OpenInViewConfig), so no connection is held
+ * (and open-in-view is off), so no connection is held
  * while the runtime reads the bundle, which can take far longer than a prediction: the member's
  * right to create it is checked in a short read, the runtime reads the bundle in a slot of the
  * workspace share, streamed from the upload's temporary file, and the model is then stored in a
