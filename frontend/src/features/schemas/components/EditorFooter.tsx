@@ -3,7 +3,6 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { m as motion } from "motion/react";
 import { useSelector } from "@tanstack/react-store";
 import { useState } from "react";
 import { useEditorAtoms } from "@/features/schemas/lib/editor-atoms";
@@ -15,18 +14,14 @@ export function EditorFooter() {
   const [expandedRequested, setExpandedRequested] = useState(false);
   const expanded = expandedRequested && schemaErrors.length > 0;
 
-  const closedH = "2rem";
-  const openedH = "30vh";
-
   return (
-    <motion.div
-      layout="size"
-      className="w-full shrink-0 z-30 flex flex-col"
-      style={{ height: expanded ? openedH : closedH }}
-      transition={{ layout: { duration: 0.25 } }}
+    <div
+      className={`z-30 flex w-full shrink-0 flex-col transition-[height] duration-(--duration-base) ease-(--ease-emphasized) motion-reduce:transition-none ${
+        expanded ? "h-[30vh]" : "h-8"
+      }`}
     >
       <EditorErrorBar expanded={expanded} setExpanded={setExpandedRequested} />
       {expanded && <EditorErrorPanel />}
-    </motion.div>
+    </div>
   );
 }
