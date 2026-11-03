@@ -54,6 +54,8 @@ export default defineConfig({
   test: { maxWorkers: 4 },
   build: {
     outDir: "./dist",
+    // A font stays a file: the CSP (nginx.conf) loads fonts from 'self' only, never data: URLs.
+    assetsInlineLimit: (file) => (file.endsWith(".woff2") ? false : undefined),
     rolldownOptions: {
       // The plugin sandbox is a document of its own; only it loads plugin code and its compiler.
       input: {
