@@ -11,8 +11,10 @@ COPY src ./src
 
 RUN uv sync --frozen --no-dev
 
-# The builder installs environments with this uv; it knows the CPython releases the allowlist names.
-FROM ghcr.io/astral-sh/uv:0.13.5@sha256:32a7bb39b496babbd997b0a39a4d66c126bdaf5661b302bf6f06abda8deca6ff AS uv
+# The builder installs environments with this uv, and only the CPython releases it can download
+# are accepted: upgrading it is how a new patch release inside the allowlist's range becomes
+# installable (0.13.6 adds CPython 3.14.10).
+FROM ghcr.io/astral-sh/uv:0.13.6@sha256:af22a52f5eafef3d78e551599d405c02df61919d18028f0cea8eda93bc9986d0 AS uv
 
 # Chainguard's free python:latest moved to 3.15, which the locked ML wheels do not support yet.
 # Install 3.14 on wolfi-base instead so package upgrades still reach the runtime.

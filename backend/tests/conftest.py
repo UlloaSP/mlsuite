@@ -50,8 +50,16 @@ def unrestricted_allowlist(request, monkeypatch):
         monkeypatch.setattr(policy, "allowlist", _Unrestricted)
 
 
+@pytest.fixture(autouse=True)
+def downloadable_python(request, monkeypatch):
+    """Any CPython counts as downloadable, whatever uv this machine has (test_policy asks the real one)."""
+    if "real_uv" not in request.keywords:
+        monkeypatch.setattr(policy, "python_installable", lambda _version: True)
+
+
 def pytest_configure(config) -> None:
     config.addinivalue_line("markers", "allowlist: the test applies the allowlist it sets itself")
+    config.addinivalue_line("markers", "real_uv: the test asks this machine's uv which CPython it can download")
 
 
 def pytest_sessionfinish() -> None:

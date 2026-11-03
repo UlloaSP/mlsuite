@@ -28,7 +28,7 @@ def lock() -> mlbundle.EnvironmentLock:
 def _allowlist(lock: mlbundle.EnvironmentLock, skip: str = "") -> policy.Allowlist:
     packages = "".join(f'{p.name} = "=={p.version}"\n' for p in lock.packages if p.name != skip)
     return parse_allowlist(
-        f'python = ["{lock.python_version}"]\n[mlbundle]\n"0.3.0" = "{DIGEST}"\n[packages]\n{packages}'
+        f'python = "=={lock.python_version}"\n[mlbundle]\n"0.3.0" = "{DIGEST}"\n[packages]\n{packages}'
     )
 
 

@@ -100,9 +100,11 @@ every feature is a number field.
 Each model runs in its own environment. A bundle from mlbundle 0.3 or later carries
 `pylock.toml`, the exact Python and distributions it was trained with, and its
 environment holds exactly those versions. MLsuite accepts a bundle only when
-`backend/environment-allowlist.toml` names that Python and that mlbundle release
-exactly, and every locked package at a version inside its range: packages with
-native code are held to the major line that was validated, pure-Python packages
+`backend/environment-allowlist.toml` grants that Python (a range, and the uv
+`backend/Dockerfile` pins must be able to download it), names that mlbundle
+release exactly, and grants every locked package at a version inside its range:
+packages with native code are held to the major line that was validated,
+pure-Python packages
 need only a lower bound, and pre-releases are never installed. Before installing,
 the builder checks each release on the package index and refuses one published
 fewer than 7 days ago (`RUNTIME_PACKAGE_MIN_AGE_DAYS`), yanked, or with a known
