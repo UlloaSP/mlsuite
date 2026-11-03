@@ -49,6 +49,6 @@ PACKAGE_INDEX_URL = os.environ.get("RUNTIME_PACKAGE_INDEX_URL") or "https://pypi
 PACKAGE_METADATA_URL = (os.environ.get("RUNTIME_PACKAGE_METADATA_URL") or "https://pypi.org/pypi").rstrip("/")
 # A release younger than this is not installed yet: a hijacked upload is usually found and yanked
 # within days.
-PACKAGE_MIN_AGE_DAYS = _positive_int("RUNTIME_PACKAGE_MIN_AGE_DAYS", 14)
+PACKAGE_MIN_AGE_DAYS = _positive_int("RUNTIME_PACKAGE_MIN_AGE_DAYS", 7)
 UV_BINARY = os.environ.get("RUNTIME_UV") or "uv"
 VENV_PYTHON = Path("Scripts/python.exe") if sys.platform == "win32" else Path("bin/python")

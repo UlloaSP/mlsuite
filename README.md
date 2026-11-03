@@ -105,7 +105,7 @@ exactly, and every locked package at a version inside its range: packages with
 native code are held to the major line that was validated, pure-Python packages
 need only a lower bound, and pre-releases are never installed. Before installing,
 the builder checks each release on the package index and refuses one published
-fewer than 14 days ago (`RUNTIME_PACKAGE_MIN_AGE_DAYS`), yanked, or with a known
+fewer than 7 days ago (`RUNTIME_PACKAGE_MIN_AGE_DAYS`), yanked, or with a known
 vulnerability. It installs the environment once (models needing the same files
 share it) and loads the model there before anyone runs it. Until then the model is
 *preparing*; a bundle that cannot load or predict its samples there is *failed*

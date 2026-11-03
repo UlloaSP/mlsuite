@@ -146,7 +146,7 @@ services:
       RUNTIME_BUILDER_PORT: ${RUNTIME_BUILDER_PORT}
       RUNTIME_PACKAGE_INDEX_URL: ${RUNTIME_PACKAGE_INDEX_URL:-https://pypi.org/simple}
       RUNTIME_PACKAGE_METADATA_URL: ${RUNTIME_PACKAGE_METADATA_URL:-https://pypi.org/pypi}
-      RUNTIME_PACKAGE_MIN_AGE_DAYS: ${RUNTIME_PACKAGE_MIN_AGE_DAYS:-14}
+      RUNTIME_PACKAGE_MIN_AGE_DAYS: ${RUNTIME_PACKAGE_MIN_AGE_DAYS:-7}
     volumes:
       - runtime_environments:/var/lib/mlsuite/environments
     mem_limit: ${RUNTIME_BUILDER_MEMORY_LIMIT:-2g}

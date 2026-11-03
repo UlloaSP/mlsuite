@@ -7,7 +7,7 @@
 # Pre-releases are never installed.
 #
 # Before installing, the builder also checks each locked release on the package index: it must
-# have been published at least RUNTIME_PACKAGE_MIN_AGE_DAYS ago (14 by default), not be yanked,
+# have been published at least RUNTIME_PACKAGE_MIN_AGE_DAYS ago (7 by default), not be yanked,
 # and have no known vulnerability. Then the model is loaded and predicts its samples on this host,
 # so a wheel this CPU cannot run (shelob's CPUs lack AVX: SIGILL) fails while it is prepared,
 # before anyone predicts with it.
