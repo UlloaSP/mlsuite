@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
+import "@/shared/ui/default-font-faces";
 import { AppProviders } from "./providers/AppProviders";
 import { createAppQueryClient } from "./providers/query-client";
 import { createAppRouter } from "./router/routes";

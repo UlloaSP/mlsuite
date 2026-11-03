@@ -52,7 +52,9 @@ export const workspaceRoutes = {
         prefetchForMember(queryClient, async (organizationId) => {
           // Any other address is the page's own "not found".
           if (Number.isInteger(Number(clientId))) {
-            await queryClient.prefetchQuery(apiClientQueryOptions(organizationId, Number(clientId)));
+            await queryClient.prefetchQuery(
+              apiClientQueryOptions(organizationId, Number(clientId)),
+            );
           }
         }),
     ),

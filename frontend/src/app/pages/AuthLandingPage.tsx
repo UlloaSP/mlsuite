@@ -13,11 +13,7 @@ import { EXPLORE_PATH } from "@/app/components/explore-navigation";
 import { isPublicPage } from "@/app/router/public-routes";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import type { AuthRequest, LoginRequest } from "@/shared/api/openapi.gen";
-import {
-  safeReturnTo,
-  useLogin,
-  useRegister,
-} from "@/capabilities/workspace-context/session";
+import { safeReturnTo, useLogin, useRegister } from "@/capabilities/workspace-context/session";
 import { appHref } from "@/shared/lib/app-href";
 import { useSearchUpdate } from "@/shared/lib/use-search-update";
 import { AuthAccessOverlay } from "./auth-landing/AuthAccessOverlay";

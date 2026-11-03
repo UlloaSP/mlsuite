@@ -4,12 +4,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { PREDICTION_THEME_VARIABLES } from "@/capabilities/prediction-runtime/mlform/headless-prediction";
+import { loadFontFaces } from "@/shared/ui/font-faces";
+import { typographyAtom } from "@/shared/ui/typography-state";
 import type { SandboxTheme } from "./sandbox-protocol";
 
 /** What a sandboxed form reads: the design system's tokens and the interface's text size. */
 const THEME_VARIABLES = [...PREDICTION_THEME_VARIABLES, "--ui-font-size"];
-
-const FONTS_STYLESHEET = 'link[rel="stylesheet"][href^="https://fonts.googleapis.com/"]';
 
 /** The app's current mode, the resolved values of the tokens a sandboxed form reads, and fonts. */
 export const readAppTheme = (root: HTMLElement = document.documentElement): SandboxTheme => {
@@ -19,7 +19,8 @@ export const readAppTheme = (root: HTMLElement = document.documentElement): Sand
     const value = style.getPropertyValue(name).trim();
     if (value) tokens[name] = value;
   }
-  const fonts = document.querySelector<HTMLLinkElement>(FONTS_STYLESHEET)?.href;
+  const { interfaceFont, monospaceFont } = typographyAtom.get();
+  const fonts = { interface: interfaceFont, monospace: monospaceFont };
   return { mode: root.classList.contains("dark") ? "dark" : "light", tokens, fonts };
 };
 
@@ -33,15 +34,10 @@ export const observeAppAppearance = (onChange: () => void): (() => void) => {
   return () => observer.disconnect();
 };
 
-/** Gives the sandbox document the app's tokens, color scheme and font stylesheet. */
+/** Gives the sandbox document the app's tokens, color scheme and the faces of its fonts. */
 export const applySandboxTheme = (theme: SandboxTheme, root: HTMLElement) => {
   for (const [name, value] of Object.entries(theme.tokens)) root.style.setProperty(name, value);
   root.style.colorScheme = theme.mode;
   root.classList.toggle("dark", theme.mode === "dark");
-  if (theme.fonts && !document.querySelector(FONTS_STYLESHEET)) {
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = theme.fonts;
-    document.head.append(link);
-  }
+  void loadFontFaces([theme.fonts.interface, theme.fonts.monospace]);
 };

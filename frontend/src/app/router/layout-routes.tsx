@@ -4,12 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { QueryClient } from "@tanstack/react-query";
-import {
-  createRootRouteWithContext,
-  createRoute,
-  notFound,
-  Outlet,
-} from "@tanstack/react-router";
+import { createRootRouteWithContext, createRoute, notFound, Outlet } from "@tanstack/react-router";
 import { AppShellFrame } from "@/app/layouts/AppShellLayout";
 import { SessionFrameLayout } from "@/app/layouts/SessionFrameLayout";
 import { RequireReviewAccess } from "@/features/reviews/components/RequireReviewAccess";

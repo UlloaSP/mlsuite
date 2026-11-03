@@ -31,9 +31,7 @@ export const superadminRoutes = superadminRoute.addChildren([
     ),
   ),
   searchPage(superadminRoute, "admin/api-traffic", apiTrafficSearch, () =>
-    import("@/features/api-access/pages/admin-api-traffic-page").then(
-      (m) => m.AdminApiTrafficPage,
-    ),
+    import("@/features/api-access/pages/admin-api-traffic-page").then((m) => m.AdminApiTrafficPage),
   ),
   searchPage(superadminRoute, "admin/audit", auditSearch, () =>
     import("@/features/workspace/pages/admin-audit-log-page").then((m) => m.AdminAuditLogPage),

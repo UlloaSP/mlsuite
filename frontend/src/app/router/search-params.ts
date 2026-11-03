@@ -19,4 +19,3 @@ export const stringifySearch = (values: Record<string, unknown>): string => {
   const search = params.toString();
   return search ? `?${search}` : "";
 };
-

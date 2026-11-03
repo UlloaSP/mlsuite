@@ -6,7 +6,20 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from "node:path";
-import { defineConfig } from "vite-plus";
+import { defineConfig, type Plugin } from "vite-plus";
+
+/**
+ * Fontsource's static families also list a .woff file after each .woff2. Every browser the app
+ * supports reads woff2, so the .woff fallback is left out of the stylesheets and the build.
+ */
+const woff2Only: Plugin = {
+  name: "mlsuite:woff2-only",
+  enforce: "pre",
+  transform(code, id) {
+    if (!/\/@fontsource\/.+\.css$/.test(id)) return null;
+    return code.replace(/,\s*url\([^)]*\.woff\) format\('woff'\)/g, "");
+  },
+};
 
 // Generated from api/openapi.json by `vp run api:types`; test/openapi-types.test.ts keeps it current.
 const API_TYPES = "src/shared/api/openapi.gen.ts";
@@ -37,7 +50,7 @@ export default defineConfig({
   // The React Compiler (oxc's Rust port, no Babel) memoizes components and hooks, so code need
   // not do it by hand. `{ logDiagnostics: true }` names the code it skips: fix that code rather
   // than opt it out. Only TanStack Virtual's useVirtualizer() callers are skipped, by design.
-  plugins: [react({ compiler: true }), tailwindcss()],
+  plugins: [react({ compiler: true }), tailwindcss(), woff2Only],
   test: { maxWorkers: 4 },
   build: {
     outDir: "./dist",

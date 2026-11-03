@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { config } from "zod";
 import { startPluginSandbox } from "@/capabilities/prediction-runtime/sandbox/sandbox-guest";
+import "@/shared/ui/default-font-faces";
 import "./plugin-sandbox.css";
 
 // The sandbox's CSP allows no eval; without this, Zod's probe for it is reported as a violation.

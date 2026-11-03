@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vite-plus/test";
 import {
   INTERFACE_FONTS,
@@ -6,12 +6,22 @@ import {
   MONOSPACE_FONTS,
   MONOSPACE_STACKS,
 } from "@/shared/ui/font-catalog";
+import { WEB_FONT_IDS } from "@/shared/ui/font-faces";
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 const bootScript = read("../public/appearance-boot.js");
-const fontStylesheet = /href="(https:\/\/fonts\.googleapis\.com\/css2\?[^"]+)"/.exec(
-  read("../index.html"),
-)?.[1];
+// Every family the installed Fontsource packages declare.
+const selfHostedFamilies = new Set(
+  ["@fontsource", "@fontsource-variable"].flatMap((scope) =>
+    readdirSync(new URL(`../node_modules/${scope}/`, import.meta.url)).flatMap((name) => {
+      const css = readdirSync(new URL(`../node_modules/${scope}/${name}/`, import.meta.url))
+        .filter((file) => file.endsWith(".css"))
+        .map((file) => read(`../node_modules/${scope}/${name}/${file}`))
+        .join("\n");
+      return [...css.matchAll(/font-family: '([^']+)'/g)].map(([, family]) => family);
+    }),
+  ),
+);
 
 const bootStacks = (name: string) => {
   const body = new RegExp(`const ${name} = \\{([\\s\\S]*?)\\n  \\};`).exec(bootScript)?.[1] ?? "";
@@ -29,14 +39,14 @@ describe("font catalog", () => {
     expect(bootStacks("monospaceStacks")).toEqual(MONOSPACE_STACKS);
   });
 
-  it("declares every web family in the preloaded font stylesheet", () => {
-    const families = [...INTERFACE_FONTS, ...MONOSPACE_FONTS]
-      .map(({ stack }) => /^'([^']+)'/.exec(stack)?.[1])
-      .filter((family) => family !== undefined);
+  it("self-hosts the faces of every web family a preset names", () => {
+    const webFonts = [...INTERFACE_FONTS, ...MONOSPACE_FONTS].filter(({ stack }) =>
+      stack.startsWith("'"),
+    );
 
-    expect(families.length).toBeGreaterThan(0);
-    for (const family of families) {
-      expect(fontStylesheet).toContain(`family=${family.replaceAll(" ", "+")}:`);
+    expect(webFonts.map(({ value }) => value).sort()).toEqual([...WEB_FONT_IDS].sort());
+    for (const { stack } of webFonts) {
+      expect(selfHostedFamilies).toContain(/^'([^']+)'/.exec(stack)?.[1]);
     }
   });
 });

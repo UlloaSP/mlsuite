@@ -30,23 +30,23 @@
   const contrasts = [100, 105, 110, 115, 120, 125];
   // Mirrors src/shared/ui/font-catalog.ts; test/font-catalog.test.ts keeps them in sync.
   const interfaceStacks = {
-    manrope: "'Manrope', 'Trebuchet MS', sans-serif",
-    inter: "'Inter', Arial, sans-serif",
-    geist: "'Geist', Arial, sans-serif",
-    "ibm-plex-sans": "'IBM Plex Sans', Arial, sans-serif",
-    "source-sans-3": "'Source Sans 3', Verdana, sans-serif",
-    figtree: "'Figtree', Arial, sans-serif",
-    "dm-sans": "'DM Sans', Arial, sans-serif",
-    "atkinson-hyperlegible": "'Atkinson Hyperlegible Next', Verdana, sans-serif",
+    manrope: "'Manrope Variable', 'Trebuchet MS', sans-serif",
+    inter: "'Inter Variable', Arial, sans-serif",
+    geist: "'Geist Variable', Arial, sans-serif",
+    "ibm-plex-sans": "'IBM Plex Sans Variable', Arial, sans-serif",
+    "source-sans-3": "'Source Sans 3 Variable', Verdana, sans-serif",
+    figtree: "'Figtree Variable', Arial, sans-serif",
+    "dm-sans": "'DM Sans Variable', Arial, sans-serif",
+    "atkinson-hyperlegible": "'Atkinson Hyperlegible Next Variable', Verdana, sans-serif",
     system: "system-ui, -apple-system, 'Segoe UI', sans-serif",
   };
   const monospaceStacks = {
     "dm-mono": "'DM Mono', Consolas, ui-monospace, monospace",
-    "jetbrains-mono": "'JetBrains Mono', Consolas, ui-monospace, monospace",
-    "geist-mono": "'Geist Mono', Consolas, ui-monospace, monospace",
+    "jetbrains-mono": "'JetBrains Mono Variable', Consolas, ui-monospace, monospace",
+    "geist-mono": "'Geist Mono Variable', Consolas, ui-monospace, monospace",
     "ibm-plex-mono": "'IBM Plex Mono', Consolas, ui-monospace, monospace",
-    "fira-code": "'Fira Code', Consolas, ui-monospace, monospace",
-    "source-code-pro": "'Source Code Pro', Consolas, ui-monospace, monospace",
+    "fira-code": "'Fira Code Variable', Consolas, ui-monospace, monospace",
+    "source-code-pro": "'Source Code Pro Variable', Consolas, ui-monospace, monospace",
     "system-mono": "ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Menlo, Consolas, monospace",
   };
   const interfaceFonts = Object.keys(interfaceStacks);
