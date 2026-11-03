@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { mutationOptions, useMutation, useQuery } from "@tanstack/react-query";
+import { mutationOptions, queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { organizationQueryKey } from "@/shared/api/organization-query-key";
 import type { CreatePredictionJobRequest, PredictionJobDto } from "@/shared/api/openapi.gen";
@@ -26,27 +26,33 @@ export const isOpenJob = (job: PredictionJobDto) =>
   job.status === "QUEUED" || job.status === "RUNNING";
 
 /** A bookmark's bulk jobs, newest first, read again while any of them is still open. */
-export function usePredictionJobs(bookmarkId: string, enabled = true) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery({
+export const predictionJobsQueryOptions = (organizationId: number | string, bookmarkId: string) =>
+  queryOptions({
     queryKey: jobsKey(organizationId, bookmarkId),
     queryFn: ({ signal }) => getPredictionJobs(bookmarkId, signal),
-    enabled,
     meta: { errorHandledLocally: true },
     refetchInterval: (query) =>
       query.state.data?.some(isOpenJob) ? PREDICTION_JOB_POLL_MS : false,
   });
-}
 
-export function usePredictionJobFailures(jobId: number, enabled: boolean) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery({
+export const usePredictionJobs = (bookmarkId: string, enabled = true) =>
+  useQuery({
+    ...predictionJobsQueryOptions(useCurrentOrganizationId() ?? "none", bookmarkId),
+    enabled,
+  });
+
+export const predictionJobFailuresQueryOptions = (organizationId: number | string, jobId: number) =>
+  queryOptions({
     queryKey: [...organizationQueryKey(organizationId), "predictionJobFailures", { jobId }],
     queryFn: ({ signal }) => getPredictionJobFailures(jobId, signal),
-    enabled,
     meta: { errorHandledLocally: true },
   });
-}
+
+export const usePredictionJobFailures = (jobId: number, enabled: boolean) =>
+  useQuery({
+    ...predictionJobFailuresQueryOptions(useCurrentOrganizationId() ?? "none", jobId),
+    enabled,
+  });
 
 /** Cancels, retries or deletes a job; the bookmark's list is read again whatever happens. */
 const predictionJobActionMutation = (organizationId: number | string, bookmarkId: string) =>

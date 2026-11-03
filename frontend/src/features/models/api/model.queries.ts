@@ -41,15 +41,16 @@ export const useModel = (modelId?: number | string) => {
  * What the model's bundle says about it and the environment it runs in. It changes only when the
  * environment becomes ready, and the model's query refreshes it then.
  */
-export const useModelDetails = (modelId?: number | string) => {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery({
-    queryKey: modelKeys.bundle(organizationId, modelId ?? ""),
-    queryFn: ({ signal }) => getModelDetails(modelId ?? "", signal),
+export const modelDetailsQueryOptions = (organizationId: number | string, modelId: number | string) =>
+  queryOptions({
+    queryKey: modelKeys.bundle(organizationId, modelId),
+    queryFn: ({ signal }) => getModelDetails(modelId, signal),
     enabled: organizationId !== "none" && Boolean(modelId),
     staleTime: Number.POSITIVE_INFINITY,
   });
-};
+
+export const useModelDetails = (modelId?: number | string) =>
+  useQuery(modelDetailsQueryOptions(useCurrentOrganizationId() ?? "none", modelId ?? ""));
 
 export const useModelCatalogPageQuery = (
   organizationId: number | string | undefined,

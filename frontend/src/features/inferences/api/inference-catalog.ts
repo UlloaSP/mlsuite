@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { appFetch, json } from "@/shared/api/http";
 import { useInfiniteCatalog, type CatalogPage } from "@/shared/api/infinite-catalog";
@@ -33,10 +33,13 @@ export function useInferenceCatalogPage(filters: InferenceFilters, sort: string)
   });
 }
 
-export function useInferenceCatalogMetadata(schemaId: string, bookmarkId: string) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
+export const inferenceCatalogMetadataQueryOptions = (
+  organizationId: number | string,
+  schemaId: string,
+  bookmarkId: string,
+) => {
   const request = { page: 0, size: 50, schemaId, bookmarkId, locale: navigator.language };
-  return useQuery({
+  return queryOptions({
     queryKey: [...INFERENCES_QUERY_KEY(organizationId), "metadata", request],
     queryFn: ({ signal }) =>
       appFetch<InferenceCatalogMetadataDto>("/api/prediction-runs/catalog/metadata", {
@@ -49,21 +52,34 @@ export function useInferenceCatalogMetadata(schemaId: string, bookmarkId: string
       previousQuery?.queryKey[1] === organizationId ? previous : undefined,
     enabled: organizationId !== "none",
   });
-}
+};
 
-export function useInferenceSelection(filters: InferenceFilters, sort: string) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
+export const useInferenceCatalogMetadata = (schemaId: string, bookmarkId: string) =>
+  useQuery(
+    inferenceCatalogMetadataQueryOptions(
+      useCurrentOrganizationId() ?? "none",
+      schemaId,
+      bookmarkId,
+    ),
+  );
+
+/** Every inference the filters select, read when an action needs the whole result. */
+export const inferenceSelectionQueryOptions = (
+  organizationId: number | string,
+  filters: InferenceFilters,
+  sort: string,
+) => {
   const request = inferenceRequest(filters, sort);
-  return useQuery({
+  return queryOptions({
     queryKey: [...INFERENCES_QUERY_KEY(organizationId), "selection", request],
     queryFn: ({ signal }) =>
       appFetch<PredictionRunCatalogItemDto[]>("/api/prediction-runs/catalog/selection", {
         ...json("POST", request),
         signal,
       }),
-    enabled: false,
+    staleTime: 0,
   });
-}
+};
 
 export function useInferenceFacetCatalog(
   kind: "schemas" | "bookmarks" | "columns",

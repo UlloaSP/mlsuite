@@ -4,17 +4,12 @@ import { AppLink } from "@/shared/ui/AppLink";
 import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
 import { useSubmitSchemaReviewInboxMutation } from "@/features/reviews/api/review-mutations";
 import {
-  reviewInboxItemQueryKey,
   useReviewInboxCatalog,
   useReviewInboxItem,
   useReviewCatalogContext,
   useReviewFirstRun,
 } from "@/features/reviews/api/review-catalog";
-import { useQueryClient } from "@tanstack/react-query";
-import {
-  useCan,
-  useCurrentOrganizationId,
-} from "@/capabilities/workspace-context/workspace-context";
+import { useCan } from "@/capabilities/workspace-context/workspace-context";
 import { ReviewStepContextPanel } from "@/features/reviews/components/ReviewStepContextPanel";
 import { ReviewUnavailable } from "@/features/reviews/components/ReviewUnavailable";
 import { SchemaReviewRunDetailPanel } from "@/features/reviews/components/SchemaReviewRunDetailPanel";
@@ -39,7 +34,12 @@ export function ReviewsPage() {
   const navigate = useNavigate();
   const canManage = useCan("canManageReviews");
   const inbox = useReviewInboxCatalog();
-  const requested = useReviewInboxItem(reviewId, reviewRunId);
+  // An item opened from the inbox shows at once; its own request only refreshes it.
+  const requested = useReviewInboxItem(
+    reviewId,
+    reviewRunId,
+    inbox.data?.items.find((item) => item.reviewId === reviewId && item.publicId === reviewRunId),
+  );
   const first = useReviewFirstRun(reviewId, Boolean(reviewId && !reviewRunId));
   const failure = [inbox.error, requested.error, first.error].find(
     (error) => error && !gone(error),
@@ -58,8 +58,6 @@ export function ReviewsPage() {
   const leaving = !resolving && !selected && Boolean(reviewId ?? reviewRunId);
   const showLoader = useStableLoading(resolving || leaving);
   const submitMutation = useSubmitSchemaReviewInboxMutation();
-  const qc = useQueryClient();
-  const org = useCurrentOrganizationId() ?? "none";
   // One review whose snapshot cannot run is that review's problem: the inbox stays usable.
   const prepared = useMemo(() => {
     if (!selectedReview) return undefined;
@@ -71,8 +69,6 @@ export function ReviewsPage() {
   }, [selectedReview]);
   const open = useCallback(
     (item: ReviewRailItem, replace = false) => {
-      // The tray already holds the item, so opening it never waits for a request.
-      qc.setQueryData(reviewInboxItemQueryKey(org, item.reviewId, item.publicId), item);
       void navigate({
         to: "/review/$reviewId/runs/$reviewRunId",
         params: { reviewId: item.reviewId, reviewRunId: item.publicId },
@@ -80,7 +76,7 @@ export function ReviewsPage() {
         viewTransition: false,
       });
     },
-    [navigate, org, qc],
+    [navigate],
   );
 
   useEffect(() => {

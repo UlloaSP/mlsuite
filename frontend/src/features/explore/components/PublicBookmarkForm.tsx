@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { applyPredictionInputsToSchema } from "@/capabilities/prediction-runtime/mlform/schema-inputs";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
@@ -13,10 +13,8 @@ import {
 } from "@/capabilities/prediction-runtime/sandbox/sandboxed-forms";
 import type { SandboxSizing } from "@/capabilities/prediction-runtime/sandbox/sandbox-protocol";
 import { useAccountEntry } from "@/capabilities/workspace-context/account-entry";
-import {
-  publicRunQuotaQueryOptions,
-  runPublicBookmark,
-} from "@/features/explore/api/public-bookmark-api";
+import { publicRunQuotaQueryOptions } from "@/features/explore/api/public-bookmark-api";
+import { useRunPublicBookmark } from "@/features/explore/api/public-catalog-api";
 import { PublicBookmarkExampleSelect } from "@/features/explore/components/PublicBookmarkExampleSelect";
 import { PublicRunQuota } from "@/features/explore/components/PublicRunQuota";
 import { publicRunFailure, type PublicRunFailure } from "@/features/explore/lib/public-run-failure";
@@ -74,13 +72,14 @@ export function PublicBookmarkForm({ publicId, version, formSchema, onRun }: Pro
   const catalog = usePublicPluginCatalog(publicId, formSchema);
   const { plugins } = catalog;
   const mountable = !empty && catalog.ready;
-  const queryClient = useQueryClient();
   // The frame offers an account only to a visitor without a session, whom the server counts apart.
   const caller = useAccountEntry() ? "visitor" : "member";
   const quota = useQuery({
     ...publicRunQuotaQueryOptions(publicId, caller),
     enabled: mountable,
   }).data;
+  const { mutateAsync: runBookmark } = useRunPublicBookmark(publicId, caller);
+  const noRunLeft = useEffectEvent(() => quota?.remaining === 0);
   const [example, setExample] = useState<PublicBookmarkExampleDto>();
   const schema = useMemo(
     () => (example ? applyPredictionInputsToSchema(formSchema, example.inputs) : formSchema),
@@ -97,26 +96,18 @@ export function PublicBookmarkForm({ publicId, version, formSchema, onRun }: Pro
       plugins,
       sizing: currentSizing(),
       run: async (values) => {
-        const { queryKey } = publicRunQuotaQueryOptions(publicId, caller);
-        if (queryClient.getQueryData(queryKey)?.remaining === 0) return null;
-        try {
-          const result = await runPublicBookmark(publicId, { version, values });
-          queryClient.setQueryData(queryKey, result.quota);
-          reportRun(result.run);
-          return result.run.reports.map((report) => ({
-            key: report.key,
-            payload: isRecord(report.payload) ? report.payload : {},
-          }));
-        } catch (error) {
-          const used = publicRunLimitQuota(error);
-          if (used) {
-            queryClient.setQueryData(queryKey, used);
-            return null;
-          }
-          // Some refused runs count and some do not, so the server is asked again.
-          void queryClient.invalidateQueries({ queryKey });
+        if (noRunLeft()) return null;
+        // A run refused for having none left is no failure: the used-up quota replaces the action.
+        const result = await runBookmark({ version, values }).catch((error: unknown) => {
+          if (publicRunLimitQuota(error)) return null;
           throw error;
-        }
+        });
+        if (!result) return null;
+        reportRun(result.run);
+        return result.run.reports.map((report) => ({
+          key: report.key,
+          payload: isRecord(report.payload) ? report.payload : {},
+        }));
       },
       onRunningChange: (next) => {
         setRunning(next);
@@ -130,7 +121,7 @@ export function PublicBookmarkForm({ publicId, version, formSchema, onRun }: Pro
       mounted.unmount();
       if (mountedRef.current === mounted) mountedRef.current = null;
     };
-  }, [caller, mountable, plugins, publicId, queryClient, schema, version]);
+  }, [mountable, plugins, runBookmark, schema, version]);
 
   // After every render, because loading an example mounts a new form that must be told too.
   useEffect(() => {

@@ -15,7 +15,7 @@ import { OverviewView } from "@/features/infrastructure/components/OverviewView"
 import { ServicesView } from "@/features/infrastructure/components/ServicesView";
 import { TerminalView } from "@/features/infrastructure/components/TerminalView";
 import {
-  infrastructureOverviewQueryOptions,
+  receiveInfrastructureEvent,
   useInfrastructureOverview,
   useServiceLogsSnapshot,
 } from "@/features/infrastructure/api/infrastructure.queries";
@@ -23,7 +23,6 @@ import { useServiceAction } from "@/features/infrastructure/api/infrastructure.m
 import {
   appendLogLine,
   serviceActionConfirmation,
-  applyInfrastructureEvent,
   resolveSelectedService,
 } from "@/features/infrastructure/lib/infrastructure-state";
 import {
@@ -83,9 +82,7 @@ export function AdminInfrastructurePage() {
       onClose: () => setStreamConnected(false),
       onError: () => setStreamConnected(false),
       onMessage: (event: InfrastructureEvent) => {
-        queryClient.setQueryData(infrastructureOverviewQueryOptions().queryKey, (current) =>
-          applyInfrastructureEvent(current, event),
-        );
+        receiveInfrastructureEvent(queryClient, event);
         if (isServiceLogEvent(event)) {
           setLogLines((current) => appendLogLine(current, event, selectedServiceRef.current));
         }

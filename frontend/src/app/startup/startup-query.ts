@@ -18,12 +18,14 @@ export const startupReadinessQueryOptions = () =>
 
 export const useStartupReadinessQuery = () => useQuery(startupReadinessQueryOptions());
 
-export const useStartupServicesQuery = (enabled: boolean) =>
-  useQuery({
+export const startupServicesQueryOptions = () =>
+  queryOptions({
     queryKey: STARTUP_SERVICES_QUERY_KEY,
     queryFn: ({ signal }) => getStartupServices(signal),
-    enabled,
     retry: false,
     staleTime: 0,
-    refetchInterval: enabled ? SERVICES_POLL_MS : false,
+    refetchInterval: SERVICES_POLL_MS,
   });
+
+export const useStartupServicesQuery = (enabled: boolean) =>
+  useQuery({ ...startupServicesQueryOptions(), enabled });

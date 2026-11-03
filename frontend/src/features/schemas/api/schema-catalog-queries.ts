@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { SCHEMA_BOOKMARK_EXAMPLES_QUERY_KEY } from "./schema-keys";
 import type { SchemaBookmarkExampleDto, BookmarkExampleStateDto } from "@/shared/api/openapi.gen";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
@@ -80,9 +80,12 @@ export function useBookmarkExampleCatalog(bookmarkId: number, enabled: boolean) 
     enabled,
   });
 }
-export function useBookmarkExampleState(bookmarkId: number | undefined, runId: number) {
-  const org = useCurrentOrganizationId() ?? "none";
-  return useQuery({
+export const bookmarkExampleStateQueryOptions = (
+  org: number | string,
+  bookmarkId: number | undefined,
+  runId: number,
+) =>
+  queryOptions({
     queryKey: [...SCHEMA_BOOKMARK_EXAMPLES_QUERY_KEY(org, bookmarkId ?? ""), "state", runId],
     queryFn: ({ signal }) =>
       appFetch<BookmarkExampleStateDto>(
@@ -91,10 +94,14 @@ export function useBookmarkExampleState(bookmarkId: number | undefined, runId: n
       ),
     enabled: Boolean(bookmarkId),
   });
-}
-export function useBookmarkStatistics(bookmarkId: string) {
-  const org = useCurrentOrganizationId() ?? "none";
-  return useQuery({
+
+export const useBookmarkExampleState = (bookmarkId: number | undefined, runId: number) =>
+  useQuery(
+    bookmarkExampleStateQueryOptions(useCurrentOrganizationId() ?? "none", bookmarkId, runId),
+  );
+
+export const bookmarkStatisticsQueryOptions = (org: number | string, bookmarkId: string) =>
+  queryOptions({
     queryKey: [...ORGANIZATION_BOOKMARKS_QUERY_KEY(org), "statistics", bookmarkId],
     queryFn: ({ signal }) =>
       appFetch<PredictBookmarkDto>(`/api/schema-bookmarks/${bookmarkId}/statistics`, { signal }),
@@ -102,4 +109,6 @@ export function useBookmarkStatistics(bookmarkId: string) {
     meta: { errorHandledLocally: true },
     enabled: Boolean(bookmarkId),
   });
-}
+
+export const useBookmarkStatistics = (bookmarkId: string) =>
+  useQuery(bookmarkStatisticsQueryOptions(useCurrentOrganizationId() ?? "none", bookmarkId));

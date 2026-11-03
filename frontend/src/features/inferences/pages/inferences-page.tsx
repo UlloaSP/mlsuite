@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ReviewCreationButton } from "@/capabilities/review-creation/ReviewCreationButton";
@@ -6,7 +7,7 @@ import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-
 import {
   useInferenceCatalogPage,
   useInferenceCatalogMetadata,
-  useInferenceSelection,
+  inferenceSelectionQueryOptions,
 } from "@/features/inferences/api/inference-catalog";
 import {
   useDeleteInferenceMutation,
@@ -101,7 +102,7 @@ export function InferencesPage({
   );
   const data = useInferenceCatalogPage(filters, sort);
   const metadata = useInferenceCatalogMetadata(schema, bookmark);
-  const selection = useInferenceSelection(filters, sort);
+  const queryClient = useQueryClient();
   const rows = useMemo<InferenceTableRow[]>(
     () =>
       data.data?.items.map((row) => ({ ...row, values: new Map(Object.entries(row.values)) })) ??
@@ -110,12 +111,9 @@ export function InferencesPage({
   );
   const dataColumns = metadata.data?.columns ?? [];
   const totalItems = data.data?.totalItems ?? 0;
-  const loadItems = async () => {
-    const result = await selection.refetch();
-    if (result.error) throw result.error;
-    return result.data ?? [];
-  };
   const organizationId = workspace?.currentOrganization.id;
+  const loadItems = () =>
+    queryClient.fetchQuery(inferenceSelectionQueryOptions(organizationId ?? "none", filters, sort));
   const canDelete = workspace?.permissions.canRunPredictions ?? false;
   const canManageReviews = workspace?.permissions.canManageReviews ?? false;
   const showLoading = useStableLoading(data.isLoading || metadata.isLoading);

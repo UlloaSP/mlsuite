@@ -60,7 +60,10 @@ const predictionResultFeedbackHistoryQuery = byIdQuery(
   getPredictionResultFeedbackHistory,
 );
 
+export const schemaQueryOptions = schemaQuery.options;
 export const schemaVersionQueryOptions = schemaVersionQuery.options;
+export const schemaBookmarkQueryOptions = schemaBookmarkQuery.options;
+export const schemaDraftQueryOptions = schemaDraftQuery.options;
 export const predictionRunQueryOptions = predictionRunQuery.options;
 export const predictionResultFeedbackQueryOptions = predictionResultFeedbackQuery.options;
 export const predictionResultFeedbackHistoryQueryOptions =
@@ -103,12 +106,12 @@ export const usePredictionRunFeedback = (run?: PredictionRunDto) => {
 
 export const usePredictionRunsFeedback = (runs: readonly PredictionRunDto[]) => {
   const organizationId = useCurrentOrganizationId() ?? "none";
-  const query = useQuery({
-    ...predictionRunsFeedbackQueryOptions(
+  const query = useQuery(
+    predictionRunsFeedbackQueryOptions(
       organizationId,
       runs.map((run) => run.id),
     ),
-  });
+  );
   return { ...query, data: query.data ?? [] };
 };
 

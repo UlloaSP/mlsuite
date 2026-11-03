@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useInfiniteCatalog } from "@/shared/api/infinite-catalog";
 import {
@@ -32,9 +32,8 @@ export function useNotificationCatalog(filter: NotificationFilter) {
 }
 
 /** The badge's count, which also tells the shell that something new arrived. */
-export function useUnreadNotificationCount() {
-  const userId = useUser().data?.id;
-  return useQuery({
+export const unreadNotificationCountQueryOptions = (userId: number | undefined) =>
+  queryOptions({
     queryKey: [...NOTIFICATIONS_QUERY_KEY, userId, "unread-count"],
     queryFn: ({ signal }) => getUnreadNotificationCount(signal),
     select: (unread) => unread.count,
@@ -44,12 +43,13 @@ export function useUnreadNotificationCount() {
     // A missed poll is not worth an error: the badge keeps its last count until the next one.
     meta: { errorHandledLocally: true },
   });
-}
+
+export const useUnreadNotificationCount = () =>
+  useQuery(unreadNotificationCountQueryOptions(useUser().data?.id));
 
 /** Invitations waiting for this account's answer, whatever became of what announced them. */
-export function usePendingInvitations() {
-  const userId = useUser().data?.id;
-  return useQuery({
+export const pendingInvitationsQueryOptions = (userId: number | undefined) =>
+  queryOptions({
     queryKey: [...PENDING_INVITATIONS_QUERY_KEY, userId],
     queryFn: ({ signal }) => getPendingInvitations(signal),
     select: (pending) => pending.items,
@@ -58,4 +58,6 @@ export function usePendingInvitations() {
     refetchInterval: PENDING_POLL_MS,
     meta: { errorHandledLocally: true },
   });
-}
+
+export const usePendingInvitations = () =>
+  useQuery(pendingInvitationsQueryOptions(useUser().data?.id));

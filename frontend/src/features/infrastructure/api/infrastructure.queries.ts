@@ -1,10 +1,12 @@
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery, type QueryClient } from "@tanstack/react-query";
 import {
   getInfrastructureOverview,
   getServiceLogsSnapshot,
   getSystemAlerts,
 } from "./infrastructure.api";
 import { infrastructureKeys } from "./infrastructure.keys";
+import type { InfrastructureEvent } from "./infrastructure.types";
+import { applyInfrastructureEvent } from "@/features/infrastructure/lib/infrastructure-state";
 
 export const infrastructureOverviewQueryOptions = () =>
   queryOptions({
@@ -22,6 +24,12 @@ export const serviceLogsQueryOptions = (serviceName: string | null) =>
     enabled: Boolean(serviceName),
     refetchInterval: 5000,
   });
+
+/** A pushed event updates the polled overview in place, until the next poll replaces it. */
+export const receiveInfrastructureEvent = (client: QueryClient, event: InfrastructureEvent) =>
+  client.setQueryData(infrastructureOverviewQueryOptions().queryKey, (current) =>
+    applyInfrastructureEvent(current, event),
+  );
 
 /** How often the page and the navigation ask about alerts; the API reads signals every 15 s. */
 const ALERTS_POLL_MS = 15_000;

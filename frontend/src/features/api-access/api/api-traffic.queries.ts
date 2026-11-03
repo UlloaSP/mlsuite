@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { mutationOptions, useMutation, useQuery } from "@tanstack/react-query";
+import { mutationOptions, queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 import { useInfiniteCatalog } from "@/shared/api/infinite-catalog";
 import type { CatalogPageRequest, UsagePeriod } from "./api-access.api";
 import {
@@ -22,12 +22,14 @@ const ORGANIZATIONS = [...API_TRAFFIC_QUERY_KEY, "organizations"] as const;
 
 type Request = Omit<CatalogPageRequest, "page">;
 
-export const useApiTrafficUsage = (period: UsagePeriod, enabled: boolean) =>
-  useQuery({
+export const apiTrafficUsageQueryOptions = (period: UsagePeriod) =>
+  queryOptions({
     queryKey: [...API_TRAFFIC_QUERY_KEY, "usage", period],
     queryFn: ({ signal }) => getApiTrafficUsage(period, signal),
-    enabled,
   });
+
+export const useApiTrafficUsage = (period: UsagePeriod, enabled: boolean) =>
+  useQuery({ ...apiTrafficUsageQueryOptions(period), enabled });
 
 export const useApiTrafficClients = (request: Request) =>
   useInfiniteCatalog({

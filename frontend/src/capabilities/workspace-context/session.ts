@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { mutationOptions, queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 import { linkOptions } from "@tanstack/react-router";
 import { deleteAccount, getProfile, login, logout, openDocument, register } from "./session-api";
-import { actInOrganization } from "@/shared/api/http";
+import { actInOrganization, isHttpError } from "@/shared/api/http";
 import type { UserDto } from "@/shared/api/openapi.gen";
 
 export const USER_QUERY_KEY = ["user"] as const;
@@ -17,18 +17,11 @@ export const userQueryOptions = () =>
     queryFn: ({ signal }) => getProfile(signal),
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
+    // No session is an answer, not a failure to retry.
+    retry: (count, error) => !(isHttpError(error) && [401, 403].includes(error.status)) && count < 2,
   });
 
-export const useUser = () =>
-  useQuery({
-    ...userQueryOptions(),
-    retry: (count, error) => {
-      const status =
-        (error as { status?: number; response?: { status?: number } }).status ??
-        (error as { response?: { status?: number } }).response?.status;
-      return status !== 401 && status !== 403 && count < 2;
-    },
-  });
+export const useUser = () => useQuery(userQueryOptions());
 
 export const useCurrentUserIsSuperadmin = () => useUser().data?.systemRole === "SUPERADMIN";
 

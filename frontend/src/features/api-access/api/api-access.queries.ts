@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { useInfiniteCatalog } from "@/shared/api/infinite-catalog";
 import {
@@ -42,23 +42,26 @@ export function useApiClientCatalog(request: Omit<CatalogPageRequest, "page">) {
   });
 }
 
-export function useApiClient(clientId: number | undefined) {
-  const organizationId = useScope();
-  return useQuery({
-    queryKey: API_CLIENT_QUERY_KEY(organizationId, clientId ?? ""),
-    queryFn: ({ signal }) => getApiClient(clientId ?? "", signal),
+export const apiClientQueryOptions = (organizationId: number | string, clientId: number) =>
+  queryOptions({
+    queryKey: API_CLIENT_QUERY_KEY(organizationId, clientId),
+    queryFn: ({ signal }) => getApiClient(clientId, signal),
+  });
+
+export const useApiClient = (clientId: number | undefined) =>
+  useQuery({
+    ...apiClientQueryOptions(useScope(), clientId ?? 0),
     enabled: clientId !== undefined,
   });
-}
 
-export function useApiAccessBookmarks(enabled = true) {
-  const organizationId = useScope();
-  return useQuery({
+export const apiAccessBookmarksQueryOptions = (organizationId: number | string) =>
+  queryOptions({
     queryKey: API_ACCESS_BOOKMARKS_QUERY_KEY(organizationId),
     queryFn: ({ signal }) => listApiAccessBookmarks(signal),
-    enabled,
   });
-}
+
+export const useApiAccessBookmarks = (enabled = true) =>
+  useQuery({ ...apiAccessBookmarksQueryOptions(useScope()), enabled });
 
 /** The request log, newest first; the server keeps no order but that one. */
 export function useApiRequestCatalog(
@@ -80,20 +83,27 @@ export function useApiRequestCatalog(
   });
 }
 
-export function useApiUsage(period: UsagePeriod, clientId?: number, enabled = true) {
-  const organizationId = useScope();
-  return useQuery({
+export const apiUsageQueryOptions = (
+  organizationId: number | string,
+  period: UsagePeriod,
+  clientId?: number,
+) =>
+  queryOptions({
     queryKey: [...API_USAGE_QUERY_KEY(organizationId), period, clientId ?? "all"],
     queryFn: ({ signal }) => getApiUsage(period, clientId, signal),
-    enabled,
   });
-}
 
-export function useDocumentedModel(modelId: number | null | undefined) {
-  const organizationId = useScope();
-  return useQuery({
-    queryKey: API_DOCUMENTED_MODEL_QUERY_KEY(organizationId, modelId ?? ""),
-    queryFn: ({ signal }) => getDocumentedModel(modelId ?? 0, signal),
+export const useApiUsage = (period: UsagePeriod, clientId?: number, enabled = true) =>
+  useQuery({ ...apiUsageQueryOptions(useScope(), period, clientId), enabled });
+
+export const documentedModelQueryOptions = (organizationId: number | string, modelId: number) =>
+  queryOptions({
+    queryKey: API_DOCUMENTED_MODEL_QUERY_KEY(organizationId, modelId),
+    queryFn: ({ signal }) => getDocumentedModel(modelId, signal),
+  });
+
+export const useDocumentedModel = (modelId: number | null | undefined) =>
+  useQuery({
+    ...documentedModelQueryOptions(useScope(), modelId ?? 0),
     enabled: typeof modelId === "number",
   });
-}
