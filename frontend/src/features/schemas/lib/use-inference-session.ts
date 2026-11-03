@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useSelector } from "@tanstack/react-store";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { mergeSchemaRunInputs } from "@/capabilities/prediction-runtime/data/input-display";
 import { useUser } from "@/capabilities/workspace-context/session";
 import {
@@ -123,7 +123,7 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
         ),
       );
     },
-    [schemaVersionId, setLiveKey],
+    [schemaVersionId, setEntries, setLiveKey],
   );
 
   const onResult = useCallback(
@@ -138,30 +138,35 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
         ),
       );
     },
-    [],
+    [setEntries],
   );
 
   /** The form remounted (e.g. prefilled from a saved run); earlier entries stop being live. */
   const detachForm = useCallback(() => setLiveKey(null), [setLiveKey]);
 
   const save = useCallback(
-    async (entry: SessionEntry) => {
-      if (!canSaveSessionEntry(entry) || savingRef.current.has(entry.key)) return false;
+    (entry: SessionEntry): Promise<boolean> => {
+      if (!canSaveSessionEntry(entry) || savingRef.current.has(entry.key)) {
+        return Promise.resolve(false);
+      }
       savingRef.current.add(entry.key);
       update(entry.key, { state: "saving" });
-      try {
-        const run = await createRun.mutateAsync(runRequest(entry));
-        update(entry.key, { state: "saved", savedRunId: run.id });
-        return true;
-      } catch (error) {
-        update(entry.key, { state: "ready" });
-        toast.error(`Could not save ${entry.name}`, {
-          description: error instanceof Error ? error.message : String(error),
-        });
-        return false;
-      } finally {
-        savingRef.current.delete(entry.key);
-      }
+      return createRun
+        .mutateAsync(runRequest(entry))
+        .then(
+          (run) => {
+            update(entry.key, { state: "saved", savedRunId: run.id });
+            return true;
+          },
+          (error: unknown) => {
+            update(entry.key, { state: "ready" });
+            toast.error(`Could not save ${entry.name}`, {
+              description: error instanceof Error ? error.message : String(error),
+            });
+            return false;
+          },
+        )
+        .finally(() => savingRef.current.delete(entry.key));
     },
     [createRun, update],
   );
@@ -177,13 +182,13 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
     setEntries((current) =>
       current.map((entry) => (keys.has(entry.key) ? { ...entry, state: "saving" } : entry)),
     );
-    let saved = 0;
-    try {
-      await createRuns.mutateAsync({
+    const saved = new Set<string>();
+    const failure = await createRuns
+      .mutateAsync({
         runs: pending.map(runRequest),
         onSaved: (from, runIds) => {
           const ids = new Map(runIds.map((id, index) => [pending[from + index]!.key, id]));
-          saved += runIds.length;
+          ids.forEach((_id, key) => saved.add(key));
           setEntries((current) =>
             current.map((entry) =>
               ids.has(entry.key)
@@ -192,21 +197,26 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
             ),
           );
         },
-      });
-    } catch (error) {
-      const left = pending.length - saved;
-      toast.error(`Could not save ${left} inference${left === 1 ? "" : "s"}`, {
-        description: error instanceof Error ? error.message : String(error),
-      });
-    } finally {
-      setEntries((current) =>
-        current.map((entry) =>
-          keys.has(entry.key) && entry.state === "saving" ? { ...entry, state: "ready" } : entry,
-        ),
+      })
+      .then(
+        () => null,
+        (error: unknown) => (error instanceof Error ? error.message : "The server did not answer."),
       );
-      keys.forEach((key) => savingRef.current.delete(key));
+    // Runs not saved, by failure or by a batch that never answered, can be saved again.
+    setEntries((current) =>
+      current.map((entry) =>
+        keys.has(entry.key) && entry.state === "saving" ? { ...entry, state: "ready" } : entry,
+      ),
+    );
+    keys.forEach((key) => savingRef.current.delete(key));
+    if (failure !== null) {
+      const left = pending.length - saved.size;
+      toast.error(`Could not save ${left} inference${left === 1 ? "" : "s"}`, {
+        description: failure,
+      });
     }
-    if (saved > 0) toast.success(saved === 1 ? "Inference saved" : `${saved} inferences saved`);
+    if (saved.size > 0)
+      toast.success(saved.size === 1 ? "Inference saved" : `${saved.size} inferences saved`);
   }, [entries, createRuns, setEntries]);
 
   const rename = useCallback((key: string, name: string) => update(key, { name }), [update]);
@@ -216,14 +226,14 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
       if (liveKeyRef.current === key) setLiveKey(null);
       setEntries((current) => current.filter((entry) => entry.key !== key));
     },
-    [setLiveKey],
+    [setEntries, setLiveKey],
   );
 
   /** Empties the session; saved entries stay in the bookmark's history. */
   const discardAll = useCallback(() => {
     setLiveKey(null);
     setEntries((current) => current.filter((entry) => entry.state === "saving"));
-  }, [setLiveKey]);
+  }, [setEntries, setLiveKey]);
 
   return {
     entries,

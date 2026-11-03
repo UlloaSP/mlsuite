@@ -3,11 +3,23 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
-import react, { reactCompilerPreset } from "@vitejs/plugin-react";
+import react from "@vitejs/plugin-react";
 import { resolve } from "node:path";
-import { defineConfig } from "vite-plus";
+import { defineConfig, type Plugin } from "vite-plus";
+
+/**
+ * Fontsource's static families also list a .woff file after each .woff2. Every browser the app
+ * supports reads woff2, so the .woff fallback is left out of the stylesheets and the build.
+ */
+const woff2Only: Plugin = {
+  name: "mlsuite:woff2-only",
+  enforce: "pre",
+  transform(code, id) {
+    if (!/\/@fontsource\/.+\.css$/.test(id)) return null;
+    return code.replace(/,\s*url\([^)]*\.woff\) format\('woff'\)/g, "");
+  },
+};
 
 // Generated from api/openapi.json by `vp run api:types`; test/openapi-types.test.ts keeps it current.
 const API_TYPES = "src/shared/api/openapi.gen.ts";
@@ -35,13 +47,17 @@ export default defineConfig({
       },
     },
   },
-  // The React Compiler memoizes components and hooks, so code need not do it by hand.
-  plugins: [react(), babel({ presets: [reactCompilerPreset()] }), tailwindcss()],
+  // The React Compiler (oxc's Rust port, no Babel) memoizes components and hooks, so code need
+  // not do it by hand. `{ logDiagnostics: true }` names the code it skips: fix that code rather
+  // than opt it out. Only TanStack Virtual's useVirtualizer() callers are skipped, by design.
+  plugins: [react({ compiler: true }), tailwindcss(), woff2Only],
   test: { maxWorkers: 4 },
   build: {
     outDir: "./dist",
+    // A font stays a file: the CSP (nginx.conf) loads fonts from 'self' only, never data: URLs.
+    assetsInlineLimit: (file) => (file.endsWith(".woff2") ? false : undefined),
     rolldownOptions: {
-      // The plugin sandbox is a document of its own; only it loads plugin code and TypeScript.
+      // The plugin sandbox is a document of its own; only it loads plugin code and its compiler.
       input: {
         index: resolve(import.meta.dirname, "index.html"),
         "plugin-sandbox": resolve(import.meta.dirname, "plugin-sandbox.html"),
@@ -49,10 +65,6 @@ export default defineConfig({
       output: {
         codeSplitting: {
           groups: [
-            {
-              name: "typescript",
-              test: /node_modules[\\/]typescript(?:[\\/]|$)/,
-            },
             {
               name: "react",
               test: /node_modules[\\/](?:react|react-dom)(?:[\\/]|$)/,

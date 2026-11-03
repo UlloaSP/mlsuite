@@ -1,5 +1,5 @@
 import { appFetch } from "@/shared/api/http";
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useInfiniteCatalog, type CatalogPage } from "@/shared/api/infinite-catalog";
 import type {
   MemberCatalogDto,
@@ -51,8 +51,8 @@ export function useMemberFilterRoleCatalog(id: number, search: string, enabled: 
   });
 }
 
-export function useMemberFilterRole(id: number, roleId: string) {
-  return useQuery({
+export const memberFilterRoleQueryOptions = (id: number, roleId: string) =>
+  queryOptions({
     queryKey: [...organizationMembersQueryKey(id), "roles", "detail", roleId],
     queryFn: ({ signal }) =>
       appFetch<CatalogPage<RoleSummaryDto>>(
@@ -61,7 +61,9 @@ export function useMemberFilterRole(id: number, roleId: string) {
       ),
     enabled: Boolean(id) && roleId !== "ALL",
   });
-}
+
+export const useMemberFilterRole = (id: number, roleId: string) =>
+  useQuery(memberFilterRoleQueryOptions(id, roleId));
 
 export function useInvitationCatalog(id: number, controls: Controls) {
   return useInfiniteCatalog({
@@ -138,14 +140,16 @@ export const useRoleTemplateCatalog = (id: number, search: string, enabled = tru
 export const usePermissionCatalog = (id: number, search: string, enabled = true) =>
   useRoleResource<PermissionGroupDto>(id, "permissions", search, enabled);
 
-export function useRoleCatalogMetadata(id: number, enabled = true) {
-  return useQuery({
+export const roleCatalogMetadataQueryOptions = (id: number) =>
+  queryOptions({
     queryKey: [...organizationRolesQueryKey(id), "metadata"],
     queryFn: ({ signal }) =>
       appFetch<RoleCatalogMetadataDto>(`/api/organizations/${id}/roles/metadata`, { signal }),
-    enabled: Boolean(id) && enabled,
+    enabled: Boolean(id),
   });
-}
+
+export const useRoleCatalogMetadata = (id: number, enabled = true) =>
+  useQuery({ ...roleCatalogMetadataQueryOptions(id), enabled: Boolean(id) && enabled });
 
 export function useOwnerCandidateCatalog(id: number, search: string, enabled = true) {
   return useInfiniteCatalog({

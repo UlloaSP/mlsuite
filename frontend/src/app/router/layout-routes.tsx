@@ -3,20 +3,26 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { createRootRoute, createRoute, notFound, Outlet } from "@tanstack/react-router";
+import type { QueryClient } from "@tanstack/react-query";
+import { createRootRouteWithContext, createRoute, notFound, Outlet } from "@tanstack/react-router";
 import { AppShellFrame } from "@/app/layouts/AppShellLayout";
 import { SessionFrameLayout } from "@/app/layouts/SessionFrameLayout";
 import { RequireReviewAccess } from "@/features/reviews/components/RequireReviewAccess";
 import { RequireSuperadmin } from "@/features/workspace/components/RequireSuperadmin";
 import { RequireTeamOrganization } from "@/features/workspace/components/RequireTeamOrganization";
 import { RequireWorkspacePermission } from "@/features/workspace/components/RequireWorkspacePermission";
+import { AppRoot } from "./AppRoot";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { RouteErrorBoundary } from "./RouteErrorBoundary";
 
-/** Any failure below, and any address no route matches, replaces the whole page. */
-export const rootRoute = createRootRoute({
-  // Every page reads the plain string params it owns (see search-params.ts).
-  validateSearch: (search: Record<string, unknown>) => search as Record<string, string | undefined>,
+export type AppRouterContext = { queryClient: QueryClient };
+
+/**
+ * Any failure below, and any address no route matches, replaces the whole page. Each page route
+ * validates the search params it owns.
+ */
+export const rootRoute = createRootRouteWithContext<AppRouterContext>()({
+  component: AppRoot,
   errorComponent: RouteErrorBoundary,
   notFoundComponent: () => <RouteErrorBoundary error={notFound()} />,
 });

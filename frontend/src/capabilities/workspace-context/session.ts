@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { mutationOptions, queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 import { linkOptions } from "@tanstack/react-router";
 import { deleteAccount, getProfile, login, logout, openDocument, register } from "./session-api";
-import { actInOrganization } from "@/shared/api/http";
+import { actInOrganization, isHttpError } from "@/shared/api/http";
 import type { UserDto } from "@/shared/api/openapi.gen";
 
 export const USER_QUERY_KEY = ["user"] as const;
@@ -17,26 +17,17 @@ export const userQueryOptions = () =>
     queryFn: ({ signal }) => getProfile(signal),
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
+    // No session is an answer, not a failure to retry.
+    retry: (count, error) =>
+      !(isHttpError(error) && [401, 403].includes(error.status)) && count < 2,
   });
 
-export const useUser = () =>
-  useQuery({
-    ...userQueryOptions(),
-    retry: (count, error) => {
-      const status =
-        (error as { status?: number; response?: { status?: number } }).status ??
-        (error as { response?: { status?: number } }).response?.status;
-      return status !== 401 && status !== 403 && count < 2;
-    },
-  });
+export const useUser = () => useQuery(userQueryOptions());
 
 export const useCurrentUserIsSuperadmin = () => useUser().data?.systemRole === "SUPERADMIN";
 
 /** The one address of the sign-in and register screen. */
 export const SIGN_IN_PATH = "/login";
-
-/** The search param naming which of the screen's two forms is open; signing in when absent. */
-export const AUTH_MODE_PARAM = "mode";
 
 /** The sign-in screen, set to come back to `returnTo` once signed in. */
 export const signInLink = (returnTo: string) =>
@@ -44,7 +35,7 @@ export const signInLink = (returnTo: string) =>
 
 /** The same screen on its registration form, set to come back to `returnTo` once registered. */
 export const registerLink = (returnTo: string) =>
-  linkOptions({ to: SIGN_IN_PATH, search: { returnTo, [AUTH_MODE_PARAM]: "register" } });
+  linkOptions({ to: SIGN_IN_PATH, search: { returnTo, mode: "register" } });
 
 // Any origin serves as the site here: only whether the browser would leave it matters.
 const SITE_ORIGIN = "https://mlsuite.invalid";

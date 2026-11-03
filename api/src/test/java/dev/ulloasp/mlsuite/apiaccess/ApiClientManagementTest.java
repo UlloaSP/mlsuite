@@ -25,7 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
 import dev.ulloasp.mlsuite.apiaccess.domain.model.ApiClient;
@@ -56,10 +56,10 @@ class ApiClientManagementTest extends ApiAccessFixture {
     @Test
     void aClientIsNamedOncePerOrganizationWhateverItsCase() throws Exception {
         JsonNode created = send(post("/api/api-clients"), Map.of("name", "  Edge  ", "description", "  "), 201);
-        assertEquals("Edge", created.at("/client/name").asText());
+        assertEquals("Edge", created.at("/client/name").asString());
         assertTrue(created.at("/client/description").isNull());
-        assertEquals("ACTIVE", created.at("/client/status").asText());
-        assertEquals("Owner", created.at("/client/createdByName").asText());
+        assertEquals("ACTIVE", created.at("/client/status").asString());
+        assertEquals("Owner", created.at("/client/createdByName").asString());
 
         mockMvc.perform(member(json(post("/api/api-clients"), Map.of("name", "lab2PRESSURE"))))
                 .andExpect(status().isConflict())
@@ -92,10 +92,10 @@ class ApiClientManagementTest extends ApiAccessFixture {
     void anIssuedKeyShowsItsSecretOnceAndIsStoredOnlyAsItsHash() throws Exception {
         JsonNode issued = send(post("/api/api-clients/{id}/keys", clientId), Map.of("name", " Staging "), 201);
 
-        String issuedSecret = issued.get("secret").asText();
+        String issuedSecret = issued.get("secret").asString();
         assertTrue(issuedSecret.matches("mls_[A-Za-z0-9_-]{43}"), issuedSecret);
-        assertEquals("Staging", issued.at("/key/name").asText());
-        assertEquals(issuedSecret.substring(0, 12), issued.at("/key/prefix").asText());
+        assertEquals("Staging", issued.at("/key/name").asString());
+        assertEquals(issuedSecret.substring(0, 12), issued.at("/key/prefix").asString());
         ApiClientKey stored = entityManager.find(ApiClientKey.class, issued.at("/key/id").asLong());
         assertEquals(ArtifactHash.sha256(issuedSecret.getBytes(StandardCharsets.UTF_8)), stored.getKeyHash());
 

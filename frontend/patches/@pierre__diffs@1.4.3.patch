@@ -1,0 +1,40 @@
+diff --git a/dist/highlighter/languages/resolveLanguage.js b/dist/highlighter/languages/resolveLanguage.js
+index 5c564857e99dc8090fceb824b83cf6f75fbf00b5..661df03bd02b3f217dabb89e35d8a5a1d698a3a5 100644
+--- a/dist/highlighter/languages/resolveLanguage.js
++++ b/dist/highlighter/languages/resolveLanguage.js
+@@ -1,6 +1,7 @@
+ import { RegisteredCustomLanguages, ResolvedLanguages, ResolvingLanguages } from "./constants.js";
+ import { isWorkerContext } from "../../utils/isWorkerContext.js";
+-import { bundledLanguages } from "shiki";
++// MLsuite patch: the merge view highlights JSON alone, so only its grammar is bundled.
++const bundledLanguages = { json: () => import("shiki/langs/json.mjs") };
+ //#region src/highlighter/languages/resolveLanguage.ts
+ async function resolveLanguage(lang) {
+ 	if (isWorkerContext()) throw new Error(`resolveLanguage("${lang}") cannot be called from a worker context. Languages must be pre-resolved on the main thread and passed to the worker via the resolvedLanguages parameter.`);
+diff --git a/dist/highlighter/shared_highlighter.js b/dist/highlighter/shared_highlighter.js
+index e231d3c2396b82a0aa7dee8d3c3352dbcae4adb6..20dfaf2992c1fb6af58669edd7193dbe8cefbd75 100644
+--- a/dist/highlighter/shared_highlighter.js
++++ b/dist/highlighter/shared_highlighter.js
+@@ -7,15 +7,18 @@ import { themeResolver } from "./themes/themeResolver.js";
+ import { attachResolvedThemes } from "./themes/attachResolvedThemes.js";
+ import { cleanUpResolvedThemes } from "./themes/cleanUpResolvedThemes.js";
+ import { getResolvedOrResolveTheme } from "./themes/getResolvedOrResolveTheme.js";
+-import { createHighlighter, createJavaScriptRegexEngine, createOnigurumaEngine } from "shiki";
++// MLsuite patch: the core highlighter with the JavaScript engine only, so no grammar or theme
++// bundle and no Oniguruma WASM is reachable (see resolveLanguage.js).
++import { createHighlighterCore } from "shiki/core";
++import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
+ import { pierreThemes } from "@pierre/theming/themes";
+ //#region src/highlighter/shared_highlighter.ts
+ let highlighter;
+ async function getSharedHighlighter({ themes, langs, preferredHighlighter = "shiki-js" }) {
+-	highlighter ??= createHighlighter({
++	highlighter ??= createHighlighterCore({
+ 		themes: [],
+-		langs: ["text"],
+-		engine: preferredHighlighter === "shiki-wasm" ? createOnigurumaEngine(import("shiki/wasm")) : createJavaScriptRegexEngine()
++		langs: [],
++		engine: createJavaScriptRegexEngine()
+ 	});
+ 	const instance = isHighlighterLoading(highlighter) ? await highlighter : highlighter;
+ 	highlighter = instance;

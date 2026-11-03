@@ -25,7 +25,6 @@ from mlsuite_worker.commands import (  # noqa: E402
     CommandError,
     LoadedBundles,
     explanation_input,
-    metadata,
     verify,
 )
 from mlsuite_worker.rows import predict_rows  # noqa: E402
@@ -45,8 +44,6 @@ def _handle(bundles: LoadedBundles, request: dict) -> object:
         case "verify":
             samples = mlbundle.inspect(request["path"]).samples or []
             return verify(bundle, list(samples), request["checked"])
-        case "metadata":
-            return metadata(bundle, request["filename"])
         case "explanation_input":
             return explanation_input(bundle, request["record"])
     raise CommandError(400, f"Unknown operation {request['op']!r}")

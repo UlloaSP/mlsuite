@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useReducedMotion } from "motion/react";
+import { useMediaQuery } from "@/shared/ui/use-media-query";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -18,7 +18,7 @@ const REDUCED_WELCOME_MS = 1000;
 
 export function useAuthAccess(destination: string) {
   const navigate = useNavigate();
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const [phase, setPhase] = useState<AuthPhase>(0);
   const [reveal, setReveal] = useState<AuthReveal>({ x: 0, y: 0, radius: 1600 });
   const startedAt = useRef(0);

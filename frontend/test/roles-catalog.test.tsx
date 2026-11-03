@@ -109,8 +109,8 @@ afterEach(() => {
 });
 async function render(search = "") {
   ({ host } = await mount(null, {
-    route: `/organizations/3/roles${search}`,
-    routes: { "/organizations/$organizationId/roles": <RolesPage /> },
+    route: `/workspace/organizations/3/roles${search}`,
+    routes: { "/workspace/organizations/$organizationId/roles": <RolesPage /> },
   }));
 }
 function hasLabel(label: string) {

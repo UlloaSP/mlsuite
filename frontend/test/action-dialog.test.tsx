@@ -1,14 +1,17 @@
 // @vitest-environment jsdom
 
-import { act } from "react";
+import { act, useEffect } from "react";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
 import { useActionDialog } from "@/shared/ui/use-action-dialog";
 import { buttonByText, changeValue, click, mount } from "./support/dom";
 
 let api: ReturnType<typeof useActionDialog>;
 function Harness() {
-  api = useActionDialog();
-  return api.dialog;
+  const dialog = useActionDialog();
+  useEffect(() => {
+    api = dialog;
+  });
+  return dialog.dialog;
 }
 
 const button = (text: string) => buttonByText(text)!;

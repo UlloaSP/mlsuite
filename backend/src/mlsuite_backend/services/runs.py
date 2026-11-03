@@ -20,7 +20,7 @@ pool = WorkerPool()
 
 def environment(key: str) -> Environment:
     if not environments.is_key(key):
-        raise bad_request("environment must be a lowercase hexadecimal SHA-256 or legacy")
+        raise bad_request("environment must be a lowercase hexadecimal SHA-256")
     try:
         return environments.resolve(key)
     except EnvironmentUnavailable:

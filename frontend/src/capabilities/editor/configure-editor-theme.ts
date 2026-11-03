@@ -7,7 +7,9 @@ import {
 } from "@/shared/ui/appearance-state";
 import { resolveCssColorHex } from "@/shared/ui/resolve-css-color";
 
-export type MonacoNamespace = typeof import("monaco-editor");
+import type { MonacoNamespace } from "./monaco";
+
+export type { MonacoNamespace };
 type ThemeData = Parameters<MonacoNamespace["editor"]["defineTheme"]>[1];
 
 const THEME_NAME = "mlsuite";

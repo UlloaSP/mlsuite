@@ -1,27 +1,43 @@
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery, type QueryClient } from "@tanstack/react-query";
 import {
   getInfrastructureOverview,
   getServiceLogsSnapshot,
   getSystemAlerts,
 } from "./infrastructure.api";
 import { infrastructureKeys } from "./infrastructure.keys";
+import type { InfrastructureEvent } from "./infrastructure.types";
+import { applyInfrastructureEvent } from "@/features/infrastructure/lib/infrastructure-state";
 
-export const infrastructureOverviewQueryOptions = () =>
+/**
+ * How often the overview and the shown service's logs are read while the live stream is down.
+ * Connected, the stream's snapshot, deltas and log lines keep them current, so they are only read
+ * once.
+ */
+const STREAM_DOWN_POLL_MS = 5000;
+const pollUnless = (streamConnected: boolean) => (streamConnected ? false : STREAM_DOWN_POLL_MS);
+
+export const infrastructureOverviewQueryOptions = (streamConnected = false) =>
   queryOptions({
     queryKey: infrastructureKeys.all,
     queryFn: ({ signal }) => getInfrastructureOverview(signal),
-    refetchInterval: 5000,
+    refetchInterval: pollUnless(streamConnected),
     // Each tab says the agent is away in its own place; polling must not repeat it as a toast.
     meta: { errorHandledLocally: true },
   });
 
-export const serviceLogsQueryOptions = (serviceName: string | null) =>
+export const serviceLogsQueryOptions = (serviceName: string | null, streamConnected = false) =>
   queryOptions({
     queryKey: infrastructureKeys.logs(serviceName),
     queryFn: ({ signal }) => getServiceLogsSnapshot(serviceName ?? "", 200, signal),
     enabled: Boolean(serviceName),
-    refetchInterval: 5000,
+    refetchInterval: pollUnless(streamConnected),
   });
+
+/** A pushed event updates the polled overview in place, until the next poll replaces it. */
+export const receiveInfrastructureEvent = (client: QueryClient, event: InfrastructureEvent) =>
+  client.setQueryData(infrastructureOverviewQueryOptions().queryKey, (current) =>
+    applyInfrastructureEvent(current, event),
+  );
 
 /** How often the page and the navigation ask about alerts; the API reads signals every 15 s. */
 const ALERTS_POLL_MS = 15_000;
@@ -34,7 +50,8 @@ export const systemAlertsQueryOptions = () =>
     meta: { errorHandledLocally: true },
   });
 
-export const useInfrastructureOverview = () => useQuery(infrastructureOverviewQueryOptions());
+export const useInfrastructureOverview = (streamConnected: boolean) =>
+  useQuery(infrastructureOverviewQueryOptions(streamConnected));
 
 export const useSystemAlerts = () => useQuery(systemAlertsQueryOptions());
 
@@ -46,5 +63,5 @@ export const useOpenSystemAlertCount = (enabled: boolean) =>
     select: (alerts) => alerts.open.length,
   });
 
-export const useServiceLogsSnapshot = (serviceName: string | null) =>
-  useQuery(serviceLogsQueryOptions(serviceName));
+export const useServiceLogsSnapshot = (serviceName: string | null, streamConnected: boolean) =>
+  useQuery(serviceLogsQueryOptions(serviceName, streamConnected));

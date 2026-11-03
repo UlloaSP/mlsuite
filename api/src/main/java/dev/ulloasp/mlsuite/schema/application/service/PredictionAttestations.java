@@ -1,6 +1,5 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
@@ -17,8 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Seals the predictions the server performs, so that the browser which asked for one can hand it
@@ -64,7 +63,7 @@ public class PredictionAttestations {
         try {
             byte[] payload = objectMapper.writeValueAsBytes(prediction);
             return ENCODER.encodeToString(payload) + "." + ENCODER.encodeToString(mac(payload));
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             throw new IllegalStateException("A prediction could not be sealed", ex);
         }
     }
@@ -93,7 +92,7 @@ public class PredictionAttestations {
         AttestedPrediction prediction;
         try {
             prediction = objectMapper.readValue(payload, AttestedPrediction.class);
-        } catch (IOException ex) {
+        } catch (JacksonException ex) {
             throw notProduced();
         }
         long age = clock.millis() - prediction.issuedAt();

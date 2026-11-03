@@ -106,7 +106,9 @@ describe("startup gate", () => {
   test("a slow first check on a reload shows the app skeleton, never the startup screen", async () => {
     startup.ready = undefined;
     await render(<StartupGate>App</StartupGate>);
-    act(() => vi.advanceTimersByTime(LOADING_REVEAL_DELAY_MS * 10));
+    act(() => {
+      vi.advanceTimersByTime(LOADING_REVEAL_DELAY_MS * 10);
+    });
     expect(text()).toBe("Loading MLsuite…");
     expect(view.host.querySelector(".startup-screen")).toBeNull();
 
@@ -117,23 +119,31 @@ describe("startup gate", () => {
 
   test("holds Opening MLsuite. before handing over to the app", async () => {
     await render(<StartupGate>App</StartupGate>);
-    act(() => vi.advanceTimersByTime(LOADING_REVEAL_DELAY_MS));
+    act(() => {
+      vi.advanceTimersByTime(LOADING_REVEAL_DELAY_MS);
+    });
     expect(text()).toContain("Starting MLsuite.");
 
     startup.ready = true;
     await render(<StartupGate>App</StartupGate>);
     expect(text()).toContain("Opening MLsuite.");
 
-    act(() => vi.advanceTimersByTime(STARTUP_OPENING_MS));
+    act(() => {
+      vi.advanceTimersByTime(STARTUP_OPENING_MS);
+    });
     expect(text()).toBe("App");
   });
 
   test("suggests checking logs after a service keeps failing", async () => {
     await render(<StartupScreen ready={false} states={["exited"]} />);
-    act(() => vi.advanceTimersByTime(STARTUP_STUCK_MS - 1));
+    act(() => {
+      vi.advanceTimersByTime(STARTUP_STUCK_MS - 1);
+    });
     expect(text()).not.toContain("docker compose logs");
 
-    act(() => vi.advanceTimersByTime(1));
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
     expect(text()).toContain("docker compose logs");
   });
 });

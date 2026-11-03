@@ -115,8 +115,8 @@ const settle = async () => {
   }
 };
 const open = async (entry: string) => {
-  const router = createAppRouter(createMemoryHistory({ initialEntries: [entry] }));
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const router = createAppRouter(client, createMemoryHistory({ initialEntries: [entry] }));
   const { host } = await mount(
     <QueryClientProvider client={client}>
       <RouterProvider router={router} />
@@ -387,13 +387,13 @@ describe("coming back after authenticating", () => {
   });
 
   test("a session that expired on a workspace page returns to that page", async () => {
-    const { host, url } = await open("/profile?tab=security");
-    expect(url()).toBe(signInHref("/profile?tab=security"));
+    const { host, url } = await open("/profile?view=edit");
+    expect(url()).toBe(signInHref("/profile?view=edit"));
 
     await authenticate(host);
 
     expect(api.posts.map((post) => post.path)).toEqual(["/api/auth/login"]);
-    expect(url()).toBe("/profile?tab=security");
+    expect(url()).toBe("/profile?view=edit");
   });
 });
 

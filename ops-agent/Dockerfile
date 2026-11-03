@@ -1,6 +1,9 @@
+# The uv the backend's image pins: one uv for every Python image the project builds.
+FROM ghcr.io/astral-sh/uv:0.13.5@sha256:32a7bb39b496babbd997b0a39a4d66c126bdaf5661b302bf6f06abda8deca6ff AS uv
+
 FROM python:3.14-alpine@sha256:9e9fde4d32eedce0b661d9ab91e826b62dddf28e928c230ec55f1866cac66b01 AS build
 
-RUN python -m pip install --no-cache-dir uv==0.12.17
+COPY --from=uv /uv /usr/local/bin/uv
 
 WORKDIR /app
 

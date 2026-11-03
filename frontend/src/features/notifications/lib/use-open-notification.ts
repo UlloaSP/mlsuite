@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { isHttpError } from "@/shared/api/http";
 import type { NotificationDto } from "@/shared/api/openapi.gen";

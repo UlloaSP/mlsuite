@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Gauge } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { useApiCallLimitMutation } from "@/features/api-access/api/api-traffic.queries";
 import { CallLimitDialog } from "@/features/api-access/components/CallLimitDialog";
 import { failureMessage, formatCount } from "@/features/api-access/lib/api-format";

@@ -35,7 +35,8 @@ const pageState = vi.hoisted(() => ({
 }));
 
 const sessionUser = vi.hoisted(() => ({ id: "user-1" }));
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({ data: { id: sessionUser.id } }),
 }));
 vi.mock("@/capabilities/prediction-runtime/sandbox/sandboxed-forms", () => ({

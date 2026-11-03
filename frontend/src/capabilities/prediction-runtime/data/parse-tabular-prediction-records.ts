@@ -157,8 +157,9 @@ export function parseTabularPredictionRecords(
   const inputHeaders = hasNameHeader ? headers.slice(1) : headers;
   const fieldMap = new Map<string, SchemaField>();
   const mappedNames = new Set<string>();
+  const byName = new Map(fields.map((field) => [field.name, field]));
   for (const header of inputHeaders) {
-    const canonical = fields.find((field) => field.name === header);
+    const canonical = byName.get(header);
     const matches = canonical
       ? [canonical]
       : fields.filter((field) => field.columns.includes(header));

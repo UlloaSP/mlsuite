@@ -3,10 +3,11 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { getRouteApi } from "@tanstack/react-router";
 import { Search, Plus } from "lucide-react";
 import { useState } from "react";
 import { AppLink } from "@/shared/ui/AppLink";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import {
   useArchiveModelMutation,
   useRestoreModelMutation,
@@ -43,16 +44,13 @@ const SORT_OPTIONS: Array<{ value: ModelSortMode; label: string }> = [
   { value: "algorithm", label: "Algorithm" },
 ];
 
+const route = getRouteApi("/protected/app/can-view-models/models");
+
 export function ModelsPage() {
   const { data: user, error } = useUser();
   const { data: workspace } = useWorkspaceContext();
   const organizationId = workspace?.currentOrganization.id;
-  const controls = useCatalogControls<ModelStatusFilter, ModelSortMode>({
-    filters: STATUS_FILTERS.map(({ value }) => value),
-    initialFilter: "active",
-    initialSort: "updated",
-    sorts: SORT_OPTIONS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const renameMutation = useRenameModelMutation();
   const archiveMutation = useArchiveModelMutation();
   const restoreMutation = useRestoreModelMutation();

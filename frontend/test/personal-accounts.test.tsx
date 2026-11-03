@@ -52,7 +52,8 @@ const state = vi.hoisted(() => ({
 }));
 
 vi.mock("sonner", () => ({ toast: { success: state.toast } }));
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => state.user,
   useCurrentUserIsSuperadmin: () => state.superadmin,
 }));

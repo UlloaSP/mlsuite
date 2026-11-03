@@ -30,7 +30,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.MultiValueMap;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.zaxxer.hikari.HikariDataSource;
 
 import dev.ulloasp.mlsuite.apiaccess.adapter.out.persistence.repository.ApiClientKeyRepository;
@@ -67,7 +67,7 @@ class ApiPredictionTest extends ApiAccessFixture {
         assertEquals(null, row.get("actor_user_id"));
         assertEquals(organization.getId(), row.get("organization_id"));
         assertEquals(single.getId().toString(), row.get("target_id"));
-        assertEquals(UUID.fromString(answer.get("requestId").asText()), row.get("request_id"));
+        assertEquals(UUID.fromString(answer.get("requestId").asString()), row.get("request_id"));
         assertEquals(false, row.get("metadata").toString().contains(secret));
     }
 
@@ -104,14 +104,14 @@ class ApiPredictionTest extends ApiAccessFixture {
                 .andReturn().getResponse();
 
         JsonNode body = objectMapper.readTree(response.getContentAsString());
-        String requestId = body.get("requestId").asText();
+        String requestId = body.get("requestId").asString();
         assertEquals(requestId, response.getHeader("X-Request-Id"));
-        assertEquals(apiId, body.at("/bookmark/id").asText());
-        assertEquals("consumers", body.at("/bookmark/name").asText());
+        assertEquals(apiId, body.at("/bookmark/id").asString());
+        assertEquals("consumers", body.at("/bookmark/name").asString());
         assertEquals(4, body.at("/snapshot/version").asInt());
-        assertEquals("Forest only", body.at("/snapshot/name").asText());
-        assertEquals("risk-forest", body.at("/model/name").asText());
-        assertEquals(ArtifactHash.sha256(FOREST_BYTES), body.at("/model/sha256").asText());
+        assertEquals("Forest only", body.at("/snapshot/name").asString());
+        assertEquals("risk-forest", body.at("/model/name").asString());
+        assertEquals(ArtifactHash.sha256(FOREST_BYTES), body.at("/model/sha256").asString());
         assertEquals("[{\"prediction\":\"high\",\"probabilities\":{\"low\":0.2,\"high\":0.8}},{\"value\":41.5}]",
                 body.get("outputs").toString());
         // The record goes as sent, to the one model, with no connection held and no explanation asked.

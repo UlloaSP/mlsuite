@@ -1,4 +1,4 @@
-import { useParams } from "@tanstack/react-router";
+import { getRouteApi } from "@tanstack/react-router";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { MemberRoleFilter } from "@/features/workspace/components/MemberRoleFilter";
@@ -6,7 +6,8 @@ import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
 import { AppSearchField } from "@/shared/ui/AppSearchField";
 import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
-import { useUrlFilters } from "@/shared/lib/use-url-filters";
+import { useSearchFilters } from "@/shared/lib/use-search-filters";
+import { membersSearch } from "@/features/workspace/pages/workspace-search";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { useMemberCatalog } from "@/features/workspace/api/workspace-catalog-queries";
 import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
@@ -18,11 +19,15 @@ import { MemberTable } from "@/features/workspace/components/MemberTable";
 import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/workspace.queries";
 import { organizationRouteErrorStatus } from "@/features/workspace/lib/organization-route-error";
 
+const route = getRouteApi(
+  "/protected/app/team-organization/workspace/organizations/$organizationId/members",
+);
+
 export function MembersPage() {
-  const { organizationId = "" } = useParams({ strict: false });
+  const { organizationId } = route.useParams();
   const id = Number(organizationId);
   const dashboard = useOrganizationAdminDashboardQuery(id);
-  const filters = useUrlFilters({ q: "", role: "ALL" });
+  const filters = useSearchFilters(route.useSearch(), membersSearch);
   const { q: query, role } = filters.values;
   const search = useDebouncedValue(query.trim());
   const membersQuery = useMemberCatalog(

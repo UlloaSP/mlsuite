@@ -3,6 +3,17 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { notificationsSearch } from "@/features/notifications/pages/notification-search";
+import { ownProfileSearch, settingsSearch } from "@/features/user/pages/user-search";
+import { organizationAdminDashboardQueryOptions } from "@/features/workspace/api/workspace.queries";
+import {
+  auditSearch,
+  invitationsSearch,
+  membersSearch,
+  organizationsSearch,
+  rolesSearch,
+} from "@/features/workspace/pages/workspace-search";
+import { superadminRoutes } from "./admin-routes";
 import {
   appRoute,
   canCreateModelsRoute,
@@ -15,10 +26,10 @@ import {
   canViewWorkspaceRoute,
   protectedRoute,
   reviewAccessRoute,
-  superadminRoute,
   teamOrganizationRoute,
 } from "./layout-routes";
-import { page } from "./lazy-route";
+import { page, searchPage } from "./lazy-route";
+import { prefetchForMember } from "./route-loaders";
 import { workspaceRoutes } from "./workspace-routes";
 
 const reviewsPage = () =>
@@ -30,16 +41,16 @@ const accountRoutes = [
   page(appRoute, "home", () =>
     import("@/app/pages/authenticated-home-page").then((m) => m.AuthenticatedHomePage),
   ),
-  page(appRoute, "profile", () =>
+  searchPage(appRoute, "profile", ownProfileSearch, () =>
     import("@/features/user/pages/own-profile-page").then((m) => m.OwnProfilePage),
   ),
-  page(appRoute, "settings", () =>
+  searchPage(appRoute, "settings", settingsSearch, () =>
     import("@/features/user/pages/SettingsPage").then((m) => m.SettingsPage),
   ),
-  page(appRoute, "notifications", () =>
+  searchPage(appRoute, "notifications", notificationsSearch, () =>
     import("@/app/pages/NotificationsRoutePage").then((m) => m.NotificationsRoutePage),
   ),
-  page(appRoute, "workspace/organizations", () =>
+  searchPage(appRoute, "workspace/organizations", organizationsSearch, () =>
     import("@/features/workspace/pages/organizations-route-page").then(
       (m) => m.OrganizationsRoutePage,
     ),
@@ -47,24 +58,31 @@ const accountRoutes = [
   page(appRoute, "workspace/organizations/create", () =>
     import("@/app/router/create-organization-route").then((m) => m.CreateOrganizationRoute),
   ),
-  page(appRoute, ORGANIZATION, () =>
-    import("@/features/workspace/pages/organization-admin-page").then(
-      (m) => m.OrganizationAdminPage,
-    ),
+  page(
+    appRoute,
+    ORGANIZATION,
+    () =>
+      import("@/features/workspace/pages/organization-admin-page").then(
+        (m) => m.OrganizationAdminPage,
+      ),
+    ({ queryClient, params: { organizationId } }) =>
+      prefetchForMember(queryClient, () =>
+        queryClient.prefetchQuery(organizationAdminDashboardQueryOptions(Number(organizationId))),
+      ),
   ),
-  page(appRoute, `${ORGANIZATION}/audit-log`, () =>
+  searchPage(appRoute, `${ORGANIZATION}/audit-log`, auditSearch, () =>
     import("@/features/workspace/pages/audit-log-page").then((m) => m.AuditLogPage),
   ),
 ];
 
 const teamOrganizationRoutes = teamOrganizationRoute.addChildren([
-  page(teamOrganizationRoute, `${ORGANIZATION}/members`, () =>
+  searchPage(teamOrganizationRoute, `${ORGANIZATION}/members`, membersSearch, () =>
     import("@/features/workspace/pages/members-page").then((m) => m.MembersPage),
   ),
-  page(teamOrganizationRoute, `${ORGANIZATION}/invitations`, () =>
+  searchPage(teamOrganizationRoute, `${ORGANIZATION}/invitations`, invitationsSearch, () =>
     import("@/features/workspace/pages/invitations-page").then((m) => m.InvitationsPage),
   ),
-  page(teamOrganizationRoute, `${ORGANIZATION}/roles`, () =>
+  searchPage(teamOrganizationRoute, `${ORGANIZATION}/roles`, rolesSearch, () =>
     import("@/features/workspace/pages/roles-page").then((m) => m.RolesPage),
   ),
   page(teamOrganizationRoute, `${ORGANIZATION}/settings`, () =>
@@ -78,34 +96,6 @@ const reviewAccessRoutes = reviewAccessRoute.addChildren([
   page(reviewAccessRoute, "review", reviewsPage),
   page(reviewAccessRoute, "review/$reviewId", reviewsPage),
   page(reviewAccessRoute, "review/$reviewId/runs/$reviewRunId", reviewsPage),
-]);
-
-const superadminRoutes = superadminRoute.addChildren([
-  page(superadminRoute, "admin/users", () =>
-    import("@/features/admin/pages/admin-users-page").then((m) => m.AdminUsersPage),
-  ),
-  page(superadminRoute, "admin/users/create", () =>
-    import("@/features/admin/pages/create-admin-user-page").then((m) => m.CreateAdminUserPage),
-  ),
-  page(superadminRoute, "admin/purges", () =>
-    import("@/features/admin/pages/admin-purges-page").then((m) => m.AdminPurgesPage),
-  ),
-  page(superadminRoute, "admin/public-bookmarks", () =>
-    import("@/features/admin/pages/admin-public-bookmarks-page").then(
-      (m) => m.AdminPublicBookmarksPage,
-    ),
-  ),
-  page(superadminRoute, "admin/api-traffic", () =>
-    import("@/features/api-access/pages/admin-api-traffic-page").then((m) => m.AdminApiTrafficPage),
-  ),
-  page(superadminRoute, "admin/audit", () =>
-    import("@/features/workspace/pages/admin-audit-log-page").then((m) => m.AdminAuditLogPage),
-  ),
-  page(superadminRoute, "admin/infrastructure", () =>
-    import("@/features/infrastructure/pages/admin-infrastructure-page").then(
-      (m) => m.AdminInfrastructurePage,
-    ),
-  ),
 ]);
 
 const permissionRoutes = [

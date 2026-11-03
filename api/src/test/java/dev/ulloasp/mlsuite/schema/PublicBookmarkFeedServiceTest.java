@@ -1,5 +1,8 @@
 package dev.ulloasp.mlsuite.schema;
 
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import dev.ulloasp.mlsuite.support.PostgresDatabase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -27,8 +30,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
@@ -51,17 +54,18 @@ import jakarta.persistence.EntityManager;
 
 /** The public feed against a real database: what is listed, found, ordered and paged. */
 @DataJpaTest(properties = {
-        "spring.profiles.active=test", "logging.file.name=target/public-bookmark-feed-test.log",
-        "spring.datasource.url=jdbc:h2:mem:publicfeed;MODE=PostgreSQL;INIT=CREATE DOMAIN IF NOT EXISTS TIMESTAMPTZ AS TIMESTAMP WITH TIME ZONE",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.datasource.username=sa", "spring.datasource.password=",
-        "spring.jpa.hibernate.ddl-auto=create-drop", "spring.flyway.enabled=false"
+        "spring.profiles.active=test", "logging.file.name=target/public-bookmark-feed-test.log"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({ PublicBookmarkService.class, BookmarkPublishability.class,
         dev.ulloasp.mlsuite.schema.application.service.SnapshotRunGuard.class })
 @ContextConfiguration(classes = PublicBookmarkFeedServiceTest.PersistenceConfig.class)
 class PublicBookmarkFeedServiceTest {
+
+    @DynamicPropertySource
+    static void database(DynamicPropertyRegistry registry) {
+        PostgresDatabase.registerRolledBack(registry);
+    }
 
     @Configuration
     @EntityScan("dev.ulloasp.mlsuite")
@@ -178,7 +182,7 @@ class PublicBookmarkFeedServiceTest {
 
     @Test
     void aCardCarriesNothingBeyondWhatItShows() throws Exception {
-        ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        ObjectMapper mapper = new JsonMapper();
         PublicBookmarkSummaryDto card = service.getPublishedBookmarkPage(0, 24, "cardio", "updated").items().get(0);
 
         assertEquals(Set.of("publicId", "name", "description", "inputCount", "reportCount",

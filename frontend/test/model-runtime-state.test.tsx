@@ -34,7 +34,8 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
     data: { permissions: { canEditModels: mocks.canEditModels }, currentOrganization: { id: 7 } },
   }),
 }));
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({ data: { id: 1 }, error: null }),
 }));
 
@@ -63,7 +64,6 @@ const NUMPY_REFUSED = "The environment needs packages MLsuite does not install: 
 
 const locked: RuntimeEnvironmentDto = {
   key: "env-locked",
-  legacy: false,
   pythonVersion: "3.12.7",
   writerVersion: "0.3.0",
   packages: [{ name: "scikit-learn", version: "1.5.2" }],

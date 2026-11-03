@@ -28,7 +28,6 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersi
 import dev.ulloasp.mlsuite.schema.application.dto.*;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaVersionUseCase;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaDraftDiffService;
-import dev.ulloasp.mlsuite.schema.application.service.SchemaDraftPublishedVersionResolver;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaDraftServiceImpl;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaMappingCheck;
 import dev.ulloasp.mlsuite.schema.domain.model.*;
@@ -45,7 +44,6 @@ class SchemaDraftServiceTest {
     @Mock SchemaModelBindingRepository bindings;
     @Mock ModelRepository models;
     @Mock SchemaVersionUseCase versionUseCase;
-    @Mock SchemaDraftPublishedVersionResolver publishedVersions;
     @Mock WorkspaceAuthorizationService authorization;
     SchemaDraftDiffService engine;
     SchemaDraftServiceImpl service;
@@ -54,7 +52,7 @@ class SchemaDraftServiceTest {
     void setUp() {
         engine = new SchemaDraftDiffService();
         service = new SchemaDraftServiceImpl(users, schemas, versions, drafts, versionUseCase,
-                engine, publishedVersions, authorization, mock(SchemaMappingCheck.class), mock(AuditLogService.class));
+                engine, authorization, mock(SchemaMappingCheck.class), mock(AuditLogService.class));
         lenient().when(users.requireById(7L)).thenReturn(user());
         lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization());
     }
@@ -168,7 +166,7 @@ class SchemaDraftServiceTest {
     }
 
     @Test
-    void publishIsIdempotentAndLegacyPublishedDraftConflicts() {
+    void publishIsIdempotentAndAPublishedDraftCannotChange() {
         SchemaVersion base = version(9L, 1, form("Age"));
         SchemaVersion published = version(10L, 2, form("Patient"));
         SchemaDraft draft = draft(base);
@@ -181,32 +179,6 @@ class SchemaDraftServiceTest {
         assertEquals(400, assertThrows(ResponseStatusException.class, () -> service.updateDraft(7L, 30L,
                 new UpdateSchemaDraftRequest(1L, "x", form("x"), List.of(map("modelId", 1L)))))
                 .getStatusCode().value());
-
-        draft.setPublishedVersion(null);
-        when(publishedVersions.resolve(7L, draft)).thenReturn(published);
-        assertEquals("published", service.publishDraft(7L, 30L, new PublishSchemaDraftRequest(1L)).status());
-        assertEquals(10L, draft.getPublishedVersion().getId());
-    }
-
-    @Test
-    void publishedResolverFindsExactLegacyVersionAndRejectsAmbiguity() {
-        SchemaVersion base = version(9L, 1, form("Age"));
-        SchemaVersion published = version(10L, 2, form("Patient"));
-        SchemaDraft draft = draft(base);
-        draft.setName("v2");
-        draft.setFormSchema(form("Patient"));
-        draft.setBindings(List.of(map("modelId", 11L, "modelName", "renamed", "pluginPolicy", Map.of("threshold", 1))));
-        SchemaDraftPublishedVersionResolver resolver = new SchemaDraftPublishedVersionResolver(versions, versionUseCase);
-        when(versions.findBySchemaIdOrderByVersionDesc(5L)).thenReturn(List.of(published));
-        when(versionUseCase.listBindings(7L, 10L)).thenReturn(List.of(binding(published)));
-
-        assertEquals(10L, resolver.resolve(7L, draft).getId());
-
-        SchemaVersion duplicate = version(11L, 3, form("Patient"));
-        duplicate.setName("v2");
-        when(versions.findBySchemaIdOrderByVersionDesc(5L)).thenReturn(List.of(published, duplicate));
-        when(versionUseCase.listBindings(7L, 11L)).thenReturn(List.of(binding(published)));
-        assertConflict(() -> resolver.resolve(7L, draft));
     }
 
     @Test

@@ -111,7 +111,8 @@ describe("plugin sandbox channel", () => {
 
   test("refuses unknown methods, inherited names and invalid parameters", async () => {
     const { app, handler } = pair();
-    const request = app.request as (method: string, params: unknown) => Promise<unknown>;
+    // Called with names and parameters its types rule out, as a hostile frame would send them.
+    const request = app.request.bind(app) as (method: string, params: unknown) => Promise<unknown>;
 
     await expect(request("triple", { value: 1 })).rejects.toThrow('Unknown method "triple".');
     await expect(request("constructor", {})).rejects.toThrow('Unknown method "constructor".');

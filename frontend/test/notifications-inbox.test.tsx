@@ -18,7 +18,8 @@ import { buttonByText, click, mount } from "./support/dom";
 
 const toast = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({ data: { id: 4 } }),
 }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
@@ -69,7 +70,7 @@ const answer = (status: number, body?: unknown) =>
   });
 
 const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-  const url = new URL(String(input));
+  const url = new URL(input instanceof Request ? input.url : input);
   const method = init?.method ?? "GET";
   requests.push({ method, path: `${url.pathname}${url.search}` });
   if (failing.has(url.pathname)) return answer(500, { status: 500, message: "The server failed" });
@@ -91,13 +92,11 @@ function Location() {
 
 async function showInbox(state: Inbox = {}, selectOrganization = vi.fn().mockResolvedValue({})) {
   inbox = { notifications: [], pending: [], unread: 0, ...state };
-  const view = await mount(
-    <>
-      <NotificationsPage selectOrganization={selectOrganization} />
-      <Location />
-    </>,
-    { route: "/notifications" },
-  );
+  // The inbox is its route's page: opening a notification leaves it for the target's page.
+  const view = await mount(<Location />, {
+    route: "/notifications",
+    routes: { "/notifications": <NotificationsPage selectOrganization={selectOrganization} /> },
+  });
   await flush();
   return { ...view, selectOrganization };
 }

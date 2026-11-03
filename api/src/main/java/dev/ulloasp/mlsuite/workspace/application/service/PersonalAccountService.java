@@ -36,8 +36,7 @@ public class PersonalAccountService {
     /** Opens the account of a user just saved, who owns it from then on. */
     public void open(User user) {
         Organization personal = organizationRepository.save(Organization.personal(user));
-        roleSeedService.ensureOrganizationRoles(personal);
-        roleSeedService.reviewerRole(personal);
+        roleSeedService.createOrganizationRoles(personal);
         membershipRepository.save(new OrganizationMembership(
                 personal,
                 user,

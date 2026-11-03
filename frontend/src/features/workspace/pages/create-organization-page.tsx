@@ -7,7 +7,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { AtSign } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppCombobox } from "@/shared/ui/AppCombobox";
 import { AppPage } from "@/shared/ui/AppPage";

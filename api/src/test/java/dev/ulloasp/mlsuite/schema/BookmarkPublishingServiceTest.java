@@ -24,8 +24,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
@@ -175,7 +175,7 @@ class BookmarkPublishingServiceTest {
                 "reports", List.of(
                         Map.of("kind", "classifier", "label", "Risk", "id", "out0", "mappedTo", "out0"))),
                 view.formSchema());
-        ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        ObjectMapper mapper = new JsonMapper();
         assertEquals(Set.of("publicId", "name", "description", "publicationNote", "version", "inputCount",
                 "reportCount", "organizationName", "organizationLogoUrl", "organizationKind", "publisherHandle",
                 "formSchema", "updatedAt"),
@@ -294,15 +294,9 @@ class BookmarkPublishingServiceTest {
 
     @ParameterizedTest
     @EnumSource(OrganizationRole.class)
-    void existingOwnerAndAdminRolesGainThePermissionAtStartup(OrganizationRole role) {
-        RoleDefinition existing = TestFixtures.role(organization, role.name(), PermissionKey.VIEW_MODELS);
-        when(roles.findByOrganizationIdAndSystemKey(ORG_ID, role.name())).thenReturn(Optional.of(existing));
-        when(roles.save(existing)).thenReturn(existing);
-        var seed = new RoleSeedService(mock(OrganizationRepository.class), roles, mock(RoleTemplateRepository.class));
-
-        boolean granted = seed.orgRole(organization, role).getPermissions().contains(PermissionKey.PUBLISH_BOOKMARKS);
-
-        assertEquals(role == OrganizationRole.OWNER || role == OrganizationRole.ADMIN, granted);
+    void onlyOwnersAndAdminsMayPublishBookmarks(OrganizationRole role) {
+        assertEquals(role == OrganizationRole.OWNER || role == OrganizationRole.ADMIN,
+                RoleSeedService.systemPermissions(role).contains(PermissionKey.PUBLISH_BOOKMARKS));
     }
 
     private SchemaBookmark stored(SchemaBookmark bookmark) {

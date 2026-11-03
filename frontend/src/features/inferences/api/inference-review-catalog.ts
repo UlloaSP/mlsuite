@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { appFetch } from "@/shared/api/http";
 import { useInfiniteCatalog, type CatalogPage } from "@/shared/api/infinite-catalog";
@@ -27,24 +27,31 @@ export function useReviewAssignmentCatalog(
   });
 }
 
-export function useReviewAssignmentCounts(id: number, enabled: boolean) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery({
+export const reviewAssignmentCountsQueryOptions = (organizationId: number | string, id: number) =>
+  queryOptions({
     queryKey: [...INFERENCE_REVIEW_ASSIGNMENTS_QUERY_KEY(organizationId, id), "counts"],
     queryFn: ({ signal }) =>
       appFetch<ReviewAssignmentCountsDto>(
         `/api/schema-reviews/inferences/${id}/assignments/counts`,
         { signal },
       ),
-    enabled: organizationId !== "none" && enabled,
+    enabled: organizationId !== "none",
     staleTime: 0,
     refetchInterval: REVIEW_POLL_MS,
   });
-}
 
-export function useReviewAssignment(id: number, reviewRunId: string, reviewerId: string) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery({
+export const useReviewAssignmentCounts = (id: number, enabled: boolean) => {
+  const options = reviewAssignmentCountsQueryOptions(useCurrentOrganizationId() ?? "none", id);
+  return useQuery({ ...options, enabled: options.enabled !== false && enabled });
+};
+
+export const reviewAssignmentQueryOptions = (
+  organizationId: number | string,
+  id: number,
+  reviewRunId: string,
+  reviewerId: string,
+) =>
+  queryOptions({
     queryKey: [
       ...INFERENCE_REVIEW_ASSIGNMENTS_QUERY_KEY(organizationId, id),
       "detail",
@@ -56,8 +63,12 @@ export function useReviewAssignment(id: number, reviewRunId: string, reviewerId:
         `/api/schema-reviews/inferences/${id}/assignments/${encodeURIComponent(reviewRunId)}/${encodeURIComponent(reviewerId)}`,
         { signal },
       ),
-    enabled: organizationId !== "none" && Boolean(reviewRunId && reviewerId),
+    enabled: organizationId !== "none",
     staleTime: 0,
     refetchInterval: REVIEW_POLL_MS,
   });
-}
+
+export const useReviewAssignment = (id: number, reviewRunId: string, reviewerId: string) =>
+  useQuery(
+    reviewAssignmentQueryOptions(useCurrentOrganizationId() ?? "none", id, reviewRunId, reviewerId),
+  );

@@ -7,7 +7,7 @@ history, and stream deltas share one payload.
 from __future__ import annotations
 
 from collections import deque
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 import os
 from pathlib import Path
 import shutil
@@ -17,12 +17,18 @@ from .config import Settings
 
 
 class MetricsBuffer:
+    """The last retention_minutes of samples, however far apart the cadence put them."""
+
     def __init__(self, settings: Settings):
+        self.retention = timedelta(minutes=settings.retention_minutes)
         max_points = max(1, (settings.retention_minutes * 60) // settings.sample_interval_seconds)
         self.points: deque[dict[str, Any]] = deque(maxlen=max_points)
 
     def append(self, point: dict[str, Any]) -> None:
         self.points.append(point)
+        oldest = datetime.fromisoformat(point["timestamp"]) - self.retention
+        while len(self.points) > 1 and datetime.fromisoformat(self.points[0]["timestamp"]) < oldest:
+            self.points.popleft()
 
 
 def collect_metrics(services: list[dict[str, Any]]) -> dict[str, Any]:

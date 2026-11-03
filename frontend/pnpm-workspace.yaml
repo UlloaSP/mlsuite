@@ -9,6 +9,13 @@ overrides:
   # mlform 0.2.0 pins zod 4.6.5 (vulnerable); a second zod copy also exhausts tsc memory.
   zod: 4.6.6
 
+# @pierre/diffs resolves Shiki languages by name from Shiki's full bundle and can load its Oniguruma
+# WASM, so the build emitted every grammar (~360 chunks) and the WASM. The merge view highlights only
+# JSON with the JavaScript engine: the patch builds the core highlighter with that engine and knows
+# only JSON's grammar. Recreate it with `vp exec pnpm patch @pierre/diffs@<version>` when upgrading.
+patchedDependencies:
+  "@pierre/diffs@1.4.3": patches/@pierre__diffs@1.4.3.patch
+
 #  - react-doctor@0.8.1
 #trustPolicy: no-downgrade
 #trustPolicyExclude:

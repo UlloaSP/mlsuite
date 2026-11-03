@@ -1,6 +1,6 @@
 import { RotateCcw, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
-import { useParams } from "@tanstack/react-router";
+import { getRouteApi } from "@tanstack/react-router";
 import { AppLink } from "@/shared/ui/AppLink";
 import { useInference } from "@/features/inferences/api/inference-api";
 import { useReviewAssignment } from "@/features/inferences/api/inference-review-catalog";
@@ -26,9 +26,13 @@ type Props = {
   renderAnswers: (inferenceId: string, reviewerId: number, reviewerName: string) => ReactNode;
 };
 
+const route = getRouteApi(
+  "/protected/app/can-manage-reviews/inferences/$inferenceId/reviews/$reviewRunId/reviewers/$reviewerId",
+);
+
 /** One reviewer's assignment on an inference: its state and dates, their answers, and its actions. */
 export function InferenceReviewPage({ renderAnswers }: Props) {
-  const { inferenceId = "", reviewRunId = "", reviewerId = "" } = useParams({ strict: false });
+  const { inferenceId, reviewRunId, reviewerId } = route.useParams();
   const inference = useInference(inferenceId).data;
   const assignments = useReviewAssignment(Number(inferenceId), reviewRunId, reviewerId);
   const assignment = assignments.data;

@@ -16,7 +16,6 @@ vi.mock("@/shared/api/http", async (importOriginal) => ({
 
 const locked: RuntimeEnvironmentDto = {
   key: "env-locked",
-  legacy: false,
   pythonVersion: "3.12.7",
   writerVersion: "0.3.0",
   packages: [
@@ -38,10 +37,7 @@ test("each inference result names the environment that computed it", async () =>
   mocks.appFetch.mockResolvedValue(locked);
   const { host } = await mount(
     <PredictionRunEnvironments
-      results={[
-        { id: 1, modelId: 12, environmentKey: "env-locked" },
-        { id: 2, modelId: 13, environmentKey: null },
-      ]}
+      results={[{ id: 1, modelId: 12, environmentKey: "env-locked" }]}
       bindings={[
         { modelId: 12, modelName: "Risk" },
         { modelId: 13, modelName: "Churn" },
@@ -57,16 +53,4 @@ test("each inference result names the environment that computed it", async () =>
   expect([...host.querySelectorAll("li")].map((item) => item.textContent)).toEqual([
     "Risk ran in Python 3.12.7 · mlbundle 0.3.0 · scikit-learn 1.5.2",
   ]);
-});
-
-test("results stored before environments show no environment", async () => {
-  const { host } = await mount(
-    <PredictionRunEnvironments
-      results={[{ id: 1, modelId: 12, environmentKey: null }]}
-      bindings={[{ modelId: 12, modelName: "Risk" }]}
-    />,
-  );
-
-  expect(host.textContent).toBe("");
-  expect(mocks.appFetch).not.toHaveBeenCalled();
 });

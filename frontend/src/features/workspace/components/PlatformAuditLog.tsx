@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { getRouteApi } from "@tanstack/react-router";
 import { useState } from "react";
 import { usePlatformAuditEventCatalog } from "@/features/workspace/api/workspace-catalog-queries";
 import { useOrganizationCatalogPageQuery } from "@/features/workspace/api/workspace.queries";
@@ -16,9 +17,11 @@ const SCOPES = [
   { id: "platform", label: "Platform events" },
 ];
 
+const route = getRouteApi("/protected/app/superadmin/admin/audit");
+
 /** Every organization's log and the platform's own events, newest first. */
 export function PlatformAuditLog() {
-  const filters = useAuditFilters();
+  const filters = useAuditFilters(route.useSearch());
   const [organizationSearch, setOrganizationSearch] = useState("");
   const log = usePlatformAuditEventCatalog(filters.controls);
   const organizations = useOrganizationCatalogPageQuery(organizationSearch, "name");

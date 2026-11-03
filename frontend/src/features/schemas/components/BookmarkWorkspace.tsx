@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { FileJson2, History } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Navigate } from "@tanstack/react-router";
+import { getRouteApi, Navigate } from "@tanstack/react-router";
 import { AppLink } from "@/shared/ui/AppLink";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
@@ -24,7 +24,8 @@ import { SchemaRunBulkUploadButton } from "@/features/schemas/components/SchemaR
 import { bookmarkInferencesHref } from "@/features/schemas/lib/bookmark-inferences-href";
 import { useInferenceSession } from "@/features/schemas/lib/use-inference-session";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
-import { useUrlSearchParams } from "@/shared/lib/url-search-params";
+
+const route = getRouteApi("/protected/app/can-view-models/predict/$bookmarkId");
 
 /**
  * Running a bookmark: its form, and the session of runs to keep or discard.
@@ -47,10 +48,9 @@ export function BookmarkWorkspace({ bookmarkId }: { bookmarkId: string }) {
   // The History count comes from the Predict catalog, which refreshes when runs are saved.
   const runCount = useBookmarkStatistics(bookmarkId).data?.runCount;
   const session = useInferenceSession(bookmarkId, pinnedVersionId);
-  const params = useUrlSearchParams();
   // "Predict again" asks for a run's inputs with ?from=; the form keeps that source
   // until another is asked for.
-  const requestedSource = params.get("from") ?? undefined;
+  const requestedSource = route.useSearch({ select: (search) => search.from });
   const [formSource, setFormSource] = useState(requestedSource);
   if (requestedSource && requestedSource !== formSource) setFormSource(requestedSource);
   const { detachForm } = session;

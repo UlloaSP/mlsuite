@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMemo } from "react";
-import { useSearchParamState } from "@/shared/lib/use-search-param-state";
+import { getRouteApi } from "@tanstack/react-router";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppTabPanel, AppTabs } from "@/shared/ui/AppTabs";
@@ -20,8 +20,7 @@ import { readModelManifest } from "@/features/models/lib/model-manifest";
 import { readModelInputs, readModelOutputs } from "@/features/models/lib/model-schema-rows";
 import type { ModelDetailsDto, ModelDto } from "@/shared/api/openapi.gen";
 
-const TABS = ["overview", "inputs", "outputs", "parameters", "provenance"] as const;
-type Tab = (typeof TABS)[number];
+const route = getRouteApi("/protected/app/can-view-models/models/$modelId");
 
 const counted = (count: number, one: string, many: string) =>
   `${count} ${count === 1 ? one : many}`;
@@ -34,7 +33,10 @@ type Props = {
 
 /** Everything a model's bundle says about it, one linkable tab per question. */
 export function ModelDetailTabs({ model, details }: Props) {
-  const [tab, setTab] = useSearchParamState<Tab>("tab", "overview", TABS);
+  const tab = route.useSearch({ select: (search) => search.tab });
+  const navigate = route.useNavigate();
+  const setTab = (next: typeof tab) =>
+    void navigate({ to: ".", search: (previous) => ({ ...previous, tab: next }), replace: true });
   const manifest = useMemo(() => readModelManifest(details?.manifest), [details?.manifest]);
   const inputs = useMemo(
     () => readModelInputs(model.inputSchema, manifest),
@@ -75,12 +77,6 @@ export function ModelDetailTabs({ model, details }: Props) {
           compact
           title="Bundle details unavailable"
           description="What the model's bundle says about it could not be loaded. Try again in a moment."
-        />
-      ) : manifest.steps.length === 0 ? (
-        <AppEmptyState
-          compact
-          title="No bundle details"
-          description="This model was stored before MLsuite kept what its bundle says about it. Upload its .mlbundle again to see it here."
         />
       ) : (
         <AppTabs

@@ -6,16 +6,13 @@ import java.util.Map;
 
 /**
  * What the runtime read from an uploaded bundle: its model's kind and estimator, the file name it
- * reports, the schema and manifest it carries, the environment it runs in and, when the runtime
- * read them already (bundles without a lock), its importances.
+ * reports, the schema and manifest it carries, and the environment it runs in. Its importances are
+ * read once the model loads in that environment.
  */
 public record BundleInspection(String type, String specificType, String fileName, Map<String, Object> schema,
-        Map<String, Object> manifest, List<Map<String, Object>> featureImportances, Environment environment) {
+        Map<String, Object> manifest, Environment environment) {
 
-    /**
-     * The environment the bundle needs: for a bundle with a lock, the lock and what it names; for
-     * one without, only the legacy key.
-     */
+    /** The environment the bundle needs: its lock and what the lock names. */
     public record Environment(String key, String environmentId, String writerVersion, String pythonVersion,
             List<Map<String, Object>> packages, String lock) {
 
@@ -32,12 +29,9 @@ public record BundleInspection(String type, String specificType, String fileName
 
     /** Reads the runtime's answer; {@code uploadedName} names the file when the answer does not. */
     public static BundleInspection of(Map<String, Object> answer, String uploadedName) {
-        List<Map<String, Object>> importances = answer.get("featureImportances") instanceof List<?> items
-                ? items.stream().filter(Map.class::isInstance).map(item -> object((Map<?, ?>) item)).toList()
-                : null;
         return new BundleInspection(text(answer, "type"), text(answer, "specificType"),
                 answer.get("fileName") != null ? answer.get("fileName").toString() : uploadedName,
-                required(answer, "schema"), required(answer, "manifest"), importances,
+                required(answer, "schema"), required(answer, "manifest"),
                 Environment.of(required(answer, "environment")));
     }
 

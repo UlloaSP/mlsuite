@@ -12,20 +12,12 @@ export function ModelEnvironmentSection({ environment }: { environment: RuntimeE
   return (
     <ModelSection
       title="Environment"
-      note={
-        environment.legacy
-          ? "Where MLsuite runs this model: the fixed environment kept for bundles written before mlbundle 0.3."
-          : "Where MLsuite runs this model: built from the packages its bundle locks."
-      }
+      note="Where MLsuite runs this model: built from the packages its bundle locks."
     >
       <ModelFacts
         facts={[
           { label: "Python", value: environment.pythonVersion, mono: true },
           { label: "mlbundle", value: environment.writerVersion, mono: true },
-          {
-            label: "Kind",
-            value: environment.legacy ? "Legacy environment" : "Locked by the bundle",
-          },
         ]}
       />
       {environment.packages.length > 0 ? (

@@ -55,7 +55,7 @@ afterEach(() => {
 });
 async function render(search = "", manage = false) {
   const view = await mount(<InvitationCatalog organizationId={3} canManage={manage} />, {
-    route: `/invitations${search}`,
+    route: `/workspace/organizations/3/invitations${search}`,
   });
   await settle();
   // Once shown, the loading state is held for a moment; wait it out instead of guessing.

@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "@tanstack/react-router";
+import { getRouteApi } from "@tanstack/react-router";
 import {
   isProfileMissing,
   publicProfileQueryOptions,
@@ -20,12 +20,14 @@ import { AppSurface } from "@/shared/ui/AppSurface";
 import { cx } from "@/shared/ui/cx";
 import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
 
+const route = getRouteApi("/session-frame/u/$handle");
+
 /**
  * A person's page, the same for anonymous visitors and members: it reads only the public API, and
  * the frame around it is chosen by the router.
  */
 export function PublicProfilePage() {
-  const { handle = "" } = useParams({ strict: false });
+  const { handle } = route.useParams();
   const query = useQuery(publicProfileQueryOptions(handle));
   const bookmarks = usePublicProfileBookmarks(handle);
   const profile = query.data;

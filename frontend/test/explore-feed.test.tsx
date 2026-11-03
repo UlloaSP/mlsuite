@@ -347,9 +347,10 @@ describe("Explore navigation entry", () => {
 
 describe("entry routing", () => {
   const open = async (entry: string) => {
-    const router = createAppRouter(createMemoryHistory({ initialEntries: [entry] }));
+    const client = newClient();
+    const router = createAppRouter(client, createMemoryHistory({ initialEntries: [entry] }));
     const view = await mount(
-      <QueryClientProvider client={newClient()}>
+      <QueryClientProvider client={client}>
         <RouterProvider router={router} />
       </QueryClientProvider>,
     );

@@ -1,4 +1,4 @@
-import { useParams } from "@tanstack/react-router";
+import { getRouteApi } from "@tanstack/react-router";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
@@ -11,8 +11,12 @@ import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/wor
 import { OrganizationSettingsContent } from "@/features/workspace/components/OrganizationSettingsContent";
 import { organizationRouteErrorStatus } from "@/features/workspace/lib/organization-route-error";
 
+const route = getRouteApi(
+  "/protected/app/team-organization/workspace/organizations/$organizationId/settings",
+);
+
 export function OrganizationSettingsPage() {
-  const { organizationId = "" } = useParams({ strict: false });
+  const { organizationId } = route.useParams();
   const id = Number(organizationId);
   const dashboard = useOrganizationAdminDashboardQuery(id);
   const showLoader = useStableLoading(dashboard.isLoading);

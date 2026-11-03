@@ -64,7 +64,7 @@ export function AppFileDropZone({ accept, hints, inputLabel, onFiles }: Props) {
         </span>
 
         {/* Visual action; the whole drop zone is the interactive control. */}
-        <span className="flex-shrink-0 cursor-pointer rounded-lg border border-line-strong bg-surface px-3.5 py-2 text-xs font-semibold text-fg-secondary shadow-none transition-all duration-150 hover:border-line-strong hover:text-fg hover:shadow-hover">
+        <span className="flex-shrink-0 cursor-pointer rounded-lg border border-line-strong bg-surface px-3.5 py-2 text-xs font-semibold text-fg-secondary shadow-none transition-[border-color,color,box-shadow] duration-150 hover:border-line-strong hover:text-fg hover:shadow-hover">
           Add files
         </span>
       </button>

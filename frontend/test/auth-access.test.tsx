@@ -28,7 +28,10 @@ function AccessProbe() {
 }
 
 const probe = () => host.querySelector<HTMLElement>("[data-phase]")!;
-const advance = (ms: number) => act(() => vi.advanceTimersByTime(ms));
+const advance = (ms: number) =>
+  act(() => {
+    vi.advanceTimersByTime(ms);
+  });
 
 beforeEach(async () => {
   vi.useFakeTimers();

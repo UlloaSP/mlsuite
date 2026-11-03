@@ -37,6 +37,8 @@ class AgentState:
         self.cleanup_task: asyncio.Task[None] | None = None
         self._latest_services: list[dict[str, Any]] = []
         self._compose_failed = False
+        # Notified when the first dashboard connects, so both loops switch to its cadence at once.
+        self._watched = asyncio.Condition()
 
     async def start(self) -> None:
         try:
@@ -73,7 +75,7 @@ class AgentState:
             },
             "services": self._latest_services,
             "history": {
-                "sampleIntervalSeconds": self.settings.sample_interval_seconds,
+                "sampleIntervalSeconds": self.sample_interval(),
                 "retentionMinutes": self.settings.retention_minutes,
                 "points": list(self.metrics.points),
             },
@@ -86,9 +88,28 @@ class AgentState:
             return None
         return machine_load(self.metrics.points[-1]["cpuPercent"])
 
+    def sample_interval(self) -> int:
+        """Seconds between samples: fast while a dashboard watches, as slow as alerts allow otherwise."""
+        return self.settings.sample_interval_seconds if self.clients else self.settings.idle_interval_seconds
+
+    def service_interval(self) -> int:
+        return self.settings.service_interval_seconds if self.clients else self.settings.idle_interval_seconds
+
+    async def _pause(self, seconds: int) -> None:
+        """Waits `seconds`, or less when a first dashboard connects meanwhile."""
+        async with self._watched:
+            try:
+                await asyncio.wait_for(self._watched.wait(), timeout=seconds)
+            except TimeoutError:
+                pass
+
     async def register_client(self, websocket: WebSocket) -> StreamClient:
         client = StreamClient(websocket)
+        first = not self.clients
         self.clients.add(client)
+        if first:
+            async with self._watched:
+                self._watched.notify_all()
         await client.queue.put({"type": "overview.snapshot", "payload": await self.snapshot()})
         return client
 
@@ -113,11 +134,11 @@ class AgentState:
                     "payload": {"aggregate": point, "services": self._latest_services},
                 }
             )
-            await asyncio.sleep(self.settings.sample_interval_seconds)
+            await self._pause(self.sample_interval())
 
     async def _service_loop(self) -> None:
         while True:
-            await asyncio.sleep(5)
+            await self._pause(self.service_interval())
             try:
                 self._latest_services = await self.compose.service_snapshot()
                 self._compose_failed = False

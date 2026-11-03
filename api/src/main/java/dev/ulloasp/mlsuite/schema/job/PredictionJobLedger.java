@@ -12,9 +12,9 @@ import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
 import lombok.RequiredArgsConstructor;
@@ -226,7 +226,7 @@ class PredictionJobLedger {
     private String json(Object value) {
         try {
             return objectMapper.writeValueAsString(value);
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             throw new IllegalArgumentException("A bulk row is not serializable as JSON", ex);
         }
     }
@@ -234,7 +234,7 @@ class PredictionJobLedger {
     private <T> T read(String json, TypeReference<T> type) {
         try {
             return objectMapper.readValue(json, type);
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             throw new IllegalStateException("A stored bulk row is not valid JSON", ex);
         }
     }

@@ -5,7 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useHotkeys, useKeyHold, type UseHotkeyDefinition } from "@tanstack/react-hotkeys";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffectEvent } from "react";
 import { RESTORE_SCROLL_STATE } from "@/app/layouts/use-scroll-memory";
 import type { NavigationChild, NavigationItem } from "./sidebar-navigation-support";
 
@@ -28,12 +27,13 @@ export function useNavigationShortcuts({
   const navigate = useNavigate();
   const altHeld = useKeyHold("Alt");
 
-  const open = useEffectEvent((digit: number, child: boolean) => {
+  // useHotkeys re-registers its definitions after every render, so this reads current entries.
+  const open = (digit: number, child: boolean) => {
     const target = child ? shortcutChildren()[digit - 1] : navigation[digit - 1];
     if (!target) return;
     // A section resumes where it was, scroll included; a child page starts fresh.
     void navigate({ href: target.to, state: child ? undefined : RESTORE_SCROLL_STATE });
-  });
+  };
 
   useHotkeys(
     DIGITS.flatMap((digit) =>

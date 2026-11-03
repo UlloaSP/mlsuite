@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { badgeLabel } from "@/shared/ui/AppBadge";
+import { badgeLabel } from "@/shared/ui/badge-label";
 
 describe("badge labels", () => {
   it("reads API enum values as sentence case", () => {

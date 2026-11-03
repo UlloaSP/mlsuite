@@ -11,11 +11,6 @@ COPY src ./src
 
 RUN uv sync --frozen --no-dev
 
-# The frozen environment for bundles written before locks (mlbundle 0.2.1); models with a lock
-# run in environments the builder installs at runtime.
-COPY legacy/pyproject.toml legacy/uv.lock ./legacy/
-RUN UV_PROJECT_ENVIRONMENT=/opt/mlsuite/legacy uv sync --frozen --no-dev --directory legacy
-
 # The builder installs environments with this uv; it knows the CPython releases the allowlist names.
 FROM ghcr.io/astral-sh/uv:0.13.5@sha256:32a7bb39b496babbd997b0a39a4d66c126bdaf5661b302bf6f06abda8deca6ff AS uv
 
@@ -31,7 +26,6 @@ WORKDIR /app
 
 USER 65532
 COPY --from=build /app/.venv ./.venv
-COPY --from=build /opt/mlsuite/legacy /opt/mlsuite/legacy
 COPY --from=build /app/src ./src
 COPY environment-allowlist.toml .
 

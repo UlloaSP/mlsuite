@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { getRouteApi } from "@tanstack/react-router";
 import { Building2 } from "lucide-react";
 import { useApiTrafficOrganizations } from "@/features/api-access/api/api-traffic.queries";
 import { TrafficOrganizationEntry } from "@/features/api-access/components/TrafficOrganizationEntry";
@@ -15,14 +16,13 @@ const PAGE_SIZE = 24;
 const FILTERS = [{ value: "all" as const, label: "All" }];
 const SORTS = [{ value: "name" as const, label: "Name" }];
 
+const route = getRouteApi("/protected/app/superadmin/admin/api-traffic");
+
 /** The accounts with API clients, personal ones among them, by name, each with its month against its limit. */
 export function TrafficOrganizationsCatalog() {
-  const controls = useCatalogControls<"all", "name">({
-    filters: ["all"],
-    initialFilter: "all",
-    initialSort: "name",
-    sorts: ["name"],
-  });
+  // Accounts are only searched; the page's filter and sort belong to its clients tab.
+  const q = route.useSearch({ select: (search) => search.q });
+  const controls = useCatalogControls({ q, filter: "all", sort: "name" });
   const query = useApiTrafficOrganizations({
     size: PAGE_SIZE,
     search: controls.search,

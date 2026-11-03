@@ -71,7 +71,7 @@ class ModelPreparationWorker {
         RunnableModel model = found.get();
         try {
             RuntimeEnvironment environment = environments.findById(model.environmentKey()).orElseThrow();
-            if (!environment.isLegacy()) builder.build(environment);
+            builder.build(environment);
             Map<String, Object> answer = runtime.verify(model);
             ledger.ready(modelId, worker, importances(answer.get("featureImportances")));
             log.info("Model {} is ready in environment {}", modelId, model.environmentKey());

@@ -4161,7 +4161,7 @@ export interface components {
         PredictionResultDto: {
             /** Format: date-time */
             createdAt: string;
-            environmentKey: string | null;
+            environmentKey: string;
             errorJson: {
                 [key: string]: unknown;
             } | null;
@@ -4557,7 +4557,6 @@ export interface components {
         };
         RuntimeEnvironmentDto: {
             key: string;
-            legacy: boolean;
             packages: components["schemas"]["EnvironmentPackageDto"][];
             pythonVersion: string;
             writerVersion: string;

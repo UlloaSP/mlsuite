@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { appFetch } from "@/shared/api/http";
 import { useInfiniteCatalog, type CatalogPage } from "@/shared/api/infinite-catalog";
@@ -22,12 +22,15 @@ export function useReviewInboxCatalog(filter = "all", enabled = true) {
     enabled: org !== "none" && enabled,
   });
 }
-export const reviewInboxItemQueryKey = (org: number | string, reviewId?: string, runId?: string) =>
+const reviewInboxItemQueryKey = (org: number | string, reviewId?: string, runId?: string) =>
   [...SCHEMA_REVIEW_INBOX_QUERY_KEY(org), "item", reviewId, runId] as const;
 
-export function useReviewInboxItem(reviewId?: string, runId?: string) {
-  const org = useCurrentOrganizationId() ?? "none";
-  return useQuery({
+export const reviewInboxItemQueryOptions = (
+  org: number | string,
+  reviewId?: string,
+  runId?: string,
+) =>
+  queryOptions({
     queryKey: reviewInboxItemQueryKey(org, reviewId, runId),
     queryFn: ({ signal }) =>
       appFetch<ReviewInboxItemDto>(`/api/schema-reviews/inbox/${reviewId}/runs/${runId}`, {
@@ -36,25 +39,41 @@ export function useReviewInboxItem(reviewId?: string, runId?: string) {
     enabled: Boolean(reviewId && runId) && org !== "none",
     retry: false,
   });
-}
-export function useReviewCatalogContext(reviewId?: string) {
-  const org = useCurrentOrganizationId() ?? "none";
-  return useQuery({
+
+/** One inbox item, shown as `listed` (its row in the inbox) until the server's answer arrives. */
+export const useReviewInboxItem = (
+  reviewId?: string,
+  runId?: string,
+  listed?: ReviewInboxItemDto,
+) =>
+  useQuery({
+    ...reviewInboxItemQueryOptions(useCurrentOrganizationId() ?? "none", reviewId, runId),
+    placeholderData: listed,
+  });
+
+export const reviewCatalogContextQueryOptions = (org: number | string, reviewId?: string) =>
+  queryOptions({
     queryKey: [...SCHEMA_REVIEW_INBOX_QUERY_KEY(org), "context", reviewId],
     queryFn: ({ signal }) =>
       appFetch<ReviewCatalogSummaryDto>(`/api/schema-reviews/inbox/${reviewId}`, { signal }),
     enabled: Boolean(reviewId) && org !== "none",
   });
-}
-export function useReviewFirstRun(reviewId?: string, enabled = false) {
-  const org = useCurrentOrganizationId() ?? "none";
-  return useQuery({
+
+export const useReviewCatalogContext = (reviewId?: string) =>
+  useQuery(reviewCatalogContextQueryOptions(useCurrentOrganizationId() ?? "none", reviewId));
+
+export const reviewFirstRunQueryOptions = (org: number | string, reviewId?: string) =>
+  queryOptions({
     queryKey: [...SCHEMA_REVIEW_INBOX_QUERY_KEY(org), "first", reviewId],
     queryFn: ({ signal }) =>
       appFetch<CatalogPage<SchemaReviewRunListItemDto>>(
         `/api/schema-reviews/inbox/${reviewId}/runs/catalog?size=1&filter=active`,
         { signal },
       ),
-    enabled: Boolean(reviewId) && org !== "none" && enabled,
+    enabled: Boolean(reviewId) && org !== "none",
   });
-}
+
+export const useReviewFirstRun = (reviewId?: string, enabled = false) => {
+  const options = reviewFirstRunQueryOptions(useCurrentOrganizationId() ?? "none", reviewId);
+  return useQuery({ ...options, enabled: options.enabled !== false && enabled });
+};

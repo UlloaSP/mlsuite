@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { getRouteApi } from "@tanstack/react-router";
 import { useApiTrafficClients } from "@/features/api-access/api/api-traffic.queries";
 import { TrafficClientEntry } from "@/features/api-access/components/TrafficClientEntry";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
@@ -29,14 +30,11 @@ const SORTS: Array<{ value: Sort; label: string }> = [
 
 const ClientIcon = SECTION_ICONS.api;
 
+const route = getRouteApi("/protected/app/superadmin/admin/api-traffic");
+
 /** Every organization's clients, searched by client or organization name. */
 export function TrafficClientsCatalog() {
-  const controls = useCatalogControls<Filter, Sort>({
-    filters: FILTERS.map(({ value }) => value),
-    initialFilter: "all",
-    initialSort: "updated",
-    sorts: SORTS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const query = useApiTrafficClients({
     size: PAGE_SIZE,
     search: controls.search,

@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useParams } from "@tanstack/react-router";
+import { getRouteApi } from "@tanstack/react-router";
 import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/workspace.queries";
 import { AuditLog } from "@/features/workspace/components/AuditLog";
 import { organizationRouteErrorStatus } from "@/features/workspace/lib/organization-route-error";
@@ -13,9 +13,11 @@ import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
 
+const route = getRouteApi("/protected/app/workspace/organizations/$organizationId/audit-log");
+
 /** Who did what in the organization, for roles that may read it. */
 export function AuditLogPage() {
-  const { organizationId = "" } = useParams({ strict: false });
+  const { organizationId } = route.useParams();
   const id = Number(organizationId);
   const dashboard = useOrganizationAdminDashboardQuery(id);
 

@@ -1,4 +1,5 @@
-import { useSearchParamState } from "@/shared/lib/use-search-param-state";
+import { getRouteApi } from "@tanstack/react-router";
+import { useSearchUpdate } from "@/shared/lib/use-search-update";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppSegmentedControl } from "@/shared/ui/AppSegmentedControl";
@@ -17,7 +18,6 @@ import {
   usePendingInvitations,
   useUnreadNotificationCount,
 } from "@/features/notifications/api/notification.queries";
-import type { NotificationFilter } from "@/features/notifications/api/notifications.api";
 import { NotificationEntry } from "@/features/notifications/components/NotificationEntry";
 import { PendingInvitationEntry } from "@/features/notifications/components/PendingInvitationEntry";
 import {
@@ -29,7 +29,6 @@ const FILTERS = [
   { value: "all", label: "All" },
   { value: "unread", label: "Unread" },
 ] as const;
-const FILTER_VALUES: readonly NotificationFilter[] = ["all", "unread"];
 
 const EMPTY = {
   all: {
@@ -39,6 +38,8 @@ const EMPTY = {
   },
   unread: { title: "Nothing unread", description: "You have read everything." },
 };
+
+const route = getRouteApi("/protected/app/notifications");
 
 /**
  * The inbox: what happened, with the invitations still waiting for an answer first. A waiting
@@ -51,11 +52,10 @@ export function NotificationsPage({
 }: {
   selectOrganization: SelectOrganization;
 }) {
-  const [filter, setFilter] = useSearchParamState<NotificationFilter>(
-    "filter",
-    "all",
-    FILTER_VALUES,
-  );
+  const search = route.useSearch();
+  const updateSearch = useSearchUpdate<typeof search>();
+  const filter = search.filter;
+  const setFilter = (value: typeof filter) => updateSearch({ filter: value });
   const notifications = useNotificationCatalog(filter);
   const pending = usePendingInvitations();
   const unread = useUnreadNotificationCount().data ?? 0;

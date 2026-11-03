@@ -147,7 +147,7 @@ describe("organization inference catalog", () => {
 
   test("registers catalog and canonical detail as protected Inferences destinations", () => {
     const routes = readFileSync(
-      new URL("../src/app/router/workspace-routes.ts", import.meta.url),
+      new URL("../src/app/router/model-routes.ts", import.meta.url),
       "utf8",
     );
     const sidebar = readFileSync(
@@ -155,8 +155,8 @@ describe("organization inference catalog", () => {
       "utf8",
     );
 
-    expect(routes).toContain('page(canViewModelsRoute, "inferences", ');
-    expect(routes).toContain('page(canViewModelsRoute, "inferences/$inferenceId", ');
+    expect(routes).toContain('searchPage(parent, "inferences", ');
+    expect(routes).toMatch(/searchPage\(\s*parent,\s*"inferences\/\$inferenceId",/);
     expect(routes).toContain('import("@/app/pages/InferencesRoutePage")');
     expect(routes).toContain('import("@/app/pages/InferenceDetailRoutePage")');
     expect(sidebar).toContain('to: "/inferences"');
@@ -173,7 +173,9 @@ describe("organization inference catalog", () => {
       import.meta.url,
     );
 
-    expect(detail).toContain('searchParams.get("section") === "reviews"');
+    expect(detail).toContain(
+      'route.useSearch({ select: (search) => search.section }) === "reviews"',
+    );
     expect(detail).toContain('getElementById("reviews")?.scrollIntoView()');
     expect(detail).toContain("<InferenceReviewStatusSection");
     expect(detail).toContain("Loading inference…");

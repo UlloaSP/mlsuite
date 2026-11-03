@@ -19,8 +19,8 @@ public record PredictionResultDto(
         @Nullable String errorMessage,
         @Nullable Map<String, Object> errorJson,
         OffsetDateTime createdAt,
-        // The runtime environment that computed it; none for results stored before environments.
-        @Nullable String environmentKey) {
+        // The runtime environment that computed it.
+        String environmentKey) {
 
     public static PredictionResultDto from(PredictionResult result) {
         return new PredictionResultDto(

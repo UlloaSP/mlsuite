@@ -4,18 +4,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
-import { useUrlFilters } from "@/shared/lib/use-url-filters";
-
-const DEFAULTS = {
-  q: "",
-  action: "all",
-  actorKind: "all",
-  actor: "",
-  target: "all",
-  from: "",
-  to: "",
-  organization: "all",
-};
+import type { z } from "zod";
+import { useSearchFilters } from "@/shared/lib/use-search-filters";
+import { auditSearch } from "@/features/workspace/pages/workspace-search";
 
 /** The start of a day picked in the viewer's own zone, as the instant the API compares with. */
 const dayStart = (day: string, addDays = 0) => {
@@ -29,8 +20,8 @@ const dayStart = (day: string, addDays = 0) => {
  * An audit catalog's filters, kept in the URL, and what they ask the API for. The period covers
  * the whole of both days picked: the API's end is exclusive, so it is the morning after.
  */
-export function useAuditFilters() {
-  const filters = useUrlFilters(DEFAULTS);
+export function useAuditFilters(urlSearch: z.output<typeof auditSearch>) {
+  const filters = useSearchFilters(urlSearch, auditSearch);
   const { q, action, actorKind, actor, target, from, to, organization } = filters.values;
   const search = useDebouncedValue(q.trim());
   const actorName = useDebouncedValue(actor.trim());

@@ -1,3 +1,4 @@
+import { getRouteApi } from "@tanstack/react-router";
 import { usePredictCatalog } from "@/features/schemas/api/schema-catalog-queries";
 /*
 SPDX-License-Identifier: MIT
@@ -26,14 +27,11 @@ const SORTS: Array<{ value: LauncherSort; label: string }> = [
   { value: "recent", label: "Recently run" },
 ];
 
+const route = getRouteApi("/protected/app/can-view-models/predict");
+
 /** Every bookmark of the organization, ready to run: one click opens its workspace. */
 export function PredictPage() {
-  const controls = useCatalogControls<LauncherFilter, LauncherSort>({
-    filters: FILTERS.map(({ value }) => value),
-    initialFilter: "all",
-    initialSort: "schema",
-    sorts: SORTS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const query = usePredictCatalog({
     search: controls.search,
     filter: controls.filter,

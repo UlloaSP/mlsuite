@@ -5,7 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useSelector } from "@tanstack/react-store";
 import { AlertCircle, CheckCircle, ChevronUp } from "lucide-react";
-import { m as motion } from "motion/react";
 import { useEditorAtoms } from "@/features/schemas/lib/editor-atoms";
 
 type EditorErrorBarProps = {
@@ -37,9 +36,12 @@ export function EditorErrorBar({ expanded, setExpanded }: EditorErrorBarProps) {
               {schemaErrors.length} Error{schemaErrors.length > 1 && "s"}
             </span>
           </span>
-          <motion.div animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
-            <ChevronUp size={14} />
-          </motion.div>
+          <ChevronUp
+            size={14}
+            className={`transition-transform duration-(--duration-base) motion-reduce:transition-none ${
+              expanded ? "rotate-180" : ""
+            }`}
+          />
         </>
       ) : (
         <span className="flex items-center gap-x-2 text-sm font-bold">

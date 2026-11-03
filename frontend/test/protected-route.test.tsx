@@ -93,7 +93,7 @@ describe("the protected shell", () => {
 
     expect(host.querySelector("[data-address]")).toBeNull();
     expect(host.querySelector("h1")?.textContent).toContain(headline);
-    click(
+    await click(
       [...host.querySelectorAll("button")].find((button) => button.textContent === "Try again")!,
     );
     expect(state.refetchContext).toHaveBeenCalledTimes(1);

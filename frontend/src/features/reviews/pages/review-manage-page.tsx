@@ -1,4 +1,5 @@
-import { toast } from "sonner";
+import { getRouteApi } from "@tanstack/react-router";
+import { toast } from "@/shared/ui/toast";
 import { useDeleteReview, useManagedReviews } from "@/features/reviews/api/managed-review-catalog";
 import { ManagedReviewEntry } from "@/features/reviews/components/ManagedReviewEntry";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
@@ -21,14 +22,11 @@ const SORT_OPTIONS: Array<{ value: ReviewSort; label: string }> = [
   { value: "newest", label: "Newest" },
 ];
 
+const route = getRouteApi("/protected/app/can-manage-reviews/review/manage");
+
 /** Every review of the organization, for those who manage them. */
 export function ReviewManagePage() {
-  const controls = useCatalogControls<ReviewFilter, ReviewSort>({
-    filters: FILTERS.map(({ value }) => value),
-    initialFilter: "all",
-    initialSort: "newest",
-    sorts: SORT_OPTIONS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const pageQuery = useManagedReviews(controls.search, controls.filter);
   const deletion = useDeleteReview();
   const { confirm, dialog } = useActionDialog();

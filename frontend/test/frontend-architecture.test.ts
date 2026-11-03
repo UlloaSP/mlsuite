@@ -255,7 +255,7 @@ describe("frontend architecture contract", () => {
     expect(removedRoots.filter((root) => existsSync(join(SRC, root)))).toEqual([]);
   });
 
-  test("keeps plugin code and the TypeScript compiler out of the app document", () => {
+  test("keeps plugin code and its compiler out of the app document", () => {
     // Plugin code runs only in the plugin sandbox document; the app must not be able to load it.
     const COMPILER = "capabilities/prediction-runtime/plugins/plugin-source-compiler.ts";
     const reach = (entry: string) => {
@@ -269,7 +269,7 @@ describe("frontend architecture contract", () => {
       return seen;
     };
     const loadsCompiler = (file: string) =>
-      file === COMPILER || moduleSpecifiers(join(SRC, file)).includes("typescript");
+      file === COMPILER || moduleSpecifiers(join(SRC, file)).includes("sucrase");
 
     expect([...reach("app/plugin-sandbox-main.ts")].some(loadsCompiler)).toBe(true);
     expect([...reach("app/main.tsx")].filter(loadsCompiler)).toEqual([]);
@@ -284,6 +284,17 @@ describe("frontend architecture contract", () => {
       sourceFiles()
         .filter((file) => rel(file) !== "shared/ui/AppLink.tsx")
         .filter(importsRouterLink)
+        .map(rel),
+    ).toEqual([]);
+  });
+
+  test("toasts through shared/ui, whose region follows the theme in effect", () => {
+    const importsSonner = (file: string) => moduleSpecifiers(file).includes("sonner");
+
+    expect(
+      sourceFiles()
+        .filter((file) => !rel(file).startsWith("shared/ui/"))
+        .filter(importsSonner)
         .map(rel),
     ).toEqual([]);
   });

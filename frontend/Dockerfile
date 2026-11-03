@@ -6,9 +6,15 @@ RUN npm install -g vite-plus@1.3.0
 ARG VITE_BACKEND_URL
 ENV VITE_BACKEND_URL=${VITE_BACKEND_URL}
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY patches ./patches
 RUN vp install --ignore-scripts --frozen-lockfile
 COPY . .
 RUN vp run build
+# Compressed once here, so nginx serves .gz files (gzip_static) instead of compressing every
+# response. woff2 and images are compressed already. Brotli would need a module this nginx lacks.
+RUN find dist -type f -size +1k \( -name '*.js' -o -name '*.css' -o -name '*.html' \
+      -o -name '*.svg' -o -name '*.json' -o -name '*.ttf' -o -name '*.txt' \) \
+      -exec sh -c 'gzip -9 -n -c "$1" > "$1.gz"' _ {} \;
 
 FROM nginx:1.31.5-alpine@sha256:72ba65eb42c10344912a84ff42408db7d34f2feb642204570ab8fc5ffd29f1d3 AS runtime
 RUN apk upgrade --no-cache

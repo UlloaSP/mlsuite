@@ -1,4 +1,4 @@
-import { getBackendBaseUrl } from "@/shared/config/runtime";
+import { buildWebSocketUrl } from "@/shared/api/websocket-url";
 import type {
   InfrastructureEvent,
   TerminalFrame,
@@ -10,15 +10,6 @@ type SocketCallbacks<TMessage> = {
   onClose?: () => void;
   onError?: () => void;
 };
-
-export function buildWebSocketUrl(path: string) {
-  const url = new URL(getBackendBaseUrl());
-  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-  url.pathname = path;
-  url.search = "";
-  url.hash = "";
-  return url.toString();
-}
 
 export function openInfrastructureSocket(callbacks: SocketCallbacks<InfrastructureEvent>) {
   const socket = new WebSocket(buildWebSocketUrl("/api/admin/infrastructure/stream"));

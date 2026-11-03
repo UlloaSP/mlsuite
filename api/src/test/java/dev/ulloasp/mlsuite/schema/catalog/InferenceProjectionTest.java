@@ -25,8 +25,8 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import dev.ulloasp.mlsuite.schema.catalog.InferenceRowProjector.Row;
 
@@ -49,7 +49,7 @@ class InferenceProjectionTest {
                                 .orElseThrow();
                         assertEquals(expected.get("values"), JSON.valueToTree(row.dto().values()),
                                 "values of run " + id);
-                        assertEquals(expected.get("feedbackStatus").textValue(), row.dto().feedbackStatus().name());
+                        assertEquals(expected.get("feedbackStatus").stringValue(), row.dto().feedbackStatus().name());
                         JsonNode columns = JSON.readTree(JSON.writeValueAsString(row.columns()));
                         columns.forEach(column -> ((ObjectNode) column).remove(List.of("kind", "choices")));
                         assertEquals(expected.get("columns"), columns, "columns of run " + id);
@@ -60,16 +60,16 @@ class InferenceProjectionTest {
     @Test
     void preservesNumericFeedbackLabelsAndCompletionAcrossIntegerAndDecimalAnswers() throws Exception {
         ObjectNode data = data(0);
-        ObjectNode result = data.at("/results/0").deepCopy();
+        ObjectNode result = (ObjectNode) data.at("/results/0").deepCopy();
         result.put("id", 21).put("modelId", 2);
         array(data, "/results").add(result);
-        ObjectNode binding = data.at("/versions/0/bindings/0").deepCopy();
+        ObjectNode binding = (ObjectNode) data.at("/versions/0/bindings/0").deepCopy();
         binding.put("modelId", 2);
         array(data, "/versions/0/bindings").add(binding);
         object(data, "/versions/0/formSchema/reports/0/mappedTo").put("2", "score");
         object(data, "/results/0/output/reports/0").put("kind", "classifier").set("mapping", JSON.readTree("[0,1]"));
         object(data, "/feedback/0/value").put("output-feedback-assessment", 1);
-        ObjectNode feedback = data.at("/feedback/0").deepCopy();
+        ObjectNode feedback = (ObjectNode) data.at("/feedback/0").deepCopy();
         feedback.put("id", 3).put("resultId", 21);
         ((ObjectNode) feedback.get("value")).put("output-feedback-assessment", 1.0);
         array(data, "/feedback").add(feedback);
@@ -86,7 +86,7 @@ class InferenceProjectionTest {
         String bodyMass = "2:output:2:0";
         ObjectNode data = data(0);
         object(data, "/runs/1/summary").put("schemaVersionId", 7).put("schemaVersion", 7);
-        ObjectNode binding = data.at("/versions/0/bindings/0").deepCopy();
+        ObjectNode binding = (ObjectNode) data.at("/versions/0/bindings/0").deepCopy();
         array(data, "/versions/0/bindings").add(binding.put("id", 2).put("modelId", 2));
         array(data, "/versions/0/formSchema/reports").add(JSON.readTree(
                 "{\"kind\":\"regressor\",\"label\":\"Body mass\",\"mappedTo\":{\"2\":\"0\"}}"));

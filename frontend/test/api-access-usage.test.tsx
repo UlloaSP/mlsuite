@@ -4,7 +4,9 @@ import { act } from "react";
 import type { AnyRoute } from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { useNavigationItems } from "@/app/components/use-navigation-items";
-import { router } from "@/app/router/routes";
+import { createAppRouter } from "@/app/router/routes";
+
+const router = createAppRouter(new QueryClient());
 import { AdminApiTrafficPage } from "@/features/api-access/pages/admin-api-traffic-page";
 import { ApiOverviewPage } from "@/features/api-access/pages/api-overview-page";
 import { ApiRequestsPage } from "@/features/api-access/pages/api-requests-page";

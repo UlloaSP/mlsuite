@@ -53,9 +53,10 @@ class ModelControllerTest {
 
     private ModelController controller;
 
-    private static final RuntimeEnvironment LEGACY = new RuntimeEnvironment("legacy", null, "0.2.1", "3.14",
-            List.of(Map.of("name", "scikit-learn", "version", "1.9.1")), null);
-    private static final RuntimeEnvironmentDto LEGACY_DTO = new RuntimeEnvironmentDto("legacy", true, "3.14", "0.2.1",
+    private static final String KEY = "e".repeat(64);
+    private static final RuntimeEnvironment ENVIRONMENT = new RuntimeEnvironment(KEY, "i".repeat(64), "0.3.1",
+            "3.14.7", List.of(Map.of("name", "scikit-learn", "version", "1.9.1")), "lock-version = \"1.0\"");
+    private static final RuntimeEnvironmentDto ENVIRONMENT_DTO = new RuntimeEnvironmentDto(KEY, "3.14.7", "0.3.1",
             List.of(new RuntimeEnvironmentDto.EnvironmentPackageDto("scikit-learn", "1.9.1")));
 
     @BeforeEach
@@ -86,13 +87,14 @@ class ModelControllerTest {
         model.setFeatureImportances(List.of(Map.of("feature", "age", "importance", 62.5)));
         model.setModelSizeBytes(2048L);
         model.setArtifactSha256("abc");
+        model.setEnvironmentKey(KEY);
         when(modelCatalogUseCase.getModel(4L, 11L)).thenReturn(model);
-        when(environments.find("legacy")).thenReturn(LEGACY);
+        when(environments.find(KEY)).thenReturn(ENVIRONMENT);
 
         ModelDetailsDto details = controller.getModelDetails(user, 11L).getBody();
 
         assertEquals(new ModelDetailsDto(Map.of("writer_version", "0.1.0a3"),
-                List.of(new FeatureImportanceDto("age", 62.5)), 2048L, "abc", LEGACY_DTO), details);
+                List.of(new FeatureImportanceDto("age", 62.5)), 2048L, "abc", ENVIRONMENT_DTO), details);
     }
 
     @Test
@@ -100,10 +102,11 @@ class ModelControllerTest {
         Model model = new Model();
         model.setModelSizeBytes(2048L);
         model.setArtifactSha256("abc");
+        model.setEnvironmentKey(KEY);
         when(modelCatalogUseCase.getModel(4L, 11L)).thenReturn(model);
-        when(environments.find("legacy")).thenReturn(LEGACY);
+        when(environments.find(KEY)).thenReturn(ENVIRONMENT);
 
-        assertEquals(new ModelDetailsDto(Map.of(), null, 2048L, "abc", LEGACY_DTO),
+        assertEquals(new ModelDetailsDto(Map.of(), null, 2048L, "abc", ENVIRONMENT_DTO),
                 controller.getModelDetails(user, 11L).getBody());
     }
 

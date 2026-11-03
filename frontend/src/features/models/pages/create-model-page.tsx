@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppFileDropArea } from "@/shared/ui/AppFileDropArea";

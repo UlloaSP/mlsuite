@@ -1,5 +1,8 @@
 package dev.ulloasp.mlsuite.admin;
 
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import dev.ulloasp.mlsuite.support.PostgresDatabase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -47,16 +50,17 @@ import jakarta.persistence.EntityManager;
 
 /** Moderation against real rows: what the list reaches, and what unpublishing changes and records. */
 @DataJpaTest(properties = {
-        "spring.profiles.active=test", "logging.file.name=target/bookmark-moderation-test.log",
-        "spring.datasource.url=jdbc:h2:mem:bookmarkmoderation;MODE=PostgreSQL;INIT=CREATE DOMAIN IF NOT EXISTS TIMESTAMPTZ AS TIMESTAMP WITH TIME ZONE",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.datasource.username=sa", "spring.datasource.password=",
-        "spring.jpa.hibernate.ddl-auto=create-drop", "spring.flyway.enabled=false"
+        "spring.profiles.active=test", "logging.file.name=target/bookmark-moderation-test.log"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(PublicBookmarkModerationService.class)
 @ContextConfiguration(classes = PublicBookmarkModerationServiceTest.PersistenceConfig.class)
 class PublicBookmarkModerationServiceTest {
+
+    @DynamicPropertySource
+    static void database(DynamicPropertyRegistry registry) {
+        PostgresDatabase.registerRolledBack(registry);
+    }
 
     @Configuration
     @EntityScan("dev.ulloasp.mlsuite")

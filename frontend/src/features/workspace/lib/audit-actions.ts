@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { enumLabel } from "@/shared/ui/AppBadge";
+import { enumLabel } from "@/shared/ui/badge-label";
 import type { AuditEventDto } from "@/shared/api/openapi.gen";
 
 type AuditAction = AuditEventDto["action"];
@@ -187,8 +187,16 @@ const detailLabel = (key: string) => {
 const isChange = (value: unknown): value is { from?: unknown; to?: unknown } =>
   typeof value === "object" && value !== null && ("from" in value || "to" in value);
 
+/** One side of a change: absent is an em dash, anything that is not text as its JSON. */
+const side = (value: unknown): string => {
+  if (value === undefined || value === null) return "—";
+  return typeof value === "object"
+    ? JSON.stringify(value)
+    : String(value as string | number | boolean);
+};
+
 const detailValue = (value: unknown): string => {
-  if (isChange(value)) return `${String(value.from ?? "—")} → ${String(value.to ?? "—")}`;
+  if (isChange(value)) return `${side(value.from)} → ${side(value.to)}`;
   if (typeof value !== "object" || value === null) return String(value);
   return Object.entries(value)
     .map(([key, entry]) => `${detailLabel(key)} ${detailValue(entry)}`)

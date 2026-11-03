@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-router";
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { SessionFrameLayout } from "@/app/layouts/SessionFrameLayout";
+import { HttpError } from "@/shared/api/http";
 import { mount } from "./support/dom";
 
 const profile = vi.hoisted(() => ({ calls: 0 }));
@@ -19,7 +20,13 @@ vi.mock("@/capabilities/workspace-context/session-api", async (original) => ({
     profile.calls += 1;
     // As over the network: the answer takes a moment, during which the query is fetching.
     return new Promise((_, reject) =>
-      setTimeout(() => reject(Object.assign(new Error("Unauthorized"), { status: 401 })), 20),
+      setTimeout(
+        () =>
+          reject(
+            new HttpError({ status: 401, message: "Unauthorized", path: "/api/me", timestamp: "" }),
+          ),
+        20,
+      ),
     );
   },
 }));

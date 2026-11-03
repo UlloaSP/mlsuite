@@ -5,7 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Copy, Tag } from "lucide-react";
 import { useState } from "react";
-import { useParams } from "@tanstack/react-router";
+import { getRouteApi } from "@tanstack/react-router";
+import { useSearchUpdate } from "@/shared/lib/use-search-update";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -17,8 +18,12 @@ import { SchemaSnapshotPreviewPanel } from "@/features/schemas/components/Schema
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
+const route = getRouteApi("/protected/app/can-view-models/schemas/$schemaId/versions/$versionId");
+
 export function SchemaSnapshotDetailPage() {
-  const { schemaId, versionId } = useParams({ strict: false });
+  const search = route.useSearch();
+  const updateSearch = useSearchUpdate<typeof search>();
+  const { schemaId, versionId } = route.useParams();
   const { data: schema } = useSchema(schemaId);
   const { data: workspace } = useWorkspaceContext();
   const { data: version } = useSchemaVersion(versionId);
@@ -54,7 +59,13 @@ export function SchemaSnapshotDetailPage() {
             ) : null
           }
         />
-        {version ? <SchemaSnapshotPreviewPanel version={version} /> : null}
+        {version ? (
+          <SchemaSnapshotPreviewPanel
+            version={version}
+            mode={search.view}
+            onModeChange={(view) => updateSearch({ view })}
+          />
+        ) : null}
       </AppSurface>
       {schemaId ? (
         <>

@@ -9,7 +9,7 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
 }));
 beforeEach(() =>
   vi.stubGlobal("fetch", async (_url: string, init: RequestInit) => {
-    const body = JSON.parse(String(init.body));
+    const body = await new Response(init.body).json();
     const chosen = items.filter((item) => body.ids.includes(item.id));
     return new Response(
       JSON.stringify({

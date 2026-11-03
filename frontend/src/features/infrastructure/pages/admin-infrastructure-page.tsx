@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { Navigate, useNavigate } from "@tanstack/react-router";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { getRouteApi, Navigate } from "@tanstack/react-router";
+import type { INFRA_TABS } from "@/features/infrastructure/pages/infrastructure-search";
 import { useQueryClient } from "@tanstack/react-query";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
@@ -7,15 +8,13 @@ import { AppPage } from "@/shared/ui/AppPage";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
-import { useUrlSearchParams } from "@/shared/lib/url-search-params";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { AlertsView } from "@/features/infrastructure/components/AlertsView";
 import { LogsView } from "@/features/infrastructure/components/LogsView";
 import { OverviewView } from "@/features/infrastructure/components/OverviewView";
 import { ServicesView } from "@/features/infrastructure/components/ServicesView";
-import { TerminalView } from "@/features/infrastructure/components/TerminalView";
 import {
-  infrastructureOverviewQueryOptions,
+  receiveInfrastructureEvent,
   useInfrastructureOverview,
   useServiceLogsSnapshot,
 } from "@/features/infrastructure/api/infrastructure.queries";
@@ -23,7 +22,6 @@ import { useServiceAction } from "@/features/infrastructure/api/infrastructure.m
 import {
   appendLogLine,
   serviceActionConfirmation,
-  applyInfrastructureEvent,
   resolveSelectedService,
 } from "@/features/infrastructure/lib/infrastructure-state";
 import {
@@ -36,33 +34,35 @@ import {
 } from "@/features/infrastructure/lib/infrastructure-socket";
 import { useActionDialog } from "@/shared/ui/use-action-dialog";
 
-type InfraTab = "overview" | "services" | "logs" | "terminal" | "alerts";
+type InfraTab = (typeof INFRA_TABS)[number];
 
-const INFRA_TABS: InfraTab[] = ["overview", "services", "logs", "terminal", "alerts"];
+const route = getRouteApi("/protected/app/superadmin/admin/infrastructure");
+
+// Xterm and its stylesheet load only when the Terminal tab is opened.
+const TerminalView = lazy(() =>
+  import("@/features/infrastructure/components/TerminalView").then((m) => ({
+    default: m.TerminalView,
+  })),
+);
 
 export function AdminInfrastructurePage() {
   const { data: user } = useUser();
   const queryClient = useQueryClient();
-  const { data: overview, isLoading, refetch } = useInfrastructureOverview();
+  const [streamConnected, setStreamConnected] = useState(false);
+  const { data: overview, isLoading, refetch } = useInfrastructureOverview(streamConnected);
   const showLoading = useStableLoading(isLoading);
   const action = useServiceAction();
   const actionDialog = useActionDialog();
   const [requestedService, setRequestedService] = useState<string | null>(null);
   const selectedService = overview ? resolveSelectedService(requestedService, overview) : null;
   const [logLines, setLogLines] = useState<string[]>([]);
-  const [streamConnected, setStreamConnected] = useState(false);
-  const searchParams = useUrlSearchParams();
-  const navigate = useNavigate();
+  const navigate = route.useNavigate();
   const socketRef = useRef<WebSocket | null>(null);
   const selectedServiceRef = useRef<string | null>(null);
-  const selectedServiceLogs = useServiceLogsSnapshot(selectedService);
-  const requestedTab = searchParams.get("tab");
-  const activeTab = INFRA_TABS.includes(requestedTab as InfraTab)
-    ? (requestedTab as InfraTab)
-    : "overview";
-  const setActiveTab = (tab: InfraTab) => {
-    void navigate({ to: ".", search: tab === "overview" ? {} : { tab } });
-  };
+  const selectedServiceLogs = useServiceLogsSnapshot(selectedService, streamConnected);
+  const activeTab = route.useSearch({ select: (search) => search.tab });
+  // A tab starts without the previous tab's filters.
+  const setActiveTab = (tab: InfraTab) => void navigate({ to: ".", search: { tab } });
 
   useEffect(() => {
     selectedServiceRef.current = selectedService;
@@ -83,9 +83,7 @@ export function AdminInfrastructurePage() {
       onClose: () => setStreamConnected(false),
       onError: () => setStreamConnected(false),
       onMessage: (event: InfrastructureEvent) => {
-        queryClient.setQueryData(infrastructureOverviewQueryOptions().queryKey, (current) =>
-          applyInfrastructureEvent(current, event),
-        );
+        receiveInfrastructureEvent(queryClient, event);
         if (isServiceLogEvent(event)) {
           setLogLines((current) => appendLogLine(current, event, selectedServiceRef.current));
         }
@@ -160,12 +158,14 @@ export function AdminInfrastructurePage() {
               />
             )}
             {activeTab === "terminal" && (
-              <TerminalView
-                services={overview.services}
-                selectedService={selectedService}
-                terminalEnabled={Boolean(selectedStatus?.terminalEnabled)}
-                onSelectService={handleSelectService}
-              />
+              <Suspense fallback={<AppLoadingState label="Loading terminal…" />}>
+                <TerminalView
+                  services={overview.services}
+                  selectedService={selectedService}
+                  terminalEnabled={Boolean(selectedStatus?.terminalEnabled)}
+                  onSelectService={handleSelectService}
+                />
+              </Suspense>
             )}
           </>
         ) : (

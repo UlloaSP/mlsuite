@@ -5,8 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Plus, Search } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
-import { toast } from "sonner";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
+import { toast } from "@/shared/ui/toast";
 import {
   useResetAdminUserPassword,
   useUpdateAdminUser,
@@ -39,15 +39,12 @@ const SORT_OPTIONS: Array<{ value: UserSortMode; label: string }> = [
   { value: "oldest", label: "Oldest" },
 ];
 
+const route = getRouteApi("/protected/app/superadmin/admin/users");
+
 export function AdminUsersPage() {
   const navigate = useNavigate();
   const { data: user, error } = useUser();
-  const controls = useCatalogControls<UserRoleFilter, UserSortMode>({
-    filters: FILTERS.map(({ value }) => value),
-    initialFilter: "all",
-    initialSort: "current",
-    sorts: SORT_OPTIONS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const pageQuery = useAdminUserCatalog({
     role: controls.filter,
     search: controls.search,

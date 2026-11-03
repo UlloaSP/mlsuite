@@ -14,7 +14,7 @@ import {
   resolveSelectedService,
 } from "@/features/infrastructure/lib/infrastructure-state";
 import type { InfrastructureOverviewDto } from "@/features/infrastructure/api/infrastructure.types";
-import { buildWebSocketUrl } from "@/features/infrastructure/lib/infrastructure-socket";
+import { buildWebSocketUrl } from "@/shared/api/websocket-url";
 import {
   filterAndSortServices,
   serviceStatusCounts,
@@ -289,6 +289,11 @@ describe("infra helpers", () => {
     await closeTerminalSession("term-1");
 
     expect(infrastructureOverviewQueryOptions().queryKey).toEqual(infrastructureKeys.all);
+    // Read again every few seconds only while the live stream is down.
+    expect(infrastructureOverviewQueryOptions(false).refetchInterval).toBe(5000);
+    expect(infrastructureOverviewQueryOptions(true).refetchInterval).toBe(false);
+    expect(serviceLogsQueryOptions("spring-app", false).refetchInterval).toBe(5000);
+    expect(serviceLogsQueryOptions("spring-app", true).refetchInterval).toBe(false);
     expect(serviceLogsQueryOptions("spring-app").queryKey).toEqual(
       infrastructureKeys.logs("spring-app"),
     );
@@ -328,7 +333,7 @@ describe("overview chart", () => {
   it("draws the enabled layers on a percent axis and lists each one's value in its tooltip", async () => {
     const { host } = await mount(
       <OverviewChartPanel overview={overview} streamConnected chartRange="1h" />,
-      { route: "/" },
+      { route: "/admin/infrastructure" },
     );
     const chart = host.querySelector<SVGSVGElement>(
       'svg[aria-label="Service aggregate load, last 1h"]',
@@ -357,7 +362,7 @@ describe("overview chart", () => {
         streamConnected
         chartRange="1h"
       />,
-      { route: "/" },
+      { route: "/admin/infrastructure" },
     );
     const labels = [...host.querySelectorAll('[data-ts-key^="y-tick-label:number:"]')].map(
       (label) => label.textContent,

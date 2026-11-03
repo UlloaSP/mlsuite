@@ -58,16 +58,11 @@ class FlywayMigrationTest {
                 assertTrue(result.next());
                 assertEquals(0, result.getInt(1));
             }
-            // A bundle without a lock runs in the legacy environment, which only this row describes.
-            try (var result = statement.executeQuery("""
-                    SELECT writer_version, jsonb_array_length(packages), packages @> '[{"name": "xgboost"}]'
-                    FROM runtime_environment WHERE environment_key = 'legacy'
-                    """)) {
+            // Every bundle carries a lock: no frozen environment of bundles written before locks is left.
+            try (var result = statement.executeQuery(
+                    "SELECT COUNT(*) FROM runtime_environment WHERE environment_key = 'legacy'")) {
                 assertTrue(result.next());
-                assertEquals("0.2.1", result.getString(1));
-                assertEquals(37, result.getInt(2));
-                assertTrue(result.getBoolean(3));
-                assertFalse(result.next());
+                assertEquals(0, result.getInt(1));
             }
         }
     }
@@ -80,6 +75,9 @@ class FlywayMigrationTest {
                 var statement = connection.createStatement()) {
             statement.execute("SET search_path TO identity, public");
             seedOrganization(statement);
+            statement.execute("""
+                    INSERT INTO runtime_environment (environment_key, writer_version, python_version, packages,
+                        created_at) VALUES (repeat('e', 64), '0.3.1', '3.14.7', '[]', now())""");
             String columns = """
                     (organization_id, user_id, name, type, specific_type, file_name, storage_bucket,
                      storage_object_key, storage_version_id, storage_etag, model_size_bytes, artifact_sha256,
@@ -87,7 +85,7 @@ class FlywayMigrationTest {
                     """;
             String values = """
                     (1, 1, 'risk', 'classifier', 'Forest', 'risk.mlbundle', 'bucket', 'key', 'v1', 'etag', 5,
-                     %s, now(), '{}', 'legacy', 'READY', now(), now())
+                     %s, now(), '{}', repeat('e', 64), 'READY', now(), now())
                     """;
             statement.execute("INSERT INTO model " + columns + " VALUES "
                     + values.formatted("repeat('a', 64)"));

@@ -62,7 +62,7 @@ def create_builder_app() -> FastAPI:
 
     @app.delete("/environments/{key}", status_code=204)
     async def remove_environment(key: str) -> Response:
-        if not environments.is_key(key) or key == environments.LEGACY:
+        if not environments.is_key(key):
             raise HTTPException(status_code=400, detail="Invalid environment key")
         async with _one_at_a_time:
             await asyncio.to_thread(remove, key, ENVIRONMENT_ROOT)

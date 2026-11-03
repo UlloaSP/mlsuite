@@ -10,8 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.ModelRuntimeClient;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
@@ -53,7 +52,7 @@ public class PublicModelRuntime {
             log.warn("{}: the runtime answered {} for model {}: {}", caller, ex.getStatus(), modelId, ex.getDetail());
             if (ex.getStatus() >= 400 && ex.getStatus() < 500) throw ex;
             throw failed();
-        } catch (JsonProcessingException | RuntimeException ex) {
+        } catch (RuntimeException ex) {
             log.error("{}: model {} could not be run", caller, modelId, ex);
             throw failed();
         }
@@ -69,7 +68,7 @@ public class PublicModelRuntime {
             return modelRuntime.run("/explain", artifact(modelId), fields).get("reports") instanceof List<?> reports
                     ? reports
                     : List.of();
-        } catch (JsonProcessingException | RuntimeException ex) {
+        } catch (RuntimeException ex) {
             log.warn("{}: model {} could not be explained: {}", caller, modelId, ex.getMessage());
             return List.of();
         }
@@ -79,7 +78,7 @@ public class PublicModelRuntime {
         return modelRepository.findRunnableModel(modelId).orElseThrow();
     }
 
-    private String json(Map<String, Object> input) throws JsonProcessingException {
+    private String json(Map<String, Object> input) {
         return objectMapper.writeValueAsString(input);
     }
 

@@ -124,7 +124,7 @@ public class Model {
 
     /** The {@link RuntimeEnvironment} the model runs in. */
     @Column(name = "environment_key", nullable = false, length = 64)
-    private String environmentKey = RuntimeEnvironment.LEGACY;
+    private String environmentKey;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "runtime_state", nullable = false, length = 16)

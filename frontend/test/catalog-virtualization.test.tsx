@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act } from "react";
+import { act, useEffect } from "react";
 import { QueryClient } from "@tanstack/react-query";
 import { useRouter, type RouterHistory } from "@tanstack/react-router";
 import { beforeEach, afterEach, expect, test, vi } from "vite-plus/test";
@@ -56,7 +56,10 @@ function RemoteList() {
 /** The app shell's scroll memory around the matched page; `history` drives navigation. */
 function ScrollMemory() {
   useScrollMemory();
-  history = useRouter().history;
+  const router = useRouter();
+  useEffect(() => {
+    history = router.history;
+  });
   return null;
 }
 const pages = { "/list": <RemoteList />, "/detail": <p>Detail</p> };

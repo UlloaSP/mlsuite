@@ -1,7 +1,7 @@
 import { useReviewAssignmentCounts } from "@/features/inferences/api/inference-review-catalog";
 import { RotateCcw } from "lucide-react";
 import { type ReactNode, useEffect } from "react";
-import { useParams } from "@tanstack/react-router";
+import { getRouteApi } from "@tanstack/react-router";
 import { AppLink } from "@/shared/ui/AppLink";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { useInference } from "@/features/inferences/api/inference-api";
@@ -14,7 +14,6 @@ import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
-import { useUrlSearchParams } from "@/shared/lib/url-search-params";
 import type { PredictionRunCatalogItemDto } from "@/shared/api/openapi.gen";
 
 type Props = {
@@ -29,16 +28,17 @@ type Props = {
   ) => ReactNode;
 };
 
+const route = getRouteApi("/protected/app/can-view-models/inferences/$inferenceId");
+
 /** One inference: what produced it, its data and feedback, and the reviews it is part of. */
 export function InferenceDetailPage({ renderData }: Props) {
-  const { inferenceId = "" } = useParams({ strict: false });
-  const searchParams = useUrlSearchParams();
+  const { inferenceId } = route.useParams();
   const inference = useInference(inferenceId);
   const showLoader = useStableLoading(inference.isLoading);
   const { data: workspace } = useWorkspaceContext();
   const item = inference.data;
   const permissions = workspace?.permissions;
-  const reviewRequested = searchParams.get("section") === "reviews";
+  const reviewRequested = route.useSearch({ select: (search) => search.section }) === "reviews";
   const canManageReviews = permissions?.canManageReviews ?? false;
   // Only fetched for managers.
   const assignments = useReviewAssignmentCounts(Number(inferenceId), canManageReviews).data;

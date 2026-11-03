@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Check, Copy } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppTextField } from "@/shared/ui/AppTextField";
 

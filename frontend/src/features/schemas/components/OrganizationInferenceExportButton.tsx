@@ -1,3 +1,4 @@
+import { useMutation } from "@tanstack/react-query";
 import { FileDown } from "lucide-react";
 import { useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -28,39 +29,29 @@ export function OrganizationInferenceExportButton({
   loadItems: () => Promise<InferenceExportCandidate[]>;
 }) {
   const [open, setOpen] = useState(false);
-  const [snapshot, setSnapshot] = useState<InferenceExportCandidate[]>();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-  const show = async () => {
-    setLoading(true);
-    setError(false);
-    try {
-      setSnapshot(await loadItems());
-      setOpen(true);
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const selection = useMutation({
+    mutationFn: loadItems,
+    onSuccess: () => setOpen(true),
+    meta: { errorHandledLocally: true },
+  });
   return (
     <>
       <AppButton
         type="button"
         variant="secondary"
-        disabled={loading || count === 0}
-        onClick={() => void show()}
+        disabled={selection.isPending || count === 0}
+        onClick={() => selection.mutate()}
       >
         <FileDown size={16} />
-        {loading ? "Preparing selection…" : "Export to CSV"}
+        {selection.isPending ? "Preparing selection…" : "Export to CSV"}
       </AppButton>
-      {error ? (
+      {selection.isError ? (
         <span role="alert" className="text-sm text-danger-fg">
           Could not load export selection. Try again.
         </span>
       ) : null}
-      {open && snapshot ? (
-        <OrganizationInferenceExportDialog items={snapshot} onClose={() => setOpen(false)} />
+      {open && selection.data ? (
+        <OrganizationInferenceExportDialog items={selection.data} onClose={() => setOpen(false)} />
       ) : null}
     </>
   );

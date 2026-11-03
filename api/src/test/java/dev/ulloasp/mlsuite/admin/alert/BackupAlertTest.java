@@ -15,7 +15,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import dev.ulloasp.mlsuite.admin.infrastructure.OpsAgentClient;
 import dev.ulloasp.mlsuite.admin.infrastructure.OpsAgentException;

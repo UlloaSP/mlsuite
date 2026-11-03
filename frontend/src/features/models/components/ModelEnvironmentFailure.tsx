@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { RotateCcw } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { useRetryModelEnvironmentMutation } from "@/features/models/api/model.mutations";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";

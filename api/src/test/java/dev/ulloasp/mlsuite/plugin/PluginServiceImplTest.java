@@ -29,8 +29,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
@@ -66,7 +66,7 @@ class PluginServiceImplTest {
     @Mock
     private OrganizationRepository organizations;
 
-    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    private final ObjectMapper objectMapper = new JsonMapper();
     private PluginServiceImpl service;
     private Map<String, byte[]> objects;
 

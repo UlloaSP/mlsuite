@@ -20,7 +20,8 @@ import {
 } from "@/features/schemas/lib/inference-session-store";
 import { click, mount } from "./support/dom";
 
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/capabilities/workspace-context/session")>()),
   SIGN_IN_PATH: "/login",
   useUser: () => ({ data: undefined }),
 }));

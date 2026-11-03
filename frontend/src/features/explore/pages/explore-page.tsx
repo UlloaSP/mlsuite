@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { getRouteApi } from "@tanstack/react-router";
 import { PublicBookmarkCard } from "@/capabilities/public-bookmarks/PublicBookmarkCard";
 import { usePublicBookmarkCatalog } from "@/features/explore/api/public-bookmark-api";
 import { ExploreVisitorIntro } from "@/features/explore/components/ExploreVisitorIntro";
@@ -19,18 +20,15 @@ const SORTS: Array<{ value: FeedSort; label: string }> = [
   { value: "name", label: "Name" },
 ];
 
+const route = getRouteApi("/session-frame/explore");
+
 /**
  * The public feed: every published bookmark, the same for anonymous visitors and members
  * of any organization. It reads only the public API; the frame around it is chosen by the
  * router.
  */
 export function ExplorePage() {
-  const controls = useCatalogControls<"all", FeedSort>({
-    filters: FILTERS.map(({ value }) => value),
-    initialFilter: "all",
-    initialSort: "updated",
-    sorts: SORTS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const query = usePublicBookmarkCatalog(controls.search, controls.sort);
   const ExploreIcon = SECTION_ICONS.explore;
 

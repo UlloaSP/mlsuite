@@ -74,8 +74,8 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 async function render(search = "") {
   const view = await mount(null, {
-    route: `/organizations/3/members${search}`,
-    routes: { "/organizations/$organizationId/members": <MembersPage /> },
+    route: `/workspace/organizations/3/members${search}`,
+    routes: { "/workspace/organizations/$organizationId/members": <MembersPage /> },
   });
   await settle();
   return view.host;

@@ -31,7 +31,7 @@ import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
@@ -168,7 +168,7 @@ class AnalyzerServiceTest {
 
     private RunnableModel artifact() {
         return new RunnableModel(new ModelArtifactReference(11L, "risk.mlbundle", "bucket", "key", null, 3L, "abc123"),
-                "legacy", ModelRuntimeState.READY);
+                "e".repeat(64), ModelRuntimeState.READY);
     }
 
     private User user() {

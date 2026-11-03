@@ -1,7 +1,7 @@
 import { useReviewRunSelection } from "./useReviewRunSelection";
 import { ClipboardPlus } from "lucide-react";
 import { useCallback, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppFieldLabel } from "@/shared/ui/AppFieldLabel";
 import { AppDialog } from "@/shared/ui/AppDialog";

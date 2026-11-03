@@ -31,7 +31,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.util.AopTestUtils;
 import org.springframework.test.web.servlet.ResultActions;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.notification.application.service.NotificationService;
 import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
@@ -92,7 +92,7 @@ class PredictionJobHttpTest extends PublicPredictionFixture {
         JsonNode job = json(start(rows(3)).andReturn().getResponse().getContentAsString());
         worker.work();
 
-        String id = job.get("id").asText();
+        String id = job.get("id").asString();
         assertEquals(List.of("USER PREDICTION_JOB_START", "SYSTEM PREDICTION_JOB_CLAIMED",
                 "SYSTEM PREDICTION_JOB_COMPLETED"), trail(id));
         assertEquals("{\"doneRows\": 3, \"failedRows\": 0}", jdbc.queryForObject("SELECT metadata::text FROM audit_event"
@@ -103,7 +103,7 @@ class PredictionJobHttpTest extends PublicPredictionFixture {
     void aJobThatComesBackIsNotClaimedAgainOnTheRecord() throws Exception {
         worker.work();
         JsonNode job = json(start(rows(1)).andReturn().getResponse().getContentAsString());
-        String id = job.get("id").asText();
+        String id = job.get("id").asString();
         var claim = ledger.claim("a-worker-that-dies", 120).orElseThrow();
         assertEquals(job.get("id").asLong(), claim.id());
         assertTrue(claim.started());
@@ -120,7 +120,7 @@ class PredictionJobHttpTest extends PublicPredictionFixture {
     @Test
     void aMemberCancellingAJobInFlightIsSeenByItsWorker() throws Exception {
         JsonNode job = json(start(rows(1)).andReturn().getResponse().getContentAsString());
-        String id = job.get("id").asText();
+        String id = job.get("id").asString();
         AtomicBoolean cancelled = new AtomicBoolean();
         when(analyzer.post(eq("/predict/batch"), any())).thenAnswer(call -> {
             if (cancelled.compareAndSet(false, true)) {
@@ -395,10 +395,6 @@ class PredictionJobHttpTest extends PublicPredictionFixture {
     }
 
     private JsonNode json(String body) {
-        try {
-            return objectMapper.readTree(body.getBytes(StandardCharsets.UTF_8));
-        } catch (java.io.IOException ex) {
-            throw new IllegalStateException(ex);
-        }
+        return objectMapper.readTree(body.getBytes(StandardCharsets.UTF_8));
     }
 }

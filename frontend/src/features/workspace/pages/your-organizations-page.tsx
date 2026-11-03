@@ -1,5 +1,5 @@
 import { Building2, Plus } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { AppLink } from "@/shared/ui/AppLink";
 import {
   useWorkspaceContext,
@@ -7,7 +7,8 @@ import {
 } from "@/capabilities/workspace-context/workspace-context";
 import { useSelectOrganization } from "@/features/workspace/api/workspace.mutations";
 import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
-import { useUrlFilters } from "@/shared/lib/use-url-filters";
+import { useSearchFilters } from "@/shared/lib/use-search-filters";
+import { organizationsSearch } from "@/features/workspace/pages/workspace-search";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -25,10 +26,12 @@ const newOrganizationLink = (
   </AppLink>
 );
 
+const route = getRouteApi("/protected/app/workspace/organizations");
+
 /** The organizations the user belongs to; everyone else's stay out of sight. */
 export function YourOrganizationsPage() {
   const navigate = useNavigate();
-  const filters = useUrlFilters({ q: "" });
+  const filters = useSearchFilters(route.useSearch(), organizationsSearch);
   const search = useDebouncedValue(filters.values.q.trim());
   const organizations = useWorkspaceOrganizationCatalog(search, "team");
   const currentId = useWorkspaceContext().data?.currentOrganization.id;

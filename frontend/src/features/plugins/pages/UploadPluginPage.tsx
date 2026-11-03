@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { FileCode2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { useUploadPluginMutation } from "@/features/plugins/api/plugin.mutations";
 import { PluginUploadCard } from "@/features/plugins/components/PluginUploadCard";
 import { PluginUploadSummary } from "@/features/plugins/components/PluginUploadSummary";

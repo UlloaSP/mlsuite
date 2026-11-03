@@ -48,7 +48,7 @@ export const predictionResult = (
   status: "SUCCESS",
   errorMessage: null,
   errorJson: null,
-  environmentKey: null,
+  environmentKey: "e".repeat(64),
   createdAt: AT,
   ...overrides,
 });

@@ -73,9 +73,9 @@ test("asks for the target's exact name before it can start", async () => {
   const onClose = await open();
 
   expect(purgeButton().disabled).toBe(true);
-  await type("risk-fores");
+  type("risk-fores");
   expect(purgeButton().disabled).toBe(true);
-  await type("risk-forest");
+  type("risk-forest");
   expect(purgeButton().disabled).toBe(false);
 
   await click(purgeButton());
@@ -83,7 +83,7 @@ test("asks for the target's exact name before it can start", async () => {
 
   expect(onClose).toHaveBeenCalled();
   const [, init] = fetchMock.mock.calls.find(([, call]) => call?.method === "POST")!;
-  expect(JSON.parse(String(init?.body))).toEqual({
+  expect(await new Response(init?.body).json()).toEqual({
     scope: "MODEL",
     targetId: 9,
     confirmation: "risk-forest",

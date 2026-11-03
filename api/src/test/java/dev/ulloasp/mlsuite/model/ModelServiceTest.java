@@ -110,7 +110,7 @@ class ModelServiceTest {
 
         assertThrows(ModelAlreadyExistsException.class, () -> service.requireCreatable(3L, "demo"));
         assertThrows(ModelAlreadyExistsException.class,
-                () -> service.createModel(3L, "demo", inspection(List.of()), TestFixtures.artifact("x".getBytes()), "sha-x", "application/octet-stream"));
+                () -> service.createModel(3L, "demo", inspection(), TestFixtures.artifact("x".getBytes()), "sha-x", "application/octet-stream"));
     }
 
     @Test
@@ -210,43 +210,20 @@ class ModelServiceTest {
         when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
         when(modelRepository.saveAndFlush(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Model result = service.createModel(3L, "demo",
-                inspection(List.of(Map.of("feature", "age", "importance", 62.5))), TestFixtures.artifact("x".getBytes()), "sha-x", "application/octet-stream");
+        Model result = service.createModel(3L, "demo", inspection(), TestFixtures.artifact("x".getBytes()), "sha-x",
+                "application/octet-stream");
 
         assertEquals("demo", result.getName());
         assertEquals("model.mlbundle", result.getFileName());
         assertEquals("rf", result.getSpecificType());
         assertEquals(Map.of("fields", List.of(), "reports", List.of()), result.getInputSchema());
         assertEquals(Map.of("writer_version", "0.1.0a3"), result.getBundleManifest());
-        assertEquals(List.of(Map.of("feature", "age", "importance", 62.5)), result.getFeatureImportances());
+        // Importances are read once the model loads in its environment.
+        assertNull(result.getFeatureImportances());
         // The row is written once, naming the object already stored.
         var order = inOrder(modelRepository, artifactWriter);
         order.verify(artifactWriter).storeAndAttach(any(), any(), eq("sha-x"), eq("application/octet-stream"));
         order.verify(modelRepository).saveAndFlush(any(Model.class));
-    }
-
-    @Test
-    void createModel_StoresAModelWhoseBundleHasNoImportances() throws Exception {
-        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
-        when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
-        when(modelRepository.saveAndFlush(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        Model result = service.createModel(3L, "demo", inspection(null), TestFixtures.artifact("x".getBytes()), "sha-x", "application/octet-stream");
-
-        assertNull(result.getFeatureImportances());
-        assertEquals(Map.of("writer_version", "0.1.0a3"), result.getBundleManifest());
-    }
-
-    @Test
-    void createModel_RunsABundleWithoutALockAtOnceInTheLegacyEnvironment() {
-        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
-        when(modelRepository.saveAndFlush(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        Model result = service.createModel(3L, "demo", inspection(null), TestFixtures.artifact("x".getBytes()), "sha-x",
-                "application/octet-stream");
-
-        assertEquals("legacy", result.getEnvironmentKey());
-        assertEquals(ModelRuntimeState.READY, result.getRuntimeState());
     }
 
     @Test
@@ -256,7 +233,7 @@ class ModelServiceTest {
         BundleInspection.Environment locked = new BundleInspection.Environment("e".repeat(64), "i".repeat(64), "0.3.0",
                 "3.14.7", List.of(Map.of("name", "scikit-learn", "version", "1.9.1")), "lock-version = \"1.0\"");
         BundleInspection inspection = new BundleInspection("clf", "rf", "model.mlbundle",
-                Map.of("fields", List.of(), "reports", List.of()), Map.of("writer_version", "0.3.0"), null, locked);
+                Map.of("fields", List.of(), "reports", List.of()), Map.of("writer_version", "0.3.0"), locked);
 
         Model result = service.createModel(3L, "demo", inspection, TestFixtures.artifact("x".getBytes()), "sha-x",
                 "application/octet-stream");
@@ -282,7 +259,7 @@ class ModelServiceTest {
                 eq("application/octet-stream"));
 
         assertEquals(failure, assertThrows(RuntimeException.class, () -> service.createModel(3L, "demo",
-                inspection(List.of()), TestFixtures.artifact("x".getBytes()), "sha-x", "application/octet-stream")));
+                inspection(), TestFixtures.artifact("x".getBytes()), "sha-x", "application/octet-stream")));
         verify(objectStorageService).delete("bucket", "key", "v1");
     }
 
@@ -294,18 +271,19 @@ class ModelServiceTest {
                 eq("application/octet-stream"))).thenThrow(failure);
 
         assertEquals(failure, assertThrows(ObjectStorageException.class, () -> service.createModel(3L, "demo",
-                inspection(List.of()), TestFixtures.artifact("x".getBytes()), "sha-x", "application/octet-stream")));
+                inspection(), TestFixtures.artifact("x".getBytes()), "sha-x", "application/octet-stream")));
         verify(modelRepository, never()).saveAndFlush(any());
         verify(objectStorageService, never()).delete(any(), any(), any());
     }
 
-    private static BundleInspection inspection(List<Map<String, Object>> importances) {
+    private static BundleInspection inspection() {
         return new BundleInspection("clf", "rf", "model.mlbundle", Map.of("fields", List.of(), "reports", List.of()),
-                Map.of("writer_version", "0.1.0a3"), importances, LEGACY);
+                Map.of("writer_version", "0.1.0a3"), LOCKED);
     }
 
-    private static final BundleInspection.Environment LEGACY =
-            new BundleInspection.Environment("legacy", null, null, null, List.of(), null);
+    private static final BundleInspection.Environment LOCKED = new BundleInspection.Environment("e".repeat(64),
+            "i".repeat(64), "0.3.1", "3.14.7", List.of(Map.of("name", "scikit-learn", "version", "1.9.1")),
+            "lock-version = \"1.0\"");
 
     private User user() {
         User user = new User();

@@ -9,8 +9,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { GitCompareArrows, Plus } from "lucide-react";
 import { useState } from "react";
-import { useParams } from "@tanstack/react-router";
-import { toast } from "sonner";
+import { getRouteApi } from "@tanstack/react-router";
+import { toast } from "@/shared/ui/toast";
 import { AppButton } from "@/shared/ui/AppButton";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
@@ -38,18 +38,15 @@ const SORTS: Array<{ value: ChangeSort; label: string }> = [
   { value: "base", label: "Base version" },
 ];
 
+const route = getRouteApi("/protected/app/can-view-models/schemas/$schemaId/changes");
+
 export function SchemaChangesPage() {
-  const { schemaId } = useParams({ strict: false });
+  const { schemaId } = route.useParams();
   const { data: schema } = useSchema(schemaId);
   const [changeBase, setChangeBase] = useState<SchemaVersionDto | null>(null);
   const [renameTarget, setRenameTarget] = useState<SchemaDraftDto | null>(null);
   const renameMutation = useUpdateSchemaDraftMutation(renameTarget?.id ?? "");
-  const controls = useCatalogControls<ChangeFilter, ChangeSort>({
-    filters: FILTERS.map(({ value }) => value),
-    initialFilter: "open",
-    initialSort: "updated",
-    sorts: SORTS.map(({ value }) => value),
-  });
+  const controls = useCatalogControls(route.useSearch());
   const draftsQuery = useChangeCatalog(schemaId, {
     search: controls.search,
     filter: controls.filter,

@@ -35,7 +35,7 @@ export function AppGlobalSearch() {
     query: "",
     activeIndex: 0,
   });
-  const debouncedQuery = useDebouncedValue(query, 180);
+  const debouncedQuery = useDebouncedValue(query);
   const organizationId = useCurrentOrganizationId();
   const { data, isError, isFetching } = useQuery(
     searchQueryOptions(organizationId, debouncedQuery),
@@ -55,7 +55,13 @@ export function AppGlobalSearch() {
   }, [open]);
 
   const showPanel = query.trim().length >= 2 || isFetching;
-  let offset = 0;
+  // Each group's first index in the flat list the arrow keys walk.
+  const groupOffsets: number[] = [];
+  let resultCount = 0;
+  for (const group of data?.groups ?? []) {
+    groupOffsets.push(resultCount);
+    resultCount += group.results.length;
+  }
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
@@ -122,20 +128,16 @@ export function AppGlobalSearch() {
                   <AppCopy className="px-6 py-5">No results.</AppCopy>
                 ) : (
                   <div className="py-4">
-                    {data.groups.map((group) => {
-                      const groupOffset = offset;
-                      offset += group.results.length;
-                      return (
-                        <SearchResultGroup
-                          key={group.label}
-                          group={group}
-                          activeIndex={activeIndex}
-                          offset={groupOffset}
-                          onHover={(value) => dispatch({ type: "active", value })}
-                          onSelect={() => setOpen(false)}
-                        />
-                      );
-                    })}
+                    {data.groups.map((group, index) => (
+                      <SearchResultGroup
+                        key={group.label}
+                        group={group}
+                        activeIndex={activeIndex}
+                        offset={groupOffsets[index]}
+                        onHover={(value) => dispatch({ type: "active", value })}
+                        onSelect={() => setOpen(false)}
+                      />
+                    ))}
                   </div>
                 )
               ) : (

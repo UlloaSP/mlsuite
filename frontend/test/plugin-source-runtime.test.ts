@@ -92,11 +92,16 @@ describe("MLForm plugin source runtime", () => {
       "describe",
     ],
     [reportSource, "defineReportKind is not defined"],
-    ["export default defineFieldKind({", "TypeScript"],
   ])("rejects invalid field plugin source %s", async (source, message) => {
-    await expect(validateCustomFieldSource(source)).rejects.toThrow(
-      message === "TypeScript" ? /L\d+:C\d+ / : message,
-    );
-    expect(revokeObjectURL).toHaveBeenCalledTimes(message === "TypeScript" ? 0 : 1);
+    await expect(validateCustomFieldSource(source)).rejects.toThrow(message);
+    expect(revokeObjectURL).toHaveBeenCalledTimes(1);
+  });
+
+  test("names where a source stops parsing, and never runs it", async () => {
+    // Line 3 of the plugin is line 5 of what is compiled: the shim binds z and the helper first.
+    await expect(
+      validateCustomFieldSource("const label: string = 'x';\n\nexport default defineFieldKind({"),
+    ).rejects.toThrow(/^L5:C\d+ Unexpected token/);
+    expect(revokeObjectURL).not.toHaveBeenCalled();
   });
 });

@@ -10,7 +10,10 @@ import { act } from "react";
 import { useLocation } from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { appRoute } from "@/app/router/layout-routes";
-import { router } from "@/app/router/routes";
+import { QueryClient } from "@tanstack/react-query";
+import { createAppRouter } from "@/app/router/routes";
+
+const router = createAppRouter(new QueryClient());
 import { SidebarActions } from "@/app/components/SidebarActions";
 import { SidebarProvider } from "@/app/components/app-sidebar/SidebarContext";
 import { useDisplayShortcuts } from "@/app/layouts/use-display-shortcuts";
@@ -119,7 +122,7 @@ describe("personal settings", () => {
         <SettingsPage />
         <LocationProbe />
       </>,
-      { route: "/" },
+      { route: "/settings" },
     );
 
     const contrast = container.querySelector<HTMLInputElement>("#interface-contrast")!;
@@ -158,11 +161,11 @@ describe("personal settings", () => {
     const layoutTab = Array.from(container.querySelectorAll("button")).find(
       (button) => button.textContent === "Layout",
     )!;
-    act(() => {
+    await act(async () => {
       layoutTab.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
     });
     expect(container.querySelector('[data-testid="location"]')?.textContent).toBe(
-      "/?section=layout",
+      "/settings?section=layout",
     );
     const panel = document.getElementById(layoutTab.getAttribute("aria-controls")!)!;
     expect(panel.getAttribute("role")).toBe("tabpanel");
@@ -209,7 +212,7 @@ describe("personal settings", () => {
         <SettingsPage />
         <LocationProbe />
       </>,
-      { route: "/" },
+      { route: "/settings" },
     );
 
     const darkScheme = container.querySelector<HTMLInputElement>(
@@ -232,7 +235,7 @@ describe("personal settings", () => {
     const keybindingsTab = Array.from(container.querySelectorAll("button")).find(
       (button) => button.textContent === "Keybindings",
     )!;
-    act(() => {
+    await act(async () => {
       keybindingsTab.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
     });
     const globalSearch = container.querySelector<HTMLButtonElement>(

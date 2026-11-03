@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { useCreateApiClientMutation } from "@/features/api-access/api/api-access.mutations";
 import {
   ApiClientFormDialog,

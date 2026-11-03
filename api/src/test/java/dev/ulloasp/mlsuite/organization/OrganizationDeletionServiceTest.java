@@ -1,5 +1,8 @@
 package dev.ulloasp.mlsuite.organization;
 
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import dev.ulloasp.mlsuite.support.PostgresDatabase;
 import static org.junit.jupiter.api.Assertions.*;
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationDeletionService;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
@@ -21,16 +24,17 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.web.server.ResponseStatusException;
 
 @DataJpaTest(properties = {
-    "spring.profiles.active=test", "logging.file.name=target/org-delete-test.log",
-    "spring.datasource.url=jdbc:h2:mem:orgdelete;MODE=PostgreSQL;INIT=CREATE DOMAIN IF NOT EXISTS TIMESTAMPTZ AS TIMESTAMP WITH TIME ZONE",
-    "spring.datasource.driver-class-name=org.h2.Driver",
-    "spring.datasource.username=sa", "spring.datasource.password=",
-    "spring.jpa.hibernate.ddl-auto=create-drop", "spring.flyway.enabled=false"
+    "spring.profiles.active=test", "logging.file.name=target/org-delete-test.log"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(OrganizationDeletionService.class)
 @ContextConfiguration(classes = OrganizationDeletionServiceTest.PersistenceConfig.class)
 class OrganizationDeletionServiceTest {
+
+    @DynamicPropertySource
+    static void database(DynamicPropertyRegistry registry) {
+        PostgresDatabase.registerRolledBack(registry);
+    }
     @Configuration
     @EntityScan("dev.ulloasp.mlsuite")
     @EnableJpaRepositories("dev.ulloasp.mlsuite")

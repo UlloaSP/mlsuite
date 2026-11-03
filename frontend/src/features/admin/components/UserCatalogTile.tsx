@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { formatDate } from "@/shared/lib/date-time";
 import { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { PersonAvatar } from "@/shared/ui/PersonAvatar";
 import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";

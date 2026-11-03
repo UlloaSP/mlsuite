@@ -18,6 +18,6 @@ const tones: Record<RoleValue, "accent" | "danger" | "neutral" | "success" | "wa
   REVOKED: "danger",
 };
 
-export function RoleBadge({ value }: { value: RoleValue | string }) {
+export function RoleBadge({ value }: { value: string }) {
   return <AppBadge tone={tones[value as RoleValue] ?? "neutral"}>{value}</AppBadge>;
 }

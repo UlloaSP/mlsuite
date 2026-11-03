@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { AppBadge, badgeLabel } from "@/shared/ui/AppBadge";
+import { AppBadge } from "@/shared/ui/AppBadge";
+import { badgeLabel } from "@/shared/ui/badge-label";
 
 export function UserInfoBadge({ icon, label }: { icon: ReactNode; label: string }) {
   return (

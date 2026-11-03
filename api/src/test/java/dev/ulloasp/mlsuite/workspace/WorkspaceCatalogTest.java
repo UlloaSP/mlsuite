@@ -10,12 +10,14 @@ import java.util.EnumSet;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
@@ -33,6 +35,9 @@ class WorkspaceCatalogTest extends PublicPredictionFixture {
     private Organization north;
     private Organization south;
     private Organization left;
+
+    @Autowired
+    RoleSeedService roleSeedService;
 
     /** The owner is an active member of their organization and of North, left Left, and never joined South. */
     @BeforeEach
@@ -112,6 +117,7 @@ class WorkspaceCatalogTest extends PublicPredictionFixture {
         Organization created = new Organization(name.toLowerCase() + "-" + schema.getId(), name + " " + mark, null,
                 owner);
         entityManager.persist(created);
+        roleSeedService.createOrganizationRoles(created);
         if (membership != null) {
             // This custom role must not occupy a system slug when another context seeds this database.
             RoleDefinition role = new RoleDefinition(created, RoleScope.ORGANIZATION, "Member", "workspace-member", null);

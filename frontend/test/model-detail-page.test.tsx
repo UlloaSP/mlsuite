@@ -9,7 +9,8 @@ import { mount } from "./support/dom";
 const queries = vi.hoisted(() => ({
   model: { data: undefined as ModelDto | undefined, error: null as Error | null },
 }));
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () => ({ data: { id: 1 } }),
 }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({

@@ -44,11 +44,11 @@ describe("typography preferences", () => {
     expect(style.setProperty).toHaveBeenCalledWith("--code-font-size", "15px");
     expect(style.setProperty).toHaveBeenCalledWith(
       "--font-sans",
-      "'IBM Plex Sans', Arial, sans-serif",
+      "'IBM Plex Sans Variable', Arial, sans-serif",
     );
     expect(style.setProperty).toHaveBeenCalledWith(
       "--font-mono",
-      "'JetBrains Mono', Consolas, ui-monospace, monospace",
+      "'JetBrains Mono Variable', Consolas, ui-monospace, monospace",
     );
     expect(localStorage.getItem("ui/typography")).toContain('"interfaceFont":"ibm-plex-sans"');
     unsubscribe();

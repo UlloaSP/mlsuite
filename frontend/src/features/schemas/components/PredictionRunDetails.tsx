@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useSearchParamState } from "@/shared/lib/use-search-param-state";
+import type { RUN_DETAIL_TABS } from "@/features/schemas/pages/schema-search";
 import { type ReactNode, useMemo } from "react";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
@@ -31,8 +31,6 @@ import {
 import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
 import { questionnaireConfigError } from "@/capabilities/prediction-runtime/feedback/questionnaire-config";
 
-const DETAIL_TABS = ["inputs", "outputs", "reviews", "history"] as const;
-
 /** A tab's own scroll area inside the fixed-height page. */
 function ScrollPanel({ children }: { children: ReactNode }) {
   return (
@@ -44,20 +42,29 @@ function ScrollPanel({ children }: { children: ReactNode }) {
     </div>
   );
 }
-type DetailTab = (typeof DETAIL_TABS)[number];
+type DetailTab = (typeof RUN_DETAIL_TABS)[number];
 
 type Props = {
   runId: string;
   bookmarkName?: string | null;
   /** The Reviews tab's content (the inference page's review management); no tab without it. */
   reviews?: { content: ReactNode; count?: ReactNode } | null;
+  /** The tab shown, which the page keeps in its URL. */
+  tab: DetailTab;
+  onTabChange: (tab: DetailTab) => void;
 };
 
 /**
  * A saved inference's data: inputs and outputs, and (for review managers) the
  * reviews it is part of. Feedback is never given here: answering belongs to reviews.
  */
-export function PredictionRunDetails({ runId, bookmarkName, reviews }: Props) {
+export function PredictionRunDetails({
+  runId,
+  bookmarkName,
+  reviews,
+  tab,
+  onTabChange: setTab,
+}: Props) {
   const { data: run, isError } = usePredictionRun(runId);
   const { data: version, isError: versionError } = useSchemaVersion(run?.schemaVersionId);
   // The run is read against the snapshot it ran on, not the bookmark's current one.
@@ -66,7 +73,6 @@ export function PredictionRunDetails({ runId, bookmarkName, reviews }: Props) {
     [version],
   );
   const runFeedback = usePredictionRunFeedback(run);
-  const [tab, setTab] = useSearchParamState<DetailTab>("tab", "inputs", DETAIL_TABS);
   const catalog = useSchemaPluginCatalog(
     executableVersion?.formSchema,
     useCurrentOrganizationId() ?? "none",

@@ -34,6 +34,7 @@ import dev.ulloasp.mlsuite.model.domain.model.RuntimeEnvironment;
 import dev.ulloasp.mlsuite.notification.application.service.NotificationService;
 import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 
 /**
  * An uploaded model whose bundle carries a lock is prepared on the server: the builder installs
@@ -169,7 +170,7 @@ class ModelPreparationTest extends PublicPredictionFixture {
                 .contentType(MediaType.APPLICATION_JSON).content(run))
                 .andExpect(status().isCreated());
 
-        assertEquals(List.of(KEY, RuntimeEnvironment.LEGACY), jdbc.queryForList("""
+        assertEquals(List.of(KEY, TestFixtures.ENVIRONMENT_KEY), jdbc.queryForList("""
                 SELECT r.environment_key FROM prediction_result r JOIN prediction_run p ON p.id = r.prediction_run_id
                 WHERE p.name = 'with-environment' ORDER BY r.model_id = ? DESC""", String.class, forestModel.getId()));
     }
@@ -254,7 +255,7 @@ class ModelPreparationTest extends PublicPredictionFixture {
         String prediction = mockMvc.perform(signedIn(post("/api/schema-bookmarks/{id}/predictions",
                 bookmark.getId()), owner.getId()).contentType(MediaType.APPLICATION_JSON).content(request))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        return Map.of("attestation", objectMapper.readTree(prediction).get("attestation").asText());
+        return Map.of("attestation", objectMapper.readTree(prediction).get("attestation").asString());
     }
 
     private int entries(String action) {

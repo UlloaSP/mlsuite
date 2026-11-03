@@ -208,8 +208,11 @@ export const mountSandboxedPublicRunForm = ({
 };
 
 export type SandboxedPreview = {
-  /** Shows the schema's form in place of the last one; only the last schema's failure is told. */
-  show(schema: unknown, plugins: PluginCatalog): void;
+  /**
+   * Shows the schema's form in place of the last one. Rejects with the failure only while this
+   * schema is still the last one shown; a superseded schema's outcome is dropped.
+   */
+  show(schema: unknown, plugins: PluginCatalog): Promise<void>;
   close(): void;
 };
 
@@ -219,8 +222,7 @@ export type SandboxedPreview = {
  */
 export const openSandboxedPreview = ({
   container,
-  onMountError,
-}: Pick<Common, "container" | "onMountError">): SandboxedPreview => {
+}: Pick<Common, "container">): SandboxedPreview => {
   const sandbox = openPluginSandbox({
     container,
     title: "Schema preview",
@@ -231,9 +233,12 @@ export const openSandboxedPreview = ({
   return {
     show(schema, plugins) {
       const current = ++shown;
-      void sandbox
-        .mount({ kind: "preview", schema, plugins })
-        .catch((error: Error) => current === shown && onMountError?.(error));
+      return sandbox.mount({ kind: "preview", schema, plugins }).then(
+        () => undefined,
+        (error: unknown) => {
+          if (current === shown) throw error;
+        },
+      );
     },
     close: () => sandbox.destroy(),
   };

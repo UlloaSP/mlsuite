@@ -17,7 +17,8 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.type.TypeFactory;
+
+import tools.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.schema.application.dto.PublicRunLimitDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaMappingErrorDto;
@@ -28,6 +29,7 @@ import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverter;
 import io.swagger.v3.core.converter.ModelConverterContext;
 import io.swagger.v3.core.converter.ModelConverters;
+import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.info.Info;
@@ -51,6 +53,7 @@ import jakarta.annotation.Nullable;
 class OpenApiContractConventions {
 
     private static final String REF_PREFIX = "#/components/schemas/";
+    private static final String JSON_NODE = "JsonNode";
 
     static {
         SpringDocUtils.getConfig().addRequestWrapperToIgnore(CurrentUser.class, PublicCaller.class);
@@ -63,6 +66,21 @@ class OpenApiContractConventions {
                 .servers(List.of(new Server().url("/")));
     }
 
+    /**
+     * swagger-core, on Jackson 2, documents only Jackson 2's JsonNode as any JSON value; the API's
+     * is Jackson 3's, and gets the same shared JsonNode model.
+     */
+    @Bean
+    ModelConverter jsonNodeConverter() {
+        return (type, context, chain) -> {
+            if (rawClass(type) != JsonNode.class) {
+                return chain.hasNext() ? chain.next().resolve(type, context, chain) : null;
+            }
+            context.defineModel(JSON_NODE, new JsonSchema());
+            return new JsonSchema().$ref(REF_PREFIX + JSON_NODE);
+        };
+    }
+
     @Bean
     ModelConverter recordNullabilityConverter() {
         return new ModelConverter() {
@@ -70,7 +88,7 @@ class OpenApiContractConventions {
             @SuppressWarnings("rawtypes")
             public Schema resolve(AnnotatedType type, ModelConverterContext context, Iterator<ModelConverter> chain) {
                 Schema resolved = chain.hasNext() ? chain.next().resolve(type, context, chain) : null;
-                Class<?> raw = TypeFactory.defaultInstance().constructType(type.getType()).getRawClass();
+                Class<?> raw = rawClass(type);
                 if (resolved == null || !raw.isRecord()) {
                     return resolved;
                 }
@@ -201,6 +219,11 @@ class OpenApiContractConventions {
     private static boolean isNullable(RecordComponent component) {
         return component.isAnnotationPresent(Nullable.class)
                 || component.getAccessor().isAnnotationPresent(Nullable.class);
+    }
+
+    /** Read with swagger-core's own (Jackson 2) mapper, as the type it passes may be its own. */
+    private static Class<?> rawClass(AnnotatedType type) {
+        return Json.mapper().constructType(type.getType()).getRawClass();
     }
 
     /** OpenAPI 3.1 spells nullability as a {@code null} type; a reference needs a union. */

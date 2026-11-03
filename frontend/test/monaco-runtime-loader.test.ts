@@ -1,7 +1,7 @@
 import { afterEach, expect, test, vi } from "vite-plus/test";
 
 afterEach(() => {
-  vi.doUnmock("monaco-editor");
+  vi.doUnmock("@/capabilities/editor/monaco");
   vi.doUnmock("@monaco-editor/react");
   vi.doUnmock("monaco-editor/editor/editor.worker.js?worker");
   vi.doUnmock("monaco-editor/language/json/json.worker.js?worker");
@@ -18,7 +18,7 @@ test("configures the React wrapper with the local Monaco instance once", async (
   const JsonWorker = vi.fn(function JsonWorker() {
     return { kind: "json" };
   });
-  vi.doMock("monaco-editor", () => ({ editor: { create: vi.fn() } }));
+  vi.doMock("@/capabilities/editor/monaco", () => ({ monaco: { editor: { create: vi.fn() } } }));
   vi.doMock("@monaco-editor/react", () => ({ Editor, loader: { config } }));
   vi.doMock("monaco-editor/editor/editor.worker.js?worker", () => ({
     default: EditorWorker,
@@ -47,7 +47,7 @@ test("propagates local Monaco configuration failures", async () => {
   const config = vi.fn(() => {
     throw new Error("local Monaco configuration failed");
   });
-  vi.doMock("monaco-editor", () => ({ editor: { create: vi.fn() } }));
+  vi.doMock("@/capabilities/editor/monaco", () => ({ monaco: { editor: { create: vi.fn() } } }));
   vi.doMock("@monaco-editor/react", () => ({ Editor: vi.fn(), loader: { config } }));
   vi.doMock("monaco-editor/editor/editor.worker.js?worker", () => ({
     default: vi.fn(),
