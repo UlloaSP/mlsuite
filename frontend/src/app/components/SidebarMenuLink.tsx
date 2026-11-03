@@ -6,7 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { LucideIcon } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import type { ReactNode } from "react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
+import { appHref } from "@/shared/lib/app-href";
 import { cx } from "@/shared/ui/cx";
 import { SIDEBAR_MENU_ITEM } from "./sidebar-menu-styles";
 
@@ -25,8 +26,8 @@ export function SidebarMenuLink({
 }) {
   return (
     <DropdownMenu.Item asChild>
-      <Link
-        to={to}
+      <AppLink
+        {...appHref(to)}
         viewTransition
         aria-current={active ? "page" : undefined}
         className={cx(
@@ -38,7 +39,7 @@ export function SidebarMenuLink({
         <Icon size={15} className="shrink-0" />
         <span className="flex-1 truncate">{label}</span>
         {trailing}
-      </Link>
+      </AppLink>
     </DropdownMenu.Item>
   );
 }

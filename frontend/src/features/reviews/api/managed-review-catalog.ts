@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { mutationOptions, useMutation } from "@tanstack/react-query";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { PREDICTION_RUN_CATALOG_QUERY_KEY } from "@/capabilities/prediction-runs/prediction-run-keys";
 import { REVIEWS_ROOT_QUERY_KEY } from "@/capabilities/review-creation/review-creation-api";
@@ -19,17 +19,17 @@ export function useManagedReviews(search: string, filter: string) {
   });
 }
 
-export const useDeleteReview = () => {
-  const queryClient = useQueryClient();
-  const org = useCurrentOrganizationId() ?? "none";
-  return useMutation({
+const deleteReviewMutation = (org: number | string) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
     mutationFn: (reviewId: string) =>
       appFetch<void>(`/api/schema-reviews/${encodeURIComponent(reviewId)}`, { method: "DELETE" }),
-    onSuccess: () =>
+    onSuccess: (_data, _reviewId, _result, { client }) =>
       Promise.all([
-        queryClient.invalidateQueries({ queryKey: REVIEWS_ROOT_QUERY_KEY(org) }),
-        queryClient.invalidateQueries({ queryKey: PREDICTION_RUN_CATALOG_QUERY_KEY(org) }),
+        client.invalidateQueries({ queryKey: REVIEWS_ROOT_QUERY_KEY(org) }),
+        client.invalidateQueries({ queryKey: PREDICTION_RUN_CATALOG_QUERY_KEY(org) }),
       ]),
   });
-};
+
+export const useDeleteReview = () =>
+  useMutation(deleteReviewMutation(useCurrentOrganizationId() ?? "none"));

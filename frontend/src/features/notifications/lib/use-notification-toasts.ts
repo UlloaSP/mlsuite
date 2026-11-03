@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useUser } from "@/capabilities/workspace-context/session";
 import {
@@ -35,7 +35,7 @@ export function useNotificationToasts() {
           const { title, description } = presentNotification(notification);
           toast(title, {
             description,
-            action: { label: "View", onClick: () => void navigate("/notifications") },
+            action: { label: "View", onClick: () => void navigate({ to: "/notifications" }) },
           });
         }
       },

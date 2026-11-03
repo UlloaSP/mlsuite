@@ -1,12 +1,18 @@
 // @vitest-environment jsdom
 import { QueryClient } from "@tanstack/react-query";
-import { Provider, createStore } from "jotai";
-import { act, type PropsWithChildren } from "react";
-import { Route, Routes } from "react-router";
+import { act, type PropsWithChildren, type ReactNode } from "react";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { SessionFrameLayout } from "@/app/layouts/SessionFrameLayout";
-import { publicPages } from "@/app/router/public-routes";
-import { routes } from "@/app/router/routes";
+import { sessionFrameRoute } from "@/app/router/layout-routes";
+import { router } from "@/app/router/routes";
+import { parseSearch, stringifySearch } from "@/app/router/search-params";
 import { PublicBookmarkPage } from "@/features/explore/pages/public-bookmark-page";
 import { SchemaBookmarkCatalogItem } from "@/features/schemas/components/SchemaBookmarkCatalogItem";
 import type { PublicBookmarkDto, SchemaBookmarkDto } from "@/shared/api/openapi.gen";
@@ -124,6 +130,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.unstubAllGlobals();
+  locationDisplayAtom.set("breadcrumb-top");
   localStorage.clear();
 });
 
@@ -225,12 +232,11 @@ describe("bookmark visibility in the schema repository", () => {
 
 describe("public bookmark page", () => {
   const page = (queryClient = newClient()) =>
-    mount(
-      <Routes>
-        <Route path="/explore/:publicId" element={<PublicBookmarkPage />} />
-      </Routes>,
-      { route: `/explore/${PUBLIC_ID}`, queryClient },
-    );
+    mount(null, {
+      route: `/explore/${PUBLIC_ID}`,
+      routes: { "/explore/$publicId": <PublicBookmarkPage /> },
+      queryClient,
+    });
 
   test("shows a loading state while the bookmark is requested", async () => {
     fetchMock.mockReturnValue(new Promise(() => undefined));
@@ -331,15 +337,25 @@ describe("public bookmark page", () => {
 });
 
 describe("public page frame", () => {
-  const framed = () =>
-    mount(
-      <Routes>
-        <Route element={<SessionFrameLayout />}>
-          <Route path="/explore/:publicId" element={<p>Public content</p>} />
-        </Route>
-      </Routes>,
-      { route: `/explore/${PUBLIC_ID}?tab=form` },
-    );
+  /** `content` at the bookmark's address inside the session frame, as the app routes it. */
+  const framedAt = (route: string, content: ReactNode) => {
+    const root = createRootRoute();
+    const frame = createRoute({
+      getParentRoute: () => root,
+      id: "frame",
+      component: SessionFrameLayout,
+    });
+    const page = createRoute({
+      getParentRoute: () => frame,
+      path: "/explore/$publicId",
+      component: () => content,
+    });
+    const history = createMemoryHistory({ initialEntries: [route] });
+    const routeTree = root.addChildren([frame.addChildren([page])]);
+    const framing = createRouter({ routeTree, history, parseSearch, stringifySearch });
+    return <RouterProvider router={framing} />;
+  };
+  const framed = () => mount(framedAt(`/explore/${PUBLIC_ID}?tab=form`, <p>Public content</p>));
 
   test("an anonymous visitor gets the slim header with a way to sign in and come back", async () => {
     const { host } = await framed();
@@ -369,25 +385,15 @@ describe("public page frame", () => {
       "off",
     ];
     const trailed = (display: LocationDisplay) => {
-      const store = createStore();
-      store.set(locationDisplayAtom, display);
+      locationDisplayAtom.set(display);
       return mount(
-        <Provider store={store}>
-          <Routes>
-            <Route element={<SessionFrameLayout />}>
-              <Route
-                path="/explore/:publicId"
-                element={
-                  <AppPageHeader
-                    title="production"
-                    breadcrumbs={[{ label: "Explore", to: "/explore" }, { label: "production" }]}
-                  />
-                }
-              />
-            </Route>
-          </Routes>
-        </Provider>,
-        { route: `/explore/${PUBLIC_ID}` },
+        framedAt(
+          `/explore/${PUBLIC_ID}`,
+          <AppPageHeader
+            title="production"
+            breadcrumbs={[{ label: "Explore", to: "/explore" }, { label: "production" }]}
+          />,
+        ),
       );
     };
     const trails = (host: HTMLElement) => [
@@ -435,9 +441,8 @@ describe("public page frame", () => {
   });
 
   test("the explore route is registered outside the protected routes", () => {
-    const root = routes[0].children ?? [];
-    const publicBranch = root.find((route) => route.children === publicPages);
-    expect(publicBranch).toBeDefined();
-    expect(publicPages.map((route) => route.path)).toContain("explore/:publicId");
+    const explore = router.routesByPath["/explore/$publicId"];
+    expect(explore).toBeDefined();
+    expect(explore.parentRoute).toBe(sessionFrameRoute);
   });
 });

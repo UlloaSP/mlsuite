@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ArrowRight, Tag } from "lucide-react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { formatDate } from "@/shared/lib/date-time";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
@@ -26,13 +26,14 @@ export function PublicBookmarkCard({ bookmark }: { bookmark: PublicBookmarkSumma
           <Tag size={18} />
         </span>
         <h2 className="min-w-0 flex-1 truncate text-lg font-semibold tracking-[-0.01em] text-fg">
-          <Link
-            to={`/explore/${encodeURIComponent(bookmark.publicId)}`}
+          <AppLink
+            to="/explore/$publicId"
+            params={{ publicId: bookmark.publicId }}
             aria-label={`Open ${bookmark.name} by ${bookmark.organizationName}`}
             className={cx("after:absolute after:inset-0 after:rounded-card", FOCUS_RING)}
           >
             {bookmark.name}
-          </Link>
+          </AppLink>
         </h2>
       </div>
 

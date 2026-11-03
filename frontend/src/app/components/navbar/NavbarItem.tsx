@@ -5,7 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
+import { appHref } from "@/shared/lib/app-href";
 import { AppKbd } from "@/shared/ui/AppKbd";
 import { AppTooltip } from "@/shared/ui/AppTooltip";
 import { useMediaQuery } from "@/shared/ui/use-media-query";
@@ -79,16 +80,16 @@ export function NavbarItem({
 
   if (!item.children?.length) {
     return withTooltip(
-      <Link
+      <AppLink
         {...common}
-        to={item.to}
+        {...appHref(item.to)}
         state={RESTORE_SCROLL_STATE}
         viewTransition
         aria-current={active ? "page" : undefined}
         className={itemClass(active)}
       >
         {face}
-      </Link>,
+      </AppLink>,
     );
   }
 
@@ -116,7 +117,7 @@ export function NavbarItem({
               active={isChildActive(child, currentPath, pathname)}
               icon={child.icon}
               label={child.label}
-              to={child.to}
+              {...appHref(child.to)}
             />
           ))}
         </DropdownMenu.Content>

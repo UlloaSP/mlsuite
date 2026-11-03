@@ -3,53 +3,20 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ComponentType, ReactElement } from "react";
-import { Outlet, type RouteObject } from "react-router";
-import { RequireWorkspacePermission } from "@/features/workspace/components/RequireWorkspacePermission";
-import { RequireSuperadmin } from "@/features/workspace/components/RequireSuperadmin";
-import { RequireTeamOrganization } from "@/features/workspace/components/RequireTeamOrganization";
-import { RequireReviewAccess } from "@/features/reviews/components/RequireReviewAccess";
-import type { WorkspacePermissionKey } from "@/capabilities/workspace-context/workspace-context";
+import type { ComponentType } from "react";
+import { createRoute, lazyRouteComponent, type AnyRoute } from "@tanstack/react-router";
 
-/** A lazily loaded page; keep `load` a literal `import()` so each page gets its own chunk. */
-export const page = (path: string, load: () => Promise<ComponentType>): RouteObject => ({
-  path,
-  lazy: async () => ({ Component: await load() }),
-});
-
-const guard = (element: ReactElement, children: RouteObject[]): RouteObject => ({
-  element,
-  children,
-});
-
-export const superadmin = (children: RouteObject[]) =>
-  guard(
-    <RequireSuperadmin>
-      <Outlet />
-    </RequireSuperadmin>,
-    children,
-  );
-
-export const teamOrganization = (children: RouteObject[]) =>
-  guard(
-    <RequireTeamOrganization>
-      <Outlet />
-    </RequireTeamOrganization>,
-    children,
-  );
-
-export const reviewAccess = (children: RouteObject[]) =>
-  guard(
-    <RequireReviewAccess>
-      <Outlet />
-    </RequireReviewAccess>,
-    children,
-  );
-
-export const workspace = (permission: WorkspacePermissionKey, children: RouteObject[]) =>
-  guard(
-    <RequireWorkspacePermission permission={permission}>
-      <Outlet />
-    </RequireWorkspacePermission>,
-    children,
-  );
+/**
+ * A lazily loaded page under `parent`; keep `load` a literal `import()` so each page gets its own
+ * chunk. The router loads the chunk before it leaves the current page.
+ */
+export const page = <TParent extends AnyRoute, const TPath extends string>(
+  parent: TParent,
+  path: TPath,
+  load: () => Promise<ComponentType>,
+) =>
+  createRoute({
+    getParentRoute: () => parent,
+    path,
+    component: lazyRouteComponent(() => load().then((Component) => ({ default: Component }))),
+  });

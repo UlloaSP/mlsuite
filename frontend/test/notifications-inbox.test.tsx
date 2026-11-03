@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { act } from "react";
-import { useLocation } from "react-router";
+import { useLocation } from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { createAppQueryClient } from "@/app/providers/query-client";
 import { NotificationsPage } from "@/features/notifications/pages/notifications-page";
@@ -85,8 +85,8 @@ const flush = () => act(async () => new Promise((resolve) => setTimeout(resolve,
 const mutations = () => requests.filter(({ method }) => method !== "GET");
 
 function Location() {
-  const { pathname, search } = useLocation();
-  return <output data-testid="location">{`${pathname}${search}`}</output>;
+  const { pathname, searchStr } = useLocation();
+  return <output data-testid="location">{`${pathname}${searchStr}`}</output>;
 }
 
 async function showInbox(state: Inbox = {}, selectOrganization = vi.fn().mockResolvedValue({})) {

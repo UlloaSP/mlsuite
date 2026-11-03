@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import { useSearchParams } from "react-router";
-import { useSearchParamsUpdate } from "@/shared/lib/use-search-params-update";
+import { useSearchParamsUpdate, useUrlSearchParams } from "@/shared/lib/url-search-params";
 import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
 
 type CatalogControlsOptions<TFilter extends string, TSort extends string> = {
@@ -28,7 +27,7 @@ export function useCatalogControls<TFilter extends string, TSort extends string>
   sorts,
   normalizeQuery = (query) => query.trim(),
 }: CatalogControlsOptions<TFilter, TSort>): CatalogControls<TFilter, TSort> {
-  const [params] = useSearchParams();
+  const params = useUrlSearchParams();
   const updateParams = useSearchParamsUpdate();
   const query = params.get("q") ?? "";
   const filterParam = params.get("filter");

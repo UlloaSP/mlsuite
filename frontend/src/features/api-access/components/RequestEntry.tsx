@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { KeyRound, Sparkles, Tag, Timer } from "lucide-react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { RequestOutcomeBadge } from "@/features/api-access/components/RequestOutcomeBadge";
 import { formatDuration } from "@/features/api-access/lib/api-format";
 import { appButtonClass } from "@/shared/ui/button-styles";
@@ -50,13 +50,14 @@ export function RequestEntry({ request }: { request: ApiRequestDto }) {
       }
       actions={
         request.predictionRunId ? (
-          <Link
-            to={`/inferences/${request.predictionRunId}`}
+          <AppLink
+            to="/inferences/$inferenceId"
+            params={{ inferenceId: String(request.predictionRunId) }}
             className={appButtonClass({ size: "sm", variant: "secondary" })}
           >
             <Sparkles size={14} />
             Inference
-          </Link>
+          </AppLink>
         ) : null
       }
     />

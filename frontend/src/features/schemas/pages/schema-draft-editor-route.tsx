@@ -1,14 +1,14 @@
-import { createStore, Provider } from "jotai";
 import { useMemo } from "react";
-import { useParams } from "react-router";
+import { useParams } from "@tanstack/react-router";
+import { EditorAtomsProvider, createEditorAtoms } from "@/features/schemas/lib/editor-atoms";
 import { SchemaDraftEditorPage } from "./schema-draft-editor-page";
 
 export function SchemaDraftEditorRoute() {
-  const { draftId } = useParams<{ draftId: string }>();
-  const store = useMemo(() => createStore(), [draftId]);
+  const { draftId } = useParams({ strict: false });
+  const atoms = useMemo(() => createEditorAtoms(), [draftId]);
   return (
-    <Provider store={store}>
+    <EditorAtomsProvider value={atoms}>
       <SchemaDraftEditorPage />
-    </Provider>
+    </EditorAtomsProvider>
   );
 }

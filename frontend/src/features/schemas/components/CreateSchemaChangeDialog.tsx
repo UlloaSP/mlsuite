@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useCreateSchemaDraftMutation } from "@/features/schemas/api/schema-draft-mutations";
 import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
@@ -27,7 +27,10 @@ export function CreateSchemaChangeDialog({ schemaId, baseVersion, onClose }: Pro
         baseVersionId: baseVersion.id,
       });
       onClose();
-      void navigate(`/schemas/${schemaId}/drafts/${draft.id}`);
+      void navigate({
+        to: "/schemas/$schemaId/drafts/$draftId",
+        params: { schemaId, draftId: String(draft.id) },
+      });
     } catch {
       // The dialog shows the mutation error and stays open for a retry.
     }

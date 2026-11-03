@@ -4,7 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { GitCommitHorizontal, GitPullRequestArrow, Tags } from "lucide-react";
-import { Link } from "react-router";
+import { linkOptions } from "@tanstack/react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { AppSkeleton } from "@/shared/ui/AppSkeleton";
 import { cx } from "@/shared/ui/cx";
 import { TAB_LIST_CLASS, tabCountClass, tabItemClass } from "@/shared/ui/tab-styles";
@@ -29,26 +30,33 @@ export function SchemaRepoNav({ active, schemaId }: Props) {
   const changes = countOf(useChangeCatalog(schemaId, controls));
   const bookmarks = countOf(useBookmarkCatalog(schemaId, controls));
   const snapshots = countOf(useSnapshotCatalog(schemaId, controls));
+  const params = { schemaId };
   const items = [
-    { id: "overview", label: "Overview", to: `/schemas/${schemaId}`, count: null, icon: null },
+    {
+      id: "overview",
+      label: "Overview",
+      link: linkOptions({ to: "/schemas/$schemaId", params }),
+      count: null,
+      icon: null,
+    },
     {
       id: "changes",
       label: "Changes",
-      to: `/schemas/${schemaId}/changes`,
+      link: linkOptions({ to: "/schemas/$schemaId/changes", params }),
       count: changes,
       icon: GitPullRequestArrow,
     },
     {
       id: "bookmarks",
       label: "Bookmarks",
-      to: `/schemas/${schemaId}/bookmarks`,
+      link: linkOptions({ to: "/schemas/$schemaId/bookmarks", params }),
       count: bookmarks,
       icon: Tags,
     },
     {
       id: "snapshots",
       label: "Snapshots",
-      to: `/schemas/${schemaId}/snapshots`,
+      link: linkOptions({ to: "/schemas/$schemaId/snapshots", params }),
       count: snapshots,
       icon: GitCommitHorizontal,
     },
@@ -60,9 +68,9 @@ export function SchemaRepoNav({ active, schemaId }: Props) {
         const Icon = item.icon;
         const selected = item.id === active;
         return (
-          <Link
+          <AppLink
             key={item.id}
-            to={item.to}
+            {...item.link}
             aria-current={selected ? "page" : undefined}
             className={tabItemClass(selected)}
           >
@@ -73,7 +81,7 @@ export function SchemaRepoNav({ active, schemaId }: Props) {
             ) : item.count !== null ? (
               <span className={tabCountClass(selected)}>{item.count}</span>
             ) : null}
-          </Link>
+          </AppLink>
         );
       })}
     </nav>

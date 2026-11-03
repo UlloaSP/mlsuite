@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router";
+import { useParams } from "@tanstack/react-router";
 import {
   isProfileMissing,
   publicProfileQueryOptions,
@@ -25,7 +25,7 @@ import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
  * the frame around it is chosen by the router.
  */
 export function PublicProfilePage() {
-  const { handle = "" } = useParams<{ handle: string }>();
+  const { handle = "" } = useParams({ strict: false });
   const query = useQuery(publicProfileQueryOptions(handle));
   const bookmarks = usePublicProfileBookmarks(handle);
   const profile = query.data;

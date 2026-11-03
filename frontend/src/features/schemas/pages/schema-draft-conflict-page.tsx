@@ -5,7 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { CheckCircle2, GitMerge, PencilLine } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
 import { appButtonClass } from "@/shared/ui/button-styles";
@@ -40,7 +41,7 @@ import type {
 } from "@/shared/api/openapi.gen";
 
 export function SchemaDraftConflictPage() {
-  const { schemaId, draftId } = useParams<{ schemaId: string; draftId: string }>();
+  const { schemaId, draftId } = useParams({ strict: false });
   const navigate = useNavigate();
   const { data: schemaDto } = useSchema(schemaId);
   const draftQuery = useSchemaDraft(draftId);
@@ -98,7 +99,10 @@ export function SchemaDraftConflictPage() {
     try {
       const result = await publishMutation.mutateAsync(draft.revision);
       if (result.status === "published" && result.version) {
-        void navigate(`/schemas/${schemaId}/versions/${result.version.id}`);
+        void navigate({
+          to: "/schemas/$schemaId/versions/$versionId",
+          params: { schemaId, versionId: String(result.version.id) },
+        });
         return;
       }
       toast.error("Publish needs merge review", {
@@ -205,13 +209,14 @@ export function SchemaDraftConflictPage() {
                 </AppButton>
               )}
               {schemaId && draftId ? (
-                <Link
-                  to={`/schemas/${schemaId}/drafts/${draftId}`}
+                <AppLink
+                  to="/schemas/$schemaId/drafts/$draftId"
+                  params={{ schemaId, draftId }}
                   className={appButtonClass({ variant: "secondary" })}
                 >
                   <PencilLine size={16} />
                   Manual edit
-                </Link>
+                </AppLink>
               ) : null}
             </>
           }

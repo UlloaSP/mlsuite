@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { PencilLine, Save, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   useDeleteApiClientMutation,
@@ -50,7 +50,7 @@ export function ApiClientSettingsTab({ client }: { client: ApiClientDto }) {
     try {
       await remove.mutateAsync(client.client.id);
       toast.success(`${client.client.name} was deleted`);
-      void navigate("/api-access/clients");
+      void navigate({ to: "/api-access/clients" });
     } catch {
       // The tab shows the mutation error.
     }

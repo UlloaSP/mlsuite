@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { useCan } from "@/capabilities/workspace-context/workspace-context";
 import { useSetBookmarkExampleMutation } from "@/features/schemas/api/schema-mutations";
 import { useBookmarkExampleCatalog } from "@/features/schemas/api/schema-catalog-queries";
@@ -66,12 +66,12 @@ export function BookmarkExamplesDialog({ bookmark, open, onClose }: Props) {
               ? "Open a saved inference of this bookmark and mark it as a public example."
               : "Members who may publish bookmarks choose the examples.",
             action: (
-              <Link
-                to={bookmarkInferencesHref(bookmark)}
+              <AppLink
+                {...bookmarkInferencesHref(bookmark)}
                 className={appButtonClass({ variant: "secondary" })}
               >
                 Open its inferences
-              </Link>
+              </AppLink>
             ),
           }}
         >
@@ -81,15 +81,16 @@ export function BookmarkExamplesDialog({ bookmark, open, onClose }: Props) {
               className="flex flex-wrap items-center gap-3 border-b border-line py-3"
             >
               <div className="min-w-0 flex-1">
-                <Link
-                  to={`/inferences/${example.runId}`}
+                <AppLink
+                  to="/inferences/$inferenceId"
+                  params={{ inferenceId: String(example.runId) }}
                   className={cx(
                     "block truncate rounded-control text-sm font-semibold text-fg hover:underline",
                     FOCUS_RING,
                   )}
                 >
                   {example.runName}
-                </Link>
+                </AppLink>
                 <p className="text-xs text-fg-muted">
                   Ran on {snapshotLabel(example.runVersionName, example.runVersion)}
                 </p>

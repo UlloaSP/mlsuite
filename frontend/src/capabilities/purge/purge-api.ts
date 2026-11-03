@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { mutationOptions, useMutation, useQuery } from "@tanstack/react-query";
 import { appFetch, json } from "@/shared/api/http";
 import type { PurgeJobDto, PurgePreviewDto, RequestPurgeRequest } from "@/shared/api/openapi.gen";
 
@@ -19,13 +19,12 @@ export const usePurgePreview = (scope: PurgeScope, targetId: number) =>
     meta: { errorHandledLocally: true },
   });
 
-export const useRequestPurge = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: (request: RequestPurgeRequest) =>
-      appFetch<PurgeJobDto>("/api/admin/purges", json("POST", request)),
-    // The target leaves catalogs of every kind, which belong to other features.
-    onSuccess: () => queryClient.invalidateQueries(),
-  });
-};
+const requestPurgeMutation = mutationOptions({
+  meta: { errorHandledLocally: true },
+  mutationFn: (request: RequestPurgeRequest) =>
+    appFetch<PurgeJobDto>("/api/admin/purges", json("POST", request)),
+  // The target leaves catalogs of every kind, which belong to other features.
+  onSuccess: (_job, _request, _result, { client }) => client.invalidateQueries(),
+});
+
+export const useRequestPurge = () => useMutation(requestPurgeMutation);

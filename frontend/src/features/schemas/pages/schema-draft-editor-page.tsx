@@ -4,10 +4,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useSearchParamState } from "@/shared/lib/use-search-param-state";
-import { useAtom, useSetAtom } from "jotai";
 import { GitCompareArrows, PencilLine, Save } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
+import { useAtom, useSelector } from "@tanstack/react-store";
+import { AppLink } from "@/shared/ui/AppLink";
 import { toast } from "sonner";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { withSeriesColumns } from "@/capabilities/prediction-runtime/mlform/series-schema";
@@ -26,12 +27,7 @@ import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSegmentedControl } from "@/shared/ui/AppSegmentedControl";
 import { AppSurface } from "@/shared/ui/AppSurface";
-import {
-  schemaAtom,
-  schemaErrorsAtom,
-  schemaMappingIssuesAtom,
-  schemaTextAtom,
-} from "@/features/schemas/lib/editor-atoms";
+import { useEditorAtoms } from "@/features/schemas/lib/editor-atoms";
 import { refusedMappings } from "@/features/schemas/lib/schema-mapping-issues";
 import { EditorWrapper } from "@/features/schemas/components/EditorWrapper";
 import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
@@ -42,16 +38,17 @@ const EDITOR_VIEWS = ["code", "preview"] as const;
 type EditorView = (typeof EDITOR_VIEWS)[number];
 
 export function SchemaDraftEditorPage() {
-  const { schemaId, draftId } = useParams<{ schemaId: string; draftId: string }>();
+  const { schemaId, draftId } = useParams({ strict: false });
   const navigate = useNavigate();
   const { data: schemaDto } = useSchema(schemaId);
   const { data: draft } = useSchemaDraft(draftId);
   const { data: diff } = useSchemaDraftDiff(draftId);
   const updateMutation = useUpdateSchemaDraftMutation(draftId ?? "");
-  const [schema, setSchema] = useAtom(schemaAtom);
-  const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
-  const [schemaErrors] = useAtom(schemaErrorsAtom);
-  const setMappingIssues = useSetAtom(schemaMappingIssuesAtom);
+  const atoms = useEditorAtoms();
+  const [schema, setSchema] = useAtom(atoms.schema);
+  const [schemaText, setSchemaText] = useAtom(atoms.schemaText);
+  const schemaErrors = useSelector(atoms.schemaErrors);
+  const setMappingIssues = atoms.schemaMappingIssues.set;
   const [editorView, setEditorView] = useSearchParamState<EditorView>("view", "code", EDITOR_VIEWS);
   const [renameOpen, setRenameOpen] = useState(false);
 
@@ -94,7 +91,10 @@ export function SchemaDraftEditorPage() {
     if (!schemaId || !draftId) return;
     const saved = await save();
     if (!saved) return;
-    void navigate(`/schemas/${schemaId}/drafts/${draftId}/conflicts`);
+    void navigate({
+      to: "/schemas/$schemaId/drafts/$draftId/conflicts",
+      params: { schemaId, draftId },
+    });
   };
 
   const rename = async (nextName: string) => {
@@ -123,9 +123,13 @@ export function SchemaDraftEditorPage() {
             title={draft.name}
             description="This change has been published and is read-only."
             actions={
-              <Link to={`/schemas/${draft.schemaId}/snapshots`} className={appButtonClass()}>
+              <AppLink
+                to="/schemas/$schemaId/snapshots"
+                params={{ schemaId: String(draft.schemaId) }}
+                className={appButtonClass()}
+              >
                 View snapshots
-              </Link>
+              </AppLink>
             }
           />
           <SchemaCodeViewer

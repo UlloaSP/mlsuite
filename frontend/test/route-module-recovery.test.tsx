@@ -1,12 +1,19 @@
 // @vitest-environment jsdom
 import { act } from "react";
-import { getDefaultStore } from "jotai";
-import { createMemoryRouter, RouterProvider } from "react-router";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { expect, test, vi } from "vite-plus/test";
 import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
+import { page } from "@/app/router/lazy-route";
 import { RouteErrorBoundary } from "@/app/router/RouteErrorBoundary";
 import { classifyRouteError } from "@/app/router/route-error";
 import { HttpError } from "@/shared/api/http";
+import { appHref } from "@/shared/lib/app-href";
 import {
   inferenceSessionsAtom,
   useWarnOnUnsavedInferences,
@@ -24,8 +31,7 @@ function SessionPage() {
 }
 
 test("a root module failure keeps the reload warning for unsaved inferences", async () => {
-  const store = getDefaultStore();
-  store.set(inferenceSessionsAtom, {
+  inferenceSessionsAtom.set({
     "1:bookmark": [
       {
         key: "run-1",
@@ -39,23 +45,16 @@ test("a root module failure keeps the reload warning for unsaved inferences", as
       },
     ],
   });
-  const router = createMemoryRouter(
-    [
-      {
-        errorElement: <RouteErrorBoundary />,
-        children: [
-          { path: "/ready", element: <SessionPage /> },
-          {
-            path: "/missing",
-            lazy: async () => {
-              throw new TypeError("Failed to fetch dynamically imported module: /assets/old.js");
-            },
-          },
-        ],
-      },
-    ],
-    { initialEntries: ["/ready"] },
-  );
+  const root = createRootRoute({ errorComponent: RouteErrorBoundary });
+  const router = createRouter({
+    routeTree: root.addChildren([
+      createRoute({ getParentRoute: () => root, path: "/ready", component: SessionPage }),
+      page(root, "missing", async () => {
+        throw new TypeError("Failed to fetch dynamically imported module: /assets/old.js");
+      }),
+    ]),
+    history: createMemoryHistory({ initialEntries: ["/ready"] }),
+  });
   try {
     const view = await mount(<RouterProvider router={router} />);
     const warns = () => {
@@ -64,15 +63,14 @@ test("a root module failure keeps the reload warning for unsaved inferences", as
       return event.defaultPrevented;
     };
     expect(warns()).toBe(true);
-    await act(async () => router.navigate("/missing"));
+    await act(async () => router.navigate(appHref("/missing")));
     expect(view.host.textContent).toContain("Page could not load");
     expect(warns()).toBe(true);
-    expect(store.get(inferenceSessionsAtom)["1:bookmark"]).toHaveLength(1);
-    await act(async () => store.set(inferenceSessionsAtom, {}));
+    expect(inferenceSessionsAtom.get()["1:bookmark"]).toHaveLength(1);
+    await act(async () => inferenceSessionsAtom.set({}));
     expect(warns()).toBe(false);
   } finally {
-    store.set(inferenceSessionsAtom, {});
-    router.dispose();
+    inferenceSessionsAtom.set({});
   }
 });
 

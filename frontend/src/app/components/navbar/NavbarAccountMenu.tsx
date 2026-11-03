@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { DropdownMenu } from "radix-ui";
-import { useLocation } from "react-router";
+import { useLocation } from "@tanstack/react-router";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useUnreadNotificationCount } from "@/features/notifications/api/notification.queries";
 import { cx } from "@/shared/ui/cx";

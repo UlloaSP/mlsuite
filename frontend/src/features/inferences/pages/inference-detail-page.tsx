@@ -1,7 +1,8 @@
 import { useReviewAssignmentCounts } from "@/features/inferences/api/inference-review-catalog";
 import { RotateCcw } from "lucide-react";
 import { type ReactNode, useEffect } from "react";
-import { Link, useParams, useSearchParams } from "react-router";
+import { useParams } from "@tanstack/react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { useInference } from "@/features/inferences/api/inference-api";
 import { InferenceReviewStatusSection } from "@/features/inferences/components/InferenceReviewStatusSection";
@@ -13,6 +14,7 @@ import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
+import { useUrlSearchParams } from "@/shared/lib/url-search-params";
 import type { PredictionRunCatalogItemDto } from "@/shared/api/openapi.gen";
 
 type Props = {
@@ -29,8 +31,8 @@ type Props = {
 
 /** One inference: what produced it, its data and feedback, and the reviews it is part of. */
 export function InferenceDetailPage({ renderData }: Props) {
-  const { inferenceId = "" } = useParams<{ inferenceId: string }>();
-  const [searchParams] = useSearchParams();
+  const { inferenceId = "" } = useParams({ strict: false });
+  const searchParams = useUrlSearchParams();
   const inference = useInference(inferenceId);
   const showLoader = useStableLoading(inference.isLoading);
   const { data: workspace } = useWorkspaceContext();
@@ -58,9 +60,9 @@ export function InferenceDetailPage({ renderData }: Props) {
             title="Inference unavailable"
             description="It may have been deleted or belong to another organization."
             action={
-              <Link to="/inferences" className={appButtonClass()}>
+              <AppLink to="/inferences" className={appButtonClass()}>
                 Back to inferences
-              </Link>
+              </AppLink>
             }
           />
         </AppSurface>
@@ -93,10 +95,15 @@ export function InferenceDetailPage({ renderData }: Props) {
           breadcrumbs={[{ label: "Inferences", to: "/inferences" }, { label: item.name }]}
           actions={
             item.bookmarkId != null && permissions?.canRunPredictions ? (
-              <Link to={`/predict/${item.bookmarkId}?from=${item.id}`} className={appButtonClass()}>
+              <AppLink
+                to="/predict/$bookmarkId"
+                params={{ bookmarkId: String(item.bookmarkId) }}
+                search={{ from: String(item.id) }}
+                className={appButtonClass()}
+              >
                 <RotateCcw size={16} />
                 Predict again
-              </Link>
+              </AppLink>
             ) : null
           }
         />

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Navigate, useSearchParams } from "react-router";
+import { Navigate, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
@@ -7,6 +7,7 @@ import { AppPage } from "@/shared/ui/AppPage";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
+import { useUrlSearchParams } from "@/shared/lib/url-search-params";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { AlertsView } from "@/features/infrastructure/components/AlertsView";
 import { LogsView } from "@/features/infrastructure/components/LogsView";
@@ -50,7 +51,8 @@ export function AdminInfrastructurePage() {
   const selectedService = overview ? resolveSelectedService(requestedService, overview) : null;
   const [logLines, setLogLines] = useState<string[]>([]);
   const [streamConnected, setStreamConnected] = useState(false);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const searchParams = useUrlSearchParams();
+  const navigate = useNavigate();
   const socketRef = useRef<WebSocket | null>(null);
   const selectedServiceRef = useRef<string | null>(null);
   const selectedServiceLogs = useServiceLogsSnapshot(selectedService);
@@ -59,7 +61,7 @@ export function AdminInfrastructurePage() {
     ? (requestedTab as InfraTab)
     : "overview";
   const setActiveTab = (tab: InfraTab) => {
-    setSearchParams(tab === "overview" ? {} : { tab });
+    void navigate({ to: ".", search: tab === "overview" ? {} : { tab } });
   };
 
   useEffect(() => {

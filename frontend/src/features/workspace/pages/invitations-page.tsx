@@ -1,4 +1,4 @@
-import { useParams } from "react-router";
+import { useParams } from "@tanstack/react-router";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -12,7 +12,7 @@ import { organizationRouteErrorStatus } from "@/features/workspace/lib/organizat
 import { InvitationCatalog } from "@/features/workspace/components/InvitationCatalog";
 
 export function InvitationsPage() {
-  const { organizationId = "" } = useParams();
+  const { organizationId = "" } = useParams({ strict: false });
   const id = Number(organizationId);
   const dashboard = useOrganizationAdminDashboardQuery(id);
   const permissions = dashboard.data?.permissions;

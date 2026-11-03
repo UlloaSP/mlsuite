@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { useApiAccessBookmarks } from "@/features/api-access/api/api-access.queries";
 import { EndpointDocsView } from "@/features/api-access/components/EndpointDocsView";
 import { failureMessage } from "@/features/api-access/lib/api-format";
@@ -73,12 +73,12 @@ export function ApiDocsPage() {
                 title="No bookmark is open to clients"
                 description="Give a bookmark to a client and its endpoint is documented here."
                 action={
-                  <Link
+                  <AppLink
                     to="/api-access/clients"
                     className={appButtonClass({ variant: "secondary" })}
                   >
                     Open clients
-                  </Link>
+                  </AppLink>
                 }
               />
             ) : (

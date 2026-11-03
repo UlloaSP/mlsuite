@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
+import { useLocation } from "@tanstack/react-router";
 import { act } from "react";
-import { Route, Routes, useLocation } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { ReviewsPage } from "@/features/reviews/pages/reviews-page";
 import { formatTimestamp } from "@/shared/lib/date-time";
@@ -24,19 +24,27 @@ vi.mock("@/capabilities/prediction-runtime/mlform/executable-schema", async (imp
 vi.mock("@/features/reviews/components/ReviewStepContextPanel", () => ({
   ReviewStepContextPanel: () => null,
 }));
-vi.mock("@/features/reviews/components/SchemaReviewRunDetailPanel", () => ({
-  SchemaReviewRunDetailPanel: ({
-    reviewRunId,
-    onReviewChanged,
-  }: {
-    reviewRunId: string;
-    onReviewChanged: () => void;
-  }) => (
-    <button type="button" data-testid="detail" onClick={onReviewChanged}>
-      {reviewRunId}
-    </button>
-  ),
-}));
+// The detail stands in for the review form; clicking it completes the shown item as the form does.
+vi.mock("@/features/reviews/components/SchemaReviewRunDetailPanel", async () => {
+  const { useCompleteSchemaReviewRunMutation } =
+    await import("@/features/reviews/api/review-mutations");
+  return {
+    SchemaReviewRunDetailPanel: ({
+      reviewId,
+      reviewRunId,
+    }: {
+      reviewId: string;
+      reviewRunId: string;
+    }) => {
+      const completion = useCompleteSchemaReviewRunMutation(reviewId, reviewRunId);
+      return (
+        <button type="button" data-testid="detail" onClick={() => completion.mutate()}>
+          {reviewRunId}
+        </button>
+      );
+    },
+  };
+});
 
 type Item = { publicId: string; reviewId: string; reviewState: "PENDING" | "IN_PROGRESS" };
 const item = ({ publicId, reviewId, reviewState }: Item) => ({
@@ -100,16 +108,13 @@ const settle = async () => {
     await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
 };
 async function openInbox(route: string) {
-  const { host } = await mount(
-    <>
-      <Location />
-      <Routes>
-        <Route path="/review" element={<ReviewsPage />} />
-        <Route path="/review/:reviewId/runs/:reviewRunId" element={<ReviewsPage />} />
-      </Routes>
-    </>,
-    { route },
-  );
+  const { host } = await mount(<Location />, {
+    route,
+    routes: {
+      "/review": <ReviewsPage />,
+      "/review/$reviewId/runs/$reviewRunId": <ReviewsPage />,
+    },
+  });
   await settle();
   // The loading state is held briefly once shown; wait it out.
   await act(async () => new Promise((resolve) => setTimeout(resolve, 500)));
@@ -150,7 +155,7 @@ test("group counts are the server's, also for a collapsed group", async () => {
 
   expect(pending().textContent).toContain("Needs feedback2");
   await click(pending().querySelector('button[aria-label="Collapse Pending"]')!);
-  // Saving feedback moves an item from pending to revision while its group is collapsed.
+  // Completing an item moves it from pending to revision while its group is collapsed.
   inbox[1]!.reviewState = "IN_PROGRESS";
   await click(host.querySelector('[data-testid="detail"]')!);
   await settle();

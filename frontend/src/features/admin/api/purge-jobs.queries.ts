@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { mutationOptions, useMutation } from "@tanstack/react-query";
 import { PURGES_QUERY_KEY } from "@/capabilities/purge/purge-api";
 import { appFetch } from "@/shared/api/http";
 import { useInfiniteCatalog, type CatalogPage } from "@/shared/api/infinite-catalog";
@@ -22,12 +22,12 @@ export const usePurgeJobs = (search: string, filter: string, enabled: boolean) =
       pages.some((page) => page.items.some(running)) ? PURGE_POLL_MS : false,
   });
 
-export const useRetryPurge = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: (jobId: number) =>
-      appFetch<PurgeJobDto>(`/api/admin/purges/${jobId}/retry`, { method: "POST" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: PURGES_QUERY_KEY }),
-  });
-};
+const retryPurgeMutation = mutationOptions({
+  meta: { errorHandledLocally: true },
+  mutationFn: (jobId: number) =>
+    appFetch<PurgeJobDto>(`/api/admin/purges/${jobId}/retry`, { method: "POST" }),
+  onSuccess: (_job, _jobId, _result, { client }) =>
+    client.invalidateQueries({ queryKey: PURGES_QUERY_KEY }),
+});
+
+export const useRetryPurge = () => useMutation(retryPurgeMutation);

@@ -1,5 +1,6 @@
 import { Building2, Plus } from "lucide-react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import {
   useWorkspaceContext,
   useWorkspaceOrganizationCatalog,
@@ -19,9 +20,9 @@ import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { OrganizationMark } from "@/shared/ui/OrganizationMark";
 
 const newOrganizationLink = (
-  <Link to="/workspace/organizations/create" viewTransition className={appButtonClass()}>
+  <AppLink to="/workspace/organizations/create" viewTransition className={appButtonClass()}>
     <Plus size={16} /> New organization
-  </Link>
+  </AppLink>
 );
 
 /** The organizations the user belongs to; everyone else's stay out of sight. */
@@ -97,7 +98,7 @@ export function YourOrganizationsPage() {
                       disabled={selectOrganization.isPending}
                       onClick={() => {
                         void selectOrganization.mutateAsync(organization.id).then(() => {
-                          void navigate("/home");
+                          void navigate({ to: "/home" });
                         });
                       }}
                     >

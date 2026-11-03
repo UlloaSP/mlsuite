@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { mutationOptions, useMutation } from "@tanstack/react-query";
 import { WORKSPACE_CONTEXT_QUERY_KEY } from "@/capabilities/workspace-context/workspace-context";
 import { removeOrganizationMember, updateOrganizationMemberRole } from "./organizations.api";
 import {
@@ -7,9 +7,8 @@ import {
   organizationRolesQueryKey,
 } from "./workspace.keys";
 
-export const useUpdateOrganizationMemberRoleMutation = (organizationId: number) => {
-  const queryClient = useQueryClient();
-  return useMutation({
+const updateMemberRoleMutation = (organizationId: number) =>
+  mutationOptions({
     mutationFn: ({
       membershipId,
       roleDefinitionId,
@@ -17,28 +16,31 @@ export const useUpdateOrganizationMemberRoleMutation = (organizationId: number) 
       membershipId: number;
       roleDefinitionId: number;
     }) => updateOrganizationMemberRole(organizationId, membershipId, roleDefinitionId),
-    onSuccess: () =>
+    onSuccess: (_data, _variables, _result, { client }) =>
       Promise.all([
-        queryClient.invalidateQueries({ queryKey: organizationMembersQueryKey(organizationId) }),
+        client.invalidateQueries({ queryKey: organizationMembersQueryKey(organizationId) }),
         // Role catalogs count their members and list each member's assignable roles.
-        queryClient.invalidateQueries({ queryKey: organizationRolesQueryKey(organizationId) }),
-        queryClient.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
+        client.invalidateQueries({ queryKey: organizationRolesQueryKey(organizationId) }),
+        client.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
       ]),
   });
-};
 
-export const useRemoveOrganizationMemberMutation = (organizationId: number) => {
-  const queryClient = useQueryClient();
-  return useMutation({
+export const useUpdateOrganizationMemberRoleMutation = (organizationId: number) =>
+  useMutation(updateMemberRoleMutation(organizationId));
+
+const removeMemberMutation = (organizationId: number) =>
+  mutationOptions({
     mutationFn: (membershipId: number) => removeOrganizationMember(organizationId, membershipId),
-    onSuccess: () =>
+    onSuccess: (_data, _membershipId, _result, { client }) =>
       Promise.all([
-        queryClient.invalidateQueries({ queryKey: organizationMembersQueryKey(organizationId) }),
-        queryClient.invalidateQueries({ queryKey: organizationRolesQueryKey(organizationId) }),
+        client.invalidateQueries({ queryKey: organizationMembersQueryKey(organizationId) }),
+        client.invalidateQueries({ queryKey: organizationRolesQueryKey(organizationId) }),
         // A removed member can be invited again.
-        queryClient.invalidateQueries({
+        client.invalidateQueries({
           queryKey: organizationInvitationCandidatesQueryKey(organizationId),
         }),
       ]),
   });
-};
+
+export const useRemoveOrganizationMemberMutation = (organizationId: number) =>
+  useMutation(removeMemberMutation(organizationId));

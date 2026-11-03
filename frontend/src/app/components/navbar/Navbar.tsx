@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { BookOpenText, Search } from "lucide-react";
-import { useAtomValue, useSetAtom } from "jotai";
-import { Link } from "react-router";
+import { useSelector } from "@tanstack/react-store";
+import { AppLink } from "@/shared/ui/AppLink";
 import { useUserGuideLauncher } from "@/app/user-guide/use-user-guide-launcher";
 import { cx } from "@/shared/ui/cx";
 import { AppIconButton } from "@/shared/ui/AppIconButton";
@@ -25,9 +25,9 @@ import { NavbarOrganizationMenu } from "./NavbarOrganizationMenu";
 
 /** Horizontal navigation for the top and bottom positions. */
 export function Navbar({ position }: { position: "top" | "bottom" }) {
-  const variant = useAtomValue(sidebarStyleAtom);
-  const bindings = useAtomValue(shortcutBindingsAtom);
-  const setSearchOpen = useSetAtom(globalSearchOpenAtom);
+  const variant = useSelector(sidebarStyleAtom);
+  const bindings = useSelector(shortcutBindingsAtom);
+  const setSearchOpen = globalSearchOpenAtom.set;
   const startGuide = useUserGuideLauncher(false);
   const { groups, isParentActive, currentPath, pathname } = useNavigationItems();
   const allItems = groups.flatMap((group) => group.items);
@@ -69,7 +69,7 @@ export function Navbar({ position }: { position: "top" | "bottom" }) {
             ),
       )}
     >
-      <Link
+      <AppLink
         to="/home"
         viewTransition
         data-user-guide-item="brand"
@@ -92,7 +92,7 @@ export function Navbar({ position }: { position: "top" | "bottom" }) {
             <MLSuiteWordmark />
           </span>
         </NavbarLabel>
-      </Link>
+      </AppLink>
 
       <NavbarOrganizationMenu menuSide={menuSide} compact={compact} />
 

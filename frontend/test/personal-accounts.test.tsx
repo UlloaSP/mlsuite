@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { DropdownMenu } from "radix-ui";
-import { Route, Routes } from "react-router";
 import { beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { OrganizationMenuContent } from "@/app/components/OrganizationMenuContent";
 import { getWorkspaceLinks } from "@/app/components/workspace-navigation";
@@ -152,19 +151,16 @@ describe("the switcher", () => {
 
 describe("pages that belong to organizations", () => {
   const openGuarded = () =>
-    mount(
-      <Routes>
-        <Route
-          path="/workspace/organizations/:organizationId/members"
-          element={
-            <RequireTeamOrganization>
-              <p>Member list</p>
-            </RequireTeamOrganization>
-          }
-        />
-      </Routes>,
-      { route: "/workspace/organizations/3/members" },
-    );
+    mount(null, {
+      route: "/workspace/organizations/3/members",
+      routes: {
+        "/workspace/organizations/$organizationId/members": (
+          <RequireTeamOrganization>
+            <p>Member list</p>
+          </RequireTeamOrganization>
+        ),
+      },
+    });
 
   test("a personal account opened by address explains itself", async () => {
     state.dashboard = { data: { organization: PERSONAL } };

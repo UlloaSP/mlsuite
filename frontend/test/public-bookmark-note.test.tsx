@@ -6,7 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // @vitest-environment jsdom
 import { QueryClient } from "@tanstack/react-query";
 import { act } from "react";
-import { Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { PublicBookmarkCard } from "@/capabilities/public-bookmarks/PublicBookmarkCard";
 import { noteSegments } from "@/features/explore/lib/publication-note-links";
@@ -87,15 +86,11 @@ async function page(dto: PublicBookmarkDto) {
     }
     return Promise.resolve(json(dto));
   });
-  const view = await mount(
-    <Routes>
-      <Route path="/explore/:publicId" element={<PublicBookmarkPage />} />
-    </Routes>,
-    {
-      route: `/explore/${PUBLIC_ID}`,
-      queryClient: new QueryClient({ defaultOptions: { queries: { retry: false } } }),
-    },
-  );
+  const view = await mount(null, {
+    route: `/explore/${PUBLIC_ID}`,
+    routes: { "/explore/$publicId": <PublicBookmarkPage /> },
+    queryClient: new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+  });
   await settle();
   return view.host;
 }

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { LogOut } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
-import { useLocation } from "react-router";
+import { useLocation } from "@tanstack/react-router";
 import { useLogout } from "@/capabilities/workspace-context/session";
 import { useUnsavedInferences } from "@/features/schemas/lib/inference-session-store";
 import { cx } from "@/shared/ui/cx";

@@ -3,13 +3,13 @@ import { HttpError } from "@/shared/api/http";
 import { LOADING_MIN_VISIBLE_MS } from "@/shared/ui/useStableLoading";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, type PropsWithChildren } from "react";
-import { createMemoryRouter, Route, RouterProvider, Routes, useLocation } from "react-router";
+import { createMemoryHistory, RouterProvider, useLocation } from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { SidebarNavigation } from "@/app/components/SidebarNavigation";
 import { SidebarProvider } from "@/app/components/app-sidebar/SidebarContext";
 import { Navbar } from "@/app/components/navbar/Navbar";
 import { PublicFrame } from "@/app/layouts/PublicFrame";
-import { routes } from "@/app/router/routes";
+import { createAppRouter } from "@/app/router/routes";
 import { ExplorePage } from "@/features/explore/pages/explore-page";
 import { PublicBookmarkPage } from "@/features/explore/pages/public-bookmark-page";
 import type {
@@ -142,19 +142,23 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("public feed page", () => {
   function UrlProbe() {
-    return <output data-testid="url">{useLocation().search}</output>;
+    return <output data-testid="url">{useLocation().searchStr}</output>;
   }
+  const framed = (page: React.ReactNode) => (
+    <PublicFrame>
+      {page}
+      <UrlProbe />
+    </PublicFrame>
+  );
   const page = async (route = "/explore") => {
-    const view = await mount(
-      <PublicFrame>
-        <Routes>
-          <Route path="/explore" element={<ExplorePage />} />
-          <Route path="/explore/:publicId" element={<PublicBookmarkPage />} />
-        </Routes>
-        <UrlProbe />
-      </PublicFrame>,
-      { route, queryClient: newClient() },
-    );
+    const view = await mount(null, {
+      route,
+      routes: {
+        "/explore": framed(<ExplorePage />),
+        "/explore/$publicId": framed(<PublicBookmarkPage />),
+      },
+      queryClient: newClient(),
+    });
     return view.host;
   };
   const cards = (host: ParentNode) => hrefs(host, "article a, a[aria-label^='Open ']");
@@ -343,7 +347,7 @@ describe("Explore navigation entry", () => {
 
 describe("entry routing", () => {
   const open = async (entry: string) => {
-    const router = createMemoryRouter(routes, { initialEntries: [entry] });
+    const router = createAppRouter(createMemoryHistory({ initialEntries: [entry] }));
     const view = await mount(
       <QueryClientProvider client={newClient()}>
         <RouterProvider router={router} />
@@ -352,8 +356,8 @@ describe("entry routing", () => {
     await settle();
     await act(async () => vi.dynamicImportSettled());
     await settle();
-    const { pathname, search } = router.state.location;
-    return { host: view.host, url: `${pathname}${search}` };
+    const { pathname, searchStr } = router.state.location;
+    return { host: view.host, url: `${pathname}${searchStr}` };
   };
 
   beforeEach(() => fetchMock.mockResolvedValue(json(feed(CARDIO))));

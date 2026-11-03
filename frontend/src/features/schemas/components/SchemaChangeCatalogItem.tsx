@@ -10,7 +10,7 @@ import {
   PencilLine,
   Trash2,
 } from "lucide-react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useCan } from "@/capabilities/workspace-context/workspace-context";
 import { useDeleteSchemaContent } from "@/features/schemas/api/schema-content-deletion";
 import type { SchemaDraftDto } from "@/features/schemas/api/draft-types";
@@ -72,7 +72,11 @@ export function SchemaChangeCatalogItem({ baseSnapshotName, draft, onRename, sch
                 key: "review",
                 label: "Review",
                 icon: GitCompareArrows,
-                onSelect: () => void navigate(`${draftPath}/conflicts`),
+                onSelect: () =>
+                  void navigate({
+                    to: "/schemas/$schemaId/drafts/$draftId/conflicts",
+                    params: { schemaId, draftId: String(draft.id) },
+                  }),
               },
               ...(canDelete
                 ? [

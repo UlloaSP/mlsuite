@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import { act } from "react";
-import { Route, Routes } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { UploadPluginPage } from "@/features/plugins/pages/UploadPluginPage";
 import { inspectPluginFile } from "@/features/plugins/lib/plugin-upload-queue";
@@ -51,13 +50,10 @@ afterEach(() => {
 });
 
 async function mountPage() {
-  ({ host: container } = await mount(
-    <Routes>
-      <Route path="/plugins/upload" element={<UploadPluginPage />} />
-      <Route path="/plugins" element={<p>Plugin catalog</p>} />
-    </Routes>,
-    { route: "/plugins/upload" },
-  ));
+  ({ host: container } = await mount(null, {
+    route: "/plugins/upload",
+    routes: { "/plugins/upload": <UploadPluginPage />, "/plugins": <p>Plugin catalog</p> },
+  }));
 }
 
 async function addFiles(...files: File[]) {

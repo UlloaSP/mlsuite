@@ -4,8 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useCallback } from "react";
-import { useSearchParams } from "react-router";
-import { useSearchParamsUpdate } from "@/shared/lib/use-search-params-update";
+import { useSearchParamsUpdate, useUrlSearchParams } from "@/shared/lib/url-search-params";
 
 /**
  * A view choice (tab, mode, filter) kept in the URL, so back/forward, reloads,
@@ -17,7 +16,7 @@ export function useSearchParamState<T extends string>(
   fallback: T,
   allowed?: readonly T[],
 ) {
-  const [params] = useSearchParams();
+  const params = useUrlSearchParams();
   const update = useSearchParamsUpdate();
   const raw = params.get(key);
   const value = raw !== null && (!allowed || allowed.includes(raw as T)) ? (raw as T) : fallback;

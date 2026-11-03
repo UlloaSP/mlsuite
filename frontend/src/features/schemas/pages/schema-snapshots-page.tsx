@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { GitCommitHorizontal } from "lucide-react";
 import { useState } from "react";
-import { useParams } from "react-router";
+import { useParams } from "@tanstack/react-router";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { useSchema } from "@/features/schemas/api/schema-queries";
@@ -33,7 +33,7 @@ const SORTS: Array<{ value: SnapshotSort; label: string }> = [
 ];
 
 export function SchemaSnapshotsPage() {
-  const { schemaId } = useParams<{ schemaId: string }>();
+  const { schemaId } = useParams({ strict: false });
   const { data: schema } = useSchema(schemaId);
   const { data: workspace } = useWorkspaceContext();
   const [bookmarkTarget, setBookmarkTarget] = useState<SchemaVersionDto | null>(null);

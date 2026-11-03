@@ -16,15 +16,9 @@ type Props = {
   reviewId: string;
   reviewRunId: string;
   version: SchemaVersionDto;
-  onReviewChanged: () => unknown;
 };
 
-export function SchemaReviewRunDetailPanel({
-  reviewId,
-  reviewRunId,
-  version,
-  onReviewChanged,
-}: Props) {
+export function SchemaReviewRunDetailPanel({ reviewId, reviewRunId, version }: Props) {
   const detail = useSchemaReviewRun(reviewId, reviewRunId);
   const showLoading = useStableLoading(detail.isLoading);
   // The previous inference stays as the skeleton's shape; its form and sections never mix
@@ -64,10 +58,7 @@ export function SchemaReviewRunDetailPanel({
           run={detail.data.run}
           version={version}
           feedback={detail.data.feedback}
-          onSaved={async () => {
-            await detail.refetch();
-            await onReviewChanged();
-          }}
+          onSaved={() => detail.refetch()}
         />
       )}
       <ReviewAccordionSection

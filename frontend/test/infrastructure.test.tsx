@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// @vitest-environment-options {"url": "http://localhost/"}
 import { serviceHealthCategory } from "@/features/infrastructure/lib/status";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import {
@@ -30,6 +32,11 @@ import {
   serviceLogsQueryOptions,
 } from "@/features/infrastructure/api/infrastructure.queries";
 import { HttpError } from "@/shared/api/http";
+import { OverviewChartPanel } from "@/features/infrastructure/components/OverviewChartPanel";
+import { Sparkline } from "@/features/infrastructure/components/Sparkline";
+import { formatTimestamp } from "@/features/infrastructure/lib/formatters";
+import { act } from "react";
+import { mount } from "./support/dom";
 
 const service = {
   name: "spring-app",
@@ -314,5 +321,58 @@ describe("infra helpers", () => {
     controller.abort(cancellation);
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(cancellation));
     await expect(getInfrastructureOverview(controller.signal)).rejects.toBe(cancellation);
+  });
+});
+
+describe("overview chart", () => {
+  it("draws the enabled layers on a percent axis and lists each one's value in its tooltip", async () => {
+    const { host } = await mount(
+      <OverviewChartPanel overview={overview} streamConnected chartRange="1h" />,
+      { route: "/" },
+    );
+    const chart = host.querySelector<SVGSVGElement>(
+      'svg[aria-label="Service aggregate load, last 1h"]',
+    )!;
+    expect(chart.querySelector("desc")?.textContent).toBe("CPU, RAM");
+    expect(chart.querySelector('[data-ts-key="y-tick-label:number:100"]')?.textContent).toBe(
+      "100.0%",
+    );
+
+    await act(async () => chart.focus());
+
+    const tooltip = host.querySelector(".ts-chart-tooltip");
+    const at = formatTimestamp("2026-05-07T00:00:00Z");
+    expect(tooltip?.textContent).toBe(`${at}CPU10.0%RAM20.0%`);
+    expect(tooltip?.getAttribute("aria-label")).toBe(`${at}\nCPU: 10.0%\nRAM: 20.0%`);
+  });
+
+  it("grows the percent axis past 100% when summed CPU passes it", async () => {
+    const [point] = overview.history.points;
+    const { host } = await mount(
+      <OverviewChartPanel
+        overview={{
+          ...overview,
+          history: { ...overview.history, points: [{ ...point, cpuPercent: 250 }] },
+        }}
+        streamConnected
+        chartRange="1h"
+      />,
+      { route: "/" },
+    );
+    const labels = [...host.querySelectorAll('[data-ts-key^="y-tick-label:number:"]')].map(
+      (label) => label.textContent,
+    );
+
+    expect(labels.at(-1)).toBe("250.0%");
+  });
+
+  it("draws a KPI sparkline as a bare line in the KPI's color", async () => {
+    const { host } = await mount(
+      <Sparkline data={[{ v: 1 }, { v: 3 }, { v: 2 }]} color="var(--color-chart-3)" />,
+    );
+    const lines = host.querySelectorAll(".ts-chart__line path");
+
+    expect([...lines].map((line) => line.getAttribute("stroke"))).toEqual(["var(--color-chart-3)"]);
+    expect(host.querySelector(".ts-chart__axes, .ts-chart__grid")).toBeNull();
   });
 });

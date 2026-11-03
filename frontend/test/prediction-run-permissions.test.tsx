@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import { Route, Routes } from "react-router";
 import { expect, test, vi } from "vite-plus/test";
 import { InferenceDetailPage } from "@/features/inferences/pages/inference-detail-page";
 import { mount } from "./support/dom";
@@ -49,24 +48,20 @@ test.each([
   { canRun: false, canManageReviews: true, bookmarkId: 4 },
 ])("run=$canRun reviews=$canManageReviews bookmark=$bookmarkId", async (permissions) => {
   Object.assign(state, permissions);
-  const { host: container } = await mount(
-    <Routes>
-      <Route
-        path="/inferences/:inferenceId"
-        element={
-          <InferenceDetailPage
-            renderData={(_inference, reviews) => (
-              <div>
-                <p>Count {reviews?.count ?? "none"}</p>
-                {reviews?.content}
-              </div>
-            )}
-          />
-        }
-      />
-    </Routes>,
-    { route: "/inferences/1" },
+  const page = (
+    <InferenceDetailPage
+      renderData={(_inference, reviews) => (
+        <div>
+          <p>Count {reviews?.count ?? "none"}</p>
+          {reviews?.content}
+        </div>
+      )}
+    />
   );
+  const { host: container } = await mount(null, {
+    route: "/inferences/1",
+    routes: { "/inferences/$inferenceId": page },
+  });
 
   const predictAgain = [...container.querySelectorAll("a")].find(
     (link) => link.textContent === "Predict again",

@@ -5,11 +5,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 // @vitest-environment jsdom
 
-import { Provider, createStore } from "jotai";
 import { act } from "react";
-import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
-import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
+import { setThemeMode } from "@/shared/ui/appearance-state";
+import { inferenceSessionsAtom } from "@/features/schemas/lib/inference-session-store";
 import { SchemaRunForm } from "@/features/schemas/components/SchemaRunForm";
 import { BookmarkPredictPanel } from "@/features/schemas/components/BookmarkPredictPanel";
 import { useInferenceSession } from "@/features/schemas/lib/use-inference-session";
@@ -99,6 +98,7 @@ const completedRaw = {
 
 describe("schema run creation UI", () => {
   beforeEach(() => {
+    inferenceSessionsAtom.set({});
     mountState.mount.mockReset();
     mountState.unmount.mockReset();
     pageState.mutateAsync.mockReset();
@@ -128,13 +128,8 @@ describe("schema run creation UI", () => {
   });
 
   test("draws the version's form in the plugin sandbox and keeps it across theme changes", async () => {
-    const store = createStore();
-    store.set(themeWithHtmlAtom, "light");
-    await mount(
-      <Provider store={store}>
-        <SchemaRunForm bookmarkId="bookmark-1" version={version} onSubmit={vi.fn()} />
-      </Provider>,
-    );
+    setThemeMode("light");
+    await mount(<SchemaRunForm bookmarkId="bookmark-1" version={version} onSubmit={vi.fn()} />);
     await act(flush);
     expect(mountState.mount).toHaveBeenCalledTimes(1);
     expect(mountState.mount.mock.calls[0][0]).toMatchObject({
@@ -145,7 +140,7 @@ describe("schema run creation UI", () => {
     });
 
     await act(async () => {
-      store.set(themeWithHtmlAtom, "dark");
+      setThemeMode("dark");
       await flush();
     });
 
@@ -295,13 +290,10 @@ describe("schema run creation UI", () => {
   });
   test("the session outlives the page; a run still going when it closes is dropped", async () => {
     vi.useFakeTimers();
-    const store = createStore();
-    const { host: container, root: sessionRoot } = await mount(null);
+    const { host: container, root: sessionRoot } = await mount(null, { route: "/" });
     const show = (visible: boolean) =>
       act(async () => {
-        sessionRoot.render(
-          <Provider store={store}>{visible ? <SessionHarness /> : null}</Provider>,
-        );
+        sessionRoot.render(visible ? <SessionHarness /> : null);
         await vi.runAllTimersAsync();
       });
     await show(true);
@@ -325,15 +317,10 @@ describe("schema run creation UI", () => {
 
   test("another member signing in on the page never sees the previous member's runs", async () => {
     vi.useFakeTimers();
-    const store = createStore();
-    const { host: container, root: sessionRoot } = await mount(null);
+    const { host: container, root: sessionRoot } = await mount(null, { route: "/" });
     const show = () =>
       act(async () => {
-        sessionRoot.render(
-          <Provider store={store}>
-            <SessionHarness />
-          </Provider>,
-        );
+        sessionRoot.render(<SessionHarness />);
         await vi.runAllTimersAsync();
       });
     sessionUser.id = "user-1";
@@ -358,20 +345,12 @@ describe("schema run creation UI", () => {
 
 function SessionHarness() {
   const session = useInferenceSession("bookmark-1", version.id);
-  return (
-    <MemoryRouter>
-      <BookmarkPredictPanel bookmarkId="bookmark-1" version={version} session={session} />
-    </MemoryRouter>
-  );
+  return <BookmarkPredictPanel bookmarkId="bookmark-1" version={version} session={session} />;
 }
 
 async function renderSession() {
   vi.useFakeTimers();
-  const { host } = await mount(
-    <Provider store={createStore()}>
-      <SessionHarness />
-    </Provider>,
-  );
+  const { host } = await mount(<SessionHarness />, { route: "/" });
   void act(() => vi.runOnlyPendingTimers());
   return host;
 }

@@ -1,9 +1,9 @@
 import { Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Dialog } from "radix-ui";
-import { useAtom } from "jotai";
 import { useEffect, useMemo, useReducer, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
+import { useAtom } from "@tanstack/react-store";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { searchQueryOptions } from "@/features/search/api/search.queries";
 import { SearchResultGroup } from "@/features/search/components/SearchResultGroup";
@@ -99,7 +99,7 @@ export function AppGlobalSearch() {
                     const result = flatResults[activeIndex];
                     if (result) {
                       setOpen(false);
-                      void navigate(result.href);
+                      void navigate({ href: result.href });
                     }
                   }
                 }}

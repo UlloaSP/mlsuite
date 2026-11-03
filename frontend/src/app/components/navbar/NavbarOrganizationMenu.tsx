@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ChevronsUpDown } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
-import { useLocation } from "react-router";
+import { useLocation } from "@tanstack/react-router";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { cx } from "@/shared/ui/cx";
 import { AppTooltip } from "@/shared/ui/AppTooltip";

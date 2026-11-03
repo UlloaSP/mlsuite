@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
-import { RouterProvider } from "react-router/dom";
 import { AppProviders } from "./providers/AppProviders";
 import { createAppQueryClient } from "./providers/query-client";
 import { router } from "./router/routes";

@@ -15,7 +15,7 @@ import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppTabPanel, AppTabs } from "@/shared/ui/AppTabs";
 import { cx } from "@/shared/ui/cx";
 import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
-import { useSearchParams } from "react-router";
+import { useSearchParamsUpdate, useUrlSearchParams } from "@/shared/lib/url-search-params";
 import { SettingsAccountSection } from "@/features/user/components/SettingsAccountSection";
 import { SettingsAppearanceSection } from "@/features/user/components/SettingsAppearanceSection";
 import { SettingsKeybindingsSection } from "@/features/user/components/SettingsKeybindingsSection";
@@ -36,16 +36,20 @@ const isSettingsSection = (value: string | null): value is SettingsSection =>
   SECTIONS.some((section) => section.value === value);
 
 export function SettingsPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const searchParams = useUrlSearchParams();
+  const updateSearchParams = useSearchParamsUpdate();
   const requestedSection = searchParams.get("section");
   const section: SettingsSection = isSettingsSection(requestedSection)
     ? requestedSection
     : "appearance";
   const setSection = (next: SettingsSection) => {
-    const updated = new URLSearchParams(searchParams);
-    if (next === "appearance") updated.delete("section");
-    else updated.set("section", next);
-    setSearchParams(updated);
+    updateSearchParams(
+      (updated) => {
+        if (next === "appearance") updated.delete("section");
+        else updated.set("section", next);
+      },
+      { replace: false },
+    );
   };
   return (
     <AppPage>

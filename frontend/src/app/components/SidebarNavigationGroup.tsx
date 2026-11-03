@@ -6,7 +6,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { ChevronRight } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 import { RESTORE_SCROLL_STATE } from "@/app/layouts/use-scroll-memory";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
+import { AppLink } from "@/shared/ui/AppLink";
+import { appHref } from "@/shared/lib/app-href";
 import { cx } from "@/shared/ui/cx";
 import { AppKbd } from "@/shared/ui/AppKbd";
 import { NavigationIcon } from "./NavigationIcon";
@@ -63,7 +65,7 @@ export function SidebarNavigationGroup({
                     isActive={active}
                     onClick={() => {
                       if (collapsed) {
-                        void navigate(item.children?.[0]?.to ?? item.to, { viewTransition: true });
+                        void navigate({ href: item.children?.[0]?.to ?? item.to });
                         return;
                       }
                       setOpenItem((current) => (current === item.root ? null : item.root));
@@ -94,10 +96,10 @@ export function SidebarNavigationGroup({
                   </SidebarMenuButton>
                 ) : (
                   <SidebarMenuButton asChild isActive={active} title={item.label}>
-                    <Link
+                    <AppLink
                       data-user-guide-item={`nav:${item.label}`}
                       aria-keyshortcuts={`Alt+${String(index + 1)}`}
-                      to={item.to}
+                      {...appHref(item.to)}
                       state={RESTORE_SCROLL_STATE}
                       viewTransition
                     >
@@ -111,7 +113,7 @@ export function SidebarNavigationGroup({
                           {String(index + 1)}
                         </AppKbd>
                       ) : null}
-                    </Link>
+                    </AppLink>
                   </SidebarMenuButton>
                 )}
                 {item.children && !collapsed ? (
@@ -133,10 +135,10 @@ export function SidebarNavigationGroup({
                           return (
                             <li key={child.to} className="min-w-0">
                               <SidebarMenuSubButton asChild isActive={childActive}>
-                                <Link
+                                <AppLink
                                   data-user-guide-item={`subnav:${child.label}`}
                                   aria-keyshortcuts={`Alt+Shift+${childShortcut}`}
-                                  to={child.to}
+                                  {...appHref(child.to)}
                                   viewTransition
                                 >
                                   <ChildIcon size={14} className="shrink-0" />
@@ -150,7 +152,7 @@ export function SidebarNavigationGroup({
                                   >
                                     {childShortcut}
                                   </AppKbd>
-                                </Link>
+                                </AppLink>
                               </SidebarMenuSubButton>
                             </li>
                           );

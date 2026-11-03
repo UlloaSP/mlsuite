@@ -72,8 +72,11 @@ TanStack Query is the source of truth for remote state.
 - Include every query input in the key and define keys once per resource.
 - Define key and fetch function together with `queryOptions()`.
 - Propagate `AbortSignal` and throw typed errors.
-- Mutations own all related cache updates and invalidations.
-- Do not copy Query DTOs into Jotai or module-global caches.
+- Mutations own all related cache updates and invalidations. Define each with
+  `mutationOptions()` in the feature's `api/`; its callbacks reach the cache through the
+  context's `client`, and its hook only supplies inputs such as the current organization.
+  Components call the hook; they do not invalidate or write the cache after a mutation.
+- Do not copy Query DTOs into TanStack Store atoms or module-global caches.
 
 Use the narrowest owner for client state:
 
@@ -81,7 +84,8 @@ Use the narrowest owner for client state:
 2. use URL state for navigable filters, tabs, and sorting;
 3. use local state for one component or page;
 4. use a local reducer/provider for a complex screen;
-5. use Jotai only across unrelated branches.
+5. use TanStack Store atoms only across unrelated branches; persist preferences with
+   `createPersistedAtom`.
 
 Persisted catalogs use backend search, filters, sorting, and page counts. TanStack Query
 accumulates server pages through `useInfiniteCatalog`, and TanStack Virtual renders the loaded
@@ -100,8 +104,18 @@ independently of the pages the user has scrolled through.
 
 ## Routing
 
-- Use React Router Data Mode and lazy feature routes.
+- Use TanStack Router with a code-based route tree in `app/router/` and lazy page components
+  (`page()` in `lazy-route.tsx`). Pathless layout routes hold the shell and the permission
+  guards; the router is registered, so `to` and `params` are type-checked against real paths.
 - Keep the persistent shell in one layout route.
+- Write in-code addresses as typed `to` + `params` + `search`, or `linkOptions()` from a helper.
+  Addresses only known at runtime as strings (return-to, remembered or server-sent links) go
+  through `appHref()`. Render links with `AppLink`, which is the current page only on its exact
+  address.
+- Search params are plain strings in the URL, never JSON; read them with `useUrlSearchParams()`
+  and change them with `useSearchParamsUpdate()` or the shared URL-state hooks.
+- `useLocation()` already names the next address while its page loads; code that must follow the
+  page on screen reads the resolved location or the matches.
 - Loaders may call `queryClient.ensureQueryData()` with feature query options.
 - Route factories receive dependencies from `app`; they do not import application singletons.
 - Permission boundaries render loading, denied, not-found, and unexpected-failure states explicitly.

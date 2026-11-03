@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ArrowRight, Settings } from "lucide-react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { RoleBadge } from "@/features/workspace/components/RoleBadge";
 import { lifecycleStages } from "@/features/workspace/lib/workspace-overview";
 import type { AppBreadcrumbItem } from "@/shared/ui/AppBreadcrumbs";
@@ -77,14 +77,15 @@ export function OrganizationOverview({
             personal ? null : (
               <>
                 {permissions.canViewOrganization ? (
-                  <Link
-                    to={`${basePath}/settings`}
+                  <AppLink
+                    to="/workspace/organizations/$organizationId/settings"
+                    params={{ organizationId: String(organization.id) }}
                     viewTransition
                     className={appButtonClass({ variant: "secondary" })}
                   >
                     <Settings size={15} />
                     Settings
-                  </Link>
+                  </AppLink>
                 ) : null}
                 {role ? <RoleBadge value={role} /> : null}
               </>
@@ -143,7 +144,7 @@ export function OrganizationOverview({
 
         {/* Plugins live under the active organization, so only its overview links there. */}
         {permissions.canViewPlugins && isCurrent ? (
-          <Link
+          <AppLink
             to="/plugins"
             viewTransition
             className={cx(
@@ -166,7 +167,7 @@ export function OrganizationOverview({
               size={15}
               className="text-fg-muted transition group-hover:translate-x-0.5 group-hover:text-fg"
             />
-          </Link>
+          </AppLink>
         ) : null}
       </AppSurface>
     </AppPage>

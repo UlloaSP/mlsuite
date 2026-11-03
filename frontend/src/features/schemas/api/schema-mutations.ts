@@ -1,5 +1,5 @@
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { mutationOptions, useMutation, type QueryClient } from "@tanstack/react-query";
 import { PREDICTION_RUN_CATALOG_QUERY_KEY } from "@/capabilities/prediction-runs/prediction-run-keys";
 import {
   archiveSchema,
@@ -30,106 +30,91 @@ import type {
   UpdateSchemaBookmarkRequest,
 } from "@/shared/api/openapi.gen";
 
-export const useInvalidateSchemaQueries = () => {
-  const queryClient = useQueryClient();
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: SCHEMA_CATALOG_PAGE_QUERY_KEY(organizationId) }),
-      // The Predict launcher shows schema names and hides archived schemas.
-      queryClient.invalidateQueries({ queryKey: ORGANIZATION_BOOKMARKS_QUERY_KEY(organizationId) }),
-    ]);
-  };
+type OrganizationKey = number | string;
+
+const useOrganizationKey = () => useCurrentOrganizationId() ?? "none";
+
+const invalidateSchemaQueries = async (client: QueryClient, organizationId: OrganizationKey) => {
+  await Promise.all([
+    client.invalidateQueries({ queryKey: SCHEMA_CATALOG_PAGE_QUERY_KEY(organizationId) }),
+    // The Predict launcher shows schema names and hides archived schemas.
+    client.invalidateQueries({ queryKey: ORGANIZATION_BOOKMARKS_QUERY_KEY(organizationId) }),
+  ]);
 };
 
-export const useArchiveSchemaMutation = () => {
-  const invalidate = useInvalidateSchemaQueries();
-  return useMutation({
+/** A change to a schema itself: the dialog that asked shows a refusal. */
+const schemaMutation = <TData, TVariables>(
+  organizationId: OrganizationKey,
+  mutationFn: (variables: TVariables) => Promise<TData>,
+) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
-    mutationFn: archiveSchema,
-    onSuccess: () => void invalidate(),
+    mutationFn,
+    onSuccess: (_data, _variables, _result, { client }) =>
+      void invalidateSchemaQueries(client, organizationId),
   });
-};
 
-export const useRestoreSchemaMutation = () => {
-  const invalidate = useInvalidateSchemaQueries();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: restoreSchema,
-    onSuccess: () => void invalidate(),
-  });
-};
+export const useArchiveSchemaMutation = () =>
+  useMutation(schemaMutation(useOrganizationKey(), archiveSchema));
 
-export const useDeleteSchemaMutation = () => {
-  const invalidate = useInvalidateSchemaQueries();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: deleteSchema,
-    onSuccess: () => void invalidate(),
-  });
-};
+export const useRestoreSchemaMutation = () =>
+  useMutation(schemaMutation(useOrganizationKey(), restoreSchema));
 
-export const useDuplicateSchemaMutation = () => {
-  const invalidate = useInvalidateSchemaQueries();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: duplicateSchema,
-    onSuccess: () => void invalidate(),
-  });
-};
+export const useDeleteSchemaMutation = () =>
+  useMutation(schemaMutation(useOrganizationKey(), deleteSchema));
 
-export function useCreateSchemaWithInitialVersionMutation() {
-  const invalidate = useInvalidateSchemaQueries();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: createSchemaWithInitialVersion,
-    onSuccess: () => void invalidate(),
-  });
-}
+export const useDuplicateSchemaMutation = () =>
+  useMutation(schemaMutation(useOrganizationKey(), duplicateSchema));
 
-export function useCreateSchemaBookmarkMutation(schemaId: number | string) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const qc = useQueryClient();
-  return useMutation({
+export const useCreateSchemaWithInitialVersionMutation = () =>
+  useMutation(schemaMutation(useOrganizationKey(), createSchemaWithInitialVersion));
+
+export const useRenameSchemaMutation = () =>
+  useMutation(schemaMutation(useOrganizationKey(), renameSchema));
+
+const createSchemaBookmarkMutation = (organizationId: OrganizationKey, schemaId: number | string) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
     mutationFn: (req: CreateSchemaBookmarkRequest) => createSchemaBookmark(schemaId, req),
-    onSuccess: (bookmark) => {
-      qc.setQueryData(SCHEMA_BOOKMARK_QUERY_KEY(organizationId, bookmark.id), bookmark);
-      void qc.invalidateQueries({ queryKey: SCHEMA_BOOKMARKS_QUERY_KEY(organizationId, schemaId) });
-      void qc.invalidateQueries({ queryKey: ORGANIZATION_BOOKMARKS_QUERY_KEY(organizationId) });
+    onSuccess: (bookmark, _req, _result, { client }) => {
+      client.setQueryData(SCHEMA_BOOKMARK_QUERY_KEY(organizationId, bookmark.id), bookmark);
+      void client.invalidateQueries({
+        queryKey: SCHEMA_BOOKMARKS_QUERY_KEY(organizationId, schemaId),
+      });
+      void client.invalidateQueries({ queryKey: ORGANIZATION_BOOKMARKS_QUERY_KEY(organizationId) });
       // Saving over an existing name moves that bookmark, which changes what its examples serve.
-      void qc.invalidateQueries({
+      void client.invalidateQueries({
         queryKey: SCHEMA_BOOKMARK_EXAMPLES_QUERY_KEY(organizationId, bookmark.id),
       });
     },
   });
-}
+
+export const useCreateSchemaBookmarkMutation = (schemaId: number | string) =>
+  useMutation(createSchemaBookmarkMutation(useOrganizationKey(), schemaId));
 
 /** Renames a bookmark and replaces its description; the dialog that asked shows a refusal. */
-export function useUpdateSchemaBookmarkMutation() {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const qc = useQueryClient();
-  return useMutation({
+const updateSchemaBookmarkMutation = (organizationId: OrganizationKey) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
     mutationFn: ({ bookmarkId, ...req }: UpdateSchemaBookmarkRequest & { bookmarkId: number }) =>
       updateSchemaBookmark(bookmarkId, req),
-    onSuccess: (bookmark) => {
-      qc.setQueryData(SCHEMA_BOOKMARK_QUERY_KEY(organizationId, bookmark.id), bookmark);
-      void qc.invalidateQueries({
+    onSuccess: (bookmark, _variables, _result, { client }) => {
+      client.setQueryData(SCHEMA_BOOKMARK_QUERY_KEY(organizationId, bookmark.id), bookmark);
+      void client.invalidateQueries({
         queryKey: SCHEMA_BOOKMARKS_QUERY_KEY(organizationId, bookmark.schemaId),
       });
       // The Predict launcher and the inferences name the bookmark.
-      void qc.invalidateQueries({ queryKey: ORGANIZATION_BOOKMARKS_QUERY_KEY(organizationId) });
-      void qc.invalidateQueries({ queryKey: PREDICTION_RUN_CATALOG_QUERY_KEY(organizationId) });
+      void client.invalidateQueries({ queryKey: ORGANIZATION_BOOKMARKS_QUERY_KEY(organizationId) });
+      void client.invalidateQueries({ queryKey: PREDICTION_RUN_CATALOG_QUERY_KEY(organizationId) });
     },
   });
-}
 
-/** Publishes or unpublishes a bookmark; a failure is reported by the global error handler. */
-export function useSetBookmarkVisibilityMutation() {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const qc = useQueryClient();
-  return useMutation({
+export const useUpdateSchemaBookmarkMutation = () =>
+  useMutation(updateSchemaBookmarkMutation(useOrganizationKey()));
+
+/** Publishes or unpublishes a bookmark. */
+const setBookmarkVisibilityMutation = (organizationId: OrganizationKey) =>
+  mutationOptions({
     // The row that asked says why a publication was refused.
     meta: { errorHandledLocally: true },
     mutationFn: ({
@@ -139,27 +124,27 @@ export function useSetBookmarkVisibilityMutation() {
       visibility === "PUBLIC"
         ? publishSchemaBookmark(bookmarkId)
         : unpublishSchemaBookmark(bookmarkId),
-    onSuccess: (bookmark) => {
-      qc.setQueryData(SCHEMA_BOOKMARK_QUERY_KEY(organizationId, bookmark.id), bookmark);
-      void qc.invalidateQueries({
+    onSuccess: (bookmark, _variables, _result, { client }) => {
+      client.setQueryData(SCHEMA_BOOKMARK_QUERY_KEY(organizationId, bookmark.id), bookmark);
+      void client.invalidateQueries({
         queryKey: SCHEMA_BOOKMARKS_QUERY_KEY(organizationId, bookmark.schemaId),
       });
       // An example is served only while its bookmark is public.
-      void qc.invalidateQueries({
+      void client.invalidateQueries({
         queryKey: SCHEMA_BOOKMARK_EXAMPLES_QUERY_KEY(organizationId, bookmark.id),
       });
     },
   });
-}
+
+export const useSetBookmarkVisibilityMutation = () =>
+  useMutation(setBookmarkVisibilityMutation(useOrganizationKey()));
 
 /**
  * Marks or unmarks one run as a public example of a bookmark. The bookmark's own queries are
  * refreshed too, because they carry its example counts.
  */
-export function useSetBookmarkExampleMutation() {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const qc = useQueryClient();
-  return useMutation({
+const setBookmarkExampleMutation = (organizationId: OrganizationKey) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
     mutationFn: async ({
       bookmark,
@@ -174,24 +159,19 @@ export function useSetBookmarkExampleMutation() {
       else await unmarkBookmarkExample(bookmark.id, runId);
       return bookmark;
     },
-    onSuccess: (bookmark) =>
+    onSuccess: (bookmark, _variables, _result, { client }) =>
       Promise.all([
-        qc.invalidateQueries({
+        client.invalidateQueries({
           queryKey: SCHEMA_BOOKMARK_EXAMPLES_QUERY_KEY(organizationId, bookmark.id),
         }),
-        qc.invalidateQueries({ queryKey: SCHEMA_BOOKMARK_QUERY_KEY(organizationId, bookmark.id) }),
-        qc.invalidateQueries({
+        client.invalidateQueries({
+          queryKey: SCHEMA_BOOKMARK_QUERY_KEY(organizationId, bookmark.id),
+        }),
+        client.invalidateQueries({
           queryKey: SCHEMA_BOOKMARKS_QUERY_KEY(organizationId, bookmark.schemaId),
         }),
       ]),
   });
-}
 
-export const useRenameSchemaMutation = () => {
-  const invalidate = useInvalidateSchemaQueries();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: renameSchema,
-    onSuccess: () => void invalidate(),
-  });
-};
+export const useSetBookmarkExampleMutation = () =>
+  useMutation(setBookmarkExampleMutation(useOrganizationKey()));

@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { mutationOptions, useMutation } from "@tanstack/react-query";
 import {
   bulkRevokeInvitations,
   createInvitation,
@@ -10,50 +10,54 @@ import {
   organizationInvitationsQueryKey,
 } from "./workspace.keys";
 
-const useInvitationInvalidation = (organizationId: number) => {
-  const queryClient = useQueryClient();
-  return (includeCandidates = false) =>
-    Promise.all([
-      queryClient.invalidateQueries({ queryKey: organizationInvitationsQueryKey(organizationId) }),
-      ...(includeCandidates
-        ? [
-            queryClient.invalidateQueries({
-              queryKey: organizationInvitationCandidatesQueryKey(organizationId),
-            }),
-          ]
-        : []),
-    ]);
-};
-
-export const useCreateInvitationMutation = (organizationId: number) => {
-  const invalidate = useInvitationInvalidation(organizationId);
-  return useMutation({
-    mutationFn: (payload: Parameters<typeof createInvitation>[1]) =>
-      createInvitation(organizationId, payload),
-    onSuccess: () => invalidate(true),
+/** `includeCandidates`: whether the change alters who can still be invited. */
+const invitationMutation = <TData, TVariables>(
+  organizationId: number,
+  mutationFn: (variables: TVariables) => Promise<TData>,
+  includeCandidates = false,
+) =>
+  mutationOptions({
+    mutationFn,
+    onSuccess: (_data, _variables, _result, { client }) =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: organizationInvitationsQueryKey(organizationId) }),
+        ...(includeCandidates
+          ? [
+              client.invalidateQueries({
+                queryKey: organizationInvitationCandidatesQueryKey(organizationId),
+              }),
+            ]
+          : []),
+      ]),
   });
-};
 
-export const useBulkRevokeInvitationsMutation = (organizationId: number) => {
-  const invalidate = useInvitationInvalidation(organizationId);
-  return useMutation({
-    mutationFn: (ids: number[]) => bulkRevokeInvitations(organizationId, ids),
-    onSuccess: () => invalidate(),
-  });
-};
+export const useCreateInvitationMutation = (organizationId: number) =>
+  useMutation(
+    invitationMutation(
+      organizationId,
+      (payload: Parameters<typeof createInvitation>[1]) =>
+        createInvitation(organizationId, payload),
+      true,
+    ),
+  );
 
-export const useResendInvitationMutation = (organizationId: number) => {
-  const invalidate = useInvitationInvalidation(organizationId);
-  return useMutation({
-    mutationFn: (invitationId: number) => resendInvitation(organizationId, invitationId),
-    onSuccess: () => invalidate(),
-  });
-};
+export const useBulkRevokeInvitationsMutation = (organizationId: number) =>
+  useMutation(
+    invitationMutation(organizationId, (ids: number[]) =>
+      bulkRevokeInvitations(organizationId, ids),
+    ),
+  );
 
-export const useRevokeInvitationMutation = (organizationId: number) => {
-  const invalidate = useInvitationInvalidation(organizationId);
-  return useMutation({
-    mutationFn: (invitationId: number) => revokeInvitation(organizationId, invitationId),
-    onSuccess: () => invalidate(),
-  });
-};
+export const useResendInvitationMutation = (organizationId: number) =>
+  useMutation(
+    invitationMutation(organizationId, (invitationId: number) =>
+      resendInvitation(organizationId, invitationId),
+    ),
+  );
+
+export const useRevokeInvitationMutation = (organizationId: number) =>
+  useMutation(
+    invitationMutation(organizationId, (invitationId: number) =>
+      revokeInvitation(organizationId, invitationId),
+    ),
+  );

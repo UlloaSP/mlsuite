@@ -6,7 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
-import { Route, Routes } from "react-router";
 import { WorkspaceHomePage } from "@/features/workspace/pages/workspace-home-page";
 import { OrganizationAdminPage } from "@/features/workspace/pages/organization-admin-page";
 import { click, mount } from "./support/dom";
@@ -171,15 +170,10 @@ describe("workspace overview", () => {
       isError: false,
     });
 
-    const { host: container } = await mount(
-      <Routes>
-        <Route
-          path="/workspace/organizations/:organizationId"
-          element={<OrganizationAdminPage />}
-        />
-      </Routes>,
-      { route: "/workspace/organizations/9" },
-    );
+    const { host: container } = await mount(null, {
+      route: "/workspace/organizations/9",
+      routes: { "/workspace/organizations/$organizationId": <OrganizationAdminPage /> },
+    });
 
     expect(hooks.useOrganizationAdminDashboardQuery).toHaveBeenCalledWith(9);
     expect(container.querySelector("h1")?.textContent).toBe("Globex");

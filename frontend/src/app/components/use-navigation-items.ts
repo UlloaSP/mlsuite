@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useLocation } from "react-router";
+import { useLocation } from "@tanstack/react-router";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useOpenSystemAlertCount } from "@/features/infrastructure/api/infrastructure.queries";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
@@ -171,7 +171,7 @@ export function useNavigationItems() {
     // Section memory belongs to the organization's sections, so the public feed is not one.
     activeRoot: [...navigation, ...administration].find(isParentActive)?.root,
     isParentActive,
-    currentPath: `${location.pathname}${location.search}`,
+    currentPath: `${location.pathname}${location.searchStr}`,
     pathname: location.pathname,
   };
 }

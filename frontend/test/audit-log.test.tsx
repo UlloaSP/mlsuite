@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import { act } from "react";
-import { Routes, Route } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { auditDetails } from "@/features/workspace/lib/audit-actions";
 import { AdminAuditLogPage } from "@/features/workspace/pages/admin-audit-log-page";
@@ -100,13 +99,13 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 async function render(search = "") {
-  const view = await mount(
-    <Routes>
-      <Route path="/organizations/:organizationId/audit-log" element={<AuditLogPage />} />
-      <Route path="/admin/audit" element={<AdminAuditLogPage />} />
-    </Routes>,
-    { route: search.startsWith("/") ? search : `/organizations/3/audit-log${search}` },
-  );
+  const view = await mount(null, {
+    route: search.startsWith("/") ? search : `/organizations/3/audit-log${search}`,
+    routes: {
+      "/organizations/$organizationId/audit-log": <AuditLogPage />,
+      "/admin/audit": <AdminAuditLogPage />,
+    },
+  });
   // A slow first load keeps its skeleton on screen a moment longer, so wait it out.
   for (let i = 0; i < 40; i++) {
     await settle();

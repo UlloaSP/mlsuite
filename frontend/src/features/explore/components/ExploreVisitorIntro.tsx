@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
 import { useAccountEntry } from "@/capabilities/workspace-context/account-entry";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
@@ -20,12 +20,12 @@ export function ExploreVisitorIntro() {
   return (
     <p className="max-w-2xl text-sm leading-5 text-fg-muted">
       MLsuite turns trained models into forms anyone can open.{" "}
-      <Link
-        to={entry.registerHref}
+      <AppLink
+        {...entry.register}
         className={cx("rounded font-semibold text-accent-strong hover:underline", FOCUS_RING)}
       >
         Create an account
-      </Link>{" "}
+      </AppLink>{" "}
       to publish your own.
     </p>
   );

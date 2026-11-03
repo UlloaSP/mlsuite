@@ -74,12 +74,7 @@ test("switching review runs keeps the previous shell as a skeleton without its f
     feedback: [],
   };
   const panel = () => (
-    <SchemaReviewRunDetailPanel
-      reviewId="r"
-      reviewRunId="next"
-      version={version}
-      onReviewChanged={() => undefined}
-    />
+    <SchemaReviewRunDetailPanel reviewId="r" reviewRunId="next" version={version} />
   );
 
   state.reviewRun = { data: detail, isLoading: false, isPlaceholderData: true };

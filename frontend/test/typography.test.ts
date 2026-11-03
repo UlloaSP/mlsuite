@@ -1,4 +1,3 @@
-import { createStore } from "jotai";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 const storage = () => {
@@ -24,12 +23,11 @@ describe("typography preferences", () => {
     vi.stubGlobal("localStorage", localStorage);
     vi.stubGlobal("window", { localStorage });
     vi.stubGlobal("document", { documentElement });
-    const { typographyAtom } = await import("@/shared/ui/typography-state");
-    const store = createStore();
-    const unsubscribe = store.sub(typographyAtom, () => undefined);
+    const { setTypography, typographyAtom } = await import("@/shared/ui/typography-state");
+    const { unsubscribe } = typographyAtom.subscribe(() => undefined);
 
-    expect(store.get(typographyAtom).interfaceFont).toBe("manrope");
-    store.set(typographyAtom, {
+    expect(typographyAtom.get().interfaceFont).toBe("manrope");
+    setTypography({
       interfaceFont: "ibm-plex-sans",
       interfaceSize: 17,
       monospaceFont: "jetbrains-mono",

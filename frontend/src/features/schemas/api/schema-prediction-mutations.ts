@@ -1,5 +1,5 @@
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { type QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
+import { mutationOptions, type QueryClient, useMutation } from "@tanstack/react-query";
 import { PREDICTION_RUN_CATALOG_QUERY_KEY } from "@/capabilities/prediction-runs/prediction-run-keys";
 import {
   createPredictionRunForBookmark,
@@ -33,10 +33,11 @@ type SaveRuns = {
  * Saves many runs of the bookmark in order, a request per hundred, and refreshes the catalogs
  * once when it ends, however far it got: a failed request leaves the runs before it saved.
  */
-export function useCreatePredictionRunsForBookmarkMutation(bookmarkId: number | string) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const qc = useQueryClient();
-  return useMutation({
+const createPredictionRunsMutation = (
+  organizationId: number | string,
+  bookmarkId: number | string,
+) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
     mutationFn: async ({ runs, onSaved }: SaveRuns) => {
       for (let from = 0; from < runs.length; from += RUNS_PER_SAVE) {
@@ -47,20 +48,26 @@ export function useCreatePredictionRunsForBookmarkMutation(bookmarkId: number | 
         onSaved(from, runIds);
       }
     },
-    onSettled: () => void invalidatePredictionRunCollections(qc, organizationId),
+    onSettled: (_data, _error, _variables, _result, { client }) =>
+      void invalidatePredictionRunCollections(client, organizationId),
   });
-}
 
-export function useCreatePredictionRunForBookmarkMutation(bookmarkId: number | string) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const qc = useQueryClient();
-  return useMutation({
+export const useCreatePredictionRunsForBookmarkMutation = (bookmarkId: number | string) =>
+  useMutation(createPredictionRunsMutation(useCurrentOrganizationId() ?? "none", bookmarkId));
+
+const createPredictionRunMutation = (
+  organizationId: number | string,
+  bookmarkId: number | string,
+) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
     mutationFn: (req: CreatePredictionRunRequest) =>
       createPredictionRunForBookmark(bookmarkId, req),
-    onSuccess: (run) => {
-      qc.setQueryData(PREDICTION_RUN_QUERY_KEY(organizationId, run.id), run);
-      void invalidatePredictionRunCollections(qc, organizationId);
+    onSuccess: (run, _req, _result, { client }) => {
+      client.setQueryData(PREDICTION_RUN_QUERY_KEY(organizationId, run.id), run);
+      void invalidatePredictionRunCollections(client, organizationId);
     },
   });
-}
+
+export const useCreatePredictionRunForBookmarkMutation = (bookmarkId: number | string) =>
+  useMutation(createPredictionRunMutation(useCurrentOrganizationId() ?? "none", bookmarkId));

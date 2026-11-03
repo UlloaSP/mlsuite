@@ -5,7 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ChevronRight } from "lucide-react";
 import { Fragment, type HTMLAttributes, type ReactNode } from "react";
-import { Link } from "react-router";
+import { AppLink } from "@/shared/ui/AppLink";
+import { appHref } from "@/shared/lib/app-href";
 import type { BreadcrumbTrailItem } from "./breadcrumb/breadcrumb-context";
 import { BreadcrumbEllipsisMenu } from "./breadcrumb/BreadcrumbEllipsisMenu";
 import { CRUMB_LINK_CLASS, CRUMB_PAGE_CLASS } from "./breadcrumb/crumb-styles";
@@ -61,9 +62,14 @@ export function AppBreadcrumbs({
                   {slot.item.label}
                 </span>
               ) : slot.item.to ? (
-                <Link className={CRUMB_LINK_CLASS} to={slot.item.to}>
+                // An ancestor contains the current address; only an exact match is the page.
+                <AppLink
+                  className={CRUMB_LINK_CLASS}
+
+                  {...appHref(slot.item.to)}
+                >
                   {slot.item.label}
-                </Link>
+                </AppLink>
               ) : (
                 <span className="min-w-0 break-words text-fg-secondary">{slot.item.label}</span>
               )}

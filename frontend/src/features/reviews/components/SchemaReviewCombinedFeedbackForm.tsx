@@ -1,4 +1,4 @@
-import { useAtom } from "jotai";
+import { useSelector } from "@tanstack/react-store";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { FieldConfig } from "mlform/runtime";
@@ -62,7 +62,7 @@ export function SchemaReviewCombinedFeedbackForm({
   feedback,
   onSaved,
 }: Props) {
-  const [theme] = useAtom(themeWithHtmlAtom);
+  const theme = useSelector(themeWithHtmlAtom);
   const { mutateAsync: saveFeedback } = useSaveSchemaReviewFeedbackMutation(reviewId, reviewRunId);
   const [editing, setEditing] = useReducer((_: boolean, next: boolean) => next, false);
   const [submitting, setSubmitting] = useState(false);

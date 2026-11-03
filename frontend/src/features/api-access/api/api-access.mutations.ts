@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { mutationOptions, useMutation, type QueryClient } from "@tanstack/react-query";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import {
   createApiClient,
@@ -26,84 +26,107 @@ import type {
   UpdateApiClientRequest,
 } from "@/shared/api/openapi.gen";
 
-/**
- * A change to a client answers with the client as it now is, which replaces the cached one; the
- * catalog's counts and the bookmarks' client names are read again.
- */
-function useClientChange<TVariables>(mutationFn: (variables: TVariables) => Promise<ApiClientDto>) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const qc = useQueryClient();
-  return useMutation({
+type OrganizationKey = number | string;
+
+const useOrganizationKey = () => useCurrentOrganizationId() ?? "none";
+
+/** The catalog's counts and the bookmarks' client names follow every client change. */
+const invalidateClientLists = (client: QueryClient, organizationId: OrganizationKey) =>
+  Promise.all([
+    client.invalidateQueries({ queryKey: API_CLIENTS_QUERY_KEY(organizationId) }),
+    client.invalidateQueries({ queryKey: API_ACCESS_BOOKMARKS_QUERY_KEY(organizationId) }),
+  ]);
+
+/** A key change shows on the client's page and in the catalog's key counts. */
+const invalidateClientKeys = (
+  client: QueryClient,
+  organizationId: OrganizationKey,
+  clientId: number,
+) =>
+  Promise.all([
+    client.invalidateQueries({ queryKey: API_CLIENT_QUERY_KEY(organizationId, clientId) }),
+    client.invalidateQueries({ queryKey: API_CLIENTS_QUERY_KEY(organizationId) }),
+  ]);
+
+/** A change to a client answers with the client as it now is, which replaces the cached one. */
+const clientChangeMutation = <TVariables>(
+  organizationId: OrganizationKey,
+  mutationFn: (variables: TVariables) => Promise<ApiClientDto>,
+) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
     mutationFn,
-    onSuccess: async (client) => {
-      qc.setQueryData(API_CLIENT_QUERY_KEY(organizationId, client.client.id), client);
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: API_CLIENTS_QUERY_KEY(organizationId) }),
-        qc.invalidateQueries({ queryKey: API_ACCESS_BOOKMARKS_QUERY_KEY(organizationId) }),
-      ]);
+    onSuccess: async (apiClient, _variables, _result, { client }) => {
+      client.setQueryData(API_CLIENT_QUERY_KEY(organizationId, apiClient.client.id), apiClient);
+      await invalidateClientLists(client, organizationId);
     },
   });
-}
 
 export const useCreateApiClientMutation = () =>
-  useClientChange((req: CreateApiClientRequest) => createApiClient(req));
+  useMutation(
+    clientChangeMutation(useOrganizationKey(), (req: CreateApiClientRequest) =>
+      createApiClient(req),
+    ),
+  );
 
 export const useUpdateApiClientMutation = (clientId: number) =>
-  useClientChange((req: UpdateApiClientRequest) => updateApiClient(clientId, req));
+  useMutation(
+    clientChangeMutation(useOrganizationKey(), (req: UpdateApiClientRequest) =>
+      updateApiClient(clientId, req),
+    ),
+  );
 
 export const useGrantApiClientBookmarkMutation = (clientId: number) =>
-  useClientChange((bookmarkId: number) => grantApiClientBookmark(clientId, bookmarkId));
+  useMutation(
+    clientChangeMutation(useOrganizationKey(), (bookmarkId: number) =>
+      grantApiClientBookmark(clientId, bookmarkId),
+    ),
+  );
 
 export const useRevokeApiClientBookmarkMutation = (clientId: number) =>
-  useClientChange((bookmarkId: number) => revokeApiClientBookmark(clientId, bookmarkId));
+  useMutation(
+    clientChangeMutation(useOrganizationKey(), (bookmarkId: number) =>
+      revokeApiClientBookmark(clientId, bookmarkId),
+    ),
+  );
 
-export function useDeleteApiClientMutation() {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const qc = useQueryClient();
-  return useMutation({
+const deleteApiClientMutation = (organizationId: OrganizationKey) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
     mutationFn: (clientId: number) => deleteApiClient(clientId),
-    onSuccess: async (_, clientId) => {
-      qc.removeQueries({ queryKey: API_CLIENT_QUERY_KEY(organizationId, clientId) });
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: API_CLIENTS_QUERY_KEY(organizationId) }),
-        qc.invalidateQueries({ queryKey: API_ACCESS_BOOKMARKS_QUERY_KEY(organizationId) }),
-      ]);
+    onSuccess: async (_data, clientId, _result, { client }) => {
+      client.removeQueries({ queryKey: API_CLIENT_QUERY_KEY(organizationId, clientId) });
+      await invalidateClientLists(client, organizationId);
     },
   });
-}
+
+export const useDeleteApiClientMutation = () =>
+  useMutation(deleteApiClientMutation(useOrganizationKey()));
 
 /**
  * The answer carries the key's secret. `gcTime: 0` keeps it out of the mutation cache; the
  * dialog that asked shows it from the resolved value.
  */
-export function useIssueApiClientKeyMutation(clientId: number) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const qc = useQueryClient();
-  return useMutation({
+const issueApiClientKeyMutation = (organizationId: OrganizationKey, clientId: number) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
     gcTime: 0,
     mutationFn: (req: CreateApiClientKeyRequest) => issueApiClientKey(clientId, req),
-    onSuccess: () =>
-      Promise.all([
-        qc.invalidateQueries({ queryKey: API_CLIENT_QUERY_KEY(organizationId, clientId) }),
-        qc.invalidateQueries({ queryKey: API_CLIENTS_QUERY_KEY(organizationId) }),
-      ]),
+    onSuccess: (_key, _req, _result, { client }) =>
+      invalidateClientKeys(client, organizationId, clientId),
   });
-}
+
+export const useIssueApiClientKeyMutation = (clientId: number) =>
+  useMutation(issueApiClientKeyMutation(useOrganizationKey(), clientId));
 
 /** Revoking deletes the key; calls made with it are refused at once. */
-export function useRevokeApiClientKeyMutation(clientId: number) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const qc = useQueryClient();
-  return useMutation({
+const revokeApiClientKeyMutation = (organizationId: OrganizationKey, clientId: number) =>
+  mutationOptions({
     meta: { errorHandledLocally: true },
     mutationFn: (keyId: number) => revokeApiClientKey(clientId, keyId),
-    onSuccess: () =>
-      Promise.all([
-        qc.invalidateQueries({ queryKey: API_CLIENT_QUERY_KEY(organizationId, clientId) }),
-        qc.invalidateQueries({ queryKey: API_CLIENTS_QUERY_KEY(organizationId) }),
-      ]),
+    onSuccess: (_data, _keyId, _result, { client }) =>
+      invalidateClientKeys(client, organizationId, clientId),
   });
-}
+
+export const useRevokeApiClientKeyMutation = (clientId: number) =>
+  useMutation(revokeApiClientKeyMutation(useOrganizationKey(), clientId));

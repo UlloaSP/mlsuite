@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtomValue } from "jotai";
+import { useSelector } from "@tanstack/react-store";
 import { sidebarStyleAtom, type SidebarPosition } from "@/shared/ui/sidebar-preferences";
 import { SidebarActions } from "./SidebarActions";
 import { SidebarBrand } from "./SidebarBrand";
@@ -13,7 +13,7 @@ import { SidebarUserFooter } from "./SidebarUserFooter";
 import { Sidebar as SidebarRoot } from "./app-sidebar/Sidebar";
 
 export function Sidebar({ side }: { side: SidebarPosition }) {
-  const variant = useAtomValue(sidebarStyleAtom);
+  const variant = useSelector(sidebarStyleAtom);
 
   return (
     <SidebarRoot data-user-guide="sidebar" side={side} variant={variant}>

@@ -3,13 +3,13 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtom } from "jotai";
+import { useSelector } from "@tanstack/react-store";
 import { AnimatePresence, m as motion } from "motion/react";
-import { schemaErrorsAtom } from "@/features/schemas/lib/editor-atoms";
+import { useEditorAtoms } from "@/features/schemas/lib/editor-atoms";
 import { EditorErrorCard } from "./EditorErrorCard";
 
 export function EditorErrorPanel() {
-  const [schemaErrors] = useAtom(schemaErrorsAtom);
+  const schemaErrors = useSelector(useEditorAtoms().schemaErrors);
 
   return (
     <AnimatePresence mode="wait">

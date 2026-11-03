@@ -4,10 +4,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { CSSProperties, FormEvent } from "react";
-import { useAtom } from "jotai";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useRef } from "react";
-import { Link, useSearchParams } from "react-router";
+import { useRouter, useSearch } from "@tanstack/react-router";
+import { useSelector } from "@tanstack/react-store";
+import { AppLink } from "@/shared/ui/AppLink";
 import { EXPLORE_PATH } from "@/app/components/explore-navigation";
 import { isPublicPage } from "@/app/router/public-routes";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
@@ -18,6 +19,7 @@ import {
   useLogin,
   useRegister,
 } from "@/capabilities/workspace-context/session";
+import { appHref } from "@/shared/lib/app-href";
 import { useSearchParamState } from "@/shared/lib/use-search-param-state";
 import { AuthAccessOverlay } from "./auth-landing/AuthAccessOverlay";
 import { AuthFormPanel } from "./auth-landing/AuthFormPanel";
@@ -37,15 +39,16 @@ function readFormValue(formData: FormData, name: string) {
 }
 
 export function AuthLandingPage() {
-  const [theme] = useAtom(themeWithHtmlAtom);
-  const [searchParams] = useSearchParams();
+  const theme = useSelector(themeWithHtmlAtom);
+  const router = useRouter();
+  const returnTo = useSearch({ strict: false, select: (search) => search.returnTo });
   // The form on screen is part of the address, so a link can open registration directly.
   const [mode, setMode] = useSearchParamState<AuthMode>(AUTH_MODE_PARAM, "login", AUTH_MODES);
   // Signing in or registering goes back to the page that sent the visitor here (an expired
   // session, a public page's header); with none to go back to, it opens the public feed.
-  const destination = safeReturnTo(searchParams.get("returnTo"), EXPLORE_PATH);
+  const destination = safeReturnTo(returnTo, EXPLORE_PATH);
   // Leaving without an account goes back too, when that page needs no session.
-  const cameFromPublicPage = destination !== EXPLORE_PATH && isPublicPage(destination);
+  const cameFromPublicPage = destination !== EXPLORE_PATH && isPublicPage(router, destination);
   const access = useAuthAccess(destination);
   const passRef = useRef<HTMLDivElement>(null);
   const scale = useAuthStageScale();
@@ -93,7 +96,7 @@ export function AuthLandingPage() {
       <AuthTypeBands />
       <AuthHorizon />
       {/* Nothing public needs an account, so the screen never traps a visitor. */}
-      <Link to={cameFromPublicPage ? destination : EXPLORE_PATH} className="auth-exit">
+      <AppLink {...appHref(cameFromPublicPage ? destination : EXPLORE_PATH)} className="auth-exit">
         {cameFromPublicPage ? (
           <>
             <ArrowLeft aria-hidden="true" size={14} />
@@ -105,7 +108,7 @@ export function AuthLandingPage() {
             <ArrowRight aria-hidden="true" size={14} />
           </>
         )}
-      </Link>
+      </AppLink>
 
       <div ref={passRef} className="auth-pass" data-phase={access.phase}>
         <div className="auth-pass-top">

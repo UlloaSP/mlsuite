@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
 
 import { expect, test, vi } from "vite-plus/test";
-import { useAtomValue } from "jotai";
-import { Route, Routes } from "react-router";
-import { schemaTextAtom } from "@/features/schemas/lib/editor-atoms";
+import { useSelector } from "@tanstack/react-store";
+import { useEditorAtoms } from "@/features/schemas/lib/editor-atoms";
 import { click, mount } from "./support/dom";
 
 const mocks = vi.hoisted(() => ({
@@ -34,7 +33,11 @@ vi.mock("@/features/schemas/components/SchemaCodeViewer", () => ({
 }));
 vi.mock("@/features/schemas/components/EditorWrapper", () => ({
   EditorWrapper: () => (
-    <textarea aria-label="Editable schema" value={useAtomValue(schemaTextAtom)} readOnly />
+    <textarea
+      aria-label="Editable schema"
+      value={useSelector(useEditorAtoms().schemaText)}
+      readOnly
+    />
   ),
 }));
 vi.mock("@/features/schemas/components/SchemaFormPreview", () => ({
@@ -44,13 +47,13 @@ vi.mock("@/features/schemas/components/SchemaChangeNameDialog", () => ({
   SchemaChangeNameDialog: () => null,
 }));
 
-import { SchemaDraftEditorPage } from "@/features/schemas/pages/schema-draft-editor-page";
+import { SchemaDraftEditorRoute } from "@/features/schemas/pages/schema-draft-editor-route";
 
 test.each(["DRAFT", "CONFLICT", "PUBLISHED"])(
   "%s change exposes only supported editing actions",
   async (status) => {
     mocks.draft = { ...mocks.draft, status };
-    const { host: container } = await mount(<SchemaDraftEditorPage />, { route: "/" });
+    const { host: container } = await mount(<SchemaDraftEditorRoute />, { route: "/" });
     const published = status === "PUBLISHED";
     expect(Boolean(container.querySelector('[aria-label="Editable schema"]'))).toBe(!published);
     expect(Boolean(container.querySelector('[data-testid="readonly"]'))).toBe(published);
@@ -87,12 +90,10 @@ test.each(["DRAFT", "CONFLICT", "PUBLISHED"])(
     const original = structuredClone(formSchema);
     mocks.draft = { ...mocks.draft, status, formSchema };
     mocks.update.mockClear();
-    const { host } = await mount(
-      <Routes>
-        <Route path="/schemas/:schemaId/drafts/:draftId" element={<SchemaDraftEditorPage />} />
-      </Routes>,
-      { route: "/schemas/7/drafts/12" },
-    );
+    const { host } = await mount(null, {
+      route: "/schemas/7/drafts/12",
+      routes: { "/schemas/$schemaId/drafts/$draftId": <SchemaDraftEditorRoute /> },
+    });
     if (status === "PUBLISHED") {
       expect(JSON.parse(host.querySelector('[data-testid="readonly"]')!.textContent!)).toEqual(
         original,

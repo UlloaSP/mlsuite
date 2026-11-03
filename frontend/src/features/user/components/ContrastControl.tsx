@@ -3,13 +3,13 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtom } from "jotai";
+import { useSelector } from "@tanstack/react-store";
 import { RotateCcw } from "lucide-react";
 import { AppIconButton } from "@/shared/ui/AppIconButton";
-import { contrastAtom, type ContrastLevel } from "@/shared/ui/appearance-state";
+import { contrastAtom, setContrast, type ContrastLevel } from "@/shared/ui/appearance-state";
 
 export function ContrastControl() {
-  const [contrast, setContrast] = useAtom(contrastAtom);
+  const contrast = useSelector(contrastAtom);
 
   return (
     <div className="grid gap-5 border-t border-line py-8 md:grid-cols-[minmax(0,1fr)_18rem] md:items-center">

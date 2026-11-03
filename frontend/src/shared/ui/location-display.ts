@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtomValue } from "jotai";
+import { useSelector } from "@tanstack/react-store";
 import { createContext, useContext } from "react";
 import { locationDisplayAtom, type LocationDisplay } from "./sidebar-preferences";
 import { useMediaQuery } from "./use-media-query";
@@ -23,7 +23,7 @@ export const PinnedLocationDisplayContext = createContext<LocationDisplay | null
  */
 export function useLocationDisplay(): LocationDisplay {
   const pinned = useContext(PinnedLocationDisplayContext);
-  const chosen = useAtomValue(locationDisplayAtom);
+  const chosen = useSelector(locationDisplayAtom);
   const railWorks = useMediaQuery(LOCATION_RAIL_MEDIA);
   if (pinned) return pinned;
   if ((chosen === "rail-left" || chosen === "rail-right") && !railWorks) return "breadcrumb-top";
