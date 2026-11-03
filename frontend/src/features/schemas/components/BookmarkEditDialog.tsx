@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Save } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { useUpdateSchemaBookmarkMutation } from "@/features/schemas/api/schema-mutations";
 import {
   BookmarkDetailsDialog,

@@ -1,6 +1,6 @@
 import { useSelector } from "@tanstack/react-store";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import type { FieldConfig } from "mlform/runtime";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { ReviewWithoutQuestionnaire } from "./ReviewWithoutQuestionnaire";

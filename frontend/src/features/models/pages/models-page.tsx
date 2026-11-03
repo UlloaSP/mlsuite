@@ -7,7 +7,7 @@ import { getRouteApi } from "@tanstack/react-router";
 import { Search, Plus } from "lucide-react";
 import { useState } from "react";
 import { AppLink } from "@/shared/ui/AppLink";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import {
   useArchiveModelMutation,
   useRestoreModelMutation,

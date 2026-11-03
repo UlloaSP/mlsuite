@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { getRouteApi } from "@tanstack/react-router";
 import { Globe } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { useUnpublishPublicBookmark } from "@/features/admin/api/public-bookmark-moderation.mutations";
 import { useModeratedBookmarks } from "@/features/admin/api/public-bookmark-moderation.queries";
 import { ModeratedBookmarkTile } from "@/features/admin/components/ModeratedBookmarkTile";

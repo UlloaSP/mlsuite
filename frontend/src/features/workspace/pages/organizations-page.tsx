@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Search, Plus } from "lucide-react";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { emitErrorFromUnknown } from "@/shared/api/error-notifications";
 import {
   useDeleteOrganizationMutation,

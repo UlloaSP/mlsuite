@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { useAtom, useSelector } from "@tanstack/react-store";
 import { AppLink } from "@/shared/ui/AppLink";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { withSeriesColumns } from "@/capabilities/prediction-runtime/mlform/series-schema";
 import {

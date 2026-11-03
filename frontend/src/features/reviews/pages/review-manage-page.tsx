@@ -1,5 +1,5 @@
 import { getRouteApi } from "@tanstack/react-router";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { useDeleteReview, useManagedReviews } from "@/features/reviews/api/managed-review-catalog";
 import { ManagedReviewEntry } from "@/features/reviews/components/ManagedReviewEntry";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";

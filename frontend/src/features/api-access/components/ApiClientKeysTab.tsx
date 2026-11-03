@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { useRevokeApiClientKeyMutation } from "@/features/api-access/api/api-access.mutations";
 import { ApiClientKeyRow } from "@/features/api-access/components/ApiClientKeyRow";
 import { failureMessage } from "@/features/api-access/lib/api-format";

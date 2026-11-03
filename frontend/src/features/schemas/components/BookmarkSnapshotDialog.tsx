@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { schemaVersionName } from "@/features/schemas/lib/version-selection";
 import { Tag } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { useCreateSchemaBookmarkMutation } from "@/features/schemas/api/schema-mutations";
 import {
   BookmarkDetailsDialog,

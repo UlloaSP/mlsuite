@@ -1,4 +1,4 @@
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import {
   useDeleteInferenceReviewResponseMutation,
   useReopenInferenceReviewMutation,

@@ -7,7 +7,7 @@ import { CheckCircle2, GitMerge, PencilLine } from "lucide-react";
 import { useMemo, useState } from "react";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { AppLink } from "@/shared/ui/AppLink";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { AppButton } from "@/shared/ui/AppButton";
 import { appButtonClass } from "@/shared/ui/button-styles";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";

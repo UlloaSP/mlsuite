@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { getRouteApi } from "@tanstack/react-router";
 import { Search, Upload } from "lucide-react";
 import { AppLink } from "@/shared/ui/AppLink";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { useDeletePluginMutation } from "@/features/plugins/api/plugin.mutations";
 import {
   usePluginCatalogPageQuery,

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Ban, KeyRound, RotateCcw } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { useApiClientStatusMutation } from "@/features/api-access/api/api-traffic.queries";
 import { ApiClientStatusBadge } from "@/features/api-access/components/ApiClientStatusBadge";
 import { SuspendClientDialog } from "@/features/api-access/components/SuspendClientDialog";

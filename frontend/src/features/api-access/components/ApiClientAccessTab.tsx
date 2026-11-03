@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { useRevokeApiClientBookmarkMutation } from "@/features/api-access/api/api-access.mutations";
 import { AccessBookmarkRow } from "@/features/api-access/components/AccessBookmarkRow";
 import { GrantBookmarkDialog } from "@/features/api-access/components/GrantBookmarkDialog";

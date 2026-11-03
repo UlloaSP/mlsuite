@@ -288,6 +288,17 @@ describe("frontend architecture contract", () => {
     ).toEqual([]);
   });
 
+  test("toasts through shared/ui, whose region follows the theme in effect", () => {
+    const importsSonner = (file: string) => moduleSpecifiers(file).includes("sonner");
+
+    expect(
+      sourceFiles()
+        .filter((file) => !rel(file).startsWith("shared/ui/"))
+        .filter(importsSonner)
+        .map(rel),
+    ).toEqual([]);
+  });
+
   test("keeps source modules within the line limit", () => {
     const failures = sourceFiles()
       .filter((file) => rel(file) !== GENERATED_API_TYPES)

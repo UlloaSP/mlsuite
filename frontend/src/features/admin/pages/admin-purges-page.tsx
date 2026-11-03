@@ -1,5 +1,5 @@
 import { getRouteApi } from "@tanstack/react-router";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { usePurgeJobs, useRetryPurge } from "@/features/admin/api/purge-jobs.queries";
 import { PurgeJobEntry } from "@/features/admin/components/PurgeJobEntry";

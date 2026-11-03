@@ -18,7 +18,7 @@ import {
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { AppLink } from "@/shared/ui/AppLink";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { isHttpError } from "@/shared/api/http";
 import { useCan } from "@/capabilities/workspace-context/workspace-context";
 import { AppActionsMenu, type AppMenuAction } from "@/shared/ui/AppActionsMenu";

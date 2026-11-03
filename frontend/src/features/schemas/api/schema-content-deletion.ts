@@ -1,5 +1,5 @@
 import { mutationOptions, useMutation } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { appFetch } from "@/shared/api/http";
 import {

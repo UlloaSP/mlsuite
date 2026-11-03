@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useSelector } from "@tanstack/react-store";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { mergeSchemaRunInputs } from "@/capabilities/prediction-runtime/data/input-display";
 import { useUser } from "@/capabilities/workspace-context/session";
 import {

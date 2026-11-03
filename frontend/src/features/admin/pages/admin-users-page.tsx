@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import {
   useResetAdminUserPassword,
   useUpdateAdminUser,

@@ -1,4 +1,4 @@
-import { toast } from "sonner";
+import { toast } from "@/shared/ui/toast";
 import { PersonAvatar } from "@/shared/ui/PersonAvatar";
 import type { OrganizationCatalogItemDto } from "@/shared/api/openapi.gen";
 
