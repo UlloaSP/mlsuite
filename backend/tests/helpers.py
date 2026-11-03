@@ -12,9 +12,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.tree import DecisionTreeClassifier
 from xgboost import XGBClassifier, XGBRegressor
 
-from mlsuite_backend.environments import LEGACY, environment_key
+from mlsuite_backend.environments import environment_key
 
-FIXTURES = Path(__file__).parent / "fixtures"
 # Locks already resolved in this interpreter: generating one asks uv and the index for every
 # target, so each export first tries the locks it has.
 _LOCKS: list[bytes] = []
@@ -46,17 +45,9 @@ def serialize_bundle(
     return (Path(filename).name, io.BytesIO(content), "application/octet-stream")
 
 
-def legacy_bundle(name: str) -> tuple[str, io.BytesIO, str]:
-    """A bundle mlbundle 0.2.1 wrote, before bundles carried a lock."""
-    return (f"{name}.mlbundle", io.BytesIO((FIXTURES / f"{name}.mlbundle").read_bytes()), "application/octet-stream")
-
-
 def environment_of(upload: tuple[str, io.BytesIO, str]) -> str:
     """The environment key a run of this upload names."""
-    try:
-        view = mlbundle.inspect(upload[1].getvalue())
-    except mlbundle.InvalidContainerError:
-        return LEGACY
+    view = mlbundle.inspect(upload[1].getvalue())
     return environment_key(view.environment_lock, view.manifest.writer_version)
 
 

@@ -154,7 +154,7 @@ def test_removing_an_environment_deletes_it(builder, tmp_path, lock) -> None:
     assert client.delete(f"/environments/{key}").status_code == 204
 
 
-@pytest.mark.parametrize("key", ["legacy", "abc"])
+@pytest.mark.parametrize("key", ["legacy", "abc", "A" * 64])
 def test_only_a_built_environment_can_be_removed(builder, key) -> None:
     client, _ = builder
     assert client.delete(f"/environments/{key}").status_code == 400

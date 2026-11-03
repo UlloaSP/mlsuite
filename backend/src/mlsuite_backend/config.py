@@ -39,8 +39,6 @@ WORKER_PROCESSES = _positive_int("RUNTIME_WORKER_PROCESSES", 512)
 ARTIFACT_DIRECTORY = Path(tempfile.gettempdir()) / "mlsuite-artifacts"
 # Built environments, one directory per environment key; the builder writes, the runtime reads.
 ENVIRONMENT_ROOT = Path(os.environ.get("RUNTIME_ENVIRONMENT_ROOT") or "/var/lib/mlsuite/environments")
-# The frozen environment that serves bundles written before locks existed (mlbundle 0.2.1).
-LEGACY_PYTHON = Path(os.environ.get("RUNTIME_LEGACY_PYTHON") or "/opt/mlsuite/legacy/bin/python")
 ALLOWLIST_PATH = Path(
     os.environ.get("RUNTIME_ALLOWLIST") or Path(__file__).resolve().parents[2] / "environment-allowlist.toml"
 )

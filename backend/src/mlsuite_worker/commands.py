@@ -73,21 +73,6 @@ def feature_importances(bundle: mlbundle.LoadedBundle) -> list[dict[str, object]
     ]
 
 
-def metadata(bundle: mlbundle.LoadedBundle, filename: str) -> dict[str, object]:
-    """What an upload holds, read by loading it: how bundles without a lock are inspected."""
-    return {
-        "fileName": filename,
-        "type": bundle.kind.value,
-        "specificType": bundle.class_name,
-        "library": bundle.library.value,
-        "features": list(bundle.feature_names),
-        "featureSource": bundle.feature_origin.value,
-        "schema": bundle.schema,
-        "manifest": bundle.manifest.model_dump(mode="json", by_alias=True),
-        "featureImportances": feature_importances(bundle),
-    }
-
-
 def verify(bundle: mlbundle.LoadedBundle, samples: list[dict], checked: bool) -> dict[str, object]:
     """Proves the environment matches the lock and the model predicts its own samples here.
 

@@ -16,8 +16,8 @@ loads pickle or joblib files.
 | --- | --- |
 | Libraries | scikit-learn, XGBoost, CatBoost, ONNX |
 | Tasks | Tabular classification and regression |
-| Bundles | Written with the MLbundle version the runtime pins in `backend/pyproject.toml` (0.2.1 at the time of writing) |
-| scikit-learn | The version the runtime pins (1.9.1 at the time of writing); a bundle from another version is refused |
+| Bundles | Written with MLbundle 0.3 or later, so they carry `pylock.toml`; a bundle without a lock is refused |
+| Environments | The Python, MLbundle release and every locked package must be named in `backend/environment-allowlist.toml` |
 
 The bundle's schema is used as it comes: export with `training_data=` to infer the form fields
 from the training frame, otherwise every feature becomes a number field. Fields map to the model's

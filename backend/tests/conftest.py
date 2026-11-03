@@ -3,10 +3,6 @@ import sys
 from pathlib import Path
 
 # Read when the runtime's configuration is imported, so set before any test imports it.
-_LEGACY = Path(__file__).resolve().parents[1] / "legacy" / ".venv"
-os.environ.setdefault(
-    "RUNTIME_LEGACY_PYTHON", str(_LEGACY / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python"))
-)
 os.environ.setdefault("RUNTIME_WORKERS", "4")
 
 import pytest  # noqa: E402
@@ -14,7 +10,7 @@ import pytest  # noqa: E402
 from mlsuite_backend import artifacts, environments, policy  # noqa: E402
 from mlsuite_backend.artifact_store import ArtifactStore  # noqa: E402
 from mlsuite_backend.config import BUNDLE_CACHE_BYTES  # noqa: E402
-from mlsuite_backend.environments import LEGACY, Environment  # noqa: E402
+from mlsuite_backend.environments import Environment  # noqa: E402
 from tests.client import client  # noqa: E402
 
 
@@ -33,11 +29,7 @@ def built_environments(monkeypatch):
     It holds more than any lock, so these environments skip check_environment; the builder's
     environments, which hold exactly their lock, are proved by test_environment_check.
     """
-    resolve = environments.resolve
-
     def resolved(key: str, root: Path = environments.ENVIRONMENT_ROOT) -> Environment:
-        if key == LEGACY:
-            return resolve(key, root)
         return Environment(key, Path(sys.executable), checked=False)
 
     monkeypatch.setattr(environments, "resolve", resolved)

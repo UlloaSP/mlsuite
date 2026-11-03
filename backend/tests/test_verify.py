@@ -10,7 +10,6 @@ from mlsuite_backend import environments
 from mlsuite_backend.environments import Environment
 from tests.client import client
 from tests.helpers import (
-    legacy_bundle,
     make_catboost_pipeline,
     make_classifier,
     make_onnx_classifier,
@@ -50,12 +49,6 @@ def test_verify_has_no_importances_for_a_model_without_structure() -> None:
     response = _verify(serialize_bundle(make_onnx_classifier(), training_data=frame))
     assert response.status_code == 200, response.text
     assert response.json()["featureImportances"] is None
-
-
-def test_verify_runs_a_bundle_without_a_lock_in_the_legacy_environment() -> None:
-    response = _verify(legacy_bundle("legacy-tree"))
-    assert response.status_code == 200, response.text
-    assert [item["feature"] for item in response.json()["featureImportances"]] == ["age", "income"]
 
 
 def test_verify_refuses_an_environment_that_holds_more_than_the_lock(monkeypatch) -> None:
