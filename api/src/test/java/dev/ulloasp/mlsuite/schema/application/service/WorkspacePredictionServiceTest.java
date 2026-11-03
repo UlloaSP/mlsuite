@@ -75,7 +75,7 @@ class WorkspacePredictionServiceTest {
     private static final Map<String, String> EXPLAIN = Map.of("data", "{\"age\":52}", "traces", "[]");
     private static final RunnableModel FOREST = new RunnableModel(new ModelArtifactReference(11L, "forest.mlbundle",
             "bucket", "key", null, 3L, "abc123"),
-            "legacy", ModelRuntimeState.READY);
+            "e".repeat(64), ModelRuntimeState.READY);
     private static final Map<String, Object> CLASSIFIER = Map.of("kind", "classifier", "output", 0,
             "mapping", List.of("low", "high"), "probabilities", List.of(List.of(0.2, 0.8)), "prediction", "high");
 

@@ -177,6 +177,8 @@ class SchemaRepositoryCatalogTest extends PublicPredictionFixture {
     private void change(String name, SchemaVersion base, SchemaDraftStatus status) {
         SchemaDraft draft = new SchemaDraft(schema, base, name, base.getFormSchema(), List.of());
         draft.setStatus(status);
+        // Publishing records the snapshot a draft became.
+        if (status == SchemaDraftStatus.PUBLISHED) draft.setPublishedVersion(base);
         entityManager.persist(draft);
     }
 

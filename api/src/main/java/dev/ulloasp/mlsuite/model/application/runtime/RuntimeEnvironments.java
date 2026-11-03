@@ -16,7 +16,6 @@ import dev.ulloasp.mlsuite.model.adapter.out.analyzer.RuntimeBuilderClient;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.RuntimeEnvironmentRepository;
 import dev.ulloasp.mlsuite.model.application.upload.BundleInspection;
-import dev.ulloasp.mlsuite.model.domain.model.ModelRuntimeState;
 import dev.ulloasp.mlsuite.model.domain.model.RuntimeEnvironment;
 import lombok.RequiredArgsConstructor;
 
@@ -44,7 +43,6 @@ public class RuntimeEnvironments {
 
     /** Records the environment unless it is known (two uploads may need it at once); returns its key. */
     public String register(BundleInspection.Environment environment) {
-        if (RuntimeEnvironment.LEGACY.equals(environment.key())) return RuntimeEnvironment.LEGACY;
         jdbc.update("""
                 INSERT INTO runtime_environment (environment_key, environment_id, writer_version, python_version,
                     packages, lock_toml, created_at)
@@ -55,17 +53,11 @@ public class RuntimeEnvironments {
         return environment.key();
     }
 
-    /** A model of the legacy environment runs at once; any other once its environment is prepared. */
-    public static ModelRuntimeState initialState(String environmentKey) {
-        return RuntimeEnvironment.LEGACY.equals(environmentKey) ? ModelRuntimeState.READY : ModelRuntimeState.PREPARING;
-    }
-
     /**
      * Once the deleting transaction commits, asks the builder to remove the environment if no
      * model uses it any longer, archived ones included. A failure only leaves the files in place.
      */
     public void releaseWhenUnused(String environmentKey) {
-        if (RuntimeEnvironment.LEGACY.equals(environmentKey)) return;
         Runnable release = () -> {
             try {
                 if (!models.existsByEnvironmentKey(environmentKey)) builder.remove(environmentKey);

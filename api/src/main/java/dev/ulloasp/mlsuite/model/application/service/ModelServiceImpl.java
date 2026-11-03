@@ -22,6 +22,7 @@ import dev.ulloasp.mlsuite.model.application.dto.ModelDto;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
 import dev.ulloasp.mlsuite.model.application.runtime.RuntimeEnvironments;
+import dev.ulloasp.mlsuite.model.domain.model.ModelRuntimeState;
 import dev.ulloasp.mlsuite.model.application.upload.BundleInspection;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelAlreadyExistsException;
@@ -112,9 +113,9 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         model.setFileName(inspection.fileName());
         model.setInputSchema(inspection.schema());
         model.setBundleManifest(inspection.manifest());
-        model.setFeatureImportances(inspection.featureImportances());
         model.setEnvironmentKey(environments.register(inspection.environment()));
-        model.setRuntimeState(RuntimeEnvironments.initialState(model.getEnvironmentKey()));
+        // It runs once its environment is prepared and it has loaded there.
+        model.setRuntimeState(ModelRuntimeState.PREPARING);
         Model saved = storeArtifact(model, artifact, sha256, contentType);
         auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.MODEL_UPLOAD, saved.getId(),
                 AuditDetails.of("name", name, "file", saved.getFileName(), "sha256", sha256));

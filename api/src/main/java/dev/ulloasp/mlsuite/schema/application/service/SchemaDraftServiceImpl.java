@@ -54,7 +54,6 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
     private final SchemaDraftRepository drafts;
     private final SchemaVersionUseCase versionUseCase;
     private final SchemaDraftDiffService merger;
-    private final SchemaDraftPublishedVersionResolver publishedVersions;
     private final WorkspaceAuthorizationService authorization;
     private final SchemaMappingCheck mappingCheck;
     private final AuditLogService auditLog;
@@ -146,13 +145,7 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
         User user = users.requireById(userId);
         Long orgId = requireOperate(userId);
         SchemaDraft draft = requireDraftForUpdate(draftId, orgId);
-        if (draft.getStatus() == SchemaDraftStatus.PUBLISHED) {
-            if (draft.getPublishedVersion() == null) {
-                lockSchema(draft.getSchema().getId(), orgId);
-                draft.setPublishedVersion(publishedVersions.resolve(userId, draft));
-            }
-            return publishedResult(userId, draft);
-        }
+        if (draft.getStatus() == SchemaDraftStatus.PUBLISHED) return publishedResult(userId, draft);
         requireRevision(draft, request.expectedDraftRevision());
         lockSchema(draft.getSchema().getId(), orgId);
         SchemaVersion current = currentVersion(draft.getSchema().getId());

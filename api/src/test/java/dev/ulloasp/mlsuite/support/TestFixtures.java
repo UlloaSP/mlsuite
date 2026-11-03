@@ -40,8 +40,12 @@ public final class TestFixtures {
     }
 
     /** Gives a model the stored artifact every persisted model names. */
+    /** The runtime environment of every model the tests store (db/testdata in the test resources). */
+    public static final String ENVIRONMENT_KEY = "c".repeat(64);
+
     public static Model storedArtifact(Model model, byte[] bytes) {
         String sha256 = ArtifactHash.sha256(bytes);
+        model.setEnvironmentKey(ENVIRONMENT_KEY);
         model.setStorageBucket("test");
         model.setStorageObjectKey("organizations/1/models/" + model.getName() + "/artifacts/" + sha256 + "/model.bin");
         model.setStorageVersionId("v1");

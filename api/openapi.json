@@ -4703,10 +4703,7 @@
             "type": "string"
           },
           "environmentKey": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           },
           "errorJson": {
             "additionalProperties": { },
@@ -6185,9 +6182,6 @@
           "key": {
             "type": "string"
           },
-          "legacy": {
-            "type": "boolean"
-          },
           "packages": {
             "items": {
               "$ref": "#/components/schemas/EnvironmentPackageDto"
@@ -6203,7 +6197,6 @@
         },
         "required": [
           "key",
-          "legacy",
           "packages",
           "pythonVersion",
           "writerVersion"

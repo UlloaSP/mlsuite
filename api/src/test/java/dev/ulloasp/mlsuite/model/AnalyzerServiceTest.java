@@ -168,7 +168,7 @@ class AnalyzerServiceTest {
 
     private RunnableModel artifact() {
         return new RunnableModel(new ModelArtifactReference(11L, "risk.mlbundle", "bucket", "key", null, 3L, "abc123"),
-                "legacy", ModelRuntimeState.READY);
+                "e".repeat(64), ModelRuntimeState.READY);
     }
 
     private User user() {
