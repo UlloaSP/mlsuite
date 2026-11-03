@@ -43,18 +43,18 @@ const route = getRouteApi("/protected/app/superadmin/admin/infrastructure");
 export function AdminInfrastructurePage() {
   const { data: user } = useUser();
   const queryClient = useQueryClient();
-  const { data: overview, isLoading, refetch } = useInfrastructureOverview();
+  const [streamConnected, setStreamConnected] = useState(false);
+  const { data: overview, isLoading, refetch } = useInfrastructureOverview(streamConnected);
   const showLoading = useStableLoading(isLoading);
   const action = useServiceAction();
   const actionDialog = useActionDialog();
   const [requestedService, setRequestedService] = useState<string | null>(null);
   const selectedService = overview ? resolveSelectedService(requestedService, overview) : null;
   const [logLines, setLogLines] = useState<string[]>([]);
-  const [streamConnected, setStreamConnected] = useState(false);
   const navigate = route.useNavigate();
   const socketRef = useRef<WebSocket | null>(null);
   const selectedServiceRef = useRef<string | null>(null);
-  const selectedServiceLogs = useServiceLogsSnapshot(selectedService);
+  const selectedServiceLogs = useServiceLogsSnapshot(selectedService, streamConnected);
   const activeTab = route.useSearch({ select: (search) => search.tab });
   // A tab starts without the previous tab's filters.
   const setActiveTab = (tab: InfraTab) => void navigate({ to: ".", search: { tab } });

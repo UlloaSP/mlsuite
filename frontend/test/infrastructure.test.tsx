@@ -289,6 +289,11 @@ describe("infra helpers", () => {
     await closeTerminalSession("term-1");
 
     expect(infrastructureOverviewQueryOptions().queryKey).toEqual(infrastructureKeys.all);
+    // Read again every few seconds only while the live stream is down.
+    expect(infrastructureOverviewQueryOptions(false).refetchInterval).toBe(5000);
+    expect(infrastructureOverviewQueryOptions(true).refetchInterval).toBe(false);
+    expect(serviceLogsQueryOptions("spring-app", false).refetchInterval).toBe(5000);
+    expect(serviceLogsQueryOptions("spring-app", true).refetchInterval).toBe(false);
     expect(serviceLogsQueryOptions("spring-app").queryKey).toEqual(
       infrastructureKeys.logs("spring-app"),
     );
