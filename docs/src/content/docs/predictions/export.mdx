@@ -41,9 +41,11 @@ spreadsheets open it correctly. One row per inference:
 | `origin`, `created_by` | Where it was made and by whom. |
 | `model_count` | How many models it ran. |
 | `input.<model id>.<feature>` | Each value sent to each model, under the model's own feature names. |
+| `series.<field>` | Each series field's rows, as a JSON array, under the field's display key. |
 | `output.<report>.predicted` | Each built-in report's prediction. |
 | `output.<report>.feedback.<reviewer>` | Each reviewer's assessment of that prediction. |
 | `report.<report>.content` | The content of a report that has review questions. |
 | `report.<report>.<question>.<reviewer>` | Each reviewer's answer to each question. |
 
-Inputs are exported as the model received them, so a one-hot field appears as its 0/1 columns.
+Inputs are exported as the model received them, so a one-hot field appears as its 0/1 columns. A
+series field's rows have their own column because its models may receive only their aggregations.

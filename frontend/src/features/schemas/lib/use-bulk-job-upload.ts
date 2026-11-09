@@ -8,7 +8,10 @@ import { useState } from "react";
 import { toast } from "@/shared/ui/toast";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { parseSpreadsheetPredictionFile } from "@/capabilities/prediction-runtime/data/parse-spreadsheet-prediction-file";
-import { applySchemaRunInputMapping } from "@/capabilities/prediction-runtime/mlform/model-input-mapping";
+import {
+  applySchemaRunInputMapping,
+  withSeriesModelValues,
+} from "@/capabilities/prediction-runtime/mlform/model-input-mapping";
 import type { PredictionPayloadField } from "@/capabilities/prediction-runtime/mlform/shared";
 import { snapshotCatalogQueryOptions } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
 import { prepareSchemaRun } from "@/capabilities/prediction-runtime/sandbox/plugin-sandbox-services";
@@ -61,14 +64,18 @@ export function useBulkJobUpload(bookmarkId: string, version: SchemaVersionDto) 
       const fields = run.fields as unknown as PredictionPayloadField[];
       await startJob({
         schemaVersionId: version.id,
-        rows: parsed.records.map((record) => ({
-          name: record.name,
-          inputData: record.inputs,
-          models: version.bindings.map((binding) => ({
-            modelId: binding.modelId,
-            modelInput: applySchemaRunInputMapping(record.inputs, fields, binding),
-          })),
-        })),
+        rows: parsed.records.map((record) => {
+          // A series column's rows are kept as entered; its models receive what the form sends.
+          const modelValues = withSeriesModelValues(record.inputs, fields);
+          return {
+            name: record.name,
+            inputData: record.inputs,
+            models: version.bindings.map((binding) => ({
+              modelId: binding.modelId,
+              modelInput: applySchemaRunInputMapping(modelValues, fields, binding),
+            })),
+          };
+        }),
       });
       return parsed.records.length;
     },

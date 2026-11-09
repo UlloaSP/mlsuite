@@ -53,6 +53,32 @@ describe("schema run display", () => {
     });
   });
 
+  test("shows and restores a series field's rows, not the aggregation its model received", () => {
+    const rows = [
+      { field1: 1, field2: 100 },
+      { field1: 2, field2: 120 },
+    ];
+    const houses = {
+      fields: [
+        {
+          id: "area_history",
+          kind: "series",
+          label: "Area history",
+          columns: [
+            { id: "field1", kind: "number", label: "Year" },
+            { id: "field2", kind: "number", label: "Area" },
+          ],
+          aggregations: [{ operation: "mean", label: "Mean", source: "field2", mappedTo: "area" }],
+        },
+      ],
+    };
+    const inputData = { area: 110, "Area history": rows };
+    expect(getVisibleSchemaInputs(houses, inputData)).toEqual([
+      { key: "Area history", label: "Area history", value: rows },
+    ]);
+    expect(getSchemaRunPrefillInputs(houses, inputData)).toEqual({ "Area history": rows });
+  });
+
   test("rebuilds visible inputs from ids, labels, or model columns", () => {
     expect(
       getVisibleSchemaInputRecord(schema, {

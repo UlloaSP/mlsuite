@@ -16,8 +16,8 @@ vi.mock("@/capabilities/prediction-runtime/plugins/schema-plugin-catalog", () =>
   snapshotCatalogQueryOptions: () => ({ queryKey: ["catalog"], queryFn: async () => ({}) }),
 }));
 vi.mock("@/capabilities/prediction-runtime/sandbox/plugin-sandbox-services", () => ({
-  prepareSchemaRun: async () => ({
-    fields: [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }],
+  prepareSchemaRun: async (schema: { fields: unknown[] }) => ({
+    fields: schema.fields,
     reports: [],
   }),
 }));
@@ -73,11 +73,11 @@ afterEach(() => vi.useRealTimers());
 
 const JOBS = "GET /api/schema-bookmarks/9/prediction-jobs";
 
-const show = (route: string) =>
-  mount(<SchemaRunBulkUploadButton bookmarkId="9" version={version} />, { route });
+const show = (route: string, shown = version) =>
+  mount(<SchemaRunBulkUploadButton bookmarkId="9" version={shown} />, { route });
 
-async function openDialog() {
-  const view = await show("/predict/9");
+async function openDialog(shown = version) {
+  const view = await show("/predict/9", shown);
   await flush();
   await click(document.body.querySelector("button")!);
   await flush();
@@ -188,6 +188,46 @@ describe("bulk uploads run on the server as jobs", () => {
       { modelId: 2, modelInput: { age: 42 } },
     ]);
     expect(toasts.success).toHaveBeenCalledWith("Bulk upload started: 2 rows run on the server");
+  });
+
+  test("a series column's rows are kept and their aggregations sent to every model", async () => {
+    routes.set(JOBS, () => ({ status: 200, body: [] }));
+    routes.set("POST /api/schema-bookmarks/9/prediction-jobs", () => ({
+      status: 201,
+      body: job({ status: "QUEUED" }),
+    }));
+    const areaHistory = {
+      id: "area_history",
+      kind: "series",
+      label: "Area history",
+      columns: [
+        { id: "field1", kind: "number", label: "Year" },
+        { id: "field2", kind: "number", label: "Area" },
+      ],
+      aggregations: [{ operation: "mean", label: "Mean", source: "field2", mappedTo: "area" }],
+    };
+    const rooms = { id: "rooms", label: "Rooms", kind: "number", mappedTo: "rooms" };
+    await openDialog({ ...version, formSchema: { fields: [rooms, areaHistory] } });
+
+    await upload(
+      'rooms,Area history\n3,"[{""field1"":1,""field2"":100},{""field1"":2,""field2"":120}]"\n',
+    );
+
+    const started = requests.find((request) => request.method === "POST")!;
+    const body = started.body as { rows: { inputData: unknown; models: unknown }[] };
+    expect(body.rows.map((row) => row.inputData)).toEqual([
+      {
+        rooms: 3,
+        "Area history": [
+          { field1: 1, field2: 100 },
+          { field1: 2, field2: 120 },
+        ],
+      },
+    ]);
+    expect(body.rows[0]!.models).toEqual([
+      { modelId: 1, modelInput: { rooms: 3, area: 110 } },
+      { modelId: 2, modelInput: { rooms: 3, area: 110 } },
+    ]);
   });
 
   test("a job the server refuses is reported and nothing runs", async () => {

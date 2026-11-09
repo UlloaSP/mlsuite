@@ -131,6 +131,46 @@ describe("schema run export parity", () => {
     expect(predictedCell([3531.39])).toBe("3531.39");
   });
 
+  test("exports a series field's rows beside the aggregations its model received", () => {
+    const rows = [
+      { field1: 1, field2: 100 },
+      { field1: 2, field2: 120 },
+    ];
+    const houses = schemaVersion({
+      bindings: [binding(1)],
+      formSchema: {
+        fields: [
+          {
+            id: "area_history",
+            kind: "series",
+            label: "Area history",
+            columns: [
+              { id: "field1", kind: "number", label: "Year" },
+              { id: "field2", kind: "number", label: "Area" },
+            ],
+            aggregations: [
+              { operation: "mean", label: "Mean", source: "field2", mappedTo: "area" },
+            ],
+          },
+        ],
+        reports: [],
+      },
+    });
+    const stored = predictionRun({
+      inputData: { area: 110, "Area history": rows },
+      results: [predictionResult({ modelId: 1, modelInput: { area: 110 } })],
+    });
+    const [header, row] = buildSchemaRunExport([stored], houses, [], ";")
+      .content.replace("\uFEFF", "")
+      .split("\n")
+      .map((line) => line.split(";"));
+    expect(row[header.indexOf("input.1.area")]).toBe("110");
+    // RFC 4180 quotes the JSON and doubles its quotes.
+    expect(row[header.indexOf("series.Area history")]).toBe(
+      `"${JSON.stringify(rows).replaceAll('"', '""')}"`,
+    );
+  });
+
   test("exports who made each run and through which door", () => {
     const viaKey = predictionRun({
       ...run,

@@ -3,8 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import type { FieldValidationContext } from "mlform/runtime";
+import { getBuiltinRegistry } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
 import { mappedTarget, targetKey } from "@/capabilities/prediction-runtime/mlform/mapped-to";
-import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
+import { isRecord, type JsonRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 
 export interface BulkPredictionRecord {
   name: string;
@@ -41,6 +43,7 @@ type SchemaField = {
   columns: string[];
   kind: string;
   required: boolean;
+  config: JsonRecord;
 };
 
 const TEXT_KINDS = new Set(["text", "long-text", "date", "category", "single-choice"]);
@@ -74,7 +77,13 @@ const getSchemaFields = (schemaDefinition: unknown): SchemaField[] => {
           )
         : [];
     return [
-      { name, columns: [...new Set([name, ...aliases])], kind, required: field.required === true },
+      {
+        name,
+        columns: [...new Set([name, ...aliases])],
+        kind,
+        required: field.required === true,
+        config: field,
+      },
     ];
   });
 };
@@ -93,6 +102,32 @@ const parseBoolean = (value: string): boolean | null => {
     default:
       return null;
   }
+};
+
+/**
+ * A series cell: its rows as a JSON array, normalized, checked and serialized as the form does
+ * with the rows a member enters, so a run's aggregations come from the same rows.
+ */
+const coerceSeries = (
+  raw: unknown,
+  text: string,
+  field: SchemaField,
+): { value?: unknown; error?: string } => {
+  let parsed: unknown;
+  try {
+    parsed = typeof raw === "string" ? JSON.parse(text) : raw;
+  } catch {
+    parsed = undefined;
+  }
+  if (!Array.isArray(parsed)) return { error: `"${field.name}" must be a JSON array` };
+  const series = getBuiltinRegistry().getField("series")!;
+  const config = field.config as never;
+  const rows = series.normalizeValue?.(parsed, config) ?? parsed;
+  const context = { field: config, values: {}, submitCount: 0, validationVersion: 0 };
+  const [problem] = series.validateSync?.(rows, config, context as FieldValidationContext) ?? [];
+  return problem
+    ? { error: `"${field.name}": ${problem}` }
+    : { value: series.serializeValue?.(rows, config) ?? rows };
 };
 
 const coerceValue = (raw: unknown, field: SchemaField): { value?: unknown; error?: string } => {
@@ -121,16 +156,7 @@ const coerceValue = (raw: unknown, field: SchemaField): { value?: unknown; error
       }),
     };
   }
-  if (field.kind === "series") {
-    try {
-      const parsed: unknown = typeof raw === "string" ? JSON.parse(text) : raw;
-      return Array.isArray(parsed)
-        ? { value: parsed }
-        : { error: `"${field.name}" must be a JSON array` };
-    } catch {
-      return { error: `"${field.name}" must be a JSON array` };
-    }
-  }
+  if (field.kind === "series") return coerceSeries(raw, text, field);
   if (TEXT_KINDS.has(field.kind)) return { value: text };
   if (text.startsWith("{") || text.startsWith("[")) {
     try {

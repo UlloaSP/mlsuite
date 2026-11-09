@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ReportConfig, Transport } from "mlform/runtime";
 import type { ReportResult } from "mlform/schema";
-import { createFanoutTransport } from "mlform/transport";
+import { createFanoutTransport, type SubmitRequest } from "mlform/transport";
 import { appFetch, json } from "@/shared/api/http";
 import { retryWhileBusy } from "@/shared/api/busy-retry";
 import type { WorkspacePredictionDto, WorkspacePredictionRequest } from "@/shared/api/openapi.gen";
@@ -35,6 +35,28 @@ export type SchemaRunTarget = {
   schemaVersionId: number;
 };
 
+const requestRecord = (value: unknown): JsonRecord => (isRecord(value) ? value : {});
+
+/**
+ * The form's values as a run keeps them: the values the form gives its models and, under its
+ * display key, each series field's rows, which its models may receive only as aggregations.
+ */
+const runInputData = (
+  request: SubmitRequest,
+  fields: readonly PredictionPayloadField[],
+): JsonRecord => {
+  const series = new Set(
+    fields.filter((field) => field.kind === "series").map((field) => field.id),
+  );
+  const values = { ...requestRecord(request.modelValues) };
+  for (const input of request.inputs) {
+    if (series.has(input.fieldId) && input.displayKey) {
+      values[input.displayKey] = input.serializedValue;
+    }
+  }
+  return values;
+};
+
 /**
  * The server runs the model and answers with the result as a saved run will store it, sealed;
  * a record the model refuses comes back as a failed result. A run the server's queue could not
@@ -43,17 +65,17 @@ export type SchemaRunTarget = {
 const runBinding = (
   target: SchemaRunTarget,
   binding: SchemaRunBinding,
-  modelValues: JsonRecord,
+  form: SubmitRequest,
   fields: readonly PredictionPayloadField[],
-  signal?: AbortSignal,
 ): Promise<WorkspacePredictionDto> => {
   const request: WorkspacePredictionRequest = {
     schemaVersionId: target.schemaVersionId,
     modelId: binding.modelId,
-    modelInput: applySchemaRunInputMapping(modelValues, fields, binding),
+    modelInput: applySchemaRunInputMapping(requestRecord(form.modelValues), fields, binding),
     // The form's values the record was mapped from: the seal vouches for them, and the saved run keeps them.
-    inputData: modelValues,
+    inputData: runInputData(form, fields),
   };
+  const { signal } = form;
   return retryWhileBusy(
     () =>
       appFetch<WorkspacePredictionDto>(
@@ -97,8 +119,6 @@ const reportResults = (
       : { backend, mappedTo, status: "pending", context };
   });
 
-const requestRecord = (value: unknown): JsonRecord => (isRecord(value) ? value : {});
-
 /** Runs a stored schema's form against its bound models; `schema` is the form as stored. */
 export const createSchemaRunTransport = (
   target: SchemaRunTarget,
@@ -110,8 +130,7 @@ export const createSchemaRunTransport = (
   return createFanoutTransport({
     targets: bindings,
     failurePolicy: "fail-fast",
-    submit: (binding, request) =>
-      runBinding(target, binding, requestRecord(request.modelValues), fields, request.signal),
+    submit: (binding, request) => runBinding(target, binding, request, fields),
     merge: (outcomes, request) => {
       const reports = request.reports as readonly ReportConfig[];
       const canonical = requestRecord(request.modelValues);

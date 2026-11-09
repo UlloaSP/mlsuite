@@ -7,7 +7,11 @@ import {
   toSchemaRunFieldValues,
 } from "@/features/schemas/lib/bulk-upload";
 import { parseCsvPredictionFile } from "@/capabilities/prediction-runtime/data/parse-csv-prediction-file";
-import { schemaVersion, workspacePrediction } from "./support/api-fixtures";
+import {
+  applySchemaRunInputMapping,
+  withSeriesModelValues,
+} from "@/capabilities/prediction-runtime/mlform/model-input-mapping";
+import { predictionRequest, schemaVersion, workspacePrediction } from "./support/api-fixtures";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -28,6 +32,22 @@ const points = [
   { field1: 1, field2: 2 },
   { field1: 3, field2: 4 },
 ];
+/** A series whose rows no model reads: its model receives only their mean, as `area`. */
+const areaHistory = {
+  id: "area_history",
+  kind: "series",
+  label: "Area history",
+  columns: [
+    { id: "field1", kind: "number", label: "Year" },
+    { id: "field2", kind: "number", label: "Area" },
+  ],
+  aggregations: [{ operation: "mean", label: "Mean", source: "field2", mappedTo: "area" }],
+};
+const areaRows = [
+  { field1: 1, field2: 100 },
+  { field1: 2, field2: 120 },
+];
+const AREA_ROWS_CELL = `"${JSON.stringify(areaRows).replaceAll('"', '""')}"`;
 
 describe("series runtime contract", () => {
   test("dates keep their declared model serialization", async () => {
@@ -108,32 +128,86 @@ describe("series runtime contract", () => {
         transport: runtime.transport,
       });
       const result = await form.submit();
+      const modelInputs = [
+        raw ? { rows_a: field.defaultValue, "stats.mean": 3 } : { "stats.mean": 3 },
+        raw ? { rows_b: field.defaultValue, "0": 3 } : { "0": 3 },
+      ];
       expect(result.raw).toMatchObject({
         results: [
-          {
-            modelId: 1,
-            modelInput: raw ? { rows_a: field.defaultValue, "stats.mean": 3 } : { "stats.mean": 3 },
-          },
-          { modelId: 2, modelInput: raw ? { rows_b: field.defaultValue, "0": 3 } : { "0": 3 } },
+          { modelId: 1, modelInput: modelInputs[0] },
+          { modelId: 2, modelInput: modelInputs[1] },
         ],
       });
+      // A bulk upload stores the rows under the field's display key and gives each model the same record.
+      const bulkValues = withSeriesModelValues(
+        { History: field.defaultValue },
+        runtime.normalizedFields,
+      );
+      expect(
+        [1, 2].map((modelId) =>
+          applySchemaRunInputMapping(bulkValues, runtime.normalizedFields, {
+            modelId,
+            modelName: modelId === 1 ? "Model A" : "Model B",
+          }),
+        ),
+      ).toEqual(modelInputs);
       form.dispose();
     },
   );
 
-  test("uses numeric aggregate targets in bulk upload", () => {
-    const field = {
-      ...series,
-      columns: [{ id: "value", kind: "number", label: "Value" }],
-      aggregations: [{ operation: "mean", label: "Mean", source: "value", mappedTo: "mean" }],
+  test("a run keeps a series field's rows while its model receives their aggregations", async () => {
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => workspacePrediction(init));
+    vi.stubGlobal("fetch", fetchMock);
+    const rooms = {
+      id: "rooms",
+      kind: "number",
+      label: "Rooms",
+      mappedTo: "rooms",
+      defaultValue: 3,
     };
-    const version = schemaVersion({ formSchema: { fields: [field], reports: [] } });
+    const runtime = schemaRunRuntime({
+      schema: { fields: [rooms, { ...areaHistory, defaultValue: areaRows }], reports: [] },
+      bindings: [{ modelId: 1, modelName: "houses" }],
+    });
+    const form = createForm({
+      schema: runtime.formSchema,
+      registry: runtime.registry,
+      transport: runtime.transport,
+    });
+    await form.submit();
+    expect(predictionRequest(fetchMock.mock.calls[0]![1])).toEqual({
+      schemaVersionId: 1,
+      modelId: 1,
+      modelInput: { rooms: 3, area: 110 },
+      inputData: { rooms: 3, area: 110, "Area history": areaRows },
+    });
+    form.dispose();
+  });
+
+  test("bulk upload reads a series field's rows from its own column, not its aggregations'", () => {
+    const version = schemaVersion({ formSchema: { fields: [areaHistory], reports: [] } });
+    const schema = getModelInputBulkSchema(version);
+    const parsed = parseCsvPredictionFile(`name,Area history\ncase,${AREA_ROWS_CELL}`, schema);
+    expect(parsed.skipped).toEqual([]);
+    expect(parsed.records[0]!.inputs).toEqual({ "Area history": areaRows });
+    expect(parseCsvPredictionFile("name,area\ncase,110", schema).skipped).toEqual([
+      { line: 1, reason: "Missing input columns: Area history" },
+      { line: 1, reason: "Unknown input columns: area" },
+    ]);
+  });
+
+  test("bulk upload skips series values the form would refuse", () => {
+    const version = schemaVersion({ formSchema: { fields: [areaHistory], reports: [] } });
     const parsed = parseCsvPredictionFile(
-      'name,history,mean\ncase,"[{""value"":2}]",2',
+      'name,Area history\nno-area,"[{""field1"":1}]"\nnot-rows,"{}"\nbroken,[',
       getModelInputBulkSchema(version),
     );
-    expect(parsed.skipped).toEqual([]);
-    expect(parsed.records[0].inputs).toEqual({ history: [{ value: 2 }], mean: 2 });
+    expect(parsed.records).toEqual([]);
+    expect(parsed.skipped).toEqual([
+      { line: 2, name: "no-area", reason: expect.stringMatching(/^"Area history": .*Area/) },
+      { line: 3, name: "not-rows", reason: '"Area history" must be a JSON array' },
+      { line: 4, name: "broken", reason: '"Area history" must be a JSON array' },
+    ]);
   });
 
   test.each([

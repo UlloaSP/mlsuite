@@ -31,6 +31,7 @@ public final class PublicForm {
     private static final String MODEL_ROUTING = "mappedTo";
     private static final String STORED_VALUE = "defaultValue";
     private static final String ONE_HOT = "onehot-category";
+    private static final String SERIES = "series";
     private static final String QUESTIONNAIRE = "feedbackQuestionnaire";
     /** Report keys that belong to the workspace: editor bookkeeping. The questionnaire is asked of visitors too. */
     private static final Set<String> PRIVATE_REPORT_KEYS = Set.of(MODEL_ROUTING, "id", "source");
@@ -50,7 +51,8 @@ public final class PublicForm {
      * A value of a run and where it goes: a visitor's, sent under {@code key} and stored under
      * the field's {@code displayKey} as the workspace stores it, or the schema's own. A one-hot
      * field sends one key per option; the option whose key is active is the field's stored
-     * value, {@code optionValue}.
+     * value, {@code optionValue}. A series field's rows may route to no model ({@code mappedTo}
+     * null) and are stored all the same; its aggregations route to models with no display key.
      */
     private record InputRoute(Object mappedTo, String key, String displayKey, Object optionValue, Object stored) {
     }
@@ -71,8 +73,10 @@ public final class PublicForm {
         for (Object field : storedFields) {
             if (field instanceof Map<?, ?> config && Boolean.TRUE.equals(config.get("hidden"))) {
                 routeStoredValue(config);
+            } else if (field instanceof Map<?, ?> config) {
+                shownFields.add(shownField(config));
             } else {
-                shownFields.add(withInputKeys(field, field instanceof Map<?, ?> config ? displayKey(config) : null, null));
+                shownFields.add(field);
             }
         }
         this.schema = Map.of(FIELDS, Collections.unmodifiableList(shownFields), REPORTS, reports);
@@ -156,9 +160,27 @@ public final class PublicForm {
     }
 
     /**
+     * A field a visitor fills, its routes replaced by input keys. A series field's rows are what the
+     * visitor entered even when its models receive only their aggregations, so they are always sent,
+     * under a key of their own that no model reads, and stored.
+     */
+    private Object shownField(Map<?, ?> field) {
+        String displayKey = displayKey(field);
+        Object shown = withInputKeys(field, displayKey, null);
+        if (!SERIES.equals(field.get("kind")) || isRouting(field.get(MODEL_ROUTING))
+                || !(shown instanceof Map<?, ?> copy)) {
+            return shown;
+        }
+        Map<Object, Object> series = new LinkedHashMap<>(copy);
+        series.put(MODEL_ROUTING, inputKey(null, displayKey, null));
+        return series;
+    }
+
+    /**
      * Options of a field route to models too, so the key is replaced at every depth. Every key
      * of a field is stored under the field's display key: a one-hot field's options all carry
-     * the one chosen value.
+     * the one chosen value. A series field's aggregations are model features computed from its
+     * rows, not values of the field, so they are routed but not stored.
      */
     private Object withInputKeys(Object value, String displayKey, Object optionValue) {
         if (value instanceof List<?> items) {
@@ -170,18 +192,25 @@ public final class PublicForm {
                 if ("options".equals(key) && entry instanceof List<?> options) {
                     copy.put(key, options.stream().map(option -> withInputKeys(option, displayKey,
                             option instanceof Map<?, ?> config ? optionValue(config) : null)).toList());
+                } else if ("aggregations".equals(key)) {
+                    copy.put(key, withInputKeys(entry, null, null));
                 } else if (!MODEL_ROUTING.equals(key)) {
                     copy.put(key, withInputKeys(entry, displayKey, optionValue));
                 } else if (isRouting(entry)) {
-                    String inputKey = "in" + inputKeys.size();
-                    inputKeys.add(inputKey);
-                    inputRoutes.add(new InputRoute(entry, inputKey, displayKey, optionValue, null));
-                    copy.put(key, inputKey);
+                    copy.put(key, inputKey(entry, displayKey, optionValue));
                 }
             });
             return copy;
         }
         return value;
+    }
+
+    /** A new input key, routed to the features of {@code mappedTo} (none when null) and stored under {@code displayKey}. */
+    private String inputKey(Object mappedTo, String displayKey, Object optionValue) {
+        String inputKey = "in" + inputKeys.size();
+        inputKeys.add(inputKey);
+        inputRoutes.add(new InputRoute(mappedTo, inputKey, displayKey, optionValue, null));
+        return inputKey;
     }
 
     private static Object optionValue(Map<?, ?> option) {

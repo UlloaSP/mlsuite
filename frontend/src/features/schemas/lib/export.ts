@@ -4,6 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { isBuiltinReportKind } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
+import { resolveDisplayKey } from "@/capabilities/prediction-runtime/mlform/display-key";
+import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { csvEscape, toCell } from "@/capabilities/prediction-runtime/data/export-csv";
 import {
   builtinPrediction,
@@ -99,6 +101,18 @@ const getSchemaRunModelInputValues = (run: PredictionRunDto): Map<string, unknow
     return values;
   }, new Map());
 
+/**
+ * The display keys of the shown series fields: a run keeps their rows under these, and their
+ * models may receive only aggregations of them, so the rows have columns of their own.
+ */
+const getSeriesKeys = (version: SchemaVersionDto): string[] =>
+  (Array.isArray(version.formSchema.fields) ? version.formSchema.fields : [])
+    .filter(isRecord)
+    .filter((field) => field.kind === "series" && field.hidden !== true)
+    .flatMap((field) => resolveDisplayKey(field) ?? []);
+
+const seriesColumn = (key: string): string => `series.${key}`;
+
 export const buildSchemaRunExport = (
   runs: readonly PredictionRunDto[],
   version: SchemaVersionDto,
@@ -106,6 +120,7 @@ export const buildSchemaRunExport = (
   delimiter = ",",
 ): { content: string; fileName: string } => {
   const inputLabels = getSchemaRunModelInputColumns(runs);
+  const seriesKeys = getSeriesKeys(version);
   const displayReports = runs.flatMap((run) =>
     run.results.flatMap((result) => getSchemaResultReports(version, result)),
   );
@@ -142,6 +157,7 @@ export const buildSchemaRunExport = (
     "created_by",
     "model_count",
     ...inputLabels,
+    ...seriesKeys.map(seriesColumn),
     ...outputHeaders,
     ...reportHeaders,
   ];
@@ -195,6 +211,7 @@ export const buildSchemaRunExport = (
       run.createdByName || run.createdByEmail || "",
       String(run.results.length),
       ...inputLabels.map((label) => toCell(inputs.get(label))),
+      ...seriesKeys.map((key) => toCell(run.inputData[key])),
       ...outputHeaders.map(
         (label) => builtInReportValues.get(label) ?? outputFeedback.get(label) ?? "",
       ),
