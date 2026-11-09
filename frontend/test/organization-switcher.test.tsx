@@ -5,6 +5,7 @@ import { beforeEach, expect, test, vi } from "vite-plus/test";
 import { OrganizationMenuContent } from "@/app/components/OrganizationMenuContent";
 import type { OrganizationDto, WorkspaceCurrentContextDto } from "@/shared/api/openapi.gen";
 import { mount } from "./support/dom";
+import { unhandledRejections } from "./support/unhandled-rejections";
 
 const organization = (id: number, name: string): OrganizationDto =>
   ({ id, name, kind: "TEAM", slug: name.toLowerCase(), logoUrl: null }) as OrganizationDto;
@@ -78,6 +79,21 @@ test("lists the member's organizations as menu entries and switches on choosing 
     document.querySelectorAll<HTMLElement>('[role="menuitem"]')[1]!.click();
   });
   expect(catalog.select).toHaveBeenCalledWith(9);
+});
+
+test("a refused switch stays where it is and raises nothing unhandled", async () => {
+  // The mutation has already told the member why.
+  catalog.select.mockRejectedValueOnce(new Error("You are no longer a member."));
+  await openMenu();
+
+  const unhandled = await unhandledRejections(async () => {
+    await act(async () => {
+      document.querySelectorAll<HTMLElement>('[role="menuitem"]')[1]!.click();
+    });
+  });
+
+  expect(catalog.select).toHaveBeenCalledWith(9);
+  expect(unhandled).toEqual([]);
 });
 
 test("offers search and fetches the next page near the end when memberships exceed a page", async () => {

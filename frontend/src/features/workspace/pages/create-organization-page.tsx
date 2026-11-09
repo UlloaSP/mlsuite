@@ -79,9 +79,11 @@ export function CreateOrganizationPage({ ownerChoice }: Props) {
         action: {
           label: "Switch to it",
           onClick: () => {
-            void selectOrganization.mutateAsync(created.id).then(() => {
-              void navigate({ to: "/home" });
-            });
+            // A refused switch stays put; the mutation has shown why.
+            void selectOrganization.mutateAsync(created.id).then(
+              () => navigate({ to: "/home" }),
+              () => undefined,
+            );
           },
         },
       });

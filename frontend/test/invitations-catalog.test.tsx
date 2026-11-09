@@ -4,6 +4,7 @@ import { act } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { InvitationCatalog } from "@/features/workspace/components/InvitationCatalog";
 import { changeValue, click, mount, searchDelay } from "./support/dom";
+import { unhandledRejections } from "./support/unhandled-rejections";
 const hooks = vi.hoisted(() => ({ mutate: vi.fn(), bulk: vi.fn() }));
 vi.mock("@/features/workspace/api/invitation.mutations", () => ({
   useBulkRevokeInvitationsMutation: () => ({ mutateAsync: hooks.bulk }),
@@ -123,6 +124,22 @@ test("keeps selection while appending pages and clears it when searching", async
   await settle();
   expect(host.textContent).not.toContain("Bulk revoke");
 });
+test("a refused bulk revoke keeps the selection and raises nothing unhandled", async () => {
+  // The mutation has already told the member why.
+  hooks.bulk.mockRejectedValue(new Error("Revoking failed."));
+  const host = await render("", true);
+  await click(host.querySelector('input[type="checkbox"]')!);
+
+  const unhandled = await unhandledRejections(async () => {
+    await click("Bulk revoke (1)", host);
+    await settle();
+  });
+
+  expect(hooks.bulk).toHaveBeenCalledWith([1]);
+  expect(unhandled).toEqual([]);
+  expect(host.textContent).toContain("Bulk revoke (1)");
+});
+
 test("offers resend, revoke and selection only on the invitations the API lets close", async () => {
   const invites = ["PENDING", "EXPIRED", "ACCEPTED", "DECLINED", "REVOKED"].map(
     (status, index) => ({

@@ -101,9 +101,11 @@ export function YourOrganizationsPage() {
                       size="sm"
                       disabled={selectOrganization.isPending}
                       onClick={() => {
-                        void selectOrganization.mutateAsync(organization.id).then(() => {
-                          void navigate({ to: "/home" });
-                        });
+                        // A refused switch stays put; the mutation has shown why.
+                        void selectOrganization.mutateAsync(organization.id).then(
+                          () => navigate({ to: "/home" }),
+                          () => undefined,
+                        );
                       }}
                     >
                       Switch

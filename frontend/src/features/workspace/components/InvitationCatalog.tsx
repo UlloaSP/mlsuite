@@ -85,7 +85,13 @@ export function InvitationCatalog({
           <AppButton
             variant="danger"
             disabled={bulkRevoke.isPending}
-            onClick={() => void bulkRevoke.mutateAsync(selected).then(() => setSelected([]))}
+            onClick={() =>
+              // The mutation has shown why it failed; the selection stays for a retry.
+              void bulkRevoke.mutateAsync(selected).then(
+                () => setSelected([]),
+                () => undefined,
+              )
+            }
           >
             Bulk revoke ({selected.length})
           </AppButton>

@@ -49,12 +49,16 @@ export function InviteForm({
     void onSubmit({
       email: candidate.email,
       roleDefinitionId: selectedRoleId,
-    }).then(() => {
-      setCandidate(null);
-      setSearch("");
-      setRoleSearch("");
-      setPickedRole(undefined);
-    });
+    }).then(
+      () => {
+        setCandidate(null);
+        setSearch("");
+        setRoleSearch("");
+        setPickedRole(undefined);
+      },
+      // The mutation has shown why; the choice stays for a retry.
+      () => undefined,
+    );
   };
 
   if (noRoles) return <AppCopy>No assignable roles available.</AppCopy>;
