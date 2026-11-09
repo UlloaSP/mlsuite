@@ -126,23 +126,25 @@ export function InferencesPage({
         }
       />
     ),
-    renderActions: ({ item }) =>
-      canDelete || canManageReviews ? (
-        <InferenceActionsMenu
-          canDelete={canDelete}
-          canManageReviews={canManageReviews}
-          disabled={deletion.removingOne}
-          inferenceName={item.name}
-          onDelete={() => void deletion.remove(item)}
-          onReviewStatus={() =>
-            navigate({
-              to: "/inferences/$inferenceId",
-              params: { inferenceId: String(item.id) },
-              search: { tab: "reviews", section: "reviews" },
-            })
-          }
-        />
-      ) : null,
+    renderActions:
+      canDelete || canManageReviews
+        ? ({ item }) => (
+            <InferenceActionsMenu
+              canDelete={canDelete}
+              canManageReviews={canManageReviews}
+              disabled={deletion.removingOne}
+              inferenceName={item.name}
+              onDelete={() => void deletion.remove(item)}
+              onReviewStatus={() =>
+                navigate({
+                  to: "/inferences/$inferenceId",
+                  params: { inferenceId: String(item.id) },
+                  search: { tab: "reviews", section: "reviews" },
+                })
+              }
+            />
+          )
+        : undefined,
   });
 
   const body = showLoading ? (

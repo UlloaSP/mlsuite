@@ -12,9 +12,12 @@ import { FOCUS_RING } from "@/shared/ui/focus-ring";
 const ROW_HEIGHT = 44;
 const OVERSCAN = 12;
 
-// The name column stays in view while the data scrolls sideways.
+// The row actions and the name beside them stay in view while the data scrolls sideways.
+const STICKY_COLUMNS = new Set(["actions", "name"]);
 const stickyClass = (columnId: string) =>
-  columnId === "name" ? "sticky left-0 z-[1] border-r border-line" : "";
+  STICKY_COLUMNS.has(columnId)
+    ? cx("sticky z-[1]", columnId === "name" && "border-r border-line")
+    : "";
 
 type Props = {
   table: InferenceReactTable;
@@ -57,6 +60,13 @@ export function InferenceTable({
       ].sort((a, b) => a - b),
   });
   const width = table.getTotalSize();
+  // The name sticks just right of the actions column, which sticks to the edge.
+  const stickyLeft = (columnId: string) =>
+    STICKY_COLUMNS.has(columnId)
+      ? columnId === "name"
+        ? (table.getColumn("actions")?.getSize() ?? 0)
+        : 0
+      : undefined;
   useLoadMoreNearEnd({
     scrollRef,
     lastVisible: virtualizer.range?.endIndex ?? -1,
@@ -99,7 +109,7 @@ export function InferenceTable({
                     <th
                       key={header.id}
                       colSpan={header.colSpan}
-                      style={{ width: header.getSize() }}
+                      style={{ width: header.getSize(), left: stickyLeft(header.column.id) }}
                       aria-sort={
                         sorted === "asc"
                           ? "ascending"
@@ -109,7 +119,9 @@ export function InferenceTable({
                       }
                       className={cx(
                         "flex h-9 shrink-0 items-center bg-surface-subtle px-3 text-left text-xs font-semibold text-fg-secondary",
-                        header.subHeaders.length > 0 && "border-l border-line first:border-l-0",
+                        header.subHeaders.length > 0 &&
+                          header.column.id !== SUMMARY_GROUP_ID &&
+                          "border-l border-line",
                         stickyClass(header.column.id),
                       )}
                     >
@@ -169,11 +181,12 @@ export function InferenceTable({
                 {row.getVisibleCells().map((cell) => (
                   <td
                     key={cell.id}
-                    style={{ width: cell.column.getSize() }}
+                    style={{ width: cell.column.getSize(), left: stickyLeft(cell.column.id) }}
                     className={cx(
                       "flex min-w-0 shrink-0 items-center px-3 text-fg",
                       stickyClass(cell.column.id),
-                      cell.column.id === "name" && "bg-surface group-hover:bg-surface-hover",
+                      STICKY_COLUMNS.has(cell.column.id) &&
+                        "bg-surface group-hover:bg-surface-hover",
                     )}
                   >
                     <table.FlexRender cell={cell} />

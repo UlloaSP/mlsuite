@@ -92,7 +92,11 @@ export function useInferenceTable({
   renderName,
   renderActions,
 }: Options) {
-  const columns = useMemo(() => buildInferenceColumns(dataColumns), [dataColumns]);
+  const withActions = renderActions !== undefined;
+  const columns = useMemo(
+    () => buildInferenceColumns(dataColumns, withActions),
+    [dataColumns, withActions],
+  );
   const [columnVisibility, setColumnVisibility] = useStoredColumnVisibility(
     `mlsuite:inference-columns:${visibilityKey}`,
     scoped ? { schema: false } : {},
