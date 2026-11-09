@@ -9,6 +9,7 @@ import { ReviewSnapshotSelect } from "./ReviewSnapshotSelect";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import { type ReviewCandidate, useCreateReviewMutation } from "./review-creation-api";
 import { ReviewSelectionCatalog } from "./ReviewSelectionCatalog";
+import { defaultReviewExpiryDate, reviewExpiryInstant } from "./review-expiry";
 
 type Props = {
   candidates: ReviewCandidate[];
@@ -16,12 +17,6 @@ type Props = {
   onClose: () => void;
   /** The review was created; the dialog is done. */
   onCreated: () => void;
-};
-
-const defaultExpiryDate = () => {
-  const date = new Date();
-  date.setDate(date.getDate() + 30);
-  return date.toISOString().slice(0, 10);
 };
 
 export function ReviewCreationDialog({ candidates, organizationId, onClose, onCreated }: Props) {
@@ -36,7 +31,7 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose, onCr
     selectGroup,
     selectBookmark,
   } = useReviewRunSelection(candidates);
-  const [expiresAt, setExpiresAt] = useState(defaultExpiryDate);
+  const [expiresAt, setExpiresAt] = useState(() => defaultReviewExpiryDate());
   const [selectedReviewerIds, setSelectedReviewerIds] = useState<Set<number>>(new Set());
   const createReview = useCreateReviewMutation(organizationId);
 
@@ -64,7 +59,7 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose, onCr
         versionId,
         runIds,
         reviewerIds: [...selectedReviewerIds],
-        expiresAt: new Date(`${expiresAt}T23:59:59.000Z`).toISOString(),
+        expiresAt: reviewExpiryInstant(expiresAt),
       });
       toast.success("Review created");
       onCreated();
