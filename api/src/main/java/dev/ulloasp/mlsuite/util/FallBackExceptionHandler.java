@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.util.DisconnectedClientHelper;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -24,6 +25,12 @@ public class FallBackExceptionHandler {
 
     @ExceptionHandler(Throwable.class) // absolutely everything
     public ResponseEntity<ErrorDto> handleFallback(Throwable ex, HttpServletRequest req) {
+        // A client that went away (a broken pipe, an aborted or unusable response) is not a server
+        // error, and nothing can be written to it: the request is left handled with no body.
+        if (DisconnectedClientHelper.isClientDisconnectedException(ex)) {
+            log.debug("Client went away during {} {}: {}", req.getMethod(), req.getRequestURI(), ex.toString());
+            return null;
+        }
         // The caller is told nothing of the cause, so the log is the only place it is kept.
         log.error("Unexpected error on {} {}", req.getMethod(), req.getRequestURI(), ex);
         var status = HttpStatus.INTERNAL_SERVER_ERROR;
