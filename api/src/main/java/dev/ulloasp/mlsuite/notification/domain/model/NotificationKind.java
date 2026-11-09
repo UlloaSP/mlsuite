@@ -17,7 +17,7 @@ public enum NotificationKind {
     MODEL_READY(NotificationTargetType.MODEL),
     /** modelName, reason. */
     MODEL_FAILED(NotificationTargetType.MODEL),
-    /** inviterName, roleName. */
+    /** inviterName, roleName; answer (ACCEPTED or DECLINED) once the invitee answered it. */
     INVITATION_RECEIVED(NotificationTargetType.INVITATION),
     /** inviteeName. */
     INVITATION_ACCEPTED(NotificationTargetType.INVITATION),

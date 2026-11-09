@@ -195,6 +195,31 @@ describe("the inbox", () => {
     expect(buttonByText("Accept")).toBeUndefined();
   });
 
+  test.each([
+    ["ACCEPTED", "Accepted"],
+    ["DECLINED", "Declined"],
+  ])("an invitation the invitee answered %s says so", async (answer, badge) => {
+    const { host } = await showInbox({
+      notifications: [
+        notification({
+          kind: "INVITATION_RECEIVED",
+          targetType: "INVITATION",
+          targetId: "3",
+          readAt: "2026-10-28T10:00:00Z",
+          payload: {
+            organizationName: "Cardio Lab",
+            inviterName: "Ada",
+            roleName: "Member",
+            answer,
+          },
+        }),
+      ],
+    });
+
+    expect(host.textContent).toContain(badge);
+    expect(host.textContent).not.toContain("No longer open");
+  });
+
   test("an invitation is not called closed while the waiting ones cannot be read", async () => {
     failing.add("/api/invitations/pending/catalog");
     const { host } = await showInbox({

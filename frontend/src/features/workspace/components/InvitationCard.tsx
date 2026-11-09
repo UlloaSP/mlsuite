@@ -8,6 +8,13 @@ import type { InvitationDto } from "@/shared/api/openapi.gen";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: "short" });
 
+/** Only an open invitation has an expiry to tell; an answered or revoked one has its status alone. */
+const expiry = (invite: InvitationDto): string | null => {
+  const date = dateFormatter.format(Date.parse(invite.expiresAt));
+  if (invite.status === "PENDING") return `Expires ${date}`;
+  return invite.status === "EXPIRED" ? `Expired ${date}` : null;
+};
+
 export function InvitationCard({
   invite,
   canManage,
@@ -38,7 +45,7 @@ export function InvitationCard({
       metadata={
         <>
           <RoleBadge value={invite.roleDefinition.name} />
-          <span>Expires {dateFormatter.format(Date.parse(invite.expiresAt))}</span>
+          {expiry(invite) ? <span>{expiry(invite)}</span> : null}
         </>
       }
       details={<StatusBadge value={invite.status} />}

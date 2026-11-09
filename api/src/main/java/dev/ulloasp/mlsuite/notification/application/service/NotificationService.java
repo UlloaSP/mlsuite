@@ -20,7 +20,6 @@ import dev.ulloasp.mlsuite.notification.application.port.in.NotificationUseCase;
 import dev.ulloasp.mlsuite.notification.domain.exception.NotificationNotFoundException;
 import dev.ulloasp.mlsuite.notification.domain.model.Notification;
 import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
-import dev.ulloasp.mlsuite.notification.domain.model.NotificationTargetType;
 import dev.ulloasp.mlsuite.util.CatalogPages;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
 import dev.ulloasp.mlsuite.util.CatalogValues;
@@ -63,10 +62,16 @@ public class NotificationService implements NotificationUseCase {
                 .forEach(recipient -> events.publishEvent(new NotificationsChanged(recipient)));
     }
 
-    /** What told the recipient about the target was dealt with: it stops counting as unread. */
+    /**
+     * The recipient answered what they were told about (an invitation): what told them stops
+     * counting as unread and keeps their answer under {@code answer}, for the inbox to show.
+     */
     @Transactional(propagation = Propagation.MANDATORY)
-    public void markTargetRead(Long recipientUserId, NotificationTargetType targetType, String targetId) {
-        notifications.markTargetRead(recipientUserId, targetType, targetId, now());
+    public void recordAnswer(Long recipientUserId, NotificationKind kind, String targetId, String answer) {
+        List<Notification> told = notifications.findByRecipientUserIdAndKindAndTargetId(recipientUserId, kind, targetId);
+        OffsetDateTime at = now();
+        told.forEach(notification -> notification.answer(answer, at));
+        if (!told.isEmpty()) events.publishEvent(new NotificationsChanged(recipientUserId));
     }
 
     /** Newest first; {@code filter} is {@code unread} or {@code all}. */

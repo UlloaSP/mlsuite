@@ -27,7 +27,6 @@ import dev.ulloasp.mlsuite.invitation.domain.model.InvitationStatus;
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.notification.application.service.NotificationService;
 import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
-import dev.ulloasp.mlsuite.notification.domain.model.NotificationTargetType;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
@@ -251,7 +250,8 @@ public class InvitationManagementService implements InvitationManagementUseCase 
 
     private void notifyAnswered(Invitation invitation, User invitee, NotificationKind answer) {
         String id = invitation.getId().toString();
-        notificationService.markTargetRead(invitee.getId(), NotificationTargetType.INVITATION, id);
+        notificationService.recordAnswer(invitee.getId(), NotificationKind.INVITATION_RECEIVED, id,
+                invitation.getStatus().name());
         Long inviter = invitation.getCreatedBy().userId();
         if (inviter == null) return;
         notificationService.notify(inviter, invitation.getOrganization().getId(), answer, id,

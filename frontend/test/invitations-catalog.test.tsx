@@ -85,6 +85,14 @@ test("passes search and status to the backend and displays its matches", async (
   expect(request.searchParams.get("filter")).toBe("ACCEPTED");
   expect(request.searchParams.get("search")).toBe("server-only");
 });
+test("an accepted invitation shows as accepted, with no expiry", async () => {
+  const accepted = await render("?status=ACCEPTED");
+  expect(accepted.textContent).toContain("person49@example.com");
+  expect(accepted.textContent).toContain("Accepted");
+  expect(accepted.textContent).not.toContain("Expires");
+  const pending = await render();
+  expect(pending.textContent).toContain("Expires");
+});
 test("retries an initial failure without showing an empty list", async () => {
   fail = true;
   const host = await render();

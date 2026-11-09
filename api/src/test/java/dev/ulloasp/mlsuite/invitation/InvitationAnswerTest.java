@@ -91,7 +91,7 @@ class InvitationAnswerTest extends PublicPredictionFixture {
     }
 
     @Test
-    void whoInvitedIsToldTheAnswerAndTheInviteeStopsCountingItAsUnread() throws Exception {
+    void whoInvitedIsToldTheAnswerAndTheInviteesNotificationKeepsItAsRead() throws Exception {
         // One invitation waits per address at a time: the second is sent once the first is answered.
         Invitation accepted = received(stored(invitee.getEmail(), InvitationStatus.PENDING, nextWeek));
         mockMvc.perform(answer(accepted, "accept", invitee)).andExpect(status().isOk());
@@ -104,6 +104,9 @@ class InvitationAnswerTest extends PublicPredictionFixture {
                 + " WHERE recipient_user_id = ? AND target_id = ?", String.class, owner.getId(), accepted.getId().toString()));
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM notification WHERE recipient_user_id = ?"
                 + " AND read_at IS NULL", Integer.class, invitee.getId()));
+        // The inbox shows what became of the invitation it announced.
+        assertEquals("ACCEPTED", answerTold(accepted));
+        assertEquals("DECLINED", answerTold(declined));
         assertEquals(1, entries(accepted, "INVITATION_ACCEPT"));
         assertEquals(1, entries(declined, "INVITATION_DECLINE"));
     }
@@ -202,6 +205,12 @@ class InvitationAnswerTest extends PublicPredictionFixture {
     private int entries(Invitation invitation, String action) {
         return jdbc.queryForObject("SELECT count(*) FROM audit_event WHERE action = ? AND target_id = ?", Integer.class,
                 action, invitation.getId().toString());
+    }
+
+    private String answerTold(Invitation invitation) {
+        return jdbc.queryForObject("SELECT payload ->> 'answer' FROM notification WHERE recipient_user_id = ?"
+                + " AND kind = 'INVITATION_RECEIVED' AND target_id = ?", String.class, invitee.getId(),
+                invitation.getId().toString());
     }
 
     private String toldTheInviter(Invitation invitation) {
