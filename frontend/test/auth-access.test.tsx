@@ -3,15 +3,32 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { act } from "react";
 import { QueryClient } from "@tanstack/react-query";
-import { useLocation } from "@tanstack/react-router";
+import { useLocation, useRouter } from "@tanstack/react-router";
 import { AuthLandingPage } from "@/app/pages/AuthLandingPage";
 import { greetingFor } from "@/app/pages/auth-landing/authLandingCopy";
 import { useAuthAccess } from "@/app/pages/auth-landing/useAuthAccess";
+import { WORKSPACE_CONTEXT_QUERY_KEY } from "@/capabilities/workspace-context/workspace-context";
 import { click, mount } from "./support/dom";
 
 let host: HTMLDivElement;
+let router: ReturnType<typeof useRouter>;
+let queryClient: QueryClient;
+
+/** The workspace the shell needs, answered when the test releases it. */
+const workspace = vi.hoisted(() => ({ release: () => undefined as void, requests: 0 }));
+const answerWorkspace = () =>
+  new Promise<Response>((resolve) => {
+    workspace.requests += 1;
+    workspace.release = () =>
+      resolve(
+        new Response(JSON.stringify({ currentOrganization: { id: 3 }, permissions: {} }), {
+          headers: { "content-type": "application/json" },
+        }),
+      );
+  });
 
 function AccessProbe() {
+  router = useRouter();
   const location = useLocation();
   const access = useAuthAccess("/review");
   return (
@@ -25,34 +42,72 @@ function AccessProbe() {
 
 const probe = () => host.querySelector<HTMLElement>("[data-phase]")!;
 const advance = (ms: number) =>
-  act(() => {
+  act(async () => {
     vi.advanceTimersByTime(ms);
   });
+const mountProbe = async () => {
+  workspace.requests = 0;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string) =>
+      url.includes("/api/workspace/context/current")
+        ? answerWorkspace()
+        : new Response("{}", { status: 404 }),
+    ),
+  );
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  ({ host } = await mount(<AccessProbe />, { route: "/", queryClient }));
+};
+/** Signs in, with the shell's workspace already answered, as a fast server would. */
+const succeedPrepared = async () => {
+  await click("succeed", host);
+  await act(async () => workspace.release());
+};
 
 describe("auth access sequence", () => {
   beforeEach(async () => {
     vi.useFakeTimers();
-    ({ host } = await mount(<AccessProbe />, { route: "/" }));
+    await mountProbe();
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   test("tears the pass, reveals the overlay, then opens the destination after about two seconds", async () => {
     expect(probe().dataset.phase).toBe("0");
-    await click("succeed", host);
+    await succeedPrepared();
     expect(probe().dataset.phase).toBe("1");
-    advance(449);
+    await advance(449);
     expect(probe().dataset.phase).toBe("1");
-    advance(1);
+    await advance(1);
     expect(probe().dataset.phase).toBe("2");
     expect(probe().dataset.path).toBe("/");
 
-    advance(1399);
+    await advance(1399);
     expect(probe().dataset.path).toBe("/");
-    advance(1);
+    await advance(1);
     expect(probe().dataset.path).toBe("/review");
+  });
+
+  test("readies the destination and the shell's workspace while the welcome plays", async () => {
+    const preload = vi.spyOn(router, "preloadRoute");
+    await click("succeed", host);
+
+    expect(preload).toHaveBeenCalledWith(expect.objectContaining({ to: "/review" }));
+    expect(workspace.requests).toBe(1);
+  });
+
+  test("holds the welcome until the shell's workspace has arrived, so it hands over to the app", async () => {
+    await click("succeed", host);
+    await advance(450 + 1400 + 500);
+    expect(probe().dataset.path).toBe("/");
+
+    await act(async () => workspace.release());
+
+    expect(probe().dataset.path).toBe("/review");
+    expect(queryClient.getQueryData(WORKSPACE_CONTEXT_QUERY_KEY)).toBeDefined();
   });
 });
 
@@ -65,7 +120,7 @@ describe("auth access sequence without motion", () => {
       addEventListener() {},
       removeEventListener() {},
     }));
-    ({ host } = await mount(<AccessProbe />, { route: "/" }));
+    await mountProbe();
   });
 
   afterEach(() => {
@@ -74,12 +129,12 @@ describe("auth access sequence without motion", () => {
   });
 
   test("shows the welcome at once and leaves it up long enough to read", async () => {
-    await click("succeed", host);
+    await succeedPrepared();
     expect(probe().dataset.phase).toBe("2");
 
-    advance(699);
+    await advance(699);
     expect(probe().dataset.path).toBe("/");
-    advance(1);
+    await advance(1);
     expect(probe().dataset.path).toBe("/review");
   });
 });
@@ -143,6 +198,8 @@ describe("auth landing form", () => {
     fill(REGISTRATION);
 
     await click(submitButton());
+    // The mutation tells the form it is pending on the next tick; the server is still holding.
+    await settle();
     expect(submitButton().textContent).toBe("Creating account…");
     expect(host.querySelector(".auth-pass")?.getAttribute("data-phase")).toBe("0");
     expect(host.textContent).not.toContain("✓");
