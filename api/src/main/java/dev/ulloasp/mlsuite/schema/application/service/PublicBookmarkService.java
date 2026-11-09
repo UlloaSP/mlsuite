@@ -1,7 +1,5 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,9 +44,6 @@ import lombok.RequiredArgsConstructor;
 public class PublicBookmarkService implements PublicBookmarkUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(PublicBookmarkService.class);
-    /** Model features are numbers, flags, or short categories; nothing longer is a form value. */
-    private static final int MAX_TEXT_LENGTH = 256;
-    private static final int MAX_KEY_ECHO = 40;
 
     private final SchemaBookmarkRepository bookmarkRepository;
     private final SchemaBookmarkExampleRepository exampleRepository;
@@ -139,7 +134,7 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This bookmark cannot be run publicly.");
         }
         PublicForm form = PublicForm.of(version.getFormSchema(), models);
-        requireFormValues(form, request.values());
+        PublicFormValues.require(form, request.values());
         return new PublicPredictionPlan(publicId, bookmark.getId(), version.getId(),
                 models.stream()
                         .map(model -> new ModelCall(model.id(), form.modelInput(model, request.values())))
@@ -168,30 +163,5 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
             case "name" -> Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.desc("updatedAt"), byId);
             default -> throw CatalogValues.unknown("sort", mode, List.of("updated", "name"));
         };
-    }
-
-    /** Only the form's own inputs, each a scalar: the form bounds how many values a run carries. */
-    private static void requireFormValues(PublicForm form, Map<String, Object> values) {
-        values.forEach((key, value) -> {
-            if (!form.inputKeys().contains(key)) {
-                throw badRequest("The form has no input \"%s\".".formatted(
-                        key.length() <= MAX_KEY_ECHO ? key : key.substring(0, MAX_KEY_ECHO)));
-            }
-            if (!isFormValue(value)) {
-                throw badRequest("Input \"%s\" has a value the form cannot send.".formatted(key));
-            }
-        });
-    }
-
-    /** A scalar a model feature can take: null, a flag, a short text, or a finite number. */
-    public static boolean isFormValue(Object value) {
-        if (value == null || value instanceof Boolean) return true;
-        if (value instanceof String text) return text.length() <= MAX_TEXT_LENGTH;
-        if (value instanceof BigInteger || value instanceof BigDecimal) return false;
-        return value instanceof Number number && Double.isFinite(number.doubleValue());
-    }
-
-    private static ResponseStatusException badRequest(String message) {
-        return new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
     }
 }

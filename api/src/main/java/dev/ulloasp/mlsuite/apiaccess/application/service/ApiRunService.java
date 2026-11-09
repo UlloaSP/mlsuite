@@ -26,8 +26,8 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionR
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.application.service.BookmarkPublishability;
-import dev.ulloasp.mlsuite.schema.application.service.PublicBookmarkService;
 import dev.ulloasp.mlsuite.schema.application.service.PublicForm;
+import dev.ulloasp.mlsuite.schema.application.service.PublicFormValues;
 import dev.ulloasp.mlsuite.schema.application.service.PublicRunReports;
 import dev.ulloasp.mlsuite.schema.application.service.SnapshotRunGuard;
 import dev.ulloasp.mlsuite.schema.domain.model.BoundModel;
@@ -105,7 +105,7 @@ public class ApiRunService {
                     "This bookmark's model is too large to run for clients.");
         });
         features.forEach((name, value) -> {
-            if (!PublicBookmarkService.isFormValue(value)) {
+            if (!PublicFormValues.isScalar(value)) {
                 throw new ApiProblem(ApiErrorCode.INVALID_FEATURES,
                         "Feature \"%s\" must be a number, a boolean, a text of at most 256 characters, or null."
                                 .formatted(name.length() <= MAX_KEY_ECHO ? name : name.substring(0, MAX_KEY_ECHO)));

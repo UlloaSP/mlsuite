@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import dev.ulloasp.mlsuite.schema.domain.model.BoundModel;
@@ -57,10 +58,24 @@ public final class PublicForm {
     private record InputRoute(Object mappedTo, String key, String displayKey, Object optionValue, Object stored) {
     }
 
+    /**
+     * The stored field an input key belongs to, by which a refusal names it to a visitor. A
+     * series field's {@code rows} key takes the rows its {@code config} defines; every other key
+     * of a field, its aggregations' included, takes one scalar.
+     */
+    public record InputField(Map<?, ?> config, boolean rows) {
+
+        public String label() {
+            String label = config.get("label") instanceof String text && !text.isBlank() ? text : displayKey(config);
+            return label == null ? "An input" : label;
+        }
+    }
+
     private final List<BoundModel> models;
     /** In the order of the stored form, which is the order a run's values are routed in. */
     private final List<InputRoute> inputRoutes = new ArrayList<>();
     private final Set<String> inputKeys = new LinkedHashSet<>();
+    private final Map<String, InputField> inputFields = new LinkedHashMap<>();
     private final List<ReportRoute> reportRoutes = new ArrayList<>();
     private final Map<String, Object> schema;
     private final int inputCount;
@@ -130,6 +145,11 @@ public final class PublicForm {
         return inputKeys;
     }
 
+    /** The field a visitor's input key belongs to; none for a key the form does not have. */
+    public Optional<InputField> field(String key) {
+        return Optional.ofNullable(inputFields.get(key));
+    }
+
     public List<ReportRoute> reportRoutes() {
         return reportRoutes;
     }
@@ -165,15 +185,20 @@ public final class PublicForm {
      * under a key of their own that no model reads, and stored.
      */
     private Object shownField(Map<?, ?> field) {
+        int firstRoute = inputRoutes.size();
         String displayKey = displayKey(field);
+        boolean series = SERIES.equals(field.get("kind"));
         Object shown = withInputKeys(field, displayKey, null);
-        if (!SERIES.equals(field.get("kind")) || isRouting(field.get(MODEL_ROUTING))
-                || !(shown instanceof Map<?, ?> copy)) {
-            return shown;
+        if (series && !isRouting(field.get(MODEL_ROUTING)) && shown instanceof Map<?, ?> copy) {
+            Map<Object, Object> withRows = new LinkedHashMap<>(copy);
+            withRows.put(MODEL_ROUTING, inputKey(null, displayKey, null));
+            shown = withRows;
         }
-        Map<Object, Object> series = new LinkedHashMap<>(copy);
-        series.put(MODEL_ROUTING, inputKey(null, displayKey, null));
-        return series;
+        // A series' rows are the one value of it that is stored; its aggregations are not.
+        for (InputRoute route : inputRoutes.subList(firstRoute, inputRoutes.size())) {
+            inputFields.put(route.key(), new InputField(field, series && route.displayKey() != null));
+        }
+        return shown;
     }
 
     /**
