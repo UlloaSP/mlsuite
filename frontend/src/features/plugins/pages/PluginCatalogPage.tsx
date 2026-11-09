@@ -59,7 +59,8 @@ export function PluginCatalogPage() {
   const handleDelete = async (item: (typeof items)[number]) => {
     const confirmed = await actionDialog.confirm({
       title: `Delete ${item.kind ?? item.fileName}?`,
-      description: "Schemas that use this plugin will no longer render its fields or reports.",
+      description:
+        "A plugin that published snapshots render with cannot be deleted while they exist. Drafts that use it will no longer render its fields or reports.",
       confirmLabel: "Delete",
       danger: true,
     });
