@@ -196,6 +196,7 @@ export function InferencesPage({
                   organizationId={organizationId}
                   key={organizationId}
                   count={totalItems}
+                  onCreated={() => void navigate({ to: "/review/manage" })}
                   loadCandidates={async () =>
                     (await loadItems()).map((item) => ({
                       runId: String(item.id),

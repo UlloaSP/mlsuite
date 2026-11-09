@@ -12,6 +12,8 @@ type Props = {
   loadCandidates: () => Promise<ReviewCandidate[]>;
   organizationId: number | string;
   variant?: "primary" | "secondary";
+  /** Where the user goes once their review exists. */
+  onCreated: () => void;
 };
 
 export function ReviewCreationButton({
@@ -19,6 +21,7 @@ export function ReviewCreationButton({
   loadCandidates,
   organizationId,
   variant = "primary",
+  onCreated,
 }: Props) {
   const [open, setOpen] = useState(false);
   const selection = useMutation({
@@ -48,6 +51,10 @@ export function ReviewCreationButton({
           candidates={selection.data}
           organizationId={organizationId}
           onClose={() => setOpen(false)}
+          onCreated={() => {
+            setOpen(false);
+            onCreated();
+          }}
         />
       ) : null}
     </>

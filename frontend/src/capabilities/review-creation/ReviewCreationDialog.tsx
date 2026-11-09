@@ -1,6 +1,6 @@
 import { useReviewRunSelection } from "./useReviewRunSelection";
 import { ClipboardPlus } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "@/shared/ui/toast";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppFieldLabel } from "@/shared/ui/AppFieldLabel";
@@ -14,6 +14,8 @@ type Props = {
   candidates: ReviewCandidate[];
   organizationId: number | string;
   onClose: () => void;
+  /** The review was created; the dialog is done. */
+  onCreated: () => void;
 };
 
 const defaultExpiryDate = () => {
@@ -22,7 +24,7 @@ const defaultExpiryDate = () => {
   return date.toISOString().slice(0, 10);
 };
 
-export function ReviewCreationDialog({ candidates, organizationId, onClose }: Props) {
+export function ReviewCreationDialog({ candidates, organizationId, onClose, onCreated }: Props) {
   const {
     groups,
     group,
@@ -39,7 +41,10 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
   const createReview = useCreateReviewMutation(organizationId);
 
   const [error, setError] = useState<string>();
+  // Set in the click itself: a second click before the next render must not create a second review.
+  const submitting = useRef(false);
   const create = async () => {
+    if (submitting.current) return;
     setError(undefined);
     if (!group || !selectedRunIds.size || !selectedReviewerIds.size) {
       setError("Select at least one inference and one reviewer.");
@@ -52,6 +57,7 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
       setError("The selection contains an invalid identifier.");
       return;
     }
+    submitting.current = true;
     try {
       await createReview.mutateAsync({
         schemaId,
@@ -61,8 +67,9 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
         expiresAt: new Date(`${expiresAt}T23:59:59.000Z`).toISOString(),
       });
       toast.success("Review created");
-      onClose();
+      onCreated();
     } catch (creationError) {
+      submitting.current = false;
       setError(
         `Review creation failed: ${creationError instanceof Error ? creationError.message : String(creationError)}`,
       );
@@ -84,6 +91,7 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
       open
       size="xl"
       flush
+      busy={createReview.isPending}
       error={error}
       onClose={onClose}
       title="Create review"
@@ -101,7 +109,12 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
             </AppFieldLabel>
           </div>
           <div className="flex items-end gap-3">
-            <AppButton type="button" variant="secondary" onClick={onClose}>
+            <AppButton
+              type="button"
+              variant="secondary"
+              disabled={createReview.isPending}
+              onClick={onClose}
+            >
               Cancel
             </AppButton>
             <AppButton
