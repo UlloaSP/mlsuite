@@ -16,7 +16,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.BoundModel;
 
 /**
  * How a public form keeps a series field's rows (the visitor's values, though a model may receive
- * only their aggregations) and which values a public run may carry.
+ * only the aggregations the server computes from them) and which values a public run may carry.
  */
 class PublicFormTest {
 
@@ -29,16 +29,17 @@ class PublicFormTest {
             Map.of("id", "field2", "kind", "number", "label", "Area"));
 
     @Test
-    void aSeriesWhoseRowsOnlyFeedAggregationsSendsAndKeepsItsRows() {
+    void aSeriesWhoseRowsOnlyFeedAggregationsSendsAndKeepsItsRowsAndItsModelGetsTheirAggregation() {
         PublicForm form = PublicForm.of(Map.of("fields", List.of(ROOMS, series(null)), "reports", List.of()),
                 List.of(MODEL));
 
-        assertEquals(Map.of("kind", "series", "label", "Area history", "columns", COLUMNS, "mappedTo", "in2",
+        assertEquals(Map.of("kind", "series", "label", "Area history", "columns", COLUMNS, "mappedTo", "in1",
                 "aggregations", List.of(Map.of("operation", "mean", "label", "Mean", "source", "field2",
-                        "mappedTo", "in1"))),
+                        "mappedTo", "agg0"))),
                 ((List<?>) form.schema().get("fields")).get(1));
-        Map<String, Object> values = Map.of("in0", 3, "in1", 110, "in2", ROWS);
-        assertEquals(Map.of("rooms", 3, "area", 110), form.modelInput(MODEL, values));
+        assertEquals(List.of("in0", "in1"), List.copyOf(form.inputKeys()));
+        Map<String, Object> values = Map.of("in0", 3, "in1", ROWS);
+        assertEquals(Map.of("rooms", 3, "area", 110L), form.modelInput(MODEL, values));
         assertEquals(Map.of("Rooms", 3, "Area history", ROWS), form.storedInputs(values));
     }
 
@@ -47,9 +48,24 @@ class PublicFormTest {
         PublicForm form = PublicForm.of(Map.of("fields", List.of(series("history")), "reports", List.of()),
                 List.of(MODEL));
 
-        Map<String, Object> values = Map.of("in0", ROWS, "in1", 110);
-        assertEquals(Map.of("history", ROWS, "area", 110), form.modelInput(MODEL, values));
+        Map<String, Object> values = Map.of("in0", ROWS);
+        assertEquals(Map.of("history", ROWS, "area", 110L), form.modelInput(MODEL, values));
         assertEquals(Map.of("Area history", ROWS), form.storedInputs(values));
+    }
+
+    @Test
+    void aSeriesSentNoRowsGivesItsModelTheAggregationOfNone() {
+        Map<String, Object> series = series(null);
+        series.put("aggregations", List.of(
+                Map.of("operation", "mean", "label", "Mean", "source", "field2", "mappedTo", "area"),
+                Map.of("operation", "count", "label", "Count", "source", "field2", "mappedTo", "years")));
+        PublicForm form = PublicForm.of(Map.of("fields", List.of(series), "reports", List.of()), List.of(MODEL));
+
+        Map<String, Object> routed = new HashMap<>();
+        routed.put("area", null);
+        routed.put("years", 0L);
+        assertEquals(routed, form.modelInput(MODEL, Map.of()));
+        assertEquals(Map.of(), form.storedInputs(Map.of()));
     }
 
     @Test
@@ -61,8 +77,51 @@ class PublicFormTest {
                 Map.of("date", "2024-04-01", "area", 95.5),
                 Collections.singletonMap("area", null));
 
-        PublicFormValues.require(form, Map.of("in0", 5, "in1", 100, "in2", rows));
-        PublicFormValues.require(form, Map.of("in2", List.of()));
+        PublicFormValues.require(form, Map.of("in0", 5, "in1", rows.subList(0, 2)));
+        PublicFormValues.require(form, Map.of("in1", List.of()));
+        PublicFormValues.require(form, Map.of());
+    }
+
+    @Test
+    void aSeriesIsHeldToItsPointsAndToAResultForEachAggregation() {
+        Map<String, Object> series = dated();
+        series.put("required", true);
+        series.put("minPoints", 2);
+        PublicForm form = PublicForm.of(Map.of("fields", List.of(ROOMS, series), "reports", List.of()),
+                List.of(MODEL));
+        Map<String, Object> row = Map.of("date", "2024-03-01T00:00:00.000Z", "area", 90);
+        Map<Map<String, Object>, String> refused = Map.of(
+                Map.of("in0", 5), "\"Area history\" is required.",
+                Map.of("in1", List.of()), "\"Area history\" is required.",
+                Map.of("in1", List.of(row)), "\"Area history\" needs at least 2 points.",
+                Map.of("in1", Collections.nCopies(4, row)), "\"Area history\" takes at most 3 points.",
+                Map.of("in1", List.of(row, Map.of("date", "2024-04-01"))),
+                "\"Area history\" has too few or missing measurements to calculate \"Mean\".");
+
+        refused.forEach((values, message) -> {
+            ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                    () -> PublicFormValues.require(form, values));
+            assertEquals(400, error.getStatusCode().value(), values.toString());
+            assertEquals(message, error.getReason(), values.toString());
+        });
+        PublicFormValues.require(form, Map.of("in1", List.of(row, row)));
+    }
+
+    @Test
+    void aSeriesThatCanBeInactiveIsHeldOnlyToItsMostPoints() {
+        Map<String, Object> series = dated();
+        series.put("required", true);
+        series.put("minPoints", 2);
+        series.put("inactiveFieldPolicy", "include");
+        series.put("hiddenWhen", Map.of("kind", "field", "field", "rooms", "equals", 0));
+        PublicForm form = PublicForm.of(Map.of("fields", List.of(ROOMS, series), "reports", List.of()),
+                List.of(MODEL));
+        Map<String, Object> row = Map.of("date", "2024-03-01T00:00:00.000Z", "area", 90);
+
+        PublicFormValues.require(form, Map.of("in0", 0));
+        ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                () -> PublicFormValues.require(form, Map.of("in1", Collections.nCopies(4, row))));
+        assertEquals("\"Area history\" takes at most 3 points.", error.getReason());
     }
 
     @Test
@@ -74,14 +133,13 @@ class PublicFormTest {
         rejected.put("Rooms", List.of(Map.of("in0", List.of(1, 2)), Map.of("in0", "x".repeat(257)),
                 Map.of("in0", Double.POSITIVE_INFINITY), Map.of("in0", Map.of("$gt", 0))));
         rejected.put("Area history", List.of(
-                Map.of("in1", List.of(row)),
-                Map.of("in2", 90),
-                Map.of("in2", List.of(List.of(90))),
-                Map.of("in2", List.of(Map.of("area", 90, "owner", "x"))),
-                Map.of("in2", List.of(Map.of("area", "90"))),
-                Map.of("in2", List.of(Map.of("date", "March 1st"))),
-                Map.of("in2", List.of(Map.of("area", List.of(90)))),
-                Map.of("in2", Collections.nCopies(4, row))));
+                Map.of("in1", 90),
+                Map.of("in1", List.of(List.of(90))),
+                Map.of("in1", List.of(Map.of("area", 90, "owner", "x"))),
+                Map.of("in1", List.of(Map.of("area", "90"))),
+                Map.of("in1", List.of(Map.of("date", "March 1st"))),
+                Map.of("in1", List.of(Map.of("area", List.of(90)))),
+                Map.of("in1", Collections.nCopies(PublicFormValues.MAX_ROWS + 1, row))));
 
         rejected.forEach((label, cases) -> {
             for (Map<String, Object> values : cases) {
@@ -91,10 +149,12 @@ class PublicFormTest {
                 assertEquals("\"" + label + "\" has a value the form cannot send.", error.getReason(), values.toString());
             }
         });
-        ResponseStatusException unknown = assertThrows(ResponseStatusException.class,
-                () -> PublicFormValues.require(form, Map.of("in9", 1)));
-        assertEquals("This page sent a value its form has no input for. Reload the page and run it again.",
-                unknown.getReason());
+        for (String key : List.of("in9", "agg0")) {
+            ResponseStatusException unknown = assertThrows(ResponseStatusException.class,
+                    () -> PublicFormValues.require(form, Map.of(key, 1)));
+            assertEquals("This page sent a value its form has no input for. Reload the page and run it again.",
+                    unknown.getReason());
+        }
     }
 
     /** A series of dated areas, at most three rows, whose mean area is a model feature. */

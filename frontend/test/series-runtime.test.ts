@@ -1,4 +1,6 @@
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
+import { calculateSeriesAggregation, type SeriesAggregation } from "mlform/builtins";
 import { createForm } from "mlform/runtime";
 import { schemaRunRuntime } from "./support/schema-run-runtime";
 import { validateMlformSchema } from "@/capabilities/prediction-runtime/mlform/schema-validation";
@@ -49,6 +51,21 @@ const areaRows = [
 ];
 const AREA_ROWS_CELL = `"${JSON.stringify(areaRows).replaceAll('"', '""')}"`;
 
+/**
+ * Series and the aggregate MLForm computes from each, which the API's own aggregation of a
+ * public run's rows is held to as well (SeriesAggregationParityTest reads the same file).
+ */
+type AggregationFixture = {
+  series: Record<string, Record<string, unknown>[]>;
+  cases: { series: string; aggregation: Record<string, unknown>; expected: number | null }[];
+};
+const aggregationFixture = JSON.parse(
+  readFileSync(
+    new URL("../../api/src/test/resources/series-aggregations.json", import.meta.url),
+    "utf8",
+  ),
+) as AggregationFixture;
+
 describe("series runtime contract", () => {
   test("dates keep their declared model serialization", async () => {
     const schema = {
@@ -78,6 +95,27 @@ describe("series runtime contract", () => {
     });
     expect(result.inputs[0].serializedValue).toEqual(expected);
     form.dispose();
+  });
+
+  test("every aggregation equals the server's on the fixture both read", () => {
+    expect(aggregationFixture.cases).toHaveLength(588);
+    for (const { series: name, aggregation, expected } of aggregationFixture.cases) {
+      const actual = calculateSeriesAggregation(aggregationFixture.series[name]!, {
+        ...aggregation,
+        label: "Value",
+        source: "value",
+        mappedTo: "feature",
+      } as SeriesAggregation);
+      const label = `${name} ${JSON.stringify(aggregation)}`;
+      if (expected === null) {
+        expect(actual, label).toBeNull();
+      } else {
+        // pow, exp and log may round their last bit differently between engines and platforms.
+        expect(Math.abs(actual! - expected), label).toBeLessThanOrEqual(
+          4 * Number.EPSILON * Math.abs(expected),
+        );
+      }
+    }
   });
 
   test("restores series inputs from bulk or saved model values", () => {

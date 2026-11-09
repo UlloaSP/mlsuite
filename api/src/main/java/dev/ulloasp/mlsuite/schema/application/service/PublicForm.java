@@ -20,6 +20,11 @@ import dev.ulloasp.mlsuite.schema.domain.model.BoundModel;
  * it. The keys follow from the stored form and its binding order, so nothing is persisted and the
  * form read by a page is the form its run is routed with.
  *
+ * A series field's aggregations are model features the server computes from the field's rows, as
+ * MLForm computes them in the workspace: a visitor sends the rows, never an aggregate. Each
+ * aggregation keeps a {@code mappedTo} of its own ({@code agg0}, ...) because MLForm requires one,
+ * but no run may carry a value under it.
+ *
  * A {@code hidden} field never leaves the server. MLForm, which runs the form in the workspace,
  * leaves a hidden field out of a run unless the field says {@code inactiveFieldPolicy: "include"},
  * and then submits its {@code defaultValue}. A public run does the same here: the value the schema
@@ -53,15 +58,21 @@ public final class PublicForm {
      * the field's {@code displayKey} as the workspace stores it, or the schema's own. A one-hot
      * field sends one key per option; the option whose key is active is the field's stored
      * value, {@code optionValue}. A series field's rows may route to no model ({@code mappedTo}
-     * null) and are stored all the same; its aggregations route to models with no display key.
+     * null) and are stored all the same; each of its aggregations is a route with no display key
+     * whose value is computed from the rows sent under {@code key}.
      */
-    private record InputRoute(Object mappedTo, String key, String displayKey, Object optionValue, Object stored) {
+    private record InputRoute(Object mappedTo, String key, String displayKey, Object optionValue, Object stored,
+            Map<?, ?> aggregation) {
+
+        InputRoute(Object mappedTo, String key, String displayKey, Object optionValue, Object stored) {
+            this(mappedTo, key, displayKey, optionValue, stored, null);
+        }
     }
 
     /**
      * The stored field an input key belongs to, by which a refusal names it to a visitor. A
-     * series field's {@code rows} key takes the rows its {@code config} defines; every other key
-     * of a field, its aggregations' included, takes one scalar.
+     * series field's one key, {@code rows}, takes the rows its {@code config} defines; every other
+     * key of a field takes one scalar.
      */
     public record InputField(Map<?, ?> config, boolean rows) {
 
@@ -77,6 +88,7 @@ public final class PublicForm {
     private final Set<String> inputKeys = new LinkedHashSet<>();
     private final Map<String, InputField> inputFields = new LinkedHashMap<>();
     private final List<ReportRoute> reportRoutes = new ArrayList<>();
+    private int aggregationCount;
     private final Map<String, Object> schema;
     private final int inputCount;
 
@@ -167,6 +179,10 @@ public final class PublicForm {
             if (feature == null) continue;
             if (route.key() == null) {
                 routed.put(featureName(feature), route.stored());
+            } else if (route.aggregation() != null) {
+                Object rows = values.get(route.key());
+                routed.put(featureName(feature),
+                        SeriesAggregation.calculate(rows instanceof List<?> list ? list : List.of(), route.aggregation()));
             } else if (values.containsKey(route.key())) {
                 routed.put(featureName(feature), values.get(route.key()));
             }
@@ -182,7 +198,8 @@ public final class PublicForm {
     /**
      * A field a visitor fills, its routes replaced by input keys. A series field's rows are what the
      * visitor entered even when its models receive only their aggregations, so they are always sent,
-     * under a key of their own that no model reads, and stored.
+     * under a key of their own that no model reads, and stored. They are the field's one input:
+     * its aggregations are computed from them.
      */
     private Object shownField(Map<?, ?> field) {
         int firstRoute = inputRoutes.size();
@@ -194,9 +211,16 @@ public final class PublicForm {
             withRows.put(MODEL_ROUTING, inputKey(null, displayKey, null));
             shown = withRows;
         }
-        // A series' rows are the one value of it that is stored; its aggregations are not.
         for (InputRoute route : inputRoutes.subList(firstRoute, inputRoutes.size())) {
-            inputFields.put(route.key(), new InputField(field, series && route.displayKey() != null));
+            inputFields.put(route.key(), new InputField(field, series));
+        }
+        if (series && field.get("aggregations") instanceof List<?> aggregations) {
+            String rowsKey = inputRoutes.get(firstRoute).key();
+            for (Object item : aggregations) {
+                if (item instanceof Map<?, ?> aggregation && isRouting(aggregation.get(MODEL_ROUTING))) {
+                    inputRoutes.add(new InputRoute(aggregation.get(MODEL_ROUTING), rowsKey, null, null, null, aggregation));
+                }
+            }
         }
         return shown;
     }
@@ -205,7 +229,7 @@ public final class PublicForm {
      * Options of a field route to models too, so the key is replaced at every depth. Every key
      * of a field is stored under the field's display key: a one-hot field's options all carry
      * the one chosen value. A series field's aggregations are model features computed from its
-     * rows, not values of the field, so they are routed but not stored.
+     * rows, not values a visitor sends: each is shown with a key no run may carry.
      */
     private Object withInputKeys(Object value, String displayKey, Object optionValue) {
         if (value instanceof List<?> items) {
@@ -218,7 +242,8 @@ public final class PublicForm {
                     copy.put(key, options.stream().map(option -> withInputKeys(option, displayKey,
                             option instanceof Map<?, ?> config ? optionValue(config) : null)).toList());
                 } else if ("aggregations".equals(key)) {
-                    copy.put(key, withInputKeys(entry, null, null));
+                    copy.put(key, entry instanceof List<?> aggregations
+                            ? aggregations.stream().map(this::shownAggregation).toList() : entry);
                 } else if (!MODEL_ROUTING.equals(key)) {
                     copy.put(key, withInputKeys(entry, displayKey, optionValue));
                 } else if (isRouting(entry)) {
@@ -228,6 +253,13 @@ public final class PublicForm {
             return copy;
         }
         return value;
+    }
+
+    private Object shownAggregation(Object aggregation) {
+        if (!(aggregation instanceof Map<?, ?> config)) return aggregation;
+        Map<Object, Object> copy = new LinkedHashMap<>(config);
+        copy.put(MODEL_ROUTING, "agg" + aggregationCount++);
+        return copy;
     }
 
     /** A new input key, routed to the features of {@code mappedTo} (none when null) and stored under {@code displayKey}. */
