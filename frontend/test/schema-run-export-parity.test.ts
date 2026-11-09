@@ -267,4 +267,78 @@ describe("schema run export parity", () => {
     expect(cell("report.Why.content")).toContain("age > 50");
     expect(cell("report.Why.clarity.r@x.org")).toBe("4");
   });
+
+  test("exports a questionnaire's choice by the option label the table shows", () => {
+    const asked = schemaVersion({
+      bindings: [binding(1)],
+      formSchema: {
+        fields: [],
+        reports: [
+          {
+            id: "why",
+            label: "Why",
+            kind: "Crystal Tree",
+            mappedTo: { "model-1": 0 },
+            feedbackQuestionnaire: {
+              steps: [
+                {
+                  id: "why",
+                  fields: [
+                    {
+                      kind: "category",
+                      id: "useful",
+                      label: "Useful?",
+                      options: [
+                        { label: "Yes", value: "yes" },
+                        { label: "No", value: "no" },
+                      ],
+                    },
+                    {
+                      kind: "category",
+                      id: "level",
+                      label: "Level",
+                      options: [{ label: "Two", value: 2 }],
+                    },
+                    { kind: "text", id: "note", label: "Note" },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    });
+    const stored = predictionRun({
+      results: [
+        predictionResult({
+          id: 1,
+          output: {
+            reports: [{ id: "why", kind: "Crystal Tree", mappedTo: "0", explanation: "x" }],
+          },
+        }),
+      ],
+    });
+    const feedback = [
+      resultFeedback({
+        id: 1,
+        resultId: 1,
+        createdByEmail: "r@x.org",
+        type: "EXPLANATION",
+        order: 0,
+        value: { useful: "yes", level: "2", note: "no" },
+      }),
+    ];
+
+    const [header, row] = buildSchemaRunExport([stored], asked, feedback, ";")
+      .content.replace("﻿", "")
+      .split("\n")
+      .map((line) => line.split(";"));
+    const cell = (column: string) => row[header.indexOf(column)];
+
+    expect(cell("report.why.useful.r@x.org")).toBe("Yes");
+    // Compared as text, as the table compares them.
+    expect(cell("report.why.level.r@x.org")).toBe("Two");
+    // A field without options keeps the answer as given, whatever an option elsewhere is valued.
+    expect(cell("report.why.note.r@x.org")).toBe("no");
+  });
 });

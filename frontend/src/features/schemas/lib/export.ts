@@ -12,7 +12,11 @@ import {
   classLabel,
 } from "@/capabilities/prediction-runtime/data/report-normalization";
 import { getOutputFeedbackFieldIds } from "@/capabilities/prediction-runtime/feedback/output-feedback-questionnaire";
-import { getQuestionnaireFieldIds } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
+import {
+  getQuestionnaireFieldDescriptors,
+  getQuestionnaireFieldIds,
+  type QuestionnaireFieldDescriptor,
+} from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
 import type { QuestionnaireSchema } from "@/capabilities/prediction-runtime/feedback/questionnaire-schema";
 import { getFormattedReportContent } from "@/capabilities/prediction-runtime/feedback/report-feedback-utils";
 import { formatTimestamp } from "@/shared/lib/date-time";
@@ -66,6 +70,28 @@ const outputFeedbackValue = (
 
 const questionnaireOf = (report: SchemaDisplayReport | undefined): unknown =>
   report?.config.feedbackQuestionnaire;
+
+const questionnaireFields = (
+  report: SchemaDisplayReport,
+): Map<string, QuestionnaireFieldDescriptor> => {
+  const questionnaire = questionnaireOf(report);
+  if (typeof questionnaire !== "object" || questionnaire === null) return new Map();
+  return new Map(
+    getQuestionnaireFieldDescriptors(questionnaire as QuestionnaireSchema).map((field) => [
+      field.id,
+      field,
+    ]),
+  );
+};
+
+/** An answer as the inference table shows it: a choice by its option's label, compared as text. */
+const questionnaireAnswer = (
+  value: unknown,
+  field: QuestionnaireFieldDescriptor | undefined,
+): unknown =>
+  typeof value === "string" || typeof value === "number" || typeof value === "boolean"
+    ? (field?.options?.find((option) => toCell(option.value) === String(value))?.label ?? value)
+    : value;
 
 const reportContentValue = (payload: unknown): string => {
   const formatted = getFormattedReportContent(payload);
@@ -179,6 +205,7 @@ export const buildSchemaRunExport = (
         if (questionnaireOf(report)) {
           reportContent.set(reportContentColumn(reportId), reportContentValue(report.payload));
         }
+        const fields = questionnaireFields(report);
         reviewers.forEach((reviewer) => {
           const matches = feedback.filter(
             (item) =>
@@ -196,7 +223,10 @@ export const buildSchemaRunExport = (
               return;
             }
             Object.entries(record).forEach(([field, value]) =>
-              reportFeedback.set(reportFeedbackColumn(reportId, field, reviewer), toCell(value)),
+              reportFeedback.set(
+                reportFeedbackColumn(reportId, field, reviewer),
+                toCell(questionnaireAnswer(value, fields.get(field))),
+              ),
             );
           });
         });
