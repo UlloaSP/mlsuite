@@ -47,8 +47,9 @@ def predict_rows(bundle: mlbundle.LoadedBundle, records: list[object]) -> list[R
             predicted = None
     if predicted is None:
         predicted = [_predict_alone(bundle, records[index]) for index, _ in usable]
-    # The batch's time, shared by its records: what each one cost the runtime.
-    execution_time = (time.perf_counter() - started) / len(usable)
+    # The batch's time, shared by its records: what each one cost the runtime, in milliseconds
+    # to the microsecond, as MLForm shows a report's execution_time.
+    execution_time = round((time.perf_counter() - started) * 1000 / len(usable), 3)
     for (index, _), outputs in zip(usable, predicted, strict=True):
         answers[index] = outputs if isinstance(outputs, dict) else _reports(outputs, execution_time)
     return answers

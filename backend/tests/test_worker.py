@@ -71,6 +71,17 @@ def test_a_record_that_breaks_the_model_fails_alone(tmp_path, monkeypatch) -> No
     assert without_time == [[{k: v for k, v in r.items() if k != "execution_time"} for r in a["reports"]] for a in alone[:2]]
 
 
+def test_execution_time_is_each_records_share_of_the_batch_in_milliseconds(tmp_path, monkeypatch) -> None:
+    # MLForm shows a report's execution_time followed by "ms".
+    bundle = LoadedBundles(1024 * 1024).get(*_saved(tmp_path, make_tree()))
+    clock = iter([10.0, 10.5])
+    monkeypatch.setattr(rows.time, "perf_counter", lambda: next(clock))
+
+    answers = rows.predict_rows(bundle, [{"age": 30, "income": 40_000}, {"age": 31, "income": 40_000}])
+
+    assert [report["execution_time"] for answer in answers for report in answer["reports"]] == [250.0, 250.0]
+
+
 def test_verify_predicts_the_samples_as_rows_by_feature_name(tmp_path, monkeypatch) -> None:
     bundle = LoadedBundles(1024 * 1024).get(*_saved(tmp_path, make_classifier()))
     predicted = []
