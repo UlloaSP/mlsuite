@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.ibm.icu.number.LocalizedNumberFormatter;
 import com.ibm.icu.number.NumberFormatter;
@@ -66,19 +67,25 @@ final class InferenceCatalogText {
         if (value instanceof Number number) {
             return format(number);
         }
-        if (value instanceof List<?> rows && !rows.isEmpty() && rows.stream().allMatch(Map.class::isInstance)) {
+        // A series' rows, or none: an empty list shows as an empty cell.
+        if (value instanceof List<?> rows && rows.stream().allMatch(Map.class::isInstance)) {
             return rows.stream().map(row -> seriesRow((Map<?, ?>) row)).collect(Collectors.joining("; "));
         }
         return value instanceof String text ? text : InferenceJsonValues.json(value, false);
     }
 
-    /** One series row: a date as its day (a form stores a day as its midnight UTC), then each value. */
+    /** One series row: its date first, as its day (a form stores a day as its midnight UTC), then each value. */
     private String seriesRow(Map<?, ?> row) {
-        return row.values().stream()
-                .map(cell -> cell instanceof String text && DAY.matcher(text).matches()
-                        ? days.format(Instant.parse(text.length() == 10 ? text + "T00:00:00Z" : text))
+        return Stream.concat(row.values().stream().filter(InferenceCatalogText::isDay),
+                        row.values().stream().filter(cell -> !isDay(cell)))
+                .map(cell -> isDay(cell)
+                        ? days.format(Instant.parse(((String) cell).length() == 10 ? cell + "T00:00:00Z" : (String) cell))
                         : cell == null ? "—" : format(cell))
                 .collect(Collectors.joining(" · "));
+    }
+
+    private static boolean isDay(Object cell) {
+        return cell instanceof String text && DAY.matcher(text).matches();
     }
 
     private static final Pattern DAY = Pattern.compile("\\d{4}-\\d{2}-\\d{2}(T00:00:00(\\.0+)?Z)?");
