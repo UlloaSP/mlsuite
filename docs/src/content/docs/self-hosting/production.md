@@ -41,7 +41,7 @@ confirmations. Review it before running it.
 ## Database
 
 Flyway is the only owner of the database schema; the API validates it and never changes it. An
-installation starts from an empty database, which the baseline migrations `V1` to `V7` bring to the whole schema. A
+installation starts from an empty database, which `V1__baseline.sql` brings to the whole schema. A
 database created before that baseline cannot be upgraded: wipe the PostgreSQL and RustFS volumes
 before the first start.
 

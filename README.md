@@ -272,10 +272,10 @@ Flyway is the only schema owner; Hibernate validates the result and never create
 or updates production tables. The release runs the same immutable API image in a
 one-shot `db-migrate` service before the API may start.
 
-An installation starts from an empty database and an empty bucket: the baseline
-migrations `V1` to `V7` in `api/src/main/resources/db/migration/` create the whole
-schema. A database created before that baseline cannot be upgraded and Flyway
-refuses it, so wipe the PostgreSQL and RustFS volumes before starting this release.
+An installation starts from an empty database and an empty bucket:
+`api/src/main/resources/db/migration/V1__baseline.sql` creates the whole schema. A
+database created before that baseline cannot be upgraded and Flyway refuses it, so
+wipe the PostgreSQL and RustFS volumes before starting this release.
 
 The coordinated local backup archives RustFS cold, preserving object versions,
 delete markers and the version IDs that PostgreSQL references; keep the RustFS
