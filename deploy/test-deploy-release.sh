@@ -92,8 +92,9 @@ for name in ("docker-compose.yml", "docker-compose.prod.yml"):
 for name in sorted(names):
     print(f"{name}={'x' * 32}")
 EOF
-  sed -i '/^WEB_PORT=/d; /^RELEASE_COMPOSE=/d' "$repo/.env"
-  printf 'WEB_PORT=5173\nRELEASE_COMPOSE=docker-compose.release.yml\n' >> "$repo/.env"
+  # The Compose project names the volumes the deployment backs up, so it keeps a real name.
+  sed -i '/^WEB_PORT=/d; /^RELEASE_COMPOSE=/d; /^COMPOSE_PROJECT_NAME=/d' "$repo/.env"
+  printf 'WEB_PORT=5173\nRELEASE_COMPOSE=docker-compose.release.yml\nCOMPOSE_PROJECT_NAME=mlsuite\n' >> "$repo/.env"
   printf '# running\n' > "$repo/docker-compose.release.yml"
   : > "$FAKE_CALLS"
 }
