@@ -224,14 +224,16 @@ class InferenceProjectionTest {
     @Test
     void showsTheRowsASeriesFieldWasGivenNotTheAggregationItsModelReceived() throws Exception {
         ObjectNode data = data(0);
-        String rows = "[{\"field1\":1,\"field2\":100},{\"field1\":2,\"field2\":120}]";
+        String rows = "[{\"field1\":\"2024-01-01T00:00:00.000Z\",\"field2\":100},"
+                + "{\"field1\":\"2024-02-01T00:00:00.000Z\",\"field2\":1200.5}]";
         array(data, "/versions/0/formSchema/fields").addObject().put("kind", "series").put("label", "Area history")
                 .set("aggregations", JSON.readTree(
                         "[{\"operation\":\"mean\",\"label\":\"Mean\",\"source\":\"field2\",\"mappedTo\":\"area\"}]"));
         object(data, "/runs/0/inputData").put("area", 110).set("Area history", JSON.readTree(rows));
         Row row = rows(data).getFirst();
         assertEquals(JSON.readTree(rows), JSON.valueToTree(row.dto().values().get("2:input:Area history")));
-        assertEquals(rows, row.dto().displayValues().get("2:input:Area history"));
+        // The cell reads as the run page's table does: each row's day, then its values, in the locale.
+        assertEquals("Jan 1, 2024 · 100; Feb 1, 2024 · 1,200.5", row.dto().displayValues().get("2:input:Area history"));
     }
 
     @Test

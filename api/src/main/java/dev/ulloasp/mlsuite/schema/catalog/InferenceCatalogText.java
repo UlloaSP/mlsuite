@@ -2,7 +2,15 @@ package dev.ulloasp.mlsuite.schema.catalog;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.ibm.icu.number.LocalizedNumberFormatter;
 import com.ibm.icu.number.NumberFormatter;
@@ -23,6 +31,7 @@ final class InferenceCatalogText {
     private final Collator cells;
     private final Collator choices;
     private final Collator options;
+    private final DateTimeFormatter days;
 
     private InferenceCatalogText(ULocale locale) {
         numbers = NumberFormatter.withLocale(locale)
@@ -31,6 +40,7 @@ final class InferenceCatalogText {
         cells = collator(locale, Collator.PRIMARY, true);
         choices = collator(locale, Collator.TERTIARY, true);
         options = collator(locale, Collator.TERTIARY, false);
+        days = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale.toLocale()).withZone(ZoneOffset.UTC);
     }
 
     /**
@@ -42,7 +52,10 @@ final class InferenceCatalogText {
         return new InferenceCatalogText(new ULocale(tag.getLanguage(), tag.getScript(), tag.getCountry()));
     }
 
-    /** What a cell shows: a number in the locale's digits, Yes or No, text as written, or compact JSON. */
+    /**
+     * What a cell shows: a number in the locale's digits, Yes or No, text as written, a series' rows
+     * as the run page's table reads them, or compact JSON.
+     */
     String format(Object value) {
         if (!InferenceCatalogValues.filled(value)) {
             return "";
@@ -53,8 +66,22 @@ final class InferenceCatalogText {
         if (value instanceof Number number) {
             return format(number);
         }
+        if (value instanceof List<?> rows && !rows.isEmpty() && rows.stream().allMatch(Map.class::isInstance)) {
+            return rows.stream().map(row -> seriesRow((Map<?, ?>) row)).collect(Collectors.joining("; "));
+        }
         return value instanceof String text ? text : InferenceJsonValues.json(value, false);
     }
+
+    /** One series row: a date as its day (a form stores a day as its midnight UTC), then each value. */
+    private String seriesRow(Map<?, ?> row) {
+        return row.values().stream()
+                .map(cell -> cell instanceof String text && DAY.matcher(text).matches()
+                        ? days.format(Instant.parse(text.length() == 10 ? text + "T00:00:00Z" : text))
+                        : cell == null ? "—" : format(cell))
+                .collect(Collectors.joining(" · "));
+    }
+
+    private static final Pattern DAY = Pattern.compile("\\d{4}-\\d{2}-\\d{2}(T00:00:00(\\.0+)?Z)?");
 
     /** A cell's place among text cells: digit runs by value, ignoring case and accents. */
     CollationKey cellKey(String text) {
