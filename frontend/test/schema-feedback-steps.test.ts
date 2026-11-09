@@ -31,7 +31,11 @@ const run = predictionRun({
     predictionResult({
       id: 1,
       modelId: 1,
-      output: { reports: [{ mappedTo: "score", prediction: 1, probabilities: [0.1, 0.9] }] },
+      output: {
+        reports: [
+          { mappedTo: "score", prediction: "1", labels: ["0", "1"], probabilities: [0.1, 0.9] },
+        ],
+      },
     }),
     predictionResult({ id: 2, modelId: 2, status: "FAILED" }),
   ],
@@ -105,8 +109,9 @@ describe("schema feedback steps", () => {
             reports: [
               {
                 id: "custom_report",
+                kind: "plugin-report",
                 mappedTo: "plugin_payload",
-                payload: { blocks: ["Rendered"] },
+                blocks: ["Rendered"],
               },
             ],
           },
@@ -143,8 +148,9 @@ describe("schema feedback steps", () => {
             reports: [
               {
                 id: "custom_report",
+                kind: "plugin-report",
                 mappedTo: "plugin_payload",
-                payload: { explanation: "Rendered" },
+                explanation: "Rendered",
               },
             ],
           },
@@ -189,7 +195,9 @@ describe("schema feedback steps", () => {
         {
           ...run.results[0]!,
           output: {
-            reports: [{ id: "tree_1", mappedTo: "crystal-tree", payload: { explanation: "ok" } }],
+            reports: [
+              { id: "tree_1", kind: "Crystal Tree", mappedTo: "crystal-tree", explanation: "ok" },
+            ],
           },
         },
         {
@@ -246,7 +254,9 @@ describe("schema feedback steps", () => {
         {
           ...run.results[0]!,
           output: {
-            reports: [{ id: "tree_1", mappedTo: "crystal-tree", payload: { explanation: "ok" } }],
+            reports: [
+              { id: "tree_1", kind: "Crystal Tree", mappedTo: "crystal-tree", explanation: "ok" },
+            ],
           },
         },
         {
@@ -257,12 +267,9 @@ describe("schema feedback steps", () => {
             reports: [
               {
                 id: "tree_2",
+                kind: "Crystal Tree",
                 mappedTo: "crystal-tree",
-                payload: {
-                  endpoint: "/api/analyzer/explanations",
-                  explanation: "",
-                  modelId: "model-2",
-                },
+                explanation: "",
               },
             ],
           },

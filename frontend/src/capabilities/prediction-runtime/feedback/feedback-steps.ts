@@ -42,13 +42,6 @@ const feedbackQuestionnaire = (report: Record<string, unknown>): QuestionnaireSc
     ? (report.feedbackQuestionnaire as QuestionnaireSchema)
     : undefined;
 
-const fakeTarget = (order: number, value: unknown) =>
-  ({
-    id: String(order),
-    order,
-    value,
-  }) as any;
-
 const feedbackKey = (resultId: number, type: PredictionResultFeedbackType, order: number): string =>
   `${resultId}:${type}:${order}`;
 
@@ -118,11 +111,7 @@ export const buildSchemaFeedbackSteps = (
     if (!isBuiltinReportKind(first.display.kind)) {
       return explanationStep ? [explanationStep] : [];
     }
-    const outputSchema = createOutputFeedbackQuestionnaire(
-      config,
-      fakeTarget(order, first.display.payload),
-      first.result.output,
-    );
+    const outputSchema = createOutputFeedbackQuestionnaire(config, first.result.output);
     const outputTargets = stepTargets(members, "OUTPUT", order, feedbackByKey);
     const outputStep: SchemaFeedbackStep = {
       id: `report-${order}-output`,

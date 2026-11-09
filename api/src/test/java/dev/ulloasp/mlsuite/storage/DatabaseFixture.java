@@ -69,8 +69,9 @@ abstract class DatabaseFixture {
     }
 
     protected String binding(long org, long version, long model) {
-        return "INSERT INTO schema_model_binding (organization_id, schema_version_id, model_id, created_by_principal_id,"
-                + " created_at) VALUES (" + org + ", " + version + ", " + model + ", " + PLATFORM + ", now())";
+        return "INSERT INTO schema_model_binding (organization_id, schema_version_id, model_id, plugin_policy,"
+                + " created_by_principal_id, created_at) VALUES (" + org + ", " + version + ", " + model + ", '{}', "
+                + PLATFORM + ", now())";
     }
 
     protected long role(long org) throws SQLException {
@@ -113,13 +114,14 @@ abstract class DatabaseFixture {
     }
 
     protected long model(long org, String name) throws SQLException {
-        run("INSERT INTO runtime_environment (environment_key, writer_version, python_version, packages, created_at)"
-                + " VALUES (repeat('e', 64), '0.3.1', '3.14.7', '[]', now()) ON CONFLICT (environment_key) DO NOTHING");
+        run("INSERT INTO runtime_environment (environment_key, lock_digest, writer_version, python_version, packages,"
+                + " lock_toml, created_at) VALUES (repeat('e', 64), repeat('d', 64), '0.3.1', '3.14.7', '[]',"
+                + " 'lock-version = \"1.0\"', now()) ON CONFLICT (environment_key) DO NOTHING");
         return number("INSERT INTO model (organization_id, name, type, specific_type, file_name, storage_bucket,"
                 + " storage_object_key, storage_version_id, storage_etag, size_bytes, artifact_sha256,"
-                + " artifact_verified_at, input_schema, environment_key, created_by_principal_id,"
+                + " artifact_verified_at, input_schema, bundle_manifest, environment_key, created_by_principal_id,"
                 + " updated_by_principal_id, created_at, updated_at) VALUES (" + org + ", '" + name + "', 'classifier',"
-                + " 'Forest', 'm.mlbundle', 'bucket', 'models/" + org + "/" + name + "', 'v1', 'etag', 5, repeat('a', 64), now(), '{}', repeat('e', 64),"
+                + " 'Forest', 'm.mlbundle', 'bucket', 'models/" + org + "/" + name + "', 'v1', 'etag', 5, repeat('a', 64), now(), '{}', '{}', repeat('e', 64),"
                 + " " + PLATFORM + ", " + PLATFORM + ", now(), now()) RETURNING id");
     }
 

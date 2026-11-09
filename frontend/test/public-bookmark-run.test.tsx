@@ -93,7 +93,13 @@ const classified = (low: number, high: number) =>
       reports: [
         {
           key: "out0",
-          payload: { kind: "classifier", mapping: ["low", "high"], probabilities: [[low, high]] },
+          payload: {
+            kind: "classifier",
+            mapping: ["low", "high"],
+            labels: ["low", "high"],
+            probabilities: [low, high],
+            prediction: high > low ? "high" : "low",
+          },
         },
       ],
       feedback: [],

@@ -6,16 +6,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { QuestionnaireSchema } from "@/capabilities/prediction-runtime/feedback/questionnaire-schema";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 
-type OutputTarget = {
-  value: unknown;
-};
-
 const OUTPUT_STEP_ID = "output-feedback";
 const ASSESSMENT_FIELD_ID = `${OUTPUT_STEP_ID}-assessment`;
 
 const getClassifierOptions = (
   reportConfig: Record<string, unknown> | undefined,
-  target: OutputTarget,
   predictionValue: unknown,
 ) => {
   const labels = Array.isArray(reportConfig?.labels)
@@ -27,11 +22,7 @@ const getClassifierOptions = (
       : [];
   const classifierReport = reports.find((output) => output.kind === "classifier");
   const mapping = Array.isArray(classifierReport?.mapping) ? classifierReport.mapping : [];
-  const fallbackIndex =
-    isRecord(target.value) && typeof target.value.classIndex === "number"
-      ? target.value.classIndex + 1
-      : 0;
-  const size = Math.max(labels.length, mapping.length, fallbackIndex, 1);
+  const size = Math.max(labels.length, mapping.length, 1);
 
   return Array.from({ length: size }, (_, index) => ({
     label: labels[index] ?? String(mapping[index] ?? index),
@@ -47,7 +38,6 @@ export const getOutputFeedbackFieldIds = (kind: string | null) => ({
 
 export const createOutputFeedbackQuestionnaire = (
   reportConfig: Record<string, unknown> | undefined,
-  target: OutputTarget,
   predictionValue: unknown,
 ): QuestionnaireSchema => {
   const kind = typeof reportConfig?.kind === "string" ? reportConfig.kind : null;
@@ -64,7 +54,7 @@ export const createOutputFeedbackQuestionnaire = (
               id: ASSESSMENT_FIELD_ID,
               label: "Assessment",
               required: true,
-              options: getClassifierOptions(reportConfig, target, predictionValue),
+              options: getClassifierOptions(reportConfig, predictionValue),
             },
           ],
         },

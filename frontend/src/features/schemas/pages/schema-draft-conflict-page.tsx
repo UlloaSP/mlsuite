@@ -269,7 +269,7 @@ const normalizeBindings = (bindings: Array<SchemaDraftBindingDto | SchemaModelBi
   bindings.map(({ modelId, modelName, pluginPolicy }) => ({
     modelId,
     modelName,
-    pluginPolicy: pluginPolicy ?? {},
+    pluginPolicy,
   }));
 
 const toCodeLabel = (value: string) =>

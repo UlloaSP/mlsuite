@@ -22,13 +22,6 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultStatus;
 /** The feedback a snapshot asks for on a run: an assessment of each built-in output, and each questionnaire. */
 final class InferenceFeedbackSteps {
 
-    /**
-     * The most classes a bare class index may imply. A model's own labels and mapping are never cut;
-     * past them an option only repeats its index as its label, so a stored index of thirty million
-     * must not become thirty million options.
-     */
-    static final int MAX_INDEXED_CLASSES = 1_000;
-
     private static final String OUTPUT = "OUTPUT";
     private static final String EXPLANATION = "EXPLANATION";
     private static final String ASSESSMENT_FIELD_ID = "output-feedback-assessment";
@@ -91,12 +84,6 @@ final class InferenceFeedbackSteps {
         return steps;
     }
 
-    /** How many classes a stored class index implies on its own, never more than {@link #MAX_INDEXED_CLASSES}. */
-    static int indexedClasses(Object classIndex) {
-        double classes = classIndex instanceof Number number ? number.doubleValue() + 1 : 1;
-        return classes >= 1 ? (int) Math.min(classes, MAX_INDEXED_CLASSES) : 1;
-    }
-
     private static Report successful(Produced produced, int order) {
         if (produced.result().status() != PredictionResultStatus.SUCCESS) {
             return null;
@@ -119,8 +106,7 @@ final class InferenceFeedbackSteps {
                 break;
             }
         }
-        int size = Math.max(
-                Math.max(labels.size(), mapping.size()), indexedClasses(display.payload().get("classIndex")));
+        int size = Math.max(labels.size(), mapping.size());
         List<Map<?, ?>> options = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {
             Object mapped = index < mapping.size() ? mapping.get(index) : null;

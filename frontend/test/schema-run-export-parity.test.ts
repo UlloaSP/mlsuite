@@ -62,7 +62,12 @@ const run = predictionRun({
       modelInput: { age: 52 },
       output: {
         reports: [
-          { mappedTo: "predicted_class", prediction: 1, probabilities: [0.2, 0.8] },
+          {
+            mappedTo: "predicted_class",
+            prediction: "1",
+            labels: ["0", "1"],
+            probabilities: [0.2, 0.8],
+          },
           { mappedTo: "crystal", explanation: "tree path" },
         ],
       },

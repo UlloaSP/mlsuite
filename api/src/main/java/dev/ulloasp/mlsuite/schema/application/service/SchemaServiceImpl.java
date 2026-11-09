@@ -5,7 +5,6 @@ import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
@@ -170,8 +169,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
         SchemaVersion version = versionRepository.save(
                 new SchemaVersion(copy, 1, source.getName(), source.getFormSchema(), copy.getCreatedBy()));
         for (SchemaModelBinding binding : bindingRepository.findBySchemaVersionId(source.getId())) {
-            Map<String, Object> policy = binding.getPluginPolicy() == null ? Map.of() : binding.getPluginPolicy();
-            bindingRepository.save(new SchemaModelBinding(version, binding.getModel(), policy));
+            bindingRepository.save(new SchemaModelBinding(version, binding.getModel(), binding.getPluginPolicy()));
         }
         bindingRepository.flush();
         snapshotPlugins.copy(source.getId(), version.getId());

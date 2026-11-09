@@ -7,16 +7,10 @@ import { mountForm } from "mlform/kit";
 import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
 import type { ReportConfig, SubmitErrorContext, SubmitRequest, Transport } from "mlform/runtime";
 import { normalizeSchema, validateSchema, type ReportResult } from "mlform/schema";
-import { toPublicReportPayload } from "@/capabilities/prediction-runtime/data/report-normalization";
 import { withResolvedDisplayKeys } from "@/capabilities/prediction-runtime/mlform/display-key";
 import type { PredictionCatalogDefinitions } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 import type { PublicRunReport } from "@/capabilities/prediction-runtime/sandbox/sandbox-protocol";
 import { createRunRegistries } from "./runtime-assembly";
-import { withSeriesColumns } from "./series-schema";
-import {
-  connectStoredStatusConditions,
-  withStoredStatusConditions,
-} from "./stored-status-conditions";
 import { getPredictionDesignSystem } from "@/capabilities/prediction-runtime/mlform/headless-prediction";
 import {
   type JsonRecord,
@@ -72,9 +66,8 @@ const toReportResult = (
 ): ReportResult => {
   const mappedTo = typeof report.mappedTo === "string" ? report.mappedTo : "";
   const answer = answered.find((item) => item.key === mappedTo);
-  const normalized = answer && toPublicReportPayload(report, answer.payload);
-  if (!normalized) return { backend: BACKEND, mappedTo, status: "skipped", reason: "No result" };
-  const { kind: _kind, ...payload } = normalized;
+  if (!answer) return { backend: BACKEND, mappedTo, status: "skipped", reason: "No result" };
+  const { kind: _kind, ...payload } = answer.payload;
   void _kind;
   return { backend: BACKEND, mappedTo, status: "ready", payload };
 };
@@ -98,10 +91,7 @@ export const mountPublicRunForm = ({
     plugins?.fieldDefinitions ?? [],
     plugins?.reportDefinitions ?? [],
   );
-  const result = validateSchema(
-    withStoredStatusConditions(withSeriesColumns(withResolvedDisplayKeys(schema))),
-    registry,
-  );
+  const result = validateSchema(withResolvedDisplayKeys(schema), registry);
   if (!result.success) throw new Error(result.issues[0]?.message ?? "Invalid MLForm schema.");
   // Layout references use the ids MLForm gives fields and reports once normalized.
   const normalized = normalizeSchema(result.data, registry);
@@ -166,7 +156,6 @@ export const mountPublicRunForm = ({
     designSystem: getPredictionDesignSystem(theme),
   });
   host = mounted.host;
-  connectStoredStatusConditions(mounted.form);
   hideRunTabTitles(mounted.host);
   adoptShadowRules(mounted.host, PUBLIC_RUN_RULES);
   return {

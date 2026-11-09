@@ -80,7 +80,7 @@ class WorkspacePredictionServiceTest {
             "bucket", "key", null, 3L, "abc123"),
             "e".repeat(64), ModelRuntimeState.READY);
     private static final Map<String, Object> CLASSIFIER = Map.of("kind", "classifier", "output", 0,
-            "mapping", List.of("low", "high"), "probabilities", List.of(List.of(0.2, 0.8)), "prediction", "high");
+            "mapping", List.of("low", "high"), "probabilities", List.of(0.2, 0.8), "prediction", "high");
 
     @Mock private WorkspaceAuthorizationService authorization;
     @Mock private SchemaBookmarkRepository bookmarks;

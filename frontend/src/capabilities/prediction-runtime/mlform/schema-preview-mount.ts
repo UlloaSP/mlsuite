@@ -14,7 +14,6 @@ import {
 } from "@/capabilities/prediction-runtime/mlform/preview-transport";
 import { toMlformSchema } from "@/capabilities/prediction-runtime/mlform/schema-validation";
 import type { PredictionTheme } from "@/capabilities/prediction-runtime/mlform/shared";
-import { connectStoredStatusConditions } from "@/capabilities/prediction-runtime/mlform/stored-status-conditions";
 import type { PredictionCatalogDefinitions } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 
 type Options = {
@@ -56,7 +55,6 @@ export const mountSchemaPreviewForm = ({ container, schema, plugins, theme }: Op
     },
     designSystem: getPredictionDesignSystem(theme),
   });
-  connectStoredStatusConditions(mounted.form);
   return {
     updateTheme: (next: PredictionTheme) =>
       mounted.replaceDesignSystem(getPredictionDesignSystem(next)),

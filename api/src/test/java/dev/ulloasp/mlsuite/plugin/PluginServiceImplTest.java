@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.lenient;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -50,7 +51,11 @@ import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StorageProperties;
 import dev.ulloasp.mlsuite.storage.StoredObject;
 import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
+import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
+import dev.ulloasp.mlsuite.principal.domain.model.PrincipalKind;
+import org.springframework.test.util.ReflectionTestUtils;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
@@ -121,7 +126,7 @@ class PluginServiceImplTest {
         byte[] stored = objects.getOrDefault(key, new byte[0]);
         row.setSizeBytes(stored.length);
         row.setSha256(ArtifactHash.sha256(stored));
-        row.setUpdatedBy(TestFixtures.principal(new User()));
+        row.setUpdatedBy(TestFixtures.principal(new User("alice", "alice@example.com", "x", "Alice", SystemRole.USER)));
         return row;
     }
 
@@ -147,6 +152,23 @@ class PluginServiceImplTest {
         assertEquals(10, page.size());
         // The search reaches the query as a lower-case literal pattern, and the page as it was asked.
         verify(pluginMetadataRepository).findCatalogPage(41L, "report", "%zeta!_%", "updated", PageRequest.of(2, 10));
+    }
+
+    @Test
+    void list_NamesAnAuthorWhoseAccountIsGoneAsTheirPrincipalDoes() {
+        prepareStoredObjects();
+        PluginMetadata row = row("report");
+        Principal gone = new Principal();
+        ReflectionTestUtils.setField(gone, "kind", PrincipalKind.USER);
+        ReflectionTestUtils.setField(gone, "formerLabel", "Deleted user");
+        row.setUpdatedBy(gone);
+        when(pluginMetadataRepository.findCatalogPage(eq(41L), anyString(), anyString(), anyString(), any()))
+                .thenAnswer(invocation -> new PageImpl<>(List.of(row), invocation.getArgument(4), 1));
+
+        PluginDto listed = service.list(7L, 0, 10, "all", "", "updated").items().getFirst();
+
+        assertEquals("Deleted user", listed.updatedByName());
+        assertNull(listed.updatedByEmail());
     }
 
     @Test
@@ -223,8 +245,7 @@ class PluginServiceImplTest {
     }
 
     private StoredPlugin plugin(String id, String fileName, String source) {
-        return new StoredPlugin(id, fileName, "application/typescript", source.length(), now(), now(),
-                "Alice", "alice@example.com", source);
+        return new StoredPlugin(id, fileName, "application/typescript", source.length(), now(), now(), source);
     }
 
     private OffsetDateTime now() {

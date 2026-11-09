@@ -69,7 +69,7 @@ describe("a workspace run keeps the app's own results, whatever the sandbox repo
       target: { bookmarkId: 7, schemaVersionId: 3 },
       schema: {},
       plugins: { fields: [], reports: [] },
-      bindings: [{ modelId: 1, modelName: "forest", pluginPolicy: null }],
+      bindings: [{ modelId: 1, modelName: "forest", pluginPolicy: {} }],
       onSubmit,
       onResultUpdate,
     });

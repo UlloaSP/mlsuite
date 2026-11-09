@@ -33,7 +33,7 @@ export type PluginCatalog = z.infer<typeof pluginCatalogSchema>;
 const bindingSchema = z.object({
   modelId: z.number(),
   modelName: z.string().optional(),
-  pluginPolicy: record.nullable().optional(),
+  pluginPolicy: record.optional(),
 });
 
 export const sandboxThemeSchema = z.object({

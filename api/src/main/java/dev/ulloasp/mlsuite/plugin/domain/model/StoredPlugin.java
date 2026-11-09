@@ -12,8 +12,6 @@ public record StoredPlugin(
         long sizeBytes,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
-        String updatedByName,
-        String updatedByEmail,
         String source) {
 }
 

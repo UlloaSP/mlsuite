@@ -55,13 +55,7 @@ const reportColumnId = (report: SchemaDisplayReport): string => report.id;
 
 const predictionValue = (report: SchemaDisplayReport): unknown => {
   const payload = feedbackRecord(report.payload);
-  const rawPrediction = builtinPrediction(payload);
-  if (typeof rawPrediction === "number") return report.labels?.[rawPrediction] ?? rawPrediction;
-  if (typeof rawPrediction === "string" && /^\d+$/.test(rawPrediction)) {
-    const index = Number(rawPrediction);
-    return report.labels?.[index] ?? rawPrediction;
-  }
-  return rawPrediction ?? report.payload;
+  return builtinPrediction(payload) ?? report.payload;
 };
 
 const outputFeedbackValue = (record: Record<string, unknown>, kind: string): unknown => {

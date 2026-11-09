@@ -6769,10 +6769,7 @@
           },
           "pluginPolicy": {
             "additionalProperties": { },
-            "type": [
-              "object",
-              "null"
-            ]
+            "type": "object"
           },
           "schemaVersionId": {
             "format": "int64",

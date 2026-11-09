@@ -51,3 +51,12 @@ export const getString = (value: unknown): string | undefined =>
 
 export const hasBlockingIssues = (issues: readonly CompatIssue[]): boolean =>
   issues.some((issue) => issue.severity === "error");
+
+/** A stored report copy without the naming the workspace added: the payload the runtime gave. */
+export const storedReportPayload = (report: JsonRecord): JsonRecord => {
+  const { id: _id, kind: _kind, mappedTo: _mappedTo, ...payload } = report;
+  void _id;
+  void _kind;
+  void _mappedTo;
+  return payload;
+};

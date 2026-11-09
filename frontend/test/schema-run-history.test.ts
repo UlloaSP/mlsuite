@@ -62,7 +62,14 @@ const run = predictionRun({
       createdAt: "2026-06-02T10:00:00Z",
       modelInput: { blood_group__A: 0, blood_group__B: 1, age: 52 },
       output: {
-        reports: [{ mappedTo: "predicted_class", prediction: 1, probabilities: [0.2, 0.8] }],
+        reports: [
+          {
+            mappedTo: "predicted_class",
+            prediction: "1",
+            labels: ["0", "1"],
+            probabilities: [0.2, 0.8],
+          },
+        ],
       },
     }),
   ],

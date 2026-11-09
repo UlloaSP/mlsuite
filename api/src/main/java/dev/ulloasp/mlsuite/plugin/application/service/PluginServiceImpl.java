@@ -91,8 +91,6 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
                     file.getSize(),
                     now,
                     now,
-                    user.getFullName(),
-                    user.getEmail(),
                     source);
             StoredObject uploaded = objectStorageService.store(
                     itemObjectKey(organization.getId(), id),
@@ -107,10 +105,10 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
                     }
                 }
             });
-            persistMetadata(organization, stored, principals.of(user), uploaded);
+            PluginMetadata row = persistMetadata(organization, stored, principals.of(user), uploaded);
             auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.PLUGIN_UPLOAD, id,
                     AuditDetails.of("file", stored.fileName(), "sizeBytes", stored.sizeBytes()));
-            return toDto(stored);
+            return toDto(stored, row);
         } catch (IOException ex) {
             throw new IllegalStateException("Could not serialize plugin.", ex);
         }
@@ -127,7 +125,7 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
                 PageDto.request(page, size, Sort.unsorted()));
         return PageDto.of(result, result.getContent().stream()
                 .flatMap(item -> stored(organization.getId(), item.getPublicId()).stream()
-                        .map(plugin -> toDto(plugin, item)))
+                        .map(stored -> toDto(stored, item)))
                 .toList());
     }
 
@@ -166,7 +164,8 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
     }
 
     /** The row that pins the stored object: its exact version, size and SHA-256. */
-    private void persistMetadata(Organization organization, StoredPlugin stored, Principal author, StoredObject uploaded) {
+    private PluginMetadata persistMetadata(Organization organization, StoredPlugin stored, Principal author,
+            StoredObject uploaded) {
         PluginDescriptor descriptor = describe(stored.source());
         PluginMetadata metadata = new PluginMetadata(stored.id(), organization,
                 itemObjectKey(organization.getId(), stored.id()), stored.fileName(), stored.contentType(),
@@ -176,6 +175,7 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
         metadata.setSha256(uploaded.sha256());
         metadata.setStorageVersionId(uploaded.versionId());
         pluginMetadataRepository.save(metadata);
+        return metadata;
     }
 
     private String itemObjectKey(Long organizationId, String id) {

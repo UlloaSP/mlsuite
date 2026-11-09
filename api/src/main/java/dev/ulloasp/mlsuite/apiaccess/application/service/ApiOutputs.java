@@ -47,8 +47,7 @@ final class ApiOutputs {
 
     /** Every probability a number, one label per probability, as the runtime gave them. */
     private static Optional<ApiPredictionOutput> classifier(Map<String, Object> report) {
-        int givenProbabilities = size(report.get("probabilities") instanceof List<?> rows && !rows.isEmpty()
-                && rows.get(0) instanceof List<?> first ? first : report.get("probabilities"));
+        int givenProbabilities = size(report.get("probabilities"));
         int givenLabels = size(report.get("mapping"));
         PublicRunReports.asWorkspaceStores("classifier", report);
         List<?> labels = (List<?>) report.get("labels");
@@ -73,8 +72,7 @@ final class ApiOutputs {
     }
 
     private static int size(Object value) {
-        if (value instanceof List<?> items) return items.size();
-        return value instanceof Map<?, ?> entries ? entries.size() : 0;
+        return value instanceof List<?> items ? items.size() : 0;
     }
 
     private static Read malformed(String reason) {

@@ -16,12 +16,13 @@ import {
   type JsonRecord,
   type PredictionPayloadField,
   isRecord,
+  storedReportPayload,
 } from "@/capabilities/prediction-runtime/mlform/shared";
 
 export type SchemaRunBinding = {
   modelId: number;
   modelName?: string;
-  pluginPolicy?: JsonRecord | null;
+  pluginPolicy?: JsonRecord;
 };
 
 /** The bookmark whose snapshot the form runs; the server runs each model for it. */
@@ -64,15 +65,6 @@ const findReportPayload = (target: string, output: JsonRecord): JsonRecord | und
     (item) => String(item.mappedTo) === target,
   );
 
-const payloadValue = (report: JsonRecord): unknown => {
-  if ("payload" in report) return report.payload;
-  const { id: _id, kind: _kind, mappedTo: _mappedTo, ...payload } = report;
-  void _id;
-  void _kind;
-  void _mappedTo;
-  return payload;
-};
-
 const reportResults = (
   results: readonly WorkspacePredictionDto[],
   bindings: readonly SchemaRunBinding[],
@@ -99,7 +91,7 @@ const reportResults = (
     const context = { modelValues: result.modelInput, meta, raw: output };
     const payload = findReportPayload(mappedTo, output);
     return payload
-      ? { backend, mappedTo, status: "ready", payload: payloadValue(payload), context }
+      ? { backend, mappedTo, status: "ready", payload: storedReportPayload(payload), context }
       : { backend, mappedTo, status: "pending", context };
   });
 

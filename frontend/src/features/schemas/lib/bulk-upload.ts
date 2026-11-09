@@ -10,7 +10,6 @@ import {
 } from "@/capabilities/prediction-runtime/mlform/mapped-to";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
-import { seriesInputValue } from "@/capabilities/prediction-runtime/mlform/series-schema";
 
 type FieldRecord = JsonRecord & {
   id?: string;
@@ -109,11 +108,11 @@ export const toSchemaRunFieldValues = (
     }
     const modelKey = mappedTargets(field.mappedTo).find((target) => target in inputs);
     if (modelKey) {
-      payload[field.id] = seriesInputValue(field, inputs[modelKey]);
+      payload[field.id] = inputs[modelKey];
       return payload;
     }
     const key = displayKeysFor(field).find((candidate) => candidate in inputs);
-    if (key) payload[field.id] = seriesInputValue(field, inputs[key]);
+    if (key) payload[field.id] = inputs[key];
     return payload;
   }, {});
 

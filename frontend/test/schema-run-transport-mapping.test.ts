@@ -17,7 +17,13 @@ describe("schema run transport mapping", () => {
           return workspacePrediction(init, [], "missing features");
         }
         return workspacePrediction(init, [
-          { kind: "classifier", mappedTo: "0", prediction: 0, probabilities: [0.8, 0.2] },
+          {
+            kind: "classifier",
+            mappedTo: "0",
+            prediction: "0",
+            labels: ["0", "1"],
+            probabilities: [0.8, 0.2],
+          },
         ]);
       }),
     );

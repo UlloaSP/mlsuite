@@ -75,17 +75,18 @@ class FlywayMigrationTest {
             statement.execute("SET search_path TO identity, public");
             seedOrganization(statement);
             statement.execute("""
-                    INSERT INTO runtime_environment (environment_key, writer_version, python_version, packages,
-                        created_at) VALUES (repeat('e', 64), '0.3.1', '3.14.7', '[]', now())""");
+                    INSERT INTO runtime_environment (environment_key, lock_digest, writer_version, python_version,
+                        packages, lock_toml, created_at)
+                    VALUES (repeat('e', 64), repeat('d', 64), '0.3.1', '3.14.7', '[]', 'lock-version = "1.0"', now())""");
             String columns = """
                     (organization_id, created_by_principal_id, updated_by_principal_id, name, type, specific_type,
                      file_name, storage_bucket,
                      storage_object_key, storage_version_id, storage_etag, size_bytes, artifact_sha256,
-                     artifact_verified_at, input_schema, environment_key, created_at, updated_at)
+                     artifact_verified_at, input_schema, bundle_manifest, environment_key, created_at, updated_at)
                     """;
             String values = """
                     (1, 1, 1, 'risk', 'classifier', 'Forest', 'risk.mlbundle', 'bucket', 'key', 'v1', 'etag', 5,
-                     %s, now(), '{}', repeat('e', 64), now(), now())
+                     %s, now(), '{}', '{}', repeat('e', 64), now(), now())
                     """;
             statement.execute("INSERT INTO model " + columns + " VALUES "
                     + values.formatted("repeat('a', 64)"));

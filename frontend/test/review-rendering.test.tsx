@@ -74,7 +74,7 @@ const version = schemaVersion({
 });
 const result = predictionResult({
   modelInput: { age: 42 },
-  output: { reports: [{ mappedTo: "custom", payload: { message: "Proof" } }] },
+  output: { reports: [{ id: "custom", kind: "QA Report", mappedTo: "custom", message: "Proof" }] },
 });
 test("review outputs pass matched reports and catalog to shared renderer", async () => {
   const { host: container } = await mount(

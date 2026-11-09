@@ -5,12 +5,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ReportConfig } from "mlform/runtime";
 import { isBuiltinReportKind } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
-import { isRecord, type JsonRecord } from "@/capabilities/prediction-runtime/mlform/shared";
-import { reportTargetForBinding } from "@/capabilities/prediction-runtime/mlform/schema-run-report-mapping";
 import {
-  mappingLabels,
-  toStoredBuiltinPayload,
-} from "@/capabilities/prediction-runtime/data/report-normalization";
+  isRecord,
+  storedReportPayload,
+  type JsonRecord,
+} from "@/capabilities/prediction-runtime/mlform/shared";
+import { reportTargetForBinding } from "@/capabilities/prediction-runtime/mlform/schema-run-report-mapping";
+import { mappingLabels } from "@/capabilities/prediction-runtime/data/report-normalization";
 import type { PredictionResultDto, SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type SchemaVersion = Pick<SchemaVersionDto, "formSchema" | "bindings">;
@@ -52,9 +53,7 @@ const payloadFor = (
       String(report.mappedTo) === target ||
       aliases.some((alias) => String(report.id) === alias || String(report.mappedTo) === alias),
   );
-  if (!match) return undefined;
-  const payload = "payload" in match ? match.payload : match;
-  return isRecord(payload) ? payload : { value: payload };
+  return match && storedReportPayload(match);
 };
 
 const reportLabels = (report: ReportConfig): string[] =>
@@ -64,37 +63,19 @@ const reportLabels = (report: ReportConfig): string[] =>
       )
     : [];
 
-/** A stored report as it is shown: a predicted class index reads as the class's label. */
+/**
+ * A stored report as it is shown: a schema's class labels name the stored classes in order, so
+ * the predicted class reads as the label in its place.
+ */
 export const normalizeReportPayload = (
   report: ReportConfig,
   payload?: JsonRecord,
 ): JsonRecord | undefined => {
   if (!payload) return undefined;
-  // Visitor runs kept before stored outputs were unified hold the runtime's raw answer.
-  payload = toStoredBuiltinPayload(report.kind, payload) ?? payload;
   const labels = reportLabels(report);
-  const payloadOnlyLabels = mappingLabels(payload.labels) ?? [];
-  const payloadLabels =
-    labels.length > 0
-      ? labels
-      : payloadOnlyLabels.length > 0
-        ? payloadOnlyLabels
-        : (mappingLabels(payload.mapping) ?? []);
-  if (payloadLabels.length > 0) payload = { ...payload, labels: payloadLabels };
-  if (payloadLabels.length === 0) return payload;
-  const prediction = payload.prediction;
-  if (typeof prediction === "string" && payloadLabels.includes(prediction)) return payload;
-  const index =
-    typeof prediction === "number"
-      ? prediction
-      : typeof prediction === "string" && /^\d+$/.test(prediction)
-        ? Number(prediction)
-        : -1;
-  return {
-    ...payload,
-    labels: payloadLabels,
-    prediction: payloadLabels[index] ?? prediction,
-  };
+  if (labels.length === 0) return payload;
+  const index = (mappingLabels(payload.labels) ?? []).indexOf(String(payload.prediction));
+  return { ...payload, labels, prediction: labels[index] ?? payload.prediction };
 };
 
 const METADATA_KEYS = new Set(["endpoint", "modelId", "backendUrl", "status"]);

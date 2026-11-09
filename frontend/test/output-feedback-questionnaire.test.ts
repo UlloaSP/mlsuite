@@ -5,7 +5,6 @@ describe("output feedback questionnaire", () => {
   test("uses category assessment for classifier", () => {
     const schema = createOutputFeedbackQuestionnaire(
       { kind: "classifier", labels: ["No", "Yes"] },
-      { value: { prediction: 1 } },
       {},
     );
 
@@ -22,7 +21,6 @@ describe("output feedback questionnaire", () => {
   test("uses number assessment for regressor even when labels exist", () => {
     const schema = createOutputFeedbackQuestionnaire(
       { kind: "regressor", labels: ["No", "Yes"] },
-      { value: 12 },
       {},
     );
 

@@ -35,12 +35,11 @@ const schema = {
 
 describe("schema run display", () => {
   test.each([
-    { prediction: 1, expected: "High" },
-    { prediction: 0, probabilities: [0.2, 0.8], expected: "Low" },
-  ])("preserves the stored classifier prediction $prediction", ({ expected, ...payload }) => {
-    expect(
-      normalizeReportPayload({ kind: "classifier", labels: ["Low", "High"] }, payload),
-    ).toMatchObject({ prediction: expected, labels: ["Low", "High"] });
+    { labels: ["Low", "High"], expected: { prediction: "High", labels: ["Low", "High"] } },
+    { labels: undefined, expected: { prediction: "1", labels: ["0", "1"] } },
+  ])("names the stored class by the schema's labels $labels", ({ labels, expected }) => {
+    const payload = { prediction: "1", labels: ["0", "1"], probabilities: [0.2, 0.8] };
+    expect(normalizeReportPayload({ kind: "classifier", labels }, payload)).toMatchObject(expected);
   });
 
   test("reads visible inputs from displayKey data only", () => {
@@ -128,7 +127,7 @@ describe("schema run display", () => {
       modelId: 1,
       output: {
         reports: [
-          { mappedTo: "normal_output", prediction: 1 },
+          { mappedTo: "normal_output", prediction: "1", labels: ["0", "1"] },
           { mappedTo: "plugin_output", explanation: "ok" },
         ],
       },

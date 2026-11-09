@@ -264,9 +264,9 @@ class PurgeIntegrationTest extends PublicPredictionFixture {
                     SELECT organization_id, id, 9, 'other', '{"fields":[]}', (SELECT id FROM principal WHERE kind = 'SYSTEM'), now()
                     FROM schema WHERE id = ? RETURNING id""", Long.class, schema.getId());
             jdbc.update("""
-                    INSERT INTO schema_model_binding (organization_id, schema_version_id, model_id, created_by_principal_id,
-                        created_at)
-                    SELECT organization_id, id, ?, created_by_principal_id, now() FROM schema_version WHERE id = ?""",
+                    INSERT INTO schema_model_binding (organization_id, schema_version_id, model_id, plugin_policy,
+                        created_by_principal_id, created_at)
+                    SELECT organization_id, id, ?, '{}', created_by_principal_id, now() FROM schema_version WHERE id = ?""",
                     netModel.getId(), written[0]);
         });
         Long keptVersion = written[0];
@@ -315,6 +315,8 @@ class PurgeIntegrationTest extends PublicPredictionFixture {
                 forestModel.getId());
         jdbc.update("UPDATE schema_review SET created_by_principal_id = (SELECT id FROM principal WHERE user_id = ?) WHERE organization_id = ?", member.getId(),
                 organization.getId());
+        jdbc.update("UPDATE plugin_metadata SET updated_by_principal_id = (SELECT id FROM principal WHERE user_id = ?)"
+                + " WHERE organization_id = ?", member.getId(), organization.getId());
 
         PurgeJobDto asked = purge(PurgeScope.USER, member.getId(), member.getUsername());
         assertFalse(jdbc.queryForObject("SELECT enabled FROM app_user WHERE id = ?", Boolean.class, member.getId()));
@@ -333,6 +335,8 @@ class PurgeIntegrationTest extends PublicPredictionFixture {
                 + " WHERE r.schema_version_id = ? AND p.user_id IS NULL AND p.kind = 'USER'", Long.class, version.getId()));
         assertEquals(DeletedUser.NAME, jdbc.queryForList("SELECT p.former_label FROM prediction_run r JOIN principal p"
                 + " ON p.id = r.created_by_principal_id WHERE r.schema_version_id = ?", String.class, version.getId()).get(0));
+        assertEquals(DeletedUser.NAME, jdbc.queryForObject("SELECT p.former_label FROM plugin_metadata m JOIN principal p"
+                + " ON p.id = m.updated_by_principal_id WHERE m.organization_id = ?", String.class, organization.getId()));
         assertEquals(2, rows("schema_review", "organization_id", organization.getId()));
         assertEquals(0, rows("organization_membership", "user_id", member.getId()));
         mockMvc.perform(signedIn(get("/api/models/{id}", forestModel.getId()), owner.getId()))

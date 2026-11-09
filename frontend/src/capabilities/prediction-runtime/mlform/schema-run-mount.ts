@@ -4,7 +4,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { mountForm } from "mlform/kit";
-import { connectStoredStatusConditions } from "./stored-status-conditions";
 import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
 import type { AfterSubmitContext, FormState, SubmitErrorContext, Transport } from "mlform/runtime";
 import { normalizeSchema } from "mlform/schema";
@@ -39,7 +38,7 @@ type Options = {
   bindings: readonly {
     modelId: number;
     modelName?: string;
-    pluginPolicy?: JsonRecord | null;
+    pluginPolicy?: JsonRecord;
   }[];
   theme: PredictionTheme;
   customFieldDefinitions?: readonly CatalogFieldDefinition[];
@@ -123,7 +122,6 @@ export const mountSchemaRunForm = ({
     designSystem: getPredictionDesignSystem(theme),
   });
   const form = mounted;
-  connectStoredStatusConditions(form.form);
   hideRunTabTitles(form.host);
   let reported: Pick<FormState, "lastResult" | "reportStates"> | null = null;
   const reportUpdate = (state: FormState) => {

@@ -65,9 +65,8 @@ public final class PublicForm {
 
     private PublicForm(Map<String, Object> formSchema, List<BoundModel> models) {
         this.models = models;
-        Map<String, Object> source = formSchema == null ? Map.of() : formSchema;
-        List<?> storedFields = source.get(FIELDS) instanceof List<?> items ? items : List.of();
-        Object reports = source.get(REPORTS) instanceof List<?> items ? reportsPerModel(items) : List.of();
+        List<?> storedFields = formSchema.get(FIELDS) instanceof List<?> items ? items : List.of();
+        Object reports = formSchema.get(REPORTS) instanceof List<?> items ? reportsPerModel(items) : List.of();
         List<Object> shownFields = new ArrayList<>();
         for (Object field : storedFields) {
             if (field instanceof Map<?, ?> config && Boolean.TRUE.equals(config.get("hidden"))) {

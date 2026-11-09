@@ -39,7 +39,11 @@ const run = predictionRun({
     predictionResult({
       id: 11,
       modelId: 1,
-      output: { reports: [{ mappedTo: "score", prediction: 1, probabilities: [0.1, 0.9] }] },
+      output: {
+        reports: [
+          { mappedTo: "score", prediction: "1", labels: ["0", "1"], probabilities: [0.1, 0.9] },
+        ],
+      },
     }),
   ],
 });

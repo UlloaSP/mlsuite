@@ -4735,7 +4735,7 @@ export interface components {
             modelName: string;
             pluginPolicy: {
                 [key: string]: unknown;
-            } | null;
+            };
             /** Format: int64 */
             schemaVersionId: number;
         };

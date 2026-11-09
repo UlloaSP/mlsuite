@@ -22,7 +22,7 @@ export const binding = (
   schemaVersionId: 1,
   modelId,
   modelName: `model-${modelId}`,
-  pluginPolicy: null,
+  pluginPolicy: {},
   ...overrides,
 });
 

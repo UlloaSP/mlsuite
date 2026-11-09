@@ -37,7 +37,7 @@ public class RuntimeEnvironment {
     @Column(name = "environment_key", nullable = false, unique = true, updatable = false, length = 64)
     private String key;
 
-    @Column(name = "lock_digest", length = 64)
+    @Column(name = "lock_digest", nullable = false, length = 64)
     private String environmentId;
 
     @Column(name = "writer_version", nullable = false, length = 64)
@@ -50,7 +50,7 @@ public class RuntimeEnvironment {
     @Column(name = "packages", nullable = false)
     private List<Map<String, Object>> packages;
 
-    @Column(name = "lock_toml")
+    @Column(name = "lock_toml", nullable = false)
     private String lockToml;
 
     @CreationTimestamp

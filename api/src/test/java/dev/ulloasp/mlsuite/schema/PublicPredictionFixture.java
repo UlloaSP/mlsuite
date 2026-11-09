@@ -102,8 +102,8 @@ public abstract class PublicPredictionFixture {
     protected static final String FOREST_SHA256 = ArtifactHash.sha256(FOREST_BYTES);
     static final String NET_SHA256 = ArtifactHash.sha256(NET_BYTES);
     protected static final Map<String, Object> CLASSIFIER = Map.of("kind", "classifier", "label", "Predicted class",
-            "mapping", List.of("low", "high"), "probabilities", List.of(List.of(0.2, 0.8)));
-    /** The classifier's answer as a run keeps it: the instance's own row, its labels and its class. */
+            "mapping", List.of("low", "high"), "probabilities", List.of(0.2, 0.8));
+    /** The classifier's answer as a run keeps it, with its labels and, as it decided none, its most probable class. */
     static final Map<String, Object> KEPT_CLASSIFIER = Map.of("kind", "classifier", "label", "Predicted class",
             "mapping", List.of("low", "high"), "probabilities", List.of(0.2, 0.8),
             "labels", List.of("low", "high"), "prediction", "high");
@@ -255,8 +255,9 @@ public abstract class PublicPredictionFixture {
         }
         entityManager.flush();
         entityManager.createNativeQuery("INSERT INTO schema_model_binding (organization_id, schema_version_id, model_id,"
-                + " created_by_principal_id, created_at) SELECT v.organization_id, v.id, (SELECT min(m.id) FROM model m"
-                + " WHERE m.organization_id = v.organization_id), v.created_by_principal_id, now()" + unbound).executeUpdate();
+                + " plugin_policy, created_by_principal_id, created_at) SELECT v.organization_id, v.id, (SELECT min(m.id)"
+                + " FROM model m WHERE m.organization_id = v.organization_id), '{}', v.created_by_principal_id, now()"
+                + unbound).executeUpdate();
     }
 
     /**

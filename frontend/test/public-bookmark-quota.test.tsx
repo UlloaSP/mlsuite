@@ -80,7 +80,9 @@ const ran = (quota: PublicRunQuotaDto, high = 0.8) =>
           payload: {
             kind: "classifier",
             mapping: ["low", "high"],
-            probabilities: [[1 - high, high]],
+            labels: ["low", "high"],
+            probabilities: [1 - high, high],
+            prediction: high > 0.5 ? "high" : "low",
           },
         },
       ],

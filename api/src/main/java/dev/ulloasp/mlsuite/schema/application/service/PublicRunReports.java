@@ -2,7 +2,6 @@ package dev.ulloasp.mlsuite.schema.application.service;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,8 +89,7 @@ public final class PublicRunReports {
      */
     public static void asWorkspaceStores(String kind, Map<String, Object> report) {
         if ("classifier".equals(kind)) {
-            List<Double> probabilities = numbers(report.get("probabilities") instanceof List<?> rows
-                    && !rows.isEmpty() && rows.get(0) instanceof List<?> first ? first : report.get("probabilities"));
+            List<Double> probabilities = numbers(report.get("probabilities"));
             List<String> labels = labels(report.get("mapping"));
             report.put("probabilities", probabilities);
             report.put("labels", labels);
@@ -119,46 +117,16 @@ public final class PublicRunReports {
         return null;
     }
 
+    /** The numbers of a list; anything else in it is left out. */
     private static List<Double> numbers(Object value) {
-        List<Double> numbers = new ArrayList<>();
-        if (value instanceof List<?> items) {
-            for (Object item : items) {
-                if (item instanceof Number number) {
-                    numbers.add(number.doubleValue());
-                } else if (item instanceof String text) {
-                    try {
-                        numbers.add(Double.valueOf(text.strip()));
-                    } catch (NumberFormatException ignored) {
-                        // Not a number: left out, as the workspace leaves it out.
-                    }
-                }
-            }
-        }
-        return numbers;
+        List<?> items = value instanceof List<?> list ? list : List.of();
+        return items.stream().filter(Number.class::isInstance).map(item -> ((Number) item).doubleValue()).toList();
     }
 
-    /** Class labels in class order: a list as given, or a map keyed by class index. */
+    /** Class labels in class order; anything that is not a label is left out. */
     private static List<String> labels(Object mapping) {
-        if (mapping instanceof List<?> items) {
-            return items.stream().filter(String.class::isInstance).map(String.class::cast).toList();
-        }
-        if (mapping instanceof Map<?, ?> byIndex) {
-            return byIndex.entrySet().stream()
-                    .sorted(Comparator.comparingDouble(entry -> index(entry.getKey())))
-                    .map(Map.Entry::getValue)
-                    .filter(String.class::isInstance)
-                    .map(String.class::cast)
-                    .toList();
-        }
-        return List.of();
-    }
-
-    private static double index(Object key) {
-        try {
-            return Double.parseDouble(String.valueOf(key));
-        } catch (NumberFormatException ex) {
-            return Double.MAX_VALUE;
-        }
+        List<?> items = mapping instanceof List<?> list ? list : List.of();
+        return items.stream().filter(String.class::isInstance).map(String.class::cast).toList();
     }
 
     private static Optional<Map<String, Object>> storedCopy(ReportRoute route, Map<String, Object> output) {

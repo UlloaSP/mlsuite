@@ -3,17 +3,14 @@ package dev.ulloasp.mlsuite.schema.catalog;
 import static dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogValues.filled;
 import static dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogValues.first;
 import static dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogValues.list;
-import static dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogValues.map;
 import static dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogValues.records;
 import static dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogValues.target;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionResultDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaModelBindingDto;
@@ -24,7 +21,6 @@ final class InferenceReportValues {
 
     private static final Set<String> BUILTINS = Set.of("classifier", "regressor");
     private static final Set<String> METADATA = Set.of("endpoint", "modelId", "backendUrl", "status");
-    private static final Pattern CLASS_INDEX = Pattern.compile("\\d+");
 
     record Report(int order, String label, String kind, String target, Map<?, ?> config, Map<?, ?> payload) {
     }
@@ -81,8 +77,7 @@ final class InferenceReportValues {
         }
         // A run stores a regressor's prediction as its list of values, one per predicted row.
         List<?> values = list(report.payload().get("values"));
-        return first(report.payload().get("prediction"), report.payload().get("value"),
-                values.isEmpty() ? null : values.get(0));
+        return first(report.payload().get("prediction"), values.isEmpty() ? null : values.get(0));
     }
 
     /** The class labels a report's configuration lists. */
@@ -90,59 +85,30 @@ final class InferenceReportValues {
         return list(value).stream().filter(String.class::isInstance).map(String.class::cast).toList();
     }
 
-    /** Class labels from a model's own mapping: a list, or labels keyed by class index. */
-    private static List<String> mappingLabels(Object value) {
-        if (value instanceof List<?>) {
-            return configuredLabels(value);
-        }
-        return map(value).entrySet().stream()
-                .sorted(Comparator.comparingDouble(entry -> InferenceJsValues.number(String.valueOf(entry.getKey()))))
-                .map(Map.Entry::getValue)
-                .filter(String.class::isInstance)
-                .map(String.class::cast)
-                .toList();
-    }
-
+    /** The copy of the report the run stored, found by the report's route, label or id. */
     private static Map<?, ?> payload(Map<?, ?> config, List<Map<?, ?>> outputs, String route, String label) {
         for (Map<?, ?> output : outputs) {
             String mappedTo = InferenceJsValues.string(output, "mappedTo");
             String id = InferenceJsValues.string(output, "id");
             if (route.equals(mappedTo) || label.equals(mappedTo) || label.equals(id)) {
-                Object raw = output.containsKey("payload") ? output.get("payload") : output;
-                return normalize(config, raw instanceof Map<?, ?> entries ? entries : singleton("value", raw));
+                return relabel(config, output);
             }
         }
         return null;
     }
 
-    /** Shows a prediction given as a class index by its label, when the report or the model names its classes. */
-    private static Map<?, ?> normalize(Map<?, ?> config, Map<?, ?> payload) {
+    /**
+     * A stored report as it is shown: a schema's class labels name the stored classes in order, so
+     * the predicted class reads as the label in its place. The run page shows it the same way.
+     */
+    private static Map<?, ?> relabel(Map<?, ?> config, Map<?, ?> stored) {
         List<String> labels = configuredLabels(config.get("labels"));
-        if (labels.isEmpty()) {
-            labels = mappingLabels(payload.get("labels"));
-        }
-        if (labels.isEmpty()) {
-            labels = mappingLabels(payload.get("mapping"));
-        }
-        if (labels.isEmpty()) {
-            return payload;
-        }
-        Map<Object, Object> normalized = new LinkedHashMap<>(payload);
-        normalized.put("labels", labels);
-        Object prediction = payload.get("prediction");
-        if (prediction instanceof String text && labels.contains(text)) {
-            return normalized;
-        }
-        double index = -1;
-        if (prediction instanceof Number number) {
-            index = number.doubleValue();
-        } else if (prediction instanceof String text && CLASS_INDEX.matcher(text).matches()) {
-            index = InferenceJsValues.number(text);
-        }
-        if (index >= 0 && index == Math.rint(index) && index < labels.size()) {
-            normalized.put("prediction", labels.get((int) index));
-        }
-        return normalized;
+        if (labels.isEmpty()) return stored;
+        Map<Object, Object> shown = new LinkedHashMap<>(stored);
+        int index = configuredLabels(stored.get("labels")).indexOf(String.valueOf(stored.get("prediction")));
+        shown.put("labels", labels);
+        if (index >= 0 && index < labels.size()) shown.put("prediction", labels.get(index));
+        return shown;
     }
 
     /** Whether a payload says anything beyond where it came from. */
@@ -164,11 +130,5 @@ final class InferenceReportValues {
             return false;
         }
         return filled(value);
-    }
-
-    private static Map<String, Object> singleton(String key, Object value) {
-        Map<String, Object> values = new LinkedHashMap<>();
-        values.put(key, value);
-        return values;
     }
 }

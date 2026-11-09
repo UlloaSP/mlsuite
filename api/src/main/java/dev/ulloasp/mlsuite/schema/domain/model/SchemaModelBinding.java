@@ -52,7 +52,7 @@ public class SchemaModelBinding {
     private Model model;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "plugin_policy")
+    @Column(name = "plugin_policy", nullable = false)
     private Map<String, Object> pluginPolicy;
 
     @CreationTimestamp

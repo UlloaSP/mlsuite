@@ -52,11 +52,7 @@ const stepsOf = (
 ): PublicFeedbackStep[] => {
   const steps: PublicFeedbackStep[] = [];
   if (isBuiltinReportKind(report.kind)) {
-    const schema = createOutputFeedbackQuestionnaire(
-      report.config,
-      { value: report.payload },
-      { reports: [payload] },
-    );
+    const schema = createOutputFeedbackQuestionnaire(report.config, { reports: [payload] });
     const saved = savedAnswers(run, key, "OUTPUT", schema);
     steps.push({
       id: `${key}-output`,

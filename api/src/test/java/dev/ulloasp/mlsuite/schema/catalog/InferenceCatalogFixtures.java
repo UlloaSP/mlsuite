@@ -51,11 +51,16 @@ final class InferenceCatalogFixtures {
         return data;
     }
 
-    /** The first fixture with its report turned into a custom one that produced the given payload. */
+    /**
+     * The first fixture with its report turned into a custom one the runtime answered with the given
+     * payload, stored as a run stores it: the answer, then the report's id, kind and route.
+     */
     static ObjectNode customReport(JsonNode payload) throws IOException {
         ObjectNode data = data(0);
         object(data, "/versions/0/formSchema/reports/0").put("kind", "custom").remove("labels");
-        object(data, "/results/0/output/reports/0").set("payload", payload);
+        ObjectNode stored = (ObjectNode) payload.deepCopy();
+        stored.put("id", "score").put("kind", "custom").put("mappedTo", "score");
+        array(data, "/results/0/output/reports").set(0, stored);
         return data;
     }
 

@@ -93,6 +93,19 @@ class InferenceProjectionTest {
     }
 
     @Test
+    void namesAStoredClassByTheSchemaLabelInItsPlace() throws Exception {
+        ObjectNode data = data(0);
+        // A model trained on 0/1 stores its own classes; the schema calls them No and Yes.
+        for (var result : array(data, "/results")) {
+            ((ObjectNode) result).set("output", JSON.readTree("""
+                    {"reports":[{"mappedTo":"score","kind":"classifier","labels":["0","1"],"prediction":"1",
+                     "probabilities":[0.2,0.8]}]}"""));
+        }
+
+        assertEquals("Yes", rows(data).getFirst().dto().values().get(SCORE));
+    }
+
+    @Test
     void showsTheValueARegressorOfASecondModelPredicted() throws Exception {
         String bodyMass = "2:output:2:0";
         ObjectNode data = data(0);
@@ -131,7 +144,8 @@ class InferenceProjectionTest {
     @Test
     void keepsJsonStringifyTextForUnstructuredCustomReports() throws Exception {
         Row row = rows(customReport(JSON.readTree("{\"score\":7.0,\"samples\":[1,2.0]}"))).getFirst();
-        assertEquals("{\n  \"score\": 7,\n  \"samples\": [\n    1,\n    2\n  ]\n}", row.dto().values().get(SCORE));
+        assertEquals("{\n  \"score\": 7,\n  \"samples\": [\n    1,\n    2\n  ],\n  \"id\": \"score\",\n"
+                + "  \"kind\": \"custom\",\n  \"mappedTo\": \"score\"\n}", row.dto().values().get(SCORE));
         assertTrue(found(row, "\"score\": 7"));
     }
 
@@ -152,19 +166,6 @@ class InferenceProjectionTest {
 
     @Test
     void boundsWorkThatStoredPayloadsAskFor() throws Exception {
-        assertEquals(InferenceFeedbackSteps.MAX_INDEXED_CLASSES, InferenceFeedbackSteps.indexedClasses(30_000_000));
-        assertEquals(InferenceFeedbackSteps.MAX_INDEXED_CLASSES, InferenceFeedbackSteps.indexedClasses(1e300));
-        assertEquals(3, InferenceFeedbackSteps.indexedClasses(2.7));
-        assertEquals(1, InferenceFeedbackSteps.indexedClasses(-40));
-        assertEquals(1, InferenceFeedbackSteps.indexedClasses("7"));
-        assertEquals(1, InferenceFeedbackSteps.indexedClasses(null));
-
-        ObjectNode hugeIndex = data(0);
-        object(hugeIndex, "/results/0/output/reports/0").put("classIndex", 30_000_000);
-        Row indexed = assertTimeoutPreemptively(PROMPT, () -> rows(hugeIndex).getFirst());
-        assertEquals(InferenceFeedbackStatus.COMPLETED, indexed.dto().feedbackStatus());
-        assertEquals("Yes", indexed.dto().values().get(ASSESSMENT));
-
         String spaces = " ".repeat(200_000);
         assertEquals("x |" + spaces + "y",
                 assertTimeoutPreemptively(PROMPT, () -> reported(explanation("* x |" + spaces + "y"))));
