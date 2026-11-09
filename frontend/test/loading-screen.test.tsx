@@ -86,6 +86,16 @@ describe("loading skeletons", () => {
     expect(count(markup, "rounded-card")).toBe(3);
   });
 
+  it("paints only the page background until a whole-page load outlasts the reveal delay", () => {
+    // Loaders that follow one another on a fast load (startup check, session) must not flash a card.
+    const markup = renderToStaticMarkup(<AppPageLoader viewport label="Loading…" />);
+    const card = markup.match(/class="([^"]*\bbg-surface\b[^"]*)"/)?.[1] ?? "";
+    const screen = markup.match(/class="([^"]*\bbg-page\b[^"]*)"/)?.[1] ?? "";
+
+    expect(card.split(" ")).toContain("app-loading-reveal");
+    expect(screen.split(" ")).not.toContain("app-loading-reveal");
+  });
+
   it("shows the same viewport skeleton while checking readiness and loading the session", async () => {
     const startup = renderToStaticMarkup(<StartupGate>Ready</StartupGate>);
     const router = createRouter({
