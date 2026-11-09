@@ -50,10 +50,11 @@ public class SnapshotPluginService implements SnapshotPluginsUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public List<PluginRuntimeSourceDto> pinned(Long schemaVersionId) {
+    public List<PluginRuntimeSourceDto> pinned(Long organizationId, Long schemaVersionId) {
         List<Long> ids = jdbc.queryForList(
-                "SELECT plugin_metadata_id FROM schema_version_plugin WHERE schema_version_id = ? ORDER BY plugin_metadata_id",
-                Long.class, schemaVersionId);
+                "SELECT plugin_metadata_id FROM schema_version_plugin WHERE organization_id = ? AND schema_version_id = ?"
+                        + " ORDER BY plugin_metadata_id",
+                Long.class, organizationId, schemaVersionId);
         return metadata.findAllById(ids).stream()
                 .map(objects::readPinned)
                 .flatMap(Optional::stream)

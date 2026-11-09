@@ -1,6 +1,6 @@
 package dev.ulloasp.mlsuite.schema.adapter.in.web;
 
-import dev.ulloasp.mlsuite.plugin.application.port.in.SnapshotPluginsUseCase;
+import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginRuntimeSourcesUseCase;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginRuntimeSourceDto;
 import java.util.List;
 
@@ -29,7 +29,7 @@ import lombok.RequiredArgsConstructor;
 public class SchemaVersionController {
 
     private final SchemaVersionUseCase schemaVersionUseCase;
-    private final SnapshotPluginsUseCase snapshotPlugins;
+    private final ListPluginRuntimeSourcesUseCase pluginSources;
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/schemas/{schemaId}/versions")
@@ -64,7 +64,7 @@ public class SchemaVersionController {
     /** The plugins the snapshot was published with: it renders with these, whatever the library holds now. */
     @GetMapping("/schema-versions/{versionId}/plugins")
     public ResponseEntity<List<PluginRuntimeSourceDto>> plugins(CurrentUser user, @PathVariable Long versionId) {
-        return ResponseEntity.ok(snapshotPlugins.pinned(schemaVersionUseCase.getVersion(user.userId(), versionId).getId()));
+        return ResponseEntity.ok(pluginSources.listPinned(user.userId(), versionId));
     }
 
     private SchemaVersionDto toDto(Long userId, SchemaVersion version) {

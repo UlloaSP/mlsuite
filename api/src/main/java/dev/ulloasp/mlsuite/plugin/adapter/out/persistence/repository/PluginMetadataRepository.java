@@ -1,6 +1,5 @@
 package dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,7 +47,6 @@ public interface PluginMetadataRepository extends JpaRepository<PluginMetadata, 
 
     long countByOrganizationId(Long organizationId);
 
-    List<PluginMetadata> findByOrganizationIdAndKindInOrderByIdAsc(Long organizationId, Collection<String> kinds);
 
     List<PluginMetadata> findByOrganizationIdOrderByIdAsc(Long organizationId);
 }

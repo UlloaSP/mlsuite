@@ -18,6 +18,6 @@ public interface SnapshotPluginsUseCase {
     /** Gives a snapshot being written the plugins another snapshot of the organization was fixed with. */
     void copy(Long sourceSchemaVersionId, Long schemaVersionId);
 
-    /** The plugins a snapshot renders with, as the runtime loads them. */
-    List<PluginRuntimeSourceDto> pinned(Long schemaVersionId);
+    /** The plugins a snapshot of the organization renders with, as the runtime loads them. */
+    List<PluginRuntimeSourceDto> pinned(Long organizationId, Long schemaVersionId);
 }

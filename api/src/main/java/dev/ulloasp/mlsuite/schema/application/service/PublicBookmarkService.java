@@ -75,7 +75,8 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
 
     @Override
     public List<PluginRuntimeSourceDto> listPublishedPlugins(String publicId) {
-        return plugins.pinned(requirePublished(publicId).getVersion().getId());
+        SchemaBookmark bookmark = requirePublished(publicId);
+        return plugins.pinned(bookmark.getSchema().getOrganization().getId(), bookmark.getVersion().getId());
     }
 
     @Override

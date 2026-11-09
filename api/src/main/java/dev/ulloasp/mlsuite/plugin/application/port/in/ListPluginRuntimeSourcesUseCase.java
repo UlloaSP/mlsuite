@@ -1,7 +1,6 @@
 package dev.ulloasp.mlsuite.plugin.application.port.in;
 
 import java.util.List;
-import java.util.Set;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginRuntimeSourceDto;
 
 public interface ListPluginRuntimeSourcesUseCase {
@@ -9,8 +8,8 @@ public interface ListPluginRuntimeSourcesUseCase {
     List<PluginRuntimeSourceDto> list(Long userId);
 
     /**
-     * The organization's plugins of these kinds, for a form whose schema uses them. Running a form
-     * needs no plugin permission: the caller decides who may open the form, not who owns the plugin.
+     * The plugins a snapshot of the caller's current organization renders with, for the same callers:
+     * a reviewer opens a run's results without seeing the organization's models.
      */
-    List<PluginRuntimeSourceDto> listUsed(Long organizationId, Set<String> kinds);
+    List<PluginRuntimeSourceDto> listPinned(Long userId, Long schemaVersionId);
 }

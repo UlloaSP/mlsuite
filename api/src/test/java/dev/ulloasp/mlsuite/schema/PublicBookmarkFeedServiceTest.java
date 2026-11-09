@@ -156,7 +156,7 @@ class PublicBookmarkFeedServiceTest {
         List<PluginRuntimeSourceDto> served = List.of(new PluginRuntimeSourceDto(
                 "body-map", "body-map.ts", "text/typescript", 12, at, at, "export default {}"));
         // The page serves the plugins its snapshot was published with, not the library's current ones.
-        when(plugins.pinned(cardio.getVersion().getId())).thenReturn(served);
+        when(plugins.pinned(cardio.getSchema().getOrganization().getId(), cardio.getVersion().getId())).thenReturn(served);
 
         assertEquals(served, service.listPublishedPlugins(cardio.getPublicId()));
     }

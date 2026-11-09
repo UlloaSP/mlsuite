@@ -15,6 +15,7 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDenie
 import dev.ulloasp.mlsuite.organization.domain.model.*;
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginRuntimeSourceDto;
+import dev.ulloasp.mlsuite.plugin.application.port.in.SnapshotPluginsUseCase;
 import dev.ulloasp.mlsuite.plugin.application.service.*;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginMetadata;
 import dev.ulloasp.mlsuite.plugin.domain.model.StoredPlugin;
@@ -27,6 +28,7 @@ class PluginRuntimePermissionTest {
     private final WorkspaceAccessService access = mock(WorkspaceAccessService.class);
     private final PluginObjectReader objects = mock(PluginObjectReader.class);
     private final PluginMetadataRepository metadata = mock(PluginMetadataRepository.class);
+    private final SnapshotPluginsUseCase snapshots = mock(SnapshotPluginsUseCase.class);
     private final Organization organization = new Organization();
     private WorkspaceAuthorizationService authorization;
     private PluginRuntimeService runtime;
@@ -36,7 +38,7 @@ class PluginRuntimePermissionTest {
         organization.setId(41L);
         when(access.requireCurrentOrganization(3L)).thenReturn(organization);
         authorization = new WorkspaceAuthorizationService(access, mock(RoleDefinitionRepository.class));
-        runtime = new PluginRuntimeService(access, authorization, objects, metadata);
+        runtime = new PluginRuntimeService(access, authorization, objects, metadata, snapshots);
     }
 
     @ParameterizedTest
@@ -60,23 +62,21 @@ class PluginRuntimePermissionTest {
     }
 
     @Test
-    void aFormRunsWithThePluginsOfItsKindsWhoeverOpensIt() {
+    void aReviewerLoadsTheRenderersOfASnapshotOfTheirOrganization() {
+        membership(PermissionKey.REVIEW);
         var time = OffsetDateTime.now();
-        PluginMetadata used = mock(PluginMetadata.class);
-        PluginMetadata gone = mock(PluginMetadata.class);
-        when(metadata.findByOrganizationIdAndKindInOrderByIdAsc(41L, Set.of("number", "body-map", "risk-gauge")))
-                .thenReturn(List.of(used, gone));
-        when(objects.readPinned(used)).thenReturn(Optional.of(new StoredPlugin("body", "body.ts",
-                "text/typescript", 12, time, time, "export default {}")));
-        // A plugin queued for deletion is simply not served.
-        when(objects.readPinned(gone)).thenReturn(Optional.empty());
+        var pinned = List.of(new PluginRuntimeSourceDto("body", "body.ts", "text/typescript", 12, time, time,
+                "export default {}"));
+        when(snapshots.pinned(41L, 9L)).thenReturn(pinned);
 
-        var result = runtime.listUsed(41L, Set.of("number", "body-map", "risk-gauge"));
+        assertEquals(pinned, runtime.listPinned(3L, 9L));
+    }
 
-        assertEquals(List.of("body"), result.stream().map(PluginRuntimeSourceDto::id).toList());
-        // No session, membership or organization lock takes part.
-        verifyNoInteractions(access);
-        assertEquals(List.of(), runtime.listUsed(41L, Set.of()));
+    @Test
+    void organizationVisibilityAloneCannotLoadASnapshotsRenderers() {
+        membership(PermissionKey.VIEW_ORGANIZATION);
+        assertThrows(OrganizationAccessDeniedException.class, () -> runtime.listPinned(3L, 9L));
+        verifyNoInteractions(snapshots);
     }
 
     @Test
