@@ -38,10 +38,14 @@ provision() {
 }
 
 provision
-# The baseline runs as the migration role, as db-migrate does, and installs pg_trgm itself.
-MSYS_NO_PATHCONV=1 docker cp "$root/api/src/main/resources/db/migration/V1__baseline.sql" "$postgres:/tmp/V1.sql"
-MSYS_NO_PATHCONV=1 docker exec -e PGPASSWORD=migrator-pass "$postgres" \
-  psql -h localhost -U mlsuite_migrator -d mlsuite -v ON_ERROR_STOP=1 -f /tmp/V1.sql >/dev/null
+# The baseline (V1 to V7, in order) runs as the migration role, as db-migrate does, and installs
+# pg_trgm itself.
+for version in 1 2 3 4 5 6 7; do
+  migration=$(ls "$root/api/src/main/resources/db/migration/V${version}__"*.sql)
+  MSYS_NO_PATHCONV=1 docker cp "$migration" "$postgres:/tmp/V$version.sql"
+  MSYS_NO_PATHCONV=1 docker exec -e PGPASSWORD=migrator-pass "$postgres" \
+    psql -h localhost -U mlsuite_migrator -d mlsuite -v ON_ERROR_STOP=1 -f "/tmp/V$version.sql" >/dev/null
+done
 # Provisioning again changes nothing it should keep.
 provision
 
