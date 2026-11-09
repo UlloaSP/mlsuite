@@ -11,10 +11,12 @@ import { useNavigate } from "@tanstack/react-router";
 export type AuthPhase = 0 | 1 | 2;
 export type AuthReveal = { x: number; y: number; radius: number };
 
-// The whole welcome stays under a second: the tear, then the reveal, then the destination.
-const TEAR_MS = 250;
-const WELCOME_MS = 550;
-const REDUCED_WELCOME_MS = 300;
+// The welcome takes about two seconds, long enough to read: the tear, then the reveal, whose
+// progress bar fills by 1.3s (auth-access-overlay.css), then the destination.
+const TEAR_MS = 450;
+const WELCOME_MS = 1400;
+// Without motion the welcome cross-fades in 0.2s and stays a moment to be read.
+const REDUCED_WELCOME_MS = 700;
 
 /** Plays the welcome only for an attempt the server accepted, then opens the destination. */
 export function useAuthAccess(destination: string) {

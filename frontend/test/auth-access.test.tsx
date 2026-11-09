@@ -39,17 +39,47 @@ describe("auth access sequence", () => {
     vi.useRealTimers();
   });
 
-  test("tears the pass, reveals the overlay, then opens the destination within a second", async () => {
+  test("tears the pass, reveals the overlay, then opens the destination after about two seconds", async () => {
     expect(probe().dataset.phase).toBe("0");
     await click("succeed", host);
     expect(probe().dataset.phase).toBe("1");
-    advance(249);
+    advance(449);
     expect(probe().dataset.phase).toBe("1");
     advance(1);
     expect(probe().dataset.phase).toBe("2");
     expect(probe().dataset.path).toBe("/");
 
-    advance(550);
+    advance(1399);
+    expect(probe().dataset.path).toBe("/");
+    advance(1);
+    expect(probe().dataset.path).toBe("/review");
+  });
+});
+
+describe("auth access sequence without motion", () => {
+  beforeEach(async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query === "(prefers-reduced-motion: reduce)",
+      media: query,
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    ({ host } = await mount(<AccessProbe />, { route: "/" }));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  test("shows the welcome at once and leaves it up long enough to read", async () => {
+    await click("succeed", host);
+    expect(probe().dataset.phase).toBe("2");
+
+    advance(699);
+    expect(probe().dataset.path).toBe("/");
+    advance(1);
     expect(probe().dataset.path).toBe("/review");
   });
 });

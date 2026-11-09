@@ -15,7 +15,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
   color: var(--color-fg-inverse);
   font-family: var(--font-sans);
   clip-path: circle(0 at var(--auth-reveal-x) var(--auth-reveal-y));
-  transition: clip-path 0.45s cubic-bezier(0.7, 0, 0.2, 1);
+  transition: clip-path 0.7s cubic-bezier(0.7, 0, 0.2, 1);
   pointer-events: none;
 }
 
@@ -33,8 +33,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
   opacity: 0;
   transform: translateY(24px);
   transition:
-    opacity 0.25s 0.1s,
-    transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s;
+    opacity 0.4s 0.3s,
+    transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s;
 }
 
 .auth-overlay[data-open="true"] .auth-overlay-content {
@@ -59,7 +59,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 .auth-overlay[data-open="true"] .auth-overlay-bar > span {
   width: 100%;
-  transition: width 0.45s ease 0.1s;
+  transition: width 0.9s ease 0.4s;
 }
 
 /* Reduced motion: a 200ms crossfade replaces the tear and circle reveal. */
