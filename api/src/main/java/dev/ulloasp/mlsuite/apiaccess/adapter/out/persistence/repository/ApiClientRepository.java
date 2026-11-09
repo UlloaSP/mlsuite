@@ -26,15 +26,11 @@ public interface ApiClientRepository extends JpaRepository<ApiClient, Long> {
 
     /** A bookmark the client was given, by the id clients call it by, while its schema is not archived. */
     @Query("""
-            SELECT b FROM ApiClient c JOIN c.bookmarks b
+            SELECT b FROM ApiClient c JOIN c.grants g JOIN g.bookmark b
             WHERE c.id = :clientId AND b.publicId = :apiId AND b.schema.archivedAt IS NULL
             AND b.schema.purgingAt IS NULL AND b.schema.organization.purgingAt IS NULL
             """)
     Optional<SchemaBookmark> findGrantedBookmark(Long clientId, String apiId);
-
-    boolean existsByOrganizationIdAndNameIgnoreCase(Long organizationId, String name);
-
-    boolean existsByOrganizationIdAndNameIgnoreCaseAndIdNot(Long organizationId, String name, Long id);
 
     @Query(value = """
             SELECT c FROM ApiClient c
@@ -76,7 +72,7 @@ public interface ApiClientRepository extends JpaRepository<ApiClient, Long> {
     @Query("""
             SELECT new dev.ulloasp.mlsuite.apiaccess.adapter.out.persistence.repository.ApiClientCount(
                 c.id, COUNT(b))
-            FROM ApiClient c LEFT JOIN c.bookmarks b
+            FROM ApiClient c LEFT JOIN c.grants b
             WHERE c.id IN :ids GROUP BY c.id
             """)
     List<ApiClientCount> countBookmarks(Collection<Long> ids);
@@ -90,7 +86,7 @@ public interface ApiClientRepository extends JpaRepository<ApiClient, Long> {
 
     /** The names of the clients that may run each bookmark, by bookmark id. */
     @Query("""
-            SELECT b.id, c.name FROM ApiClient c JOIN c.bookmarks b
+            SELECT b.id, c.name FROM ApiClient c JOIN c.grants g JOIN g.bookmark b
             WHERE c.organization.id = :organizationId ORDER BY LOWER(c.name)
             """)
     List<Object[]> findClientNamesByBookmark(Long organizationId);

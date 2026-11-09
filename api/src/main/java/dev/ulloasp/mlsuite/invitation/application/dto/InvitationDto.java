@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.invitation.application.dto;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 import dev.ulloasp.mlsuite.invitation.domain.model.Invitation;
 import dev.ulloasp.mlsuite.invitation.domain.model.InvitationStatus;
@@ -14,7 +15,9 @@ public record InvitationDto(
         RoleSummaryDto roleDefinition,
         InvitationStatus status,
         OffsetDateTime expiresAt,
-        OffsetDateTime createdAt) {
+        OffsetDateTime createdAt,
+        /** Who sent it. */
+        String createdByName) {
 
     public static InvitationDto from(Invitation invitation) {
         return new InvitationDto(
@@ -23,8 +26,9 @@ public record InvitationDto(
                 invitation.getOrganization().getName(),
                 invitation.getEmail(),
                 RoleSummaryDto.from(invitation.getRoleDefinition()),
-                invitation.getStatus(),
+                invitation.statusAt(OffsetDateTime.now(ZoneOffset.UTC)),
                 invitation.getExpiresAt(),
-                invitation.getCreatedAt());
+                invitation.getCreatedAt(),
+                invitation.getCreatedBy().label());
     }
 }

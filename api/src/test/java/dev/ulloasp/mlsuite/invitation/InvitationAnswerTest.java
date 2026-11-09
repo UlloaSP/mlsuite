@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import dev.ulloasp.mlsuite.invitation.domain.model.Invitation;
 import dev.ulloasp.mlsuite.invitation.domain.model.InvitationStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
@@ -31,6 +32,9 @@ import dev.ulloasp.mlsuite.user.domain.model.User;
  * it is pending and unexpired. Anyone else's invitation does not exist for them.
  */
 class InvitationAnswerTest extends PublicPredictionFixture {
+
+    @Autowired
+    private Principals principals;
 
     private final OffsetDateTime nextWeek = OffsetDateTime.now(ZoneOffset.UTC).plusDays(7);
     @Autowired JdbcTemplate jdbc;
@@ -82,22 +86,16 @@ class InvitationAnswerTest extends PublicPredictionFixture {
 
         mockMvc.perform(answer(invitation, "decline", invitee)).andExpect(status().isNoContent());
 
-        assertEquals(InvitationStatus.REVOKED, statusOf(invitation));
+        assertEquals(InvitationStatus.DECLINED, statusOf(invitation));
         assertTrue(membership(invitee).isEmpty());
     }
 
     @Test
     void whoInvitedIsToldTheAnswerAndTheInviteeStopsCountingItAsUnread() throws Exception {
-        Invitation accepted = stored(invitee.getEmail(), InvitationStatus.PENDING, nextWeek);
-        Invitation declined = stored(invitee.getEmail(), InvitationStatus.PENDING, nextWeek);
-        for (Invitation invitation : new Invitation[] { accepted, declined }) {
-            jdbc.update("""
-                    INSERT INTO notification (recipient_user_id, organization_id, kind, target_type, target_id, payload, created_at)
-                    VALUES (?, ?, 'INVITATION_RECEIVED', 'INVITATION', ?, '{}', now())""", invitee.getId(),
-                    organization.getId(), invitation.getId().toString());
-        }
-
+        // One invitation waits per address at a time: the second is sent once the first is answered.
+        Invitation accepted = received(stored(invitee.getEmail(), InvitationStatus.PENDING, nextWeek));
         mockMvc.perform(answer(accepted, "accept", invitee)).andExpect(status().isOk());
+        Invitation declined = received(stored(invitee.getEmail(), InvitationStatus.PENDING, nextWeek));
         mockMvc.perform(answer(declined, "decline", invitee)).andExpect(status().isNoContent());
 
         assertEquals("INVITATION_ACCEPTED", toldTheInviter(accepted));
@@ -159,6 +157,8 @@ class InvitationAnswerTest extends PublicPredictionFixture {
                     .andExpect(jsonPath("$.message").value("Invitation expired."));
 
             assertEquals(InvitationStatus.PENDING, statusOf(invitation));
+            // Revoked, so the next one can be sent to the same address.
+            inTransaction(() -> entityManager.find(Invitation.class, invitation.getId()).setStatus(InvitationStatus.REVOKED));
         }
         assertTrue(membership(invitee).isEmpty());
     }
@@ -180,9 +180,18 @@ class InvitationAnswerTest extends PublicPredictionFixture {
     }
 
     private Invitation stored(String email, InvitationStatus invitationStatus, OffsetDateTime expiresAt) {
-        Invitation invitation = new Invitation(organization, email, ownerRole, owner, expiresAt);
+        Invitation invitation = new Invitation(organization, email, ownerRole, principals.of(owner), expiresAt);
         invitation.setStatus(invitationStatus);
         inTransaction(() -> entityManager.persist(invitation));
+        return invitation;
+    }
+
+    /** The invitee was told of the invitation, unread. */
+    private Invitation received(Invitation invitation) {
+        jdbc.update("""
+                INSERT INTO notification (recipient_user_id, organization_id, kind, target_type, target_id, payload, created_at)
+                VALUES (?, ?, 'INVITATION_RECEIVED', 'INVITATION', ?, '{}', now())""", invitee.getId(),
+                organization.getId(), invitation.getId().toString());
         return invitation;
     }
 

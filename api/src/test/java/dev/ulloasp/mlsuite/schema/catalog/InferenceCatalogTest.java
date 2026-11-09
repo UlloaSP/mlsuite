@@ -81,7 +81,7 @@ class InferenceCatalogTest {
         assertTrue(metadata.columns().stream()
                 .anyMatch(column -> column.id().equals(AGE) && column.kind() == InferenceValueKind.number));
         // The newest snapshot names a column, and a schema's inputs come before its outputs and feedback.
-        assertEquals(List.of("Age (years)", "Income", "Score", "Score · v2 · Assessment · grace@example.com"),
+        assertEquals(List.of("Age (years)", "Income", "Score", "Score · v2 · Assessment · Grace"),
                 metadata.columns().stream().map(InferenceCatalogColumnDto::label).toList());
 
         assertThrows(ResponseStatusException.class, () -> service.page(OUTSIDER, olderThanForty));
@@ -91,16 +91,17 @@ class InferenceCatalogTest {
     }
 
     @Test
-    void rejectsMalformedConditionsAndClampsPaging() {
-        assertThrows(ResponseStatusException.class,
+    void rejectsMalformedConditionsSortsAndPaging() {
+        assertThrows(IllegalArgumentException.class,
                 () -> request(0, "", "createdAt.desc", Arrays.asList((Condition) null)));
-        assertThrows(ResponseStatusException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> request(0, "", "createdAt.desc", new Condition("age", null, "1")));
-        assertThrows(ResponseStatusException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> request(0, "", "createdAt.desc", new Condition("age", "bad", "1")));
-        assertThrows(ResponseStatusException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> request(0, "", "createdAt.desc", Collections.nCopies(101, new Condition("age", "eq", "1"))));
-        assertEquals(0, request(-4, "", "createdAt.desc").page());
+        assertThrows(IllegalArgumentException.class, () -> request(0, "", "name.sideways"));
+        assertThrows(IllegalArgumentException.class, () -> request(-4, "", "createdAt.desc"));
     }
 
     @Test
@@ -165,7 +166,7 @@ class InferenceCatalogTest {
         assertEquals(List.of(3L, 1L, 4L, 2L), ids(missing.selection(MEMBER, request(0, "", AGE + ".asc"))));
         assertEquals(List.of(1L, 3L, 4L, 2L), ids(missing.selection(MEMBER, request(0, "", AGE + ".desc"))));
         for (String tied : List.of("status.asc", "status.desc", "schema.asc", "origin.desc", "feedbackStatus.asc",
-                "name.sideways", "unknown.asc")) {
+                "unknown.asc")) {
             assertEquals(List.of(4L, 3L, 2L, 1L), ids(missing.selection(MEMBER, request(0, "", tied))), tied);
         }
         ObjectNode sameMoment = ages(1, 1, 1);

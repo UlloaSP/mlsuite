@@ -21,6 +21,7 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.ResultActions;
@@ -28,6 +29,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
@@ -37,6 +39,9 @@ import dev.ulloasp.mlsuite.user.domain.model.User;
  * the people they share an organization with.
  */
 class UserAvatarTest extends ProfileFixture {
+
+    @Autowired
+    private Principals principals;
 
     private static final String AVATAR = ME + "/avatar";
 
@@ -85,7 +90,7 @@ class UserAvatarTest extends ProfileFixture {
         edited(ada, Map.of("profilePublic", false));
         long team = createdOrganization(ada, "Lab", unique("lab"));
         inTransaction(() -> entityManager.persist(new OrganizationMembership(entityManager.find(Organization.class, team),
-                colleague, roles.findByOrganizationIdAndSystemKey(team, "VIEWER").orElseThrow(), MembershipStatus.ACTIVE)));
+                colleague, roles.findByOrganizationIdAndSystemKey(team, "VIEWER").orElseThrow(), MembershipStatus.ACTIVE, principals.of(colleague))));
 
         mockMvc.perform(get(address)).andExpect(status().isNotFound());
         mockMvc.perform(as(stranger, get(address))).andExpect(status().isNotFound());

@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema;
 
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.ArgumentMatchers.any;
@@ -10,7 +11,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
@@ -77,7 +77,7 @@ class PredictionRunCatalogTest {
     void summaryReturnsTheCatalogItemOfAnOrganizationRun() {
         allowRead();
         PredictionRun run = new PredictionRun(SchemaFlowFixtures.bookmark(), SchemaFlowFixtures.version(), "case-1",
-                java.util.Map.of(), PredictionRunStatus.SUCCESS);
+                java.util.Map.of(), PredictionRunStatus.SUCCESS, TestFixtures.system());
         run.setId(12L);
         when(runs.findByIdAndOrganizationId(12L, 41L)).thenReturn(java.util.Optional.of(run));
 

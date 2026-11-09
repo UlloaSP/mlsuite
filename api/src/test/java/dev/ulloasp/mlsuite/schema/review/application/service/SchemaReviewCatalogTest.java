@@ -18,6 +18,7 @@ import java.util.TreeSet;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
@@ -25,9 +26,9 @@ import tools.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
@@ -36,6 +37,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
+import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReview;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewAssignee;
@@ -43,9 +45,13 @@ import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewRun;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewRunSubmission;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.user.domain.model.UserAvatar;
 
 /** A reviewer's inbox and an inference's review assignments, selected, counted and paged on PostgreSQL. */
 class SchemaReviewCatalogTest extends PublicPredictionFixture {
+
+    @Autowired
+    private Principals principals;
     private static final String INBOX = "/api/schema-reviews/inbox";
 
     private final OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -78,18 +84,21 @@ class SchemaReviewCatalogTest extends PublicPredictionFixture {
                     entityManager.persist(new SchemaReviewRunSubmission(reviewRun, owner, now.minusHours(i)));
                 }
             }
-            Schema appetite = new Schema(organization, "Appetite", null);
+            Schema appetite = new Schema(organization, "Appetite", null, principals.system());
             entityManager.persist(appetite);
-            SchemaVersion appetiteVersion = new SchemaVersion(appetite, 1, "First", Map.of("fields", List.of()));
+            SchemaVersion appetiteVersion = new SchemaVersion(appetite, 1, "First", Map.of("fields", List.of()), principals.system());
             entityManager.persist(appetiteVersion);
             reviewRun(review(appetite, appetiteVersion, now.plusDays(30), owner), appetiteVersion, "Meal");
             colleaguesOnly = reviewRun(review(schema, version, now.plusDays(30), colleague), version, "Theirs");
             expired = reviewRun(review(schema, version, now.minusDays(1), owner), version, "Late");
             // One earlier creation time for every case leaves their order to the review run's public id.
+            // Stands in for runs created earlier: a run is otherwise written once.
+            entityManager.createNativeQuery("SET LOCAL session_replication_role = replica").executeUpdate();
             entityManager.createQuery("update PredictionRun r set r.createdAt = :at where r.schemaVersion.id = :id")
                     .setParameter("at", now.minusDays(2))
                     .setParameter("id", version.getId())
                     .executeUpdate();
+            entityManager.createNativeQuery("SET LOCAL session_replication_role = origin").executeUpdate();
         });
     }
 
@@ -104,7 +113,7 @@ class SchemaReviewCatalogTest extends PublicPredictionFixture {
                 .andExpect(jsonPath("$.items[0].schemaName").value("Appetite"))
                 .andExpect(jsonPath("$.items[0].reviewState").value("PENDING"))
                 .andExpect(jsonPath("$.items[1].reviewId").value(shared.getPublicId()))
-                .andExpect(jsonPath("$.items[1].run.results.length()").value(1));
+                .andExpect(jsonPath("$.items[1].run.results.length()").value(2)); // one per model its snapshot binds
         inbox(owner, "filter", "IN_PROGRESS", "size", "4", "page", "2")
                 .andExpect(jsonPath("$.totalItems").value(10))
                 .andExpect(jsonPath("$.items.length()").value(2))
@@ -113,7 +122,8 @@ class SchemaReviewCatalogTest extends PublicPredictionFixture {
                 .andExpect(jsonPath("$.pendingCount").value(18));
         inbox(owner, "filter", "PENDING").andExpect(jsonPath("$.totalItems").value(18));
         inbox(owner, "filter", "COMPLETED").andExpect(jsonPath("$.totalItems").value(0));
-        inbox(owner, "filter", "unknown").andExpect(jsonPath("$.totalItems").value(0));
+        mockMvc.perform(signedIn(get(INBOX + "/runs/catalog").param("filter", "unknown"), owner.getId()))
+                .andExpect(status().isBadRequest());
         inbox(owner, "search", "APPETITE")
                 .andExpect(jsonPath("$.totalItems").value(1))
                 .andExpect(jsonPath("$.pendingCount").value(18));
@@ -241,8 +251,9 @@ class SchemaReviewCatalogTest extends PublicPredictionFixture {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(2))
                 .andExpect(jsonPath("$.completed").value(1));
-        inTransaction(() -> entityManager.find(User.class, owner.getId())
-                .setAvatarUpdatedAt(OffsetDateTime.parse("2026-10-01T10:00:00Z")));
+        // The reviewer has a picture; its time versions the address.
+        inTransaction(() -> entityManager.persist(new UserAvatar(owner.getId(),
+                new byte[] { 1 }, "image/png", OffsetDateTime.parse("2026-10-01T10:00:00Z"))));
         mockMvc.perform(signedIn(get(assignments + "/catalog").param("filter", "COMPLETED"), owner.getId()))
                 .andExpect(jsonPath("$.totalItems").value(1))
                 .andExpect(jsonPath("$.items[0].reviewer.id").value(owner.getId()))
@@ -266,26 +277,33 @@ class SchemaReviewCatalogTest extends PublicPredictionFixture {
         String unique = name + "-" + schema.getId();
         User user = new User(unique, unique + "@test.example", "unused", name, SystemRole.USER);
         entityManager.persist(user);
-        RoleDefinition role = new RoleDefinition(organization, RoleScope.ORGANIZATION, name, name, null);
+        RoleDefinition role = new RoleDefinition(organization, name, name, null, principals.system());
         role.setPermissions(EnumSet.of(permission));
         entityManager.persist(role);
-        entityManager.persist(new OrganizationMembership(organization, user, role, MembershipStatus.ACTIVE));
+        entityManager.persist(new OrganizationMembership(organization, user, role, MembershipStatus.ACTIVE, principals.of(user)));
         user.setCurrentOrganization(organization);
         return user;
     }
 
     private SchemaReview review(Schema reviewed, SchemaVersion snapshot, OffsetDateTime expiresAt, User... reviewers) {
-        SchemaReview review = new SchemaReview(organization, reviewed, snapshot, owner, expiresAt);
+        SchemaReview review = new SchemaReview(organization, reviewed, snapshot, principals.of(owner), expiresAt);
         entityManager.persist(review);
         for (User reviewer : reviewers) {
-            entityManager.persist(new SchemaReviewAssignee(review, reviewer));
+            entityManager.persist(new SchemaReviewAssignee(review, reviewer, principals.system()));
         }
         return review;
     }
 
     /** A run with one result, included in the review. */
     private SchemaReviewRun reviewRun(SchemaReview review, SchemaVersion snapshot, String name) {
-        PredictionRun run = new PredictionRun(snapshot, name, Map.of(), PredictionRunStatus.SUCCESS);
+        PredictionRun run = new PredictionRun(snapshot, name, Map.of(), PredictionRunStatus.SUCCESS, principals.system());
+        // A result is of a model its snapshot binds.
+        Number bound = (Number) entityManager.createNativeQuery(
+                "SELECT count(*) FROM schema_model_binding WHERE schema_version_id = ?1 AND model_id = ?2")
+                .setParameter(1, snapshot.getId()).setParameter(2, netModel.getId()).getSingleResult();
+        if (bound.intValue() == 0) {
+            entityManager.persist(new SchemaModelBinding(snapshot, netModel, Map.of()));
+        }
         entityManager.persist(run);
         entityManager.persist(new PredictionResult(run, netModel, Map.of(), Map.of(), PredictionResultStatus.SUCCESS,
                 null, null));
@@ -299,7 +317,7 @@ class SchemaReviewCatalogTest extends PublicPredictionFixture {
                 .createQuery("select r from PredictionResult r where r.run = :run", PredictionResult.class)
                 .setParameter("run", reviewRun.getRun())
                 .getSingleResult();
-        entityManager.persist(new PredictionResultFeedback(result, reviewer, reviewRun.getReview(), PredictionResultFeedbackType.OUTPUT, 0,
+        entityManager.persist(new PredictionResultFeedback(result, principals.of(reviewer), reviewRun.getReview(), PredictionResultFeedbackType.OUTPUT, 0,
                 objectMapper.valueToTree(Map.of("output-feedback-assessment", "high"))));
     }
 

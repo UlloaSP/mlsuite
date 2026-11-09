@@ -16,7 +16,11 @@ export function ReviewOutputsSection({
   version: SchemaVersionDto;
   results: PredictionResultDto[];
 }) {
-  const catalog = useSchemaPluginCatalog(version.formSchema, useCurrentOrganizationId() ?? "none");
+  const catalog = useSchemaPluginCatalog(
+    version.formSchema,
+    useCurrentOrganizationId() ?? "none",
+    version.id,
+  );
   const showLoading = useStableLoading(catalog.status === "loading");
   const reports = useMemo(
     () =>

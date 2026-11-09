@@ -73,7 +73,7 @@ export function LogsView({
     <>
       <AppPageHeader
         breadcrumbs={[{ label: "Infrastructure", to: "/admin/infrastructure" }, { label: "Logs" }]}
-        title="Service logs"
+        title="Logs"
         description={`${filtered.length} of ${logLines.length} lines · multi-service tail with live filtering.`}
         actions={
           <>

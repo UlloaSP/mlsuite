@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaWithInitialVersionRequest;
@@ -22,6 +23,7 @@ public class SchemaCreationController {
 
     private final SchemaCreationUseCase schemaCreationUseCase;
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/with-initial-version")
     public ResponseEntity<SchemaDto> create(CurrentUser user,
             @Valid @RequestBody CreateSchemaWithInitialVersionRequest request) {

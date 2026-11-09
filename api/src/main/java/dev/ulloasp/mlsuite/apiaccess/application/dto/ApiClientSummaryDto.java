@@ -28,6 +28,6 @@ public record ApiClientSummaryDto(
             OffsetDateTime lastUsedAt) {
         return new ApiClientSummaryDto(client.getId(), client.getName(), client.getDescription(), client.getStatus(),
                 client.getSuspensionReason(), client.getSuspendedAt(), keyCount, bookmarkCount, lastUsedAt,
-                client.getCreatedByName(), client.getCreatedAt(), client.getUpdatedAt());
+                client.getCreatedBy().label(), client.getCreatedAt(), client.getUpdatedAt());
     }
 }

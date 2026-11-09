@@ -113,7 +113,7 @@ final class InferenceFeedbackSteps {
     private static List<Map<?, ?>> classes(Report display, PredictionResultDto result) {
         List<String> labels = InferenceReportValues.configuredLabels(display.config().get("labels"));
         List<?> mapping = List.of();
-        for (Map<?, ?> output : records(result.output().get("reports"))) {
+        for (Map<?, ?> output : records(result.output() == null ? null : result.output().get("reports"))) {
             if ("classifier".equals(output.get("kind"))) {
                 mapping = list(output.get("mapping"));
                 break;

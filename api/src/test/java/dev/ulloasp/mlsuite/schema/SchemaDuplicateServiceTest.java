@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.schema;
 
+import dev.ulloasp.mlsuite.plugin.application.port.in.SnapshotPluginsUseCase;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import static dev.ulloasp.mlsuite.support.TestFixtures.organization;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.ArgumentMatchers.eq;
@@ -59,9 +61,9 @@ class SchemaDuplicateServiceTest {
     @BeforeEach
     void setUp() {
         service = new SchemaServiceImpl(userLookupService, schemaRepository, versionRepository,
-                bindingRepository, runRepository, reviewRepository,
+                bindingRepository,
                 authorizationService, org.mockito.Mockito.mock(dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaDraftRepository.class),
-                org.mockito.Mockito.mock(dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository.class), mock(AuditLogService.class));
+                org.mockito.Mockito.mock(dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository.class), mock(AuditLogService.class), TestFixtures.principals(), mock(SnapshotPluginsUseCase.class));
         lenient().when(userLookupService.requireById(7L)).thenReturn(user());
         lenient().when(authorizationService.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization());
     }
@@ -157,27 +159,16 @@ class SchemaDuplicateServiceTest {
         verify(schemaRepository, never()).save(any(Schema.class));
     }
 
-    @Test
-    void duplicateSchema_RejectsDuplicateNameBeforeCopyingSnapshot() {
-        when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema(5L, "Risk")));
-        when(schemaRepository.existsByNameAndOrganizationId("Risk Copy", 41L)).thenReturn(true);
-
-        ResponseStatusException error = assertThrows(ResponseStatusException.class,
-                () -> service.duplicateSchema(7L, 5L, 8L, "Risk Copy"));
-
-        assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
-        verify(versionRepository, never()).findByIdAndOrganizationId(any(), any());
-    }
 
     private SchemaVersion version(Schema schema, Long id, int number, String name) {
         SchemaVersion version = new SchemaVersion(schema, number, name,
-                Map.of("fields", List.of(Map.of("id", "age", "kind", "number"))));
+                Map.of("fields", List.of(Map.of("id", "age", "kind", "number"))), TestFixtures.system());
         version.setId(id);
         return version;
     }
 
     private Schema schema(Long id, String name) {
-        Schema schema = new Schema(organization(), name, "Source description");
+        Schema schema = new Schema(organization(), name, "Source description", TestFixtures.system());
         schema.setId(id);
         return schema;
     }

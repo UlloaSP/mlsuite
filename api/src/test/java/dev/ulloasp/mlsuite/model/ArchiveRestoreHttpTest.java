@@ -13,15 +13,16 @@ import java.util.EnumSet;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import tools.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
@@ -29,6 +30,9 @@ import dev.ulloasp.mlsuite.user.domain.model.User;
 
 /** Archiving a model or a schema is undone by restoring it, by a member who may edit models. */
 class ArchiveRestoreHttpTest extends PublicPredictionFixture {
+
+    @Autowired
+    private Principals principals;
 
     @BeforeEach
     void signInTheOwner() {
@@ -95,10 +99,10 @@ class ArchiveRestoreHttpTest extends PublicPredictionFixture {
             String unique = "viewer" + System.nanoTime();
             User user = new User(unique, unique + "@example.test", "unused", "Viewer", SystemRole.USER);
             entityManager.persist(user);
-            RoleDefinition role = new RoleDefinition(organization, RoleScope.ORGANIZATION, "Viewer", unique, null);
+            RoleDefinition role = new RoleDefinition(organization, "Viewer", unique, null, principals.system());
             role.setPermissions(EnumSet.of(PermissionKey.VIEW_MODELS));
             entityManager.persist(role);
-            entityManager.persist(new OrganizationMembership(organization, user, role, MembershipStatus.ACTIVE));
+            entityManager.persist(new OrganizationMembership(organization, user, role, MembershipStatus.ACTIVE, principals.of(user)));
             user.setCurrentOrganization(organization);
             id[0] = user.getId();
         });

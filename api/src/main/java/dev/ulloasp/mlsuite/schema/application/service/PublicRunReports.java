@@ -78,8 +78,6 @@ public final class PublicRunReports {
         output.put("reports", reports);
         Map<String, Object> meta = new LinkedHashMap<>();
         if (answer.get("meta") instanceof Map<?, ?> given) given.forEach((key, value) -> meta.put(String.valueOf(key), value));
-        meta.put("modelId", String.valueOf(modelId));
-        meta.put("backendFieldValues", input);
         output.put("meta", meta);
         return output;
     }

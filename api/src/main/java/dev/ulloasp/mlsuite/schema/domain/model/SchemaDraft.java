@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.domain.model;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +11,6 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
-import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -34,13 +34,14 @@ import lombok.Setter;
 public class SchemaDraft {
 
     public SchemaDraft(Schema schema, SchemaVersion baseVersion, String name,
-            Map<String, Object> formSchema, List<Map<String, Object>> bindings) {
+            Map<String, Object> formSchema, List<Map<String, Object>> bindings, Principal createdBy) {
         this.schema = schema;
+        this.createdBy = createdBy;
+        this.updatedBy = createdBy;
         this.baseVersion = baseVersion;
         this.name = name;
         this.formSchema = copyMap(formSchema);
         this.bindings = copyBindings(bindings);
-        this.baseBindings = copyBindings(bindings);
         this.status = SchemaDraftStatus.DRAFT;
     }
 
@@ -60,30 +61,26 @@ public class SchemaDraft {
     private String name;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "form_schema_json", nullable = false)
+    @Column(name = "form_schema", nullable = false)
     private Map<String, Object> formSchema;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "bindings_json", nullable = false)
+    @Column(name = "bindings", nullable = false)
     private List<Map<String, Object>> bindings;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "base_bindings_json")
-    private List<Map<String, Object>> baseBindings;
 
     @ManyToOne
     @JoinColumn(name = "published_version_id", foreignKey = @ForeignKey(name = "fk_schema_draft_published"))
     private SchemaVersion publishedVersion;
 
-    @Column(name = "revision")
-    private Long revision = 0L;
+    @Column(name = "lock_version", nullable = false)
+    private long revision;
 
     public long currentRevision() {
-        return revision == null ? 0L : revision;
+        return revision;
     }
 
     public void advanceRevision() {
-        revision = currentRevision() + 1;
+        revision++;
     }
 
     public void setFormSchema(Map<String, Object> formSchema) {
@@ -92,10 +89,6 @@ public class SchemaDraft {
 
     public void setBindings(List<Map<String, Object>> bindings) {
         this.bindings = copyBindings(bindings);
-    }
-
-    public void setBaseBindings(List<Map<String, Object>> bindings) {
-        this.baseBindings = bindings == null ? null : copyBindings(bindings);
     }
 
     private static List<Map<String, Object>> copyBindings(List<Map<String, Object>> bindings) {
@@ -118,9 +111,15 @@ public class SchemaDraft {
     @Column(name = "status", nullable = false, length = 32)
     private SchemaDraftStatus status;
 
-    @ManyToOne
-    @JoinColumn(name = "updated_by", foreignKey = @ForeignKey(name = "fk_schema_draft_updated_by"))
-    private User updatedBy;
+    /** Who created it. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
+
+    /** Who changed it last. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "updated_by_principal_id", nullable = false)
+    private Principal updatedBy;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")

@@ -46,6 +46,8 @@ const runBinding = (
     schemaVersionId: target.schemaVersionId,
     modelId: binding.modelId,
     modelInput: applySchemaRunInputMapping(modelValues, fields, binding),
+    // The form's values the record was mapped from: the seal vouches for them, and the saved run keeps them.
+    inputData: modelValues,
   };
   return retryWhileBusy(
     () =>
@@ -87,9 +89,15 @@ const reportResults = (
       return { backend, mappedTo, status: "skipped", reason: result?.errorMessage ?? "no-result" };
     }
 
-    const meta = isRecord(result.output.meta) ? result.output.meta : {};
-    const context = { modelValues: result.modelInput, meta, raw: result.output };
-    const payload = findReportPayload(mappedTo, result.output);
+    const output = result.output ?? {};
+    // The model and the record it was given are the result's own; meta is what the runtime added.
+    const meta = {
+      modelId: result.modelId,
+      backendFieldValues: result.modelInput,
+      ...(isRecord(output.meta) ? output.meta : {}),
+    };
+    const context = { modelValues: result.modelInput, meta, raw: output };
+    const payload = findReportPayload(mappedTo, output);
     return payload
       ? { backend, mappedTo, status: "ready", payload: payloadValue(payload), context }
       : { backend, mappedTo, status: "pending", context };

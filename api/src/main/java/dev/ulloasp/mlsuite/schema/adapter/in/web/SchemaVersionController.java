@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.schema.adapter.in.web;
 
+import dev.ulloasp.mlsuite.plugin.application.port.in.SnapshotPluginsUseCase;
+import dev.ulloasp.mlsuite.plugin.application.dto.PluginRuntimeSourceDto;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaVersionRequest;
@@ -26,7 +29,9 @@ import lombok.RequiredArgsConstructor;
 public class SchemaVersionController {
 
     private final SchemaVersionUseCase schemaVersionUseCase;
+    private final SnapshotPluginsUseCase snapshotPlugins;
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/schemas/{schemaId}/versions")
     public ResponseEntity<SchemaVersionDto> create(CurrentUser user, @PathVariable Long schemaId,
             @Valid @RequestBody CreateSchemaVersionRequest request) {
@@ -54,6 +59,12 @@ public class SchemaVersionController {
             @PathVariable Long versionId) {
         return ResponseEntity.ok(SchemaModelBindingDto.fromList(
                 schemaVersionUseCase.listBindings(user.userId(), versionId)));
+    }
+
+    /** The plugins the snapshot was published with: it renders with these, whatever the library holds now. */
+    @GetMapping("/schema-versions/{versionId}/plugins")
+    public ResponseEntity<List<PluginRuntimeSourceDto>> plugins(CurrentUser user, @PathVariable Long versionId) {
+        return ResponseEntity.ok(snapshotPlugins.pinned(schemaVersionUseCase.getVersion(user.userId(), versionId).getId()));
     }
 
     private SchemaVersionDto toDto(Long userId, SchemaVersion version) {

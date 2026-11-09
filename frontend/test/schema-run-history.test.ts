@@ -117,8 +117,8 @@ describe("schema run history helpers", () => {
       resultFeedback({
         id: 1,
         resultId: 1,
-        userId: 7,
-        userEmail: "reviewer@example.com",
+        createdByUserId: 7,
+        createdByEmail: "reviewer@example.com",
         type: "OUTPUT",
         order: 0,
         value: { assessment: "High" },

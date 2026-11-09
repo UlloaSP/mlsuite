@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.notification.adapter.out.persistence.repository;
 
+import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
+import java.util.List;
 import java.time.OffsetDateTime;
 
 import org.springframework.data.domain.Page;
@@ -14,6 +16,8 @@ import dev.ulloasp.mlsuite.notification.domain.model.Notification;
 import dev.ulloasp.mlsuite.notification.domain.model.NotificationTargetType;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
+
+    List<Notification> findByKindAndTargetId(NotificationKind kind, String targetId);
 
     @Query("""
             SELECT n FROM Notification n

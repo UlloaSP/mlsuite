@@ -11,7 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginMetadata;
 
-public interface PluginMetadataRepository extends JpaRepository<PluginMetadata, String> {
+public interface PluginMetadataRepository extends JpaRepository<PluginMetadata, Long> {
 
     @Query("""
             SELECT p FROM PluginMetadata p
@@ -44,12 +44,12 @@ public interface PluginMetadataRepository extends JpaRepository<PluginMetadata, 
 
     long countByOrganizationIdAndPluginType(Long organizationId, String pluginType);
 
-    Optional<PluginMetadata> findByIdAndOrganizationId(String id, Long organizationId);
+    Optional<PluginMetadata> findByPublicIdAndOrganizationId(String publicId, Long organizationId);
 
     long countByOrganizationId(Long organizationId);
 
     /** The plugins a person was the last to write. */
-    List<PluginMetadata> findByUpdatedByIdOrderByIdAsc(Long userId, Pageable pageable);
+    List<PluginMetadata> findByUpdatedByUserIdOrderByIdAsc(Long userId, Pageable pageable);
 
     List<PluginMetadata> findByOrganizationIdAndKindInOrderByIdAsc(Long organizationId, Collection<String> kinds);
 

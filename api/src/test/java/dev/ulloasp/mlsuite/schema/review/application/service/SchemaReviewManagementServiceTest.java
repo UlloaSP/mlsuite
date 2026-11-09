@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.schema.review.application.service;
 
+import org.springframework.jdbc.core.JdbcTemplate;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import static org.mockito.ArgumentMatchers.argThat;
 import static dev.ulloasp.mlsuite.support.TestFixtures.organization;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,9 +31,7 @@ import org.springframework.web.server.ResponseStatusException;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
-import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRevisionRepository;
 import dev.ulloasp.mlsuite.schema.application.service.FeedbackHistory;
-import dev.ulloasp.mlsuite.schema.catalog.InferenceRows;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackChange;
@@ -67,8 +67,7 @@ class SchemaReviewManagementServiceTest {
     @Mock private SchemaReviewAssigneeRepository assignees;
     @Mock private PredictionRunRepository runs;
     @Mock private PredictionResultFeedbackRepository feedback;
-    @Mock private PredictionResultFeedbackRevisionRepository revisions;
-    @Mock private InferenceRows inferenceRows;
+    @Mock private JdbcTemplate jdbc;
     @Mock private WorkspaceAccessService workspaceAccess;
     @Mock private WorkspaceAuthorizationService authorization;
     @Mock private NotificationService notifications;
@@ -78,8 +77,8 @@ class SchemaReviewManagementServiceTest {
     @BeforeEach
     void setUp() {
         service = new SchemaReviewManagementService(reviews, reviewRuns, submissions, assignees,
-                runs, feedback, new FeedbackHistory(feedback, revisions, inferenceRows), inferenceRows, workspaceAccess,
-                authorization, mock(AuditLogService.class), notifications, users);
+                runs, feedback, new FeedbackHistory(feedback, jdbc), workspaceAccess,
+                authorization, mock(AuditLogService.class), notifications, users, TestFixtures.principals());
     }
 
     @Test
@@ -95,7 +94,7 @@ class SchemaReviewManagementServiceTest {
         when(runs.findByIdAndOrganizationId(50L, 41L)).thenReturn(Optional.of(run));
         when(reviewRuns.findByRunIdOrderByIdAsc(50L)).thenReturn(List.of(reviewRun));
         when(assignees.findByReviewIdOrderByIdAsc(88L))
-                .thenReturn(List.of(new SchemaReviewAssignee(review, reviewer)));
+                .thenReturn(List.of(new SchemaReviewAssignee(review, reviewer, TestFixtures.system())));
         when(submissions.findByReviewRunIdAndUserId(null, 12L)).thenReturn(Optional.of(submission));
 
         var status = service.assignmentStatus(7L, 50L).getFirst();
@@ -221,18 +220,18 @@ class SchemaReviewManagementServiceTest {
         when(submissions.findByReviewRunIdAndUserId(null, 12L)).thenReturn(Optional.of(submission));
         PredictionResult result = new PredictionResult(run, new Model(), Map.of(), Map.of(),
                 PredictionResultStatus.SUCCESS, null, null);
-        PredictionResultFeedback answer = new PredictionResultFeedback(result, reviewer, review,
+        PredictionResultFeedback answer = new PredictionResultFeedback(result, TestFixtures.principal(reviewer), review,
                 PredictionResultFeedbackType.OUTPUT, 0, JsonNodeFactory.instance.objectNode().put("correct", true));
-        when(feedback.findByResultRunIdAndUserIdAndReviewId(50L, 12L, review.getId())).thenReturn(List.of(answer));
+        when(feedback.findByResultRunIdAndCreatedByUserIdAndReviewId(50L, 12L, review.getId())).thenReturn(List.of(answer));
 
         service.deleteResponse(7L, review.getPublicId(), reviewRun.getPublicId(), 12L);
 
         verify(submissions).delete(submission);
         // Only this review's answers go, and their removal is kept in their history.
         verify(feedback).deleteAll(List.of(answer));
-        verify(revisions).save(argThat(revision -> revision.getChange() == PredictionResultFeedbackChange.DELETED
-                && revision.getValue() == null && revision.getChangedByUserId() == 7L));
-        verify(inferenceRows).answersChanged(50L);
+        // Whoever removes them is named for the history the database writes.
+        verify(jdbc).queryForObject("SELECT set_config('app.principal_id', ?, true)", String.class,
+                TestFixtures.principal(TestFixtures.user(7L)).getId().toString());
         verify(authorization).require(7L, 41L, PermissionKey.MANAGE_REVIEWS);
     }
 
@@ -244,7 +243,7 @@ class SchemaReviewManagementServiceTest {
         SchemaReviewRun reviewRun = new SchemaReviewRun(review, run);
         stubReopen(organization, review, reviewRun, 12L);
         when(submissions.findByReviewRunIdAndUserId(null, 12L)).thenReturn(Optional.empty());
-        when(feedback.findByResultRunIdAndUserIdAndReviewId(50L, 12L, review.getId())).thenReturn(List.of());
+        when(feedback.findByResultRunIdAndCreatedByUserIdAndReviewId(50L, 12L, review.getId())).thenReturn(List.of());
 
         ResponseStatusException error = assertThrows(ResponseStatusException.class,
                 () -> service.deleteResponse(7L, review.getPublicId(), reviewRun.getPublicId(), 12L));
@@ -295,17 +294,17 @@ class SchemaReviewManagementServiceTest {
 
     private SchemaReview review(Organization organization, SchemaVersion version,
             OffsetDateTime expiresAt) {
-        SchemaReview review = new SchemaReview(organization, version.getSchema(), version, reviewer(), expiresAt);
+        SchemaReview review = new SchemaReview(organization, version.getSchema(), version, TestFixtures.principal(reviewer()), expiresAt);
         review.setId(88L);
         return review;
     }
 
     private PredictionRun run(Organization organization) {
-        Schema schema = new Schema(organization, "Risk", null);
+        Schema schema = new Schema(organization, "Risk", null, TestFixtures.system());
         schema.setId(5L);
-        SchemaVersion version = new SchemaVersion(schema, 1, "v1", Map.of("fields", List.of()));
+        SchemaVersion version = new SchemaVersion(schema, 1, "v1", Map.of("fields", List.of()), TestFixtures.system());
         version.setId(9L);
-        PredictionRun run = new PredictionRun(version, "case", Map.of(), PredictionRunStatus.SUCCESS);
+        PredictionRun run = new PredictionRun(version, "case", Map.of(), PredictionRunStatus.SUCCESS, TestFixtures.system());
         run.setId(50L);
         return run;
     }

@@ -96,13 +96,9 @@ public interface ModelRepository extends JpaRepository<Model, Long> {
             ORDER BY m.id""")
     List<ModelArtifactReference> findArtifactsAfter(Long after, Limit limit);
 
-    boolean existsByNameAndOrganizationId(String name, Long organizationId);
-
-    boolean existsByNameAndOrganizationIdAndIdNot(String name, Long organizationId, Long id);
-
+    boolean existsByNameIgnoreCaseAndOrganizationId(String name, Long organizationId);
 
     Optional<Model> findByIdAndOrganizationId(Long modelId, Long organizationId);
 
     long countByOrganizationId(Long organizationId);
-
 }

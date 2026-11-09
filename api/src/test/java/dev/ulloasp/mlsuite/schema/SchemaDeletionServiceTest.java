@@ -1,5 +1,8 @@
 package dev.ulloasp.mlsuite.schema;
 
+import dev.ulloasp.mlsuite.plugin.application.port.in.SnapshotPluginsUseCase;
+import dev.ulloasp.mlsuite.schema.domain.model.SchemaDraftStatus;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import dev.ulloasp.mlsuite.support.PostgresDatabase;
@@ -35,14 +38,18 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 
 @DataJpaTest(properties = {
     "spring.profiles.active=test", "logging.file.name=target/schema-delete-test.log"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import(SchemaServiceImpl.class)
+@Import({ SchemaServiceImpl.class, Principals.class })
 @ContextConfiguration(classes = SchemaDeletionServiceTest.PersistenceConfig.class)
 class SchemaDeletionServiceTest {
+
+    @Autowired
+    private Principals principals;
 
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry registry) {
@@ -50,6 +57,7 @@ class SchemaDeletionServiceTest {
     }
 
     @MockitoBean AuditLogService auditLog;
+    @MockitoBean SnapshotPluginsUseCase snapshotPlugins;
     @Configuration
     @EntityScan("dev.ulloasp.mlsuite")
     @EnableJpaRepositories("dev.ulloasp.mlsuite")
@@ -71,11 +79,11 @@ class SchemaDeletionServiceTest {
         reset(users, authorization);
         owner = new User("qa", "qa@example.test", "unused", "QA", SystemRole.USER);
         entityManager.persist(owner);
-        org = new Organization("qa-schema", "QA", null, owner);
+        org = new Organization("qa-schema", "QA", null, principals.of(owner));
         entityManager.persist(org);
-        schema = new Schema(org, "QA", null);
+        schema = new Schema(org, "QA", null, principals.system());
         entityManager.persist(schema);
-        version = new SchemaVersion(schema, 1, "v1", Map.of());
+        version = new SchemaVersion(schema, 1, "v1", Map.of(), principals.system());
         entityManager.persist(version);
         when(users.requireById(owner.getId())).thenReturn(owner);
         when(authorization.requireCurrent(eq(owner.getId()), any(PermissionKey[].class))).thenReturn(org);
@@ -86,12 +94,13 @@ class SchemaDeletionServiceTest {
         var model = new Model();
         model.setName("QA model"); model.setFileName("qa.mlbundle");
         model.setType("classifier"); model.setSpecificType("DecisionTreeClassifier");
-        model.setUser(owner); model.setOrganization(org);
+        model.setCreatedBy(principals.of(owner)); model.setUpdatedBy(model.getCreatedBy()); model.setOrganization(org);
         entityManager.persist(TestFixtures.storedArtifact(model, new byte[] { 1 }));
         entityManager.persist(new SchemaModelBinding(version, model, Map.of()));
-        entityManager.persist(new SchemaBookmark(schema, version, "QA bookmark"));
-        var draft = new SchemaDraft(schema, version, "QA draft", Map.of(), List.of());
+        entityManager.persist(new SchemaBookmark(schema, version, "QA bookmark", principals.system()));
+        var draft = new SchemaDraft(schema, version, "QA draft", Map.of(), List.of(), principals.system());
         draft.setPublishedVersion(version);
+        draft.setStatus(SchemaDraftStatus.PUBLISHED);
         entityManager.persist(draft);
         entityManager.flush();
         Long schemaId = schema.getId();
@@ -107,14 +116,20 @@ class SchemaDeletionServiceTest {
 
     @Test
     void predictionRunProtectsSchema() {
-        entityManager.persist(new PredictionRun(version, "QA", Map.of(), PredictionRunStatus.SUCCESS));
-        assertConflict();
+        entityManager.persist(new PredictionRun(version, "QA", Map.of(), PredictionRunStatus.SUCCESS, principals.system()));
+        // Written and forgotten, as a request leaves it: only the database still knows it needs the schema.
+        entityManager.flush();
+        entityManager.clear();
+        assertKeptBy("fk_prediction_run_version");
     }
 
     @Test
     void reviewProtectsSchema() {
-        entityManager.persist(new SchemaReview(org, schema, version, owner, OffsetDateTime.now().plusDays(1)));
-        assertConflict();
+        entityManager.persist(new SchemaReview(org, schema, version, principals.of(owner), OffsetDateTime.now().plusDays(1)));
+        // Written and forgotten, as a request leaves it: only the database still knows it needs the schema.
+        entityManager.flush();
+        entityManager.clear();
+        assertKeptBy("fk_schema_review_version");
     }
 
     @Test
@@ -131,9 +146,17 @@ class SchemaDeletionServiceTest {
         assertNotNull(entityManager.find(Schema.class, schema.getId()));
     }
 
-    private void assertConflict() {
-        var error = assertThrows(ResponseStatusException.class, () -> service.deleteSchema(owner.getId(), schema.getId()));
-        assertEquals(409, error.getStatusCode().value());
-        assertNotNull(entityManager.find(Schema.class, schema.getId()));
+    /** The database keeps the schema: the delete is refused by the constraint of what still needs it. */
+    private void assertKeptBy(String constraint) {
+        var error = assertThrows(RuntimeException.class, () -> {
+            service.deleteSchema(owner.getId(), schema.getId());
+            entityManager.flush();
+        });
+        Throwable cause = error;
+        while (cause != null && !(cause instanceof ConstraintViolationException)) {
+            cause = cause.getCause();
+        }
+        assertNotNull(cause, () -> "not a constraint violation: " + error);
+        assertEquals(constraint, ((ConstraintViolationException) cause).getConstraintName());
     }
 }

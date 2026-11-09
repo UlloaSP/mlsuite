@@ -16,6 +16,7 @@ const tones: Record<RoleValue, "accent" | "danger" | "neutral" | "success" | "wa
   ACCEPTED: "success",
   EXPIRED: "danger",
   REVOKED: "danger",
+  DECLINED: "neutral",
 };
 
 export function RoleBadge({ value }: { value: string }) {

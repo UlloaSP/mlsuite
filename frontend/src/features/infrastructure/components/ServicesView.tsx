@@ -76,7 +76,7 @@ export function ServicesView({
           { label: "Infrastructure", to: "/admin/infrastructure" },
           { label: "Services" },
         ]}
-        title="Managed services"
+        title="Services"
         description={`${filtered.length} of ${services.length} services · click a row for details, logs, and shell.`}
         actions={
           <AppButton variant="secondary" onClick={onSync}>

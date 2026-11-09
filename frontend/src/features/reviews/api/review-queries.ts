@@ -10,6 +10,8 @@ export const schemaReviewRunQueryOptions = (
 ) =>
   queryOptions({
     queryKey: SCHEMA_REVIEW_RUN_QUERY_KEY(organizationId, reviewId, reviewRunId),
+    // The review panel says when a run cannot be opened; no toast repeats it.
+    meta: { errorHandledLocally: true },
     queryFn: ({ signal }) => getSchemaReviewRunDetail(reviewId, reviewRunId, signal),
     enabled: organizationId !== "none" && Boolean(reviewId && reviewRunId),
     // Switching inferences keeps the previous one on screen, drawn as a skeleton, until this arrives.

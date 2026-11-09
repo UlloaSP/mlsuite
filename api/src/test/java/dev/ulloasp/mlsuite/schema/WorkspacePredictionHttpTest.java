@@ -77,6 +77,20 @@ class WorkspacePredictionHttpTest extends PublicPredictionFixture {
             assertEquals(predicted.get("modelInput"), result.get("modelInput"));
             assertEquals("SUCCESS", result.get("status").asString());
         }
+        // The run keeps the form values the predictions were run on.
+        assertEquals(52, read.at("/inputData/Age").asInt());
+    }
+
+    @Test
+    void anExecutionIsSavedInOneRun() throws Exception {
+        String forest = predict(forestModel.getId()).get("attestation").asString();
+        String net = predict(netModel.getId()).get("attestation").asString();
+        mockMvc.perform(save("case-1", forest, net)).andExpect(status().isCreated());
+
+        mockMvc.perform(save("case-2", forest, net))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value(
+                        "This prediction was already saved in a run; run the inference again to save another."));
     }
 
     @Test
@@ -101,7 +115,7 @@ class WorkspacePredictionHttpTest extends PublicPredictionFixture {
     void aRunCannotBeSavedWithOutputsTheClientWrote() throws Exception {
         long runs = count("PredictionRun");
         String body = objectMapper.writeValueAsString(Map.of("schemaVersionId", version.getId(), "name", "case-3",
-                "inputData", Map.of("Age", 52), "results", List.of(written(forestModel.getId()), written(netModel.getId()))));
+                "results", List.of(written(forestModel.getId()), written(netModel.getId()))));
 
         mockMvc.perform(signedIn(post("/api/schema-bookmarks/{id}/runs", bookmark.getId())
                 .contentType(MediaType.APPLICATION_JSON).content(body), owner.getId()))
@@ -223,6 +237,7 @@ class WorkspacePredictionHttpTest extends PublicPredictionFixture {
             List<Object> reports = new ArrayList<>((List<?>) form.get("reports"));
             reports.add(Map.of("kind", "Crystal Tree", "label", "Path", "mappedTo", Map.of("risk-forest", "tree")));
             form.put("reports", reports);
+            entityManager.createNativeQuery("SET LOCAL session_replication_role = replica").executeUpdate(); // stands in for a snapshot written with this form
             stored.setFormSchema(form);
         });
     }
@@ -241,14 +256,13 @@ class WorkspacePredictionHttpTest extends PublicPredictionFixture {
 
     private MockHttpServletRequestBuilder predictRequest(long modelId) throws Exception {
         String body = objectMapper.writeValueAsString(Map.of("schemaVersionId", version.getId(), "modelId", modelId,
-                "modelInput", Map.of("age", 52)));
+                "modelInput", Map.of("age", 52), "inputData", Map.of("Age", 52)));
         return signedIn(post("/api/schema-bookmarks/{id}/predictions", bookmark.getId())
                 .contentType(MediaType.APPLICATION_JSON).content(body), owner.getId());
     }
 
     private MockHttpServletRequestBuilder save(String name, String... seals) throws Exception {
         String body = objectMapper.writeValueAsString(Map.of("schemaVersionId", version.getId(), "name", name,
-                "inputData", Map.of("Age", 52),
                 "results", List.of(seals).stream().map(seal -> Map.of("attestation", seal)).toList()));
         return signedIn(post("/api/schema-bookmarks/{id}/runs", bookmark.getId())
                 .contentType(MediaType.APPLICATION_JSON).content(body), owner.getId());

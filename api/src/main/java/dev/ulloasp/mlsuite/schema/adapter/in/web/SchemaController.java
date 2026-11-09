@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaRequest;
@@ -31,6 +32,7 @@ public class SchemaController {
 
     private final SchemaCatalogUseCase schemaCatalogUseCase;
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public ResponseEntity<SchemaDto> create(CurrentUser user,
             @Valid @RequestBody CreateSchemaRequest request) {
@@ -76,6 +78,7 @@ public class SchemaController {
         return ResponseEntity.ok(SchemaDto.from(schemaCatalogUseCase.restoreSchema(user.userId(), schemaId)));
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/{schemaId}/duplicate")
     public ResponseEntity<SchemaDto> duplicate(CurrentUser user, @PathVariable Long schemaId,
             @RequestParam(required = false) Long versionId, @RequestParam String name) {
@@ -83,6 +86,7 @@ public class SchemaController {
                 user.userId(), schemaId, versionId, name)));
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{schemaId}")
     public ResponseEntity<Void> delete(CurrentUser user, @PathVariable Long schemaId) {
         schemaCatalogUseCase.deleteSchema(user.userId(), schemaId);

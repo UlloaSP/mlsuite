@@ -43,12 +43,12 @@ record InferenceCatalogScope(String schemaId, String bookmarkId, String status, 
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(builder.equal(schema.get("organization").get("id"), organizationId));
         if (!ALL.equals(schemaId)) {
-            predicates.add(builder.equal(schema.get("id"), id(schemaId)));
+            predicates.add(builder.equal(schema.get("id"), Long.valueOf(schemaId)));
         }
         if (UNBOOKMARKED.equals(bookmarkId)) {
             predicates.add(builder.isNull(run.get("schemaBookmark")));
         } else if (!ALL.equals(bookmarkId)) {
-            predicates.add(builder.equal(run.get("schemaBookmark").get("id"), id(bookmarkId)));
+            predicates.add(builder.equal(run.get("schemaBookmark").get("id"), Long.valueOf(bookmarkId)));
         }
         if (!ALL.equals(status)) {
             predicates.add(builder.equal(run.get("status").as(String.class), status));
@@ -57,14 +57,5 @@ record InferenceCatalogScope(String schemaId, String bookmarkId, String status, 
             predicates.add(builder.equal(run.get("origin").as(String.class), origin));
         }
         return builder.and(predicates.toArray(Predicate[]::new));
-    }
-
-    /** An id no row has stands in for one that is not a number, so the filter matches nothing. */
-    private static Long id(String value) {
-        try {
-            return Long.valueOf(value);
-        } catch (NumberFormatException notAnId) {
-            return -1L;
-        }
     }
 }

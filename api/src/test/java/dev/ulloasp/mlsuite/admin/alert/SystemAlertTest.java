@@ -262,19 +262,22 @@ class SystemAlertTest extends PublicPredictionFixture {
         cpuAt(1);
         var before = signals.read(T).values();
         jdbc.update("""
-                INSERT INTO prediction_job (organization_id, schema_bookmark_id, schema_version_id, created_by_user_id,
-                    status, total_rows, done_rows, failed_rows, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, 100, 30, 10, ?::timestamptz, now())""", organization.getId(), bookmark.getId(),
-                version.getId(), owner.getId(), "RUNNING", T.minusSeconds(600).toString());
+                INSERT INTO prediction_job (organization_id, schema_id, schema_bookmark_id, schema_version_id, created_by_principal_id,
+                    updated_by_principal_id,
+                    status, total_rows, done_rows, failed_rows, lease_owner, lease_expires_at, created_at, updated_at)
+                VALUES (?, ?, ?, ?, (SELECT id FROM principal WHERE user_id = ?), (SELECT id FROM principal WHERE user_id = ?), ?, 100, 30, 10,
+                    'elsewhere', now() + interval '1 day', ?::timestamptz, now())""", organization.getId(), bookmark.getSchema().getId(), bookmark.getId(),
+                version.getId(), owner.getId(), owner.getId(), "RUNNING", T.minusSeconds(600).toString());
         jdbc.update("""
-                INSERT INTO prediction_job (organization_id, schema_bookmark_id, schema_version_id, created_by_user_id,
-                    status, total_rows, created_at, updated_at)
-                VALUES (?, ?, ?, ?, 'CANCELLED', 900, now(), now())""", organization.getId(), bookmark.getId(),
-                version.getId(), owner.getId());
-        jdbc.update("UPDATE model SET runtime_state = 'PREPARING' WHERE id = ?", forestModel.getId());
+                INSERT INTO prediction_job (organization_id, schema_id, schema_bookmark_id, schema_version_id, created_by_principal_id,
+                    updated_by_principal_id,
+                    status, total_rows, created_at, updated_at, finished_at)
+                VALUES (?, ?, ?, ?, (SELECT id FROM principal WHERE user_id = ?), (SELECT id FROM principal WHERE user_id = ?), 'CANCELLED', 900, now(), now(), now())""", organization.getId(), bookmark.getSchema().getId(), bookmark.getId(),
+                version.getId(), owner.getId(), owner.getId());
+        jdbc.update("UPDATE model_preparation SET state = 'PREPARING' WHERE model_id = ?", forestModel.getId());
         jdbc.update("""
-                INSERT INTO storage_deletion_task (bucket, object_key, status) VALUES ('b', ?, 'FAILED'),
-                    ('b', ?, 'PENDING')""", UUID.randomUUID().toString(), UUID.randomUUID().toString());
+                INSERT INTO storage_deletion_task (storage_bucket, storage_object_key, status, error_message)
+                VALUES ('b', ?, 'FAILED', 'gone for good'), ('b', ?, 'PENDING', NULL)""", UUID.randomUUID().toString(), UUID.randomUUID().toString());
 
         var after = signals.read(T).values();
 
@@ -285,7 +288,7 @@ class SystemAlertTest extends PublicPredictionFixture {
         assertEquals(1d, after.get(SystemAlertSignal.STORAGE_DELETIONS_FAILED)
                 - before.get(SystemAlertSignal.STORAGE_DELETIONS_FAILED));
         jdbc.update("DELETE FROM prediction_job WHERE organization_id = ?", organization.getId());
-        jdbc.update("DELETE FROM storage_deletion_task WHERE bucket = 'b'");
+        jdbc.update("DELETE FROM storage_deletion_task WHERE storage_bucket = 'b'");
     }
 
     @Test

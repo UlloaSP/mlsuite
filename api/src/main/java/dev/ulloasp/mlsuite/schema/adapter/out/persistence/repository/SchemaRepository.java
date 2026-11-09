@@ -55,7 +55,5 @@ public interface SchemaRepository extends JpaRepository<Schema, Long> {
 
     boolean existsByNameAndOrganizationId(String name, Long organizationId);
 
-    boolean existsByNameAndOrganizationIdAndIdNot(String name, Long organizationId, Long id);
-
     long countByOrganizationId(Long organizationId);
 }

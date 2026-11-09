@@ -7,21 +7,21 @@ import { useMediaQuery } from "@/shared/ui/use-media-query";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
-/** 0 idle, 1 pass torn while the request runs, 2 overlay revealed after success. */
+/** 0 idle or waiting for the server, 1 pass torn once it accepted, 2 overlay revealed. */
 export type AuthPhase = 0 | 1 | 2;
 export type AuthReveal = { x: number; y: number; radius: number };
 
-const TEAR_MS = 650;
-// Overlay content fades in at .45s and the progress bar finishes at .6s + 2.4s.
-const WELCOME_MS = 3000;
-const REDUCED_WELCOME_MS = 1000;
+// The whole welcome stays under a second: the tear, then the reveal, then the destination.
+const TEAR_MS = 250;
+const WELCOME_MS = 550;
+const REDUCED_WELCOME_MS = 300;
 
+/** Plays the welcome only for an attempt the server accepted, then opens the destination. */
 export function useAuthAccess(destination: string) {
   const navigate = useNavigate();
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const [phase, setPhase] = useState<AuthPhase>(0);
   const [reveal, setReveal] = useState<AuthReveal>({ x: 0, y: 0, radius: 1600 });
-  const startedAt = useRef(0);
   const timers = useRef<number[]>([]);
 
   useEffect(() => {
@@ -32,13 +32,9 @@ export function useAuthAccess(destination: string) {
   const later = (callback: () => void, delay: number) => {
     timers.current.push(window.setTimeout(callback, delay));
   };
-  const afterTear = (callback: () => void) =>
-    later(
-      callback,
-      reduceMotion ? 0 : Math.max(0, TEAR_MS - (performance.now() - startedAt.current)),
-    );
+  const open = () => void navigate({ href: destination, replace: true });
 
-  const start = (pass: HTMLElement | null) => {
+  const succeed = (pass: HTMLElement | null) => {
     const box = pass?.getBoundingClientRect();
     const x = box ? box.left + box.width / 2 : window.innerWidth / 2;
     const y = box ? box.top + box.height / 2 : window.innerHeight / 2;
@@ -47,20 +43,17 @@ export function useAuthAccess(destination: string) {
       Math.max(y, window.innerHeight - y),
     );
     setReveal({ x, y, radius: Math.max(1600, Math.ceil(farthest)) });
-    startedAt.current = performance.now();
+    if (reduceMotion) {
+      setPhase(2);
+      later(open, REDUCED_WELCOME_MS);
+      return;
+    }
     setPhase(1);
+    later(() => {
+      setPhase(2);
+      later(open, WELCOME_MS);
+    }, TEAR_MS);
   };
 
-  const succeed = () =>
-    afterTear(() => {
-      setPhase(2);
-      later(
-        () => void navigate({ href: destination, replace: true }),
-        reduceMotion ? REDUCED_WELCOME_MS : WELCOME_MS,
-      );
-    });
-
-  const fail = () => afterTear(() => setPhase(0));
-
-  return { phase, reveal, start, succeed, fail };
+  return { phase, reveal, succeed };
 }

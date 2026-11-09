@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { AppLink } from "@/shared/ui/AppLink";
 import { profileLink } from "@/shared/lib/profile-link";
-import { formatCompactRelativeTime } from "@/shared/lib/relative-time";
+import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { PersonAvatar } from "@/shared/ui/PersonAvatar";
@@ -57,11 +57,11 @@ export function OverviewMembersPanel({
             </span>
             <span className="shrink-0 text-right">
               <span className="block text-xs font-medium text-fg-secondary">
-                {member.role.name}
+                {member.roleDefinition.name}
               </span>
-              <time dateTime={member.createdAt} className="block text-2xs text-fg-muted">
-                joined {formatCompactRelativeTime(member.createdAt)} ago
-              </time>
+              <span className="block text-2xs text-fg-muted">
+                joined <LiveRelativeTime value={member.createdAt} />
+              </span>
             </span>
           </li>
         );

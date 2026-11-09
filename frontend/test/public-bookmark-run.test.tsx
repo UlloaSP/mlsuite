@@ -72,6 +72,8 @@ const workspaceBookmark: SchemaBookmarkDto = {
   exampleCount: 0,
   staleExampleCount: 0,
   createdAt: AT,
+  createdByName: "Ada Lovelace",
+  updatedByName: "Ada Lovelace",
   updatedAt: AT,
 };
 

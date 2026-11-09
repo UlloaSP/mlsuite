@@ -196,7 +196,7 @@ export function TerminalView({
           { label: "Infrastructure", to: "/admin/infrastructure" },
           { label: "Terminal" },
         ]}
-        title="Embedded terminal"
+        title="Terminal"
         description="Interactive shell in enabled services. Commands can modify files and interrupt services."
         actions={
           <>

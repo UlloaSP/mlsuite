@@ -12,10 +12,12 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaDraft;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaDraftStatus;
 
@@ -27,6 +29,9 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaDraftStatus;
  * may, and it still runs and still opens as a change.
  */
 class SchemaMappingValidationHttpTest extends PublicPredictionFixture {
+
+    @Autowired
+    private Principals principals;
 
     @BeforeEach
     void modelsWithTheirPersistedSignatures() {
@@ -162,7 +167,7 @@ class SchemaMappingValidationHttpTest extends PublicPredictionFixture {
     /** A change opened on the fixture's version, as stored: its reports read outputs by name. */
     private SchemaDraft storedDraft() {
         SchemaDraft draft = new SchemaDraft(schema, version, "Fix risk", version.getFormSchema(), List.of(
-                Map.of("modelId", forestModel.getId()), Map.of("modelId", netModel.getId())));
+                Map.of("modelId", forestModel.getId()), Map.of("modelId", netModel.getId())), principals.system());
         inTransaction(() -> entityManager.persist(draft));
         return draft;
     }

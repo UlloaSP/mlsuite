@@ -19,7 +19,6 @@ import dev.ulloasp.mlsuite.role.application.dto.RolesResponseDto;
 import dev.ulloasp.mlsuite.role.application.port.in.RoleCatalogUseCase;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.role.domain.model.RoleTemplate;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +36,7 @@ public class RoleCatalogService implements RoleCatalogUseCase {
     @Override
     public RolesResponseDto list(Long userId, Long organizationId) {
         requireReadable(userId, organizationId);
-        var roles = roleRepository.findByOrganizationIdAndScopeOrderByLockedDescNameAsc(organizationId, RoleScope.ORGANIZATION)
+        var roles = roleRepository.findByOrganizationIdOrderByLockedDescNameAsc(organizationId)
                 .stream()
                 .map(role -> toDto(userId, organizationId, role))
                 .toList();
@@ -79,7 +78,6 @@ public class RoleCatalogService implements RoleCatalogUseCase {
                 role.getName(),
                 role.getSlug(),
                 role.getDescription(),
-                role.getScope(),
                 role.isLocked(),
                 role.getSystemKey(),
                 users,
@@ -88,7 +86,7 @@ public class RoleCatalogService implements RoleCatalogUseCase {
     }
 
     List<RoleTemplateDto> templates() {
-        return templateRepository.findByScopeOrderByNameAsc(RoleScope.ORGANIZATION).stream()
+        return templateRepository.findAllByOrderByNameAsc().stream()
                 .map(this::template)
                 .toList();
     }
@@ -99,7 +97,6 @@ public class RoleCatalogService implements RoleCatalogUseCase {
                 template.getName(),
                 template.getDescription(),
                 template.getCategory(),
-                template.getScope(),
                 List.copyOf(template.getPermissionKeys()));
     }
 

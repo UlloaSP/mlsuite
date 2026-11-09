@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.LinkedHashMap;
@@ -57,6 +58,7 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
     private final WorkspaceAuthorizationService authorization;
     private final SchemaMappingCheck mappingCheck;
     private final AuditLogService auditLog;
+    private final Principals principals;
     @Override
     public List<SchemaDraft> listDrafts(Long userId, Long schemaId) {
         Long orgId = requireRead(userId);
@@ -69,9 +71,8 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
         Long orgId = requireOperate(userId);
         Schema schema = requireSchema(schemaId, orgId);
         SchemaVersion base = requireVersion(request.baseVersionId(), orgId);
-        if (!base.getSchema().getId().equals(schemaId)) throw badRequest("Base version outside schema");
         List<Map<String, Object>> bindings = bindingJson(versionUseCase.listBindings(userId, base.getId()));
-        SchemaDraft draft = new SchemaDraft(schema, base, request.name(), base.getFormSchema(), bindings);
+        SchemaDraft draft = new SchemaDraft(schema, base, request.name(), base.getFormSchema(), bindings, principals.of(user));
         touch(schema, draft, user);
         SchemaDraft saved = drafts.save(draft);
         auditLog.record(AuditActor.user(userId), orgId, AuditAction.SCHEMA_DRAFT_CREATE, saved.getId(),
@@ -116,7 +117,7 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
         requireRevision(draft, request.expectedDraftRevision());
         lockSchema(draft.getSchema().getId(), orgId);
         SchemaVersion current = currentVersion(draft.getSchema().getId());
-        if (!current.getId().equals(request.expectedCurrentVersionId())) throw conflict("Current version changed");
+        if (!current.getId().equals(request.expectedCurrentVersionId())) throw conflict("The schema has a newer snapshot");
 
         SchemaDraftDiffDto diff = diff(userId, draft, current);
         if (!diff.currentDocumentHash().equals(request.expectedCurrentDocumentHash()))
@@ -131,7 +132,6 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
         Map<String, Object> merged = merger.merge(document(current.getFormSchema(), currentBindings), diff, resolutions);
         draft.setFormSchema(map(merged.get("formSchema"), "Merged formSchema invalid"));
         draft.setBindings(bindings(merged.get("bindings")));
-        draft.setBaseBindings(currentBindings);
         draft.setBaseVersion(current);
         draft.setStatus(SchemaDraftStatus.DRAFT);
         changed(draft, user);
@@ -150,7 +150,20 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
         lockSchema(draft.getSchema().getId(), orgId);
         SchemaVersion current = currentVersion(draft.getSchema().getId());
         SchemaDraftDiffDto diff = diff(userId, draft, current);
-        if (!draft.getBaseVersion().getId().equals(current.getId()) || diff.hasConflicts()) {
+        if (!diff.hasConflicts() && !draft.getBaseVersion().getId().equals(current.getId())) {
+            // Another snapshot was published meanwhile, touching nothing this change touches: the
+            // change is carried onto it and published there.
+            List<Map<String, Object>> currentBindings = bindingJson(versionUseCase.listBindings(userId, current.getId()));
+            Map<String, Object> merged = merger.merge(document(current.getFormSchema(), currentBindings), diff, Map.of());
+            draft.setFormSchema(map(merged.get("formSchema"), "Merged formSchema invalid"));
+            draft.setBindings(bindings(merged.get("bindings")));
+            draft.setBaseVersion(current);
+            diff = diff(userId, draft, current);
+        }
+        if (!diff.hasConflicts() && diff.changes().isEmpty()) {
+            throw conflict("This change matches v" + current.getVersion() + "; there is nothing to publish");
+        }
+        if (diff.hasConflicts()) {
             draft.setStatus(SchemaDraftStatus.CONFLICT);
             changed(draft, user);
             auditLog.record(AuditActor.user(userId), orgId, AuditAction.SCHEMA_DRAFT_PUBLISH, draftId,
@@ -173,10 +186,8 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
         return new SchemaDraftPublishResultDto("published", SchemaDraftDto.from(draft), dto, null);
     }
     private SchemaDraftDiffDto diff(Long userId, SchemaDraft draft, SchemaVersion current) {
-        List<Map<String, Object>> baseBindings = draft.getBaseBindings();
-        if (baseBindings == null) {
-            baseBindings = bindingJson(versionUseCase.listBindings(userId, draft.getBaseVersion().getId()));
-        }
+        // A snapshot's bindings never change, so what the draft started from is its base's.
+        List<Map<String, Object>> baseBindings = bindingJson(versionUseCase.listBindings(userId, draft.getBaseVersion().getId()));
         List<Map<String, Object>> currentBindings = bindingJson(versionUseCase.listBindings(userId, current.getId()));
         return merger.diff(draft.getBaseVersion().getId(), current.getId(),
                 document(draft.getBaseVersion().getFormSchema(), baseBindings),
@@ -220,7 +231,7 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
 
     private SchemaVersion requireVersion(Long id, Long orgId) {
         return versions.findByIdAndOrganizationId(id, orgId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema version not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema snapshot not found"));
     }
 
     private SchemaDraft requireDraft(Long id, Long orgId) {
@@ -235,7 +246,7 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
 
     private SchemaVersion currentVersion(Long schemaId) {
         return versions.findTopBySchemaIdOrderByVersionDesc(schemaId)
-                .orElseThrow(() -> badRequest("Schema has no versions"));
+                .orElseThrow(() -> badRequest("The schema has no snapshots"));
     }
 
     private void requireEditable(SchemaDraft draft) {
@@ -269,9 +280,9 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
     }
 
     private void touch(Schema schema, SchemaDraft draft, User user) {
-        schema.setUpdatedBy(user);
+        schema.setUpdatedBy(principals.of(user));
         schema.setUpdatedAt(OffsetDateTime.now(ZoneOffset.UTC));
-        draft.setUpdatedBy(user);
+        draft.setUpdatedBy(principals.of(user));
     }
 
     private ResponseStatusException badRequest(String message) { return new ResponseStatusException(HttpStatus.BAD_REQUEST, message); }

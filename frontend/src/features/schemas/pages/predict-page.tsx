@@ -1,5 +1,7 @@
 import { getRouteApi } from "@tanstack/react-router";
 import { usePredictCatalog } from "@/features/schemas/api/schema-catalog-queries";
+import { useSchemaCatalogPageQuery } from "@/features/schemas/api/schema-queries";
+import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 /*
 SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
@@ -38,6 +40,9 @@ export function PredictPage() {
     sort: controls.sort,
   });
   const SchemasIcon = SECTION_ICONS.schemas;
+  // With nothing to run, the way on is a schema's snapshots, or the schemas when there are none.
+  const schemas = useSchemaCatalogPageQuery(useCurrentOrganizationId(), "", "updated", "active");
+  const firstSchema = schemas.data?.items[0];
 
   return (
     <CatalogResourcePage
@@ -61,10 +66,21 @@ export function PredictPage() {
       filteredEmptyTitle="No matching bookmarks"
       emptyDescription="Bookmark a published snapshot of a schema to run it from here."
       emptyAction={
-        <AppLink to="/schemas" className={appButtonClass()}>
-          <SchemasIcon size={16} />
-          Open schemas
-        </AppLink>
+        firstSchema ? (
+          <AppLink
+            to="/schemas/$schemaId/snapshots"
+            params={{ schemaId: String(firstSchema.id) }}
+            className={appButtonClass()}
+          >
+            <SchemasIcon size={16} />
+            Open {firstSchema.name} snapshots
+          </AppLink>
+        ) : (
+          <AppLink to="/schemas" className={appButtonClass()}>
+            <SchemasIcon size={16} />
+            Open schemas
+          </AppLink>
+        )
       }
       filteredEmptyDescription="Try another search or show every bookmark."
       renderItem={(bookmark) => <PredictBookmarkCard key={bookmark.id} bookmark={bookmark} />}

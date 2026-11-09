@@ -105,7 +105,7 @@ public class PredictionJobService {
     public PredictionJobDto cancel(Long userId, Long jobId) {
         Long organizationId = requireRun(userId);
         PredictionJobDto job = require(organizationId, jobId);
-        PredictionJobLedger.FinishedJob cancelled = ledger.cancel(organizationId, job.id())
+        PredictionJobLedger.FinishedJob cancelled = ledger.cancel(organizationId, job.id(), userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "The bulk upload has already finished"));
         auditLog.record(AuditActor.user(userId), organizationId, AuditAction.PREDICTION_JOB_CANCEL, jobId,
                 AuditDetails.of("rowsLeft", job.pendingRows()));
@@ -128,7 +128,7 @@ public class PredictionJobService {
     public PredictionJobDto retry(Long userId, Long jobId) {
         Long organizationId = requireRun(userId);
         PredictionJobDto job = require(organizationId, jobId);
-        if (job.failedRows() == 0 || !ledger.retry(organizationId, job.id())) {
+        if (job.failedRows() == 0 || !ledger.retry(organizationId, job.id(), userId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Only a finished bulk upload's failed rows run again");
         }
         auditLog.record(AuditActor.user(userId), organizationId, AuditAction.PREDICTION_JOB_RETRY, jobId,

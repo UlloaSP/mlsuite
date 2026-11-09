@@ -37,14 +37,14 @@ public class RuntimeEnvironments {
     private final RuntimeBuilderClient builder;
 
     public RuntimeEnvironment find(String environmentKey) {
-        return environments.findById(environmentKey)
+        return environments.findByKey(environmentKey)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Environment not found"));
     }
 
     /** Records the environment unless it is known (two uploads may need it at once); returns its key. */
     public String register(BundleInspection.Environment environment) {
         jdbc.update("""
-                INSERT INTO runtime_environment (environment_key, environment_id, writer_version, python_version,
+                INSERT INTO runtime_environment (environment_key, lock_digest, writer_version, python_version,
                     packages, lock_toml, created_at)
                 VALUES (?, ?, ?, ?, ?::jsonb, ?, now())
                 ON CONFLICT (environment_key) DO NOTHING""",

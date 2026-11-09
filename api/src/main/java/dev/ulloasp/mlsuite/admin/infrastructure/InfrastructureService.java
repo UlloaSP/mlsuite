@@ -18,6 +18,8 @@ public class InfrastructureService {
     private final AuditLogService auditLog;
     private final TerminalSessions terminals;
 
+    private static final int MAX_TAIL = 5000;
+
     public JsonNode overview() {
         return opsAgentClient.overview();
     }
@@ -29,6 +31,9 @@ public class InfrastructureService {
     }
 
     public JsonNode logs(String serviceName, int tail) {
+        if (tail < 1 || tail > MAX_TAIL) {
+            throw new IllegalArgumentException("tail must be between 1 and " + MAX_TAIL + " lines.");
+        }
         return opsAgentClient.logs(serviceName, tail);
     }
 

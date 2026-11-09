@@ -118,7 +118,7 @@ final class InferenceFeedbackValues {
                 if (!filled(value)) {
                     continue;
                 }
-                String id = prefix + step.type() + ":" + step.order() + ":" + field.id() + ":" + item.entry().userId();
+                String id = prefix + step.type() + ":" + step.order() + ":" + field.id() + ":" + item.entry().createdByUserId();
                 labels.putIfAbsent(id,
                         step.title() + " · " + snapshot + " · " + field.label() + " · " + reviewer(item.entry()));
                 values.computeIfAbsent(id, ignored -> new LinkedHashSet<>()).add(answer(value, field));
@@ -132,14 +132,15 @@ final class InferenceFeedbackValues {
     }
 
     /** A member by address or name, "Deleted user" once gone; no name at all is a visitor of the public page. */
+    /** A reviewer by the name people know them by; their address only when they have no name. */
     private static String reviewer(PredictionResultFeedbackDto entry) {
-        if (entry.userEmail() != null && !entry.userEmail().isEmpty()) {
-            return entry.userEmail();
+        if (entry.createdByName() != null && !entry.createdByName().isEmpty()) {
+            return entry.createdByName();
         }
-        if (entry.userName() != null && !entry.userName().isEmpty()) {
-            return entry.userName();
+        if (entry.createdByEmail() != null && !entry.createdByEmail().isEmpty()) {
+            return entry.createdByEmail();
         }
-        return entry.userId() == null ? "Visitor" : "user-" + entry.userId();
+        return entry.createdByUserId() == null ? "Visitor" : "user-" + entry.createdByUserId();
     }
 
     /** An answer by the label of the option it chose, compared as text the way the form compared them. */

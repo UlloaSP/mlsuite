@@ -24,7 +24,6 @@ import dev.ulloasp.mlsuite.admin.AdminCreateUserRequest;
 import dev.ulloasp.mlsuite.admin.AdminUpdateUserRequest;
 import dev.ulloasp.mlsuite.admin.AdminUserService;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
-import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.PersonalAccountService;
@@ -63,7 +62,6 @@ class ManualAuthServiceTest {
 
     @Test
     void register_CreatesNormalUserAndOpensTheirPersonalAccount() {
-        when(userRepository.existsByEmailIgnoreCase("alice@example.com")).thenReturn(false);
         when(passwordEncoder.encode("very-secret")).thenReturn("hash");
         when(personalAccountService.claimHandle("Alice")).thenReturn("alice");
 
@@ -107,18 +105,9 @@ class ManualAuthServiceTest {
         org.mockito.Mockito.verifyNoInteractions(auditLog);
     }
 
-    @Test
-    void register_RejectsDuplicateEmail() {
-        when(userRepository.existsByEmailIgnoreCase("alice@example.com")).thenReturn(true);
-
-        assertThrows(UserAlreadyExistsException.class,
-                () -> authService.register(new AuthRequest("alice@example.com", "very-secret", "Alice", "alice"),
-                        "address:test"));
-    }
 
     @Test
     void adminCreate_CanCreateSuperadmin() {
-        when(userRepository.existsByEmailIgnoreCase("root@example.com")).thenReturn(false);
         when(passwordEncoder.encode("very-secret")).thenReturn("hash");
 
         var dto = adminUserService.create(9L, new AdminCreateUserRequest(

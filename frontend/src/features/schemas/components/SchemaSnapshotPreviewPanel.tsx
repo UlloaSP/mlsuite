@@ -8,6 +8,7 @@ import { AppSegmentedControl } from "@/shared/ui/AppSegmentedControl";
 import { cx } from "@/shared/ui/cx";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
 import { countVisibleSchemaFields } from "@/features/schemas/lib/visible-fields";
+import { hasOwnVersionName, schemaVersionName } from "@/features/schemas/lib/version-selection";
 import { SchemaCodeViewer } from "./SchemaCodeViewer";
 import { SchemaFormPreview } from "./SchemaFormPreview";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
@@ -37,9 +38,10 @@ export function SchemaSnapshotPreviewPanel({ version, mode, onModeChange: setMod
     <section className="flex shrink-0 flex-col gap-4 lg:min-h-0 lg:flex-1 lg:overflow-hidden">
       <div className="grid shrink-0 items-center gap-3 lg:grid-cols-[minmax(220px,1fr)_minmax(280px,0.9fr)_auto]">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-fg">{version.name}</h2>
+          <h2 className="text-lg font-semibold text-fg">{schemaVersionName(version)}</h2>
           <p className="mt-1 text-sm text-fg-secondary">
-            v{version.version} · Published <LiveRelativeTime value={version.createdAt} /> ago
+            {hasOwnVersionName(version) ? `v${version.version} · ` : null}
+            Published <LiveRelativeTime value={version.createdAt} />
           </p>
         </div>
         <dl className="grid grid-cols-3 gap-2">
@@ -72,7 +74,7 @@ export function SchemaSnapshotPreviewPanel({ version, mode, onModeChange: setMod
       <div className="lg:min-h-0 lg:flex-1 lg:overflow-hidden">
         {/* Hidden, not unmounted: the MLForm runtime keeps its inputs across modes. */}
         <div className={cx("size-full lg:min-h-0 lg:overflow-hidden", mode !== "form" && "hidden")}>
-          <SchemaFormPreview schema={version.formSchema} />
+          <SchemaFormPreview schema={version.formSchema} versionId={version.id} />
         </div>
         {mode === "json" ? (
           <SchemaCodeViewer

@@ -19,13 +19,15 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 class PurgeSteps {
 
-    private static final String VERSIONS = "(SELECT schema_version_id FROM purge_job_version WHERE job_id = ?)";
+    private static final String VERSIONS = "(SELECT schema_version_id FROM purge_job_version WHERE purge_job_id = ?)";
     private static final String RUN_RESULTS = """
             prediction_result x JOIN prediction_run r ON r.id = x.prediction_run_id
             WHERE r.schema_version_id IN """ + VERSIONS;
     private static final String CANCEL = """
             UPDATE prediction_job SET status = 'CANCELLED', lease_owner = NULL, lease_expires_at = NULL,
-                finished_at = now(), updated_at = now() WHERE status IN ('QUEUED', 'RUNNING')""";
+                finished_at = now(), updated_at = now(),
+                updated_by_principal_id = (SELECT id FROM principal WHERE kind = 'SYSTEM')
+            WHERE status IN ('QUEUED', 'RUNNING')""";
 
     private final JdbcTemplate jdbc;
     private final NamedParameterJdbcTemplate named;
@@ -55,7 +57,7 @@ class PurgeSteps {
                             SELECT rr.id FROM schema_review_run rr JOIN schema_review sr ON sr.id = rr.schema_review_id
                             WHERE sr.schema_version_id IN """ + VERSIONS),
                     delete(job, "reviewAssignees", "schema_review_assignee", "id", """
-                            SELECT a.id FROM schema_review_assignee a JOIN schema_review sr ON sr.id = a.review_id
+                            SELECT a.id FROM schema_review_assignee a JOIN schema_review sr ON sr.id = a.schema_review_id
                             WHERE sr.schema_version_id IN """ + VERSIONS),
                     delete(job, "reviews", "schema_review", "id",
                             "SELECT id FROM schema_review WHERE schema_version_id IN " + VERSIONS));
@@ -85,7 +87,7 @@ class PurgeSteps {
         Map<String, Long> parameters = Map.of("job", job.id(), "organization", job.organizationId(),
                 "target", job.targetId());
         return new PurgeStep("preparedVersions", limit -> named.update(
-                "INSERT INTO purge_job_version (job_id, schema_version_id) SELECT :job, chosen.id FROM ("
+                "INSERT INTO purge_job_version (purge_job_id, schema_version_id) SELECT :job, chosen.id FROM ("
                         + job.scope().versions() + ") chosen ON CONFLICT DO NOTHING", parameters));
     }
 
@@ -96,11 +98,11 @@ class PurgeSteps {
                 limit -> jdbc.update(CANCEL + " AND schema_version_id IN " + VERSIONS, job.id())));
         if (job.scope() == PurgeScope.USER) {
             steps.add(new PurgeStep("predictionJobsCancelled",
-                    limit -> jdbc.update(CANCEL + " AND created_by_user_id = ?", job.targetId())));
+                    limit -> jdbc.update(CANCEL + " AND created_by_principal_id = (SELECT id FROM principal WHERE user_id = ?)", job.targetId())));
         }
         steps.add(new PurgeStep("predictionJobRows", limit -> jdbc.update("""
-                DELETE FROM prediction_job_row WHERE (job_id, row_index) IN (
-                    SELECT r.job_id, r.row_index FROM prediction_job_row r JOIN prediction_job j ON j.id = r.job_id
+                DELETE FROM prediction_job_row WHERE (prediction_job_id, row_index) IN (
+                    SELECT r.prediction_job_id, r.row_index FROM prediction_job_row r JOIN prediction_job j ON j.id = r.prediction_job_id
                     WHERE j.schema_version_id IN """ + VERSIONS + " LIMIT ?)", job.id(), limit)));
         steps.add(delete(job, "predictionJobs", "prediction_job", "id",
                 "SELECT id FROM prediction_job WHERE schema_version_id IN " + VERSIONS));
@@ -120,11 +122,11 @@ class PurgeSteps {
                 "SELECT id FROM schema_version WHERE id IN " + VERSIONS));
         if (job.scope() == PurgeScope.SCHEMA) {
             steps.add(new PurgeStep("schemas", limit -> jdbc.update(
-                    "DELETE FROM schema_artifact WHERE id = ?", job.targetId())));
+                    "DELETE FROM schema WHERE id = ?", job.targetId())));
         } else if (job.scope().ownsOrganization()) {
             steps.add(new PurgeStep("schemas", limit -> jdbc.update("""
-                    DELETE FROM schema_artifact WHERE id IN (
-                        SELECT id FROM schema_artifact WHERE organization_id = ? LIMIT ?)""",
+                    DELETE FROM schema WHERE id IN (
+                        SELECT id FROM schema WHERE organization_id = ? LIMIT ?)""",
                     job.organizationId(), limit)));
         }
         return steps;

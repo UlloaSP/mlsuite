@@ -16,16 +16,19 @@ type Props = {
   reviewId: string;
   reviewRunId: string;
   version: SchemaVersionDto;
+  /** Called once the answers are saved and the run is read again. */
+  onSaved?: () => void;
 };
 
-export function SchemaReviewRunDetailPanel({ reviewId, reviewRunId, version }: Props) {
+export function SchemaReviewRunDetailPanel({ reviewId, reviewRunId, version, onSaved }: Props) {
   const detail = useSchemaReviewRun(reviewId, reviewRunId);
   const showLoading = useStableLoading(detail.isLoading);
   // The previous inference stays as the skeleton's shape; its form and sections never mix
   // with the newly selected review run, so only the shell is drawn while switching.
   const switching = detail.isPlaceholderData;
-  const [outputsOpen, setOutputsOpen] = useState(false);
-  const [inputsOpen, setInputsOpen] = useState(false);
+  // What the reviewer judges is open from the start; collapsing is their choice.
+  const [outputsOpen, setOutputsOpen] = useState(true);
+  const [inputsOpen, setInputsOpen] = useState(true);
   const visibleInputs = useMemo(
     () =>
       detail.data ? getVisibleSchemaInputRecord(version.formSchema, detail.data.run.inputData) : {},
@@ -58,7 +61,7 @@ export function SchemaReviewRunDetailPanel({ reviewId, reviewRunId, version }: P
           run={detail.data.run}
           version={version}
           feedback={detail.data.feedback}
-          onSaved={() => detail.refetch()}
+          onSaved={() => detail.refetch().then(() => onSaved?.())}
         />
       )}
       <ReviewAccordionSection

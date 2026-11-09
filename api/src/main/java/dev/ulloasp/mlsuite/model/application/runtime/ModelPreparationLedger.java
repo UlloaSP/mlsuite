@@ -35,8 +35,10 @@ import lombok.RequiredArgsConstructor;
 public class ModelPreparationLedger {
 
     private static final int MAX_ERROR = 2000;
-    private static final String SETTLED = " RETURNING id, name, organization_id, user_id, runtime_state,"
-            + " (SELECT o.name FROM organization o WHERE o.id = organization_id), environment_key";
+    /** Updates a preparation and returns what reporting it takes, read from its model. */
+    private static final String SETTLED = " RETURNING m.id, m.name, m.organization_id,"
+            + " (SELECT p.user_id FROM principal p WHERE p.id = m.created_by_principal_id), x.state,"
+            + " (SELECT o.name FROM organization o WHERE o.id = m.organization_id), m.environment_key";
 
     private final JdbcTemplate jdbc;
     private final ObjectMapper objectMapper;
@@ -50,22 +52,26 @@ public class ModelPreparationLedger {
 
     Optional<Long> claim(String worker, int leaseSeconds) {
         return jdbc.query("""
-                UPDATE model SET runtime_lease_owner = ?, runtime_lease_expires_at = now() + make_interval(secs => ?)
-                WHERE id = (
-                    SELECT id FROM model
-                    WHERE runtime_state = 'PREPARING'
-                    AND (runtime_lease_expires_at IS NULL OR runtime_lease_expires_at < now())
-                    ORDER BY id LIMIT 1 FOR UPDATE SKIP LOCKED)
-                RETURNING id""", (rs, n) -> rs.getLong(1), worker, leaseSeconds).stream().findFirst();
+                UPDATE model_preparation SET lease_owner = ?, lease_expires_at = now() + make_interval(secs => ?),
+                    next_attempt_at = NULL
+                WHERE model_id = (
+                    SELECT model_id FROM model_preparation
+                    WHERE state = 'PREPARING'
+                    AND (lease_owner IS NULL AND (next_attempt_at IS NULL OR next_attempt_at <= now())
+                        OR lease_expires_at < now())
+                    ORDER BY model_id LIMIT 1 FOR UPDATE SKIP LOCKED)
+                RETURNING model_id""", (rs, n) -> rs.getLong(1), worker, leaseSeconds).stream().findFirst();
     }
 
     @Transactional
     void ready(Long modelId, String worker, List<Map<String, Object>> featureImportances) {
         jdbc.query("""
-                UPDATE model SET runtime_state = 'READY', feature_importances = ?::jsonb, runtime_error = NULL,
-                    runtime_attempts = 0, runtime_lease_owner = NULL, runtime_lease_expires_at = NULL
-                WHERE id = ? AND runtime_lease_owner = ?""" + SETTLED, ModelPreparationLedger::settled,
-                json(featureImportances), modelId, worker).forEach(model -> {
+                UPDATE model_preparation x SET state = 'READY', error_message = NULL, attempts = 0, lease_owner = NULL,
+                    lease_expires_at = NULL
+                FROM model m WHERE m.id = x.model_id AND x.model_id = ? AND x.lease_owner = ?""" + SETTLED,
+                ModelPreparationLedger::settled, modelId, worker).forEach(model -> {
+                    jdbc.update("UPDATE model SET feature_importances = ?::jsonb WHERE id = ?", json(featureImportances),
+                            model.id());
                     auditLog.record(AuditActor.SYSTEM, model.organizationId(), AuditAction.MODEL_PREPARATION_READY,
                             model.id(), AuditDetails.of("environment", model.environmentKey()));
                     tell(model, NotificationKind.MODEL_READY,
@@ -76,9 +82,9 @@ public class ModelPreparationLedger {
     @Transactional
     void fail(Long modelId, String worker, String reason) {
         jdbc.query("""
-                UPDATE model SET runtime_state = 'FAILED', runtime_error = ?,
-                    runtime_lease_owner = NULL, runtime_lease_expires_at = NULL
-                WHERE id = ? AND runtime_lease_owner = ?""" + SETTLED, ModelPreparationLedger::settled,
+                UPDATE model_preparation x SET state = 'FAILED', error_message = ?, lease_owner = NULL,
+                    lease_expires_at = NULL
+                FROM model m WHERE m.id = x.model_id AND x.model_id = ? AND x.lease_owner = ?""" + SETTLED, ModelPreparationLedger::settled,
                 bounded(reason), modelId, worker).forEach(model -> reportFailure(model, reason));
     }
 
@@ -91,12 +97,12 @@ public class ModelPreparationLedger {
     boolean retryOrFail(Long modelId, String worker, String reason, int maxAttempts, long firstDelaySeconds,
             long maxDelaySeconds) {
         Optional<Settled> failed = jdbc.query("""
-                UPDATE model SET runtime_attempts = runtime_attempts + 1, runtime_error = ?,
-                    runtime_state = CASE WHEN runtime_attempts + 1 >= ? THEN 'FAILED' ELSE 'PREPARING' END,
-                    runtime_lease_owner = NULL,
-                    runtime_lease_expires_at = CASE WHEN runtime_attempts + 1 >= ? THEN NULL
-                        ELSE now() + make_interval(secs => LEAST(?, ? * power(2, runtime_attempts))) END
-                WHERE id = ? AND runtime_lease_owner = ?""" + SETTLED, ModelPreparationLedger::settled,
+                UPDATE model_preparation x SET attempts = x.attempts + 1, error_message = ?,
+                    state = CASE WHEN x.attempts + 1 >= ? THEN 'FAILED' ELSE 'PREPARING' END,
+                    lease_owner = NULL, lease_expires_at = NULL,
+                    next_attempt_at = CASE WHEN x.attempts + 1 >= ? THEN NULL
+                        ELSE now() + make_interval(secs => LEAST(?, ? * power(2, x.attempts))) END
+                FROM model m WHERE m.id = x.model_id AND x.model_id = ? AND x.lease_owner = ?""" + SETTLED, ModelPreparationLedger::settled,
                 bounded(reason), maxAttempts, maxAttempts, (double) maxDelaySeconds, (double) firstDelaySeconds,
                 modelId, worker).stream().filter(model -> "FAILED".equals(model.state())).findFirst();
         failed.ifPresent(model -> reportFailure(model, reason));
@@ -106,17 +112,17 @@ public class ModelPreparationLedger {
     /** A READY model whose environment the runtime no longer has is prepared again. */
     public void prepareAgain(Long modelId) {
         jdbc.update("""
-                UPDATE model SET runtime_state = 'PREPARING', runtime_attempts = 0, runtime_error = NULL,
-                    runtime_lease_owner = NULL, runtime_lease_expires_at = NULL
-                WHERE id = ? AND runtime_state = 'READY'""", modelId);
+                UPDATE model_preparation SET state = 'PREPARING', attempts = 0, error_message = NULL,
+                    lease_owner = NULL, lease_expires_at = NULL, next_attempt_at = NULL
+                WHERE model_id = ? AND state = 'READY'""", modelId);
     }
 
     /** A FAILED model is prepared again from its first attempt; false when it had not failed. */
     boolean retry(Long modelId) {
         return jdbc.update("""
-                UPDATE model SET runtime_state = 'PREPARING', runtime_attempts = 0, runtime_error = NULL,
-                    runtime_lease_owner = NULL, runtime_lease_expires_at = NULL
-                WHERE id = ? AND runtime_state = 'FAILED'""", modelId) == 1;
+                UPDATE model_preparation SET state = 'PREPARING', attempts = 0, error_message = NULL,
+                    lease_owner = NULL, lease_expires_at = NULL, next_attempt_at = NULL
+                WHERE model_id = ? AND state = 'FAILED'""", modelId) == 1;
     }
 
     private void reportFailure(Settled model, String reason) {

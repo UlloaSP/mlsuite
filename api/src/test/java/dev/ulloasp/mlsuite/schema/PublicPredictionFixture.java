@@ -42,9 +42,9 @@ import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionRequest;
 import dev.ulloasp.mlsuite.schema.application.service.PublicBookmarkService;
@@ -113,6 +113,7 @@ public abstract class PublicPredictionFixture {
     static final PublicCaller VISITOR = PublicCaller.anonymous("address:visitor", null);
 
     @Autowired protected EntityManager entityManager;
+    @Autowired protected Principals principals;
     @Autowired PlatformTransactionManager transactionManager;
     @Autowired protected DataSource dataSource;
     @Autowired protected ObjectMapper objectMapper;
@@ -138,11 +139,11 @@ public abstract class PublicPredictionFixture {
         inTransaction(() -> {
             owner = new User("owner" + n, "owner" + n + "@example.test", "unused", "Owner", SystemRole.USER);
             entityManager.persist(owner);
-            organization = new Organization("acme-" + n, "Acme Health", null, owner);
+            organization = new Organization("acme-" + n, "Acme Health", null, principals.of(owner));
             entityManager.persist(organization);
             forestModel = model(owner, "risk-forest", "forest.mlbundle", FOREST_BYTES);
             netModel = model(owner, "risk-net", "net.mlbundle", NET_BYTES);
-            schema = new Schema(organization, "Cardio risk", null);
+            schema = new Schema(organization, "Cardio risk", null, principals.system());
             entityManager.persist(schema);
             version = new SchemaVersion(schema, 3, "Baseline", Map.of(
                     "fields", List.of(
@@ -160,11 +161,11 @@ public abstract class PublicPredictionFixture {
                                     "feedbackQuestionnaire", Map.of("steps", List.of()),
                                     "mappedTo", Map.of("risk-forest", "risk", "risk-net", "risk")),
                             Map.of("kind", "regressor", "label", "Score",
-                                    "mappedTo", Map.of("risk-net", "score")))));
+                                    "mappedTo", Map.of("risk-net", "score")))), principals.system());
             entityManager.persist(version);
             entityManager.persist(new SchemaModelBinding(version, forestModel, Map.of()));
             entityManager.persist(new SchemaModelBinding(version, netModel, Map.of()));
-            bookmark = new SchemaBookmark(schema, version, "production");
+            bookmark = new SchemaBookmark(schema, version, "production", principals.system());
             bookmark.setVisibility(BookmarkVisibility.PUBLIC);
             bookmark.setPublicId("public-" + n);
             entityManager.persist(bookmark);
@@ -174,7 +175,7 @@ public abstract class PublicPredictionFixture {
     }
 
     private Model model(User owner, String name, String fileName, byte[] bytes) {
-        Model model = new Model(owner, name, "classifier", "Estimator", fileName);
+        Model model = new Model(principals.of(owner), name, "classifier", "Estimator", fileName);
         model.setOrganization(organization);
         entityManager.persist(TestFixtures.storedArtifact(model, bytes));
         return model;
@@ -218,18 +219,65 @@ public abstract class PublicPredictionFixture {
      * permission, and the organization the one they work in.
      */
     protected RoleDefinition authorizeOwner() {
-        RoleDefinition role = new RoleDefinition(organization, RoleScope.ORGANIZATION, "Owner", "owner", "OWNER");
+        RoleDefinition role = new RoleDefinition(organization, "Owner", "owner", "OWNER", principals.system());
         role.setPermissions(EnumSet.allOf(PermissionKey.class));
         inTransaction(() -> {
             entityManager.persist(role);
-            entityManager.persist(new OrganizationMembership(organization, owner, role, MembershipStatus.ACTIVE));
+            entityManager.persist(new OrganizationMembership(organization, owner, role, MembershipStatus.ACTIVE, principals.of(owner)));
             entityManager.find(User.class, owner.getId()).setCurrentOrganization(organization);
         });
         return role;
     }
 
     protected void inTransaction(Runnable work) {
-        new TransactionTemplate(transactionManager).executeWithoutResult(status -> work.run());
+        new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+            work.run();
+            bindSnapshots();
+            completeRuns();
+        });
+    }
+
+    /**
+     * A snapshot a test writes by hand stands for a published one, which binds at least one model:
+     * one written without any binds its organization's first model, or a stand-in model when the
+     * organization has none.
+     */
+    private void bindSnapshots() {
+        entityManager.flush();
+        String unbound = " FROM schema_version v WHERE v.created_xact = pg_current_xact_id()"
+                + " AND NOT EXISTS (SELECT 1 FROM schema_model_binding b WHERE b.schema_version_id = v.id)";
+        List<?> withoutModels = entityManager.createNativeQuery("SELECT DISTINCT v.organization_id" + unbound
+                + " AND NOT EXISTS (SELECT 1 FROM model m WHERE m.organization_id = v.organization_id)").getResultList();
+        for (Object organizationId : withoutModels) {
+            Model standIn = new Model(principals.system(), "stand-in", "classifier", "Estimator", "stand-in.mlbundle");
+            standIn.setOrganization(entityManager.getReference(Organization.class, ((Number) organizationId).longValue()));
+            entityManager.persist(TestFixtures.storedArtifact(standIn, ("stand-in-" + organizationId).getBytes()));
+        }
+        entityManager.flush();
+        entityManager.createNativeQuery("INSERT INTO schema_model_binding (organization_id, schema_version_id, model_id,"
+                + " created_by_principal_id, created_at) SELECT v.organization_id, v.id, (SELECT min(m.id) FROM model m"
+                + " WHERE m.organization_id = v.organization_id), v.created_by_principal_id, now()" + unbound).executeUpdate();
+    }
+
+    /**
+     * A run a test writes by hand stands for an execution, which has one result per model its
+     * snapshot binds: each model it wrote none for gets one that went as the run's status says.
+     */
+    private void completeRuns() {
+        entityManager.flush();
+        entityManager.createNativeQuery("""
+                INSERT INTO prediction_result (schema_version_id, prediction_run_id, model_id, environment_key, status,
+                    error_message, error_detail, model_input, output, created_at)
+                SELECT r.schema_version_id, r.id, b.model_id,
+                    COALESCE(m.environment_key, (SELECT min(environment_key) FROM runtime_environment)),
+                    CASE r.status WHEN 'FAILED' THEN 'FAILED' ELSE 'SUCCESS' END,
+                    CASE r.status WHEN 'FAILED' THEN 'failed' END, CASE r.status WHEN 'FAILED' THEN '{}'::jsonb END,
+                    '{}', CASE r.status WHEN 'FAILED' THEN NULL ELSE '{}'::jsonb END, r.created_at
+                FROM prediction_run r JOIN schema_model_binding b ON b.schema_version_id = r.schema_version_id
+                JOIN model m ON m.id = b.model_id
+                WHERE r.xmin::text = pg_current_xact_id()::xid::text
+                    AND NOT EXISTS (SELECT 1 FROM prediction_result x WHERE x.prediction_run_id = r.id AND x.model_id = b.model_id)""")
+                .executeUpdate();
     }
 
     protected long count(String entity) {

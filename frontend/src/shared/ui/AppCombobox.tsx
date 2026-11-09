@@ -12,6 +12,7 @@ import { CONTROL_HEIGHT } from "./control-size";
 import { cx } from "./cx";
 import { FIELD_FOCUS_RING } from "./focus-ring";
 import { ComboboxOptions } from "./ComboboxOptions";
+import { useFieldId } from "./field-id";
 
 export type RemoteComboboxProps<TId extends string | number = number> = {
   onSearchChange?: (query: string) => void;
@@ -52,10 +53,12 @@ export function AppCombobox<TId extends string | number = number>({
   onChange: (item: AppComboboxItem<TId> | null) => void;
 } & RemoteComboboxProps<TId>) {
   const listboxId = useId();
-  const fieldRef = useRef<HTMLLabelElement | null>(null);
+  const fieldRef = useRef<HTMLSpanElement | null>(null);
+  // Inside an AppFieldLabel the field's label names the input; the placeholder only hints.
+  const fieldId = useFieldId();
   // The modal dialog around the field, if any: the list renders in its top layer.
   const [dialog, setDialog] = useState<HTMLElement | null>(null);
-  const attachField = (node: HTMLLabelElement | null) => {
+  const attachField = (node: HTMLSpanElement | null) => {
     fieldRef.current = node;
     setDialog(node?.closest<HTMLElement>('[role="dialog"]') ?? null);
   };
@@ -127,7 +130,7 @@ export function AppCombobox<TId extends string | number = number>({
       }}
     >
       <Popover.Anchor asChild>
-        <label
+        <span
           ref={attachField}
           className={cx(
             "inline-flex w-full items-center gap-3 rounded-control border border-line bg-surface px-3 text-sm text-fg-secondary transition",
@@ -141,7 +144,8 @@ export function AppCombobox<TId extends string | number = number>({
             disabled={disabled}
             placeholder={placeholder}
             role="combobox"
-            aria-label={ariaLabel ?? placeholder}
+            id={fieldId}
+            aria-label={ariaLabel ?? (fieldId ? undefined : placeholder)}
             aria-controls={listboxId}
             aria-expanded={expanded}
             aria-activedescendant={
@@ -182,10 +186,10 @@ export function AppCombobox<TId extends string | number = number>({
                 setOpen(false);
               }
             }}
-            className="w-full bg-transparent text-fg outline-none placeholder:text-fg-muted"
+            className="w-full self-stretch bg-transparent text-fg outline-none placeholder:text-fg-muted"
           />
           <ChevronDown size={16} className="shrink-0 text-fg-muted" />
-        </label>
+        </span>
       </Popover.Anchor>
       {/* In the top layer, so no scroll container, menu or virtual row clips or covers it. Inside a
           modal dialog that layer is the dialog itself: its scroll lock only lets its own content

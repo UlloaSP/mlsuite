@@ -27,8 +27,10 @@ import lombok.RequiredArgsConstructor;
 class PurgeLedger {
 
     private static final String COLUMNS = """
-            id, scope, target_id, target_label, requested_by_label, status, phase, counts, error,
-            created_at, updated_at, finished_at""";
+            id, scope, target_id, target_label,
+            (SELECT coalesce(u.full_name, p.former_label) FROM principal p LEFT JOIN app_user u ON u.id = p.user_id
+             WHERE p.id = created_by_principal_id),
+            status, phase, counts, error_message, created_at, updated_at, finished_at""";
     private static final String UNFINISHED = "status <> 'COMPLETED'";
     private static final String MATCHING = """
              WHERE lower(target_label) LIKE ? ESCAPE '!'
@@ -37,13 +39,13 @@ class PurgeLedger {
     private final JdbcTemplate jdbc;
     private final ObjectMapper objectMapper;
 
-    Long insert(PurgeTargets.Target target, Long requestedBy, String requestedByLabel) {
+    Long insert(PurgeTargets.Target target, Long requestedBy) {
         return jdbc.queryForObject("""
-                INSERT INTO purge_job (scope, target_id, target_label, organization_id, requested_by_user_id,
-                    requested_by_label, status, phase, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, 'QUEUED', 'PREPARE', now(), now()) RETURNING id""", Long.class,
-                target.scope().name(), target.id(), target.label(), target.organizationId(), requestedBy,
-                requestedByLabel);
+                INSERT INTO purge_job (scope, target_id, target_label, organization_id, created_by_principal_id,
+                    updated_by_principal_id, status, phase, created_at, updated_at)
+                SELECT ?, ?, ?, ?, p.id, p.id, 'QUEUED', 'PREPARE', now(), now() FROM principal p WHERE p.user_id = ?
+                RETURNING id""", Long.class,
+                target.scope().name(), target.id(), target.label(), target.organizationId(), requestedBy);
     }
 
     boolean isOpen(PurgeScope scope, Long targetId) {
@@ -64,7 +66,8 @@ class PurgeLedger {
                 UPDATE purge_job j SET status = 'RUNNING', lease_owner = ?, updated_at = now(),
                     lease_expires_at = now() + make_interval(secs => ?)
                 FROM next WHERE j.id = next.id
-                RETURNING j.id, j.scope, j.target_id, j.target_label, j.organization_id, j.requested_by_user_id, j.phase""",
+                RETURNING j.id, j.scope, j.target_id, j.target_label, j.organization_id,
+                    (SELECT p.user_id FROM principal p WHERE p.id = j.created_by_principal_id), j.phase""",
                 (rs, n) -> new PurgeJob(rs.getLong(1), PurgeScope.valueOf(rs.getString(2)), rs.getLong(3),
                         rs.getString(4), rs.getLong(5), rs.getObject(6, Long.class), PurgePhase.valueOf(rs.getString(7))),
                 worker, leaseSeconds).stream().findFirst();
@@ -89,23 +92,24 @@ class PurgeLedger {
 
     void finish(Long jobId) {
         jdbc.update("""
-                UPDATE purge_job SET status = 'COMPLETED', error = NULL, lease_owner = NULL, lease_expires_at = NULL,
+                UPDATE purge_job SET status = 'COMPLETED', error_message = NULL, lease_owner = NULL, lease_expires_at = NULL,
                     finished_at = now(), updated_at = now() WHERE id = ?""", jobId);
     }
 
     /** False when the job is no longer this worker's, which then reports nothing. */
     boolean fail(Long jobId, String worker, String error) {
         return jdbc.update("""
-                UPDATE purge_job SET status = 'FAILED', error = ?, lease_owner = NULL, lease_expires_at = NULL,
+                UPDATE purge_job SET status = 'FAILED', error_message = ?, lease_owner = NULL, lease_expires_at = NULL,
                     finished_at = now(), updated_at = now()
                 WHERE id = ? AND lease_owner = ? AND status = 'RUNNING'""", error, jobId, worker) == 1;
     }
 
     /** A retry starts over: every phase finds only what is left. */
-    boolean retry(Long jobId) {
+    boolean retry(Long jobId, Long actorUserId) {
         return jdbc.update("""
-                UPDATE purge_job SET status = 'QUEUED', phase = 'PREPARE', error = NULL, finished_at = NULL,
-                    updated_at = now() WHERE id = ? AND status = 'FAILED'""", jobId) == 1;
+                UPDATE purge_job SET status = 'QUEUED', phase = 'PREPARE', error_message = NULL, finished_at = NULL,
+                    updated_at = now(), updated_by_principal_id = (SELECT id FROM principal WHERE user_id = ?)
+                WHERE id = ? AND status = 'FAILED'""", actorUserId, jobId) == 1;
     }
 
     Optional<PurgeJobDto> find(Long jobId) {
@@ -116,7 +120,7 @@ class PurgeLedger {
         return jdbc.queryForObject("SELECT count(*) FROM purge_job" + MATCHING, Long.class, search, filter, filter, filter);
     }
 
-    /** {@code filter} is "open" (not ended, or failed), "completed" or "all"; any other matches nothing. */
+    /** {@code filter} is "open" (not ended, or failed), "completed" or "all". */
     List<PurgeJobDto> page(String search, String filter, int page, int size) {
         return jdbc.query("SELECT " + COLUMNS + " FROM purge_job" + MATCHING + " ORDER BY id DESC LIMIT ? OFFSET ?",
                 this::job, search, filter, filter, filter, size, (long) page * size);

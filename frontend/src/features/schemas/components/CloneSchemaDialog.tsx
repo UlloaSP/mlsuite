@@ -8,6 +8,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "@/shared/ui/toast";
 import { useDuplicateSchemaMutation } from "@/features/schemas/api/schema-mutations";
 import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
+import { schemaVersionLabel } from "@/features/schemas/lib/version-selection";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type Props = {
@@ -43,7 +44,7 @@ export function CloneSchemaDialog({ schemaId, schemaName, version, onClose }: Pr
       defaultName={`${schemaName ?? "Schema"} Copy`}
       description={
         version
-          ? `Create an independent schema with ${version.name} · v${version.version} as its first snapshot.`
+          ? `Create an independent schema with ${schemaVersionLabel(version)} as its first snapshot.`
           : "Selected snapshot"
       }
       fieldLabel="Schema name"

@@ -43,17 +43,17 @@ public class PluginObjectReader {
      */
     @Transactional(readOnly = true)
     public Optional<StoredPlugin> find(Long organizationId, String id) {
-        return metadata.findByIdAndOrganizationId(id, organizationId).flatMap(this::readPinned);
+        return metadata.findByPublicIdAndOrganizationId(id, organizationId).flatMap(this::readPinned);
     }
 
     @Transactional(readOnly = true)
     public Optional<StoredPlugin> readPinned(PluginMetadata item) {
-        if (deletionQueue.isDeletionRequested(properties.getBucket(), item.getObjectKey())) {
+        if (deletionQueue.isDeletionRequested(item.getStorageBucket(), item.getObjectKey())) {
             return Optional.empty();
         }
-        return storage.loadOptional(properties.getBucket(), item.getObjectKey(), item.getStorageVersionId())
+        return storage.loadOptional(item.getStorageBucket(), item.getObjectKey(), item.getStorageVersionId())
                 .map(bytes -> {
-                    ArtifactIntegrityVerifier.verify("plugin " + item.getId(), null, item.getSha256(), bytes);
+                    ArtifactIntegrityVerifier.verify("plugin " + item.getPublicId(), null, item.getSha256(), bytes);
                     return decode(bytes);
                 });
     }

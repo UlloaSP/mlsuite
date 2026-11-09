@@ -77,7 +77,7 @@ export function TrafficClientEntry({ client }: { client: AdminApiClientDto }) {
             <span>
               {client.lastUsedAt ? (
                 <>
-                  Last successful call <LiveRelativeTime value={client.lastUsedAt} /> ago
+                  Last successful call <LiveRelativeTime value={client.lastUsedAt} />
                 </>
               ) : (
                 "No successful calls yet"

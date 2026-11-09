@@ -1,11 +1,10 @@
 package dev.ulloasp.mlsuite.organization.application.dto;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.user.application.dto.UserAvatarUrl;
-import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
-import dev.ulloasp.mlsuite.user.domain.model.User;
 
 import jakarta.annotation.Nullable;
 
@@ -39,7 +38,7 @@ public record OrganizationCatalogItemDto(
             long pluginCount,
             long inferenceCount,
             long memberCount) {
-        User modifier = organization.getUpdatedBy() == null ? organization.getCreatedBy() : organization.getUpdatedBy();
+        Principal modifier = organization.getUpdatedBy();
         return new OrganizationCatalogItemDto(
                 organization.getId(),
                 organization.getSlug(),
@@ -51,9 +50,9 @@ public record OrganizationCatalogItemDto(
                 ownerName,
                 ownerEmail,
                 ownerAvatarUrl,
-                DeletedUser.nameOf(modifier),
-                modifier == null ? null : modifier.getEmail(),
-                modifier == null ? null : UserAvatarUrl.of(modifier),
+                modifier.label(),
+                modifier.email(),
+                modifier.userId() == null ? null : UserAvatarUrl.of(modifier.userId(), modifier.getUserAvatarUpdatedAt()),
                 modelCount,
                 schemaCount,
                 pluginCount,

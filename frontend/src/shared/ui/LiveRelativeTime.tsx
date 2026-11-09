@@ -4,7 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useSyncExternalStore } from "react";
-import { formatCompactRelativeTime } from "@/shared/lib/relative-time";
+import { formatTimestamp } from "@/shared/lib/date-time";
+import { formatRelativeTime } from "@/shared/lib/relative-time";
 
 // One clock for every relative time on the page: a single interval while any is
 // mounted, and each instance re-renders only when its own text changes.
@@ -32,11 +33,17 @@ const subscribe = (listener: () => void) => {
   };
 };
 
+/** When something happened, "47s ago" for the last week and its date after; its moment on hover. */
 export function LiveRelativeTime({ value }: { value?: string }) {
   const text = useSyncExternalStore(
     subscribe,
-    () => formatCompactRelativeTime(value, clock.now),
-    () => formatCompactRelativeTime(value),
+    () => formatRelativeTime(value, clock.now),
+    () => formatRelativeTime(value),
   );
-  return <>{text}</>;
+  if (!value || !Number.isFinite(Date.parse(value))) return <>{text}</>;
+  return (
+    <time dateTime={value} title={formatTimestamp(value)}>
+      {text}
+    </time>
+  );
 }

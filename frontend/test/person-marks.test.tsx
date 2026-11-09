@@ -81,7 +81,7 @@ describe("where a person appears", () => {
       email: "ada@example.test",
       avatarUrl: null,
       status: "ACTIVE",
-      role: { id: 2, name: "Owner" },
+      roleDefinition: { id: 2, name: "Owner" },
       actions: { canChangeRole: false, canRemove: false },
     } as const;
     const { host, rerender } = await mount(

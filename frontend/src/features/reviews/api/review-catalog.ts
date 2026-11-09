@@ -8,7 +8,7 @@ import type {
   ReviewCatalogSummaryDto,
   SchemaReviewRunListItemDto,
 } from "@/shared/api/openapi.gen";
-import { SCHEMA_REVIEW_INBOX_QUERY_KEY } from "./review-keys";
+import { REVIEW_INBOX_ITEMS_QUERY_KEY, SCHEMA_REVIEW_INBOX_QUERY_KEY } from "./review-keys";
 export function useReviewInboxCatalog(filter = "all", enabled = true) {
   const org = useCurrentOrganizationId() ?? "none";
   return useInfiniteCatalog({
@@ -23,7 +23,7 @@ export function useReviewInboxCatalog(filter = "all", enabled = true) {
   });
 }
 const reviewInboxItemQueryKey = (org: number | string, reviewId?: string, runId?: string) =>
-  [...SCHEMA_REVIEW_INBOX_QUERY_KEY(org), "item", reviewId, runId] as const;
+  [...REVIEW_INBOX_ITEMS_QUERY_KEY(org), reviewId, runId] as const;
 
 export const reviewInboxItemQueryOptions = (
   org: number | string,
@@ -32,6 +32,8 @@ export const reviewInboxItemQueryOptions = (
 ) =>
   queryOptions({
     queryKey: reviewInboxItemQueryKey(org, reviewId, runId),
+    // The inbox page owns these failures: a gone run moves it on, any other shows its state.
+    meta: { errorHandledLocally: true },
     queryFn: ({ signal }) =>
       appFetch<ReviewInboxItemDto>(`/api/schema-reviews/inbox/${reviewId}/runs/${runId}`, {
         signal,
@@ -54,6 +56,7 @@ export const useReviewInboxItem = (
 export const reviewCatalogContextQueryOptions = (org: number | string, reviewId?: string) =>
   queryOptions({
     queryKey: [...SCHEMA_REVIEW_INBOX_QUERY_KEY(org), "context", reviewId],
+    meta: { errorHandledLocally: true },
     queryFn: ({ signal }) =>
       appFetch<ReviewCatalogSummaryDto>(`/api/schema-reviews/inbox/${reviewId}`, { signal }),
     enabled: Boolean(reviewId) && org !== "none",
@@ -65,6 +68,7 @@ export const useReviewCatalogContext = (reviewId?: string) =>
 export const reviewFirstRunQueryOptions = (org: number | string, reviewId?: string) =>
   queryOptions({
     queryKey: [...SCHEMA_REVIEW_INBOX_QUERY_KEY(org), "first", reviewId],
+    meta: { errorHandledLocally: true },
     queryFn: ({ signal }) =>
       appFetch<CatalogPage<SchemaReviewRunListItemDto>>(
         `/api/schema-reviews/inbox/${reviewId}/runs/catalog?size=1&filter=active`,

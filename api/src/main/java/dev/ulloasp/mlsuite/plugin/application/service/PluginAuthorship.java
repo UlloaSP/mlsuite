@@ -40,7 +40,7 @@ public class PluginAuthorship {
     /** Takes the person's name off up to {@code limit} of their plugins and says how many it found. */
     @Transactional
     public int forget(Long userId, int limit) {
-        List<PluginMetadata> written = metadata.findByUpdatedByIdOrderByIdAsc(userId, PageRequest.of(0, limit));
+        List<PluginMetadata> written = metadata.findByUpdatedByUserIdOrderByIdAsc(userId, PageRequest.of(0, limit));
         written.forEach(this::anonymize);
         return written.size();
     }
@@ -58,8 +58,9 @@ public class PluginAuthorship {
                     }
                 }
             });
-            deletionQueue.enqueue(row.getOrganization().getId(), properties.getBucket(), row.getObjectKey(),
+            deletionQueue.enqueue(row.getOrganization().getId(), row.getStorageBucket(), row.getObjectKey(),
                     row.getStorageVersionId());
+            row.setStorageBucket(stored.bucket());
             row.setSizeBytes(stored.sizeBytes());
             row.setSha256(stored.sha256());
             row.setStorageVersionId(stored.versionId());

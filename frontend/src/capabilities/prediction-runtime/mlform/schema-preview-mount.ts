@@ -49,10 +49,10 @@ export const mountSchemaPreviewForm = ({ container, schema, plugins, theme }: Op
     reportFetchMode: "none",
     labels: {
       form: "Schema inputs",
-      reports: "Preview results",
-      submit: "Run preview",
+      reports: "Sample results",
+      submit: "Run sample",
       validating: "Checking schema…",
-      submitting: "Rendering preview…",
+      submitting: "Rendering sample…",
     },
     designSystem: getPredictionDesignSystem(theme),
   });

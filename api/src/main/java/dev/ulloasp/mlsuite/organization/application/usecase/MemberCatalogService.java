@@ -1,7 +1,7 @@
 package dev.ulloasp.mlsuite.organization.application.usecase;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
@@ -21,9 +21,9 @@ import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.application.dto.RoleSummaryDto;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.util.CatalogPages;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.workspace.application.dto.MembershipActionsDto;
 import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
@@ -47,14 +47,14 @@ public class MemberCatalogService {
     /** Only roles held by active members, across the full organization and independently of member pages. */
     public PageDto<RoleSummaryDto> filterRoles(Long userId, Long organizationId, CatalogRequest request) {
         viewing(userId, organizationId);
+        Optional<Long> role = roleFilter(organizationId, request.requireOneOrder().filter());
         Specification<RoleDefinition> used = (root, query, builder) -> {
             var active = query.subquery(Long.class);
             var member = active.from(OrganizationMembership.class);
             active.select(member.get("id")).where(
                     builder.equal(member.get("roleDefinition"), root),
                     builder.equal(member.get("status"), MembershipStatus.ACTIVE));
-            var id = request.filter().equalsIgnoreCase("all") ? builder.conjunction()
-                    : builder.equal(root.get("id"), roleId(request.filter()));
+            var id = role.map(value -> builder.equal(root.get("id"), value)).orElseGet(builder::conjunction);
             return builder.and(builder.equal(root.get("organization").get("id"), organizationId),
                     builder.exists(active), id,
                     builder.like(builder.lower(root.get("name")), CatalogPages.likeLiteral(request.search()), '!'));
@@ -67,7 +67,11 @@ public class MemberCatalogService {
     /** {@code filter} is a role id; each row says what the caller may do, without the roles to choose from. */
     public MemberCatalogDto list(Long userId, Long organizationId, CatalogRequest request) {
         WorkspacePermissionsDto permissions = viewing(userId, organizationId);
-        Page<OrganizationMembership> page = memberships.findAll(activeMembers(organizationId, request, false),
+        Optional<Long> role = roleFilter(organizationId, request.requireOneOrder().filter());
+        Specification<OrganizationMembership> ofRole = (root, query, builder) -> role
+                .map(id -> builder.equal(root.get("roleDefinition").get("id"), id))
+                .orElseGet(builder::conjunction);
+        Page<OrganizationMembership> page = memberships.findAll(activeMembers(organizationId, request).and(ofRole),
                 CatalogPages.pageable(request, Sort.by("createdAt", "id")));
         List<OrganizationMembershipRowDto> items = page.getContent().stream()
                 .map(member -> OrganizationMembershipRowDto.from(member,
@@ -83,7 +87,10 @@ public class MemberCatalogService {
         if (!viewing(userId, organizationId).canTransferOwnership()) {
             throw new OrganizationAccessDeniedException(organizationId);
         }
-        Page<OrganizationMembership> page = memberships.findAll(activeMembers(organizationId, request, true),
+        request.requireNoChoices();
+        Specification<OrganizationMembership> notOwners = (root, query, builder) ->
+                notOwner(builder, root.get("roleDefinition").get("systemKey"));
+        Page<OrganizationMembership> page = memberships.findAll(activeMembers(organizationId, request).and(notOwners),
                 CatalogPages.pageable(request, Sort.by("user.fullName", "id")));
         return PageDto.of(page, page.getContent().stream()
                 .map(member -> OrganizationMembershipRowDto.from(member, NO_ACTIONS))
@@ -99,9 +106,9 @@ public class MemberCatalogService {
         if (!authorization.organizationMemberActionFlags(userId, permissions, member).canChangeRole()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
+        request.requireNoChoices();
         Specification<RoleDefinition> assignable = (root, query, builder) -> builder.and(
                 builder.equal(root.get("organization").get("id"), organizationId),
-                builder.equal(root.get("scope"), RoleScope.ORGANIZATION),
                 notOwner(builder, root.get("systemKey")),
                 builder.like(builder.lower(root.get("name")), CatalogPages.likeLiteral(request.search()), '!'));
         Page<RoleDefinition> page = definitions.findAll(assignable,
@@ -117,22 +124,15 @@ public class MemberCatalogService {
         return permissions;
     }
 
-    private Specification<OrganizationMembership> activeMembers(Long organizationId, CatalogRequest request,
-            boolean ownerCandidates) {
+    private Specification<OrganizationMembership> activeMembers(Long organizationId, CatalogRequest request) {
         return (root, query, builder) -> {
             String search = CatalogPages.likeLiteral(request.search());
-            List<Predicate> predicates = new ArrayList<>();
-            predicates.add(builder.equal(root.get("organization").get("id"), organizationId));
-            predicates.add(builder.equal(root.get("status"), MembershipStatus.ACTIVE));
-            predicates.add(builder.or(
-                    builder.like(builder.lower(root.get("user").get("fullName")), search, '!'),
-                    builder.like(builder.lower(root.get("user").get("email")), search, '!')));
-            if (ownerCandidates) {
-                predicates.add(notOwner(builder, root.get("roleDefinition").get("systemKey")));
-            } else if (!request.filter().equalsIgnoreCase("all")) {
-                predicates.add(builder.equal(root.get("roleDefinition").get("id"), roleId(request.filter())));
-            }
-            return builder.and(predicates.toArray(Predicate[]::new));
+            return builder.and(
+                    builder.equal(root.get("organization").get("id"), organizationId),
+                    builder.equal(root.get("status"), MembershipStatus.ACTIVE),
+                    builder.or(
+                            builder.like(builder.lower(root.get("user").get("fullName")), search, '!'),
+                            builder.like(builder.lower(root.get("user").get("email")), search, '!')));
         };
     }
 
@@ -140,12 +140,19 @@ public class MemberCatalogService {
         return builder.or(builder.isNull(systemKey), builder.notEqual(systemKey, OrganizationRole.OWNER.name()));
     }
 
-    /** A filter that is not a role id matches no member. */
-    private Long roleId(String value) {
-        try {
-            return Long.valueOf(value);
-        } catch (NumberFormatException ignored) {
-            return -1L;
+    /** {@code filter} is "all", in any case, or the id of one of the organization's roles. */
+    private Optional<Long> roleFilter(Long organizationId, String filter) {
+        if (filter.equalsIgnoreCase("all")) {
+            return Optional.empty();
         }
+        try {
+            Long id = Long.valueOf(filter);
+            if (definitions.findByIdAndOrganizationId(id, organizationId).isPresent()) {
+                return Optional.of(id);
+            }
+        } catch (NumberFormatException notAnId) {
+            // Refused below, like an id that names no role here.
+        }
+        throw CatalogValues.unknown("filter", filter, List.of("all", "<role id>"));
     }
 }

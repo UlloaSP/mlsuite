@@ -19,7 +19,7 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "storage_deletion_task", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_storage_deletion_object", columnNames = {"bucket", "object_key", "object_version_id"})
+        @UniqueConstraint(name = "uq_storage_deletion_object", columnNames = {"storage_bucket", "storage_object_key", "storage_version_id"})
 })
 @Getter
 @Setter
@@ -43,13 +43,13 @@ public class StorageDeletionTask {
     @Column(name = "organization_id")
     private Long organizationId;
 
-    @Column(name = "bucket", nullable = false, length = 100)
+    @Column(name = "storage_bucket", nullable = false, length = 100)
     private String bucket;
 
-    @Column(name = "object_key", nullable = false, length = 512)
+    @Column(name = "storage_object_key", nullable = false, length = 512)
     private String objectKey;
 
-    @Column(name = "object_version_id", length = 255)
+    @Column(name = "storage_version_id", length = 255)
     private String objectVersionId;
 
     @Enumerated(EnumType.STRING)
@@ -62,7 +62,7 @@ public class StorageDeletionTask {
     @Column(name = "next_attempt_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime nextAttemptAt;
 
-    @Column(name = "last_error", length = 1000)
+    @Column(name = "error_message", length = 1000)
     private String lastError;
 
     @CreationTimestamp
@@ -72,9 +72,9 @@ public class StorageDeletionTask {
     @Column(name = "completed_at", columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime completedAt;
 
-    @Column(name = "processing_started_at", columnDefinition = "TIMESTAMPTZ")
+    @Column(name = "lease_expires_at", columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime processingStartedAt;
 
-    @Column(name = "processing_token", length = 128)
+    @Column(name = "lease_owner", length = 128)
     private String processingToken;
 }

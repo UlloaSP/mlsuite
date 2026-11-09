@@ -40,7 +40,7 @@ export function OverviewView({ overview, streamConnected, onNavigateTab }: Props
           { label: "Infrastructure", to: "/admin/infrastructure" },
           { label: "Overview" },
         ]}
-        title="Control dashboard"
+        title="Overview"
         description="Managed services, live logs, shell access, and aggregate resource use."
         actions={
           <>

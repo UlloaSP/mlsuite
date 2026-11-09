@@ -112,7 +112,7 @@ final class InferenceCatalogValues {
                 : trimmed + " · " + number;
     }
 
-    private static boolean scalar(Object value) {
+    static boolean scalar(Object value) {
         return value instanceof String || value instanceof Number;
     }
 }

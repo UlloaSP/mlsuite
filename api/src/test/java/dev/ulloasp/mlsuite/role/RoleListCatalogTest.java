@@ -14,16 +14,19 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
 /** An organization's roles, role templates and permissions, paged over PostgreSQL. */
 class RoleListCatalogTest extends PublicPredictionFixture {
+
+    @Autowired
+    private Principals principals;
     /** Four system roles and the Reviewer, thirty analyst roles, the inviter's and the outsider's. */
     private static final int ROLES = 37;
 
@@ -148,8 +151,8 @@ class RoleListCatalogTest extends PublicPredictionFixture {
     }
 
     private RoleDefinition role(String name, PermissionKey permission) {
-        RoleDefinition role = new RoleDefinition(organization, RoleScope.ORGANIZATION, name,
-                name.toLowerCase().replace(' ', '-'), null);
+        RoleDefinition role = new RoleDefinition(organization, name,
+                name.toLowerCase().replace(' ', '-'), null, principals.system());
         role.setPermissions(EnumSet.of(permission));
         entityManager.persist(role);
         return role;
@@ -163,7 +166,7 @@ class RoleListCatalogTest extends PublicPredictionFixture {
     }
 
     private void join(User user, RoleDefinition role) {
-        entityManager.persist(new OrganizationMembership(organization, user, role, MembershipStatus.ACTIVE));
+        entityManager.persist(new OrganizationMembership(organization, user, role, MembershipStatus.ACTIVE, principals.of(user)));
         user.setCurrentOrganization(organization);
     }
 

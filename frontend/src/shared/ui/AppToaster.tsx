@@ -8,13 +8,19 @@ import { CircleAlert, CircleCheck, Info, LoaderCircle, TriangleAlert } from "luc
 import { Toaster } from "sonner";
 import { themeWithHtmlAtom } from "./appearance-state";
 
-/** The app's one toast region, in the scheme in effect and with the app's surfaces and icons. */
+/**
+ * The app's one toast region, in the scheme in effect and with the app's surfaces and icons. It
+ * sits in the bottom corner, clear of page headers and their actions, and above every dialog:
+ * a modal turns off pointer events on the page, which the region takes back so a toast shown
+ * over a dialog can still be read, hovered and closed.
+ */
 export function AppToaster() {
   const theme = useSelector(themeWithHtmlAtom);
   return (
     <Toaster
       theme={theme}
-      position="top-center"
+      position="bottom-right"
+      style={{ pointerEvents: "auto" }}
       icons={{
         success: <CircleCheck size={16} className="text-success" aria-hidden="true" />,
         info: <Info size={16} className="text-info" aria-hidden="true" />,

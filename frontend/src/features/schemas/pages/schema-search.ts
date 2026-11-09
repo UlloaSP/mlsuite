@@ -28,12 +28,7 @@ export const schemaBookmarksSearch = z.object(
 
 /** A schema's snapshots. */
 export const schemaSnapshotsSearch = z.object(
-  catalogSearch(
-    ["all", "latest", "withBindings"],
-    "all",
-    ["created", "version", "name"],
-    "created",
-  ),
+  catalogSearch(["all", "latest"], "all", ["created", "version", "name"], "created"),
 );
 
 /** The bookmarks a member runs from. */

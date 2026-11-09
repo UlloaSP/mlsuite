@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.plugin;
 
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -69,9 +70,10 @@ class PluginAuthorshipTest {
         lenient().when(team.getId()).thenReturn(7L);
         User ada = new User("ada", "ada@example.test", "x", "Ada Lovelace", SystemRole.USER);
         row = new PluginMetadata("p1", team, KEY, "body.ts", "application/json", 10, OffsetDateTime.now(),
-                OffsetDateTime.now(), ada, "field", "body");
+                OffsetDateTime.now(), TestFixtures.principal(ada), "field", "body");
+        row.setStorageBucket("bucket");
         row.setStorageVersionId("v1");
-        when(metadata.findByUpdatedByIdOrderByIdAsc(eq(3L), any(Pageable.class))).thenReturn(List.of(row));
+        when(metadata.findByUpdatedByUserIdOrderByIdAsc(eq(3L), any(Pageable.class))).thenReturn(List.of(row));
         TransactionSynchronizationManager.initSynchronization();
     }
 

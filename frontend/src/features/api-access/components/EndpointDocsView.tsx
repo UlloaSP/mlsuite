@@ -15,7 +15,7 @@ import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import type { ApiAccessBookmarkDto } from "@/shared/api/openapi.gen";
 
-type Props = { bookmark: ApiAccessBookmarkDto & { apiId: string } };
+type Props = { bookmark: ApiAccessBookmarkDto & { publicId: string } };
 
 /**
  * The endpoint of one bookmark given to a client, documented from the signature of the model it
@@ -30,7 +30,7 @@ export function EndpointDocsView({ bookmark }: Props) {
         ? buildApiDocs({
             url: apiUrl,
             bookmark: {
-              apiId: bookmark.apiId,
+              publicId: bookmark.publicId,
               name: bookmark.name,
               refusal: bookmark.refusal,
               modelName: bookmark.modelName,

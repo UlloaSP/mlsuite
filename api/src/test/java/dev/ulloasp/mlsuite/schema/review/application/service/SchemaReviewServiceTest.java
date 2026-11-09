@@ -84,13 +84,12 @@ class SchemaReviewServiceTest {
     void setUp() {
         service = new SchemaReviewService(reviewRepository, reviewRunRepository, submissionRepository,
                 assignments, workspaceAccess, authorization, users, schemas, versions, bindings, runs, results, feedback,
-                mock(FeedbackHistory.class), mock(AuditLogService.class));
+                mock(FeedbackHistory.class), mock(AuditLogService.class), TestFixtures.principals());
     }
 
     @Test
     void create_SavesAssignedOrganizationReview() {
         stubCreateActor();
-        when(users.requireById(7L)).thenReturn(user());
         Schema schema = schema();
         SchemaVersion version = version(schema, 9L);
         PredictionRun run = run(version, 50L);
@@ -114,7 +113,7 @@ class SchemaReviewServiceTest {
 
         assertEquals(1, persistedRuns.size());
         assertFalse(persistedRuns.getFirst().getReview().getPublicId().isBlank());
-        assertEquals(7L, persistedRuns.getFirst().getReview().getCreatedBy().getId());
+        assertEquals(7L, persistedRuns.getFirst().getReview().getCreatedBy().userId());
         verify(authorization).require(7L, 41L, PermissionKey.MANAGE_REVIEWS);
         verify(assignments).assign(any(SchemaReview.class), org.mockito.ArgumentMatchers.eq(List.of(12L)));
         verify(reviewRunRepository).save(any(SchemaReviewRun.class));
@@ -128,22 +127,9 @@ class SchemaReviewServiceTest {
         assertNotNull(updatedAt.getAnnotation(UpdateTimestamp.class));
         assertEquals("updated_at", updatedAt.getAnnotation(Column.class).name());
         assertNotNull(createdBy.getAnnotation(ManyToOne.class));
-        assertEquals("created_by_user_id", createdBy.getAnnotation(JoinColumn.class).name());
+        assertEquals("created_by_principal_id", createdBy.getAnnotation(JoinColumn.class).name());
     }
 
-    @Test
-    void create_RejectsRunOutsideSchemaVersion() {
-        stubCreateActor();
-        Schema schema = schema();
-        SchemaVersion version = version(schema, 9L);
-        when(schemas.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema));
-        when(versions.findByIdAndOrganizationId(9L, 41L)).thenReturn(Optional.of(version));
-        when(runs.findByIdAndOrganizationId(50L, 41L))
-                .thenReturn(Optional.of(run(version(schema, 10L), 50L)));
-
-        assertThrows(ResponseStatusException.class, () -> service.create(7L,
-                new CreateSchemaReviewRequest(5L, 9L, List.of(50L), List.of(12L), null)));
-    }
 
     @Test
     void create_RejectsPastExpiry() {
@@ -163,7 +149,7 @@ class SchemaReviewServiceTest {
     void assignments_ListsOnlyEnabledMembersWithReviewPermission() {
         User reviewer = reviewer(12L, "Reviewer");
         OrganizationMembership membership = new OrganizationMembership(
-                organization(), reviewer, TestFixtures.role(organization(), "MEMBER"), MembershipStatus.ACTIVE);
+                organization(), reviewer, TestFixtures.role(organization(), "MEMBER"), MembershipStatus.ACTIVE, TestFixtures.principal(reviewer));
         when(memberships.findActiveByOrganizationIdOrderByCreatedAtAsc(41L))
                 .thenReturn(List.of(membership));
         when(authorization.effectiveOrganizationPermissions(12L, 41L)).thenReturn(Set.of(PermissionKey.REVIEW));
@@ -180,11 +166,11 @@ class SchemaReviewServiceTest {
         User assigner = reviewer(7L, "Ada");
         User reviewer = reviewer(12L, "Grace");
         when(memberships.findActiveByOrganizationIdOrderByCreatedAtAsc(41L)).thenReturn(List.of(
-                new OrganizationMembership(organization, assigner, TestFixtures.role(organization, "OWNER"), MembershipStatus.ACTIVE),
-                new OrganizationMembership(organization, reviewer, TestFixtures.role(organization, "MEMBER"), MembershipStatus.ACTIVE)));
+                new OrganizationMembership(organization, assigner, TestFixtures.role(organization, "OWNER"), MembershipStatus.ACTIVE, TestFixtures.principal(assigner)),
+                new OrganizationMembership(organization, reviewer, TestFixtures.role(organization, "MEMBER"), MembershipStatus.ACTIVE, TestFixtures.principal(reviewer))));
         when(authorization.effectiveOrganizationPermissions(any(), any())).thenReturn(Set.of(PermissionKey.REVIEW));
-        Schema schema = new Schema(organization, "Risk", null);
-        SchemaReview review = new SchemaReview(organization, schema, version(schema, 9L), assigner,
+        Schema schema = new Schema(organization, "Risk", null, TestFixtures.system());
+        SchemaReview review = new SchemaReview(organization, schema, version(schema, 9L), TestFixtures.principal(assigner),
                 OffsetDateTime.now().plusDays(1));
 
         assignmentService().assign(review, List.of(7L, 12L));
@@ -199,12 +185,12 @@ class SchemaReviewServiceTest {
         User reviewer = reviewer(12L, "Member");
         Organization organization = organization();
         OrganizationMembership membership = new OrganizationMembership(
-                organization, reviewer, TestFixtures.role(organization, "MEMBER"), MembershipStatus.ACTIVE);
+                organization, reviewer, TestFixtures.role(organization, "MEMBER"), MembershipStatus.ACTIVE, TestFixtures.principal(reviewer));
         when(memberships.findActiveByOrganizationIdOrderByCreatedAtAsc(41L))
                 .thenReturn(List.of(membership));
         when(authorization.effectiveOrganizationPermissions(12L, 41L)).thenReturn(Set.of(PermissionKey.VIEW_WORKSPACE));
-        Schema schema = new Schema(organization, "Risk", null);
-        SchemaReview review = new SchemaReview(organization, schema, version(schema, 9L), user(),
+        Schema schema = new Schema(organization, "Risk", null, TestFixtures.system());
+        SchemaReview review = new SchemaReview(organization, schema, version(schema, 9L), TestFixtures.principal(user()),
                 OffsetDateTime.now().plusDays(1));
 
         assertThrows(ResponseStatusException.class, () -> assignmentService().assign(review, List.of(12L)));
@@ -251,7 +237,7 @@ class SchemaReviewServiceTest {
     }
 
     private PredictionRun run(SchemaVersion version, Long id) {
-        PredictionRun run = new PredictionRun(version, "case", Map.of(), PredictionRunStatus.SUCCESS);
+        PredictionRun run = new PredictionRun(version, "case", Map.of(), PredictionRunStatus.SUCCESS, TestFixtures.system());
         run.setId(id);
         return run;
     }
@@ -266,7 +252,7 @@ class SchemaReviewServiceTest {
 
     private SchemaReview review() {
         Schema schema = schema();
-        SchemaReview review = new SchemaReview(organization(), schema, version(schema, 9L), user(),
+        SchemaReview review = new SchemaReview(organization(), schema, version(schema, 9L), TestFixtures.principal(user()),
                 OffsetDateTime.now().plusDays(1));
         review.setId(88L);
         return review;
@@ -281,13 +267,13 @@ class SchemaReviewServiceTest {
     }
 
     private SchemaVersion version(Schema schema, Long id) {
-        SchemaVersion version = new SchemaVersion(schema, 1, "v1", Map.of("fields", List.of()));
+        SchemaVersion version = new SchemaVersion(schema, 1, "v1", Map.of("fields", List.of()), TestFixtures.system());
         version.setId(id);
         return version;
     }
 
     private Schema schema() {
-        Schema schema = new Schema(organization(), "Risk", null);
+        Schema schema = new Schema(organization(), "Risk", null, TestFixtures.system());
         schema.setId(5L);
         return schema;
     }
@@ -297,7 +283,7 @@ class SchemaReviewServiceTest {
         organization.setId(41L);
         organization.setName("Org");
         organization.setSlug("org");
-        organization.setCreatedBy(user());
+        organization.setCreatedBy(TestFixtures.principal(user()));
         return organization;
     }
 

@@ -28,17 +28,15 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
-import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
-import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleTemplateRepository;
 import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginRuntimeSourcesUseCase;
+import dev.ulloasp.mlsuite.plugin.application.port.in.SnapshotPluginsUseCase;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkExampleRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
@@ -84,10 +82,10 @@ class BookmarkPublishingServiceTest {
         when(access.requireCurrentOrganization(USER_ID)).thenReturn(organization);
         BookmarkPublishability publishability = new BookmarkPublishability(bindings, CEILING_MB);
         service = new SchemaBookmarkServiceImpl(schemas, versions, bookmarks,
-                new WorkspaceAuthorizationService(access, roles), publishability, mock(AuditLogService.class));
+                new WorkspaceAuthorizationService(access, roles), publishability, mock(AuditLogService.class), TestFixtures.principals());
         publicService = new PublicBookmarkService(bookmarks, mock(SchemaBookmarkExampleRepository.class),
                 publishability, mock(SnapshotRunGuard.class),
-                mock(ListPluginRuntimeSourcesUseCase.class));
+                mock(SnapshotPluginsUseCase.class));
     }
 
     @Test
@@ -245,7 +243,7 @@ class BookmarkPublishingServiceTest {
         memberWith(PermissionKey.CREATE_MODELS);
         bound(NEXT_VERSION_ID, new BoundModel(12L, "huge", CEILING_MB * MB + 1));
         when(schemas.findByIdAndOrganizationId(5L, ORG_ID)).thenReturn(Optional.of(bookmark.getSchema()));
-        when(bookmarks.findBySchemaIdAndName(5L, "production")).thenReturn(Optional.of(bookmark));
+        when(bookmarks.findBySchemaIdAndNameIgnoreCase(5L, "production")).thenReturn(Optional.of(bookmark));
 
         ResponseStatusException moved = assertThrows(ResponseStatusException.class,
                 () -> service.moveBookmark(USER_ID, BOOKMARK_ID, new MoveSchemaBookmarkRequest(NEXT_VERSION_ID)));

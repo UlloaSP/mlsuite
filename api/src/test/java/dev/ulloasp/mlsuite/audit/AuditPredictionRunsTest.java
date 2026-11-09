@@ -40,7 +40,7 @@ class AuditPredictionRunsTest extends PublicPredictionFixture {
                 .header(ClientNetworks.CLIENT_ADDRESS_HEADER, "198.51.100.7")
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(Map.of(
                         "schemaVersionId", version.getId(), "modelId", forestModel.getId(),
-                        "modelInput", Map.of("age", 52, "secretMarker", "s3nsitive")))))
+                        "modelInput", Map.of("age", 52, "secretMarker", "s3nsitive"), "inputData", Map.of("Age", 52)))))
                 .andExpect(status().isOk());
 
         assertEquals(before + 1, runs());
@@ -52,7 +52,7 @@ class AuditPredictionRunsTest extends PublicPredictionFixture {
         assertEquals("Acme Health", row.get("organization_label"));
         assertEquals("SCHEMA_BOOKMARK", row.get("target_type"));
         assertEquals(bookmark.getId().toString(), row.get("target_id"));
-        assertEquals("198.51.100.7", row.get("ip"));
+        assertEquals("198.51.100.7", row.get("address"));
         assertNotNull(row.get("request_id"));
         String metadata = row.get("metadata").toString();
         assertTrue(metadata.contains("\"status\": \"SUCCESS\""));
@@ -106,6 +106,6 @@ class AuditPredictionRunsTest extends PublicPredictionFixture {
     }
 
     private Map<String, Object> lastRun() {
-        return jdbc.queryForMap("SELECT * FROM audit_event WHERE action = 'PREDICTION_RUN' ORDER BY id DESC LIMIT 1");
+        return jdbc.queryForMap("SELECT e.*, host(e.ip) AS address, p.user_id AS actor_user_id, p.api_client_id AS actor_client_id FROM audit_event e LEFT JOIN principal p ON p.id = e.actor_principal_id WHERE action = 'PREDICTION_RUN' ORDER BY e.id DESC LIMIT 1");
     }
 }

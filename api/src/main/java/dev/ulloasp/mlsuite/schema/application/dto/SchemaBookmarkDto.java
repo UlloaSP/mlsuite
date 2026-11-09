@@ -27,7 +27,9 @@ public record SchemaBookmarkDto(
         long exampleCount,
         long staleExampleCount,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt) {
+        OffsetDateTime updatedAt,
+        String createdByName,
+        String updatedByName) {
 
     /** {@code exampleCounts} is keyed by bookmark id; a bookmark it does not name has no examples. */
     public static SchemaBookmarkDto from(SchemaBookmark bookmark, Map<Long, BookmarkExampleCounts> exampleCounts) {
@@ -47,6 +49,8 @@ public record SchemaBookmarkDto(
                 examples.current(),
                 examples.stale(),
                 bookmark.getCreatedAt(),
-                bookmark.getUpdatedAt());
+                bookmark.getUpdatedAt(),
+                bookmark.getCreatedBy().label(),
+                bookmark.getUpdatedBy().label());
     }
 }

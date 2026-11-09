@@ -16,7 +16,6 @@ public record PredictionRunCatalogItemDto(
         PredictionRunStatus status,
         PredictionRunOrigin origin,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt,
         Long schemaId,
         String schemaName,
         Long schemaVersionId,
@@ -31,7 +30,7 @@ public record PredictionRunCatalogItemDto(
         SchemaVersion version = run.getSchemaVersion();
         SchemaBookmark bookmark = run.getSchemaBookmark();
         return new PredictionRunCatalogItemDto(run.getId(), run.getName(), run.getStatus(), run.getOrigin(),
-                run.getCreatedAt(), run.getUpdatedAt(), version.getSchema().getId(), version.getSchema().getName(),
+                run.getCreatedAt(), version.getSchema().getId(), version.getSchema().getName(),
                 version.getId(), version.getVersion(), version.getName(),
                 bookmark == null ? null : bookmark.getId(), bookmark == null ? null : bookmark.getName(),
                 run.getCreatedByName(), run.getCreatedByEmail());

@@ -69,13 +69,13 @@ final class SearchWorkspaceCandidateFactory {
         return candidate(
                 "predictionRun", run.getId(), run.getName(), schema.getName() + " / " + run.getStatus(),
                 "/inferences/" + run.getId(),
-                schema.getOrganization().getId(), null, run.getUpdatedAt(), run.getName(), schema.getName());
+                schema.getOrganization().getId(), null, run.getCreatedAt(), run.getName(), schema.getName());
     }
 
     static SearchCandidate fromPlugin(PluginMetadata plugin) {
         return new SearchCandidate(
                 new SearchResultDto(
-                        "plugin", plugin.getId(), plugin.getFileName(),
+                        "plugin", plugin.getPublicId(), plugin.getFileName(),
                         plugin.getKind() == null ? "Plugin" : plugin.getKind(), "/plugins",
                         plugin.getOrganization().getId(), null),
                 plugin.getUpdatedAt(), plugin.getFileName(), plugin.getPluginType(), plugin.getKind());

@@ -15,7 +15,6 @@ import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.application.dto.UserDto;
-import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.PersonalAccountService;
@@ -37,9 +36,6 @@ public class AuthService {
     public Authentication register(AuthRequest request, String caller) {
         attemptLimiter.admitRegistration(caller);
         String email = request.email().trim().toLowerCase();
-        if (userRepository.existsByEmailIgnoreCase(email)) {
-            throw new UserAlreadyExistsException(email);
-        }
         String handle = personalAccountService.claimHandle(request.username());
         User user = new User(
                 handle,

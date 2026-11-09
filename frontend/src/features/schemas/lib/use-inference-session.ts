@@ -6,7 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useSelector } from "@tanstack/react-store";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "@/shared/ui/toast";
-import { mergeSchemaRunInputs } from "@/capabilities/prediction-runtime/data/input-display";
 import { useUser } from "@/capabilities/workspace-context/session";
 import {
   useCreatePredictionRunForBookmarkMutation,
@@ -14,6 +13,7 @@ import {
 } from "@/features/schemas/api/schema-prediction-mutations";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
 import { inferenceSessionsAtom, type SessionEntry } from "./inference-session-store";
+import { createRunName } from "./run-name";
 import type {
   CreatePredictionRunRequest,
   PredictionRunDto,
@@ -23,8 +23,6 @@ import type {
 export type { SessionEntry } from "./inference-session-store";
 
 type Results = WorkspacePredictionDto[];
-
-const createRunName = () => `run-${new Date().toISOString()}`;
 
 const toResults = (raw: JsonRecord): Results =>
   Array.isArray(raw.results) ? (raw.results as Results) : [];
@@ -43,7 +41,7 @@ export const canSaveSessionEntry = (entry: SessionEntry) =>
 const runRequest = (entry: SessionEntry): CreatePredictionRunRequest => ({
   schemaVersionId: entry.schemaVersionId,
   name: entry.name.trim(),
-  inputData: mergeSchemaRunInputs(entry.inputData, entry.results),
+  // The inputs are the ones the results' seals vouch for; the server keeps those, not values sent beside them.
   results: entry.results.map(({ attestation }) => ({ attestation })),
 });
 
@@ -53,7 +51,12 @@ const NO_ENTRIES: SessionEntry[] = [];
  * The bookmark's session of runs: newest first, each saved or discarded. The
  * entries live in the app-wide store, so leaving the page and coming back keeps them.
  */
-export function useInferenceSession(bookmarkId: string, schemaVersionId: number | undefined) {
+export function useInferenceSession(
+  bookmarkId: string,
+  schemaVersionId: number | undefined,
+  /** Names each new run, with the time it ran. */
+  bookmarkName?: string,
+) {
   // Keyed by member too: another member signing in on this page never sees these.
   const sessionKey = `${useUser().data?.id ?? "anonymous"}:${bookmarkId}`;
   const entries = useSelector(inferenceSessionsAtom)[sessionKey] ?? NO_ENTRIES;
@@ -103,7 +106,7 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
           {
             key,
             schemaVersionId,
-            name: createRunName(),
+            name: createRunName(bookmarkName),
             state: "running",
             inputData: {},
             results: [],
@@ -123,7 +126,7 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
         ),
       );
     },
-    [schemaVersionId, setEntries, setLiveKey],
+    [bookmarkName, schemaVersionId, setEntries, setLiveKey],
   );
 
   const onResult = useCallback(

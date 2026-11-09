@@ -1,5 +1,8 @@
 package dev.ulloasp.mlsuite.organization.domain.model;
 
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 
 import org.hibernate.annotations.JdbcTypeCode;
@@ -7,6 +10,8 @@ import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -14,7 +19,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * The organization's logo as it is served: already square and small, so every reader shows the
- * same bytes. Stored by the organization's id and dropped with it.
+ * same bytes. Stored once per organization and dropped with it.
  */
 @Entity
 @Getter
@@ -22,15 +27,25 @@ import lombok.NoArgsConstructor;
 @Table(name = "organization_logo")
 public class OrganizationLogo {
 
-    public OrganizationLogo(Long organizationId, byte[] content, String contentType, OffsetDateTime updatedAt) {
+    public OrganizationLogo(Long organizationId, byte[] content, String contentType, OffsetDateTime at, Principal author) {
         this.organizationId = organizationId;
+        this.createdAt = at;
+        this.createdBy = author;
+        replace(content, contentType, at, author);
+    }
+
+    public void replace(byte[] content, String contentType, OffsetDateTime at, Principal author) {
         this.content = content;
         this.contentType = contentType;
-        this.updatedAt = updatedAt;
+        this.updatedAt = at;
+        this.updatedBy = author;
     }
 
     @Id
-    @Column(name = "organization_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "organization_id", nullable = false, unique = true, updatable = false)
     private Long organizationId;
 
     @JdbcTypeCode(SqlTypes.VARBINARY)
@@ -40,6 +55,19 @@ public class OrganizationLogo {
     @Column(name = "content_type", nullable = false, length = 40)
     private String contentType;
 
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime createdAt;
+
+    /** Who created it. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
+
     @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime updatedAt;
+
+    /** Who changed it last. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "updated_by_principal_id", nullable = false)
+    private Principal updatedBy;
 }

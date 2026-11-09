@@ -27,6 +27,7 @@ const model = (fields: unknown[], reports: unknown[] = [], id = 1): ModelDto => 
   fileName: "model.mlbundle",
   inputSchema: { fields: withMappedTo(fields), reports: withMappedTo(reports) },
   createdAt: "2026-06-02T00:00:00Z",
+  createdByName: "Ada Lovelace",
   updatedAt: "2026-06-02T00:00:00Z",
   archivedAt: null,
   updatedByName: "Owner",

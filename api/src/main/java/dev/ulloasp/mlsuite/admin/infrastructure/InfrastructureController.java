@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.admin.infrastructure;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import tools.jackson.databind.JsonNode;
@@ -30,6 +32,7 @@ public class InfrastructureController {
         return ResponseEntity.ok(infrastructureService.overview());
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @PostMapping("/services/{serviceName}/actions")
     public ResponseEntity<Void> action(
             CurrentUser actor,
@@ -53,6 +56,7 @@ public class InfrastructureController {
         return ResponseEntity.ok(infrastructureService.createTerminalSession(actor.userId(), request));
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/terminal/sessions/{sessionId}")
     public ResponseEntity<Void> closeTerminalSession(CurrentUser actor, @PathVariable String sessionId) {
         infrastructureService.closeTerminalSession(actor.userId(), sessionId);

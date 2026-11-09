@@ -1,5 +1,12 @@
 package dev.ulloasp.mlsuite.schema;
 
+import dev.ulloasp.mlsuite.schema.application.service.FormKinds;
+import dev.ulloasp.mlsuite.plugin.application.port.in.SnapshotPluginsUseCase;
+import dev.ulloasp.mlsuite.model.domain.model.Model;
+import org.springframework.http.HttpStatus;
+import java.time.OffsetDateTime;
+import dev.ulloasp.mlsuite.support.TestFixtures;
+import static org.mockito.Mockito.never;
 import static dev.ulloasp.mlsuite.schema.SchemaFlowFixtures.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -71,6 +78,7 @@ class SchemaFlowServiceTest {
     @Mock private SchemaReviewRepository reviewRepository;
     @Mock private ModelRepository modelRepository;
     @Mock private WorkspaceAuthorizationService authorizationService;
+    @Mock private SnapshotPluginsUseCase snapshotPlugins;
 
     private SchemaServiceImpl schemaService;
     private SchemaVersionServiceImpl versionService;
@@ -79,14 +87,14 @@ class SchemaFlowServiceTest {
     @BeforeEach
     void setUp() {
         schemaService = new SchemaServiceImpl(userLookupService, schemaRepository, versionRepository,
-                bindingRepository, runRepository, reviewRepository,
-                authorizationService, mock(SchemaDraftRepository.class), mock(SchemaBookmarkRepository.class), mock(AuditLogService.class));
+                bindingRepository,
+                authorizationService, mock(SchemaDraftRepository.class), mock(SchemaBookmarkRepository.class), mock(AuditLogService.class), TestFixtures.principals(), snapshotPlugins);
         versionService = new SchemaVersionServiceImpl(userLookupService, schemaRepository, versionRepository,
-                bindingRepository, modelRepository, authorizationService, new SchemaMappingCheck(modelRepository), mock(AuditLogService.class));
+                bindingRepository, modelRepository, authorizationService, new SchemaMappingCheck(modelRepository), mock(AuditLogService.class), TestFixtures.principals(), snapshotPlugins);
         runService = new PredictionRunServiceImpl(userLookupService, bookmarkRepository, runRepository,
                 mock(PredictionRunDeletion.class), mock(SnapshotRunGuard.class), authorizationService,
                 mock(PredictionAttestations.class),
-                new PredictionRunStore(bindingRepository, runRepository, resultRepository, modelRepository), mock(AuditLogService.class));
+                new PredictionRunStore(bindingRepository, runRepository, resultRepository, modelRepository, TestFixtures.principals()), mock(AuditLogService.class));
         lenient().when(userLookupService.requireById(7L)).thenReturn(user());
         lenient().when(authorizationService.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization());
     }
@@ -99,7 +107,7 @@ class SchemaFlowServiceTest {
 
         assertEquals("Risk", result.getName());
         assertEquals("Transplant risk", result.getDescription());
-        assertEquals(7L, result.getUpdatedBy().getId());
+        assertEquals(7L, result.getUpdatedBy().userId());
         assertEquals(41L, result.getOrganization().getId());
         verify(authorizationService).requireCurrent(7L, PermissionKey.CREATE_MODELS);
     }
@@ -121,13 +129,6 @@ class SchemaFlowServiceTest {
         verify(authorizationService).requireCurrent(7L, PermissionKey.VIEW_MODELS);
     }
 
-    @Test
-    void renameSchema_RejectsDuplicateName() {
-        when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema()));
-        when(schemaRepository.existsByNameAndOrganizationIdAndIdNot("Risk 2", 41L, 5L)).thenReturn(true);
-
-        assertThrows(ResponseStatusException.class, () -> schemaService.renameSchema(7L, 5L, "Risk 2"));
-    }
 
     @Test
     void archiveSchema_SetsArchivedAt() {
@@ -141,13 +142,6 @@ class SchemaFlowServiceTest {
         assertNotNull(result.getArchivedAt());
     }
 
-    @Test
-    void deleteSchema_RejectsSchemaWithRuns() {
-        when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema()));
-        when(runRepository.existsBySchemaId(5L)).thenReturn(true);
-
-        assertThrows(ResponseStatusException.class, () -> schemaService.deleteSchema(7L, 5L));
-    }
 
     @Test
     void createVersion_RejectsDuplicateModelBinding() {
@@ -176,6 +170,20 @@ class SchemaFlowServiceTest {
 
         assertEquals("v1", version.getName());
         verify(bindingRepository, times(2)).save(any());
+        // The plugins drawing the custom kinds its form names are fixed with it.
+        verify(snapshotPlugins).pin(eq(41L), any(), eq(FormKinds.of(formSchema())));
+    }
+
+    @Test
+    void createVersion_RefusesANameAnotherSnapshotOfTheSchemaHas() {
+        when(schemaRepository.findForUpdate(5L, 41L)).thenReturn(Optional.of(schema()));
+        when(versionRepository.existsBySchemaIdAndNameIgnoreCase(5L, "Baseline")).thenReturn(true);
+
+        ResponseStatusException refused = assertThrows(ResponseStatusException.class, () -> versionService.createVersion(7L, 5L,
+                new CreateSchemaVersionRequest(" Baseline ", formSchema(), List.of(new CreateSchemaModelBindingRequest(11L, Map.of())))));
+
+        assertEquals(HttpStatus.CONFLICT, refused.getStatusCode());
+        verify(versionRepository, never()).save(any());
     }
 
     @Test
@@ -187,4 +195,32 @@ class SchemaFlowServiceTest {
         assertThrows(ResponseStatusException.class, () -> versionService.createVersion(7L, 5L, request));
     }
 
+    @Test
+    void createVersion_RefusesAnArchivedSchema() {
+        Schema archived = schema();
+        archived.setArchivedAt(OffsetDateTime.now());
+        when(schemaRepository.findForUpdate(5L, 41L)).thenReturn(Optional.of(archived));
+
+        ResponseStatusException refused = assertThrows(ResponseStatusException.class, () -> versionService.createVersion(7L, 5L,
+                new CreateSchemaVersionRequest("v1", formSchema(), List.of(new CreateSchemaModelBindingRequest(11L, Map.of())))));
+
+        assertEquals(HttpStatus.CONFLICT, refused.getStatusCode());
+        verify(versionRepository, never()).save(any());
+    }
+
+    @Test
+    void createVersion_RefusesToBindAnArchivedModel() {
+        when(schemaRepository.findForUpdate(5L, 41L)).thenReturn(Optional.of(schema()));
+        when(versionRepository.findMaxVersionBySchemaId(5L)).thenReturn(0);
+        when(versionRepository.save(any(SchemaVersion.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Model archived = model(11L);
+        archived.setArchivedAt(OffsetDateTime.now());
+        when(modelRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(archived));
+
+        ResponseStatusException refused = assertThrows(ResponseStatusException.class, () -> versionService.createVersion(7L, 5L,
+                new CreateSchemaVersionRequest("v1", formSchema(), List.of(new CreateSchemaModelBindingRequest(11L, Map.of())))));
+
+        assertEquals(HttpStatus.CONFLICT, refused.getStatusCode());
+        verify(bindingRepository, never()).save(any());
+    }
 }

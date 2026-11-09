@@ -13,6 +13,8 @@ import jakarta.annotation.Nullable;
 public record PredictBookmarkDto(
         Long id,
         String name,
+        /** The bookmark's own description; schemaDescription describes the schema it pins. */
+        @Nullable String description,
         Long schemaId,
         String schemaName,
         @Nullable String schemaDescription,

@@ -126,6 +126,7 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
                     Map.of("kind", "classifier", "label", "Risk", "mappedTo", Map.of("risk-forest", "risk")),
                     Map.of("kind", "Crystal Tree", "id", "ctree", "label", "Why",
                             "mappedTo", Map.of("risk-forest", "risk"))));
+            entityManager.createNativeQuery("SET LOCAL session_replication_role = replica").executeUpdate(); // stands in for a snapshot written with this form
             stored.setFormSchema(form);
         });
         List<MultiValueMap<String, HttpEntity<?>>> explained = new ArrayList<>();
@@ -171,6 +172,7 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
                     // Hidden and not kept: MLForm leaves it out of a workspace run, and so does this.
                     Map.of("kind", "text", "label", "Site code", "hidden", true, "defaultValue", "north",
                             "mappedTo", Map.of("risk-forest", "site"))));
+            entityManager.createNativeQuery("SET LOCAL session_replication_role = replica").executeUpdate(); // stands in for a snapshot written with this form
             stored.setFormSchema(form);
         });
         List<MultiValueMap<String, HttpEntity<?>>> calls = new ArrayList<>();
@@ -258,7 +260,12 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
 
     @Test
     void aBookmarkWhoseModelOutgrewTheCeilingIsRefusedWithoutNamingIt() {
-        inTransaction(() -> entityManager.find(Model.class, netModel.getId()).setModelSizeBytes(MB + 1));
+        // Stands in for a model uploaded too large: a stored artifact never changes, so the database's
+        // guard on it is set aside for this one write.
+        inTransaction(() -> {
+            entityManager.createNativeQuery("SET LOCAL session_replication_role = replica").executeUpdate();
+            entityManager.find(Model.class, netModel.getId()).setModelSizeBytes(MB + 1);
+        });
 
         ResponseStatusException error = refused(bookmark.getPublicId(), request(Map.of("in0", 52)));
 

@@ -27,7 +27,7 @@ export function SidebarUserFooter({ side }: { side: SidebarPosition }) {
     return null;
   }
 
-  const displayName = user.fullName || user.userName || "Guest";
+  const displayName = user.fullName || user.username || "Guest";
 
   return (
     <ul className="grid gap-1">

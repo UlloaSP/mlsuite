@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.openapi;
 
+import dev.ulloasp.mlsuite.plugin.application.port.in.SnapshotPluginsUseCase;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -119,7 +120,7 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
         InferenceCatalogService.class,
         InferenceFacetCatalogService.class,
         InfrastructureService.class, InvitationCatalogService.class, InvitationManagementUseCase.class,
-        ListPluginRuntimeSourcesUseCase.class, MemberCatalogService.class, ModelCatalogUseCase.class, ModelUploadUseCase.class,
+        ListPluginRuntimeSourcesUseCase.class, SnapshotPluginsUseCase.class, MemberCatalogService.class, ModelCatalogUseCase.class, ModelUploadUseCase.class,
         ModelPreparationService.class, NotificationUseCase.class, RuntimeEnvironments.class,
         OrganizationCatalogService.class, OrganizationLogoService.class,
         OrganizationManagementUseCase.class,

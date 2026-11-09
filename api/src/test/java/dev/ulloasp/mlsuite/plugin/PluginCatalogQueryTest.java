@@ -26,7 +26,8 @@ class PluginCatalogQueryTest extends PublicPredictionFixture {
             for (int i = 0; i < 30; i++) {
                 String id = "catalog-" + schema.getId() + "-" + String.format("%02d", i);
                 PluginMetadata row = new PluginMetadata(id, organization, "objects/" + i, "same.ts",
-                        "text/typescript", 1, at, at, owner, i < 29 ? "field" : "report", "same");
+                        "text/typescript", 1, at, at, principals.of(owner), i < 29 ? "field" : "report", "same");
+                row.setStorageBucket("bucket");
                 row.setSha256("a".repeat(64));
                 row.setStorageVersionId("v1");
                 entityManager.persist(row);
@@ -36,7 +37,7 @@ class PluginCatalogQueryTest extends PublicPredictionFixture {
         Page<PluginMetadata> second = page("field", "SAME", "name", 1);
         assertEquals(29, second.getTotalElements());
         assertEquals(5, second.getNumberOfElements());
-        assertTrue(second.getContent().getFirst().getId().endsWith("-24"));
+        assertTrue(second.getContent().getFirst().getPublicId().endsWith("-24"));
         assertEquals(1, plugins.countByOrganizationIdAndPluginType(organization.getId(), "report"));
         assertEquals(30, page("all", "", "updated", 0).getTotalElements());
         // Wildcard characters in a search are matched literally.

@@ -19,10 +19,10 @@ import { appButtonClass } from "@/shared/ui/button-styles";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import type { ApiAccessBookmarkDto } from "@/shared/api/openapi.gen";
 
-type Given = ApiAccessBookmarkDto & { apiId: string };
+type Given = ApiAccessBookmarkDto & { publicId: string };
 
 const isGiven = (bookmark: ApiAccessBookmarkDto): bookmark is Given =>
-  bookmark.apiId !== null && bookmark.clientNames.length > 0;
+  bookmark.publicId !== null && bookmark.clientNames.length > 0;
 
 const route = getRouteApi("/protected/app/can-view-api-access/api-access/docs");
 

@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 package dev.ulloasp.mlsuite.model.domain.model;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +16,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
-import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -26,6 +26,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SecondaryTable;
+import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
@@ -34,6 +36,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@SecondaryTable(name = "model_preparation", pkJoinColumns = @PrimaryKeyJoinColumn(name = "model_id"))
 @Table(name = "model", uniqueConstraints = {
         @UniqueConstraint(name = "uq_model_name_org", columnNames = { "name", "organization_id" })
 })
@@ -44,8 +47,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Model {
 
-    public Model(User user, String name, String type, String specific_type, String fileName) {
-        this.user = user;
+    public Model(Principal createdBy, String name, String type, String specific_type, String fileName) {
+        this.createdBy = createdBy;
+        this.updatedBy = createdBy;
         this.name = name;
         this.type = type;
         this.specificType = specific_type;
@@ -57,21 +61,22 @@ public class Model {
     private Long id;
 
     @Version
-    @Column(name = "version", nullable = false)
+    @Column(name = "lock_version", nullable = false)
     private Long version;
 
-    /** Who uploaded it; null once that person is gone. */
-    @ManyToOne
-    @JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "fk_model_user"))
-    private User user;
+    /** Who created it. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
 
     /** When a purge of it was asked for; written only by the purge, so saving this row never clears it. */
     @Column(name = "purging_at", insertable = false, updatable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime purgingAt;
 
-    @ManyToOne
-    @JoinColumn(name = "updated_by_user_id", foreignKey = @ForeignKey(name = "fk_model_updated_by"))
-    private User updatedBy;
+    /** Who changed it last. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "updated_by_principal_id", nullable = false)
+    private Principal updatedBy;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "organization_id", nullable = false, foreignKey = @ForeignKey(name = "fk_model_organization"))
@@ -98,7 +103,7 @@ public class Model {
     @Column(name = "storage_etag", nullable = false, length = 128)
     private String storageEtag;
 
-    @Column(name = "model_size_bytes", nullable = false)
+    @Column(name = "size_bytes", nullable = false)
     private Long modelSizeBytes;
 
     @Column(name = "artifact_sha256", nullable = false, length = 64)
@@ -127,19 +132,19 @@ public class Model {
     private String environmentKey;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "runtime_state", nullable = false, length = 16)
+    @Column(table = "model_preparation", name = "state", nullable = false, length = 16)
     private ModelRuntimeState runtimeState = ModelRuntimeState.READY;
 
-    @Column(name = "runtime_error", length = 2000)
+    @Column(table = "model_preparation", name = "error_message")
     private String runtimeError;
 
-    @Column(name = "runtime_attempts", nullable = false)
+    @Column(table = "model_preparation", name = "attempts", nullable = false)
     private int runtimeAttempts;
 
-    @Column(name = "runtime_lease_owner", length = 128)
+    @Column(table = "model_preparation", name = "lease_owner", length = 128)
     private String runtimeLeaseOwner;
 
-    @Column(name = "runtime_lease_expires_at", columnDefinition = "TIMESTAMPTZ")
+    @Column(table = "model_preparation", name = "lease_expires_at", columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime runtimeLeaseExpiresAt;
 
     @CreationTimestamp

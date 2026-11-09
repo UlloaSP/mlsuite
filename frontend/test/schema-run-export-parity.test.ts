@@ -76,8 +76,8 @@ describe("schema run export parity", () => {
       resultFeedback({
         id: 1,
         resultId: 1,
-        userId: 7,
-        userEmail: "reviewer@example.com",
+        createdByUserId: 7,
+        createdByEmail: "reviewer@example.com",
         type: "EXPLANATION",
         order: 1,
         value: { clarity: 5 },

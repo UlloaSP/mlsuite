@@ -7,6 +7,7 @@ import org.springframework.data.domain.Sort;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.application.dto.ModelDto;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -33,6 +34,7 @@ final class ModelCatalogReader {
 
     public PageDto<ModelDto> getModelPage(Long userId, int page, int size, String search, String sort, String status) {
         Long organizationId = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.VIEW_MODELS).getId();
+        CatalogValues.require("status", status, List.of("active", "archived", "all"));
         Page<Model> models = modelRepository.findCatalogPage(
                 organizationId,
                 normalizeSearch(search),
@@ -48,13 +50,13 @@ final class ModelCatalogReader {
 
     private Sort sort(String mode) {
         Sort.Order byId = Sort.Order.asc("id");
-        if ("name".equals(mode)) {
-            return Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.desc("updatedAt"), byId);
-        }
-        if ("algorithm".equals(mode)) {
-            return Sort.by(Sort.Order.asc("type").ignoreCase(), Sort.Order.asc("specificType").ignoreCase(), byId);
-        }
-        return Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("name").ignoreCase(), byId);
+        return switch (mode) {
+            case "updated" -> Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("name").ignoreCase(), byId);
+            case "name" -> Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.desc("updatedAt"), byId);
+            case "algorithm" -> Sort.by(Sort.Order.asc("type").ignoreCase(), Sort.Order.asc("specificType").ignoreCase(),
+                    byId);
+            default -> throw CatalogValues.unknown("sort", mode, List.of("updated", "name", "algorithm"));
+        };
     }
 
 }

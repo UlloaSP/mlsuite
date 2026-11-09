@@ -25,7 +25,7 @@ export function RecentFailuresList({ failures }: { failures: ApiRequestDto[] }) 
             {failure.clientName}
           </span>
           <span className="text-xs text-fg-muted">
-            <LiveRelativeTime value={failure.createdAt} /> ago
+            <LiveRelativeTime value={failure.createdAt} />
           </span>
         </li>
       ))}

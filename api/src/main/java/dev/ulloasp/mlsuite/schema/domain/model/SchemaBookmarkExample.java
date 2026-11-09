@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.schema.domain.model;
 
+import jakarta.persistence.PrePersist;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -35,8 +37,9 @@ import lombok.Setter;
 @NoArgsConstructor
 public class SchemaBookmarkExample {
 
-    public SchemaBookmarkExample(SchemaBookmark bookmark, PredictionRun run) {
+    public SchemaBookmarkExample(SchemaBookmark bookmark, PredictionRun run, Principal createdBy) {
         this.bookmark = bookmark;
+        this.createdBy = createdBy;
         this.run = run;
         this.publicId = UUID.randomUUID().toString();
     }
@@ -44,6 +47,11 @@ public class SchemaBookmarkExample {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /** Who created it. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
 
     @ManyToOne(optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -79,5 +87,14 @@ public class SchemaBookmarkExample {
         return bookmark.getVisibility() == BookmarkVisibility.PUBLIC
                 ? BookmarkExampleStatus.SERVED
                 : BookmarkExampleStatus.BOOKMARK_PRIVATE;
+    }
+
+    /** Carried from its parent for the composite foreign key that keeps it there. */
+    @Column(name = "schema_id", nullable = false, updatable = false)
+    private Long schemaId;
+
+    @PrePersist
+    void carryParentKeys() {
+        schemaId = bookmark.getSchema().getId();
     }
 }

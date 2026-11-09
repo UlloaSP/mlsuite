@@ -7,11 +7,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Locale;
-import java.util.UUID;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import dev.ulloasp.mlsuite.invitation.domain.model.Invitation;
@@ -19,6 +21,7 @@ import dev.ulloasp.mlsuite.invitation.domain.model.InvitationStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
@@ -27,6 +30,9 @@ import dev.ulloasp.mlsuite.user.domain.model.User;
 
 /** Invitations, invitation candidates and a user's pending invitations, paged on PostgreSQL. */
 class InvitationCatalogTest extends PublicPredictionFixture {
+
+    @Autowired
+    private Principals principals;
     private final OffsetDateTime nextWeek = OffsetDateTime.now(ZoneOffset.UTC).plusDays(7);
     private RoleDefinition ownerRole;
     private String organizationPath;
@@ -76,8 +82,9 @@ class InvitationCatalogTest extends PublicPredictionFixture {
         mockMvc.perform(asOwner(get(path).param("filter", "PENDING")))
                 .andExpect(jsonPath("$.totalItems").value(26));
         mockMvc.perform(asOwner(get(path).param("filter", "not-a-status")))
-                .andExpect(jsonPath("$.totalItems").value(0))
-                .andExpect(jsonPath("$.totalInvitations").value(30));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Unknown filter 'not-a-status'; expected one of: "
+                        + "all, PENDING, ACCEPTED, EXPIRED, REVOKED, DECLINED"));
         mockMvc.perform(asOwner(get(path).param("search", "GUEST-" + mark + "-1")))
                 .andExpect(jsonPath("$.totalItems").value(10))
                 .andExpect(jsonPath("$.totalInvitations").value(30));
@@ -105,7 +112,7 @@ class InvitationCatalogTest extends PublicPredictionFixture {
                 if (i < 3) {
                     // An active member is no candidate; a removed one may be invited again.
                     entityManager.persist(new OrganizationMembership(organization, user, ownerRole,
-                            i == 2 ? MembershipStatus.REMOVED : MembershipStatus.ACTIVE));
+                            i == 2 ? MembershipStatus.REMOVED : MembershipStatus.ACTIVE, principals.of(user)));
                 }
             }
         });
@@ -133,13 +140,12 @@ class InvitationCatalogTest extends PublicPredictionFixture {
     @Test
     void pendingInvitationsAreTheCallersOwnOpenOnes() throws Exception {
         inTransaction(() -> {
-            Organization north = new Organization("north-" + mark, "North " + mark, null, owner);
-            Organization south = new Organization("south-" + mark, "South " + mark, null, owner);
-            entityManager.persist(north);
-            entityManager.persist(south);
+            Organization north = team("north-" + mark, "North " + mark);
+            Organization south = team("south-" + mark, "South " + mark);
+            Organization west = team("west-" + mark, "West " + mark);
             entityManager.persist(invitation(north, owner.getEmail()));
             entityManager.persist(invitation(south, owner.getEmail()));
-            Invitation expired = invitation(south, owner.getEmail());
+            Invitation expired = invitation(west, owner.getEmail());
             expired.setExpiresAt(nextWeek.minusDays(8));
             entityManager.persist(expired);
             Invitation revoked = invitation(north, owner.getEmail());
@@ -165,7 +171,9 @@ class InvitationCatalogTest extends PublicPredictionFixture {
     @Test
     void pendingCatalogPagesMoreThanOneScreenAndEscapesSearchWildcards() throws Exception {
         inTransaction(() -> {
-            for (int i = 0; i < 30; i++) entityManager.persist(invitation(organization, owner.getEmail()));
+            for (int i = 0; i < 30; i++) {
+                entityManager.persist(invitation(team("many-" + i + "-" + mark, "Many " + i + " " + mark), owner.getEmail()));
+            }
         });
         String path = "/api/invitations/pending/catalog";
         mockMvc.perform(asOwner(get(path).param("page", "1").param("size", "24")))
@@ -177,8 +185,22 @@ class InvitationCatalogTest extends PublicPredictionFixture {
                 .andExpect(jsonPath("$.totalItems").value(0));
     }
 
+    /** An invitation to {@code target} with a role of its own; the test organization's is its owner role. */
     private Invitation invitation(Organization target, String email) {
-        return new Invitation(target, email, ownerRole, owner, nextWeek);
+        RoleDefinition role = target.getId().equals(organization.getId()) ? ownerRole : roles.get(target.getId());
+        return new Invitation(target, email, role, principals.of(owner), nextWeek);
+    }
+
+    private final Map<Long, RoleDefinition> roles = new HashMap<>();
+
+    /** Another organization, with a role it can invite to. */
+    private Organization team(String slug, String name) {
+        Organization team = new Organization(slug, name, null, principals.of(owner));
+        entityManager.persist(team);
+        RoleDefinition member = new RoleDefinition(team, "Member", "member", null, principals.of(owner));
+        entityManager.persist(member);
+        roles.put(team.getId(), member);
+        return team;
     }
 
     private void grantOwner(PermissionKey permission) {

@@ -1,11 +1,14 @@
 package dev.ulloasp.mlsuite.plugin.application.service;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import static dev.ulloasp.mlsuite.plugin.application.service.PluginCatalogValues.*;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,6 +32,7 @@ import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.Organ
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
 import dev.ulloasp.mlsuite.util.CatalogPages;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginStatsDto;
 import dev.ulloasp.mlsuite.plugin.application.port.in.PluginCatalogUseCase;
@@ -63,6 +67,7 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
     private final PluginObjectReader pluginObjects;
     private final OrganizationRepository organizations;
     private final AuditLogService auditLog;
+    private final Principals principals;
 
     @Override
     @Transactional
@@ -71,6 +76,11 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
         Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.MANAGE_PLUGINS);
         organizations.lockById(organization.getId()).orElseThrow();
         try {
+            String source = new String(file.getBytes(), StandardCharsets.UTF_8);
+            if ("invalid".equals(PluginCatalogValues.describe(source).type())) {
+                throw new IllegalArgumentException(
+                        "This file is not a plugin: it must define an MLForm field or report renderer.");
+            }
             String id = UUID.randomUUID().toString();
             OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
             StoredPlugin stored = new StoredPlugin(
@@ -82,7 +92,7 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
                     now,
                     user.getFullName(),
                     user.getEmail(),
-                    new String(file.getBytes(), StandardCharsets.UTF_8));
+                    source);
             StoredObject uploaded = objectStorageService.store(
                     itemObjectKey(organization.getId(), id),
                     stored.fileName(),
@@ -96,7 +106,7 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
                     }
                 }
             });
-            persistMetadata(organization, stored, user, uploaded);
+            persistMetadata(organization, stored, principals.of(user), uploaded);
             auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.PLUGIN_UPLOAD, id,
                     AuditDetails.of("file", stored.fileName(), "sizeBytes", stored.sizeBytes()));
             return toDto(stored);
@@ -109,12 +119,13 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
     @Transactional
     public PageDto<PluginDto> list(Long userId, int page, int size, String type, String search, String sort) {
         Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.VIEW_PLUGINS);
-        String safeType = "field".equals(type) || "report".equals(type) ? type : "all";
-        Page<PluginMetadata> result = pluginMetadataRepository.findCatalogPage(organization.getId(), safeType,
-                CatalogPages.likeLiteral(search == null ? "" : search.strip()), sort == null ? "updated" : sort,
+        CatalogValues.require("type", type, List.of("all", "field", "report"));
+        CatalogValues.require("sort", sort, List.of("updated", "name"));
+        Page<PluginMetadata> result = pluginMetadataRepository.findCatalogPage(organization.getId(), type,
+                CatalogPages.likeLiteral(search == null ? "" : search.strip()), sort,
                 PageDto.request(page, size, Sort.unsorted()));
         return PageDto.of(result, result.getContent().stream()
-                .flatMap(item -> stored(organization.getId(), item.getId()).stream()
+                .flatMap(item -> stored(organization.getId(), item.getPublicId()).stream()
                         .map(plugin -> toDto(plugin, item)))
                 .toList());
     }
@@ -145,7 +156,7 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
         organizations.lockById(organization.getId()).orElseThrow();
         // Loading proves the plugin exists and is intact before deletion is queued.
         pluginObjects.load(organization.getId(), id);
-        Optional<PluginMetadata> metadata = pluginMetadataRepository.findByIdAndOrganizationId(id, organization.getId());
+        Optional<PluginMetadata> metadata = pluginMetadataRepository.findByPublicIdAndOrganizationId(id, organization.getId());
         // Every revision of the key: a plugin's id is never used again.
         deletionQueue.enqueue(organization.getId(), storageProperties.getBucket(),
                 itemObjectKey(organization.getId(), id), null);
@@ -155,12 +166,13 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
     }
 
     /** The row that pins the stored object: its exact version, size and SHA-256. */
-    private void persistMetadata(Organization organization, StoredPlugin stored, User updatedBy, StoredObject uploaded) {
+    private void persistMetadata(Organization organization, StoredPlugin stored, Principal author, StoredObject uploaded) {
         PluginDescriptor descriptor = describe(stored.source());
         PluginMetadata metadata = new PluginMetadata(stored.id(), organization,
                 itemObjectKey(organization.getId(), stored.id()), stored.fileName(), stored.contentType(),
-                uploaded.sizeBytes(), stored.createdAt(), stored.updatedAt(), updatedBy, descriptor.type(),
+                uploaded.sizeBytes(), stored.createdAt(), stored.updatedAt(), author, descriptor.type(),
                 descriptor.kind());
+        metadata.setStorageBucket(uploaded.bucket());
         metadata.setSha256(uploaded.sha256());
         metadata.setStorageVersionId(uploaded.versionId());
         pluginMetadataRepository.save(metadata);

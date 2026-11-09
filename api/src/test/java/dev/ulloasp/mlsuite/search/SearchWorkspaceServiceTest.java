@@ -101,7 +101,7 @@ class SearchWorkspaceServiceTest {
                 10L,
                 now(),
                 now(),
-                null,
+                TestFixtures.system(),
                 "report",
                 "acme-plugin")));
 
@@ -257,7 +257,8 @@ class SearchWorkspaceServiceTest {
         organization.setId(41L);
         organization.setSlug("acme");
         organization.setName("Acme Corp");
-        organization.setCreatedBy(user());
+        organization.setCreatedBy(TestFixtures.principal(user()));
+        organization.setUpdatedBy(organization.getCreatedBy());
         organization.setUpdatedAt(now());
         return organization;
     }
@@ -284,7 +285,7 @@ class SearchWorkspaceServiceTest {
     }
 
     private Schema schema(Organization organization) {
-        Schema schema = new Schema(organization, "Acme Schema", "Acme records");
+        Schema schema = new Schema(organization, "Acme Schema", "Acme records", TestFixtures.system());
         schema.setId(31L);
         schema.setUpdatedAt(now());
         return schema;
@@ -299,7 +300,7 @@ class SearchWorkspaceServiceTest {
         run.setName("Acme Run");
         run.setSchemaVersion(version);
         run.setStatus(PredictionRunStatus.SUCCESS);
-        run.setUpdatedAt(now());
+        run.setCreatedAt(now());
         return run;
     }
 
@@ -313,7 +314,7 @@ class SearchWorkspaceServiceTest {
                 10L,
                 now(),
                 now(),
-                null,
+                TestFixtures.system(),
                 kind,
                 "custom-report");
     }

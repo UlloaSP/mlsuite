@@ -6,6 +6,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.security.identity.ClientNetworks;
@@ -23,6 +24,7 @@ public class AuthController {
     private final AuthService authService;
     private final ClientNetworks clientNetworks = new ClientNetworks();
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/register")
     public ResponseEntity<UserDto> register(
             @Valid @RequestBody AuthRequest request,

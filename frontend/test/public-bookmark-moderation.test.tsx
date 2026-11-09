@@ -300,7 +300,7 @@ describe("moderation access", () => {
 
   test("a superadmin reaches the page through the route", async () => {
     const host = await openRoute();
-    expect(host.querySelector("h1")?.textContent).toBe("Public bookmarks");
+    expect(host.querySelector("h1")?.textContent).toBe("Moderation");
     expect(titles(host)).toEqual(["production", "live", "legacy"]);
   });
 
@@ -309,7 +309,7 @@ describe("moderation access", () => {
     const host = await openRoute();
 
     expect(host.textContent).toContain("Route not found");
-    expect(host.textContent).not.toContain("Public bookmarks");
+    expect(host.textContent).not.toContain("Moderation");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

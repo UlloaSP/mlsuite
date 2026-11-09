@@ -5,16 +5,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
@@ -25,6 +26,9 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 
 class InferenceFacetCatalogTest extends PublicPredictionFixture {
+
+    @Autowired
+    private Principals principals;
     private RoleDefinition role;
     private Long lastSchemaId;
     private Long lastBookmarkId;
@@ -34,25 +38,25 @@ class InferenceFacetCatalogTest extends PublicPredictionFixture {
         role = authorizeOwner();
         inTransaction(() -> {
             for (int i = 0; i < 30; i++) {
-                Schema s = new Schema(organization, "Schema %02d".formatted(i), null);
+                Schema s = new Schema(organization, "Schema %02d".formatted(i), null, principals.system());
                 entityManager.persist(s);
                 SchemaVersion v = new SchemaVersion(s, 1, "First", Map.of("fields",
                         IntStream.range(0, 30).mapToObj(n -> Map.of("kind", "number", "label", "Field %02d".formatted(n)))
-                                .toList()));
+                                .toList()), principals.system());
                 entityManager.persist(v);
-                SchemaBookmark b = new SchemaBookmark(s, v, "Bookmark %02d".formatted(i));
+                SchemaBookmark b = new SchemaBookmark(s, v, "Bookmark %02d".formatted(i), principals.system());
                 entityManager.persist(b);
-                entityManager.persist(new PredictionRun(b, v, "Run", Map.of(), PredictionRunStatus.SUCCESS));
+                entityManager.persist(new PredictionRun(b, v, "Run", Map.of(), PredictionRunStatus.SUCCESS, principals.system()));
                 lastSchemaId = s.getId();
                 lastBookmarkId = b.getId();
             }
-            Organization foreign = new Organization("foreign-facets-" + schema.getId(), "Foreign", null, owner);
+            Organization foreign = new Organization("foreign-facets-" + schema.getId(), "Foreign", null, principals.of(owner));
             entityManager.persist(foreign);
-            Schema other = new Schema(foreign, "Foreign schema", null);
+            Schema other = new Schema(foreign, "Foreign schema", null, principals.system());
             entityManager.persist(other);
-            SchemaVersion v = new SchemaVersion(other, 1, "Other", Map.of());
+            SchemaVersion v = new SchemaVersion(other, 1, "Other", Map.of(), principals.system());
             entityManager.persist(v);
-            entityManager.persist(new PredictionRun(null, v, "Outside", Map.of(), PredictionRunStatus.SUCCESS));
+            entityManager.persist(new PredictionRun(null, v, "Outside", Map.of(), PredictionRunStatus.SUCCESS, principals.system()));
         });
     }
 

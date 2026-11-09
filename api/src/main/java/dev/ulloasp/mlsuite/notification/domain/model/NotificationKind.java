@@ -40,7 +40,9 @@ public enum NotificationKind {
     /** As SYSTEM_ALERT_RAISED, at its critical threshold. */
     SYSTEM_ALERT_ESCALATED(NotificationTargetType.SYSTEM_ALERT),
     /** As SYSTEM_ALERT_RAISED, at its clear threshold. */
-    SYSTEM_ALERT_RESOLVED(NotificationTargetType.SYSTEM_ALERT);
+    SYSTEM_ALERT_RESOLVED(NotificationTargetType.SYSTEM_ALERT),
+    /** bookmarkName, schemaName, schemaId: the platform's moderators took it off the public pages. */
+    BOOKMARK_UNPUBLISHED(NotificationTargetType.BOOKMARK);
 
     private final NotificationTargetType targetType;
 

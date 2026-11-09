@@ -60,7 +60,7 @@ class BookmarkDetailsServiceTest {
         when(access.requireCurrentOrganization(USER_ID)).thenReturn(organization);
         service = new SchemaBookmarkServiceImpl(schemas, versions, bookmarks,
                 new WorkspaceAuthorizationService(access, mock(RoleDefinitionRepository.class)),
-                new BookmarkPublishability(mock(SchemaModelBindingRepository.class), 50L), mock(AuditLogService.class));
+                new BookmarkPublishability(mock(SchemaModelBindingRepository.class), 50L), mock(AuditLogService.class), TestFixtures.principals());
         when(bookmarks.save(any(SchemaBookmark.class))).thenAnswer(call -> call.getArgument(0));
     }
 
@@ -88,7 +88,7 @@ class BookmarkDetailsServiceTest {
         SchemaBookmark existing = stored(described());
         snapshot();
         memberWith(PermissionKey.CREATE_MODELS);
-        when(bookmarks.findBySchemaIdAndName(SCHEMA_ID, "production")).thenReturn(Optional.of(existing));
+        when(bookmarks.findBySchemaIdAndNameIgnoreCase(SCHEMA_ID, "production")).thenReturn(Optional.of(existing));
 
         service.createBookmark(USER_ID, SCHEMA_ID, new CreateSchemaBookmarkRequest("production", VERSION_ID, null, null));
         assertEquals("Estimates risk.", existing.getDescription());
@@ -128,7 +128,7 @@ class BookmarkDetailsServiceTest {
         existing.setPublicationNote("Published in Lancet 2026.");
         snapshot();
         memberWith(PermissionKey.CREATE_MODELS);
-        when(bookmarks.findBySchemaIdAndName(SCHEMA_ID, "production")).thenReturn(Optional.of(existing));
+        when(bookmarks.findBySchemaIdAndNameIgnoreCase(SCHEMA_ID, "production")).thenReturn(Optional.of(existing));
 
         service.createBookmark(USER_ID, SCHEMA_ID, new CreateSchemaBookmarkRequest("production", VERSION_ID, null, " "));
         assertEquals("Published in Lancet 2026.", existing.getPublicationNote());
@@ -150,8 +150,8 @@ class BookmarkDetailsServiceTest {
         SchemaBookmark other = bookmark();
         other.setId(71L);
         memberWith(PermissionKey.CREATE_MODELS);
-        when(bookmarks.findBySchemaIdAndName(SCHEMA_ID, "staging")).thenReturn(Optional.of(other));
-        when(bookmarks.findBySchemaIdAndName(SCHEMA_ID, "production")).thenReturn(Optional.of(bookmark));
+        when(bookmarks.findBySchemaIdAndNameIgnoreCase(SCHEMA_ID, "staging")).thenReturn(Optional.of(other));
+        when(bookmarks.findBySchemaIdAndNameIgnoreCase(SCHEMA_ID, "production")).thenReturn(Optional.of(bookmark));
 
         ResponseStatusException refused = assertThrows(ResponseStatusException.class, () -> service.updateBookmark(
                 USER_ID, BOOKMARK_ID, new UpdateSchemaBookmarkRequest("staging", "New text", null)));

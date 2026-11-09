@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 package dev.ulloasp.mlsuite.model.application.dto;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -12,8 +13,6 @@ import java.util.Map;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.domain.model.ModelRuntimeState;
 import dev.ulloasp.mlsuite.user.application.dto.UserAvatarUrl;
-import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
-import dev.ulloasp.mlsuite.user.domain.model.User;
 
 import jakarta.annotation.Nullable;
 
@@ -28,6 +27,7 @@ public record ModelDto(
         OffsetDateTime updatedAt,
         @Nullable OffsetDateTime archivedAt,
         long version,
+        String createdByName,
         String updatedByName,
         @Nullable String updatedByEmail,
         @Nullable String updatedByAvatarUrl,
@@ -37,7 +37,7 @@ public record ModelDto(
         @Nullable String runtimeError) {
 
     public static final ModelDto toDto(Model model) {
-        User modifier = model.getUpdatedBy() == null ? model.getUser() : model.getUpdatedBy();
+        Principal modifier = model.getUpdatedBy();
         return new ModelDto(
                 model.getId(),
                 model.getName(),
@@ -49,9 +49,10 @@ public record ModelDto(
                 model.getUpdatedAt(),
                 model.getArchivedAt(),
                 model.getVersion() == null ? 0 : model.getVersion(),
-                DeletedUser.nameOf(modifier),
-                modifier == null ? null : modifier.getEmail(),
-                modifier == null ? null : UserAvatarUrl.of(modifier),
+                model.getCreatedBy().label(),
+                modifier.label(),
+                modifier.email(),
+                modifier.userId() == null ? null : UserAvatarUrl.of(modifier.userId(), modifier.getUserAvatarUpdatedAt()),
                 countVisibleFields(model.getInputSchema()),
                 countReports(model.getInputSchema()),
                 model.getRuntimeState(),

@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.security.auth;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.hamcrest.Matchers.matchesRegex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -10,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -17,7 +19,9 @@ import java.time.ZoneOffset;
 import java.util.UUID;
 
 import org.hamcrest.Matcher;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
@@ -72,7 +76,10 @@ class AuthAttemptThrottleTest extends AuthHttpFixture {
 
     @Test
     void repeatedRegistrationAttemptsAreRefused() throws Exception {
-        when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(true);
+        // The address is taken: the database refuses the account.
+        when(userRepository.save(any())).thenThrow(new DataIntegrityViolationException("taken",
+                new ConstraintViolationException("taken", new SQLException(),
+                        "uq_app_user_email_lower")));
         for (int i = 0; i < 2; i++) {
             mockMvc.perform(register()).andExpect(status().isConflict());
         }

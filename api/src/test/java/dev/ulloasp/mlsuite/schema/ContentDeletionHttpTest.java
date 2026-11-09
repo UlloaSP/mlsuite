@@ -16,11 +16,13 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.ResultActions;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
@@ -41,6 +43,9 @@ import dev.ulloasp.mlsuite.user.domain.model.User;
 /** Every delete a member has, over HTTP on PostgreSQL: what goes, what stays, and each refusal. */
 class ContentDeletionHttpTest extends PublicPredictionFixture {
 
+    @Autowired
+    private Principals principals;
+
     private JdbcTemplate jdbc;
     private RoleDefinition role;
     private PredictionRun run;
@@ -53,27 +58,27 @@ class ContentDeletionHttpTest extends PublicPredictionFixture {
         jdbc = new JdbcTemplate(dataSource);
         role = authorizeOwner();
         inTransaction(() -> {
-            run = new PredictionRun(bookmark, version, "reviewed", Map.of("Age", 1), PredictionRunStatus.SUCCESS);
+            run = new PredictionRun(bookmark, version, "reviewed", Map.of("Age", 1), PredictionRunStatus.SUCCESS, principals.system());
             entityManager.persist(run);
             PredictionResult result = new PredictionResult(run, entityManager.find(forestModel.getClass(), forestModel.getId()),
                     Map.of(), Map.of(), PredictionResultStatus.SUCCESS, null, null);
             entityManager.persist(result);
             User reviewer = entityManager.find(User.class, owner.getId());
             review = new SchemaReview(entityManager.getReference(Organization.class, organization.getId()), schema,
-                    version, reviewer, OffsetDateTime.now().plusDays(1));
+                    version, principals.of(reviewer), OffsetDateTime.now().plusDays(1));
             entityManager.persist(review);
-            entityManager.persist(new SchemaReviewAssignee(review, reviewer));
+            entityManager.persist(new SchemaReviewAssignee(review, reviewer, principals.system()));
             SchemaReviewRun reviewRun = new SchemaReviewRun(review, run);
             entityManager.persist(reviewRun);
             entityManager.persist(new SchemaReviewRunSubmission(reviewRun, reviewer, OffsetDateTime.now()));
-            PredictionResultFeedback given = new PredictionResultFeedback(result, reviewer, review,
+            PredictionResultFeedback given = new PredictionResultFeedback(result, principals.of(reviewer), review,
                     PredictionResultFeedbackType.OUTPUT, 0, objectMapper.valueToTree(Map.of("a", 1)));
             entityManager.persist(given);
             entityManager.flush();
             answer = given.getId();
             entityManager.persist(new PredictionResultFeedbackRevision(given, PredictionResultFeedbackChange.CREATED,
-                    reviewer.getId(), OffsetDateTime.now()));
-            draft = new SchemaDraft(schema, version, "wip", Map.of("fields", List.of()), List.of());
+                    principals.of(reviewer), OffsetDateTime.now()));
+            draft = new SchemaDraft(schema, version, "wip", Map.of("fields", List.of()), List.of(), principals.system());
             entityManager.persist(draft);
         });
     }
@@ -86,11 +91,17 @@ class ContentDeletionHttpTest extends PublicPredictionFixture {
         return jdbc.queryForObject("SELECT count(*) FROM " + sql, Long.class, args);
     }
 
+    /** A job a worker elsewhere is running, under a lease no other worker takes over during the test. */
     private Long openJob() {
         return jdbc.queryForObject("""
-                INSERT INTO prediction_job (organization_id, schema_bookmark_id, schema_version_id, created_by_user_id,
-                    status, total_rows, created_at, updated_at) VALUES (?, ?, ?, ?, 'QUEUED', 1, now(), now())
-                RETURNING id""", Long.class, organization.getId(), bookmark.getId(), version.getId(), owner.getId());
+                INSERT INTO prediction_job (organization_id, schema_id, schema_bookmark_id, schema_version_id,
+                    created_by_principal_id, updated_by_principal_id, status, total_rows, lease_owner, lease_expires_at,
+                    created_at, updated_at)
+                SELECT ?, b.schema_id, b.id, ?, (SELECT id FROM principal WHERE user_id = ?),
+                    (SELECT id FROM principal WHERE user_id = ?), 'RUNNING', 1, 'elsewhere', now() + interval '1 day',
+                    now(), now() FROM schema_bookmark b WHERE b.id = ?
+                RETURNING id""", Long.class, organization.getId(), version.getId(), owner.getId(), owner.getId(),
+                bookmark.getId());
     }
 
     private void lose(PermissionKey permission) {
@@ -106,9 +117,9 @@ class ContentDeletionHttpTest extends PublicPredictionFixture {
         assertEquals(0, rows("prediction_result_feedback WHERE id = ?", answer));
         assertEquals(0, rows("schema_review_run WHERE schema_review_id = ?", review.getId()));
         assertEquals(1, rows("schema_review WHERE id = ?", review.getId()));
-        assertEquals(1, rows("prediction_result_feedback_revision WHERE feedback_id = ? AND change = 'DELETED'"
-                + " AND changed_by_user_id = ?", answer, owner.getId()));
-        assertEquals(0, rows("prediction_result_feedback_revision WHERE feedback_id = ? AND change <> 'DELETED'", answer));
+        assertEquals(1, rows("prediction_result_feedback_revision WHERE feedback_id = ? AND change_kind = 'DELETED'"
+                + " AND changed_by_principal_id = (SELECT id FROM principal WHERE user_id = ?)", answer, owner.getId()));
+        assertEquals(0, rows("prediction_result_feedback_revision WHERE feedback_id = ? AND change_kind <> 'DELETED'", answer));
         mockMvc.perform(signedIn(get("/api/schema-reviews/managed/catalog").param("filter", "empty"), owner.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].id").value(review.getPublicId()))
@@ -147,7 +158,7 @@ class ContentDeletionHttpTest extends PublicPredictionFixture {
         assertEquals(0, rows("schema_review WHERE id = ?", review.getId()));
         assertEquals(0, rows("prediction_result_feedback WHERE id = ?", answer));
         assertEquals(1, rows("prediction_run WHERE id = ?", run.getId()));
-        assertEquals(1, rows("inference_row WHERE prediction_run_id = ? AND answer_changes > 0", run.getId()));
+        assertEquals(1, rows("prediction_run_projection WHERE prediction_run_id = ? AND answer_changes > 0", run.getId()));
     }
 
     @Test
@@ -161,15 +172,18 @@ class ContentDeletionHttpTest extends PublicPredictionFixture {
     void aBulkJobGoesOnceItEndedWithItsRowsAndLeavesItsRuns() throws Exception {
         Long job = openJob();
         jdbc.update("""
-                INSERT INTO prediction_job_row (job_id, row_index, name, input_data, model_inputs, status, prediction_run_id)
-                VALUES (?, 0, 'row', '{"secret":1}', '[]', 'DONE', ?)""", job, run.getId());
+                INSERT INTO prediction_job_row (prediction_job_id, schema_version_id, row_index, name, input_data,
+                    model_inputs, status, prediction_run_id)
+                SELECT id, schema_version_id, 0, 'row', NULL, NULL, 'DONE', ? FROM prediction_job WHERE id = ?""",
+                run.getId(), job);
         remove("/api/prediction-jobs/{id}", job).andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message", containsString("still running")));
 
-        jdbc.update("UPDATE prediction_job SET status = 'COMPLETED' WHERE id = ?", job);
+        jdbc.update("UPDATE prediction_job SET status = 'COMPLETED', done_rows = 1, finished_at = now(), lease_owner = NULL,"
+                + " lease_expires_at = NULL WHERE id = ?", job);
         remove("/api/prediction-jobs/{id}", job).andExpect(status().isNoContent());
 
-        assertEquals(0, rows("prediction_job_row WHERE job_id = ?", job));
+        assertEquals(0, rows("prediction_job_row WHERE prediction_job_id = ?", job));
         assertEquals(1, rows("prediction_run WHERE id = ?", run.getId()));
     }
 
@@ -182,12 +196,17 @@ class ContentDeletionHttpTest extends PublicPredictionFixture {
     @Test
     void aBookmarkIsUnpublishedAndGoesWithItsGrantsAndExamplesLeavingItsRuns() throws Exception {
         Long client = jdbc.queryForObject("""
-                INSERT INTO api_client (organization_id, name, created_at, updated_at)
-                VALUES (?, ?, now(), now()) RETURNING id""", Long.class, organization.getId(), UUID.randomUUID().toString());
-        jdbc.update("INSERT INTO api_client_bookmark (api_client_id, schema_bookmark_id) VALUES (?, ?)", client, bookmark.getId());
+                INSERT INTO api_client (organization_id, name, created_by_principal_id, updated_by_principal_id,
+                    created_at, updated_at)
+                VALUES (?, ?, (SELECT id FROM principal WHERE user_id = ?), (SELECT id FROM principal WHERE user_id = ?), now(), now()) RETURNING id""", Long.class, organization.getId(),
+                UUID.randomUUID().toString(), owner.getId(), owner.getId());
+        jdbc.update("INSERT INTO api_client_bookmark (organization_id, schema_id, api_client_id, schema_bookmark_id, created_by_principal_id, created_at) SELECT c.organization_id, b.schema_id, c.id, b.id, (SELECT id FROM principal WHERE kind = 'SYSTEM'), now() FROM api_client c, schema_bookmark b WHERE c.id = ? AND b.id = ?", client, bookmark.getId());
         jdbc.update("""
-                INSERT INTO schema_bookmark_example (schema_bookmark_id, prediction_run_id, public_id, created_at)
-                VALUES (?, ?, ?, now())""", bookmark.getId(), run.getId(), UUID.randomUUID().toString());
+                INSERT INTO schema_bookmark_example (schema_id, schema_bookmark_id, prediction_run_id, public_id,
+                    created_by_principal_id, created_at)
+                SELECT b.schema_id, b.id, ?, ?, (SELECT id FROM principal WHERE user_id = ?), now()
+                FROM schema_bookmark b WHERE b.id = ?""", run.getId(), UUID.randomUUID().toString(), owner.getId(),
+                bookmark.getId());
 
         remove("/api/schema-bookmarks/{id}", bookmark.getId()).andExpect(status().isNoContent());
 
@@ -219,16 +238,17 @@ class ContentDeletionHttpTest extends PublicPredictionFixture {
         remove("/api/prediction-runs/{id}", run.getId()).andExpect(status().isNoContent());
 
         remove("/api/schema-versions/{id}", version.getId()).andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message", containsString("review")));
-        remove("/api/schema-reviews/{id}", review.getPublicId()).andExpect(status().isNoContent());
-
-        remove("/api/schema-versions/{id}", version.getId()).andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message", containsString("bookmark \"production\"")));
         remove("/api/schema-bookmarks/{id}", bookmark.getId()).andExpect(status().isNoContent());
 
         remove("/api/schema-versions/{id}", version.getId()).andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message", containsString("\"wip\"")));
         remove("/api/schema-drafts/{id}", draft.getId()).andExpect(status().isNoContent());
+
+        // A review keeps its snapshot through its foreign key, the last thing a delete meets.
+        remove("/api/schema-versions/{id}", version.getId()).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message", containsString("review")));
+        remove("/api/schema-reviews/{id}", review.getPublicId()).andExpect(status().isNoContent());
 
         remove("/api/schema-versions/{id}", version.getId()).andExpect(status().isNoContent());
         assertEquals(0, rows("schema_version WHERE id = ?", version.getId()));
@@ -239,23 +259,29 @@ class ContentDeletionHttpTest extends PublicPredictionFixture {
     @Test
     void anOrganizationIsEmptyWithOnlyAnsweredOrRevokedInvitationsLeft() throws Exception {
         Long empty = jdbc.queryForObject("""
-                INSERT INTO organization (slug, name, created_by_user_id, created_at, updated_at)
-                VALUES (?, 'Empty', ?, now(), now()) RETURNING id""", Long.class, "empty-" + UUID.randomUUID(), owner.getId());
+                INSERT INTO organization (slug, name, created_by_principal_id, updated_by_principal_id, created_at, updated_at)
+                VALUES (?, 'Empty', (SELECT id FROM principal WHERE user_id = ?), (SELECT id FROM principal WHERE user_id = ?), now(), now()) RETURNING id""", Long.class, "empty-" + UUID.randomUUID().toString().substring(0, 8),
+                owner.getId(), owner.getId());
         Long member = jdbc.queryForObject("""
-                INSERT INTO role_definition (organization_id, scope, name, slug, locked, created_at, updated_at)
-                VALUES (?, 'ORGANIZATION', 'Member', 'member', TRUE, now(), now()) RETURNING id""", Long.class, empty);
+                INSERT INTO role_definition (organization_id, name, slug, locked, created_by_principal_id,
+                    updated_by_principal_id, created_at, updated_at)
+                VALUES (?, 'Member', 'member', TRUE, (SELECT id FROM principal WHERE user_id = ?), (SELECT id FROM principal WHERE user_id = ?), now(), now()) RETURNING id""", Long.class, empty,
+                owner.getId(), owner.getId());
         jdbc.update("""
-                INSERT INTO invitation (organization_id, invited_by_user_id, role_definition_id, email, status, expires_at,
-                    created_at, updated_at) VALUES (?, ?, ?, 'r@example.test', 'REVOKED', now() + interval '1 day', now(), now())""",
-                empty, owner.getId(), member);
+                INSERT INTO invitation (organization_id, created_by_principal_id, updated_by_principal_id, role_definition_id,
+                    email, status, expires_at, created_at, updated_at)
+                VALUES (?, (SELECT id FROM principal WHERE user_id = ?), (SELECT id FROM principal WHERE user_id = ?), ?, 'r@example.test', 'REVOKED', now() + interval '1 day', now(), now())""",
+                empty, owner.getId(), owner.getId(), member);
         Long pending = jdbc.queryForObject("""
-                INSERT INTO invitation (organization_id, invited_by_user_id, role_definition_id, email, status, expires_at,
-                    created_at, updated_at) VALUES (?, ?, ?, 'p@example.test', 'PENDING', now() + interval '1 day', now(), now())
-                RETURNING id""", Long.class, empty, owner.getId(), member);
+                INSERT INTO invitation (organization_id, created_by_principal_id, updated_by_principal_id, role_definition_id,
+                    email, status, expires_at, created_at, updated_at)
+                VALUES (?, (SELECT id FROM principal WHERE user_id = ?), (SELECT id FROM principal WHERE user_id = ?), ?, 'p@example.test', 'PENDING', now() + interval '1 day', now(), now())
+                RETURNING id""", Long.class, empty, owner.getId(), owner.getId(), member);
         jdbc.update("INSERT INTO role_permission (role_definition_id, permission_key) VALUES (?, 'DELETE_ORGANIZATION')", member);
         jdbc.update("""
-                INSERT INTO organization_membership (organization_id, user_id, role_definition_id, status, created_at, updated_at)
-                VALUES (?, ?, ?, 'ACTIVE', now(), now())""", empty, owner.getId(), member);
+                INSERT INTO organization_membership (organization_id, user_id, role_definition_id, status,
+                    created_by_principal_id, updated_by_principal_id, created_at, updated_at)
+                VALUES (?, ?, ?, 'ACTIVE', (SELECT id FROM principal WHERE user_id = ?), (SELECT id FROM principal WHERE user_id = ?), now(), now())""", empty, owner.getId(), member, owner.getId(), owner.getId());
 
         remove("/api/organizations/{id}", empty).andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message", containsString("Only empty")));

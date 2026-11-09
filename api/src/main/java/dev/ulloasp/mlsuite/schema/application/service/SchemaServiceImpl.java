@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
+import dev.ulloasp.mlsuite.plugin.application.port.in.SnapshotPluginsUseCase;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -17,7 +19,6 @@ import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
-import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaDraftRepository;
@@ -25,13 +26,13 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookm
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaCatalogItemDto;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
-import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -47,24 +48,19 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     private final SchemaRepository schemaRepository;
     private final SchemaVersionRepository versionRepository;
     private final SchemaModelBindingRepository bindingRepository;
-    private final PredictionRunRepository runRepository;
-    private final SchemaReviewRepository reviewRepository;
     private final WorkspaceAuthorizationService authorizationService;
     private final SchemaDraftRepository draftRepository;
     private final SchemaBookmarkRepository bookmarkRepository;
     private final AuditLogService auditLog;
+    private final Principals principals;
+    private final SnapshotPluginsUseCase snapshotPlugins;
 
     @Override
     public Schema createSchema(Long userId, CreateSchemaRequest request) {
         User user = userLookupService.requireById(userId);
         Organization organization = authorizationService.requireCurrent(userId, PermissionKey.CREATE_MODELS);
         String name = normalizeName(request.name());
-        if (schemaRepository.existsByNameAndOrganizationId(name, organization.getId())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Schema name already exists");
-        }
-        Schema schema = new Schema(organization, name, normalizeDescription(request.description()));
-        schema.setCreatedBy(user);
-        schema.setUpdatedBy(user);
+        Schema schema = new Schema(organization, name, normalizeDescription(request.description()), principals.of(user));
         Schema saved = schemaRepository.save(schema);
         auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.SCHEMA_CREATE, saved.getId(),
                 AuditDetails.of("name", name));
@@ -82,7 +78,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
                     AuditDetails.of("name", schema.getName()));
         }
         schema.setArchivedAt(null);
-        schema.setUpdatedBy(user);
+        schema.setUpdatedBy(principals.of(user));
         return schemaRepository.save(schema);
     }
 
@@ -95,6 +91,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     @Override
     public PageDto<SchemaCatalogItemDto> getSchemaPage(Long userId, int page, int size, String search, String sort, String status) {
         Long organizationId = authorizationService.requireCurrent(userId, PermissionKey.VIEW_MODELS).getId();
+        CatalogValues.require("status", status, List.of("active", "archived", "all"));
         Page<Schema> schemas = schemaRepository.findCatalogPage(
                 organizationId,
                 normalizeSearch(search),
@@ -116,13 +113,10 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
         Organization organization = authorizationService.requireCurrent(userId, PermissionKey.EDIT_MODELS);
         Schema schema = requireSchema(schemaId, organization.getId());
         String nextName = normalizeName(name);
-        if (schemaRepository.existsByNameAndOrganizationIdAndIdNot(nextName, organization.getId(), schemaId)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Schema name already exists");
-        }
         auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.SCHEMA_RENAME, schemaId,
                 AuditDetails.of("name", AuditDetails.changed(schema.getName(), nextName)));
         schema.setName(nextName);
-        schema.setUpdatedBy(user);
+        schema.setUpdatedBy(principals.of(user));
         return schemaRepository.save(schema);
     }
 
@@ -137,7 +131,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
             auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.SCHEMA_ARCHIVE, schemaId,
                     AuditDetails.of("name", schema.getName()));
         }
-        schema.setUpdatedBy(user);
+        schema.setUpdatedBy(principals.of(user));
         return schemaRepository.save(schema);
     }
 
@@ -147,12 +141,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
         Organization organization = authorizationService.requireCurrent(userId, PermissionKey.CREATE_MODELS);
         Schema source = requireSchema(schemaId, organization.getId());
         String nextName = normalizeName(name);
-        if (schemaRepository.existsByNameAndOrganizationId(nextName, organization.getId())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Schema name already exists");
-        }
-        Schema copy = new Schema(organization, nextName, source.getDescription());
-        copy.setCreatedBy(user);
-        copy.setUpdatedBy(user);
+        Schema copy = new Schema(organization, nextName, source.getDescription(), principals.of(user));
         SchemaVersion sourceVersion = resolveSourceVersion(schemaId, organization.getId(), sourceVersionId);
         Schema savedCopy = schemaRepository.save(copy);
         if (sourceVersion != null) copyVersion(savedCopy, sourceVersion);
@@ -165,10 +154,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     public void deleteSchema(Long userId, Long schemaId) {
         Organization organization = authorizationService.requireCurrent(userId, PermissionKey.DELETE_MODELS);
         Schema schema = requireSchema(schemaId, organization.getId());
-        if (runRepository.existsBySchemaId(schemaId) || reviewRepository.existsBySchemaId(schemaId)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Schema is used by prediction runs or reviews. Archive it instead.");
-        }
+        // A schema with runs or reviews is kept by their foreign keys.
         draftRepository.deleteBySchemaId(schemaId);
         bookmarkRepository.deleteBySchemaId(schemaId);
         versionRepository.findBySchemaIdOrderByVersionDesc(schemaId).forEach(version -> {
@@ -182,11 +168,13 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
 
     private void copyVersion(Schema copy, SchemaVersion source) {
         SchemaVersion version = versionRepository.save(
-                new SchemaVersion(copy, 1, source.getName(), source.getFormSchema()));
+                new SchemaVersion(copy, 1, source.getName(), source.getFormSchema(), copy.getCreatedBy()));
         for (SchemaModelBinding binding : bindingRepository.findBySchemaVersionId(source.getId())) {
             Map<String, Object> policy = binding.getPluginPolicy() == null ? Map.of() : binding.getPluginPolicy();
             bindingRepository.save(new SchemaModelBinding(version, binding.getModel(), policy));
         }
+        bindingRepository.flush();
+        snapshotPlugins.copy(source.getId(), version.getId());
     }
 
     private SchemaVersion resolveSourceVersion(Long schemaId, Long organizationId, Long sourceVersionId) {
@@ -235,12 +223,11 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
 
     private Sort sort(String mode) {
         Sort.Order byId = Sort.Order.asc("id");
-        if ("name".equals(mode)) {
-            return Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.desc("updatedAt"), byId);
-        }
-        if ("created".equals(mode)) {
-            return Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("name").ignoreCase(), byId);
-        }
-        return Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("name").ignoreCase(), byId);
+        return switch (mode) {
+            case "updated" -> Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("name").ignoreCase(), byId);
+            case "created" -> Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("name").ignoreCase(), byId);
+            case "name" -> Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.desc("updatedAt"), byId);
+            default -> throw CatalogValues.unknown("sort", mode, List.of("updated", "created", "name"));
+        };
     }
 }

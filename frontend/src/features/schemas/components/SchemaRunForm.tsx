@@ -29,7 +29,7 @@ type Props = {
 
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-/** A schema version's run form, drawn in the plugin sandbox with the organization's plugins. */
+/** A schema version's run form, drawn in the plugin sandbox with the plugins the version was published with. */
 export function SchemaRunForm({
   bookmarkId,
   version,
@@ -52,7 +52,11 @@ export function SchemaRunForm({
         : version.formSchema,
     [initialInputs, version.formSchema],
   );
-  const catalog = useSchemaPluginCatalog(formSchema, useCurrentOrganizationId() ?? "none");
+  const catalog = useSchemaPluginCatalog(
+    formSchema,
+    useCurrentOrganizationId() ?? "none",
+    version.id,
+  );
   const { data, needsPlugins, status } = catalog;
   const showCatalogLoading = useStableLoading(needsPlugins && status === "loading");
 

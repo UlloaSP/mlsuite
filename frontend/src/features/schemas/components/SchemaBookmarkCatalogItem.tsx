@@ -214,7 +214,7 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
             ) : null}
             {examples.stale ? <span className="text-warning-fg">{examples.stale}</span> : null}
             <span>
-              Updated <LiveRelativeTime value={bookmark.updatedAt} /> ago
+              Updated <LiveRelativeTime value={bookmark.updatedAt} />
             </span>
           </>
         }

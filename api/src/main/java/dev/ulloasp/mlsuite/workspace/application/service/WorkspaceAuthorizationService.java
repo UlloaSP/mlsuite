@@ -15,7 +15,6 @@ import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.application.dto.RoleSummaryDto;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.workspace.application.dto.MembershipActionsDto;
 import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
 import lombok.RequiredArgsConstructor;
@@ -81,7 +80,7 @@ public class WorkspaceAuthorizationService {
         if (flags.stream().noneMatch(MembershipActionsDto::canChangeRole)) {
             return flags;
         }
-        var roles = roleDefinitionRepository.findByOrganizationIdAndScopeOrderByLockedDescNameAsc(organizationId, RoleScope.ORGANIZATION)
+        var roles = roleDefinitionRepository.findByOrganizationIdOrderByLockedDescNameAsc(organizationId)
                 .stream()
                 .filter(role -> !OrganizationRole.OWNER.name().equals(role.getSystemKey()))
                 .map(RoleSummaryDto::from)

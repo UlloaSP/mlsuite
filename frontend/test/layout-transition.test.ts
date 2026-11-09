@@ -37,7 +37,10 @@ describe("layout transition", () => {
     stubStartViewTransition(
       vi.fn((callback: () => void) => {
         callback();
-        return { finished: new Promise<void>((resolve) => (finish = resolve)) };
+        return {
+          finished: new Promise<void>((resolve) => (finish = resolve)),
+          ready: Promise.resolve(),
+        };
       }),
     );
 

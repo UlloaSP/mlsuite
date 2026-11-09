@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.search;
 
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -68,17 +69,17 @@ class SearchWorkspaceSchemaArtifactsTest {
     void search_LinksRunsWithAndWithoutBookmarksToInferenceDetails() {
         Organization organization = new Organization();
         organization.setId(41L);
-        Schema schema = new Schema(organization, "Risk schema", null);
+        Schema schema = new Schema(organization, "Risk schema", null, TestFixtures.system());
         schema.setId(31L);
-        SchemaVersion version = new SchemaVersion(schema, 4, "Release", java.util.Map.of());
+        SchemaVersion version = new SchemaVersion(schema, 4, "Release", java.util.Map.of(), TestFixtures.system());
         version.setId(51L);
-        SchemaBookmark bookmark = new SchemaBookmark(schema, version, "Production");
+        SchemaBookmark bookmark = new SchemaBookmark(schema, version, "Production", TestFixtures.system());
         bookmark.setId(61L);
         PredictionRun bookmarked = new PredictionRun(bookmark, version, "Release run", java.util.Map.of(),
-                PredictionRunStatus.SUCCESS);
+                PredictionRunStatus.SUCCESS, TestFixtures.system());
         bookmarked.setId(71L);
         PredictionRun unbookmarked = new PredictionRun(version, "Release legacy", java.util.Map.of(),
-                PredictionRunStatus.SUCCESS);
+                PredictionRunStatus.SUCCESS, TestFixtures.system());
         unbookmarked.setId(72L);
         when(access.requireCurrentOrganization(7L)).thenReturn(organization);
         when(authorization.effectiveOrganizationPermissions(7L, 41L)).thenReturn(EnumSet.of(PermissionKey.VIEW_MODELS));
@@ -96,12 +97,12 @@ class SearchWorkspaceSchemaArtifactsTest {
         Organization organization = new Organization();
         organization.setId(41L);
         organization.setName("Acme");
-        Schema schema = new Schema(organization, "Risk schema", null);
+        Schema schema = new Schema(organization, "Risk schema", null, TestFixtures.system());
         schema.setId(31L);
-        SchemaVersion version = new SchemaVersion(schema, 4, "Release candidate", java.util.Map.of());
+        SchemaVersion version = new SchemaVersion(schema, 4, "Release candidate", java.util.Map.of(), TestFixtures.system());
         version.setId(51L);
         version.setCreatedAt(OffsetDateTime.parse("2026-07-27T10:00:00Z"));
-        SchemaBookmark bookmark = new SchemaBookmark(schema, version, "Release production");
+        SchemaBookmark bookmark = new SchemaBookmark(schema, version, "Release production", TestFixtures.system());
         bookmark.setId(61L);
         bookmark.setUpdatedAt(OffsetDateTime.parse("2026-07-27T11:00:00Z"));
         when(access.requireCurrentOrganization(7L)).thenReturn(organization);

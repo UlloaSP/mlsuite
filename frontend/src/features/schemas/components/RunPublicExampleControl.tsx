@@ -20,7 +20,7 @@ import type { PredictionRunDto } from "@/shared/api/openapi.gen";
  * this is where a member can read the inputs they are about to make public.
  */
 export function RunPublicExampleControl({ run }: { run: PredictionRunDto }) {
-  const bookmarkId = run.schemaBookmarkId ?? undefined;
+  const bookmarkId = run.bookmarkId ?? undefined;
   const { data: bookmark } = useSchemaBookmark(bookmarkId);
   const { data: state } = useBookmarkExampleState(bookmarkId, run.id);
   const canPublish = useCan("canPublishBookmarks");

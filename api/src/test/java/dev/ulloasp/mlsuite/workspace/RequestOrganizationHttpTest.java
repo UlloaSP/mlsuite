@@ -14,6 +14,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
@@ -22,9 +23,9 @@ import tools.jackson.databind.JsonNode;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.user.domain.model.User;
@@ -36,6 +37,9 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
  */
 class RequestOrganizationHttpTest extends PublicPredictionFixture {
 
+    @Autowired
+    private Principals principals;
+
     private static final String HEADER = WorkspaceAccessService.ORGANIZATION_HEADER;
     private Organization other;
     private Organization stranger;
@@ -45,14 +49,14 @@ class RequestOrganizationHttpTest extends PublicPredictionFixture {
     void aSecondTabSelectedAnotherOrganization() {
         authorizeOwner();
         inTransaction(() -> {
-            other = new Organization("other-" + System.nanoTime(), "Other Lab", null, owner);
+            other = new Organization("other-" + System.nanoTime(), "Other Lab", null, principals.of(owner));
             entityManager.persist(other);
-            RoleDefinition role = new RoleDefinition(other, RoleScope.ORGANIZATION, "Owner", "owner", "OWNER");
+            RoleDefinition role = new RoleDefinition(other, "Owner", "owner", "OWNER", principals.system());
             role.setPermissions(EnumSet.allOf(PermissionKey.class));
             entityManager.persist(role);
-            entityManager.persist(new OrganizationMembership(other, owner, role, MembershipStatus.ACTIVE));
+            entityManager.persist(new OrganizationMembership(other, owner, role, MembershipStatus.ACTIVE, principals.of(owner)));
             entityManager.find(User.class, owner.getId()).setCurrentOrganization(other);
-            stranger = new Organization("stranger-" + System.nanoTime(), "Stranger Lab", null, owner);
+            stranger = new Organization("stranger-" + System.nanoTime(), "Stranger Lab", null, principals.of(owner));
             entityManager.persist(stranger);
         });
     }
@@ -119,14 +123,13 @@ class RequestOrganizationHttpTest extends PublicPredictionFixture {
 
     private MockHttpServletRequestBuilder prediction(long modelId) throws Exception {
         String body = objectMapper.writeValueAsString(Map.of("schemaVersionId", version.getId(), "modelId", modelId,
-                "modelInput", Map.of("age", 52)));
+                "modelInput", Map.of("age", 52), "inputData", Map.of("Age", 52)));
         return signedIn(post("/api/schema-bookmarks/{id}/predictions", bookmark.getId())
                 .contentType(MediaType.APPLICATION_JSON).content(body), owner.getId());
     }
 
     private MockHttpServletRequestBuilder save(String... seals) throws Exception {
         String body = objectMapper.writeValueAsString(Map.of("schemaVersionId", version.getId(), "name", "tab-run",
-                "inputData", Map.of("Age", 52),
                 "results", List.of(seals).stream().map(seal -> Map.of("attestation", seal)).toList()));
         return signedIn(post("/api/schema-bookmarks/{id}/runs", bookmark.getId())
                 .contentType(MediaType.APPLICATION_JSON).content(body), owner.getId());

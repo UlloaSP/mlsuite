@@ -18,6 +18,7 @@ const state = vi.hoisted(() => ({
   bookmarks: [] as PredictBookmarkDto[],
   bookmark: undefined as SchemaBookmarkDto | undefined,
   requestedVersions: [] as Array<number | string | undefined>,
+  schemas: [] as Array<{ id: number; name: string }>,
 }));
 
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
@@ -33,6 +34,7 @@ vi.mock("@/features/schemas/api/schema-prediction-mutations", () => ({
   useCreatePredictionRunsForBookmarkMutation: () => ({ mutateAsync: vi.fn() }),
 }));
 vi.mock("@/features/schemas/api/schema-queries", () => ({
+  useSchemaCatalogPageQuery: () => ({ data: { items: state.schemas } }),
   useOrganizationBookmarks: () => ({
     data: state.bookmarks,
     error: null,
@@ -77,6 +79,7 @@ const launcherEntry = (
 ): PredictBookmarkDto => ({
   id,
   name,
+  description: null,
   schemaId: id * 10,
   schemaName,
   schemaDescription: null,
@@ -108,6 +111,8 @@ const bookmark = (id: number, name: string, schemaName: string): SchemaBookmarkD
   exampleCount: 0,
   staleExampleCount: 0,
   createdAt: "2026-09-24T12:00:00Z",
+  createdByName: "Ada Lovelace",
+  updatedByName: "Ada Lovelace",
   updatedAt: "2026-09-24T12:00:00Z",
 });
 
@@ -117,7 +122,13 @@ function InferencesProbe() {
 
 let container: HTMLDivElement;
 beforeEach(() => {
-  Object.assign(state, { canRun: true, bookmarks: [], bookmark: undefined, requestedVersions: [] });
+  Object.assign(state, {
+    canRun: true,
+    bookmarks: [],
+    bookmark: undefined,
+    requestedVersions: [],
+    schemas: [],
+  });
 });
 
 async function renderAt(path: string) {
@@ -167,6 +178,15 @@ test("explains where bookmarks come from when there are none", async () => {
   await renderAt("/predict");
   expect(container.textContent).toContain("Nothing to run yet");
   expect(container.querySelector('a[href="/schemas"]')).not.toBeNull();
+});
+
+test("with a schema but no bookmarks, the empty state leads to that schema's snapshots", async () => {
+  state.schemas = [{ id: 5, name: "Credit risk" }];
+  await renderAt("/predict");
+
+  const action = container.querySelector<HTMLAnchorElement>('a[href="/schemas/5/snapshots"]');
+  expect(action?.textContent).toContain("Open Credit risk snapshots");
+  expect(container.querySelector('a[href="/schemas"]')).toBeNull();
 });
 
 test("pins the snapshot the page opened with and offers to switch when the bookmark moves", async () => {

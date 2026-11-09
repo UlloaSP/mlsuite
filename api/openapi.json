@@ -299,12 +299,6 @@
       },
       "ApiAccessBookmarkDto": {
         "properties": {
-          "apiId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "clientNames": {
             "items": {
               "type": "string"
@@ -330,6 +324,12 @@
           },
           "name": {
             "type": "string"
+          },
+          "publicId": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "refusal": {
             "type": [
@@ -363,12 +363,12 @@
           }
         },
         "required": [
-          "apiId",
           "clientNames",
           "id",
           "modelId",
           "modelName",
           "name",
+          "publicId",
           "refusal",
           "schemaId",
           "schemaName",
@@ -652,18 +652,6 @@
             "type": "number"
           }
         },
-        "type": "object"
-      },
-      "ApiPredictionRequest": {
-        "properties": {
-          "features": {
-            "additionalProperties": { },
-            "type": "object"
-          }
-        },
-        "required": [
-          "features"
-        ],
         "type": "object"
       },
       "ApiPredictionSnapshot": {
@@ -1545,11 +1533,6 @@
       },
       "CreatePredictionRunRequest": {
         "properties": {
-          "inputData": {
-            "additionalProperties": { },
-            "minProperties": 1,
-            "type": "object"
-          },
           "name": {
             "minLength": 1,
             "type": "string"
@@ -1567,7 +1550,6 @@
           }
         },
         "required": [
-          "inputData",
           "name",
           "results",
           "schemaVersionId"
@@ -2274,6 +2256,9 @@
             "format": "date-time",
             "type": "string"
           },
+          "createdByName": {
+            "type": "string"
+          },
           "email": {
             "type": "string"
           },
@@ -2300,13 +2285,15 @@
               "PENDING",
               "ACCEPTED",
               "EXPIRED",
-              "REVOKED"
+              "REVOKED",
+              "DECLINED"
             ],
             "type": "string"
           }
         },
         "required": [
           "createdAt",
+          "createdByName",
           "email",
           "expiresAt",
           "id",
@@ -2534,6 +2521,9 @@
             "format": "date-time",
             "type": "string"
           },
+          "createdByName": {
+            "type": "string"
+          },
           "fieldCount": {
             "format": "int64",
             "type": "integer"
@@ -2603,6 +2593,7 @@
         "required": [
           "archivedAt",
           "createdAt",
+          "createdByName",
           "fieldCount",
           "fileName",
           "id",
@@ -2726,7 +2717,8 @@
               "PURGE_FAILED",
               "SYSTEM_ALERT_RAISED",
               "SYSTEM_ALERT_ESCALATED",
-              "SYSTEM_ALERT_RESOLVED"
+              "SYSTEM_ALERT_RESOLVED",
+              "BOOKMARK_UNPUBLISHED"
             ],
             "type": "string"
           },
@@ -2759,7 +2751,8 @@
               "ORGANIZATION",
               "REVIEW",
               "PURGE_JOB",
-              "SYSTEM_ALERT"
+              "SYSTEM_ALERT",
+              "BOOKMARK"
             ],
             "type": "string"
           }
@@ -2980,6 +2973,9 @@
             "format": "date-time",
             "type": "string"
           },
+          "createdByName": {
+            "type": "string"
+          },
           "description": {
             "type": [
               "string",
@@ -3012,17 +3008,22 @@
           "updatedAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "updatedByName": {
+            "type": "string"
           }
         },
         "required": [
           "createdAt",
+          "createdByName",
           "description",
           "id",
           "kind",
           "logoUrl",
           "name",
           "slug",
-          "updatedAt"
+          "updatedAt",
+          "updatedByName"
         ],
         "type": "object"
       },
@@ -3070,7 +3071,6 @@
           "status": {
             "enum": [
               "ACTIVE",
-              "PENDING",
               "REMOVED"
             ],
             "type": "string"
@@ -3129,13 +3129,12 @@
               "null"
             ]
           },
-          "role": {
+          "roleDefinition": {
             "$ref": "#/components/schemas/RoleSummaryDto"
           },
           "status": {
             "enum": [
               "ACTIVE",
-              "PENDING",
               "REMOVED"
             ],
             "type": "string"
@@ -3154,7 +3153,7 @@
           "id",
           "organizationId",
           "profileHandle",
-          "role",
+          "roleDefinition",
           "status",
           "userId"
         ],
@@ -4468,6 +4467,12 @@
       },
       "PredictBookmarkDto": {
         "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "fieldCount": {
             "format": "int32",
             "type": "integer"
@@ -4537,6 +4542,7 @@
           }
         },
         "required": [
+          "description",
           "fieldCount",
           "id",
           "lastRunAt",
@@ -4732,7 +4738,10 @@
           },
           "output": {
             "additionalProperties": { },
-            "type": "object"
+            "type": [
+              "object",
+              "null"
+            ]
           },
           "runId": {
             "format": "int64",
@@ -4766,6 +4775,25 @@
             "format": "date-time",
             "type": "string"
           },
+          "createdByEmail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdByName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdByUserId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
           "id": {
             "format": "int64",
             "type": "integer"
@@ -4789,45 +4817,42 @@
             "format": "date-time",
             "type": "string"
           },
-          "userEmail": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "userId": {
-            "format": "int64",
-            "type": [
-              "integer",
-              "null"
-            ]
-          },
-          "userName": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "value": {
             "$ref": "#/components/schemas/JsonNode"
           }
         },
         "required": [
           "createdAt",
+          "createdByEmail",
+          "createdByName",
+          "createdByUserId",
           "id",
           "order",
           "resultId",
           "type",
           "updatedAt",
-          "userEmail",
-          "userId",
-          "userName",
           "value"
         ],
         "type": "object"
       },
       "PredictionResultFeedbackRevisionDto": {
         "properties": {
+          "authorName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "authorUserId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "byVisitor": {
+            "type": "boolean"
+          },
           "change": {
             "enum": [
               "CREATED",
@@ -4893,19 +4918,6 @@
             ],
             "type": "string"
           },
-          "userId": {
-            "format": "int64",
-            "type": [
-              "integer",
-              "null"
-            ]
-          },
-          "userName": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "value": {
             "oneOf": [
               {
@@ -4915,16 +4927,12 @@
                 "type": "null"
               }
             ]
-          },
-          "visitorId": {
-            "format": "uuid",
-            "type": [
-              "string",
-              "null"
-            ]
           }
         },
         "required": [
+          "authorName",
+          "authorUserId",
+          "byVisitor",
           "change",
           "changedAt",
           "changedByName",
@@ -4936,10 +4944,7 @@
           "review",
           "reviewId",
           "type",
-          "userId",
-          "userName",
-          "value",
-          "visitorId"
+          "value"
         ],
         "type": "object"
       },
@@ -5017,10 +5022,6 @@
               "FAILED"
             ],
             "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
           }
         },
         "required": [
@@ -5037,13 +5038,19 @@
           "schemaVersion",
           "schemaVersionId",
           "schemaVersionName",
-          "status",
-          "updatedAt"
+          "status"
         ],
         "type": "object"
       },
       "PredictionRunDto": {
         "properties": {
+          "bookmarkId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -5085,13 +5092,6 @@
             },
             "type": "array"
           },
-          "schemaBookmarkId": {
-            "format": "int64",
-            "type": [
-              "integer",
-              "null"
-            ]
-          },
           "schemaVersionId": {
             "format": "int64",
             "type": "integer"
@@ -5103,13 +5103,10 @@
               "FAILED"
             ],
             "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
           }
         },
         "required": [
+          "bookmarkId",
           "createdAt",
           "createdByEmail",
           "createdByName",
@@ -5118,10 +5115,8 @@
           "name",
           "origin",
           "results",
-          "schemaBookmarkId",
           "schemaVersionId",
-          "status",
-          "updatedAt"
+          "status"
         ],
         "type": "object"
       },
@@ -5980,13 +5975,6 @@
             },
             "type": "array"
           },
-          "scope": {
-            "enum": [
-              "SYSTEM",
-              "ORGANIZATION"
-            ],
-            "type": "string"
-          },
           "slug": {
             "type": "string"
           },
@@ -6008,7 +5996,6 @@
           "locked",
           "name",
           "permissions",
-          "scope",
           "slug",
           "systemKey",
           "userCount"
@@ -6049,13 +6036,6 @@
           "name": {
             "type": "string"
           },
-          "scope": {
-            "enum": [
-              "SYSTEM",
-              "ORGANIZATION"
-            ],
-            "type": "string"
-          },
           "slug": {
             "type": "string"
           },
@@ -6070,7 +6050,6 @@
           "id",
           "locked",
           "name",
-          "scope",
           "slug",
           "systemKey"
         ],
@@ -6126,13 +6105,6 @@
               "type": "string"
             },
             "type": "array"
-          },
-          "scope": {
-            "enum": [
-              "SYSTEM",
-              "ORGANIZATION"
-            ],
-            "type": "string"
           }
         },
         "required": [
@@ -6140,8 +6112,7 @@
           "description",
           "id",
           "name",
-          "permissionKeys",
-          "scope"
+          "permissionKeys"
         ],
         "type": "object"
       },
@@ -6209,6 +6180,9 @@
             "format": "date-time",
             "type": "string"
           },
+          "createdByName": {
+            "type": "string"
+          },
           "description": {
             "type": [
               "string",
@@ -6253,6 +6227,9 @@
             "format": "date-time",
             "type": "string"
           },
+          "updatedByName": {
+            "type": "string"
+          },
           "version": {
             "format": "int32",
             "type": "integer"
@@ -6277,6 +6254,7 @@
         },
         "required": [
           "createdAt",
+          "createdByName",
           "description",
           "exampleCount",
           "id",
@@ -6287,6 +6265,7 @@
           "schemaName",
           "staleExampleCount",
           "updatedAt",
+          "updatedByName",
           "version",
           "versionId",
           "versionName",
@@ -6518,6 +6497,9 @@
             "format": "date-time",
             "type": "string"
           },
+          "createdByName": {
+            "type": "string"
+          },
           "formSchema": {
             "additionalProperties": { },
             "type": "object"
@@ -6548,6 +6530,9 @@
           "updatedAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "updatedByName": {
+            "type": "string"
           }
         },
         "required": [
@@ -6555,13 +6540,15 @@
           "baseVersionId",
           "bindings",
           "createdAt",
+          "createdByName",
           "formSchema",
           "id",
           "name",
           "revision",
           "schemaId",
           "status",
-          "updatedAt"
+          "updatedAt",
+          "updatedByName"
         ],
         "type": "object"
       },
@@ -6679,6 +6666,9 @@
             "format": "date-time",
             "type": "string"
           },
+          "createdByName": {
+            "type": "string"
+          },
           "description": {
             "type": [
               "string",
@@ -6699,16 +6689,21 @@
           "updatedAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "updatedByName": {
+            "type": "string"
           }
         },
         "required": [
           "archivedAt",
           "createdAt",
+          "createdByName",
           "description",
           "id",
           "name",
           "organizationId",
-          "updatedAt"
+          "updatedAt",
+          "updatedByName"
         ],
         "type": "object"
       },
@@ -6990,6 +6985,9 @@
             "format": "date-time",
             "type": "string"
           },
+          "createdByName": {
+            "type": "string"
+          },
           "formSchema": {
             "additionalProperties": { },
             "type": "object"
@@ -7016,6 +7014,7 @@
         "required": [
           "bindings",
           "createdAt",
+          "createdByName",
           "formSchema",
           "id",
           "name",
@@ -7122,6 +7121,7 @@
         "properties": {
           "action": {
             "minLength": 1,
+            "pattern": "START|STOP|RESTART",
             "type": "string"
           }
         },
@@ -7761,7 +7761,7 @@
             ],
             "type": "string"
           },
-          "userName": {
+          "username": {
             "type": "string"
           },
           "website": {
@@ -7785,7 +7785,7 @@
           "profilePublic",
           "profileShowsOrganizations",
           "systemRole",
-          "userName",
+          "username",
           "website"
         ],
         "type": "object"
@@ -7990,7 +7990,10 @@
           },
           "output": {
             "additionalProperties": { },
-            "type": "object"
+            "type": [
+              "object",
+              "null"
+            ]
           },
           "status": {
             "enum": [
@@ -8013,6 +8016,11 @@
       },
       "WorkspacePredictionRequest": {
         "properties": {
+          "inputData": {
+            "additionalProperties": { },
+            "minProperties": 1,
+            "type": "object"
+          },
           "modelId": {
             "format": "int64",
             "type": "integer"
@@ -8027,6 +8035,7 @@
           }
         },
         "required": [
+          "inputData",
           "modelId",
           "modelInput",
           "schemaVersionId"
@@ -8565,8 +8574,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -8658,8 +8667,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -8834,7 +8843,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "202": {
             "content": {
               "application/json": {
                 "schema": {
@@ -8842,7 +8851,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Accepted"
           }
         },
         "tags": [
@@ -9007,7 +9016,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -9015,7 +9024,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           }
         },
         "tags": [
@@ -9153,8 +9162,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -9416,7 +9425,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -9424,7 +9433,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           }
         },
         "tags": [
@@ -9447,8 +9456,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -9627,7 +9636,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -9635,7 +9644,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           }
         },
         "tags": [
@@ -9667,8 +9676,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -9720,7 +9729,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -9728,7 +9737,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           }
         },
         "tags": [
@@ -9932,8 +9941,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -10040,7 +10049,7 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -10048,7 +10057,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           }
         },
         "tags": [
@@ -10103,8 +10112,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -10281,7 +10290,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -10289,7 +10298,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           }
         },
         "tags": [
@@ -10561,7 +10570,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -10569,7 +10578,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           }
         },
         "tags": [
@@ -10652,8 +10661,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -11086,7 +11095,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -11094,7 +11103,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           }
         },
         "tags": [
@@ -11127,8 +11136,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -11233,8 +11242,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -11564,8 +11573,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -12170,8 +12179,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -12332,8 +12341,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -12428,7 +12437,7 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -12436,7 +12445,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           }
         },
         "tags": [
@@ -12502,8 +12511,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -12909,8 +12918,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -13247,7 +13256,7 @@
     },
     "/api/public/bookmarks/{publicId}/plugins": {
       "get": {
-        "operationId": "plugins",
+        "operationId": "plugins_1",
         "parameters": [
           {
             "in": "path",
@@ -13825,8 +13834,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -13999,8 +14008,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -14103,7 +14112,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -14111,7 +14120,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           }
         },
         "tags": [
@@ -14216,7 +14225,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -14224,7 +14233,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           }
         },
         "tags": [
@@ -14257,7 +14266,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -14265,7 +14274,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           }
         },
         "tags": [
@@ -14463,8 +14472,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -14667,8 +14676,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "201": {
+            "description": "Created"
           }
         },
         "tags": [
@@ -14790,8 +14799,8 @@
       "post": {
         "operationId": "submitInbox",
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -15203,8 +15212,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -15375,8 +15384,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -15415,8 +15424,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -15448,8 +15457,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -15472,8 +15481,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -15531,6 +15540,40 @@
                 "schema": {
                   "items": {
                     "$ref": "#/components/schemas/SchemaModelBindingDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-version-controller"
+        ]
+      }
+    },
+    "/api/schema-versions/{versionId}/plugins": {
+      "get": {
+        "operationId": "plugins",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "versionId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PluginRuntimeSourceDto"
                   },
                   "type": "array"
                 }
@@ -15625,7 +15668,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -15633,7 +15676,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           }
         },
         "tags": [
@@ -15678,7 +15721,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -15686,7 +15729,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           }
         },
         "tags": [
@@ -15709,8 +15752,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -15872,7 +15915,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -15880,7 +15923,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           }
         },
         "tags": [
@@ -16018,7 +16061,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -16026,7 +16069,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           }
         },
         "tags": [
@@ -16139,7 +16182,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -16147,7 +16190,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           }
         },
         "tags": [
@@ -16243,7 +16286,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -16251,7 +16294,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           }
         },
         "tags": [
@@ -16377,8 +16420,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -16553,8 +16596,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
           }
         },
         "tags": [
@@ -16637,11 +16680,10 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ApiPredictionRequest"
+                "type": "string"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {

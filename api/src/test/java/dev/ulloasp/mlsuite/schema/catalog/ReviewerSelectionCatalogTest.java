@@ -12,20 +12,24 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
 class ReviewerSelectionCatalogTest extends PublicPredictionFixture {
+
+    @Autowired
+    private Principals principals;
     private final List<String> eligible = new ArrayList<>();
     private RoleDefinition ownerRole;
 
@@ -33,10 +37,10 @@ class ReviewerSelectionCatalogTest extends PublicPredictionFixture {
     void manyMembersWithDifferentEligibility() {
         ownerRole = authorizeOwner();
         inTransaction(() -> {
-            RoleDefinition reviewRole = new RoleDefinition(organization, RoleScope.ORGANIZATION, "Reviewer", "reviewer", null);
+            RoleDefinition reviewRole = new RoleDefinition(organization, "Reviewer", "reviewer", null, principals.system());
             reviewRole.setPermissions(EnumSet.of(PermissionKey.REVIEW));
             entityManager.persist(reviewRole);
-            RoleDefinition withoutReview = new RoleDefinition(organization, RoleScope.ORGANIZATION, "Reader", "reader", null);
+            RoleDefinition withoutReview = new RoleDefinition(organization, "Reader", "reader", null, principals.system());
             withoutReview.setPermissions(EnumSet.of(PermissionKey.VIEW_MODELS));
             entityManager.persist(withoutReview);
             for (int i = 0; i < 30; i++) {
@@ -53,9 +57,9 @@ class ReviewerSelectionCatalogTest extends PublicPredictionFixture {
             join(organization, user("Removed", SystemRole.USER), reviewRole, MembershipStatus.REMOVED);
             join(organization, user("No review", SystemRole.USER), withoutReview, MembershipStatus.ACTIVE);
             user("Nonmember superadmin", SystemRole.SUPERADMIN);
-            Organization foreign = new Organization("foreign-reviewers-" + schema.getId(), "Foreign", null, owner);
+            Organization foreign = new Organization("foreign-reviewers-" + schema.getId(), "Foreign", null, principals.of(owner));
             entityManager.persist(foreign);
-            RoleDefinition foreignRole = new RoleDefinition(foreign, RoleScope.ORGANIZATION, "Reviewer", "reviewer", null);
+            RoleDefinition foreignRole = new RoleDefinition(foreign, "Reviewer", "reviewer", null, principals.system());
             foreignRole.setPermissions(EnumSet.of(PermissionKey.REVIEW));
             entityManager.persist(foreignRole);
             join(foreign, user("Foreign", SystemRole.USER), foreignRole, MembershipStatus.ACTIVE);
@@ -85,14 +89,14 @@ class ReviewerSelectionCatalogTest extends PublicPredictionFixture {
     }
 
     private User user(String name, SystemRole systemRole) {
-        String username = "reviewer-" + schema.getId() + "-" + name.replace(' ', '-');
+        String username = "reviewer-" + schema.getId() + "-" + name.toLowerCase().replace(' ', '-');
         User u = new User(username, username + "@test.example", "unused", name, systemRole);
         entityManager.persist(u);
         return u;
     }
 
     private void join(Organization org, User u, RoleDefinition role, MembershipStatus status) {
-        entityManager.persist(new OrganizationMembership(org, u, role, status));
+        entityManager.persist(new OrganizationMembership(org, u, role, status, principals.of(u)));
     }
 
     private MockHttpServletRequestBuilder request(String search, int page, boolean ids) throws Exception {

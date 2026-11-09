@@ -1,5 +1,9 @@
 package dev.ulloasp.mlsuite.schema.review.domain.model;
 
+import java.time.OffsetDateTime;
+import org.hibernate.annotations.CreationTimestamp;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
+import jakarta.persistence.PrePersist;
 import java.util.UUID;
 
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
@@ -44,4 +48,23 @@ public class SchemaReviewRun {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "prediction_run_id", nullable = false, foreignKey = @ForeignKey(name = "fk_schema_review_run_prediction"))
     private PredictionRun run;
+
+    /** Carried from its parent for the composite foreign key that keeps it there. */
+    @Column(name = "schema_version_id", nullable = false, updatable = false)
+    private Long schemaVersionId;
+
+    /** Written with its parent, by whoever wrote the parent. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime createdAt;
+
+    @PrePersist
+    void carryParentKeys() {
+        schemaVersionId = review.getSchemaVersion().getId();
+        if (createdBy == null) createdBy = review.getUpdatedBy();
+    }
 }

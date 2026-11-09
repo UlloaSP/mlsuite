@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { formatCompactRelativeTime } from "@/shared/lib/relative-time";
+import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
 import { StatusBadge } from "@/features/workspace/components/admin/StatusBadge";
 import { OverviewListPanel } from "./OverviewListPanel";
 import type { InvitationDto } from "@/shared/api/openapi.gen";
@@ -32,9 +32,7 @@ export function OverviewInvitationsPanel({
             <span className="block truncate text-sm font-medium text-fg">{invitation.email}</span>
             <span className="block truncate text-xs text-fg-secondary">
               {invitation.roleDefinition.name} · sent{" "}
-              <time dateTime={invitation.createdAt}>
-                {formatCompactRelativeTime(invitation.createdAt)} ago
-              </time>
+              <LiveRelativeTime value={invitation.createdAt} />
             </span>
           </span>
           <StatusBadge value={invitation.status} />

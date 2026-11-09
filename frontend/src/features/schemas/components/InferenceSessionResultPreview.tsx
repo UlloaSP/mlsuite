@@ -26,7 +26,11 @@ export function InferenceSessionResultPreview({ entry, currentVersion }: Props) 
     : snapshot.data
       ? toExecutableSchemaVersion(snapshot.data)
       : undefined;
-  const catalog = useSchemaPluginCatalog(version?.formSchema, useCurrentOrganizationId() ?? "none");
+  const catalog = useSchemaPluginCatalog(
+    version?.formSchema,
+    useCurrentOrganizationId() ?? "none",
+    version?.id,
+  );
 
   if (!version) {
     return snapshot.isError ? (

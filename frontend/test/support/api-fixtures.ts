@@ -34,6 +34,7 @@ export const schemaVersion = (overrides: Partial<SchemaVersionDto> = {}): Schema
   formSchema: {},
   bindings: [],
   createdAt: AT,
+  createdByName: "Ada Lovelace",
   ...overrides,
 });
 
@@ -56,14 +57,13 @@ export const predictionResult = (
 export const predictionRun = (overrides: Partial<PredictionRunDto> = {}): PredictionRunDto => ({
   id: 1,
   schemaVersionId: 1,
-  schemaBookmarkId: null,
+  bookmarkId: null,
   name: "run",
   origin: "WORKSPACE",
   inputData: {},
   status: "SUCCESS",
   results: [],
   createdAt: AT,
-  updatedAt: AT,
   createdByName: null,
   createdByEmail: null,
   ...overrides,
@@ -74,9 +74,9 @@ export const resultFeedback = (
 ): PredictionResultFeedbackDto => ({
   id: 1,
   resultId: 1,
-  userId: 1,
-  userName: "Reviewer",
-  userEmail: "reviewer@example.com",
+  createdByUserId: 1,
+  createdByName: "Reviewer",
+  createdByEmail: "reviewer@example.com",
   type: "OUTPUT",
   order: 0,
   value: null,

@@ -47,7 +47,7 @@ export function BookmarkWorkspace({ bookmarkId }: { bookmarkId: string }) {
   );
   // The History count comes from the Predict catalog, which refreshes when runs are saved.
   const runCount = useBookmarkStatistics(bookmarkId).data?.runCount;
-  const session = useInferenceSession(bookmarkId, pinnedVersionId);
+  const session = useInferenceSession(bookmarkId, pinnedVersionId, bookmark?.name);
   // "Predict again" asks for a run's inputs with ?from=; the form keeps that source
   // until another is asked for.
   const requestedSource = route.useSearch({ select: (search) => search.from });

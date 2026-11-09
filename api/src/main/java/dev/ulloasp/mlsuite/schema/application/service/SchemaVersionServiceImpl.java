@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
+import dev.ulloasp.mlsuite.plugin.application.port.in.SnapshotPluginsUseCase;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.HashSet;
@@ -46,6 +48,8 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
     private final WorkspaceAuthorizationService authorizationService;
     private final SchemaMappingCheck mappingCheck;
     private final AuditLogService auditLog;
+    private final Principals principals;
+    private final SnapshotPluginsUseCase snapshotPlugins;
 
     @Override
     public SchemaVersion createVersion(Long userId, Long schemaId, CreateSchemaVersionRequest request) {
@@ -53,13 +57,23 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
         Long organizationId = requireOperate(userId);
         validateFormSchema(request.formSchema());
         Schema schema = requireSchemaForUpdate(schemaId, organizationId);
+        if (schema.getArchivedAt() != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "An archived schema takes no new snapshots; restore it first");
+        }
         assertUniqueBindings(request.bindings());
+        if (request.name() != null && !request.name().isBlank()
+                && versionRepository.existsBySchemaIdAndNameIgnoreCase(schemaId, request.name().strip())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "A snapshot of this schema is already named " + request.name().strip() + ".");
+        }
         mappingCheck.require(organizationId, request.formSchema(), request.bindings());
         touch(schema, user);
         int nextVersion = versionRepository.findMaxVersionBySchemaId(schemaId) + 1;
         SchemaVersion version = versionRepository.save(
-                new SchemaVersion(schema, nextVersion, request.name(), request.formSchema()));
+                new SchemaVersion(schema, nextVersion, request.name(), request.formSchema(), principals.of(user)));
         request.bindings().forEach(binding -> saveBinding(organizationId, version, binding));
+        snapshotPlugins.pin(organizationId, version.getId(), FormKinds.of(request.formSchema()));
         auditLog.record(AuditActor.user(userId), organizationId, AuditAction.SCHEMA_VERSION_CREATE, version.getId(),
                 AuditDetails.of("schema", schema.getName(), "version", nextVersion, "name", request.name()));
         return version;
@@ -100,13 +114,17 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
 
     private SchemaVersion requireVersion(Long versionId, Long organizationId) {
         return versionRepository.findByIdAndOrganizationId(versionId, organizationId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema version not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema snapshot not found"));
     }
 
     private SchemaModelBinding saveBinding(Long orgId, SchemaVersion version, CreateSchemaModelBindingRequest req) {
         Model model = modelRepository.findByIdAndOrganizationId(req.modelId(), orgId)
                 .filter(found -> found.getPurgingAt() == null)
                 .orElseThrow(() -> badRequest("Model unavailable"));
+        if (model.getArchivedAt() != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Model " + model.getName() + " is archived; restore it before binding it to a snapshot");
+        }
         return bindingRepository.save(new SchemaModelBinding(version, model,
                 req.pluginPolicy() == null ? Map.of() : req.pluginPolicy()));
     }
@@ -118,19 +136,19 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
     }
 
     private void touch(Schema schema, User user) {
-        schema.setUpdatedBy(user);
+        schema.setUpdatedBy(principals.of(user));
         schema.setUpdatedAt(OffsetDateTime.now(ZoneOffset.UTC));
     }
 
     private void validateFormSchema(Map<String, Object> formSchema) {
         if (!(formSchema.get("fields") instanceof List<?>)) {
-            throw badRequest("Schema version formSchema must include fields");
+            throw badRequest("A snapshot's form must include fields");
         }
     }
 
     private void assertUniqueBindings(List<CreateSchemaModelBindingRequest> bindings) {
         if (bindings.isEmpty()) {
-            throw badRequest("Schema version must bind at least one model");
+            throw badRequest("A snapshot must bind at least one model");
         }
         Set<String> seen = new HashSet<>();
         for (CreateSchemaModelBindingRequest binding : bindings) {

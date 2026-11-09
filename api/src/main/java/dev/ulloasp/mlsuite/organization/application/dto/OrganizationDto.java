@@ -16,7 +16,9 @@ public record OrganizationDto(
         /** Where its picture is read from: its logo, or its owner's avatar; null while it has none. */
         @Nullable String logoUrl,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt) {
+        OffsetDateTime updatedAt,
+        String createdByName,
+        String updatedByName) {
 
     public static OrganizationDto from(Organization organization) {
         return new OrganizationDto(
@@ -27,6 +29,8 @@ public record OrganizationDto(
                 organization.getDescription(),
                 OrganizationLogoUrl.of(organization),
                 organization.getCreatedAt(),
-                organization.getUpdatedAt());
+                organization.getUpdatedAt(),
+                organization.getCreatedBy().label(),
+                organization.getUpdatedBy().label());
     }
 }

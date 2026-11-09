@@ -1,6 +1,8 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,24 +40,33 @@ public class PredictionRunStore {
     private final PredictionRunRepository runRepository;
     private final PredictionResultRepository resultRepository;
     private final ModelRepository modelRepository;
+    private final Principals principals;
 
     public PredictionRun store(Long organizationId, User author, SchemaBookmark bookmark, String name,
             Map<String, Object> inputData, List<AttestedPrediction> results) {
+        return store(organizationId, author, bookmark, name, inputData, results,
+                Collections.nCopies(results.size(), null));
+    }
+
+    /**
+     * Stores a run whose results came sealed: each with the SHA-256 of its seal, which the
+     * database lets a result be stored under once, so one execution is saved in one run.
+     */
+    public PredictionRun store(Long organizationId, User author, SchemaBookmark bookmark, String name,
+            Map<String, Object> inputData, List<AttestedPrediction> results, List<String> seals) {
         SchemaVersion version = bookmark.getVersion();
-        if (runRepository.existsBySchemaVersionIdAndName(version.getId(), name)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Prediction run name already exists: " + name);
-        }
         results.forEach(result -> {
             if (!result.organizationId().equals(organizationId) || !result.schemaVersionId().equals(version.getId())) {
                 throw badRequest("A prediction result was produced for another snapshot; run the inference again");
             }
         });
         validateResults(bindingRepository.findBySchemaVersionId(version.getId()), results);
-        PredictionRun candidate = new PredictionRun(bookmark, version, name, inputData, aggregateStatus(results));
-        candidate.setCreatedByName(author.getFullName());
-        candidate.setCreatedByEmail(author.getEmail());
+        PredictionRun candidate = new PredictionRun(bookmark, version, name, inputData, aggregateStatus(results),
+                principals.of(author));
         PredictionRun run = runRepository.save(candidate);
-        results.forEach(result -> saveResult(organizationId, run, result));
+        for (int index = 0; index < results.size(); index++) {
+            saveResult(organizationId, run, results.get(index), seals.get(index));
+        }
         return run;
     }
 
@@ -84,11 +95,13 @@ public class PredictionRunStore {
         return successCount == 0 ? PredictionRunStatus.FAILED : PredictionRunStatus.PARTIAL_SUCCESS;
     }
 
-    private void saveResult(Long organizationId, PredictionRun run, AttestedPrediction result) {
+    private void saveResult(Long organizationId, PredictionRun run, AttestedPrediction result, String seal) {
         Model model = modelRepository.findByIdAndOrganizationId(result.modelId(), organizationId)
                 .orElseThrow(() -> badRequest("Model unavailable"));
-        resultRepository.save(new PredictionResult(run, model, result.modelInput(), result.output(),
-                result.status(), result.errorMessage(), result.errorJson()));
+        PredictionResult stored = new PredictionResult(run, model, result.modelInput(), result.output(),
+                result.status(), result.errorMessage(), result.errorJson());
+        stored.setAttestationSha256(seal);
+        resultRepository.save(stored);
     }
 
     private static ResponseStatusException badRequest(String message) {

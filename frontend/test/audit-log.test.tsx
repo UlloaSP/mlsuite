@@ -148,7 +148,17 @@ test("shows what changed and never a blank actor, whoever acted", async () => {
 
 test("reads recorded counts as they are, never as an object", () => {
   expect(auditDetails({ scope: "USER", counts: { runs: 3, apiCalls: 1 } })).toBe(
-    "Scope: USER · Counts: Runs 3, Api calls 1",
+    "Scope: User · Counts: Runs 3, API calls 1",
+  );
+});
+
+test("keeps acronyms in detail names and reads API values as words, but not typed names", () => {
+  expect(auditDetails({ apiClients: 2, modelId: 7, schemaVersionId: 9, status: "SUCCESS" })).toBe(
+    "API clients: 2 · Model ID: 7 · Schema version ID: 9 · Status: Success",
+  );
+  expect(auditDetails({ name: { from: "PROD", to: "STAGING" } })).toBe("Name: PROD → STAGING");
+  expect(auditDetails({ status: { from: "PENDING", to: "IN_PROGRESS" } })).toBe(
+    "Status: Pending → In progress",
   );
 });
 

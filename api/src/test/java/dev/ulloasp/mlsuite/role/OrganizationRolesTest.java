@@ -59,7 +59,7 @@ class OrganizationRolesTest extends PublicPredictionFixture {
             personalAccounts.open(person);
         });
         Long id = entityManager.createQuery(
-                "select o.id from Organization o where o.createdBy.id = :user", Long.class)
+                "select o.id from Organization o where o.createdBy.userId = :user", Long.class)
                 .setParameter("user", person.getId()).getSingleResult();
 
         assertRoles(id);

@@ -106,8 +106,8 @@ class OrganizationCatalogServiceTest {
         organization.setDescription("Ops workspace");
         organization.setCreatedAt(OffsetDateTime.parse("2025-01-01T00:00:00Z"));
         organization.setUpdatedAt(OffsetDateTime.parse("2025-01-02T00:00:00Z"));
-        organization.setCreatedBy(user(1L, "Creator"));
-        organization.setUpdatedBy(user(4L, "Editor"));
+        organization.setCreatedBy(TestFixtures.principal(user(1L, "Creator")));
+        organization.setUpdatedBy(TestFixtures.principal(user(4L, "Editor")));
         return organization;
     }
 

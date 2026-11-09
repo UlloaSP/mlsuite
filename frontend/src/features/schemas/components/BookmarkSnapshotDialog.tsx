@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { schemaVersionName } from "@/features/schemas/lib/version-selection";
+import { schemaVersionLabel, schemaVersionName } from "@/features/schemas/lib/version-selection";
 import { Tag } from "lucide-react";
 import { toast } from "@/shared/ui/toast";
 import { useCreateSchemaBookmarkMutation } from "@/features/schemas/api/schema-mutations";
@@ -37,7 +37,7 @@ export function BookmarkSnapshotDialog({ schemaId, version, onClose }: Props) {
   return (
     <BookmarkDetailsDialog
       title="Bookmark snapshot"
-      summary={version ? `${schemaVersionName(version)} · v${version.version}` : "Snapshot"}
+      summary={version ? schemaVersionLabel(version) : "Snapshot"}
       defaultName={version ? schemaVersionName(version).toLowerCase().replace(/\s+/g, "-") : ""}
       defaultDescription=""
       defaultPublicationNote=""

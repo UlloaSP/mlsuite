@@ -55,3 +55,27 @@ test("an elevated invitation resets to Member and clears the candidate for the n
   await click("Send invite", host);
   expect(onSubmit).toHaveBeenLastCalledWith({ email: "new@example.com", roleDefinitionId: 2 });
 });
+
+test("a superadmin adds the member at once, so the form says so", async () => {
+  vi.stubGlobal(
+    "fetch",
+    async () =>
+      new Response(
+        JSON.stringify({
+          items: [{ id: 2, name: "Member", systemKey: "MEMBER" }],
+          page: 0,
+          size: 24,
+          totalItems: 1,
+          hasNext: false,
+        }),
+        { headers: { "content-type": "application/json" } },
+      ),
+  );
+  const { host } = await mount(
+    <InviteForm organizationId={7} addsDirectly onSubmit={vi.fn(async () => {})} />,
+  );
+  await settle();
+
+  expect(host.querySelector("button")?.textContent).toBe("Add member");
+  expect(host.textContent).not.toContain("Send invite");
+});

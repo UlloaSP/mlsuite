@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.invitation;
 
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import static dev.ulloasp.mlsuite.support.TestFixtures.organization;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -94,7 +96,7 @@ class InvitationManagementServiceTest {
                 auditLogService,
                 roleDefinitionRepository,
                 userRepository,
-                notificationService);
+                notificationService, TestFixtures.principals());
     }
 
     @Test
@@ -165,6 +167,9 @@ class InvitationManagementServiceTest {
         verify(organizationMembershipRepository).save(membership.capture());
         assertEquals(invitee, membership.getValue().getUser());
         assertEquals(role, membership.getValue().getRoleDefinition());
+        // The superadmin added them, so the membership and the invitation name the superadmin.
+        assertEquals(7L, membership.getValue().getCreatedBy().userId());
+        assertEquals(7L, membership.getValue().getUpdatedBy().userId());
         verify(notificationService).notify(eq(8L), eq(41L), eq(NotificationKind.ORGANIZATION_JOINED), eq("41"), any());
         verify(notificationService, never()).notify(any(), any(), eq(NotificationKind.INVITATION_RECEIVED), any(), any());
     }
@@ -191,20 +196,19 @@ class InvitationManagementServiceTest {
     }
 
     @Test
-    void resendInvitation_TellsTheInvitedAccountAgain() {
+    void createInvitation_RefusesSomeoneAlreadyAMember() {
         Organization org = organization();
-        Invitation revoked = new Invitation(org, "target@example.com", reviewerRole(org), user(7L),
-                OffsetDateTime.now(ZoneOffset.UTC).minusDays(1));
-        revoked.setId(12L);
-        revoked.setStatus(InvitationStatus.REVOKED);
         when(workspaceAccessService.requireUser(7L)).thenReturn(user(7L));
-        when(invitationRepository.findById(12L)).thenReturn(Optional.of(revoked));
-        when(invitationRepository.save(revoked)).thenReturn(revoked);
-        when(userRepository.findByEmailIgnoreCase("target@example.com")).thenReturn(Optional.of(user(8L)));
+        when(organizationRepository.findById(41L)).thenReturn(Optional.of(org));
+        when(roleDefinitionRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(reviewerRole(org)));
+        when(organizationMembershipRepository.existsActiveByOrganizationIdAndEmail(41L, "target@example.com"))
+                .thenReturn(true);
 
-        service.resendInvitation(7L, 41L, 12L);
+        ResponseStatusException refused = assertThrows(ResponseStatusException.class,
+                () -> service.createInvitation(7L, 41L, new CreateInvitationRequest(" Target@Example.com ", 5L)));
 
-        verify(notificationService).notify(eq(8L), eq(41L), eq(NotificationKind.INVITATION_RECEIVED), eq("12"), any());
+        assertEquals(HttpStatus.CONFLICT, refused.getStatusCode());
+        verify(invitationRepository, never()).save(any());
     }
 
     @Test
@@ -227,7 +231,7 @@ class InvitationManagementServiceTest {
                 new CreateInvitationRequest("target@example.com", 5L));
 
         assertEquals(InvitationStatus.PENDING, result.status());
-        verifyNoInteractions(organizationMembershipRepository);
+        verify(organizationMembershipRepository, never()).save(any());
         // No account holds the address, so there is nobody to tell yet.
         verifyNoInteractions(notificationService);
     }

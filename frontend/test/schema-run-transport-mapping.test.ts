@@ -95,6 +95,8 @@ describe("schema run transport mapping", () => {
       schemaVersionId: 1,
       modelId: 1,
       modelInput: { age: 52 },
+      // The form's values, which the seal vouches for and the saved run keeps.
+      inputData: { age: 52 },
     });
     expect((result as { raw: { results: unknown[] } }).raw.results).toEqual([
       expect.objectContaining({ modelId: 1, status: "SUCCESS", attestation: "seal-1" }),

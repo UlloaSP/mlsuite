@@ -47,7 +47,7 @@ class PredictionJobOutcomes {
         if (!ledger.holds(jobId, worker)) return;
         String told = Objects.requireNonNullElse(reason, STOPPED);
         ledger.failPending(jobId, told);
-        ledger.complete(jobId, worker).ifPresent(job -> {
+        ledger.complete(jobId, worker, told).ifPresent(job -> {
             record(job, told);
             tell(job, NotificationKind.PREDICTION_JOB_STOPPED, Map.of("reason", told));
         });

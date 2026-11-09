@@ -72,7 +72,7 @@ public interface SchemaBookmarkRepository
             """)
     List<SchemaBookmark> findActiveByOrganizationId(Long organizationId);
 
-    Optional<SchemaBookmark> findBySchemaIdAndName(Long schemaId, String name);
+    Optional<SchemaBookmark> findBySchemaIdAndNameIgnoreCase(Long schemaId, String name);
 
     @Query("SELECT b FROM SchemaBookmark b WHERE b.id = :id AND b.schema.organization.id = :organizationId")
     Optional<SchemaBookmark> findByIdAndOrganizationId(Long id, Long organizationId);

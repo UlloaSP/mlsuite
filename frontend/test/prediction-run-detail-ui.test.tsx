@@ -44,7 +44,7 @@ const version = schemaVersion({
 
 const run = predictionRun({
   schemaVersionId: version.id,
-  schemaBookmarkId: 1,
+  bookmarkId: 1,
   name: "manito",
   createdAt: "2026-08-24T15:15:00Z",
   inputData: { age: 52, sex: "Female" },

@@ -35,6 +35,8 @@ export function useThemeModeCycle() {
 
     root.classList.add("theme-corner-transition");
     const transition = document.startViewTransition(() => setThemeMode(nextMode));
+    // Skipped when another transition starts first; the theme has changed all the same.
+    transition.ready.catch(() => undefined);
     void transition.finished.finally(() => {
       window.setTimeout(() => {
         root.classList.remove("theme-corner-transition");

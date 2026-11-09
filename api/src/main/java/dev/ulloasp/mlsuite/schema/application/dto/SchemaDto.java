@@ -14,7 +14,9 @@ public record SchemaDto(
         @Nullable String description,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
-        @Nullable OffsetDateTime archivedAt) {
+        @Nullable OffsetDateTime archivedAt,
+        String createdByName,
+        String updatedByName) {
 
     public static SchemaDto from(Schema schema) {
         return new SchemaDto(
@@ -24,7 +26,9 @@ public record SchemaDto(
                 schema.getDescription(),
                 schema.getCreatedAt(),
                 schema.getUpdatedAt(),
-                schema.getArchivedAt());
+                schema.getArchivedAt(),
+                schema.getCreatedBy().label(),
+                schema.getUpdatedBy().label());
     }
 
     public static List<SchemaDto> fromList(List<Schema> schemas) {

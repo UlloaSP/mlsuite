@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.organization;
 
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import static dev.ulloasp.mlsuite.support.TestFixtures.organization;
 import static dev.ulloasp.mlsuite.support.TestFixtures.user;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -15,6 +16,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mock;
 
+import jakarta.persistence.EntityManager;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -29,7 +31,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -60,11 +64,27 @@ class OrganizationLogoServiceTest {
 
     private OrganizationLogoService service;
     private Organization organization;
+    private OrganizationLogo savedLogo;
 
     @BeforeEach
     void setUp() {
-        service = new OrganizationLogoService(access, authorization, organizations, logos, mock(AuditLogService.class));
+        EntityManager entityManager = mock(EntityManager.class);
+        service = new OrganizationLogoService(access, authorization, organizations, logos, mock(AuditLogService.class),
+                entityManager, TestFixtures.principals());
         organization = organization(ORG_ID);
+        // Reading the organization again reads the logo's time from the logo row, as the database would.
+        Mockito.lenient().when(logos.save(ArgumentMatchers.any())).thenAnswer(call -> {
+            savedLogo = call.getArgument(0);
+            return savedLogo;
+        });
+        Mockito.lenient().when(logos.deleteByOrganizationId(ORG_ID)).thenAnswer(call -> {
+            savedLogo = null;
+            return 1;
+        });
+        Mockito.lenient().doAnswer(call -> {
+            organization.setLogoUpdatedAt(savedLogo == null ? null : savedLogo.getUpdatedAt());
+            return null;
+        }).when(entityManager).refresh(organization);
     }
 
     @Test
@@ -161,18 +181,19 @@ class OrganizationLogoServiceTest {
     @Test
     void removingDropsTheLogoAndItsAddress() {
         editable();
-        organization.setLogoUpdatedAt(java.time.OffsetDateTime.parse("2026-10-01T10:00:00Z"));
+        savedLogo = new OrganizationLogo(ORG_ID, new byte[] { 1 }, "image/png",
+                java.time.OffsetDateTime.parse("2026-10-01T10:00:00Z"), TestFixtures.system());
 
         OrganizationDto result = service.remove(USER_ID, ORG_ID);
 
-        verify(logos).deleteById(ORG_ID);
+        verify(logos).deleteByOrganizationId(ORG_ID);
         assertNull(organization.getLogoUpdatedAt());
         assertNull(result.logoUrl());
     }
 
     @Test
     void readingNeedsNoSessionAndIsEmptyWithoutALogo() {
-        when(logos.findById(ORG_ID)).thenReturn(Optional.empty());
+        when(logos.findByOrganizationId(ORG_ID)).thenReturn(Optional.empty());
 
         assertFalse(service.read(ORG_ID).isPresent());
         verifyNoInteractions(authorization, access);
@@ -184,8 +205,6 @@ class OrganizationLogoServiceTest {
 
     private void editable() {
         found();
-        when(organizations.save(organization)).thenReturn(organization);
-        when(access.requireUser(USER_ID)).thenReturn(user(USER_ID));
     }
 
     private OrganizationLogo storedLogo() {

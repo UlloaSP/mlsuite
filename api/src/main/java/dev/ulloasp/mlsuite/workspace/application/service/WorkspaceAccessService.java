@@ -12,7 +12,6 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundExc
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationPurgingException;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
-import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
@@ -86,7 +85,7 @@ public class WorkspaceAccessService {
         }
         if (isSuperadmin(user)) {
             // Superadmins act without a stored membership; callers authorize them before reading its role.
-            return new OrganizationMembership(organization, user, null, MembershipStatus.ACTIVE);
+            return OrganizationMembership.unstored(organization, user, null);
         }
         return membershipRepository.findActiveByOrganizationIdAndUserId(organizationId, userId)
                 .orElseThrow(() -> new OrganizationAccessDeniedException(organizationId));

@@ -26,8 +26,6 @@ const COUNT_LABELS: Record<string, string> = {
   bindings: "Model bindings",
   examples: "Public examples",
   emptyOrganizations: "Empty organizations",
-  anonymizedRuns: "Inferences made anonymous",
-  anonymizedApiClients: "API clients made anonymous",
   anonymizedPlugins: "Plugins made anonymous",
 };
 

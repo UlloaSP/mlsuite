@@ -82,6 +82,17 @@ class InferenceProjectionTest {
     }
 
     @Test
+    void aReportReadingOneOutputForEveryModelIsProjectedLikeAPerModelOne() throws Exception {
+        ObjectNode data = data(0);
+        // What the runtime writes when it generates a snapshot: the output, not a route per model.
+        ((ObjectNode) data.at("/versions/0/formSchema/reports/0")).put("mappedTo", "score");
+
+        Row row = rows(data).getFirst();
+        assertTrue(row.dto().feedbackStatus() != InferenceFeedbackStatus.ERROR);
+        assertEquals("Yes", row.dto().values().get(SCORE));
+    }
+
+    @Test
     void showsTheValueARegressorOfASecondModelPredicted() throws Exception {
         String bodyMass = "2:output:2:0";
         ObjectNode data = data(0);
@@ -167,11 +178,12 @@ class InferenceProjectionTest {
     }
 
     @Test
-    void marksOnlyTheInferenceWhoseStoredPayloadCannotBeRead() throws Exception {
+    void listsAFailedResultWithItsInputsAndNoOutputs() throws Exception {
         ObjectNode data = data(0);
-        object(data, "/results/0").putNull("output");
+        // A failed result answered nothing but its error: it has no output.
+        object(data, "/results/0").put("status", "FAILED").putNull("output");
         List<Row> rows = rows(data);
-        assertEquals(InferenceFeedbackStatus.ERROR, rows.get(0).dto().feedbackStatus());
+        assertEquals(InferenceFeedbackStatus.NOT_REQUIRED, rows.get(0).dto().feedbackStatus());
         assertEquals(Map.of(AGE, 52, "2:input:income", 900), rows.get(0).dto().values());
         assertEquals(InferenceFeedbackStatus.PENDING, rows.get(1).dto().feedbackStatus());
         assertEquals("No", rows.get(1).dto().values().get(SCORE));

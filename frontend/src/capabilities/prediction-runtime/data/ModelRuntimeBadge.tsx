@@ -6,12 +6,17 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { AppBadge } from "@/shared/ui/AppBadge";
 import type { ModelDto } from "@/shared/api/openapi.gen";
 
-/** A model that cannot run yet, or any more, says so; a ready model shows nothing. */
+/**
+ * A model that cannot run yet, or any more, says so; a ready model shows nothing unless
+ * `showReady`, where a list compares models and each one states its state.
+ */
 export function ModelRuntimeBadge({
   state,
+  showReady = false,
   className,
 }: {
   state: ModelDto["runtimeState"];
+  showReady?: boolean;
   className?: string;
 }) {
   if (state === "PREPARING")
@@ -24,6 +29,12 @@ export function ModelRuntimeBadge({
     return (
       <AppBadge tone="danger" className={className}>
         Environment failed
+      </AppBadge>
+    );
+  if (state === "READY" && showReady)
+    return (
+      <AppBadge tone="success" className={className}>
+        Ready
       </AppBadge>
     );
   return null;

@@ -32,15 +32,22 @@ vi.mock("@/features/reviews/components/SchemaReviewRunDetailPanel", async () => 
     SchemaReviewRunDetailPanel: ({
       reviewId,
       reviewRunId,
+      onSaved,
     }: {
       reviewId: string;
       reviewRunId: string;
+      onSaved?: () => void;
     }) => {
       const completion = useCompleteSchemaReviewRunMutation(reviewId, reviewRunId);
       return (
-        <button type="button" data-testid="detail" onClick={() => completion.mutate()}>
-          {reviewRunId}
-        </button>
+        <>
+          <button type="button" data-testid="detail" onClick={() => completion.mutate()}>
+            {reviewRunId}
+          </button>
+          <button type="button" data-testid="saved" onClick={() => onSaved?.()}>
+            saved
+          </button>
+        </>
       );
     },
   };
@@ -72,10 +79,14 @@ beforeEach(() => {
   snapshot = { id: 1 };
   vi.stubGlobal(
     "fetch",
-    vi.fn(async (input: string) => {
+    vi.fn(async (input: string, init?: RequestInit) => {
       const url = new URL(input);
       const path = url.pathname.replace("/api/schema-reviews/inbox", "");
       requests.push(`${path}${url.search}`);
+      if (init?.method === "POST" && path === "/submit-pending") {
+        inbox = inbox.filter((entry) => entry.reviewState !== "IN_PROGRESS");
+        return new Response(null, { status: 204 });
+      }
       if (path === "/runs/catalog") {
         const filter = url.searchParams.get("filter");
         const items = inbox.filter((entry) => filter === "all" || entry.reviewState === filter);
@@ -204,4 +215,45 @@ test("a run with saved feedback shows when the feedback was saved", async () => 
   const tray = host.querySelector("aside")!.textContent;
   expect(tray).toContain(`Feedback saved · ${formatTimestamp("2026-07-21T09:30:00Z")}`);
   expect(tray).not.toContain(`Feedback saved · ${formatTimestamp("2026-07-20T08:00:00Z")}`);
+});
+
+test("completing the review moves off the submitted runs without asking for them again", async () => {
+  const host = await openInbox("/review");
+  expect(location(host)).toBe("/review/r1/runs/saved");
+  requests = [];
+
+  await click("Complete review (1)", host);
+  await settle();
+
+  expect(location(host)).toBe("/review/r1/runs/todo-1");
+  expect(requests).not.toContain("/r1/runs/saved");
+  expect(host.textContent).not.toContain("Review unavailable");
+});
+
+test("saving a pending run's answers opens the next run that needs feedback", async () => {
+  const host = await openInbox("/review/r1/runs/todo-1");
+  expect(detail(host)).toBe("todo-1");
+
+  await click(host.querySelector('[data-testid="saved"]')!);
+  await settle();
+
+  expect(location(host)).toBe("/review/r2/runs/todo-2");
+});
+
+test("saving a run already in revision keeps it open", async () => {
+  const host = await openInbox("/review/r1/runs/saved");
+
+  await click(host.querySelector('[data-testid="saved"]')!);
+  await settle();
+
+  expect(location(host)).toBe("/review/r1/runs/saved");
+});
+
+test("an empty revision group says saved answers appear there", async () => {
+  inbox = inbox.filter((entry) => entry.reviewState === "PENDING");
+  const host = await openInbox("/review");
+
+  expect(host.querySelector("aside")?.textContent).toContain(
+    "Runs whose answers you save appear here",
+  );
 });

@@ -12,8 +12,10 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
@@ -25,6 +27,9 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 
 /** One bookmark's statistics, its example of one run and its example catalogs, on PostgreSQL. */
 class BookmarkListCatalogTest extends PublicPredictionFixture {
+
+    @Autowired
+    private Principals principals;
     private RoleDefinition ownerRole;
     private SchemaBookmark moved;
     private PredictionRun marked;
@@ -39,14 +44,14 @@ class BookmarkListCatalogTest extends PublicPredictionFixture {
         ownerRole = authorizeOwner();
         inTransaction(() -> {
             marked = run("Case A");
-            entityManager.persist(new SchemaBookmarkExample(bookmark, marked));
-            entityManager.persist(new SchemaBookmarkExample(bookmark, run("Case B")));
+            entityManager.persist(new SchemaBookmarkExample(bookmark, marked, principals.system()));
+            entityManager.persist(new SchemaBookmarkExample(bookmark, run("Case B"), principals.system()));
             unmarked = run("Case C");
-            SchemaVersion newer = new SchemaVersion(schema, 9, "Newer", Map.of("fields", List.of()));
+            SchemaVersion newer = new SchemaVersion(schema, 9, "Newer", Map.of("fields", List.of()), principals.system());
             entityManager.persist(newer);
-            moved = new SchemaBookmark(schema, newer, "moved");
+            moved = new SchemaBookmark(schema, newer, "moved", principals.system());
             entityManager.persist(moved);
-            entityManager.persist(new SchemaBookmarkExample(moved, marked));
+            entityManager.persist(new SchemaBookmarkExample(moved, marked, principals.system()));
         });
     }
 
@@ -88,7 +93,7 @@ class BookmarkListCatalogTest extends PublicPredictionFixture {
         mockMvc.perform(asOwner(get("/api/schema-bookmarks/" + moved.getId() + "/statistics")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.version").value(9))
-                .andExpect(jsonPath("$.models.length()").value(0))
+                .andExpect(jsonPath("$.models.length()").value(1))
                 .andExpect(jsonPath("$.runCount").value(0))
                 .andExpect(jsonPath("$.lastRunAt").value(nullValue()));
         mockMvc.perform(asOwner(get("/api/schema-bookmarks/0/statistics"))).andExpect(status().isNotFound());
@@ -128,7 +133,7 @@ class BookmarkListCatalogTest extends PublicPredictionFixture {
     }
 
     private PredictionRun run(String name) {
-        PredictionRun run = new PredictionRun(bookmark, version, name, Map.of("Age", 40), PredictionRunStatus.SUCCESS);
+        PredictionRun run = new PredictionRun(bookmark, version, name, Map.of("Age", 40), PredictionRunStatus.SUCCESS, principals.system());
         entityManager.persist(run);
         return run;
     }

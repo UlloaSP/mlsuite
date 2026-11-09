@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import dev.ulloasp.mlsuite.schema.application.dto.InferenceTableRunDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionResultDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionResultFeedbackDto;
@@ -17,7 +18,6 @@ import dev.ulloasp.mlsuite.schema.application.dto.SchemaModelBindingDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaVersionDto;
 import dev.ulloasp.mlsuite.schema.catalog.InferenceCatalogMetadataDto.Option;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
-import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
 import dev.ulloasp.mlsuite.util.CatalogPages;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
 import dev.ulloasp.mlsuite.util.PageDto;
@@ -41,11 +41,14 @@ class InferenceCatalogQueries {
     private static final String DTO = "dev.ulloasp.mlsuite.schema.application.dto.";
     private static final String SUMMARY = "new " + DTO + """
             PredictionRunCatalogItemDto(
-                r.id, r.name, r.status, r.origin, r.createdAt, r.updatedAt, s.id, s.name,
-                v.id, v.version, v.name, b.id, b.name, r.createdByName, r.createdByEmail)
+                r.id, r.name, r.status, r.origin, r.createdAt, s.id, s.name,
+                v.id, v.version, v.name, b.id, b.name,
+                coalesce(author.fullName, client.name, cb.formerLabel), author.email)
             """;
     private static final String SUMMARY_SOURCE = """
             FROM PredictionRun r JOIN r.schemaVersion v JOIN v.schema s LEFT JOIN r.schemaBookmark b
+            JOIN r.createdBy cb LEFT JOIN User author ON author.id = cb.userId
+            LEFT JOIN ApiClient client ON client.id = cb.apiClientId
             WHERE s.organization.id = :organizationId AND r.id IN :ids
             """;
 
@@ -137,15 +140,13 @@ class InferenceCatalogQueries {
     List<PredictionResultFeedbackDto> feedback(Collection<Long> runIds) {
         return entities.createQuery("SELECT new " + DTO + """
                 PredictionResultFeedbackDto(
-                    f.id, r.id, u.id,
-                    CASE WHEN u.id IS NULL AND f.visitor IS NULL THEN :deletedUser ELSE u.fullName END,
+                    f.id, r.id, u.id, coalesce(u.fullName, a.formerLabel),
                     u.email, f.type, f.order, f.value, f.createdAt, f.updatedAt)
-                FROM PredictionResultFeedback f JOIN f.result r LEFT JOIN f.user u
+                FROM PredictionResultFeedback f JOIN f.result r JOIN f.createdBy a LEFT JOIN User u ON u.id = a.userId
                 WHERE r.run.id IN :runIds
                 ORDER BY r.run.id ASC, r.id ASC, f.type ASC, f.order ASC, f.id ASC
                 """, PredictionResultFeedbackDto.class)
                 .setParameter("runIds", runIds)
-                .setParameter("deletedUser", DeletedUser.NAME)
                 .getResultList();
     }
 
@@ -161,7 +162,7 @@ class InferenceCatalogQueries {
                 .getResultStream()
                 .collect(Collectors.groupingBy(SchemaModelBindingDto::schemaVersionId));
         return entities.createQuery("""
-                SELECT v.id, v.schema.id, v.version, v.name, v.formSchema, v.createdAt
+                SELECT v.id, v.schema.id, v.version, v.name, v.formSchema, v.createdAt, v.createdBy
                 FROM SchemaVersion v
                 WHERE v.id IN :ids
                 """, Object[].class)
@@ -174,7 +175,7 @@ class InferenceCatalogQueries {
     @SuppressWarnings("unchecked")
     private static SchemaVersionDto version(Object[] row, List<SchemaModelBindingDto> bindings) {
         return new SchemaVersionDto((Long) row[0], (Long) row[1], (Integer) row[2], (String) row[3],
-                (Map<String, Object>) row[4], bindings, (OffsetDateTime) row[5]);
+                (Map<String, Object>) row[4], bindings, (OffsetDateTime) row[5], ((Principal) row[6]).label());
     }
 
     private TypedQuery<Long> ordered(Long organizationId, InferenceCatalogScope scope, boolean oldestFirst) {

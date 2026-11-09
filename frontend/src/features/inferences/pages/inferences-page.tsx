@@ -1,7 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
-import { toast } from "@/shared/ui/toast";
 import { ReviewCreationButton } from "@/capabilities/review-creation/ReviewCreationButton";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import {
@@ -9,10 +8,6 @@ import {
   useInferenceCatalogMetadata,
   inferenceSelectionQueryOptions,
 } from "@/features/inferences/api/inference-catalog";
-import {
-  useDeleteInferenceMutation,
-  useDeleteInferencesMutation,
-} from "@/features/inferences/api/inference-mutations";
 import { InferenceActionsMenu } from "@/features/inferences/components/InferenceActionsMenu";
 import { InferenceCatalogToolbar } from "@/features/inferences/components/InferenceCatalogToolbar";
 import { InferenceColumnsMenu } from "@/features/inferences/components/InferenceColumnsMenu";
@@ -31,6 +26,7 @@ import {
   type InferenceFilters,
 } from "@/features/inferences/lib/inference-filter";
 import { type InferenceTableRow } from "@/features/inferences/lib/inference-table-rows";
+import { useInferenceDeletion } from "@/features/inferences/lib/use-inference-deletion";
 import {
   normalizeInferenceSort,
   useInferenceTable,
@@ -42,7 +38,6 @@ import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
-import { useActionDialog } from "@/shared/ui/use-action-dialog";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
 import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
@@ -51,8 +46,6 @@ import { inferencesSearch } from "@/features/inferences/pages/inference-search";
 import type { PredictionRunCatalogItemDto } from "@/shared/api/openapi.gen";
 
 const EMPTY_ROWS: InferenceTableRow[] = [];
-const DELETE_CONSEQUENCE =
-  "Each leaves any review it is in, and goes with its results and reviewers' answers. This cannot be undone.";
 
 const route = getRouteApi("/protected/app/can-view-models/inferences");
 
@@ -65,10 +58,7 @@ export function InferencesPage({
   }) => ReactNode;
 }) {
   const { data: workspace } = useWorkspaceContext();
-  const deleteInference = useDeleteInferenceMutation();
-  const deleteInferences = useDeleteInferencesMutation();
   const navigate = useNavigate();
-  const actionDialog = useActionDialog();
   const urlFilters = useSearchFilters(route.useSearch(), inferencesSearch);
   const { q, schema, bookmark, status, feedback, origin, where } = urlFilters.values;
   const sort = normalizeInferenceSort(urlFilters.values.sort);
@@ -103,30 +93,8 @@ export function InferencesPage({
   const canDelete = workspace?.permissions.canRunPredictions ?? false;
   const canManageReviews = workspace?.permissions.canManageReviews ?? false;
   const showLoading = useStableLoading(data.isLoading || metadata.isLoading);
+  const deletion = useInferenceDeletion(rows);
 
-  const handleDelete = async (item: PredictionRunCatalogItemDto) => {
-    const confirmed = await actionDialog.confirm({
-      title: `Delete ${item.name}?`,
-      description: DELETE_CONSEQUENCE,
-      confirmLabel: "Delete",
-      danger: true,
-    });
-    if (!confirmed) return;
-    deleteInference.mutate(item.id, { onSuccess: () => toast.success("Inference deleted.") });
-  };
-  const handleDeleteSelection = async () => {
-    const ids = (await loadItems()).map((item) => item.id);
-    const confirmed = await actionDialog.confirm({
-      title: `Delete ${ids.length} ${ids.length === 1 ? "inference" : "inferences"}?`,
-      description: `Every inference the search and filters select. ${DELETE_CONSEQUENCE}`,
-      confirmLabel: "Delete",
-      danger: true,
-    });
-    if (!confirmed) return;
-    deleteInferences.mutate(ids, {
-      onSuccess: () => toast.success(`${ids.length} deleted.`),
-    });
-  };
   const applyFilters = (choice: InferenceFilterChoice) => {
     urlFilters.setFilters({
       schema: choice.schemaId,
@@ -146,15 +114,25 @@ export function InferencesPage({
     scoped: schema !== "all",
     sort,
     onSortChange: (next) => urlFilters.setFilters({ sort: next }),
-    renderName: ({ item }) => <InferenceNameCell id={item.id} name={item.name} />,
+    renderName: ({ item }) => (
+      <InferenceNameCell
+        id={item.id}
+        name={item.name}
+        selection={
+          canDelete
+            ? { checked: deletion.isTicked(item.id), onToggle: () => deletion.toggle(item.id) }
+            : undefined
+        }
+      />
+    ),
     renderActions: ({ item }) =>
       canDelete || canManageReviews ? (
         <InferenceActionsMenu
           canDelete={canDelete}
           canManageReviews={canManageReviews}
-          disabled={deleteInference.isPending}
+          disabled={deletion.removingOne}
           inferenceName={item.name}
-          onDelete={() => void handleDelete(item)}
+          onDelete={() => void deletion.remove(item)}
           onReviewStatus={() =>
             navigate({
               to: "/inferences/$inferenceId",
@@ -206,7 +184,7 @@ export function InferencesPage({
 
   return (
     <AppPage>
-      {actionDialog.dialog}
+      {deletion.dialog}
       <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
           title="Inferences"
@@ -235,13 +213,15 @@ export function InferencesPage({
               {workspace?.permissions.canExportPredictions
                 ? renderExportAction?.({ count: totalItems, loadItems })
                 : null}
-              {canDelete && totalItems > 0 ? (
+              {canDelete && deletion.selected.length > 0 ? (
                 <AppButton
                   variant="danger"
-                  disabled={deleteInferences.isPending}
-                  onClick={() => void handleDeleteSelection()}
+                  disabled={deletion.removingSelected}
+                  onClick={() => void deletion.removeSelected()}
                 >
-                  {deleteInferences.isPending ? "Deleting…" : `Delete ${totalItems}`}
+                  {deletion.removingSelected
+                    ? "Deleting…"
+                    : `Delete ${deletion.selected.length} selected`}
                 </AppButton>
               ) : null}
             </>

@@ -29,7 +29,7 @@ class PurgePreviewCounts {
             """;
     private static final String ORGANIZATION_COUNTS = """
             SELECT
-                (SELECT count(*) FROM schema_artifact WHERE organization_id = :organization) AS "schemas",
+                (SELECT count(*) FROM schema WHERE organization_id = :organization) AS "schemas",
                 (SELECT count(*) FROM model WHERE organization_id = :organization) AS "models",
                 (SELECT count(*) FROM plugin_metadata WHERE organization_id = :organization) AS "plugins",
                 (SELECT count(*) FROM organization_membership WHERE organization_id = :organization) AS "memberships",

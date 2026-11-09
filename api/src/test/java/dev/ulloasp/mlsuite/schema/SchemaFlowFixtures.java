@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema;
 
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import java.util.List;
 import java.util.Map;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
@@ -18,19 +19,19 @@ final class SchemaFlowFixtures {
     }
 
     static SchemaVersion version() {
-        SchemaVersion version = new SchemaVersion(schema(), 1, "v1", formSchema());
+        SchemaVersion version = new SchemaVersion(schema(), 1, "v1", formSchema(), TestFixtures.system());
         version.setId(9L);
         return version;
     }
 
     static SchemaBookmark bookmark() {
-        SchemaBookmark bookmark = new SchemaBookmark(schema(), version(), "production");
+        SchemaBookmark bookmark = new SchemaBookmark(schema(), version(), "production", TestFixtures.system());
         bookmark.setId(70L);
         return bookmark;
     }
 
     static PredictionResult predictionResult() {
-        PredictionRun run = new PredictionRun(version(), "case", Map.of(), PredictionRunStatus.SUCCESS);
+        PredictionRun run = new PredictionRun(version(), "case", Map.of(), PredictionRunStatus.SUCCESS, TestFixtures.system());
         PredictionResult result = new PredictionResult(run, model(11L),
                 Map.of(), Map.of(), PredictionResultStatus.SUCCESS, null, null);
         result.setId(77L);
@@ -39,17 +40,17 @@ final class SchemaFlowFixtures {
 
     static Model model(Long id) {
         Model model = new Model(); model.setId(id); model.setOrganization(organization());
-        model.setUser(user()); model.setName("model-" + id); return model;
+        model.setCreatedBy(TestFixtures.principal(user())); model.setName("model-" + id); return model;
     }
 
     static Schema schema() {
-        Schema schema = new Schema(organization(), "Risk", null); schema.setId(5L); schema.setUpdatedBy(user()); return schema;
+        Schema schema = new Schema(organization(), "Risk", null, TestFixtures.system()); schema.setId(5L); schema.setUpdatedBy(TestFixtures.principal(user())); return schema;
     }
 
     static Organization organization() {
         Organization organization = new Organization();
         organization.setId(41L); organization.setName("Org"); organization.setSlug("org");
-        organization.setCreatedBy(user()); return organization;
+        organization.setCreatedBy(TestFixtures.principal(user())); return organization;
     }
 
     static User user() {

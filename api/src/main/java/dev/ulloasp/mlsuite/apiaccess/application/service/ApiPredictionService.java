@@ -45,12 +45,13 @@ public class ApiPredictionService implements ApiPredictionUseCase {
     private final ApiRequestLog requestLog;
 
     @Override
-    public ApiPredictionDto predict(String secret, String bookmarkId, ApiPredictionRequest request) {
+    public ApiPredictionDto predict(String secret, String bookmarkId, String body) {
         UUID requestId = RequestOrigin.currentRequestId();
         long started = System.nanoTime();
         ApiCaller caller = runs.authenticate(secret);
         ApiTarget target = null;
         try {
+            ApiPredictionRequest request = ApiPredictionRequest.read(body);
             if (caller.suspended()) {
                 throw new ApiProblem(ApiErrorCode.CLIENT_SUSPENDED,
                         "The platform suspended this client. Its organization can see why.");

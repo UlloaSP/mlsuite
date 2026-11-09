@@ -36,6 +36,7 @@ const invitation: InvitationDto = {
   status: "PENDING",
   expiresAt: "2026-11-03T10:00:00Z",
   createdAt: "2026-10-27T10:00:00Z",
+  createdByName: "Ada Lovelace",
 };
 
 const notification = (overrides: Partial<NotificationDto>): NotificationDto => ({
@@ -391,8 +392,22 @@ describe("what a notification says", () => {
       "Back to 40%, under 70%.",
     ],
     ["SYSTEM_ALERT_RESOLVED", { label: "Ops agent", unit: "", value: 0 }, "It is back to normal."],
+    [
+      "BOOKMARK_UNPUBLISHED",
+      { bookmarkName: "production", schemaName: "Cardio", schemaId: 5 },
+      "The platform took production of Cardio off the public pages.",
+    ],
   ])("%s", (kind, payload, description) => {
     expect(presentNotification(notification({ kind, payload })).description).toBe(description);
+  });
+
+  test("an unpublished bookmark leads to its schema's bookmarks", () => {
+    const unpublished = notification({
+      kind: "BOOKMARK_UNPUBLISHED",
+      targetType: "BOOKMARK",
+      payload: { bookmarkName: "production", schemaName: "Cardio", schemaId: 5 },
+    });
+    expect(notificationLink(unpublished)).toBe("/schemas/5/bookmarks");
   });
 });
 

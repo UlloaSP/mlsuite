@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.organization.application.dto.CreateOrganizationRequest;
@@ -58,6 +59,7 @@ public class OrganizationController {
                 sort));
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public ResponseEntity<OrganizationDto> createOrganization(
             CurrentUser user,
@@ -93,6 +95,7 @@ public class OrganizationController {
                 request));
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{organizationId}")
     public ResponseEntity<Void> deleteOrganization(
             CurrentUser user,
@@ -121,6 +124,7 @@ public class OrganizationController {
                 request));
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{organizationId}/members/{membershipId}")
     public ResponseEntity<Void> removeMember(
             CurrentUser user,

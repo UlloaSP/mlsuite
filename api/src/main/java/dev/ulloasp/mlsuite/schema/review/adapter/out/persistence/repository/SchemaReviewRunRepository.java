@@ -7,7 +7,6 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
@@ -51,7 +50,7 @@ public interface SchemaReviewRunRepository extends JpaRepository<SchemaReviewRun
 
     String REVIEW = REVIEWER_RUNS + "WHERE review.id = :reviewId\n";
 
-    /** {@code state} is a SchemaReviewState name, "active" (not completed) or "all"; any other matches nothing. */
+    /** {@code state} is a SchemaReviewState name, "active" (not completed) or "all". */
     String IN_STATE = """
             AND (
                 :state = 'all'
@@ -59,11 +58,11 @@ public interface SchemaReviewRunRepository extends JpaRepository<SchemaReviewRun
                 OR (:state = 'COMPLETED' AND submission.id IS NOT NULL)
                 OR (:state = 'IN_PROGRESS' AND submission.id IS NULL AND EXISTS (
                     SELECT 1 FROM PredictionResultFeedback feedback
-                    WHERE feedback.result.run = run AND feedback.user.id = :userId AND feedback.review = review
+                    WHERE feedback.result.run = run AND feedback.createdBy.userId = :userId AND feedback.review = review
                 ))
                 OR (:state = 'PENDING' AND submission.id IS NULL AND NOT EXISTS (
                     SELECT 1 FROM PredictionResultFeedback feedback
-                    WHERE feedback.result.run = run AND feedback.user.id = :userId AND feedback.review = review
+                    WHERE feedback.result.run = run AND feedback.createdBy.userId = :userId AND feedback.review = review
                 ))
             )
             """;
@@ -86,10 +85,6 @@ public interface SchemaReviewRunRepository extends JpaRepository<SchemaReviewRun
     String BY_STATE_ENTERED = "ORDER BY coalesce(submission.submittedAt, run.createdAt) DESC, rr.publicId ASC";
 
     List<SchemaReviewRun> findByReviewIdOrderByIdAsc(Long reviewId);
-
-    @Modifying
-    @Query("DELETE FROM SchemaReviewRun rr WHERE rr.review.id = :reviewId")
-    void deleteByReview(Long reviewId);
 
     List<SchemaReviewRun> findByRunIdOrderByIdAsc(Long runId);
 

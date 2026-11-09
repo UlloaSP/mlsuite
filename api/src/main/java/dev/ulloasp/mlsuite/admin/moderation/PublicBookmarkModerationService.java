@@ -1,5 +1,9 @@
 package dev.ulloasp.mlsuite.admin.moderation;
 
+import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
+import dev.ulloasp.mlsuite.notification.application.service.NotificationService;
+import java.util.List;
+import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -14,6 +18,7 @@ import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import dev.ulloasp.mlsuite.util.PageDto;
 import lombok.RequiredArgsConstructor;
 
@@ -28,6 +33,7 @@ public class PublicBookmarkModerationService {
 
     private final SchemaBookmarkRepository bookmarkRepository;
     private final AuditLogService auditLogService;
+    private final NotificationService notifications;
 
     @Transactional(readOnly = true)
     public PageDto<ModeratedBookmarkDto> list(int page, int size, String search, String sort) {
@@ -37,7 +43,10 @@ public class PublicBookmarkModerationService {
         return PageDto.of(bookmarks, bookmarks.getContent().stream().map(ModeratedBookmarkDto::from).toList());
     }
 
-    /** Unpublishing a bookmark that is already private changes nothing and records nothing. */
+    /**
+     * Unpublishing a bookmark that is already private changes nothing and records nothing. Whoever
+     * last changed the bookmark is told, so its being private is never a mystery.
+     */
     public SchemaBookmark unpublish(Long moderatorId, Long bookmarkId) {
         SchemaBookmark bookmark = bookmarkRepository.findById(bookmarkId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema bookmark not found"));
@@ -45,18 +54,27 @@ public class PublicBookmarkModerationService {
             bookmark.unpublish();
             auditLogService.record(AuditActor.user(moderatorId), bookmark.getSchema().getOrganization().getId(),
                     AuditAction.BOOKMARK_MODERATION_UNPUBLISH, bookmarkId, AuditDetails.of("bookmark", bookmark.getName()));
+            Long editor = bookmark.getUpdatedBy().userId();
+            if (editor != null && !editor.equals(moderatorId)) {
+                notifications.notify(editor, bookmark.getSchema().getOrganization().getId(),
+                        NotificationKind.BOOKMARK_UNPUBLISHED, bookmarkId.toString(), Map.of(
+                                "bookmarkName", bookmark.getName(),
+                                "schemaName", bookmark.getSchema().getName(),
+                                "schemaId", bookmark.getSchema().getId()));
+            }
         }
         return bookmark;
     }
 
     private Sort sort(String mode) {
-        if ("name".equals(mode)) return Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.asc("id"));
-        if ("organization".equals(mode)) {
-            return Sort.by(
+        return switch (mode) {
+            case "updated" -> Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("id"));
+            case "name" -> Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.asc("id"));
+            case "organization" -> Sort.by(
                     Sort.Order.asc("schema.organization.name").ignoreCase(),
                     Sort.Order.asc("name").ignoreCase(),
                     Sort.Order.asc("id"));
-        }
-        return Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("id"));
+            default -> throw CatalogValues.unknown("sort", mode, List.of("updated", "name", "organization"));
+        };
     }
 }

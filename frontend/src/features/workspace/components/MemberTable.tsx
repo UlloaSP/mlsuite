@@ -22,7 +22,7 @@ type MemberTableRow = {
   avatarUrl: string | null;
   profileHandle: string | null;
   status: OrganizationMembershipRowDto["status"];
-  role: RoleSummaryDto;
+  roleDefinition: RoleSummaryDto;
   actions: MembershipActionsDto;
 };
 
@@ -56,7 +56,7 @@ export function MemberTable({
           }
           titleAccessory={
             <>
-              <RoleBadge value={row.role.name} />
+              <RoleBadge value={row.roleDefinition.name} />
               <RoleBadge value={row.status} />
             </>
           }
@@ -72,12 +72,12 @@ export function MemberTable({
             ) : null
           }
           details={
-            row.actions.canChangeRole && row.role.id ? (
+            row.actions.canChangeRole && row.roleDefinition.id ? (
               <MemberRoleSelect
                 organizationId={organizationId}
                 memberId={row.id}
                 name={row.fullName}
-                role={row.role}
+                role={row.roleDefinition}
                 onChange={(roleId) => onRoleChange(row.id, roleId)}
               />
             ) : (

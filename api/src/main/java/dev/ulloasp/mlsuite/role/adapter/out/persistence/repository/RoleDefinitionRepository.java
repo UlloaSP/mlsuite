@@ -8,21 +8,22 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 
 @Repository
 public interface RoleDefinitionRepository
         extends JpaRepository<RoleDefinition, Long>, JpaSpecificationExecutor<RoleDefinition> {
 
-    List<RoleDefinition> findByOrganizationIdAndScopeOrderByLockedDescNameAsc(Long organizationId, RoleScope scope);
+    List<RoleDefinition> findByOrganizationIdOrderByLockedDescNameAsc(Long organizationId);
 
     Optional<RoleDefinition> findByOrganizationIdAndSystemKey(Long organizationId, String systemKey);
 
     Optional<RoleDefinition> findByIdAndOrganizationId(Long id, Long organizationId);
 
-    boolean existsByOrganizationIdAndScopeAndSlug(Long organizationId, RoleScope scope, String slug);
+    boolean existsByOrganizationIdAndSlug(Long organizationId, String slug);
+
+    Optional<RoleDefinition> findByOrganizationIdAndNameIgnoreCase(Long organizationId, String name);
 
     List<RoleDefinition> findByOrganizationId(Long organizationId);
 
-    long countByOrganizationIdAndScope(Long organizationId, RoleScope scope);
+    long countByOrganizationId(Long organizationId);
 }

@@ -179,27 +179,52 @@ export const isPlatformAction = (action: string) =>
 export const auditTargetLabel = (targetType: string) =>
   AUDIT_TARGET_TYPES[targetType as AuditTargetType] ?? enumLabel(targetType);
 
-const detailLabel = (key: string) => {
-  const words = key.replace(/([A-Z])/g, " $1").toLowerCase();
-  return words.charAt(0).toUpperCase() + words.slice(1);
+// Words a detail key spells in lower camel case that read as acronyms ("apiClients", "modelId").
+const ACRONYMS: Record<string, string> = {
+  api: "API",
+  csv: "CSV",
+  doi: "DOI",
+  id: "ID",
+  ids: "IDs",
+  ip: "IP",
+  json: "JSON",
+  url: "URL",
+};
+
+/** "apiClients" → "API clients", "schemaVersionId" → "Schema version ID". */
+const detailLabel = (key: string) =>
+  key
+    .replace(/([A-Z])/g, " $1")
+    .toLowerCase()
+    .split(" ")
+    .filter(Boolean)
+    .map(
+      (word, index) =>
+        ACRONYMS[word] ?? (index === 0 ? word.charAt(0).toUpperCase() + word.slice(1) : word),
+    )
+    .join(" ");
+
+// What people typed keeps its casing; anything else that looks like an API enum reads as words.
+const TYPED = /name|email|handle|slug|title|description/i;
+const scalar = (key: string, value: unknown): string => {
+  const text = String(value as string | number | boolean);
+  return typeof value === "string" && !TYPED.test(key) ? enumLabel(text) : text;
 };
 
 const isChange = (value: unknown): value is { from?: unknown; to?: unknown } =>
   typeof value === "object" && value !== null && ("from" in value || "to" in value);
 
 /** One side of a change: absent is an em dash, anything that is not text as its JSON. */
-const side = (value: unknown): string => {
+const side = (key: string, value: unknown): string => {
   if (value === undefined || value === null) return "—";
-  return typeof value === "object"
-    ? JSON.stringify(value)
-    : String(value as string | number | boolean);
+  return typeof value === "object" ? JSON.stringify(value) : scalar(key, value);
 };
 
-const detailValue = (value: unknown): string => {
-  if (isChange(value)) return `${side(value.from)} → ${side(value.to)}`;
-  if (typeof value !== "object" || value === null) return String(value);
+const detailValue = (key: string, value: unknown): string => {
+  if (isChange(value)) return `${side(key, value.from)} → ${side(key, value.to)}`;
+  if (typeof value !== "object" || value === null) return scalar(key, value);
   return Object.entries(value)
-    .map(([key, entry]) => `${detailLabel(key)} ${detailValue(entry)}`)
+    .map(([entryKey, entry]) => `${detailLabel(entryKey)} ${detailValue(entryKey, entry)}`)
     .join(", ");
 };
 
@@ -207,6 +232,6 @@ const detailValue = (value: unknown): string => {
 export const auditDetails = (metadata: AuditEventDto["metadata"]) =>
   Object.entries(metadata ?? {})
     .map(([key, value]) =>
-      key === "detail" ? String(value) : `${detailLabel(key)}: ${detailValue(value)}`,
+      key === "detail" ? String(value) : `${detailLabel(key)}: ${detailValue(key, value)}`,
     )
     .join(" · ");

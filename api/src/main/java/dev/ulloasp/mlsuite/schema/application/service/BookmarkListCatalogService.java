@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
+import java.util.List;
 import java.util.Locale;
 
 import org.springframework.data.domain.Sort;
@@ -28,6 +29,7 @@ import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkExampleUseCa
 import dev.ulloasp.mlsuite.security.identity.PublicCaller;
 import dev.ulloasp.mlsuite.util.CatalogPages;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import dev.ulloasp.mlsuite.util.PageDto;
 import lombok.RequiredArgsConstructor;
 
@@ -38,6 +40,8 @@ import lombok.RequiredArgsConstructor;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class BookmarkListCatalogService implements BookmarkListCatalogUseCase {
+    private static final List<String> EXAMPLE_STATES = List.of("ALL", "SERVED", "BOOKMARK_PRIVATE", "BOOKMARK_MOVED");
+
     private final PublicBookmarkService bookmarks;
     private final SchemaBookmarkRepository bookmarkRepository;
     private final SchemaBookmarkExampleRepository exampleRepository;
@@ -49,6 +53,7 @@ public class BookmarkListCatalogService implements BookmarkListCatalogUseCase {
     @Override
     public PageDto<PublicBookmarkExampleDto> publicExamples(String publicId, CatalogRequest request) {
         var bookmark = bookmarks.requirePublic(publicId);
+        request.requireNoChoices();
         var page = exampleRepository.findAll(matching(bookmark.getId(), request.search(), "SERVED"),
                 CatalogPages.pageable(request, Sort.by(Sort.Order.asc("run.name").ignoreCase(),
                         Sort.Order.asc("publicId"))));
@@ -68,7 +73,8 @@ public class BookmarkListCatalogService implements BookmarkListCatalogUseCase {
         Long org = authorization.requireCurrent(userId, PermissionKey.VIEW_MODELS).getId();
         bookmarkRepository.findByIdAndOrganizationId(bookmarkId, org)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema bookmark not found"));
-        var page = exampleRepository.findAll(matching(bookmarkId, request.search(), request.filter()),
+        var page = exampleRepository.findAll(matching(bookmarkId, request.search(),
+                exampleState(request.requireOneOrder().filter())),
                 CatalogPages.pageable(request, Sort.by(Sort.Order.asc("run.name").ignoreCase(),
                         Sort.Order.asc("run.id"))));
         return PageDto.of(page, page.getContent().stream().map(SchemaBookmarkExampleDto::from).toList());
@@ -84,20 +90,29 @@ public class BookmarkListCatalogService implements BookmarkListCatalogUseCase {
         return predict.bookmark(userId, bookmarkId);
     }
 
-    private Specification<SchemaBookmarkExample> matching(Long bookmarkId, String search, String filter) {
+    /** {@code filter} is, in any case, one of {@link #EXAMPLE_STATES}. */
+    private static String exampleState(String filter) {
+        String state = filter.toUpperCase(Locale.ROOT);
+        if (!EXAMPLE_STATES.contains(state)) {
+            throw CatalogValues.unknown("filter", filter, EXAMPLE_STATES);
+        }
+        return state;
+    }
+
+    private Specification<SchemaBookmarkExample> matching(Long bookmarkId, String search, String state) {
         return (root, query, builder) -> {
             var version = root.get("run").get("schemaVersion");
             var pinned = builder.equal(version.get("id"), root.get("bookmark").get("version").get("id"));
             var published = builder.equal(root.get("bookmark").get("visibility"), BookmarkVisibility.PUBLIC);
-            var state = switch (filter.toUpperCase(Locale.ROOT)) {
+            var states = switch (state) {
                 case "ALL" -> builder.conjunction();
                 case "SERVED" -> builder.and(pinned, published);
                 case "BOOKMARK_PRIVATE" -> builder.and(pinned, builder.not(published));
                 case "BOOKMARK_MOVED" -> builder.not(pinned);
-                default -> builder.disjunction();
+                default -> throw new IllegalStateException("Unchecked example state " + state);
             };
             String pattern = CatalogPages.likeLiteral(search);
-            return builder.and(builder.equal(root.get("bookmark").get("id"), bookmarkId), state,
+            return builder.and(builder.equal(root.get("bookmark").get("id"), bookmarkId), states,
                     builder.or(builder.like(builder.lower(root.get("run").get("name")), pattern, '!'),
                             builder.like(builder.lower(version.get("name")), pattern, '!'),
                             builder.like(builder.concat("v", version.get("version").as(String.class)), pattern, '!')));

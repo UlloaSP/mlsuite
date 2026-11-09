@@ -30,7 +30,7 @@ const person = (name: string | null, id: number | null) =>
   name ?? (id === null ? "Unknown" : "Former member");
 
 const author = (revision: PredictionResultFeedbackRevisionDto) =>
-  revision.visitorId ? "A public page visitor" : person(revision.userName, revision.userId);
+  revision.byVisitor ? "A public page visitor" : person(revision.authorName, revision.authorUserId);
 
 const where = ({ review, reviewId }: PredictionResultFeedbackRevisionDto) => {
   if (review) {

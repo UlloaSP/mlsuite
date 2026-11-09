@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { CSSProperties, FormEvent } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { getRouteApi, useRouter } from "@tanstack/react-router";
 import { useSelector } from "@tanstack/react-store";
 import { AppLink } from "@/shared/ui/AppLink";
@@ -17,11 +17,16 @@ import { safeReturnTo, useLogin, useRegister } from "@/capabilities/workspace-co
 import { appHref } from "@/shared/lib/app-href";
 import { useSearchUpdate } from "@/shared/lib/use-search-update";
 import { AuthAccessOverlay } from "./auth-landing/AuthAccessOverlay";
-import { AuthFormPanel } from "./auth-landing/AuthFormPanel";
+import { AuthFormPanel, type AuthFailure } from "./auth-landing/AuthFormPanel";
 import { AuthHorizon } from "./auth-landing/AuthHorizon";
 import { AuthPassStub } from "./auth-landing/AuthPassStub";
 import { AuthTypeBands } from "./auth-landing/AuthTypeBands";
-import { authFailureMessage, type AuthMode } from "./auth-landing/authLandingCopy";
+import {
+  authFailureBlamesFields,
+  authFailureMessage,
+  invalidFieldMessage,
+  type AuthMode,
+} from "./auth-landing/authLandingCopy";
 import { useAuthAccess } from "./auth-landing/useAuthAccess";
 import { useAuthStageScale } from "./auth-landing/useAuthStageScale";
 import "./auth-landing/auth-landing.css";
@@ -53,22 +58,42 @@ export function AuthLandingPage() {
   const login = useLogin();
   const register = useRegister();
   const mutation = mode === "login" ? login : register;
+  // A field the browser would refuse, explained in the form instead of a validation bubble.
+  const [invalid, setInvalid] = useState<AuthFailure | null>(null);
+  const failure: AuthFailure | null =
+    invalid ??
+    (mutation.isError
+      ? {
+          message: authFailureMessage(mode, mutation.error),
+          field: authFailureBlamesFields(mode, mutation.error) ? "all" : null,
+        }
+      : null);
 
   const changeMode = (next: AuthMode) => {
     login.reset();
     register.reset();
+    setInvalid(null);
     updateSearch({ mode: next });
   };
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (access.phase !== 0) return;
+    if (access.phase !== 0 || mutation.isPending) return;
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const refused = [...form.querySelectorAll("input")].find((input) => !input.checkValidity());
+    if (refused) {
+      mutation.reset();
+      setInvalid({ message: invalidFieldMessage(mode, refused), field: refused.name });
+      refused.focus();
+      return;
+    }
+    setInvalid(null);
+    const formData = new FormData(form);
     const email = readFormValue(formData, "email");
     const password = readFormValue(formData, "password");
-    const callbacks = { onSuccess: access.succeed, onError: access.fail };
-    access.start(passRef.current);
+    // The welcome plays only once the server has accepted the attempt.
+    const callbacks = { onSuccess: () => access.succeed(passRef.current) };
 
     if (mode === "login") {
       const request: LoginRequest = { email, password };
@@ -115,19 +140,21 @@ export function AuthLandingPage() {
         <div className="auth-pass-bottom">
           <AuthFormPanel
             mode={mode}
-            locked={access.phase !== 0}
-            failure={
-              mutation.isError && access.phase === 0
-                ? authFailureMessage(mode, mutation.error)
-                : null
-            }
+            pending={mutation.isPending}
+            succeeded={access.phase !== 0}
+            failure={failure}
             onModeChange={changeMode}
             onSubmit={submit}
           />
         </div>
       </div>
 
-      <AuthAccessOverlay mode={mode} open={access.phase === 2} reveal={access.reveal} />
+      <AuthAccessOverlay
+        mode={mode}
+        succeeded={access.phase !== 0}
+        open={access.phase === 2}
+        reveal={access.reveal}
+      />
     </main>
   );
 }

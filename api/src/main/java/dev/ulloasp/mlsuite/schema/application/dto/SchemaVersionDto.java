@@ -16,7 +16,8 @@ public record SchemaVersionDto(
         @Nullable String name,
         Map<String, Object> formSchema,
         List<SchemaModelBindingDto> bindings,
-        OffsetDateTime createdAt) {
+        OffsetDateTime createdAt,
+        String createdByName) {
 
     public static SchemaVersionDto from(SchemaVersion version, List<SchemaModelBinding> bindings) {
         return new SchemaVersionDto(
@@ -26,6 +27,7 @@ public record SchemaVersionDto(
                 version.getName(),
                 version.getFormSchema(),
                 SchemaModelBindingDto.fromList(bindings),
-                version.getCreatedAt());
+                version.getCreatedAt(),
+                version.getCreatedBy().label());
     }
 }

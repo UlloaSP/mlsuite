@@ -5,122 +5,26 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 // @vitest-environment jsdom
 
-import { act } from "react";
 import { beforeEach, describe, expect, test, vi } from "vite-plus/test";
-import { OwnProfilePage } from "@/features/user/pages/own-profile-page";
-import { PublicProfilePage } from "@/features/user/pages/public-profile-page";
-import { buttonByText, changeValue, click, mount } from "./support/dom";
-import type {
-  OwnProfileDto,
-  PublicBookmarkSummaryDto,
-  PublicProfileDto,
-  UserDto,
-} from "@/shared/api/openapi.gen";
+import { buttonByText, changeValue, click } from "./support/dom";
+import {
+  bookmark,
+  fetchStub,
+  field,
+  json,
+  OWN,
+  ownPage,
+  PAGE,
+  PROFILE,
+  publicPage,
+  requests,
+  routes,
+  serveProfileApi,
+  settled,
+  USER,
+} from "./support/user-profile-fixture";
 
-const bookmark = (name: string, publisherHandle: string | null = "ada") =>
-  ({
-    publicId: `id-${name}`,
-    name,
-    description: null,
-    inputCount: 1,
-    reportCount: 1,
-    organizationName: "Ada Lovelace",
-    organizationLogoUrl: null,
-    organizationKind: "PERSONAL",
-    publisherHandle,
-    updatedAt: "2026-10-01T10:00:00Z",
-  }) satisfies PublicBookmarkSummaryDto;
-
-const PROFILE: PublicProfileDto = {
-  handle: "ada",
-  fullName: "Ada Lovelace",
-  avatarUrl: null,
-  bio: "First line\nSecond line",
-  location: "London",
-  website: "https://ada.example/",
-  company: "Analytical Engines",
-  links: ["https://notes.example/ada"],
-  joinedAt: "2026-01-15T10:00:00Z",
-  pinned: [bookmark("pinned")],
-  organizations: [{ name: "Royal Society", logoUrl: null }],
-};
-
-const USER: UserDto = {
-  id: 7,
-  userName: "ada",
-  email: "ada@example.test",
-  fullName: "Ada Lovelace",
-  avatarUrl: null,
-  systemRole: "USER",
-  enabled: true,
-  createdAt: "Jan, 2026",
-  bio: PROFILE.bio,
-  location: PROFILE.location,
-  website: PROFILE.website,
-  company: PROFILE.company,
-  links: PROFILE.links,
-  profilePublic: true,
-  profileShowsOrganizations: true,
-};
-
-const OWN: OwnProfileDto = { profile: PROFILE, models: 3, schemas: 2, plugins: 1, inferences: 40 };
-const PAGE = (...items: PublicBookmarkSummaryDto[]) => ({
-  items,
-  page: 0,
-  size: 24,
-  totalItems: items.length,
-  hasNext: false,
-});
-
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-
-const routes = new Map<string, () => Response>();
-let fetchMock: ReturnType<typeof vi.fn>;
-
-const requests = (method: string) =>
-  fetchMock.mock.calls
-    .filter(([, init]) => (init?.method ?? "GET") === method)
-    .map(([url, init]) => ({
-      path: new URL(String(url), "http://api.test").pathname,
-      body: typeof init?.body === "string" ? JSON.parse(init.body) : init?.body,
-    }));
-
-beforeEach(() => {
-  routes.clear();
-  routes.set("/api/users/me", () => json(USER));
-  routes.set("/api/users/me/profile", () => json(OWN));
-  routes.set("/api/users/me/bookmarks", () => json(PAGE(bookmark("other"))));
-  fetchMock = vi.fn(async (url: string) => {
-    const route = routes.get(new URL(url, "http://api.test").pathname);
-    return route ? route() : new Response(null, { status: 404 });
-  });
-  vi.stubGlobal("fetch", fetchMock);
-});
-
-const settled = () => act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
-
-const publicPage = async (handle: string) => {
-  const view = await mount(null, {
-    route: `/u/${handle}`,
-    routes: { "/u/$handle": <PublicProfilePage /> },
-  });
-  await settled();
-  return view;
-};
-
-const ownPage = async (route = "/profile") => {
-  const view = await mount(<OwnProfilePage />, { route });
-  await settled();
-  return view;
-};
-
-const field = (label: string, host: ParentNode) => {
-  const row = [...host.querySelectorAll("label")].find((node) =>
-    node.textContent?.startsWith(label),
-  );
-  return row?.querySelector("input, textarea") as HTMLInputElement;
-};
+beforeEach(serveProfileApi);
 
 describe("a public profile", () => {
   test("shows the person, their pins, and the rest of what they publish", async () => {
@@ -208,7 +112,7 @@ describe("their own profile", () => {
   test("saves every field together and keeps a refused value for another try", async () => {
     routes.set("/api/users/me", () => json(USER));
     const { host } = await ownPage("/profile?view=edit");
-    fetchMock.mockImplementationOnce(async () =>
+    fetchStub().mockImplementationOnce(async () =>
       json({ status: 409, message: "The handle 'grace' is already taken." }, 409),
     );
 
@@ -220,6 +124,35 @@ describe("their own profile", () => {
     expect(requests("PATCH")[0]?.body).toMatchObject({ handle: "grace", company: PROFILE.company });
     expect(host.textContent).toContain("already taken");
     expect(field("Handle", host).value).toBe("grace");
+  });
+
+  test("asks before leaving the editor with unsaved changes, and stays when told to", async () => {
+    const { host } = await ownPage("/profile?view=edit");
+
+    await changeValue(field("Company", host), "Difference Engines");
+    await click("Done", host);
+    await settled();
+    expect(document.body.textContent).toContain("Your profile changes are not saved yet");
+
+    await click("Cancel");
+    await settled();
+    expect(field("Company", host).value).toBe("Difference Engines");
+
+    await click("Done", host);
+    await settled();
+    await click("Leave");
+    await settled();
+    expect(host.textContent).toContain("Edit profile");
+  });
+
+  test("leaves the editor without asking when nothing changed", async () => {
+    const { host } = await ownPage("/profile?view=edit");
+
+    await click("Done", host);
+    await settled();
+
+    expect(document.body.textContent).not.toContain("Leave without saving?");
+    expect(host.textContent).toContain("Edit profile");
   });
 
   test("leaves empty link slots out of what it saves", async () => {
@@ -261,43 +194,5 @@ describe("their own profile", () => {
     const { host } = await ownPage("/profile?view=edit");
 
     expect(buttonByText("Pin", host)?.hasAttribute("disabled")).toBe(true);
-  });
-
-  test("a password change needs both new entries to match and clears on success", async () => {
-    routes.set("/api/users/me/password", () => new Response(null, { status: 204 }));
-    const { host } = await ownPage("/profile?view=edit");
-    await changeValue(field("Current password", host), "the-current-one");
-    await changeValue(field("New password", host), "a-brand-new-one");
-    await changeValue(field("Repeat new password", host), "something-else");
-
-    expect(host.textContent).toContain("do not match");
-    expect(buttonByText("Change password", host)?.hasAttribute("disabled")).toBe(true);
-
-    await changeValue(field("Repeat new password", host), "a-brand-new-one");
-    await click("Change password", host);
-    await settled();
-
-    expect(requests("POST")).toContainEqual({
-      path: "/api/users/me/password",
-      body: { currentPassword: "the-current-one", newPassword: "a-brand-new-one" },
-    });
-    expect(host.textContent).toContain("Password changed.");
-    expect(field("Current password", host).value).toBe("");
-  });
-
-  test("a wrong current password keeps what was typed and says why", async () => {
-    routes.set("/api/users/me/password", () =>
-      json({ status: 400, message: "That is not your current password." }, 400),
-    );
-    const { host } = await ownPage("/profile?view=edit");
-    await changeValue(field("Current password", host), "a-wrong-one-here");
-    await changeValue(field("New password", host), "a-brand-new-one");
-    await changeValue(field("Repeat new password", host), "a-brand-new-one");
-
-    await click("Change password", host);
-    await settled();
-
-    expect(host.textContent).toContain("That is not your current password.");
-    expect(field("Current password", host).value).toBe("a-wrong-one-here");
   });
 });

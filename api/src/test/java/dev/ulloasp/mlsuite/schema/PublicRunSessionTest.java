@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
@@ -34,7 +35,9 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunOrigin;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.security.identity.VisitorCookie;
-import dev.ulloasp.mlsuite.visitor.domain.model.Visitor;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
+import dev.ulloasp.mlsuite.principal.domain.model.PrincipalKind;
 import jakarta.servlet.http.Cookie;
 
 /**
@@ -42,6 +45,9 @@ import jakarta.servlet.http.Cookie;
  * inferences and read back by the browser that made them, and the feedback they give on them.
  */
 class PublicRunSessionTest extends PublicPredictionFixture {
+
+    @Autowired
+    private Principals principals;
 
     private static final String FEEDBACK = "{\"items\":[{\"reportKey\":\"out0\",\"type\":\"OUTPUT\","
             + "\"value\":{\"output-feedback-assessment\":\"high\"}}]}";
@@ -104,7 +110,8 @@ class PublicRunSessionTest extends PublicPredictionFixture {
         assertEquals(issued, lastSeen(id));
 
         OffsetDateTime longAgo = OffsetDateTime.now().minusHours(2);
-        inTransaction(() -> entityManager.find(Visitor.class, id).setLastSeenAt(longAgo));
+        inTransaction(() -> entityManager.createQuery("UPDATE Principal p SET p.lastSeenAt = :at WHERE p.visitorTokenSha256 = :digest")
+                .setParameter("at", longAgo).setParameter("digest", Principal.digest(id)).executeUpdate());
         mockMvc.perform(runRequest(bookmark.getPublicId()).cookie(visitor)).andExpect(status().isOk());
         assertTrue(lastSeen(id).isAfter(longAgo.plusHours(1)), lastSeen(id).toString());
     }
@@ -113,7 +120,8 @@ class PublicRunSessionTest extends PublicPredictionFixture {
         OffsetDateTime[] seen = new OffsetDateTime[1];
         inTransaction(() -> {
             entityManager.clear();
-            seen[0] = entityManager.find(Visitor.class, visitorId).getLastSeenAt();
+            seen[0] = entityManager.createQuery("SELECT p FROM Principal p WHERE p.visitorTokenSha256 = :digest", Principal.class)
+                    .setParameter("digest", Principal.digest(visitorId)).getSingleResult().getLastSeenAt();
         });
         return seen[0];
     }
@@ -142,11 +150,11 @@ class PublicRunSessionTest extends PublicPredictionFixture {
 
         PredictionRun run = entityManager.find(PredictionRun.class, made.id());
         assertEquals(PredictionRunOrigin.PUBLIC, run.getOrigin());
-        assertNotNull(run.getVisitor());
+        assertEquals(PrincipalKind.VISITOR, run.getCreatedBy().getKind());
         assertNull(run.getCreatedByName());
         assertEquals(bookmark.getId(), run.getSchemaBookmark().getId());
         assertEquals(version.getId(), run.getSchemaVersion().getId());
-        assertTrue(run.getName().startsWith("visitor-"), run.getName());
+        assertTrue(run.getName().startsWith("public-"), run.getName());
         // Inputs by field, a one-hot field as the option chosen: what the workspace's Inputs tab reads.
         assertEquals(Map.of("Age", 52, "Cholesterol", 240.5, "Smoker", "yes"), run.getInputData());
         assertEquals(PredictionRunOrigin.PUBLIC, PredictionRunCatalogItemDto.from(run).origin());
@@ -170,9 +178,8 @@ class PublicRunSessionTest extends PublicPredictionFixture {
         assertEquals(List.of(0.2, 0.8), kept.get("probabilities"));
         assertEquals(List.of("low", "high"), kept.get("labels"));
         assertEquals("high", kept.get("prediction"));
-        Map<?, ?> meta = (Map<?, ?>) forest.getOutput().get("meta");
-        assertEquals(String.valueOf(forestModel.getId()), meta.get("modelId"));
-        assertEquals(forest.getModelInput(), meta.get("backendFieldValues"));
+        // The model and the record it was given are the result's own columns, not copied into its output.
+        assertEquals(null, ((Map<?, ?>) forest.getOutput().get("meta")).get("backendFieldValues"));
         // The positional model answers both reports; its copies route by position-free feature names.
         List<?> netReports = (List<?>) results.get(1).getOutput().get("reports");
         assertEquals(4, netReports.size());
@@ -214,12 +221,13 @@ class PublicRunSessionTest extends PublicPredictionFixture {
                         PredictionResultFeedback.class)
                 .setParameter("run", runId).getResultList();
         assertEquals(2, kept.size());
-        assertNull(kept.get(0).getUser());
-        assertEquals(UUID.fromString(visitor.getValue()), kept.get(0).getVisitor().getId());
+        assertNull(kept.get(0).getCreatedBy().userId());
+        // Only the cookie id's digest is stored.
+        assertEquals(Principal.digest(UUID.fromString(visitor.getValue())), kept.get(0).getCreatedBy().getVisitorTokenSha256());
         assertEquals(0, kept.get(0).getOrder());
         assertEquals(forestModel.getId(), kept.get(0).getResult().getModel().getId());
         assertEquals(netModel.getId(), kept.get(1).getResult().getModel().getId());
-        assertNull(PredictionResultFeedbackDto.from(kept.get(0)).userId());
+        assertNull(PredictionResultFeedbackDto.from(kept.get(0)).createdByUserId());
 
         // What is not asked is refused: an unknown report, an explanation no questionnaire asks, a bare value.
         for (String body : List.of(
@@ -234,32 +242,32 @@ class PublicRunSessionTest extends PublicPredictionFixture {
     }
 
     @Test
-    void aSignedInAccountRunsUnderItsBrowserAndIsNamedOnTheRunAndItsFeedback() throws Exception {
+    void aSignedInAccountRunsAsItselfAndIsNamedOnTheRunAndItsFeedback() throws Exception {
         MvcResult made = mockMvc.perform(signedIn(runRequest(bookmark.getPublicId()), owner.getId()))
                 .andExpect(status().isOk())
+                .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE))
                 .andReturn();
-        Cookie visitor = cookie(made.getResponse().getHeader(HttpHeaders.SET_COOKIE));
         long runId = read(made).run().id();
         PredictionRun run = entityManager.find(PredictionRun.class, runId);
         assertEquals(PredictionRunOrigin.PUBLIC, run.getOrigin());
         assertEquals("Owner", run.getCreatedByName());
         assertEquals(owner.getEmail(), run.getCreatedByEmail());
-        assertNotNull(run.getVisitor());
+        assertEquals(owner.getId(), run.getCreatedBy().userId());
 
-        mockMvc.perform(signedIn(feedback(runId, FEEDBACK).cookie(visitor), owner.getId()))
+        mockMvc.perform(signedIn(feedback(runId, FEEDBACK), owner.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.feedback.length()").value(1));
         PredictionResultFeedback kept = entityManager
                 .createQuery("select f from PredictionResultFeedback f where f.result.run.id = :run", PredictionResultFeedback.class)
                 .setParameter("run", runId).getSingleResult();
-        assertEquals(owner.getId(), kept.getUser().getId());
-        assertNull(kept.getVisitor());
-        // Signed out in the same browser, the run is still listed but the account's answers are its own.
-        mockMvc.perform(get("/api/public/bookmarks/{publicId}/runs", bookmark.getPublicId()).cookie(visitor))
+        assertEquals(owner.getId(), kept.getCreatedBy().userId());
+        // The account's session is its own runs, wherever it signs in; a browser without it sees none of them.
+        mockMvc.perform(signedIn(get("/api/public/bookmarks/{publicId}/runs", bookmark.getPublicId()), owner.getId()))
                 .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].feedback.length()").value(0));
-        mockMvc.perform(signedIn(get("/api/public/bookmarks/{publicId}/runs", bookmark.getPublicId()).cookie(visitor), owner.getId()))
                 .andExpect(jsonPath("$[0].feedback.length()").value(1));
+        mockMvc.perform(get("/api/public/bookmarks/{publicId}/runs", bookmark.getPublicId()))
+                .andExpect(jsonPath("$.length()").value(0));
+        mockMvc.perform(feedback(runId, FEEDBACK)).andExpect(status().isNotFound());
     }
 
     @Test
@@ -283,12 +291,11 @@ class PublicRunSessionTest extends PublicPredictionFixture {
     void theCatalogPagesAndSearchesRunsOlderThanTheSessionListKeeps() throws Exception {
         UUID visitorId = UUID.randomUUID();
         inTransaction(() -> {
-            Visitor visitor = new Visitor(visitorId, OffsetDateTime.parse("2026-10-01T10:00:00Z"));
+            Principal visitor = Principal.visitor(visitorId, OffsetDateTime.parse("2026-10-01T10:00:00Z"));
             entityManager.persist(visitor);
             for (int i = 0; i < 130; i++) {
                 PredictionRun run = new PredictionRun(bookmark, version, "public-" + i,
-                        Map.of("Age", i == 0 ? "needle" : i), PredictionRunStatus.SUCCESS);
-                run.setVisitor(visitor);
+                        Map.of("Age", i == 0 ? "needle" : i), PredictionRunStatus.SUCCESS, visitor);
                 run.setOrigin(PredictionRunOrigin.PUBLIC);
                 entityManager.persist(run);
             }

@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.invitation.domain.model;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -7,7 +8,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -34,13 +34,14 @@ public class Invitation {
             Organization organization,
             String email,
             RoleDefinition roleDefinition,
-            User invitedBy,
+            Principal createdBy,
             OffsetDateTime expiresAt) {
         this.organization = organization;
         this.email = email;
         this.roleDefinition = roleDefinition;
         this.status = InvitationStatus.PENDING;
-        this.invitedBy = invitedBy;
+        this.createdBy = createdBy;
+        this.updatedBy = createdBy;
         this.expiresAt = expiresAt;
     }
 
@@ -64,9 +65,15 @@ public class Invitation {
     private InvitationStatus status;
 
     /** Null once the person who invited is gone. */
-    @ManyToOne
-    @JoinColumn(name = "invited_by_user_id", foreignKey = @ForeignKey(name = "fk_invitation_invited_by"))
-    private User invitedBy;
+    /** Who created it. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
+
+    /** Who changed it last. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "updated_by_principal_id", nullable = false)
+    private Principal updatedBy;
 
     @Column(name = "expires_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime expiresAt;
@@ -78,4 +85,9 @@ public class Invitation {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime updatedAt;
+
+    /** The status as of {@code now}: a pending invitation whose time has passed is expired. */
+    public InvitationStatus statusAt(OffsetDateTime now) {
+        return status == InvitationStatus.PENDING && expiresAt.isBefore(now) ? InvitationStatus.EXPIRED : status;
+    }
 }

@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema;
 
+import static org.mockito.Mockito.mock;
 import static dev.ulloasp.mlsuite.schema.BookmarkExampleFixtures.formRunInputs;
 import static dev.ulloasp.mlsuite.schema.BookmarkExampleFixtures.nextVersion;
 import static dev.ulloasp.mlsuite.schema.BookmarkExampleFixtures.run;
@@ -38,7 +39,8 @@ import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
-import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginRuntimeSourcesUseCase;
+import dev.ulloasp.mlsuite.plugin.application.port.in.SnapshotPluginsUseCase;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.schema.adapter.in.web.PublicBookmarkController;
 import dev.ulloasp.mlsuite.schema.adapter.in.web.SchemaBookmarkController;
 import dev.ulloasp.mlsuite.schema.adapter.in.web.SchemaBookmarkExampleController;
@@ -82,7 +84,7 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationS
 @MockitoBean(types = { dev.ulloasp.mlsuite.schema.application.service.SnapshotRunGuard.class,
         PredictBookmarkCatalogUseCase.class, PublicPredictionUseCase.class, PublicRunUseCase.class,
         UserDetailsService.class, SessionAccountCheck.class, SchemaRepository.class, SchemaModelBindingRepository.class,
-        RoleDefinitionRepository.class, ListPluginRuntimeSourcesUseCase.class, AuditLogService.class })
+        RoleDefinitionRepository.class, SnapshotPluginsUseCase.class, AuditLogService.class })
 class BookmarkExampleHttpTest {
 
     private static final long USER_ID = 7L;
@@ -96,6 +98,9 @@ class BookmarkExampleHttpTest {
 
     @Autowired
     private MockMvc mockMvc;
+    @MockitoBean
+    private Principals principals;
+
     @MockitoBean
     private WorkspaceAccessService access;
     @MockitoBean

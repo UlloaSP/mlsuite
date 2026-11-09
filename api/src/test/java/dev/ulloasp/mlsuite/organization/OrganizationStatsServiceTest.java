@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.organization;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -57,7 +59,8 @@ class OrganizationStatsServiceTest {
         when(permissions.canViewPlugins()).thenReturn(true);
         when(permissions.canReview()).thenReturn(true);
         when(membershipRepository.countActiveByOrganizationId(41L)).thenReturn(4L);
-        when(invitationRepository.countByOrganizationIdAndStatus(41L, InvitationStatus.PENDING)).thenReturn(2L);
+        when(invitationRepository.countByOrganizationIdAndStatusAndExpiresAtAfter(eq(41L), eq(InvitationStatus.PENDING), any()))
+                .thenReturn(2L);
         when(modelRepository.countByOrganizationId(41L)).thenReturn(3L);
         when(schemaRepository.countByOrganizationId(41L)).thenReturn(5L);
         when(predictionRunRepository.countByOrganizationId(41L)).thenReturn(120L);

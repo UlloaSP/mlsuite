@@ -1,6 +1,9 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -116,9 +119,26 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
                     "The bookmark moved to another snapshot; reload before saving");
         }
         guard.requireRunnable(bookmark.getVersion().getId());
-        List<AttestedPrediction> results = request.results().stream()
+        List<SealedPrediction.Opened> opened = request.results().stream()
                 .map(result -> attestations.open(result.attestation()))
                 .toList();
-        return runStore.store(organizationId, user, bookmark, request.name(), request.inputData(), results);
+        Map<String, Object> formValues = opened.getFirst().sealed().inputData();
+        // The run shows the form's values and, under their own names, what each model received.
+        Map<String, Object> inputData = new LinkedHashMap<>(formValues);
+        for (SealedPrediction.Opened seal : opened) {
+            SealedPrediction sealed = seal.sealed();
+            if (!user.getId().equals(sealed.userId()) || !bookmark.getId().equals(sealed.schemaBookmarkId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "A prediction result was run by someone else or through another bookmark");
+            }
+            if (!Objects.equals(formValues, sealed.inputData())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "The prediction results were run on different inputs; run the inference again");
+            }
+            inputData.putAll(sealed.prediction().modelInput());
+        }
+        return runStore.store(organizationId, user, bookmark, request.name(), inputData,
+                opened.stream().map(seal -> seal.sealed().prediction()).toList(),
+                opened.stream().map(SealedPrediction.Opened::sha256).toList());
     }
 }

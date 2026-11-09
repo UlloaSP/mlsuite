@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.review.adapter.in.web;
 
+import dev.ulloasp.mlsuite.schema.review.application.dto.SavedFeedback;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultFeedbackRequest;
@@ -35,6 +37,7 @@ public class SchemaReviewController {
     private final SchemaReviewUseCase service;
     private final SchemaReviewManagementUseCase management;
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public ResponseEntity<Void> create(CurrentUser user,
             @Valid @RequestBody CreateSchemaReviewRequest request) {
@@ -68,8 +71,9 @@ public class SchemaReviewController {
     public ResponseEntity<PredictionResultFeedbackDto> createFeedback(CurrentUser user,
             @PathVariable String reviewId, @PathVariable String reviewRunId,
             @Valid @RequestBody CreatePredictionResultFeedbackRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(service.createFeedback(user.userId(), reviewId, reviewRunId, request));
+        SavedFeedback saved = service.createFeedback(user.userId(), reviewId, reviewRunId, request);
+        // Answering a question already answered changes that answer.
+        return ResponseEntity.status(saved.created() ? HttpStatus.CREATED : HttpStatus.OK).body(saved.feedback());
     }
 
     @PatchMapping("/{reviewId}/runs/{reviewRunId}/feedback")
@@ -79,6 +83,7 @@ public class SchemaReviewController {
         return ResponseEntity.ok(service.updateFeedback(user.userId(), reviewId, reviewRunId, request));
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @PostMapping("/{reviewId}/submit")
     public ResponseEntity<Void> submit(CurrentUser user, @PathVariable String reviewId,
             @Valid @RequestBody SubmitSchemaReviewRunsRequest request) {
@@ -86,12 +91,14 @@ public class SchemaReviewController {
         return ResponseEntity.noContent().build();
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @PostMapping("/inbox/submit-pending")
     public ResponseEntity<Void> submitInbox(CurrentUser user) {
         service.submitInbox(user.userId());
         return ResponseEntity.noContent().build();
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @PostMapping("/{reviewId}/runs/{reviewRunId}/reviewers/{reviewerId}/reopen")
     public ResponseEntity<Void> reopen(CurrentUser user,
             @PathVariable String reviewId, @PathVariable String reviewRunId,
@@ -100,12 +107,14 @@ public class SchemaReviewController {
         return ResponseEntity.noContent().build();
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<Void> delete(CurrentUser user, @PathVariable String reviewId) {
         management.delete(user.userId(), reviewId);
         return ResponseEntity.noContent().build();
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{reviewId}/runs/{reviewRunId}/reviewers/{reviewerId}/response")
     public ResponseEntity<Void> deleteResponse(CurrentUser user,
             @PathVariable String reviewId, @PathVariable String reviewRunId,

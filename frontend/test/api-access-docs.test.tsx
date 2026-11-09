@@ -55,7 +55,7 @@ const model = { id: 4, name: "risk-forest", inputSchema: signature } as unknown 
 
 const given = (overrides: Partial<ApiAccessBookmarkDto> = {}): ApiAccessBookmarkDto => ({
   id: 70,
-  apiId: "pub-70",
+  publicId: "pub-70",
   name: "production",
   schemaId: 5,
   schemaName: "Risk",
@@ -71,7 +71,7 @@ const given = (overrides: Partial<ApiAccessBookmarkDto> = {}): ApiAccessBookmark
 const docsFor = (refusal: string | null = null) =>
   buildApiDocs({
     url: URL_OF,
-    bookmark: { apiId: "pub-70", name: "production", refusal, modelName: "risk-forest" },
+    bookmark: { publicId: "pub-70", name: "production", refusal, modelName: "risk-forest" },
     model: refusal ? undefined : { inputSchema: signature },
   });
 
@@ -89,7 +89,7 @@ const paths = () => fetchMock.mock.calls.map(([url]) => new URL(String(url)).pat
 
 beforeEach(() => {
   member.permissions = ["canViewApiAccess"];
-  bookmarks = [given(), given({ id: 71, apiId: null, name: "staging", clientNames: [] })];
+  bookmarks = [given(), given({ id: 71, publicId: null, name: "staging", clientNames: [] })];
   writeText.mockReset().mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
   fetchMock = vi.fn(async (url: string) => {
@@ -191,7 +191,7 @@ describe("the client API reference", () => {
   test("a bookmark no client was given is explained, and a refused one reads no model", async () => {
     bookmarks = [
       given({ refusal: "Its schema is archived.", modelId: null }),
-      given({ id: 71, apiId: null, name: "staging", clientNames: [] }),
+      given({ id: 71, publicId: null, name: "staging", clientNames: [] }),
     ];
     const host = await openDocs("/api-access/docs?bookmark=71");
 
@@ -201,7 +201,7 @@ describe("the client API reference", () => {
   });
 
   test("without a bookmark given to a client the page leads to the clients", async () => {
-    bookmarks = [given({ apiId: null, clientNames: [] })];
+    bookmarks = [given({ publicId: null, clientNames: [] })];
     const host = await openDocs();
 
     expect(host.textContent).toContain("No bookmark is open to clients");
@@ -225,6 +225,8 @@ describe("a bookmark's way to the client API", () => {
     exampleCount: 0,
     staleExampleCount: 0,
     createdAt: AT,
+    createdByName: "Ada Lovelace",
+    updatedByName: "Ada Lovelace",
     updatedAt: AT,
   };
   function Location() {

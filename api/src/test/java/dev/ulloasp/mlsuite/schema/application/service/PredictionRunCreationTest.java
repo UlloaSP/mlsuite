@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -82,16 +83,17 @@ class PredictionRunCreationTest {
     void setUp() {
         service = new PredictionRunServiceImpl(users, bookmarks, runs, mock(PredictionRunDeletion.class),
                 mock(SnapshotRunGuard.class), authorization, attestations,
-                new PredictionRunStore(bindings, runs, results, models), mock(AuditLogService.class));
+                new PredictionRunStore(bindings, runs, results, models, TestFixtures.principals()), mock(AuditLogService.class));
         Organization organization = new Organization();
         organization.setId(ORG);
         User user = new User();
         user.setId(7L);
         user.setFullName("Alice");
-        Schema schema = new Schema(organization, "Risk", null);
-        SchemaVersion version = new SchemaVersion(schema, 1, "v1", Map.of("fields", List.of()));
+        Schema schema = new Schema(organization, "Risk", null, TestFixtures.system());
+        SchemaVersion version = new SchemaVersion(schema, 1, "v1", Map.of("fields", List.of()), TestFixtures.system());
         version.setId(VERSION);
-        bookmark = new SchemaBookmark(schema, version, "production");
+        bookmark = new SchemaBookmark(schema, version, "production", TestFixtures.system());
+        bookmark.setId(70L);
         lenient().when(users.requireById(7L)).thenReturn(user);
         lenient().when(authorization.requireCurrent(7L, PermissionKey.RUN_PREDICTIONS)).thenReturn(organization);
         lenient().when(bookmarks.findByIdAndOrganizationId(70L, ORG)).thenReturn(Optional.of(bookmark));
@@ -138,7 +140,7 @@ class PredictionRunCreationTest {
     void refusesAResultSignedWithAnotherKey() {
         PredictionAttestations foreign = new PredictionAttestations(objectMapper,
                 "another-deployment-secret-that-is-long-enough", Clock.fixed(NOW, ZoneOffset.UTC));
-        String seal = foreign.seal(prediction(ORG, VERSION, 11L, PredictionResultStatus.SUCCESS, NOW.toEpochMilli()));
+        String seal = foreign.seal(of(prediction(ORG, VERSION, 11L, PredictionResultStatus.SUCCESS, NOW.toEpochMilli())));
 
         assertRefused(400, seal, sealed(12L, PredictionResultStatus.SUCCESS));
     }
@@ -152,14 +154,14 @@ class PredictionRunCreationTest {
 
     @Test
     void refusesAResultPerformedForAnotherOrganization() {
-        String seal = attestations.seal(prediction(99L, VERSION, 11L, PredictionResultStatus.SUCCESS, NOW.toEpochMilli()));
+        String seal = attestations.seal(of(prediction(99L, VERSION, 11L, PredictionResultStatus.SUCCESS, NOW.toEpochMilli())));
 
         assertRefused(400, seal, sealed(12L, PredictionResultStatus.SUCCESS));
     }
 
     @Test
     void refusesAResultPerformedForAnotherSnapshot() {
-        String seal = attestations.seal(prediction(ORG, 8L, 11L, PredictionResultStatus.SUCCESS, NOW.toEpochMilli()));
+        String seal = attestations.seal(of(prediction(ORG, 8L, 11L, PredictionResultStatus.SUCCESS, NOW.toEpochMilli())));
 
         assertRefused(400, seal, sealed(12L, PredictionResultStatus.SUCCESS));
     }
@@ -167,7 +169,7 @@ class PredictionRunCreationTest {
     @Test
     void refusesAnExpiredResult() {
         long dayAndASecondAgo = NOW.minus(PredictionAttestations.LIFETIME).minusSeconds(1).toEpochMilli();
-        String seal = attestations.seal(prediction(ORG, VERSION, 11L, PredictionResultStatus.SUCCESS, dayAndASecondAgo));
+        String seal = attestations.seal(of(prediction(ORG, VERSION, 11L, PredictionResultStatus.SUCCESS, dayAndASecondAgo)));
 
         assertRefused(400, seal, sealed(12L, PredictionResultStatus.SUCCESS));
     }
@@ -175,7 +177,7 @@ class PredictionRunCreationTest {
     @Test
     void refusesAResultIssuedInTheFuture() {
         long later = NOW.plusSeconds(3600).toEpochMilli();
-        String seal = attestations.seal(prediction(ORG, VERSION, 11L, PredictionResultStatus.SUCCESS, later));
+        String seal = attestations.seal(of(prediction(ORG, VERSION, 11L, PredictionResultStatus.SUCCESS, later)));
 
         assertRefused(400, seal, sealed(12L, PredictionResultStatus.SUCCESS));
     }
@@ -197,7 +199,7 @@ class PredictionRunCreationTest {
 
     @Test
     void refusesARunOfASnapshotTheBookmarkNoLongerTargets() {
-        CreatePredictionRunRequest request = new CreatePredictionRunRequest(8L, "case-1", Map.of("age", 52),
+        CreatePredictionRunRequest request = new CreatePredictionRunRequest(8L, "case-1",
                 List.of(new CreatePredictionResultRequest(sealed(11L, PredictionResultStatus.SUCCESS))));
 
         ResponseStatusException error = assertThrows(ResponseStatusException.class,
@@ -205,6 +207,31 @@ class PredictionRunCreationTest {
 
         assertEquals(409, error.getStatusCode().value());
         verify(runs, never()).save(any());
+    }
+
+    @Test
+    void refusesAResultAnotherMemberRanOrRanThroughAnotherBookmark() {
+        AttestedPrediction prediction = prediction(ORG, VERSION, 11L, PredictionResultStatus.SUCCESS, NOW.toEpochMilli());
+        String otherMember = attestations.seal(new SealedPrediction(prediction, 70L, 8L, Map.of("age", 52)));
+        String otherBookmark = attestations.seal(new SealedPrediction(prediction, 71L, 7L, Map.of("age", 52)));
+
+        assertRefused(400, otherMember, sealed(12L, PredictionResultStatus.SUCCESS));
+        assertRefused(400, otherBookmark, sealed(12L, PredictionResultStatus.SUCCESS));
+    }
+
+    @Test
+    void refusesResultsRunOnDifferentInputs() {
+        AttestedPrediction prediction = prediction(ORG, VERSION, 11L, PredictionResultStatus.SUCCESS, NOW.toEpochMilli());
+        String older = attestations.seal(new SealedPrediction(prediction, 70L, 7L, Map.of("age", 99)));
+
+        assertRefused(400, older, sealed(12L, PredictionResultStatus.SUCCESS));
+    }
+
+    @Test
+    void theRunKeepsTheInputsItsResultsWereRunOn() {
+        PredictionRun run = save(sealed(11L, PredictionResultStatus.SUCCESS), sealed(12L, PredictionResultStatus.SUCCESS));
+
+        assertEquals(Map.of("age", 52), run.getInputData());
     }
 
     @Test
@@ -228,12 +255,17 @@ class PredictionRunCreationTest {
     }
 
     private static CreatePredictionRunRequest request(String... seals) {
-        return new CreatePredictionRunRequest(VERSION, "case-1", Map.of("age", 52),
+        return new CreatePredictionRunRequest(VERSION, "case-1",
                 Arrays.stream(seals).map(CreatePredictionResultRequest::new).toList());
     }
 
+    /** A prediction sealed as member 7 ran it through bookmark 70 on the form's values. */
+    private static SealedPrediction of(AttestedPrediction prediction) {
+        return new SealedPrediction(prediction, 70L, 7L, Map.of("age", 52));
+    }
+
     private String sealed(long modelId, PredictionResultStatus status) {
-        return attestations.seal(prediction(ORG, VERSION, modelId, status, NOW.toEpochMilli()));
+        return attestations.seal(of(prediction(ORG, VERSION, modelId, status, NOW.toEpochMilli())));
     }
 
     private static AttestedPrediction prediction(long organizationId, long versionId, long modelId,

@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.organization;
 
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import static dev.ulloasp.mlsuite.support.TestFixtures.user;
 import static dev.ulloasp.mlsuite.support.TestFixtures.organization;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -86,7 +87,8 @@ class OrganizationSettingsServiceTest {
                 roleSeedService,
                 roleRepository,
                 deletionService,
-                statsService, mock(AuditLogService.class));
+                statsService, mock(AuditLogService.class), TestFixtures.principals(),
+                org.mockito.Mockito.mock(dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewAssigneeRepository.class));
     }
 
     @Test
@@ -153,8 +155,7 @@ class OrganizationSettingsServiceTest {
         Organization organization = organization();
         User owner = user(7L);
         when(organizationRepository.findById(41L)).thenReturn(Optional.of(organization));
-        when(workspaceAccessService.requireUser(7L)).thenReturn(owner);
-        when(organizationRepository.save(organization)).thenReturn(organization);
+        when(organizationRepository.saveAndFlush(organization)).thenReturn(organization);
 
         var result = managementService.updateOrganization(
                 7L, 41L, new UpdateOrganizationRequest("Acme Lab", "acme-lab", "Description"));
@@ -167,8 +168,7 @@ class OrganizationSettingsServiceTest {
     void superadminCanUpdateOrganizationWithoutMembership() {
         Organization organization = organization();
         when(organizationRepository.findById(41L)).thenReturn(Optional.of(organization));
-        when(workspaceAccessService.requireUser(1L)).thenReturn(user(1L));
-        when(organizationRepository.save(organization)).thenReturn(organization);
+        when(organizationRepository.saveAndFlush(organization)).thenReturn(organization);
 
         managementService.updateOrganization(
                 1L, 41L, new UpdateOrganizationRequest("Acme Lab", null, null));

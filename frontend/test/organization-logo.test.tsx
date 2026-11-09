@@ -25,6 +25,8 @@ const organization = (logoUrl: string | null): OrganizationDto => ({
   description: null,
   logoUrl,
   createdAt: "2026-01-01T00:00:00Z",
+  createdByName: "Ada Lovelace",
+  updatedByName: "Ada Lovelace",
   updatedAt: "2026-01-01T00:00:00Z",
 });
 

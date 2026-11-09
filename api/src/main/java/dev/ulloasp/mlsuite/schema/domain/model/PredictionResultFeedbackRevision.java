@@ -1,7 +1,7 @@
 package dev.ulloasp.mlsuite.schema.domain.model;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -47,17 +47,15 @@ public class PredictionResultFeedbackRevision {
     @Column(name = "schema_review_id", updatable = false)
     private Long reviewId;
 
-    @Column(name = "user_id", updatable = false)
-    private Long userId;
-
-    @Column(name = "visitor_id", updatable = false)
-    private UUID visitorId;
+    /** The answer's author. */
+    @Column(name = "author_principal_id", nullable = false, updatable = false)
+    private Long authorId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "feedback_type", nullable = false, updatable = false, length = 32)
     private PredictionResultFeedbackType type;
 
-    @Column(name = "orden", nullable = false, updatable = false)
+    @Column(name = "question_index", nullable = false, updatable = false)
     private int order;
 
     @JdbcTypeCode(SqlTypes.JSON)
@@ -65,28 +63,27 @@ public class PredictionResultFeedbackRevision {
     private JsonNode value;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "change", nullable = false, updatable = false, length = 16)
+    @Column(name = "change_kind", nullable = false, updatable = false, length = 16)
     private PredictionResultFeedbackChange change;
 
-    @Column(name = "changed_by_user_id", updatable = false)
-    private Long changedByUserId;
+    @Column(name = "changed_by_principal_id", nullable = false, updatable = false)
+    private Long changedById;
 
     @Column(name = "changed_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime changedAt;
 
     public PredictionResultFeedbackRevision(PredictionResultFeedback answer, PredictionResultFeedbackChange change,
-            Long changedByUserId, OffsetDateTime changedAt) {
+            Principal changedBy, OffsetDateTime changedAt) {
         this.feedbackId = answer.getId();
         this.resultId = answer.getResult().getId();
         this.schemaVersionId = answer.getResult().getRun().getSchemaVersion().getId();
         this.reviewId = answer.getReview() == null ? null : answer.getReview().getId();
-        this.userId = answer.getUser() == null ? null : answer.getUser().getId();
-        this.visitorId = answer.getVisitor() == null ? null : answer.getVisitor().getId();
+        this.authorId = answer.getCreatedBy().getId();
         this.type = answer.getType();
         this.order = answer.getOrder();
         this.value = change == PredictionResultFeedbackChange.DELETED ? null : answer.getValue();
         this.change = change;
-        this.changedByUserId = changedByUserId;
+        this.changedById = changedBy.getId();
         this.changedAt = changedAt;
     }
 }

@@ -19,12 +19,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.ResultActions;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
 /** Closing one's own account: the checks, in order, and what happens at once. */
 class AccountDeletionHttpTest extends PublicPredictionFixture {
+
+    @Autowired
+    private Principals principals;
 
     private static final String PASSWORD = "correct horse";
 
@@ -36,7 +40,7 @@ class AccountDeletionHttpTest extends PublicPredictionFixture {
         jdbc = new JdbcTemplate(dataSource);
         authorizeOwner();
         jdbc.update("UPDATE app_user SET password_hash = ? WHERE id = ?", encoder.encode(PASSWORD), owner.getId());
-        inTransaction(() -> entityManager.persist(Organization.personal(entityManager.find(User.class, owner.getId()))));
+        inTransaction(() -> entityManager.persist(Organization.personal(entityManager.find(User.class, owner.getId()), principals.of(entityManager.find(User.class, owner.getId())))));
     }
 
     private ResultActions close(String password, long userId, SystemRole role) throws Exception {
@@ -82,9 +86,10 @@ class AccountDeletionHttpTest extends PublicPredictionFixture {
         assertTrue(session == null);
         assertFalse(enabled(owner.getId()));
         assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM purge_job WHERE scope = 'USER' AND target_id = ?"
-                + " AND requested_by_user_id = ?", Long.class, owner.getId(), owner.getId()));
+                + " AND created_by_principal_id = (SELECT id FROM principal WHERE user_id = ?)", Long.class, owner.getId(), owner.getId()));
         assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM audit_event WHERE action = 'USER_DELETE'"
                 + " AND target_id = ?", Long.class, owner.getId().toString()));
-        jdbc.update("UPDATE purge_job SET status = 'COMPLETED' WHERE target_id = ?", owner.getId());
+        jdbc.update("UPDATE purge_job SET status = 'COMPLETED', finished_at = now(), lease_owner = NULL,"
+                + " lease_expires_at = NULL WHERE target_id = ?", owner.getId());
     }
 }

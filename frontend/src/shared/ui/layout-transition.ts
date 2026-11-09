@@ -38,5 +38,7 @@ export function animateLayoutChange(update: () => void) {
 
   // The new snapshot is taken when the callback returns, so React must commit synchronously.
   const transition = document.startViewTransition(() => flushSync(update));
+  // Skipped when another transition starts first; the layout has changed all the same.
+  transition.ready.catch(() => undefined);
   void transition.finished.finally(restore);
 }

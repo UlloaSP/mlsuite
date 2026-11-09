@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ArrowRight, Tag } from "lucide-react";
 import { AppLink } from "@/shared/ui/AppLink";
-import { formatDate } from "@/shared/lib/date-time";
+import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { PublisherMark } from "@/shared/ui/PublisherMark";
@@ -59,7 +59,9 @@ export function PublicBookmarkCard({ bookmark }: { bookmark: PublicBookmarkSumma
             />
             <PublisherName handle={bookmark.publisherHandle} name={bookmark.organizationName} />
           </span>
-          <span>Updated {formatDate(bookmark.updatedAt)}</span>
+          <span>
+            Updated <LiveRelativeTime value={bookmark.updatedAt} />
+          </span>
         </div>
         <span className="inline-flex shrink-0 items-center gap-1 font-semibold text-accent-strong">
           Open

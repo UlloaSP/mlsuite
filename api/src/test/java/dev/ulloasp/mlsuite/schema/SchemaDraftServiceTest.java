@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema;
 
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -52,7 +53,7 @@ class SchemaDraftServiceTest {
     void setUp() {
         engine = new SchemaDraftDiffService();
         service = new SchemaDraftServiceImpl(users, schemas, versions, drafts, versionUseCase,
-                engine, authorization, mock(SchemaMappingCheck.class), mock(AuditLogService.class));
+                engine, authorization, mock(SchemaMappingCheck.class), mock(AuditLogService.class), TestFixtures.principals());
         lenient().when(users.requireById(7L)).thenReturn(user());
         lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization());
     }
@@ -71,8 +72,6 @@ class SchemaDraftServiceTest {
         policy(draft.getBindings().getFirst()).put("threshold", 2);
 
         assertFalse(base.getFormSchema().containsKey("title"));
-        assertEquals("model", draft.getBaseBindings().getFirst().get("modelName"));
-        assertEquals(1, policy(draft.getBaseBindings().getFirst()).get("threshold"));
         assertEquals(0, draft.currentRevision());
     }
 
@@ -123,7 +122,6 @@ class SchemaDraftServiceTest {
 
         assertFalse(draft.getFormSchema().containsKey("gone"));
         assertEquals(12L, draft.getBindings().getFirst().get("modelId"));
-        assertEquals(List.of(), draft.getBaseBindings());
         assertEquals(10L, draft.getBaseVersion().getId());
         assertEquals(1, draft.currentRevision());
     }
@@ -170,6 +168,7 @@ class SchemaDraftServiceTest {
         SchemaVersion base = version(9L, 1, form("Age"));
         SchemaVersion published = version(10L, 2, form("Patient"));
         SchemaDraft draft = draft(base);
+        draft.setFormSchema(form("Patient"));
         stubMutation(draft, base);
         when(versionUseCase.createVersion(any(), any(), any())).thenReturn(published);
 
@@ -179,6 +178,16 @@ class SchemaDraftServiceTest {
         assertEquals(400, assertThrows(ResponseStatusException.class, () -> service.updateDraft(7L, 30L,
                 new UpdateSchemaDraftRequest(1L, "x", form("x"), List.of(map("modelId", 1L)))))
                 .getStatusCode().value());
+    }
+
+    @Test
+    void aChangeThatChangesNothingIsNotPublished() {
+        SchemaVersion base = version(9L, 1, form("Age"));
+        SchemaDraft draft = draft(base);
+        stubMutation(draft, base);
+
+        assertConflict(() -> service.publishDraft(7L, 30L, new PublishSchemaDraftRequest(0L)));
+        verify(versionUseCase, never()).createVersion(any(), any(), any());
     }
 
     @Test
@@ -225,13 +234,13 @@ class SchemaDraftServiceTest {
     }
 
     private SchemaDraft draft(SchemaVersion base) {
-        SchemaDraft draft = new SchemaDraft(schema(), base, "Draft", base.getFormSchema(), List.of());
+        SchemaDraft draft = new SchemaDraft(schema(), base, "Draft", base.getFormSchema(), List.of(), TestFixtures.system());
         draft.setId(30L);
         return draft;
     }
 
     private SchemaVersion version(Long id, int number, Map<String, Object> formSchema) {
-        SchemaVersion version = new SchemaVersion(schema(), number, "v" + number, formSchema);
+        SchemaVersion version = new SchemaVersion(schema(), number, "v" + number, formSchema, TestFixtures.system());
         version.setId(id);
         return version;
     }
@@ -254,7 +263,7 @@ class SchemaDraftServiceTest {
 
     private Model model() { return model(11L); }
     private Model model(Long id) { Model model = new Model(); model.setId(id); model.setName("model"); return model; }
-    private Schema schema() { Schema schema = new Schema(organization(), "Risk", null); schema.setId(5L); return schema; }
-    private Organization organization() { Organization org = new Organization(); org.setId(41L); org.setName("Org"); org.setSlug("org"); org.setCreatedBy(user()); return org; }
+    private Schema schema() { Schema schema = new Schema(organization(), "Risk", null, TestFixtures.system()); schema.setId(5L); return schema; }
+    private Organization organization() { Organization org = new Organization(); org.setId(41L); org.setName("Org"); org.setSlug("org"); org.setCreatedBy(TestFixtures.principal(user())); return org; }
     private User user() { User user = new User(); user.setId(7L); user.setUsername("alice"); user.setFullName("Alice"); return user; }
 }

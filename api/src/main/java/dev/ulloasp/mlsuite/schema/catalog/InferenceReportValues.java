@@ -40,10 +40,14 @@ final class InferenceReportValues {
         return BUILTINS.contains(kind);
     }
 
-    /** A snapshot can show outputs and feedback only when every report says which model output it reads. */
+    /**
+     * A snapshot can show outputs and feedback only when every report says which model output it
+     * reads: one output for every model, or one per model. The snapshot's validation accepts both.
+     */
     static boolean executable(SchemaVersionDto version) {
         return version != null && records(version.formSchema().get("reports")).stream()
-                .allMatch(report -> report.get("mappedTo") instanceof Map<?, ?>);
+                .map(report -> report.get("mappedTo"))
+                .allMatch(mapping -> mapping instanceof Map<?, ?> || InferenceCatalogValues.scalar(mapping));
     }
 
     static Produced produced(SchemaVersionDto version, PredictionResultDto result) {
@@ -52,7 +56,7 @@ final class InferenceReportValues {
                 .findFirst()
                 .orElse(null);
         List<Map<?, ?>> configs = records(version.formSchema().get("reports"));
-        List<Map<?, ?>> outputs = records(result.output().get("reports"));
+        List<Map<?, ?>> outputs = records(result.output() == null ? null : result.output().get("reports"));
         List<Report> reports = new ArrayList<>();
         for (int order = 0; order < configs.size(); order++) {
             Map<?, ?> config = configs.get(order);

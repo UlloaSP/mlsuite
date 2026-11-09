@@ -1,11 +1,12 @@
 package dev.ulloasp.mlsuite.schema.domain.model;
 
+import jakarta.persistence.PrePersist;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.Column;
@@ -20,7 +21,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import dev.ulloasp.mlsuite.visitor.domain.model.Visitor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -35,13 +35,14 @@ import lombok.Setter;
 public class PredictionRun {
 
     public PredictionRun(SchemaVersion schemaVersion, String name, Map<String, Object> inputData,
-            PredictionRunStatus status) {
-        this(null, schemaVersion, name, inputData, status);
+            PredictionRunStatus status, Principal createdBy) {
+        this(null, schemaVersion, name, inputData, status, createdBy);
     }
 
     public PredictionRun(SchemaBookmark schemaBookmark, SchemaVersion schemaVersion, String name,
-            Map<String, Object> inputData, PredictionRunStatus status) {
+            Map<String, Object> inputData, PredictionRunStatus status, Principal createdBy) {
         this.schemaBookmark = schemaBookmark;
+        this.createdBy = createdBy;
         this.schemaVersion = schemaVersion;
         this.name = name;
         this.inputData = inputData;
@@ -65,7 +66,7 @@ public class PredictionRun {
     private String name;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "input_data_json", nullable = false)
+    @Column(name = "input_data", nullable = false)
     private Map<String, Object> inputData;
 
     @Enumerated(EnumType.STRING)
@@ -76,23 +77,46 @@ public class PredictionRun {
     @Column(name = "origin", nullable = false, length = 16, updatable = false)
     private PredictionRunOrigin origin;
 
-    /** Who made a public run without an account; a workspace run, or a member's public run, has none. */
-    @ManyToOne
-    @JoinColumn(name = "visitor_id", updatable = false, foreignKey = @ForeignKey(name = "fk_prediction_run_visitor"))
-    private Visitor visitor;
+    /** Who made it: a member, a visitor of a public page, or an API client. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
 
-    // Identity snapshot: existing runs remain unattributed; later profile edits do not rewrite history.
-    @Column(name = "created_by_name", updatable = false)
-    private String createdByName;
+    /** The name its author is shown by; null for a visitor. */
+    public String getCreatedByName() {
+        return createdBy.label();
+    }
 
-    @Column(name = "created_by_email", updatable = false)
-    private String createdByEmail;
+    /** The address of the member who made it, while they have an account. */
+    public String getCreatedByEmail() {
+        return createdBy.email();
+    }
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
-    private OffsetDateTime updatedAt;
+    /** Carried from its parent for the composite foreign key that keeps it there. */
+    @Column(name = "schema_id", nullable = false, updatable = false)
+    private Long schemaId;
+
+    /** The organization of its schema, carried for the composite key and tenant listings. */
+    @Column(name = "organization_id", nullable = false, updatable = false)
+    private Long organizationId;
+
+    /** The client an API run was made with; the database keeps it to the run's organization. */
+    @Column(name = "api_client_id", updatable = false)
+    private Long apiClientId;
+
+    /** The author's kind, which the database checks the origin against. */
+    @Column(name = "created_by_kind", nullable = false, updatable = false, length = 16)
+    private String createdByKind;
+
+    @PrePersist
+    void carryParentKeys() {
+        schemaId = schemaVersion.getSchema().getId();
+        organizationId = schemaVersion.getSchema().getOrganization().getId();
+        createdByKind = createdBy.getKind().name();
+        apiClientId = createdBy.getApiClientId();
+    }
 }

@@ -4,7 +4,6 @@ import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -17,10 +16,6 @@ public interface PredictionResultFeedbackRepository extends JpaRepository<Predic
     /** Every answer on these runs, by anyone and in any review. */
     List<PredictionResultFeedback> findByResultRunIdIn(Collection<Long> runIds);
 
-    /** The runs answered in a review. */
-    @Query("SELECT DISTINCT f.result.run.id FROM PredictionResultFeedback f WHERE f.review.id = :reviewId")
-    List<Long> findRunIdsAnsweredIn(Long reviewId);
-
     @Query("""
             SELECT f FROM PredictionResultFeedback f
             WHERE f.result.id = :resultId
@@ -32,7 +27,7 @@ public interface PredictionResultFeedbackRepository extends JpaRepository<Predic
     @Query("""
             SELECT f FROM PredictionResultFeedback f
             JOIN FETCH f.result r
-            LEFT JOIN FETCH f.user
+            JOIN FETCH f.createdBy
             WHERE r.run.id IN :runIds
             AND r.run.schemaVersion.schema.organization.id = :organizationId
             ORDER BY r.run.id ASC, r.id ASC, f.type ASC, f.order ASC
@@ -40,35 +35,29 @@ public interface PredictionResultFeedbackRepository extends JpaRepository<Predic
     List<PredictionResultFeedback> findByRunIdsAndOrganizationId(List<Long> runIds, Long organizationId);
 
     /** A member's answer to one question in one review. */
-    Optional<PredictionResultFeedback> findByResultIdAndUserIdAndTypeAndOrderAndReviewId(
+    Optional<PredictionResultFeedback> findByResultIdAndCreatedByUserIdAndTypeAndOrderAndReviewId(
             Long resultId, Long userId, PredictionResultFeedbackType type, int order, Long reviewId);
 
-    /** A member's answer to one question outside any review: on a public page. */
-    Optional<PredictionResultFeedback> findByResultIdAndUserIdAndTypeAndOrderAndReviewIsNull(
-            Long resultId, Long userId, PredictionResultFeedbackType type, int order);
+    /** An author's answer to one question outside any review: on a public page, by a member or a visitor. */
+    Optional<PredictionResultFeedback> findByResultIdAndCreatedByIdAndTypeAndOrderAndReviewIsNull(
+            Long resultId, Long principalId, PredictionResultFeedbackType type, int order);
 
-    Optional<PredictionResultFeedback> findByResultIdAndVisitorIdAndTypeAndOrder(
-            Long resultId, UUID visitorId, PredictionResultFeedbackType type, int order);
-
-    /** A visitor's own answers on their runs, for the public page that reads them back. */
-    List<PredictionResultFeedback> findByResultRunIdInAndVisitorIdOrderByIdAsc(Collection<Long> runIds, UUID visitorId);
-
-    /** A signed-in member's own answers on public-page runs, given outside any review. */
-    List<PredictionResultFeedback> findByResultRunIdInAndUserIdAndReviewIsNullOrderByIdAsc(Collection<Long> runIds,
-            Long userId);
+    /** An author's own answers on public-page runs, given outside any review, for the page that reads them back. */
+    List<PredictionResultFeedback> findByResultRunIdInAndCreatedByIdAndReviewIsNullOrderByIdAsc(Collection<Long> runIds,
+            Long principalId);
 
     /** A reviewer's answers on one result in one review. */
     @Query("""
             SELECT f FROM PredictionResultFeedback f
-            WHERE f.result.id = :resultId AND f.user.id = :userId AND f.review.id = :reviewId
+            WHERE f.result.id = :resultId AND f.createdBy.userId = :userId AND f.review.id = :reviewId
             ORDER BY f.type ASC, f.order ASC
             """)
     List<PredictionResultFeedback> findByResultIdAndUserIdAndReviewId(Long resultId, Long userId, Long reviewId);
 
     /** A reviewer's answers on a run in one review. */
-    List<PredictionResultFeedback> findByResultRunIdAndUserIdAndReviewId(Long runId, Long userId, Long reviewId);
+    List<PredictionResultFeedback> findByResultRunIdAndCreatedByUserIdAndReviewId(Long runId, Long userId, Long reviewId);
 
-    boolean existsByResultRunIdAndUserIdAndReviewId(Long runId, Long userId, Long reviewId);
+    boolean existsByResultRunIdAndCreatedByUserIdAndReviewId(Long runId, Long userId, Long reviewId);
 
     /** When a reviewer last saved feedback on a review run. */
     interface FeedbackSaved {
@@ -80,7 +69,7 @@ public interface PredictionResultFeedbackRepository extends JpaRepository<Predic
     /** The review runs among these that the reviewer answered, each with when they last saved. */
     @Query("""
             SELECT rr.id AS reviewRunId, MAX(f.updatedAt) AS savedAt FROM SchemaReviewRun rr, PredictionResultFeedback f
-            WHERE rr.id IN :reviewRunIds AND f.result.run = rr.run AND f.review = rr.review AND f.user.id = :userId
+            WHERE rr.id IN :reviewRunIds AND f.result.run = rr.run AND f.review = rr.review AND f.createdBy.userId = :userId
             GROUP BY rr.id
             """)
     List<FeedbackSaved> findFeedbackSaved(Collection<Long> reviewRunIds, Long userId);

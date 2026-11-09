@@ -10,6 +10,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -41,6 +42,7 @@ public class ModelController {
     private final ModelPreparationService preparations;
     private final RuntimeEnvironments environments;
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public ResponseEntity<CreateModelDto> createModel(
             CurrentUser user,
@@ -124,6 +126,7 @@ public class ModelController {
         return ResponseEntity.ok(ModelDto.toDto(preparations.retry(user.userId(), modelId)));
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/{modelId}/duplicate")
     public ResponseEntity<ModelDto> duplicate(
             CurrentUser user,
@@ -135,6 +138,7 @@ public class ModelController {
                 name)));
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{modelId}")
     public ResponseEntity<Void> delete(
             CurrentUser user,

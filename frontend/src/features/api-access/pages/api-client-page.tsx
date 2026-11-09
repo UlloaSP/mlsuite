@@ -55,7 +55,7 @@ export function ApiClientPage() {
   const items = [
     { label: "Overview", value: "overview" as const },
     { label: "Keys", value: "keys" as const, count: client.keys.length },
-    { label: "Bookmarks", value: "access" as const, count: client.bookmarks.length },
+    { label: "Bookmarks", value: "bookmarks" as const, count: client.bookmarks.length },
     { label: "Requests", value: "requests" as const },
     ...(canManage ? [{ label: "Settings", value: "settings" as const }] : []),
   ];
@@ -101,7 +101,7 @@ export function ApiClientPage() {
               />
             ) : shown === "keys" ? (
               <ApiClientKeysTab client={client} canManage={canManage} />
-            ) : shown === "access" ? (
+            ) : shown === "bookmarks" ? (
               <ApiClientAccessTab client={client} canManage={canManage} />
             ) : shown === "requests" ? (
               <RequestLog clientId={client.client.id} search={search} />

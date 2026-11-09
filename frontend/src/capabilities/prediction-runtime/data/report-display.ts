@@ -125,7 +125,7 @@ export const getSchemaResultReports = (
     const id = reportId(report);
     const kind = typeof report.kind === "string" ? report.kind : "report";
     const target = reportTargetForBinding(report, binding);
-    const rawPayload = target ? payloadFor(target, result.output, [id ?? ""]) : undefined;
+    const rawPayload = target ? payloadFor(target, result.output ?? {}, [id ?? ""]) : undefined;
     const payload = normalizeReportPayload(report, rawPayload);
     if (!id || !target || !isRenderablePayload(report, payload)) return items;
     items.push({

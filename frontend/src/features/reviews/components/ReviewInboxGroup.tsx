@@ -43,10 +43,17 @@ export function ReviewInboxGroup({
           onRetry={() =>
             void (query.isFetchNextPageError ? query.fetchNextPage() : query.refetch())
           }
-          emptyState={{
-            title: "No review items",
-            description: "Assigned inferences will appear here.",
-          }}
+          emptyState={
+            tone === "revision"
+              ? {
+                  title: "No saved answers",
+                  description: "Runs whose answers you save appear here, ready to send.",
+                }
+              : {
+                  title: "No review items",
+                  description: "Assigned inferences will appear here.",
+                }
+          }
         >
           {query.data?.items.map((item) => (
             <ReviewTrayRow

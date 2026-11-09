@@ -63,6 +63,7 @@ const version = (id: number, fields: object[], reports?: object[]): SchemaVersio
   version: id,
   name: null,
   createdAt: "2026-07-20T08:00:00Z",
+  createdByName: "Ada Lovelace",
   bindings: [{ id: 1, modelId: 1, schemaVersionId: id, pluginPolicy: null } as never],
   formSchema: {
     fields,
@@ -87,9 +88,9 @@ const result = (runId: number, prediction = 1) => ({
 const answer = (runId: number, value: string): PredictionResultFeedbackDto => ({
   id: runId,
   resultId: runId * 10,
-  userId: 1,
-  userName: "Grace",
-  userEmail: "grace@example.com",
+  createdByUserId: 1,
+  createdByName: "Grace",
+  createdByEmail: "grace@example.com",
   type: "OUTPUT",
   order: 0,
   value: { "output-feedback-assessment": value },

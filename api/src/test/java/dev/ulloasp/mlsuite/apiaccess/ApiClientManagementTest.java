@@ -34,9 +34,9 @@ import dev.ulloasp.mlsuite.apiaccess.domain.model.ApiClientKey;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
@@ -51,6 +51,9 @@ import dev.ulloasp.mlsuite.user.domain.model.User;
  */
 class ApiClientManagementTest extends ApiAccessFixture {
 
+    @Autowired
+    private Principals principals;
+
     @Autowired SchemaCatalogUseCase schemas;
 
     @Test
@@ -63,7 +66,7 @@ class ApiClientManagementTest extends ApiAccessFixture {
 
         mockMvc.perform(member(json(post("/api/api-clients"), Map.of("name", "lab2PRESSURE"))))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("This organization already has a client named \"lab2PRESSURE\"."));
+                .andExpect(jsonPath("$.message").value("This organization already has a client with this name."));
         long id = created.at("/client/id").asLong();
         send(patch("/api/api-clients/{id}", id), Map.of("name", "Edge gateway", "description", "Billing"), 200);
         mockMvc.perform(member(get("/api/api-clients").param("search", "billing")))
@@ -170,7 +173,7 @@ class ApiClientManagementTest extends ApiAccessFixture {
         mockMvc.perform(member(delete("/api/api-clients/{id}", clientId))).andExpect(status().isNoContent());
 
         assertNull(entityManager.find(ApiClient.class, clientId));
-        assertNull(calls().getFirst().getClientId());
+        assertEquals(clientId, calls().getFirst().getClientId());
         assertEquals("Lab2Pressure", calls().getFirst().getClientName());
         mockMvc.perform(predicting(secret, FEATURES)).andExpect(status().isUnauthorized());
         assertEquals(1, auditEvents("API_CLIENT_DELETE"));
@@ -199,9 +202,9 @@ class ApiClientManagementTest extends ApiAccessFixture {
         mockMvc.perform(signedIn(get("/api/api-access/requests"), outsider)).andExpect(status().isForbidden());
 
         Long foreign = inTransactionReturning(() -> {
-            Organization elsewhere = new Organization("elsewhere-" + clientId, "Elsewhere", null, owner);
+            Organization elsewhere = new Organization("elsewhere-" + clientId, "Elsewhere", null, principals.of(owner));
             entityManager.persist(elsewhere);
-            ApiClient client = new ApiClient(elsewhere, "Foreign", null, "Owner");
+            ApiClient client = new ApiClient(elsewhere, "Foreign", null, principals.system());
             entityManager.persist(client);
             return client.getId();
         });
@@ -214,10 +217,10 @@ class ApiClientManagementTest extends ApiAccessFixture {
             String name = "member-" + System.nanoTime();
             User user = new User(name, name + "@example.test", "unused", "Member", SystemRole.USER);
             entityManager.persist(user);
-            RoleDefinition role = new RoleDefinition(organization, RoleScope.ORGANIZATION, name, name, null);
+            RoleDefinition role = new RoleDefinition(organization, name, name, null, principals.system());
             role.setPermissions(permissions);
             entityManager.persist(role);
-            entityManager.persist(new OrganizationMembership(organization, user, role, MembershipStatus.ACTIVE));
+            entityManager.persist(new OrganizationMembership(organization, user, role, MembershipStatus.ACTIVE, principals.of(user)));
             user.setCurrentOrganization(organization);
             return user.getId();
         });

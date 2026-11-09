@@ -13,7 +13,7 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   useCurrentOrganizationId: () => 1,
 }));
 vi.mock("@/capabilities/prediction-runtime/plugins/schema-plugin-catalog", () => ({
-  predictionCatalogQueryOptions: () => ({ queryKey: ["catalog"], queryFn: async () => ({}) }),
+  snapshotCatalogQueryOptions: () => ({ queryKey: ["catalog"], queryFn: async () => ({}) }),
 }));
 vi.mock("@/capabilities/prediction-runtime/sandbox/plugin-sandbox-services", () => ({
   prepareSchemaRun: async () => ({
@@ -206,6 +206,22 @@ describe("bulk uploads run on the server as jobs", () => {
     expect(toasts.error).toHaveBeenCalledWith("Bulk upload could not start", {
       description: "You already have 2 bulk uploads running; wait for one to finish",
     });
+  });
+
+  test("lines the file could not use are listed in the dialog, with why", async () => {
+    routes.set(JOBS, () => ({ status: 200, body: [] }));
+    routes.set("POST /api/schema-bookmarks/9/prediction-jobs", () => ({
+      status: 201,
+      body: job({ status: "QUEUED" }),
+    }));
+    await openDialog();
+
+    await upload("age\n42\nold\n");
+
+    const skipped = document.body.querySelector('[aria-label="Skipped lines"]');
+    expect(skipped?.textContent).toContain("Skipped 1 line of the file");
+    expect(skipped?.textContent).toMatch(/line 3: .*age/);
+    expect(toasts.error).not.toHaveBeenCalled();
   });
 
   test("says when the jobs cannot be read", async () => {

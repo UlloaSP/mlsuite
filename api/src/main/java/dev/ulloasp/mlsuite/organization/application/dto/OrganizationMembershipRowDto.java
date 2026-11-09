@@ -19,7 +19,7 @@ public record OrganizationMembershipRowDto(
         @Nullable String avatarUrl,
         /** The handle of their profile, while anyone may read it. */
         @Nullable String profileHandle,
-        RoleSummaryDto role,
+        RoleSummaryDto roleDefinition,
         MembershipStatus status,
         OffsetDateTime createdAt,
         MembershipActionsDto actions) {

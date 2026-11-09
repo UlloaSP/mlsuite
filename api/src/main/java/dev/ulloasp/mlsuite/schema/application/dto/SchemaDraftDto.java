@@ -18,7 +18,9 @@ public record SchemaDraftDto(
         long revision,
         SchemaDraftStatus status,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt) {
+        OffsetDateTime updatedAt,
+        String createdByName,
+        String updatedByName) {
 
     public static SchemaDraftDto from(SchemaDraft draft) {
         return new SchemaDraftDto(
@@ -32,6 +34,8 @@ public record SchemaDraftDto(
                 draft.currentRevision(),
                 draft.getStatus(),
                 draft.getCreatedAt(),
-                draft.getUpdatedAt());
+                draft.getUpdatedAt(),
+                draft.getCreatedBy().label(),
+                draft.getUpdatedBy().label());
     }
 }

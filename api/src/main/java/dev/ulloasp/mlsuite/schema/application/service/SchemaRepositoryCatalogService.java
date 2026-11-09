@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
@@ -35,6 +36,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.util.CatalogPages;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -59,11 +61,14 @@ public class SchemaRepositoryCatalogService implements SchemaRepositoryCatalogUs
     private final SchemaBookmarkRepository bookmarkRepository;
     private final SchemaBookmarkExampleUseCase examples;
 
+    /** "updated", what a request without a sort holds, keeps the default order: newest first. */
     @Override
     public PageDto<SchemaVersionDto> snapshots(Long userId, Long schemaId, CatalogRequest request) {
         requireSchema(userId, schemaId);
-        Page<SchemaVersion> page = versionRepository.findSnapshotPage(schemaId, request.filter(),
-                CatalogPages.likeLiteral(request.search()), request.sort(),
+        String filter = CatalogValues.require("filter", request.filter(), List.of("all", "latest"));
+        String sort = CatalogValues.require("sort", request.sort(), List.of("created", "version", "name", "updated"));
+        Page<SchemaVersion> page = versionRepository.findSnapshotPage(schemaId, filter,
+                CatalogPages.likeLiteral(request.search()), sort,
                 CatalogPages.pageable(request, Sort.unsorted()));
         List<Long> versionIds = page.getContent().stream().map(SchemaVersion::getId).toList();
         Map<Long, List<SchemaModelBinding>> bindings = bindingRepository.findBySchemaVersionIdIn(versionIds).stream()
@@ -77,10 +82,16 @@ public class SchemaRepositoryCatalogService implements SchemaRepositoryCatalogUs
     @Override
     public PageDto<SchemaChangeCatalogItemDto> changes(Long userId, Long schemaId, CatalogRequest request) {
         requireSchema(userId, schemaId);
+        String filter = request.filter();
+        if (!filter.equals("all") && !filter.equals("open") && statuses(filter::equalsIgnoreCase).isEmpty()) {
+            throw CatalogValues.unknown("filter", filter, Stream.concat(Stream.of("all", "open"),
+                    Arrays.stream(SchemaDraftStatus.values()).map(SchemaDraftStatus::name)).toList());
+        }
         Sort order = switch (request.sort()) {
+            case "updated" -> Sort.by(Sort.Order.desc("updatedAt"));
             case "name" -> Sort.by(Sort.Order.asc("name").ignoreCase());
             case "base" -> Sort.by(Sort.Order.desc("baseVersion.version"));
-            default -> Sort.by(Sort.Order.desc("updatedAt"));
+            default -> throw CatalogValues.unknown("sort", request.sort(), List.of("updated", "name", "base"));
         };
         Page<SchemaDraft> page = draftRepository.findAll(openChanges(schemaId, request),
                 CatalogPages.pageable(request, order.and(Sort.by("id"))));
@@ -94,10 +105,12 @@ public class SchemaRepositoryCatalogService implements SchemaRepositoryCatalogUs
     @Override
     public PageDto<SchemaBookmarkDto> bookmarks(Long userId, Long schemaId, CatalogRequest request) {
         requireSchema(userId, schemaId);
+        CatalogValues.require("filter", request.filter(), List.of("all", "latest", "older"));
         Sort order = switch (request.sort()) {
+            case "updated" -> Sort.by(Sort.Order.desc("updatedAt"));
             case "name" -> Sort.by(Sort.Order.asc("name").ignoreCase());
             case "version" -> Sort.by(Sort.Order.desc("version.version"));
-            default -> Sort.by(Sort.Order.desc("updatedAt"));
+            default -> throw CatalogValues.unknown("sort", request.sort(), List.of("updated", "name", "version"));
         };
         int latest = versionRepository.findMaxVersionBySchemaId(schemaId);
         Page<SchemaBookmark> page = bookmarkRepository.findAll(schemaBookmarks(schemaId, latest, request),
@@ -137,7 +150,7 @@ public class SchemaRepositoryCatalogService implements SchemaRepositoryCatalogUs
                 case "all" -> builder.conjunction();
                 case "latest" -> builder.equal(version, latest);
                 case "older" -> builder.notEqual(version, latest);
-                default -> builder.disjunction();
+                default -> throw new IllegalStateException("Unchecked bookmark filter " + request.filter());
             });
             predicates.add(builder.or(
                     builder.like(builder.lower(root.get("name")), search, '!'),

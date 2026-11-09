@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { AtSign } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "@/shared/ui/toast";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -50,9 +50,11 @@ export function CreateOrganizationPage({ ownerChoice }: Props) {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
-  const [owner, setOwner] = useState<OrganizationOwnerCandidate | null>(null);
+  // The owner picked in the field: undefined until someone picks, so the creator (who may load
+  // after the page) is the owner by default; null once the field is cleared.
+  const [pickedOwner, setOwner] = useState<OrganizationOwnerCandidate | null | undefined>();
+  const owner = pickedOwner === undefined ? (initialOwner ?? null) : pickedOwner;
   const [submitError, setSubmitError] = useState<string>();
-  const ownerInitializedRef = useRef(false);
   const slugEditedRef = useRef(false);
   const ownerItems = users.map((item) => ({
     id: item.id,
@@ -60,13 +62,6 @@ export function CreateOrganizationPage({ ownerChoice }: Props) {
     description: item.email,
     avatarUrl: item.avatarUrl ?? null,
   }));
-  useEffect(() => {
-    if (!ownerInitializedRef.current && initialOwner) {
-      setOwner(initialOwner);
-      ownerInitializedRef.current = true;
-    }
-  }, [initialOwner]);
-
   async function submit() {
     setSubmitError(undefined);
     const trimmedName = name.trim();

@@ -15,7 +15,7 @@ public record ApiClientKeyDto(
         @Nullable OffsetDateTime lastUsedAt) {
 
     public static ApiClientKeyDto from(ApiClientKey key) {
-        return new ApiClientKeyDto(key.getId(), key.getName(), key.getKeyPrefix(), key.getCreatedByName(),
+        return new ApiClientKeyDto(key.getId(), key.getName(), key.getKeyPrefix(), key.getCreatedBy().label(),
                 key.getCreatedAt(), key.getLastUsedAt());
     }
 }

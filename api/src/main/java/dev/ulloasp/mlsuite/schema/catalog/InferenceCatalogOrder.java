@@ -63,14 +63,13 @@ final class InferenceCatalogOrder {
         this.text = text;
     }
 
-    /** Column ids may contain dots themselves, so the direction is what follows the last one. */
+    /**
+     * A sort the request has read as a column and a direction. Column ids may contain dots
+     * themselves, so the direction is what follows the last one.
+     */
     static InferenceCatalogOrder of(String sort, InferenceCatalogText text) {
         int split = sort.lastIndexOf('.');
-        String direction = sort.substring(split + 1);
-        boolean readable = split > 0 && (direction.equals("asc") || direction.equals("desc"));
-        return readable
-                ? new InferenceCatalogOrder(sort.substring(0, split), direction.equals("desc"), text)
-                : new InferenceCatalogOrder(CREATED_AT, true, text);
+        return new InferenceCatalogOrder(sort.substring(0, split), sort.substring(split + 1).equals("desc"), text);
     }
 
     /** Whether the order is by creation time, which the database can page by itself. */

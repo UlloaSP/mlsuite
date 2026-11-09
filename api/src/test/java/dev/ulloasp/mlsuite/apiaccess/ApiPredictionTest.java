@@ -37,6 +37,8 @@ import dev.ulloasp.mlsuite.apiaccess.adapter.out.persistence.repository.ApiClien
 import dev.ulloasp.mlsuite.apiaccess.application.dto.ApiPredictionRequest;
 import dev.ulloasp.mlsuite.apiaccess.application.port.in.ApiPredictionUseCase;
 import dev.ulloasp.mlsuite.apiaccess.domain.model.ApiRequest;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
+import dev.ulloasp.mlsuite.principal.domain.model.PrincipalKind;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunOrigin;
@@ -52,6 +54,9 @@ import dev.ulloasp.mlsuite.storage.ArtifactHash;
  */
 class ApiPredictionTest extends ApiAccessFixture {
 
+    @Autowired
+    private Principals principals;
+
     @Test
     void aClientsRunIsOneAuditEntryUnderTheClientWithTheCallsRequestId() throws Exception {
         long before = auditedRuns();
@@ -61,10 +66,11 @@ class ApiPredictionTest extends ApiAccessFixture {
 
         assertEquals(before + 1, auditedRuns());
         Map<String, Object> row = jdbc.queryForMap(
-                "SELECT * FROM audit_event WHERE action = 'PREDICTION_RUN' ORDER BY id DESC LIMIT 1");
+                "%s WHERE action = 'PREDICTION_RUN' ORDER BY e.id DESC LIMIT 1".formatted("SELECT e.*, p.user_id AS actor_user_id, p.api_client_id AS actor_client_id FROM audit_event e LEFT JOIN principal p ON p.id = e.actor_principal_id"));
         assertEquals("API_CLIENT", row.get("actor_kind"));
         assertEquals("Lab2Pressure", row.get("actor_label"));
         assertEquals(null, row.get("actor_user_id"));
+        assertNotNull(row.get("actor_client_id"));
         assertEquals(organization.getId(), row.get("organization_id"));
         assertEquals(single.getId().toString(), row.get("target_id"));
         assertEquals(UUID.fromString(answer.get("requestId").asString()), row.get("request_id"));
@@ -123,7 +129,9 @@ class ApiPredictionTest extends ApiAccessFixture {
         PredictionRun run = runsOf(single).getFirst();
         assertEquals(PredictionRunOrigin.API, run.getOrigin());
         assertEquals("Lab2Pressure", run.getCreatedByName());
-        assertNull(run.getVisitor());
+        assertEquals(PrincipalKind.API_CLIENT, run.getCreatedBy().getKind());
+        // The run names its client, which the database keeps to the run's organization.
+        assertEquals(clientId, run.getApiClientId());
         assertEquals(singleVersion.getId(), run.getSchemaVersion().getId());
         assertEquals(Map.of("age", 52, "sex__male", 1), run.getInputData());
         PredictionResult result = entityManager
@@ -156,7 +164,8 @@ class ApiPredictionTest extends ApiAccessFixture {
         mockMvc.perform(predicting(secret, FEATURES)).andExpect(status().isOk());
 
         assertEquals("Lab2Pressure", runsOf(single).getFirst().getCreatedByName());
-        assertNull(calls().getFirst().getKeyId());
+        // The log keeps the id the revoked key had, beside its prefix.
+        assertEquals(keyId, calls().getFirst().getKeyId());
     }
 
     @Test
@@ -184,7 +193,7 @@ class ApiPredictionTest extends ApiAccessFixture {
             assertTrue(finish.await(10, TimeUnit.SECONDS));
             return Map.of("reports", List.of(CLASSIFIER));
         });
-        ApiPredictionRequest record = new ApiPredictionRequest(Map.of("age", 52));
+        String record = "{\"features\":{\"age\":52}}";
         var first = CompletableFuture.supplyAsync(() -> predictions.predict(secret, apiId, record));
         var second = CompletableFuture.supplyAsync(() -> predictions.predict(secret, apiId, record));
         var visitor = CompletableFuture.supplyAsync(() -> run(bookmark.getPublicId(), request(Map.of("in0", 52))));
@@ -208,7 +217,7 @@ class ApiPredictionTest extends ApiAccessFixture {
         when(analyzer.post(eq("/predict"), any())).thenAnswer(call -> {
             inTransaction(() -> {
                 SchemaVersion moved = new SchemaVersion(entityManager.find(Schema.class, schema.getId()), 5, "Next",
-                        singleVersion.getFormSchema());
+                        singleVersion.getFormSchema(), principals.system());
                 entityManager.persist(moved);
                 entityManager.find(SchemaBookmark.class, single.getId()).setVersion(moved);
             });
