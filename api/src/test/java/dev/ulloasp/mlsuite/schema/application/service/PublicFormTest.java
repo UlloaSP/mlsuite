@@ -149,11 +149,25 @@ class PublicFormTest {
                 assertEquals("\"" + label + "\" has a value the form cannot send.", error.getReason(), values.toString());
             }
         });
-        for (String key : List.of("in9", "agg0")) {
-            ResponseStatusException unknown = assertThrows(ResponseStatusException.class,
-                    () -> PublicFormValues.require(form, Map.of(key, 1)));
-            assertEquals("This page sent a value its form has no input for. Reload the page and run it again.",
-                    unknown.getReason());
+        ResponseStatusException unknown = assertThrows(ResponseStatusException.class,
+                () -> PublicFormValues.require(form, Map.of("in9", 1)));
+        assertEquals("This page sent a value its form has no input for. Reload the page and run it again.",
+                unknown.getReason());
+    }
+
+    @Test
+    void anAggregateSentInsteadOfItsRowsIsRefusedByTheSeriesAndAggregationLabels() {
+        PublicForm form = PublicForm.of(Map.of("fields", List.of(ROOMS, dated()), "reports", List.of()),
+                List.of(MODEL));
+        Map<String, Object> row = Map.of("date", "2024-03-01T00:00:00.000Z", "area", 90);
+
+        for (Map<String, Object> values : List.of(Map.<String, Object>of("in0", 3, "agg0", 95),
+                Map.of("in0", 3, "in1", List.of(row), "agg0", 95))) {
+            ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                    () -> PublicFormValues.require(form, values));
+            assertEquals(400, error.getStatusCode().value());
+            assertEquals("\"Area history\" is calculated from its rows; send the rows, not \"Mean\".",
+                    error.getReason());
         }
     }
 

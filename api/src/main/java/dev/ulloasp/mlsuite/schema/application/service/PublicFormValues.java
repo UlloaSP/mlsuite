@@ -33,6 +33,10 @@ public final class PublicFormValues {
 
     public static void require(PublicForm form, Map<String, Object> values) {
         values.forEach((key, value) -> {
+            form.aggregate(key).ifPresent(aggregate -> {
+                throw badRequest("\"%s\" is calculated from its rows; send the rows, not \"%s\"."
+                        .formatted(aggregate.field().label(), aggregate.label()));
+            });
             InputField field = form.field(key).orElseThrow(() -> badRequest(
                     "This page sent a value its form has no input for. Reload the page and run it again."));
             if (field.rows() ? !isRows(value, field.config()) : !isScalar(value)) {

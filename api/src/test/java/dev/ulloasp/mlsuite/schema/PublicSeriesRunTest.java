@@ -85,13 +85,16 @@ class PublicSeriesRunTest extends PublicPredictionFixture {
     @Test
     void anAggregateTheVisitorSendsIsRefusedAndNeverReachesTheModel() throws Exception {
         String row = "[{\"date\":\"2024-01-01T00:00:00.000Z\",\"area\":90}]";
-        for (String values : List.of("{\"in0\":5,\"in1\":" + row + ",\"agg0\":99999}",
-                "{\"in0\":5,\"in2\":" + row + ",\"in1\":99999}")) {
+        for (String values : List.of("{\"in0\":5,\"in1\":" + row + ",\"agg0\":99999}", "{\"in0\":3,\"agg0\":95}")) {
             mockMvc.perform(running(values))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message").value(
-                            "This page sent a value its form has no input for. Reload the page and run it again."));
+                            "\"Area history\" is calculated from its rows; send the rows, not \"Mean area\"."));
         }
+        mockMvc.perform(running("{\"in0\":5,\"in2\":" + row + ",\"in1\":99999}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(
+                        "This page sent a value its form has no input for. Reload the page and run it again."));
         mockMvc.perform(running("{\"in0\":5,\"in1\":99999}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("\"Area history\" has a value the form cannot send."));

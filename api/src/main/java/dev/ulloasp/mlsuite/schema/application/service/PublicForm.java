@@ -82,11 +82,19 @@ public final class PublicForm {
         }
     }
 
+    /**
+     * A key a series' aggregation is shown with, which a run never carries: the server computes
+     * it from {@code field}'s rows. A refusal names the aggregation by its label.
+     */
+    public record Aggregate(InputField field, String label) {
+    }
+
     private final List<BoundModel> models;
     /** In the order of the stored form, which is the order a run's values are routed in. */
     private final List<InputRoute> inputRoutes = new ArrayList<>();
     private final Set<String> inputKeys = new LinkedHashSet<>();
     private final Map<String, InputField> inputFields = new LinkedHashMap<>();
+    private final Map<String, Aggregate> aggregates = new LinkedHashMap<>();
     private final List<ReportRoute> reportRoutes = new ArrayList<>();
     private int aggregationCount;
     private final Map<String, Object> schema;
@@ -162,6 +170,11 @@ public final class PublicForm {
         return Optional.ofNullable(inputFields.get(key));
     }
 
+    /** The aggregation a key is shown for; none for a key no aggregation has. */
+    public Optional<Aggregate> aggregate(String key) {
+        return Optional.ofNullable(aggregates.get(key));
+    }
+
     public List<ReportRoute> reportRoutes() {
         return reportRoutes;
     }
@@ -213,6 +226,15 @@ public final class PublicForm {
         }
         for (InputRoute route : inputRoutes.subList(firstRoute, inputRoutes.size())) {
             inputFields.put(route.key(), new InputField(field, series));
+        }
+        if (shown instanceof Map<?, ?> copy && copy.get("aggregations") instanceof List<?> shownAggregations) {
+            for (Object item : shownAggregations) {
+                if (item instanceof Map<?, ?> aggregation && aggregation.get(MODEL_ROUTING) instanceof String key) {
+                    Object label = aggregation.get("label");
+                    aggregates.put(key, new Aggregate(new InputField(field, true),
+                            label instanceof String text && !text.isBlank() ? text : String.valueOf(aggregation.get("operation"))));
+                }
+            }
         }
         if (series && field.get("aggregations") instanceof List<?> aggregations) {
             String rowsKey = inputRoutes.get(firstRoute).key();
