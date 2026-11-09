@@ -1,0 +1,72 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
+/*
+  Toasts in the app's tokens (AppToaster). Sonner injects its own unlayered stylesheet with a
+  fixed light and dark palette, which beats layered utilities whatever their specificity. These
+  rules are unlayered too and outrank its selectors: its variables point at the theme in effect,
+  and the colors it writes out are replaced, so toasts follow every theme in both schemes.
+*/
+.app-toaster[data-sonner-toaster][data-sonner-theme] {
+  --normal-bg: var(--color-surface-raised);
+  --normal-bg-hover: var(--color-surface-hover);
+  --normal-border: var(--color-line);
+  --normal-border-hover: var(--color-line-strong);
+  --normal-text: var(--color-fg);
+  --success-bg: var(--color-success-subtle);
+  --success-border: var(--color-success-border);
+  --success-text: var(--color-success-fg);
+  --info-bg: var(--color-info-subtle);
+  --info-border: var(--color-info-border);
+  --info-text: var(--color-info-fg);
+  --warning-bg: var(--color-warning-subtle);
+  --warning-border: var(--color-warning-border);
+  --warning-text: var(--color-warning-fg);
+  --error-bg: var(--color-danger-subtle);
+  --error-border: var(--color-danger-border);
+  --error-text: var(--color-danger-fg);
+  --border-radius: var(--radius-card);
+  font-family: var(--font-sans);
+}
+
+.app-toaster [data-sonner-toast][data-styled="true"] {
+  box-shadow: var(--shadow-overlay);
+  font-size: var(--text-sm);
+}
+
+.app-toaster [data-sonner-toast][data-styled="true"] [data-description] {
+  color: var(--color-fg-secondary);
+}
+
+.app-toaster [data-sonner-toast][data-styled="true"] [data-button] {
+  border-radius: var(--radius-control);
+  background: var(--color-action);
+  color: var(--color-on-action);
+}
+
+.app-toaster[data-sonner-toaster]
+  [data-sonner-toast][data-styled="true"]
+  [data-button][data-cancel] {
+  background: var(--color-surface-muted);
+  color: var(--color-fg);
+}
+
+.app-toaster[data-sonner-toaster]
+  [data-sonner-toast][data-styled="true"]:hover
+  [data-close-button]:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-line-strong);
+}
+
+.app-toaster [data-sonner-toast][data-styled="true"]:focus-visible {
+  box-shadow:
+    var(--shadow-overlay),
+    0 0 0 2px color-mix(in oklch, var(--color-focus) 60%, transparent);
+}
+
+.app-toaster [data-sonner-toast][data-styled="true"] [data-button]:focus-visible,
+.app-toaster [data-sonner-toast][data-styled="true"] [data-close-button]:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--color-focus) 60%, transparent);
+}
