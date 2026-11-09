@@ -99,13 +99,6 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
         Long orgId = requireOperate(userId);
         SchemaBookmark bookmark = requireBookmark(bookmarkId, orgId);
         String name = cleanName(request.name());
-        boolean taken = bookmarkRepository.findBySchemaIdAndNameIgnoreCase(bookmark.getSchema().getId(), name)
-                .filter(other -> !other.getId().equals(bookmark.getId()))
-                .isPresent();
-        if (taken) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "This schema already has a bookmark named \"%s\".".formatted(name));
-        }
         auditLog.record(AuditActor.user(userId), orgId, AuditAction.BOOKMARK_UPDATE, bookmarkId,
                 AuditDetails.of("bookmark", name, "name", AuditDetails.changed(bookmark.getName(), name),
                         "description", AuditDetails.changed(bookmark.getDescription(), cleanText(request.description())),
@@ -114,7 +107,7 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
         bookmark.setName(name);
         bookmark.setDescription(cleanText(request.description()));
         bookmark.setPublicationNote(cleanText(request.publicationNote()));
-        return bookmark;
+        return bookmarkRepository.saveAndFlush(bookmark);
     }
 
     @Override

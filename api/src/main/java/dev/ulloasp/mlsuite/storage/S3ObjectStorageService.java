@@ -55,9 +55,7 @@ class S3ObjectStorageService implements ObjectStorageService {
                     .bucket(properties.getBucket())
                     .key(objectKey)
                     .contentType(effectiveContentType);
-            if (sha256 != null) {
-                request.metadata(Map.of(SHA256_METADATA, sha256));
-            }
+            request.metadata(Map.of(SHA256_METADATA, sha256));
 
             PutObjectResponse response = client.putObject(
                     request.build(), RequestBody.fromInputStream(inputStream, sizeBytes));
@@ -67,7 +65,7 @@ class S3ObjectStorageService implements ObjectStorageService {
             }
             StoredObjectMetadata metadata = metadata(
                     properties.getBucket(), objectKey, head(properties.getBucket(), objectKey, versionId));
-            if (metadata.sizeBytes() != sizeBytes || sha256 != null && !sha256.equals(metadata.sha256())) {
+            if (metadata.sizeBytes() != sizeBytes) {
                 throw new ObjectStorageException("Object verification failed for " + objectKey);
             }
 

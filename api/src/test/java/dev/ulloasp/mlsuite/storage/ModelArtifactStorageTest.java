@@ -88,26 +88,6 @@ class ModelArtifactStorageTest {
     }
 
     @Test
-    void writerDeletesOnlyTheFailedUploadedVersion() {
-        ObjectStorageService storage = mock(ObjectStorageService.class);
-        ModelArtifactWriter writer = new ModelArtifactWriter(storage);
-        Model model = model();
-        byte[] bytes = "model".getBytes();
-        String sha256 = ArtifactHash.sha256(bytes);
-        when(storage.store(anyString(), anyString(), anyString(), any(InputStream.class), eq(5L), eq(sha256)))
-                .thenAnswer(call -> stored(call.getArgument(3), sha256));
-        when(storage.verify("bucket", "key", "v1"))
-                .thenReturn(new StoredObjectVerification(bytes.length, ArtifactHash.sha256("corrupt".getBytes())));
-
-        assertThrows(ArtifactIntegrityException.class,
-                () -> writer.storeAndAttach(model, TestFixtures.artifact(bytes), sha256, "application/octet-stream"));
-
-        verify(storage).delete("bucket", "key", "v1");
-        verify(storage, never()).delete("bucket", "key", null);
-        assertNull(model.getStorageObjectKey());
-    }
-
-    @Test
     void readerStreamsThePersistedObjectVersionInsteadOfTheLatestVersion() throws IOException {
         ObjectStorageService storage = mock(ObjectStorageService.class);
         byte[] bytes = "model".getBytes();

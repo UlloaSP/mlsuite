@@ -5,20 +5,20 @@ public final class ArtifactIntegrityVerifier {
     private ArtifactIntegrityVerifier() {
     }
 
-    public static void verify(String artifact, Long expectedSize, String expectedSha256, byte[] bytes) {
+    public static void verify(String artifact, long expectedSize, String expectedSha256, byte[] bytes) {
         verify(artifact, expectedSize, expectedSha256,
                 new StoredObjectVerification(bytes.length, ArtifactHash.sha256(bytes)));
     }
 
     public static void verify(
             String artifact,
-            Long expectedSize,
+            long expectedSize,
             String expectedSha256,
             StoredObjectVerification actual) {
-        if (expectedSize != null && expectedSize != actual.sizeBytes()) {
+        if (expectedSize != actual.sizeBytes()) {
             throw new ArtifactIntegrityException("Size mismatch for " + artifact);
         }
-        if (expectedSha256 != null && !expectedSha256.equals(actual.sha256())) {
+        if (!expectedSha256.equals(actual.sha256())) {
             throw new ArtifactIntegrityException("SHA-256 mismatch for " + artifact);
         }
     }

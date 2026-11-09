@@ -56,7 +56,6 @@ public class RoleManagementService implements RoleManagementUseCase {
         authorizationService.require(userId, organizationId, PermissionKey.MANAGE_MEMBER_ROLES);
         var org = organizationRepository.findById(organizationId).orElseThrow(() -> new OrganizationNotFoundException(organizationId));
         org.requireTeam(NO_ROLES);
-        requireFreeName(organizationId, request.name(), null);
         RoleDefinition role = new RoleDefinition(org, request.name().strip(), uniqueSlug(organizationId, request.name()), null,
                 principals.user(userId));
         role.setDescription(request.description());
@@ -89,7 +88,6 @@ public class RoleManagementService implements RoleManagementUseCase {
         if (role.isLocked()) {
             throw new IllegalArgumentException("Locked role cannot be edited.");
         }
-        requireFreeName(organizationId, request.name(), roleId);
         String previousName = role.getName();
         String previousPermissions = permissionNames(role);
         role.setName(request.name().strip());
@@ -98,14 +96,13 @@ public class RoleManagementService implements RoleManagementUseCase {
         auditLogService.record(AuditActor.user(userId), organizationId, AuditAction.ROLE_UPDATE, roleId,
                 AuditDetails.of("role", role.getName(), "name", AuditDetails.changed(previousName, role.getName()),
                         "permissions", AuditDetails.changed(previousPermissions, permissionNames(role))));
-        return catalogService.toDto(userId, organizationId, roleRepository.save(role));
+        return catalogService.toDto(userId, organizationId, roleRepository.saveAndFlush(role));
     }
 
     @Override
     public RoleDefinitionDto duplicate(Long userId, Long organizationId, Long roleId, DuplicateRoleRequest request) {
         authorizationService.require(userId, organizationId, PermissionKey.MANAGE_MEMBER_ROLES);
         RoleDefinition source = requireRole(organizationId, roleId);
-        requireFreeName(organizationId, request.name(), null);
         RoleDefinition copy = new RoleDefinition(source.getOrganization(), request.name().strip(),
                 uniqueSlug(organizationId, request.name()), null, principals.user(userId));
         copy.setDescription(source.getDescription());
@@ -152,16 +149,6 @@ public class RoleManagementService implements RoleManagementUseCase {
             parsed.remove(PermissionKey.TRANSFER_OWNERSHIP);
         }
         return parsed;
-    }
-
-    /** A role's name is one role's in its organization, whatever its case. */
-    private void requireFreeName(Long organizationId, String name, Long roleId) {
-        roleRepository.findByOrganizationIdAndNameIgnoreCase(organizationId, name.strip())
-                .filter(existing -> !existing.getId().equals(roleId))
-                .ifPresent(existing -> {
-                    throw new ResponseStatusException(HttpStatus.CONFLICT,
-                            "This organization already has a role named " + existing.getName() + ".");
-                });
     }
 
     private String uniqueSlug(Long orgId, String name) {

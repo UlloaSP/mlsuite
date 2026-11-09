@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.plugin.application.service;
 
+import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
 import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import static dev.ulloasp.mlsuite.plugin.application.service.PluginCatalogValues.*;
@@ -154,15 +155,14 @@ public class PluginServiceImpl implements PluginCatalogUseCase {
     public void delete(Long userId, String id) {
         Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.MANAGE_PLUGINS);
         organizations.lockById(organization.getId()).orElseThrow();
-        // Loading proves the plugin exists and is intact before deletion is queued.
-        pluginObjects.load(organization.getId(), id);
-        Optional<PluginMetadata> metadata = pluginMetadataRepository.findByPublicIdAndOrganizationId(id, organization.getId());
+        PluginMetadata plugin = pluginMetadataRepository.findByPublicIdAndOrganizationId(id, organization.getId())
+                .orElseThrow(() -> new PluginNotFoundException(id));
         // Every revision of the key: a plugin's id is never used again.
-        deletionQueue.enqueue(organization.getId(), storageProperties.getBucket(),
-                itemObjectKey(organization.getId(), id), null);
-        metadata.ifPresent(pluginMetadataRepository::delete);
+        deletionQueue.enqueue(organization.getId(), plugin.getStorageBucket(), plugin.getObjectKey(), null);
+        pluginMetadataRepository.delete(plugin);
+        pluginMetadataRepository.flush();
         auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.PLUGIN_DELETE, id,
-                metadata.map(plugin -> AuditDetails.of("file", plugin.getFileName())).orElse(Map.of()));
+                AuditDetails.of("file", plugin.getFileName()));
     }
 
     /** The row that pins the stored object: its exact version, size and SHA-256. */

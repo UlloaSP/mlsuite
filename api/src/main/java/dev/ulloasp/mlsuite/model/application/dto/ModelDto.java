@@ -48,7 +48,7 @@ public record ModelDto(
                 model.getCreatedAt(),
                 model.getUpdatedAt(),
                 model.getArchivedAt(),
-                model.getVersion() == null ? 0 : model.getVersion(),
+                model.getVersion(),
                 model.getCreatedBy().label(),
                 modifier.label(),
                 modifier.email(),

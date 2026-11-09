@@ -21,8 +21,6 @@ public interface RoleDefinitionRepository
 
     boolean existsByOrganizationIdAndSlug(Long organizationId, String slug);
 
-    Optional<RoleDefinition> findByOrganizationIdAndNameIgnoreCase(Long organizationId, String name);
-
     List<RoleDefinition> findByOrganizationId(Long organizationId);
 
     long countByOrganizationId(Long organizationId);

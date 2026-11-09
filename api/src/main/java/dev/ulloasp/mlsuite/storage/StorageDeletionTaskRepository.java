@@ -8,6 +8,4 @@ public interface StorageDeletionTaskRepository extends JpaRepository<StorageDele
 
     long countByStatus(StorageDeletionStatus status);
 
-    boolean existsByBucketAndObjectKeyAndStatusIn(String bucket, String objectKey,
-            Collection<StorageDeletionStatus> statuses);
 }

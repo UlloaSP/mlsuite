@@ -53,7 +53,6 @@ public interface SchemaRepository extends JpaRepository<Schema, Long> {
     @Query("SELECT s FROM Schema s WHERE s.id = :id AND s.organization.id = :organizationId")
     Optional<Schema> findForUpdate(Long id, Long organizationId);
 
-    boolean existsByNameAndOrganizationId(String name, Long organizationId);
 
     long countByOrganizationId(Long organizationId);
 }

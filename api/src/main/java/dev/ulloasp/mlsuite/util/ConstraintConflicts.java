@@ -50,6 +50,7 @@ public final class ConstraintConflicts {
             Map.entry("fk_schema_version_plugin_plugin",
                     "Published snapshots render with this plugin, so it stays while they do."),
             Map.entry("uq_role_definition_org_name", "This organization already has a role with this name."),
+            Map.entry("uq_schema_bookmark_schema_name", "This schema already has a bookmark with this name."),
             Map.entry("uq_schema_version_schema_name", "A snapshot of this schema already has this name."));
 
     /** Rows written to point outside the schema or snapshot they belong to. */

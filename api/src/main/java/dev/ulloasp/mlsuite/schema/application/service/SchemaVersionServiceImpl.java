@@ -62,11 +62,6 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
                     "An archived schema takes no new snapshots; restore it first");
         }
         assertUniqueBindings(request.bindings());
-        if (request.name() != null && !request.name().isBlank()
-                && versionRepository.existsBySchemaIdAndNameIgnoreCase(schemaId, request.name().strip())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "A snapshot of this schema is already named " + request.name().strip() + ".");
-        }
         mappingCheck.require(organizationId, request.formSchema(), request.bindings());
         touch(schema, user);
         int nextVersion = versionRepository.findMaxVersionBySchemaId(schemaId) + 1;

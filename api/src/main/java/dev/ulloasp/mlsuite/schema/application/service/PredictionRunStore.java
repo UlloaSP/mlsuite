@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
 import dev.ulloasp.mlsuite.principal.application.service.Principals;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Collections;
 import java.util.List;
@@ -11,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
@@ -39,7 +39,6 @@ public class PredictionRunStore {
     private final SchemaModelBindingRepository bindingRepository;
     private final PredictionRunRepository runRepository;
     private final PredictionResultRepository resultRepository;
-    private final ModelRepository modelRepository;
     private final Principals principals;
 
     public PredictionRun store(Long organizationId, User author, SchemaBookmark bookmark, String name,
@@ -60,12 +59,16 @@ public class PredictionRunStore {
                 throw badRequest("A prediction result was produced for another snapshot; run the inference again");
             }
         });
-        validateResults(bindingRepository.findBySchemaVersionId(version.getId()), results);
+        List<SchemaModelBinding> bindings = bindingRepository.findBySchemaVersionId(version.getId());
+        validateResults(bindings, results);
+        // A result's model is one its snapshot binds, so it is the binding's, of the run's organization.
+        Map<Long, Model> models = new HashMap<>();
+        bindings.forEach(binding -> models.put(binding.getModel().getId(), binding.getModel()));
         PredictionRun candidate = new PredictionRun(bookmark, version, name, inputData, aggregateStatus(results),
                 principals.of(author));
         PredictionRun run = runRepository.save(candidate);
         for (int index = 0; index < results.size(); index++) {
-            saveResult(organizationId, run, results.get(index), seals.get(index));
+            saveResult(run, models.get(results.get(index).modelId()), results.get(index), seals.get(index));
         }
         return run;
     }
@@ -95,9 +98,7 @@ public class PredictionRunStore {
         return successCount == 0 ? PredictionRunStatus.FAILED : PredictionRunStatus.PARTIAL_SUCCESS;
     }
 
-    private void saveResult(Long organizationId, PredictionRun run, AttestedPrediction result, String seal) {
-        Model model = modelRepository.findByIdAndOrganizationId(result.modelId(), organizationId)
-                .orElseThrow(() -> badRequest("Model unavailable"));
+    private void saveResult(PredictionRun run, Model model, AttestedPrediction result, String seal) {
         PredictionResult stored = new PredictionResult(run, model, result.modelInput(), result.output(),
                 result.status(), result.errorMessage(), result.errorJson());
         stored.setAttestationSha256(seal);

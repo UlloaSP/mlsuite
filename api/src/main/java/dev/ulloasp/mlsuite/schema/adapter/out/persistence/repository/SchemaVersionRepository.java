@@ -11,8 +11,6 @@ import org.springframework.data.domain.Pageable;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 
 public interface SchemaVersionRepository extends JpaRepository<SchemaVersion, Long> {
-
-    boolean existsBySchemaIdAndNameIgnoreCase(Long schemaId, String name);
     /**
      * The snapshots of one schema that pass a filter and a search, in PostgreSQL's own SQL: the
      * search text counts the fields of the stored form that are not hidden, which JPQL cannot read.

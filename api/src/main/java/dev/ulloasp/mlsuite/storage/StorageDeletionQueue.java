@@ -1,6 +1,5 @@
 package dev.ulloasp.mlsuite.storage;
 
-import java.util.List;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -9,9 +8,6 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class StorageDeletionQueue {
-
-    private static final List<StorageDeletionStatus> ASKED = List.of(StorageDeletionStatus.PENDING,
-            StorageDeletionStatus.RUNNING, StorageDeletionStatus.FAILED);
 
     private final StorageDeletionTaskRepository tasks;
     private final JdbcTemplate jdbc;
@@ -33,8 +29,4 @@ public class StorageDeletionQueue {
                 organizationId, bucket, objectKey, versionId);
     }
 
-    /** Whether the key's deletion is still to come: one that finished hides nothing written after it. */
-    public boolean isDeletionRequested(String bucket, String objectKey) {
-        return tasks.existsByBucketAndObjectKeyAndStatusIn(bucket, objectKey, ASKED);
-    }
 }

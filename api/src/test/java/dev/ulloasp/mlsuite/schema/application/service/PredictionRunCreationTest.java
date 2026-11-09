@@ -83,7 +83,7 @@ class PredictionRunCreationTest {
     void setUp() {
         service = new PredictionRunServiceImpl(users, bookmarks, runs, mock(PredictionRunDeletion.class),
                 mock(SnapshotRunGuard.class), authorization, attestations,
-                new PredictionRunStore(bindings, runs, results, models, TestFixtures.principals()), mock(AuditLogService.class));
+                new PredictionRunStore(bindings, runs, results, TestFixtures.principals()), mock(AuditLogService.class));
         Organization organization = new Organization();
         organization.setId(ORG);
         User user = new User();

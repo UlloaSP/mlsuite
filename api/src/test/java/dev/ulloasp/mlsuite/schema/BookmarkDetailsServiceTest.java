@@ -105,6 +105,7 @@ class BookmarkDetailsServiceTest {
         bookmark.setPublicId("public-1");
         SchemaVersion pinned = bookmark.getVersion();
         memberWith(PermissionKey.CREATE_MODELS);
+        when(bookmarks.saveAndFlush(bookmark)).thenReturn(bookmark);
 
         SchemaBookmark updated = service.updateBookmark(USER_ID, BOOKMARK_ID,
                 new UpdateSchemaBookmarkRequest("  cardio-screening ", " Screens for cardiovascular risk. ", null));
@@ -142,27 +143,6 @@ class BookmarkDetailsServiceTest {
         service.updateBookmark(USER_ID, BOOKMARK_ID,
                 new UpdateSchemaBookmarkRequest("production", "Estimates risk.", "Terms of use apply."));
         assertEquals("Terms of use apply.", existing.getPublicationNote());
-    }
-
-    @Test
-    void aNameAnotherBookmarkOfTheSchemaHasIsRefused() {
-        SchemaBookmark bookmark = stored(described());
-        SchemaBookmark other = bookmark();
-        other.setId(71L);
-        memberWith(PermissionKey.CREATE_MODELS);
-        when(bookmarks.findBySchemaIdAndNameIgnoreCase(SCHEMA_ID, "staging")).thenReturn(Optional.of(other));
-        when(bookmarks.findBySchemaIdAndNameIgnoreCase(SCHEMA_ID, "production")).thenReturn(Optional.of(bookmark));
-
-        ResponseStatusException refused = assertThrows(ResponseStatusException.class, () -> service.updateBookmark(
-                USER_ID, BOOKMARK_ID, new UpdateSchemaBookmarkRequest("staging", "New text", null)));
-
-        assertEquals(409, refused.getStatusCode().value());
-        assertEquals("This schema already has a bookmark named \"staging\".", refused.getReason());
-        assertEquals("production", bookmark.getName());
-        assertEquals("Estimates risk.", bookmark.getDescription());
-        // Keeping its own name is not a clash: only the description changes.
-        service.updateBookmark(USER_ID, BOOKMARK_ID, new UpdateSchemaBookmarkRequest("production", "New text", null));
-        assertEquals("New text", bookmark.getDescription());
     }
 
     @Test

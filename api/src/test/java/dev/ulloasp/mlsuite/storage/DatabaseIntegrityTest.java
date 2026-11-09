@@ -117,6 +117,10 @@ class DatabaseIntegrityTest extends DatabaseFixture {
         long foreignRole = number("INSERT INTO role_definition (organization_id, name, slug, locked, created_by_principal_id,"
                 + " updated_by_principal_id, created_at, updated_at) VALUES (" + organization("elsewhere", platform())
                 + ", 'Member', 'member', true, " + PLATFORM + ", " + PLATFORM + ", now(), now()) RETURNING id");
+        role(lab);
+        assertRefused("uq_role_definition_org_name", "INSERT INTO role_definition (organization_id, name, slug, locked,"
+                + " created_by_principal_id, updated_by_principal_id, created_at, updated_at) VALUES (" + lab
+                + ", 'MEMBER', 'member-2', false, " + PLATFORM + ", " + PLATFORM + ", now(), now())");
         assertRefused("fk_org_membership_role_definition", "INSERT INTO organization_membership (organization_id, user_id,"
                 + " role_definition_id, status, created_by_principal_id, updated_by_principal_id, created_at, updated_at)"
                 + " VALUES (" + lab + ", " + user("ada") + ", " + foreignRole + ", 'ACTIVE', " + PLATFORM + ", " + PLATFORM

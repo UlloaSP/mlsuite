@@ -79,7 +79,7 @@ class PluginServiceImplTest {
         StorageProperties storageProperties = new StorageProperties();
         storageProperties.setBucket("bucket");
         PluginObjectReader reader = new PluginObjectReader(
-                objectStorageService, storageProperties, objectMapper, pluginMetadataRepository, deletionQueue);
+                objectStorageService, storageProperties, objectMapper, pluginMetadataRepository);
         service = new PluginServiceImpl(
                 objectStorageService,
                 storageProperties,
@@ -118,7 +118,9 @@ class PluginServiceImplTest {
         row.setObjectKey(key);
         row.setStorageVersionId("v1");
         row.setStorageBucket("bucket");
-        row.setSha256(ArtifactHash.sha256(objects.getOrDefault(key, new byte[0])));
+        byte[] stored = objects.getOrDefault(key, new byte[0]);
+        row.setSizeBytes(stored.length);
+        row.setSha256(ArtifactHash.sha256(stored));
         row.setUpdatedBy(TestFixtures.principal(new User()));
         return row;
     }
@@ -176,24 +178,6 @@ class PluginServiceImplTest {
         PageDto<PluginDto> page = service.list(7L, 0, 10, "all", "", "updated");
 
         assertEquals(List.of("field"), page.items().stream().map(PluginDto::id).toList());
-    }
-
-    @Test
-    void deletedPluginStaysAbsentWhileObjectDeletionIsQueued() {
-        prepareStoredObjects();
-        // The page was read before the deletion removed the plugin's row.
-        catalogAnswers(3, "field", "invalid", "report");
-        User user = new User();
-        user.setId(7L);
-        lenient().when(userLookupService.requireById(7L)).thenReturn(user);
-        when(deletionQueue.isDeletionRequested(
-                "bucket", "organizations/41/plugins/items/field.json")).thenReturn(false, true);
-
-        service.delete(7L, "field");
-        PageDto<PluginDto> page = service.list(7L, 0, 10, "all", "", "name");
-
-        assertEquals(List.of("invalid", "report"), page.items().stream().map(PluginDto::id).toList());
-        verify(deletionQueue).enqueue(41L, "bucket", "organizations/41/plugins/items/field.json", null);
     }
 
     @Test

@@ -32,7 +32,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.server.ResponseStatusException;
 
-
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
@@ -94,7 +93,7 @@ class SchemaFlowServiceTest {
         runService = new PredictionRunServiceImpl(userLookupService, bookmarkRepository, runRepository,
                 mock(PredictionRunDeletion.class), mock(SnapshotRunGuard.class), authorizationService,
                 mock(PredictionAttestations.class),
-                new PredictionRunStore(bindingRepository, runRepository, resultRepository, modelRepository, TestFixtures.principals()), mock(AuditLogService.class));
+                new PredictionRunStore(bindingRepository, runRepository, resultRepository, TestFixtures.principals()), mock(AuditLogService.class));
         lenient().when(userLookupService.requireById(7L)).thenReturn(user());
         lenient().when(authorizationService.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization());
     }
@@ -129,7 +128,6 @@ class SchemaFlowServiceTest {
         verify(authorizationService).requireCurrent(7L, PermissionKey.VIEW_MODELS);
     }
 
-
     @Test
     void archiveSchema_SetsArchivedAt() {
         Schema schema = schema();
@@ -141,7 +139,6 @@ class SchemaFlowServiceTest {
         assertEquals(5L, result.getId());
         assertNotNull(result.getArchivedAt());
     }
-
 
     @Test
     void createVersion_RejectsDuplicateModelBinding() {
@@ -172,18 +169,6 @@ class SchemaFlowServiceTest {
         verify(bindingRepository, times(2)).save(any());
         // The plugins drawing the custom kinds its form names are fixed with it.
         verify(snapshotPlugins).pin(eq(41L), any(), eq(FormKinds.of(formSchema())));
-    }
-
-    @Test
-    void createVersion_RefusesANameAnotherSnapshotOfTheSchemaHas() {
-        when(schemaRepository.findForUpdate(5L, 41L)).thenReturn(Optional.of(schema()));
-        when(versionRepository.existsBySchemaIdAndNameIgnoreCase(5L, "Baseline")).thenReturn(true);
-
-        ResponseStatusException refused = assertThrows(ResponseStatusException.class, () -> versionService.createVersion(7L, 5L,
-                new CreateSchemaVersionRequest(" Baseline ", formSchema(), List.of(new CreateSchemaModelBindingRequest(11L, Map.of())))));
-
-        assertEquals(HttpStatus.CONFLICT, refused.getStatusCode());
-        verify(versionRepository, never()).save(any());
     }
 
     @Test

@@ -14,6 +14,10 @@ class ConstraintConflictsTest {
 
     @Test
     void aTakenNameIsAConflict() {
+        assertEquals(new ConstraintConflicts.Conflict(HttpStatus.CONFLICT, "This schema already has a bookmark with this name."),
+                ConstraintConflicts.of(refused("uq_schema_bookmark_schema_name", "duplicate key value")).orElseThrow());
+        assertEquals(new ConstraintConflicts.Conflict(HttpStatus.CONFLICT, "This organization already has a role with this name."),
+                ConstraintConflicts.of(refused("uq_role_definition_org_name", "duplicate key value")).orElseThrow());
         assertEquals(new ConstraintConflicts.Conflict(HttpStatus.CONFLICT, "This organization already has a model with this name."),
                 ConstraintConflicts.of(refused("uq_model_name_org", "duplicate key value violates unique constraint")).orElseThrow());
     }
