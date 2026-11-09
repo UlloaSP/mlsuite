@@ -297,7 +297,7 @@ public final class PublicForm {
     }
 
     /** The key a stored run keeps a field's value under: the workspace's own resolution. */
-    private static String displayKey(Map<?, ?> field) {
+    static String displayKey(Map<?, ?> field) {
         for (String name : List.of("displayKey", "label", "id")) {
             if (field.get(name) instanceof String text && !text.isBlank()) return text;
         }

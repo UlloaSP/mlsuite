@@ -2,8 +2,6 @@ package dev.ulloasp.mlsuite.schema.application.service;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +29,11 @@ public final class PublicFormValues {
     private PublicFormValues() {
     }
 
-    public static void require(PublicForm form, Map<String, Object> values) {
+    /**
+     * The values a run carries once the form accepts them: a series' date cells as the instants
+     * every run stores (SeriesDates), so its rows are stored and routed as the form sends them.
+     */
+    public static Map<String, Object> require(PublicForm form, Map<String, Object> values) {
         values.forEach((key, value) -> {
             form.aggregate(key).ifPresent(aggregate -> {
                 throw badRequest("\"%s\" is calculated from its rows; send the rows, not \"%s\"."
@@ -43,9 +45,14 @@ public final class PublicFormValues {
                 throw badRequest("\"%s\" has a value the form cannot send.".formatted(field.label()));
             }
         });
+        Map<String, Object> accepted = new LinkedHashMap<>(values);
         for (String key : form.inputKeys()) {
-            form.field(key).filter(InputField::rows).ifPresent(field -> requirePoints(field, values.get(key)));
+            form.field(key).filter(InputField::rows).ifPresent(field -> {
+                requirePoints(field, values.get(key));
+                if (values.containsKey(key)) accepted.put(key, SeriesDates.rows(values.get(key), field.config()));
+            });
         }
+        return accepted;
     }
 
     /**
@@ -117,21 +124,8 @@ public final class PublicFormValues {
         if (!isScalar(value)) return false;
         if ("number".equals(kind)) return value instanceof Number;
         if ("boolean".equals(kind)) return value instanceof Boolean;
-        if ("date".equals(kind)) return value instanceof String text && isIsoDate(text);
+        if ("date".equals(kind)) return value instanceof String text && SeriesDates.instant(text).isPresent();
         return true;
-    }
-
-    /** A date as MLForm sends it: an ISO instant, or a date alone when its column keeps only the day. */
-    private static boolean isIsoDate(String text) {
-        for (DateTimeFormatter format : List.of(DateTimeFormatter.ISO_DATE_TIME, DateTimeFormatter.ISO_DATE)) {
-            try {
-                format.parse(text);
-                return true;
-            } catch (DateTimeParseException notThisFormat) {
-                // Try the next format.
-            }
-        }
-        return false;
     }
 
     private static ResponseStatusException badRequest(String message) {

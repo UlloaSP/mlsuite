@@ -83,6 +83,25 @@ class PublicFormTest {
     }
 
     @Test
+    void aSeriesDateIsKeptAsTheInstantTheFormSendsHoweverItWasWritten() {
+        PublicForm form = PublicForm.of(Map.of("fields", List.of(ROOMS, dated()), "reports", List.of()),
+                List.of(MODEL));
+        List<Map<String, Object>> rows = List.of(
+                Map.of("date", "2024-04-01", "area", 90),
+                Map.of("date", "2024-04-01T02:30:00.5+02:00", "area", 95),
+                Map.of("date", "2024-03-01T00:00:00.000Z", "area", 100));
+
+        Map<String, Object> accepted = PublicFormValues.require(form, Map.of("in0", 5, "in1", rows));
+
+        List<Map<String, Object>> instants = List.of(
+                Map.of("date", "2024-04-01T00:00:00.000Z", "area", 90),
+                Map.of("date", "2024-04-01T00:30:00.500Z", "area", 95),
+                Map.of("date", "2024-03-01T00:00:00.000Z", "area", 100));
+        assertEquals(Map.of("in0", 5, "in1", instants), accepted);
+        assertEquals(Map.of("Rooms", 5, "Area history", instants), form.storedInputs(accepted));
+    }
+
+    @Test
     void aSeriesIsHeldToItsPointsAndToAResultForEachAggregation() {
         Map<String, Object> series = dated();
         series.put("required", true);
@@ -138,6 +157,7 @@ class PublicFormTest {
                 Map.of("in1", List.of(Map.of("area", 90, "owner", "x"))),
                 Map.of("in1", List.of(Map.of("area", "90"))),
                 Map.of("in1", List.of(Map.of("date", "March 1st"))),
+                Map.of("in1", List.of(Map.of("date", "2024-03-01T00:00"))),
                 Map.of("in1", List.of(Map.of("area", List.of(90)))),
                 Map.of("in1", Collections.nCopies(PublicFormValues.MAX_ROWS + 1, row))));
 

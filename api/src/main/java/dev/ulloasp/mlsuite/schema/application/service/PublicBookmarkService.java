@@ -134,13 +134,13 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This bookmark cannot be run publicly.");
         }
         PublicForm form = PublicForm.of(version.getFormSchema(), models);
-        PublicFormValues.require(form, request.values());
+        Map<String, Object> values = PublicFormValues.require(form, request.values());
         return new PublicPredictionPlan(publicId, bookmark.getId(), version.getId(),
                 models.stream()
-                        .map(model -> new ModelCall(model.id(), form.modelInput(model, request.values())))
+                        .map(model -> new ModelCall(model.id(), form.modelInput(model, values)))
                         .toList(),
                 form.reportRoutes(),
-                form.storedInputs(request.values()));
+                form.storedInputs(values));
     }
 
     private PublicBookmarkExampleDto publicExample(SchemaBookmarkExample example) {

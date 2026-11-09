@@ -66,7 +66,8 @@ public class PredictionRunStore {
         // A result's model is one its snapshot binds, so it is the binding's, of the run's organization.
         Map<Long, Model> models = new HashMap<>();
         bindings.forEach(binding -> models.put(binding.getModel().getId(), binding.getModel()));
-        PredictionRun candidate = new PredictionRun(bookmark, version, name, inputData, aggregateStatus(results),
+        PredictionRun candidate = new PredictionRun(bookmark, version, name,
+                SeriesDates.inStoredInputs(version.getFormSchema(), inputData), aggregateStatus(results),
                 principals.of(author));
         PredictionRun run;
         try {
