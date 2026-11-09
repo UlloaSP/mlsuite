@@ -55,7 +55,7 @@ const appendProductIssues = (schema: unknown, issues: CompatIssue[]): void => {
           if (isRecord(option) && option.mappedTo === undefined) {
             issues.push({
               path: ["fields", index, "options", optionIndex, "mappedTo"],
-              message: `Schema field ${index + 1} option ${optionIndex + 1} falta mappedTo`,
+              message: `Schema field ${index + 1} option ${optionIndex + 1} has no mappedTo`,
               severity: "error",
             });
           }
@@ -70,7 +70,7 @@ const appendProductIssues = (schema: unknown, issues: CompatIssue[]): void => {
       ) {
         issues.push({
           path: ["fields", index, "mappedTo"],
-          message: `Schema field ${index + 1} falta mappedTo`,
+          message: `Schema field ${index + 1} has no mappedTo`,
           severity: "error",
         });
       }
@@ -81,7 +81,7 @@ const appendProductIssues = (schema: unknown, issues: CompatIssue[]): void => {
       if (isRecord(report) && report.mappedTo === undefined) {
         issues.push({
           path: ["reports", index, "mappedTo"],
-          message: `Schema report ${index + 1} falta mappedTo`,
+          message: `Schema report ${index + 1} has no mappedTo`,
           severity: "error",
         });
       }

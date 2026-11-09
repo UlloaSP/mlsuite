@@ -76,11 +76,17 @@ describe("schema binding plugin policy", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (_url: string, init?: RequestInit) =>
-        workspacePrediction(init, [{ mappedTo: "score", value: 1 }]),
+        workspacePrediction(init, [
+          { id: "report_1", kind: "plugin-report", mappedTo: "score", value: 1 },
+        ]),
       ),
     );
+    const reports = [
+      { id: "report_1", label: "Score", kind: "plugin-report", mappedTo: { "model-1": "score" } },
+    ];
     const transport = createSchemaRunTransport(
       RUN_TARGET,
+      { reports },
       [
         {
           modelId: 1,
@@ -95,14 +101,7 @@ describe("schema binding plugin policy", () => {
       inputs: [],
       displayValues: {},
       modelValues: {},
-      reports: [
-        {
-          id: "report_1",
-          label: "Score",
-          kind: "plugin-report",
-          mappedTo: { "model-1": "score" },
-        },
-      ],
+      reports,
     } as never);
 
     expect((result as { reports: unknown[] }).reports).toMatchObject([
@@ -120,11 +119,19 @@ describe("schema binding plugin policy", () => {
       "fetch",
       vi.fn(async (_url: string, init?: RequestInit) => {
         const { modelId } = predictionRequest(init);
-        return workspacePrediction(init, [{ mappedTo: "score", value: modelId }]);
+        const id = modelId === 1 ? "report_a" : "report_b";
+        return workspacePrediction(init, [
+          { id, kind: "plugin-report", mappedTo: "score", value: modelId },
+        ]);
       }),
     );
+    const reports = [
+      { id: "report_a", label: "A", kind: "plugin-report", mappedTo: { "model-1": "score" } },
+      { id: "report_b", label: "B", kind: "plugin-report", mappedTo: { "model-2": "score" } },
+    ];
     const transport = createSchemaRunTransport(
       RUN_TARGET,
+      { reports },
       [
         { modelId: 1, modelName: "model-1" },
         { modelId: 2, modelName: "model-2" },
@@ -135,25 +142,12 @@ describe("schema binding plugin policy", () => {
       inputs: [],
       displayValues: {},
       modelValues: {},
-      reports: [
-        {
-          id: "report_a",
-          label: "A",
-          kind: "plugin-report",
-          mappedTo: { "model-1": "score" },
-        },
-        {
-          id: "report_b",
-          label: "B",
-          kind: "plugin-report",
-          mappedTo: { "model-2": "score" },
-        },
-      ],
+      reports,
     } as never);
-    const reports = (result as { reports: Array<{ context?: { meta?: { modelId?: string } } }> })
+    const answered = (result as { reports: Array<{ context?: { meta?: { modelId?: string } } }> })
       .reports;
-    expect(reports[0]?.context?.meta?.modelId).toBe("1");
-    expect(reports[1]?.context?.meta?.modelId).toBe("2");
+    expect(answered[0]?.context?.meta?.modelId).toBe("1");
+    expect(answered[1]?.context?.meta?.modelId).toBe("2");
   });
 
   test("schema report context exists when custom report payload must be fetched", async () => {
@@ -161,8 +155,12 @@ describe("schema binding plugin policy", () => {
       "fetch",
       vi.fn(async (_url: string, init?: RequestInit) => workspacePrediction(init)),
     );
+    const reports = [
+      { id: "report_1", label: "Score", kind: "plugin-report", mappedTo: { "model-1": "score" } },
+    ];
     const transport = createSchemaRunTransport(
       RUN_TARGET,
+      { reports },
       [{ modelId: 1, modelName: "model-1" }],
       [],
     );
@@ -170,14 +168,7 @@ describe("schema binding plugin policy", () => {
       inputs: [],
       displayValues: {},
       modelValues: {},
-      reports: [
-        {
-          id: "report_1",
-          label: "Score",
-          kind: "plugin-report",
-          mappedTo: { "model-1": "score" },
-        },
-      ],
+      reports,
     } as never);
     expect((result as { reports: unknown[] }).reports).toMatchObject([
       {

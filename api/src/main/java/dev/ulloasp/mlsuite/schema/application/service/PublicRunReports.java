@@ -129,19 +129,39 @@ public final class PublicRunReports {
         return items.stream().filter(String.class::isInstance).map(String.class::cast).toList();
     }
 
-    private static Optional<Map<String, Object>> storedCopy(ReportRoute route, Map<String, Object> output) {
-        List<?> reports = output.get("reports") instanceof List<?> items ? items : List.of();
+    /**
+     * The id a run stores a form report's copy under: the report's id, else its label, else its
+     * position in the form. The browser names stored copies by the same rule (stored-report.ts).
+     */
+    public static String storedId(Map<?, ?> report, int order) {
+        if (report.get("id") instanceof String id) return id;
+        return report.get("label") instanceof String label ? label : String.valueOf(order);
+    }
+
+    /**
+     * The copy a run stored of one form report among a model's stored reports: the one named by
+     * the report's stored id and routed to the output it reads. Two reports may read the same
+     * output (a class and its explanation), so the output alone does not tell them apart. The
+     * inference catalog and the browser read stored copies by this rule.
+     */
+    public static Optional<Map<?, ?>> storedCopy(List<?> reports, String storedId, String target) {
         for (Object item : reports) {
-            if (item instanceof Map<?, ?> report
-                    && route.storedId().equals(report.get("id"))
-                    && route.target().equals(String.valueOf(report.get("mappedTo")))) {
-                Map<String, Object> payload = new LinkedHashMap<>();
-                report.forEach((key, value) -> {
-                    if (!STORED_NAMING.contains(String.valueOf(key))) payload.put(String.valueOf(key), value);
-                });
-                return Optional.of(payload);
+            if (item instanceof Map<?, ?> report && storedId.equals(report.get("id"))
+                    && target.equals(String.valueOf(report.get("mappedTo")))) {
+                return Optional.of(report);
             }
         }
         return Optional.empty();
+    }
+
+    private static Optional<Map<String, Object>> storedCopy(ReportRoute route, Map<String, Object> output) {
+        List<?> reports = output.get("reports") instanceof List<?> items ? items : List.of();
+        return storedCopy(reports, route.storedId(), route.target()).map(report -> {
+            Map<String, Object> payload = new LinkedHashMap<>();
+            report.forEach((key, value) -> {
+                if (!STORED_NAMING.contains(String.valueOf(key))) payload.put(String.valueOf(key), value);
+            });
+            return payload;
+        });
     }
 }

@@ -24,6 +24,8 @@ const version = schemaVersion({
   },
 });
 
+const scoreCopy = { kind: "classifier", mappedTo: "score", prediction: "1", labels: ["0", "1"] };
+
 const run = predictionRun({
   name: "case",
   status: "PARTIAL_SUCCESS",
@@ -32,9 +34,7 @@ const run = predictionRun({
       id: 1,
       modelId: 1,
       output: {
-        reports: [
-          { mappedTo: "score", prediction: "1", labels: ["0", "1"], probabilities: [0.1, 0.9] },
-        ],
+        reports: [{ id: "report_1", ...scoreCopy }],
       },
     }),
     predictionResult({ id: 2, modelId: 2, status: "FAILED" }),
@@ -70,7 +70,9 @@ describe("schema feedback steps", () => {
       },
     };
 
-    const steps = buildSchemaFeedbackSteps(noIdVersion, run.results, []);
+    // A report with no id is stored under its label.
+    const output = { reports: [{ id: "Predicted class", ...scoreCopy }] };
+    const steps = buildSchemaFeedbackSteps(noIdVersion, [{ ...run.results[0]!, output }], []);
 
     expect(steps[0]?.schema.steps[0]?.fields[0]).toMatchObject({
       id: "output-feedback-assessment",
@@ -307,7 +309,9 @@ describe("schema feedback steps", () => {
       {
         ...run.results[0]!,
         output: {
-          reports: [{ id: "shared-score-model-1", mappedTo: "classifier9", prediction: "Yes" }],
+          reports: [
+            { id: "shared-score", kind: "classifier", mappedTo: "classifier9", prediction: "Yes" },
+          ],
         },
       },
       {
@@ -315,7 +319,9 @@ describe("schema feedback steps", () => {
         id: 2,
         modelId: 2,
         output: {
-          reports: [{ id: "shared-score-model-2", mappedTo: "classifier9", prediction: "No" }],
+          reports: [
+            { id: "shared-score", kind: "classifier", mappedTo: "classifier9", prediction: "No" },
+          ],
         },
       },
     ];

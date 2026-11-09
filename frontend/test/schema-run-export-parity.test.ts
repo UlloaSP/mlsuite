@@ -63,12 +63,14 @@ const run = predictionRun({
       output: {
         reports: [
           {
+            id: "report_1",
+            kind: "classifier",
             mappedTo: "predicted_class",
             prediction: "1",
             labels: ["0", "1"],
             probabilities: [0.2, 0.8],
           },
-          { mappedTo: "crystal", explanation: "tree path" },
+          { id: "crystal_1", kind: "Crystal Tree", mappedTo: "crystal", explanation: "tree path" },
         ],
       },
     }),
@@ -113,7 +115,9 @@ describe("schema run export parity", () => {
       const stored = predictionRun({
         results: [
           predictionResult({
-            output: { reports: [{ kind: "regressor", output: 0, mappedTo: "0", values }] },
+            output: {
+              reports: [{ id: "body_mass", kind: "regressor", output: 0, mappedTo: "0", values }],
+            },
           }),
         ],
       });
@@ -158,5 +162,69 @@ describe("schema run export parity", () => {
       ["PUBLIC", ""],
       ["WORKSPACE", "a@b.c"],
     ]);
+  });
+
+  test("exports each report on one output, and a reviewer's class as the label shown", () => {
+    // Built from a model: no report ids, a class and its explanation read the same output.
+    const fromModel = schemaVersion({
+      bindings: [binding(1)],
+      formSchema: {
+        fields: [],
+        reports: [
+          {
+            label: "Predicted class",
+            kind: "classifier",
+            mappedTo: { "model-1": 0 },
+            labels: ["High risk", "Low risk"],
+          },
+          {
+            label: "Why",
+            kind: "Crystal Tree",
+            mappedTo: { "model-1": 0 },
+            feedbackQuestionnaire: {
+              steps: [{ id: "why", fields: [{ kind: "rating", id: "clarity", label: "Clarity" }] }],
+            },
+          },
+        ],
+      },
+    });
+    const stored = predictionRun({
+      results: [
+        predictionResult({
+          id: 1,
+          output: {
+            reports: [
+              { kind: "classifier", output: 0, mapping: ["high", "low"], prediction: "low" },
+              { kind: "Crystal Tree", explanation: "age > 50" },
+              {
+                id: "Predicted class",
+                kind: "classifier",
+                mappedTo: "0",
+                labels: ["high", "low"],
+                prediction: "low",
+              },
+              { id: "Why", kind: "Crystal Tree", mappedTo: "0", explanation: "age > 50" },
+            ],
+          },
+        }),
+      ],
+    });
+    const answer = (id: number, type: "OUTPUT" | "EXPLANATION", order: number, value: object) =>
+      resultFeedback({ id, resultId: 1, createdByEmail: "r@x.org", type, order, value });
+    const feedback = [
+      answer(1, "OUTPUT", 0, { "output-feedback-assessment": "low" }),
+      answer(2, "EXPLANATION", 1, { clarity: 4 }),
+    ];
+
+    const [header, row] = buildSchemaRunExport([stored], fromModel, feedback, ";")
+      .content.replace("﻿", "")
+      .split("\n")
+      .map((line) => line.split(";"));
+    const cell = (column: string) => row[header.indexOf(column)];
+
+    expect(cell("output.Predicted class.predicted")).toBe("Low risk");
+    expect(cell("output.Predicted class.feedback.r@x.org")).toBe("Low risk");
+    expect(cell("report.Why.content")).toContain("age > 50");
+    expect(cell("report.Why.clarity.r@x.org")).toBe("4");
   });
 });

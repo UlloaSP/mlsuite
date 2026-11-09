@@ -78,7 +78,7 @@ const result = (runId: number, prediction = 1) => ({
   runId,
   modelId: 1,
   modelInput: {},
-  output: { reports: [{ mappedTo: "score", prediction }] },
+  output: { reports: [{ id: "Score", kind: "classifier", mappedTo: "score", prediction }] },
   status: "SUCCESS" as const,
   errorMessage: null,
   errorJson: null,

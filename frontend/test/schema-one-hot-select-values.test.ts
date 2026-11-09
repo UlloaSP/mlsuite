@@ -49,6 +49,7 @@ describe("schema one-hot select values", () => {
     );
     const transport = createSchemaRunTransport(
       RUN_TARGET,
+      version.formSchema,
       version.bindings,
       version.formSchema.fields as never,
     );

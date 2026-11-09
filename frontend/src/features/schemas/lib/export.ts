@@ -5,7 +5,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { isBuiltinReportKind } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
 import { csvEscape, toCell } from "@/capabilities/prediction-runtime/data/export-csv";
-import { builtinPrediction } from "@/capabilities/prediction-runtime/data/report-normalization";
+import {
+  builtinPrediction,
+  classLabel,
+} from "@/capabilities/prediction-runtime/data/report-normalization";
 import { getOutputFeedbackFieldIds } from "@/capabilities/prediction-runtime/feedback/output-feedback-questionnaire";
 import { getQuestionnaireFieldIds } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
 import type { QuestionnaireSchema } from "@/capabilities/prediction-runtime/feedback/questionnaire-schema";
@@ -38,17 +41,6 @@ const feedbackRecord = (value: unknown): Record<string, unknown> =>
     ? (value as Record<string, unknown>)
     : { value };
 
-const reportsOf = (schema: unknown): Record<string, unknown>[] =>
-  typeof schema === "object" &&
-  schema !== null &&
-  !Array.isArray(schema) &&
-  Array.isArray((schema as { reports?: unknown }).reports)
-    ? (schema as { reports: unknown[] }).reports.filter(
-        (item): item is Record<string, unknown> =>
-          typeof item === "object" && item !== null && !Array.isArray(item),
-      )
-    : [];
-
 const modelInputColumn = (modelId: number, key: string): string => `input.${modelId}.${key}`;
 
 const reportColumnId = (report: SchemaDisplayReport): string => report.id;
@@ -58,10 +50,20 @@ const predictionValue = (report: SchemaDisplayReport): unknown => {
   return builtinPrediction(payload) ?? report.payload;
 };
 
-const outputFeedbackValue = (record: Record<string, unknown>, kind: string): unknown => {
-  const fieldIds = getOutputFeedbackFieldIds(kind);
-  return record[fieldIds.assessment] ?? record.assessment ?? Object.values(record)[0];
+/** A reviewer's assessment, a class written as the predicted class beside it is: by its schema label. */
+const outputFeedbackValue = (
+  record: Record<string, unknown>,
+  report: SchemaDisplayReport,
+): unknown => {
+  const fieldIds = getOutputFeedbackFieldIds(report.kind);
+  const value = record[fieldIds.assessment] ?? record.assessment ?? Object.values(record)[0];
+  return report.kind === "classifier"
+    ? classLabel(report.labels ?? [], report.classes ?? [], value)
+    : value;
 };
+
+const questionnaireOf = (report: SchemaDisplayReport | undefined): unknown =>
+  report?.config.feedbackQuestionnaire;
 
 const reportContentValue = (payload: unknown): string => {
   const formatted = getFormattedReportContent(payload);
@@ -109,7 +111,6 @@ export const buildSchemaRunExport = (
   );
   const reportIds = Array.from(new Set(displayReports.map(reportColumnId)));
   const reviewers = Array.from(new Set(feedback.map(schemaRunReviewerLabel))).sort();
-  const reportConfigs = reportsOf(version.formSchema);
   const outputHeaders = reportIds.flatMap((reportId) => {
     const report = displayReports.find((item) => item.id === reportId);
     if (!report || !isBuiltinReportKind(report.kind)) return [];
@@ -119,8 +120,7 @@ export const buildSchemaRunExport = (
     ];
   });
   const reportHeaders = reportIds.flatMap((reportId) => {
-    const config = reportConfigs.find((item) => item.id === reportId);
-    const questionnaire = config?.feedbackQuestionnaire;
+    const questionnaire = questionnaireOf(displayReports.find((item) => item.id === reportId));
     const schemaFields =
       typeof questionnaire === "object" && questionnaire !== null
         ? getQuestionnaireFieldIds(questionnaire as QuestionnaireSchema)
@@ -154,14 +154,13 @@ export const buildSchemaRunExport = (
     run.results.forEach((result) => {
       getSchemaResultReports(version, result).forEach((report) => {
         const reportId = reportColumnId(report);
-        const config = reportConfigs.find((item) => item.id === reportId);
         if (isBuiltinReportKind(report.kind)) {
           builtInReportValues.set(
             outputPredictionColumn(reportId),
             toCell(predictionValue(report)),
           );
         }
-        if (config?.feedbackQuestionnaire) {
+        if (questionnaireOf(report)) {
           reportContent.set(reportContentColumn(reportId), reportContentValue(report.payload));
         }
         reviewers.forEach((reviewer) => {
@@ -176,7 +175,7 @@ export const buildSchemaRunExport = (
             if (item.type === "OUTPUT") {
               outputFeedback.set(
                 outputFeedbackColumn(reportId, reviewer),
-                toCell(outputFeedbackValue(record, report.kind)),
+                toCell(outputFeedbackValue(record, report)),
               );
               return;
             }

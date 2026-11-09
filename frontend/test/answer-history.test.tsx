@@ -41,7 +41,14 @@ const run = predictionRun({
       modelId: 1,
       output: {
         reports: [
-          { mappedTo: "score", prediction: "1", labels: ["0", "1"], probabilities: [0.1, 0.9] },
+          {
+            id: "report_1",
+            kind: "classifier",
+            mappedTo: "score",
+            prediction: "1",
+            labels: ["0", "1"],
+            probabilities: [0.1, 0.9],
+          },
         ],
       },
     }),

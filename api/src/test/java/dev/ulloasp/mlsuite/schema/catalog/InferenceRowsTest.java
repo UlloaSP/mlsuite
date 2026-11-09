@@ -49,7 +49,7 @@ class InferenceRowsTest extends PublicPredictionFixture {
             "Zebra", "zebra", "ñandú", "nandu", "Ärger", "ärger", "arg", "z", "å", "Ångström", "ı", "I", "i",
             "  spaced", "x-ray", "x ray", "xray", "10", "9", "-3", "1e3", 42, 7.5, -0.25, 0, 1000000, 3,
             true, false, Map.of("k", 1), List.of(1, 2), "", "😀", "中文", "日本");
-    private static final Map<String, Object> RISK = Map.of("reports", List.of(Map.of("mappedTo", "risk",
+    private static final Map<String, Object> RISK = Map.of("reports", List.of(Map.of("id", "Risk", "mappedTo", "risk",
             "kind", "classifier", "prediction", "high", "mapping", List.of("low", "high"))));
 
     @Autowired InferenceCatalogService catalog;

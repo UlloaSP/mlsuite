@@ -15,7 +15,7 @@ import {
 } from "@/features/schemas/components/SchemaModelPicker";
 import { useCreateSchemaWithInitialVersionMutation } from "@/features/schemas/api/schema-mutations";
 import { countVisibleSchemaFields } from "@/features/schemas/lib/visible-fields";
-import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
+import { toSavedSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
 import { composeSchemaVersion, type SchemaSourceModel } from "@/features/schemas/lib/merge";
 
 type Props = {
@@ -53,7 +53,7 @@ export function CreateSchemaPage({
     setSubmitError(undefined);
     if (!canSubmit || busy) return;
     try {
-      const preparedVersion = toExecutableSchemaVersion(composedVersion);
+      const preparedVersion = toSavedSchemaVersion(composedVersion);
       const schemaId = (
         await createSchema.mutateAsync({
           schema: {

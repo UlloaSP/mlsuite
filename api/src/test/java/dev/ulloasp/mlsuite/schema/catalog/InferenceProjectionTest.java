@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -98,11 +99,41 @@ class InferenceProjectionTest {
         // A model trained on 0/1 stores its own classes; the schema calls them No and Yes.
         for (var result : array(data, "/results")) {
             ((ObjectNode) result).set("output", JSON.readTree("""
-                    {"reports":[{"mappedTo":"score","kind":"classifier","labels":["0","1"],"prediction":"1",
+                    {"reports":[{"id":"Score","mappedTo":"score","kind":"classifier","labels":["0","1"],"prediction":"1",
                      "probabilities":[0.2,0.8]}]}"""));
         }
 
         assertEquals("Yes", rows(data).getFirst().dto().values().get(SCORE));
+    }
+
+    @Test
+    void givesEachReportReadingOneOutputItsOwnColumnAndItsOwnStoredCopy() throws Exception {
+        String why = SCORE + ":Why";
+        ObjectNode data = data(0);
+        for (var version : array(data, "/versions")) {
+            array(version, "/formSchema/reports").add(JSON.readTree(
+                    "{\"kind\":\"Crystal Tree\",\"label\":\"Why\",\"mappedTo\":{\"1\":\"score\"}}"));
+        }
+        // As a run stores both: the runtime's answers, then one copy per form report, both on the output.
+        for (var result : array(data, "/results")) {
+            ((ObjectNode) result).set("output", JSON.readTree("""
+                    {"reports":[
+                      {"kind":"classifier","output":0,"mapping":["no","yes"],"probabilities":[0.2,0.8],"prediction":"yes"},
+                      {"kind":"Crystal Tree","explanation":"age > 50"},
+                      {"id":"Score","kind":"classifier","mappedTo":"score","labels":["no","yes"],
+                       "probabilities":[0.2,0.8],"prediction":"yes"},
+                      {"id":"Why","kind":"Crystal Tree","mappedTo":"score","explanation":"age > 50"}]}"""));
+        }
+
+        List<Row> rows = rows(data);
+        assertEquals("Yes", rows.getFirst().dto().values().get(SCORE));
+        assertEquals("age > 50", rows.getFirst().dto().values().get(why));
+        InferenceCatalogMetadata metadata = new InferenceCatalogMetadata(InferenceCatalogFixtures.TEXT);
+        rows.forEach(metadata::accept);
+        Map<String, String> labels = metadata.finish().stream()
+                .collect(Collectors.toMap(InferenceCatalogColumnDto::id, InferenceCatalogColumnDto::label));
+        assertEquals("Score", labels.get(SCORE));
+        assertEquals("Why", labels.get(why));
     }
 
     @Test
@@ -114,13 +145,13 @@ class InferenceProjectionTest {
         array(data, "/versions/0/bindings").add(binding.put("id", 2).put("modelId", 2));
         array(data, "/versions/0/formSchema/reports").add(JSON.readTree(
                 "{\"kind\":\"regressor\",\"label\":\"Body mass\",\"mappedTo\":{\"2\":\"0\"}}"));
-        // Stored as a workspace run stores it: the runtime's answer, then the form's report, named by MLForm.
+        // Stored as a workspace run stores it: the runtime's answer, then the form's report under its label.
         for (String[] run : new String[][] { { "2", "21", "[3531.39]" }, { "1", "11", "[]" } }) {
             array(data, "/results").add(JSON.readTree("""
                     {"id":%s,"runId":%s,"modelId":2,"modelInput":{},"status":"SUCCESS","errorMessage":null,
                      "errorJson":null,"createdAt":"2026-07-20T08:00:00Z","output":{"reports":[
                        {"kind":"regressor","output":0,"values":%s},
-                       {"id":"body-mass","kind":"regressor","output":0,"mappedTo":"0","values":%s}]}}
+                       {"id":"Body mass","kind":"regressor","output":0,"mappedTo":"0","values":%s}]}}
                     """.formatted(run[1], run[0], run[2], run[2])));
         }
 
@@ -144,7 +175,7 @@ class InferenceProjectionTest {
     @Test
     void keepsJsonStringifyTextForUnstructuredCustomReports() throws Exception {
         Row row = rows(customReport(JSON.readTree("{\"score\":7.0,\"samples\":[1,2.0]}"))).getFirst();
-        assertEquals("{\n  \"score\": 7,\n  \"samples\": [\n    1,\n    2\n  ],\n  \"id\": \"score\",\n"
+        assertEquals("{\n  \"score\": 7,\n  \"samples\": [\n    1,\n    2\n  ],\n  \"id\": \"Score\",\n"
                 + "  \"kind\": \"custom\",\n  \"mappedTo\": \"score\"\n}", row.dto().values().get(SCORE));
         assertTrue(found(row, "\"score\": 7"));
     }

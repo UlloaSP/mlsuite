@@ -54,14 +54,16 @@ const run = predictionRun({
       modelId: 1,
       createdAt: "2026-08-24T15:15:00Z",
       modelInput: { age: 52, sex: "Female" },
-      output: { reports: [{ mappedTo: "score", value: "High" }] },
+      output: { reports: [{ id: "score", kind: "regressor", mappedTo: "score", value: "High" }] },
     }),
     predictionResult({
       id: 2,
       modelId: 2,
       createdAt: "2026-08-24T15:15:00Z",
       modelInput: { age: 52 },
-      output: { reports: [{ mappedTo: "score-2", value: "Low" }] },
+      output: {
+        reports: [{ id: "score", kind: "regressor", mappedTo: "score-2", value: "Low" }],
+      },
     }),
   ],
 });

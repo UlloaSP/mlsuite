@@ -233,8 +233,7 @@ public final class PublicForm {
                 .filter(model -> featureFor(report.get(MODEL_ROUTING), model) != null)
                 .toList();
         String kind = String.valueOf(report.get("kind"));
-        String storedId = report.get("id") instanceof String id ? id
-                : report.get("label") instanceof String label ? label : String.valueOf(order);
+        String storedId = PublicRunReports.storedId(report, order);
         List<Object> expanded = new ArrayList<>();
         for (BoundModel model : producers) {
             String key = "out" + reportRoutes.size();

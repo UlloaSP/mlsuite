@@ -4,7 +4,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, test } from "vite-plus/test";
-import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
+import {
+  toExecutableSchemaVersion,
+  toSavedSchemaVersion,
+} from "@/capabilities/prediction-runtime/mlform/executable-schema";
 
 const bindings = [
   { modelId: 1, modelName: "Model One", pluginPolicy: { reportKinds: ["classifier"] } },
@@ -29,10 +32,10 @@ describe("toExecutableSchemaVersion", () => {
       },
     };
 
-    expect(() => toExecutableSchemaVersion(version)).toThrow("Schema report 2 falta mappedTo");
+    expect(() => toExecutableSchemaVersion(version)).toThrow("Schema report 2 has no mappedTo");
   });
 
-  test("keeps bound reports and bindings, dropping editor-only report keys", () => {
+  test("saves bound reports and bindings, dropping editor-only report keys", () => {
     const version = {
       id: "version-1",
       name: "v1",
@@ -51,13 +54,17 @@ describe("toExecutableSchemaVersion", () => {
       },
     };
 
-    const executable = toExecutableSchemaVersion(version);
+    const saved = toSavedSchemaVersion(version);
 
-    expect(executable.id).toBe("version-1");
-    expect(executable.bindings).toEqual(bindings);
-    expect(executable.formSchema.reports).toEqual([
+    expect(saved.id).toBe("version-1");
+    expect(saved.bindings).toEqual(bindings);
+    expect(saved.formSchema.reports).toEqual([
       { label: "Risk", kind: "classifier", mappedTo: { "Model One:Signature One": "risk" } },
     ]);
+    // A stored version runs as stored: its report ids name the copies its runs keep.
+    expect(toExecutableSchemaVersion(version).formSchema.reports).toEqual(
+      version.formSchema.reports,
+    );
   });
 
   test("keeps a report mapped to a bare output position, which serves every bound model", () => {

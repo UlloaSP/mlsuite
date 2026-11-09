@@ -28,6 +28,7 @@ import type {
 import {
   reportStatesFromSnapshot,
   schemaRunReportsPending,
+  settleUnfetchableReports,
 } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
 
 type RunResultCallback = (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => void;
@@ -97,7 +98,11 @@ export const mountSchemaRunForm = ({
     registry: runtime.registry,
     descriptorRegistry: runtime.descriptorRegistry,
     primitiveRegistry: createBuiltinPrimitiveRegistry(),
-    transport: transport(runtime.normalizedFields),
+    transport: settleUnfetchableReports(
+      transport(runtime.normalizedFields),
+      normalized.reports,
+      runtime.registry,
+    ),
     hooks: {
       beforeSubmit() {
         onRunningChange?.(true);

@@ -64,6 +64,8 @@ const run = predictionRun({
       output: {
         reports: [
           {
+            id: "report_1",
+            kind: "classifier",
             mappedTo: "predicted_class",
             prediction: "1",
             labels: ["0", "1"],

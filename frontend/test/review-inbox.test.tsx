@@ -192,7 +192,7 @@ test("a review whose snapshot cannot run is shown as such, and the tray stays us
 
   expect(host.textContent).not.toContain("Review unavailable");
   expect(host.textContent).toContain("Review cannot be shown");
-  expect(host.textContent).toContain("Schema report 1 falta mappedTo");
+  expect(host.textContent).toContain("Schema report 1 has no mappedTo");
   expect(host.querySelector("aside")?.textContent).toContain("Run todo-1");
 });
 

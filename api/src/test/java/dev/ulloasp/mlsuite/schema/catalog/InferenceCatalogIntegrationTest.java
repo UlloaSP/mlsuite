@@ -229,7 +229,7 @@ class InferenceCatalogIntegrationTest extends PublicPredictionFixture {
                 entityManager.persist(new PredictionRun(bookmark, version, "shared-main-" + i, Map.of("Age", i),
                         PredictionRunStatus.SUCCESS, principals.system()));
             }
-            var output = Map.<String, Object>of("reports", List.of(Map.of("id", "score", "kind", "regressor",
+            var output = Map.<String, Object>of("reports", List.of(Map.of("id", "Score", "kind", "regressor",
                     "mappedTo", "score", "values", List.of(41.5))));
             var reviewed = new PredictionRun(null, otherVersion, "shared-reviewed", Map.of("Weight", 70),
                     PredictionRunStatus.SUCCESS, principals.system());

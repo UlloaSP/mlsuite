@@ -11,7 +11,11 @@ import { retryWhileBusy } from "@/shared/api/busy-retry";
 import type { WorkspacePredictionDto, WorkspacePredictionRequest } from "@/shared/api/openapi.gen";
 import { getBackendBaseUrl } from "@/shared/config/runtime";
 import { applySchemaRunInputMapping } from "@/capabilities/prediction-runtime/mlform/model-input-mapping";
-import { reportTargetForBinding } from "@/capabilities/prediction-runtime/mlform/schema-run-report-mapping";
+import {
+  type RuntimeReportRoute,
+  runtimeReportRoutes,
+} from "@/capabilities/prediction-runtime/mlform/runtime-report-targets";
+import { findStoredReport } from "@/capabilities/prediction-runtime/data/stored-report";
 import {
   type JsonRecord,
   type PredictionPayloadField,
@@ -60,23 +64,21 @@ const runBinding = (
   );
 };
 
-const findReportPayload = (target: string, output: JsonRecord): JsonRecord | undefined =>
-  (Array.isArray(output.reports) ? output.reports.filter(isRecord) : []).find(
-    (item) => String(item.mappedTo) === target,
-  );
-
+/**
+ * One result for each report of the run form, routed as the form routes it: the stored copy
+ * of that report in its model's result. A report the server stored no copy of is pending: a
+ * plugin may still fetch it in the browser.
+ */
 const reportResults = (
   results: readonly WorkspacePredictionDto[],
-  bindings: readonly SchemaRunBinding[],
+  routes: readonly RuntimeReportRoute<SchemaRunBinding>[],
   reports: readonly ReportConfig[],
 ): ReportResult[] =>
   reports.map((report, index) => {
-    const binding = bindings.find((candidate) => reportTargetForBinding(report, candidate));
-    if (!binding) throw new Error(`Schema report ${index + 1} no coincide con ningún modelo`);
-    const mappedTo = reportTargetForBinding(report, binding);
-    if (!mappedTo) throw new Error(`Schema report ${index + 1} falta mappedTo`);
-    const backend = String(binding.modelName ?? binding.modelId);
-    const result = results.find((candidate) => candidate.modelId === binding.modelId);
+    const route = routes.find((candidate) => candidate.id === report.id);
+    if (!route) throw new Error(`Schema report ${index + 1} does not map to any bound model.`);
+    const { backend, key: mappedTo } = route;
+    const result = results.find((candidate) => candidate.modelId === route.binding.modelId);
     if (!result || result.status === "FAILED") {
       return { backend, mappedTo, status: "skipped", reason: result?.errorMessage ?? "no-result" };
     }
@@ -89,20 +91,23 @@ const reportResults = (
       ...(isRecord(output.meta) ? output.meta : {}),
     };
     const context = { modelValues: result.modelInput, meta, raw: output };
-    const payload = findReportPayload(mappedTo, output);
-    return payload
-      ? { backend, mappedTo, status: "ready", payload: storedReportPayload(payload), context }
+    const copy = findStoredReport(output, route);
+    return copy
+      ? { backend, mappedTo, status: "ready", payload: storedReportPayload(copy), context }
       : { backend, mappedTo, status: "pending", context };
   });
 
 const requestRecord = (value: unknown): JsonRecord => (isRecord(value) ? value : {});
 
+/** Runs a stored schema's form against its bound models; `schema` is the form as stored. */
 export const createSchemaRunTransport = (
   target: SchemaRunTarget,
+  schema: unknown,
   bindings: readonly SchemaRunBinding[],
   fields: readonly PredictionPayloadField[],
-): Transport =>
-  createFanoutTransport({
+): Transport => {
+  const routes = runtimeReportRoutes(schema, bindings);
+  return createFanoutTransport({
     targets: bindings,
     failurePolicy: "fail-fast",
     submit: (binding, request) =>
@@ -115,7 +120,7 @@ export const createSchemaRunTransport = (
         if (outcome.status !== "fulfilled") throw outcome.reason;
         return outcome.value;
       });
-      const reportPayloads = reportResults(results, bindings, reports);
+      const reportPayloads = reportResults(results, routes, reports);
       const meta = {
         backendUrl: getBackendBaseUrl(),
         backendFieldValues: canonical,
@@ -134,3 +139,4 @@ export const createSchemaRunTransport = (
       };
     },
   });
+};

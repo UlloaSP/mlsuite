@@ -34,6 +34,8 @@ describe("schema review output context", () => {
           output: {
             reports: [
               {
+                id: "report_1",
+                kind: "classifier",
                 mappedTo: "predicted_class",
                 prediction: "1",
                 labels: ["0", "1"],
@@ -91,7 +93,7 @@ describe("schema review output context", () => {
       modelId: 1,
       status: "SUCCESS" as const,
       output: {
-        reports: [species, { ...species, labels: species.mapping, id: "species", mappedTo: "0" }],
+        reports: [species, { ...species, labels: species.mapping, id: "Species", mappedTo: "0" }],
       },
     },
     {
@@ -101,7 +103,7 @@ describe("schema review output context", () => {
       output: {
         reports: [
           { kind: "regressor", output: 0, ...bodyMass },
-          { kind: "regressor", output: 0, ...bodyMass, id: "body-mass", mappedTo: "0" },
+          { kind: "regressor", output: 0, ...bodyMass, id: "Body mass", mappedTo: "0" },
         ],
       },
     },

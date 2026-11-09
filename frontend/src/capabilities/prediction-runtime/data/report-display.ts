@@ -11,7 +11,14 @@ import {
   type JsonRecord,
 } from "@/capabilities/prediction-runtime/mlform/shared";
 import { reportTargetForBinding } from "@/capabilities/prediction-runtime/mlform/schema-run-report-mapping";
-import { mappingLabels } from "@/capabilities/prediction-runtime/data/report-normalization";
+import {
+  classLabel,
+  mappingLabels,
+} from "@/capabilities/prediction-runtime/data/report-normalization";
+import {
+  findStoredReport,
+  storedReportId,
+} from "@/capabilities/prediction-runtime/data/stored-report";
 import type { PredictionResultDto, SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type SchemaVersion = Pick<SchemaVersionDto, "formSchema" | "bindings">;
@@ -25,6 +32,8 @@ export type SchemaDisplayReport = {
   config: ReportConfig;
   payload?: JsonRecord;
   labels?: string[];
+  /** The classes the run stored, which `labels` name in order. */
+  classes?: string[];
 };
 
 const reportsOf = (schema: unknown): ReportConfig[] =>
@@ -32,29 +41,12 @@ const reportsOf = (schema: unknown): ReportConfig[] =>
     ? (schema.reports.filter(isRecord) as ReportConfig[])
     : [];
 
-const reportId = (report: ReportConfig): string | undefined =>
-  typeof report.id === "string"
-    ? report.id
-    : typeof report.label === "string"
-      ? report.label
-      : undefined;
-
 const reportLabel = (report: ReportConfig): string =>
-  typeof report.label === "string" ? report.label : (reportId(report) ?? "Report");
-
-const payloadFor = (
-  target: string,
-  output: JsonRecord,
-  aliases: readonly string[] = [],
-): JsonRecord | undefined => {
-  const reports = Array.isArray(output.reports) ? output.reports.filter(isRecord) : [];
-  const match = reports.find(
-    (report) =>
-      String(report.mappedTo) === target ||
-      aliases.some((alias) => String(report.id) === alias || String(report.mappedTo) === alias),
-  );
-  return match && storedReportPayload(match);
-};
+  typeof report.label === "string"
+    ? report.label
+    : typeof report.id === "string"
+      ? report.id
+      : "Report";
 
 const reportLabels = (report: ReportConfig): string[] =>
   Array.isArray((report as JsonRecord).labels)
@@ -74,8 +66,8 @@ export const normalizeReportPayload = (
   if (!payload) return undefined;
   const labels = reportLabels(report);
   if (labels.length === 0) return payload;
-  const index = (mappingLabels(payload.labels) ?? []).indexOf(String(payload.prediction));
-  return { ...payload, labels, prediction: labels[index] ?? payload.prediction };
+  const classes = mappingLabels(payload.labels) ?? [];
+  return { ...payload, labels, prediction: classLabel(labels, classes, payload.prediction) };
 };
 
 const METADATA_KEYS = new Set(["endpoint", "modelId", "backendUrl", "status"]);
@@ -103,12 +95,15 @@ export const getSchemaResultReports = (
 ): SchemaDisplayReport[] => {
   const binding = version.bindings.find((item) => item.modelId === result.modelId);
   return reportsOf(version.formSchema).reduce<SchemaDisplayReport[]>((items, report, order) => {
-    const id = reportId(report);
     const kind = typeof report.kind === "string" ? report.kind : "report";
     const target = reportTargetForBinding(report, binding);
-    const rawPayload = target ? payloadFor(target, result.output ?? {}, [id ?? ""]) : undefined;
-    const payload = normalizeReportPayload(report, rawPayload);
-    if (!id || !target || !isRenderablePayload(report, payload)) return items;
+    const named = typeof report.id === "string" || typeof report.label === "string";
+    if (!named || !target) return items;
+    const id = storedReportId(report, order);
+    const copy = findStoredReport(result.output ?? {}, { storedId: id, target });
+    const stored = copy && storedReportPayload(copy);
+    const payload = normalizeReportPayload(report, stored);
+    if (!isRenderablePayload(report, payload)) return items;
     items.push({
       id,
       order,
@@ -116,6 +111,7 @@ export const getSchemaResultReports = (
       kind,
       config: report,
       labels: reportLabels(report),
+      classes: mappingLabels(stored?.labels) ?? [],
       payload,
     });
     return items;

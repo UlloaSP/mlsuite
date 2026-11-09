@@ -102,7 +102,7 @@ describe("schema run display", () => {
     });
   });
 
-  test("reads normal and plugin report payload aliases", () => {
+  test("reads each report from the copy the run stored under its id", () => {
     const version = {
       formSchema: {
         reports: [
@@ -127,12 +127,64 @@ describe("schema run display", () => {
       modelId: 1,
       output: {
         reports: [
-          { mappedTo: "normal_output", prediction: "1", labels: ["0", "1"] },
-          { mappedTo: "plugin_output", explanation: "ok" },
+          {
+            id: "normal-report",
+            kind: "classifier",
+            mappedTo: "normal_output",
+            prediction: "1",
+            labels: ["0", "1"],
+          },
+          {
+            id: "plugin-report",
+            kind: "Crystal Tree",
+            mappedTo: "plugin_output",
+            explanation: "ok",
+          },
         ],
       },
     });
 
     expect(reports.map((report) => report.id)).toEqual(["normal-report", "plugin-report"]);
+  });
+
+  test("reads a class and its explanation on one output from their own stored copies", () => {
+    // Built from a model: the reports have no id, so a run stores them under their labels.
+    const version = {
+      formSchema: {
+        reports: [
+          {
+            label: "Predicted class",
+            kind: "classifier",
+            mappedTo: { risk: 0 },
+            labels: ["High risk", "Low risk"],
+          },
+          { label: "Why", kind: "Crystal Tree", mappedTo: { risk: 0 } },
+        ],
+      },
+      bindings: [{ modelId: 1, modelName: "risk" }],
+    };
+
+    const reports = getSchemaResultReports(version as never, {
+      modelId: 1,
+      output: {
+        reports: [
+          { kind: "classifier", output: 0, mapping: ["high", "low"], prediction: "low" },
+          { kind: "Crystal Tree", explanation: "age > 50" },
+          {
+            id: "Predicted class",
+            kind: "classifier",
+            mappedTo: "0",
+            labels: ["high", "low"],
+            prediction: "low",
+          },
+          { id: "Why", kind: "Crystal Tree", mappedTo: "0", explanation: "age > 50" },
+        ],
+      },
+    });
+
+    expect(reports.map(({ id, payload }) => [id, payload])).toEqual([
+      ["Predicted class", { labels: ["High risk", "Low risk"], prediction: "Low risk" }],
+      ["Why", { explanation: "age > 50" }],
+    ]);
   });
 });
