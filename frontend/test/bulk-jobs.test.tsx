@@ -224,6 +224,22 @@ describe("bulk uploads run on the server as jobs", () => {
     expect(toasts.error).not.toHaveBeenCalled();
   });
 
+  test("a header the schema cannot use refuses the whole file, not lines of it", async () => {
+    routes.set(JOBS, () => ({ status: 200, body: [] }));
+    await openDialog();
+
+    await upload("years,extra\n42,1\n");
+
+    const skipped = document.body.querySelector('[aria-label="Skipped lines"]');
+    expect(skipped?.textContent).toContain("The file was not sent");
+    expect(skipped?.textContent).not.toContain("Skipped");
+    expect(skipped?.textContent).toContain("line 1: Missing input columns: age");
+    expect(skipped?.textContent).toContain("line 1: Unknown input columns: years, extra");
+    expect(toasts.warning).toHaveBeenCalledWith(
+      "Bulk upload not started: the file has no rows to run",
+    );
+  });
+
   test("says when the jobs cannot be read", async () => {
     routes.set(JOBS, () => ({ status: 500, body: { status: 500, message: "boom" } }));
     await openDialog();

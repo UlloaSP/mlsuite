@@ -62,7 +62,7 @@ export function BulkJobsDialog({ open, onClose, bookmarkId, version, jobs }: Pro
             {upload.preparing ? "Preparing rows…" : "Upload a file"}
           </AppButton>
         </div>
-        {upload.skipped.length > 0 ? <BulkSkippedLines skipped={upload.skipped} /> : null}
+        {upload.skipped.lines.length > 0 ? <BulkSkippedLines skipped={upload.skipped} /> : null}
         {jobs.isError ? (
           <AppEmptyState
             compact

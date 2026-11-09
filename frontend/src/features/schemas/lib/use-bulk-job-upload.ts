@@ -22,6 +22,11 @@ export const MAX_BULK_ROWS = 10000;
 /** A line of the last file that was not sent, and why; line 0 is the whole file. */
 export type SkippedBulkLine = { line: number; reason: string };
 
+/** What of the last file was not sent: some data lines, or the whole file and why. */
+export type SkippedBulkFile = { lines: SkippedBulkLine[]; fileRejected: boolean };
+
+const NOTHING_SKIPPED: SkippedBulkFile = { lines: [], fileRejected: false };
+
 const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 /**
@@ -34,19 +39,19 @@ export function useBulkJobUpload(bookmarkId: string, version: SchemaVersionDto) 
   const queryClient = useQueryClient();
   const { mutateAsync: startJob } = useStartPredictionJob(bookmarkId);
   // Shown in the dialog that started the upload, until the next file replaces them.
-  const [skipped, setSkipped] = useState<SkippedBulkLine[]>([]);
+  const [skipped, setSkipped] = useState<SkippedBulkFile>(NOTHING_SKIPPED);
 
   // Resolves to the number of rows sent to the server, 0 when the file had none to run.
   const upload = useMutation({
     mutationFn: async (file: File) => {
-      setSkipped([]);
+      setSkipped(NOTHING_SKIPPED);
       const parsed = await parseSpreadsheetPredictionFile(
         file,
         getModelInputBulkSchema(version),
         MAX_BULK_ROWS,
         `bulk-upload-${crypto.randomUUID()}`,
       );
-      setSkipped(parsed.skipped);
+      setSkipped({ lines: parsed.skipped, fileRejected: parsed.fileRejected });
       if (parsed.records.length === 0) return 0;
       const plugins = await queryClient.fetchQuery(
         snapshotCatalogQueryOptions(organizationId, version.id),

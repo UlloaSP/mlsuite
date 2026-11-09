@@ -20,7 +20,16 @@ export interface SkippedRecord {
 export interface ParseBulkPredictionResult {
   records: BulkPredictionRecord[];
   skipped: SkippedRecord[];
+  /** The whole file was refused (its header, size or format), not some of its data rows. */
+  fileRejected: boolean;
 }
+
+/** A file none of whose rows can be read, for the problems given. */
+export const rejectFile = (...problems: SkippedRecord[]): ParseBulkPredictionResult => ({
+  records: [],
+  skipped: problems,
+  fileRejected: true,
+});
 
 export type TabularPredictionRow = {
   line: number;
@@ -142,7 +151,7 @@ export function parseTabularPredictionRecords(
   maxRecords = 10000,
   autoNameBase?: number | string,
 ): ParseBulkPredictionResult {
-  if (rows.length === 0) return { records: [], skipped: [{ line: 1, reason: "File is empty" }] };
+  if (rows.length === 0) return rejectFile({ line: 0, reason: "File is empty" });
 
   const [headerRow, ...dataRows] = rows;
   const headers = headerRow.values.map((value) => getCellText(value).trim());
@@ -151,7 +160,7 @@ export function parseTabularPredictionRecords(
   const hasNameHeader = headers[0] === "name";
 
   if (new Set(headers).size !== headers.length) {
-    return { records: [], skipped: [{ line: headerRow.line, reason: "Headers must be unique" }] };
+    return rejectFile({ line: headerRow.line, reason: "Headers must be unique" });
   }
 
   const inputHeaders = hasNameHeader ? headers.slice(1) : headers;
@@ -164,29 +173,24 @@ export function parseTabularPredictionRecords(
       ? [canonical]
       : fields.filter((field) => field.columns.includes(header));
     if (matches.length > 1) {
-      return {
-        records: [],
-        skipped: [{ line: headerRow.line, reason: `Ambiguous input column: ${header}` }],
-      };
+      return rejectFile({ line: headerRow.line, reason: `Ambiguous input column: ${header}` });
     }
     const field = matches[0];
     if (!field) continue;
     if (mappedNames.has(field.name)) {
-      return {
-        records: [],
-        skipped: [{ line: headerRow.line, reason: `Multiple columns map to input: ${field.name}` }],
-      };
+      return rejectFile({
+        line: headerRow.line,
+        reason: `Multiple columns map to input: ${field.name}`,
+      });
     }
     mappedNames.add(field.name);
     fieldMap.set(header, field);
   }
   if (!hasNameHeader && autoNameBase === undefined) {
-    return {
-      records: [],
-      skipped: [
-        { line: headerRow.line, reason: 'Missing "name" column requires prediction id base' },
-      ],
-    };
+    return rejectFile({
+      line: headerRow.line,
+      reason: 'Missing "name" column requires prediction id base',
+    });
   }
   const missing = fields.reduce<string[]>((items, field) => {
     if (!mappedNames.has(field.name)) items.push(field.name);
@@ -194,28 +198,20 @@ export function parseTabularPredictionRecords(
   }, []);
   const extra = inputHeaders.filter((header) => !fieldMap.has(header));
   if (missing.length > 0 || extra.length > 0) {
-    return {
-      records: [],
-      skipped: [
-        ...(missing.length > 0
-          ? [{ line: headerRow.line, reason: `Missing input columns: ${missing.join(", ")}` }]
-          : []),
-        ...(extra.length > 0
-          ? [{ line: headerRow.line, reason: `Unknown input columns: ${extra.join(", ")}` }]
-          : []),
-      ],
-    };
+    return rejectFile(
+      ...(missing.length > 0
+        ? [{ line: headerRow.line, reason: `Missing input columns: ${missing.join(", ")}` }]
+        : []),
+      ...(extra.length > 0
+        ? [{ line: headerRow.line, reason: `Unknown input columns: ${extra.join(", ")}` }]
+        : []),
+    );
   }
   if (dataRows.length > maxRecords) {
-    return {
-      records: [],
-      skipped: [
-        {
-          line: 0,
-          reason: `File exceeds maximum of ${maxRecords} records (found ${dataRows.length})`,
-        },
-      ],
-    };
+    return rejectFile({
+      line: 0,
+      reason: `File exceeds maximum of ${maxRecords} records (found ${dataRows.length})`,
+    });
   }
 
   const records: BulkPredictionRecord[] = [];
@@ -244,5 +240,5 @@ export function parseTabularPredictionRecords(
     if (rowError) skipped.push({ line: row.line, name, reason: rowError });
     else records.push({ name, inputs });
   }
-  return { records, skipped };
+  return { records, skipped, fileRejected: false };
 }
