@@ -28,7 +28,6 @@ export function SidebarMenuLink({
     <DropdownMenu.Item asChild>
       <AppLink
         {...appHref(to)}
-        viewTransition
         aria-current={active ? "page" : undefined}
         className={cx(
           SIDEBAR_MENU_ITEM,

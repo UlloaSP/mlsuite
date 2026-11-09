@@ -93,7 +93,7 @@ Do not unmount stateful editors, forms, or report runtimes for cosmetic changes.
 - Motion communicates navigation, hierarchy, or state change.
 - Avoid continuously repainting effects and decorative animation.
 - Respect reduced-motion preferences.
-- Theme and route transitions must preserve runtime state and avoid flashes.
+- A page change shows the next page in place, with no cross-fade, slide, or enter animation. The theme switch and shell layout changes may animate; they must preserve runtime state and avoid flashes.
 
 ## Accessibility
 

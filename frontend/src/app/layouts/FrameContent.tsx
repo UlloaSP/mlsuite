@@ -21,7 +21,7 @@ export function FrameContent({ children }: PropsWithChildren) {
 
   return (
     <>
-      <div className="app-content-transition relative min-h-0 min-w-0 flex-1 overflow-clip [view-transition-name:app-content]">
+      <div className="app-content-transition relative min-h-0 min-w-0 flex-1 overflow-clip">
         {children}
         {location === "rail-left" ? <LocationRail side="left" /> : null}
         {location === "rail-right" ? <LocationRail side="right" /> : null}

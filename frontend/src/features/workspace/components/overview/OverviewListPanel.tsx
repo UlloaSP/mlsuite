@@ -43,7 +43,6 @@ export function OverviewListPanel({
       <footer className="mt-auto border-t border-line px-5 py-3">
         <AppLink
           {...appHref(to)}
-          viewTransition
           className={cx(
             "inline-flex items-center gap-1.5 rounded text-xs font-semibold text-accent-strong hover:underline",
             FOCUS_RING,

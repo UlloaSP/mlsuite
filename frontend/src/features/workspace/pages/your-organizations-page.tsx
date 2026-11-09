@@ -21,7 +21,7 @@ import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { OrganizationMark } from "@/shared/ui/OrganizationMark";
 
 const newOrganizationLink = (
-  <AppLink to="/workspace/organizations/create" viewTransition className={appButtonClass()}>
+  <AppLink to="/workspace/organizations/create" className={appButtonClass()}>
     <Plus size={16} /> New organization
   </AppLink>
 );

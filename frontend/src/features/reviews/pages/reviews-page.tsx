@@ -73,7 +73,6 @@ export function ReviewsPage() {
         to: "/review/$reviewId/runs/$reviewRunId",
         params: { reviewId: item.reviewId, reviewRunId: item.publicId },
         replace,
-        viewTransition: false,
       });
     },
     [navigate],
@@ -95,8 +94,7 @@ export function ReviewsPage() {
   useEffect(() => {
     if (resolving || failure) return;
     if (!selectedReviewId || !selectedRunId) {
-      if (reviewId || reviewRunId)
-        void navigate({ to: "/review", replace: true, viewTransition: false });
+      if (reviewId || reviewRunId) void navigate({ to: "/review", replace: true });
       return;
     }
     if (selectedReviewId === reviewId && selectedRunId === reviewRunId) return;
@@ -162,8 +160,7 @@ export function ReviewsPage() {
               onSubmitRevision={() =>
                 submitMutation.mutate(undefined, {
                   // The submitted runs are gone from the inbox: the first one left opens.
-                  onSuccess: () =>
-                    navigate({ to: "/review", replace: true, viewTransition: false }),
+                  onSuccess: () => navigate({ to: "/review", replace: true }),
                 })
               }
             />

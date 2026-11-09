@@ -29,18 +29,10 @@ export function RequireTeamOrganization({ children }: PropsWithChildren) {
           description="Members, invitations, roles and settings belong to organizations. Create one to work with other people."
           action={
             <div className="flex flex-wrap justify-center gap-2">
-              <AppLink
-                to="/workspace/organizations/create"
-                viewTransition
-                className={appButtonClass()}
-              >
+              <AppLink to="/workspace/organizations/create" className={appButtonClass()}>
                 <Plus size={16} /> New organization
               </AppLink>
-              <AppLink
-                to="/workspace"
-                viewTransition
-                className={appButtonClass({ variant: "secondary" })}
-              >
+              <AppLink to="/workspace" className={appButtonClass({ variant: "secondary" })}>
                 Back to overview
               </AppLink>
             </div>

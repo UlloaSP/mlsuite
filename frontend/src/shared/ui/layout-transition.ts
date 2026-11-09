@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { flushSync } from "react-dom";
 
 // Names are applied only for this transition: permanent names would pull the
-// sidebar out of the theme reveal and the content out of its route fade.
+// sidebar and the content out of the theme reveal.
 const PARTS = [
   { selector: "[data-app-sidebar]", name: "app-layout-sidebar" },
   { selector: ".app-content-transition", name: "app-layout-main" },

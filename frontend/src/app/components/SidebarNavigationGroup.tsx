@@ -101,7 +101,6 @@ export function SidebarNavigationGroup({
                       aria-keyshortcuts={`Alt+${String(index + 1)}`}
                       {...appHref(item.to)}
                       state={RESTORE_SCROLL_STATE}
-                      viewTransition
                     >
                       <NavigationIcon item={item} size={18} />
                       <SidebarLabel className="truncate">{item.label}</SidebarLabel>
@@ -139,7 +138,6 @@ export function SidebarNavigationGroup({
                                   data-user-guide-item={`subnav:${child.label}`}
                                   aria-keyshortcuts={`Alt+Shift+${childShortcut}`}
                                   {...appHref(child.to)}
-                                  viewTransition
                                 >
                                   <ChildIcon size={14} className="shrink-0" />
                                   <span className="truncate">{child.label}</span>
