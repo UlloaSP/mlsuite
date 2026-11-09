@@ -54,7 +54,9 @@ export function AppGlobalSearch() {
     }
   }, [open]);
 
-  const showPanel = query.trim().length >= 2 || isFetching;
+  const typed = query.trim().length;
+  // Typing over a search passes through one character: its results stay, beside the hint.
+  const showPanel = typed >= 2 || isFetching || (typed === 1 && data !== undefined);
   // Each group's first index in the flat list the arrow keys walk.
   const groupOffsets: number[] = [];
   let resultCount = 0;
@@ -128,6 +130,9 @@ export function AppGlobalSearch() {
                   <AppCopy className="px-6 py-5">No results.</AppCopy>
                 ) : (
                   <div className="py-4">
+                    {typed < 2 && (
+                      <AppCopy className="px-6 pb-3">Type at least two characters.</AppCopy>
+                    )}
                     {data.groups.map((group, index) => (
                       <SearchResultGroup
                         key={group.label}

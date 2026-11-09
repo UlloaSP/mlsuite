@@ -76,3 +76,26 @@ test("keeps the previous results on screen while the next query loads", async ()
   expect(document.body.textContent).toContain("Acme Model");
   expect(document.body.textContent).not.toContain("Searching workspace");
 });
+
+test("keeps the results on screen while a new query has one character", async () => {
+  search.run.mockResolvedValue({
+    query: "risk",
+    groups: [
+      {
+        label: "Models",
+        results: [{ type: "model", id: "11", title: "Risk Forest", href: "/models/11" }],
+      },
+    ],
+  });
+  await searchFor("risk");
+  const input = document.querySelector<HTMLInputElement>("#global-search")!;
+
+  await changeValue(input, "h");
+  expect(document.body.textContent).toContain("Risk Forest");
+  await searchDelay();
+  await act(async () => new Promise((resolve) => setTimeout(resolve, 50)));
+
+  expect(document.body.textContent).toContain("Risk Forest");
+  expect(document.body.textContent).toContain("Type at least two characters.");
+  expect(search.run).not.toHaveBeenCalledWith("h", expect.anything());
+});
