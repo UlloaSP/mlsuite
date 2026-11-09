@@ -12,6 +12,7 @@ import {
 } from "@/capabilities/prediction-runtime/data/input-display";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
+import { SeriesRowsTable } from "./SeriesRowsTable";
 
 type Props = {
   schema: unknown;
@@ -45,12 +46,22 @@ export function SchemaRunInputsPanel({ schema, inputData }: Props) {
       </div>
       {filteredInputs.length > 0 ? (
         <div className="grid gap-3 md:grid-cols-2">
-          {filteredInputs.map((input) => (
-            <div key={input.key} className="rounded-control bg-surface-muted px-4 py-3">
-              <p className="text-2xs uppercase tracking-eyebrow text-fg-muted">{input.label}</p>
-              <p className="mt-1 font-mono text-sm text-fg">{formatDisplayValue(input.value)}</p>
-            </div>
-          ))}
+          {filteredInputs.map((input) =>
+            input.columns && Array.isArray(input.value) ? (
+              <div
+                key={input.key}
+                className="rounded-control bg-surface-muted px-4 py-3 md:col-span-2"
+              >
+                <p className="text-2xs uppercase tracking-eyebrow text-fg-muted">{input.label}</p>
+                <SeriesRowsTable label={input.label} columns={input.columns} rows={input.value} />
+              </div>
+            ) : (
+              <div key={input.key} className="rounded-control bg-surface-muted px-4 py-3">
+                <p className="text-2xs uppercase tracking-eyebrow text-fg-muted">{input.label}</p>
+                <p className="mt-1 font-mono text-sm text-fg">{formatDisplayValue(input.value)}</p>
+              </div>
+            ),
+          )}
         </div>
       ) : (
         <AppEmptyState compact title={`No inputs match "${query.trim()}"`} />

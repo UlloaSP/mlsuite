@@ -74,7 +74,15 @@ describe("schema run display", () => {
     };
     const inputData = { area: 110, "Area history": rows };
     expect(getVisibleSchemaInputs(houses, inputData)).toEqual([
-      { key: "Area history", label: "Area history", value: rows },
+      {
+        key: "Area history",
+        label: "Area history",
+        value: rows,
+        columns: [
+          { id: "field1", kind: "number", label: "Year" },
+          { id: "field2", kind: "number", label: "Area" },
+        ],
+      },
     ]);
     expect(getSchemaRunPrefillInputs(houses, inputData)).toEqual({ "Area history": rows });
   });
