@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -23,6 +24,8 @@ import java.util.concurrent.Future;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -341,6 +344,48 @@ class PurgeIntegrationTest extends PublicPredictionFixture {
         assertEquals(0, rows("organization_membership", "user_id", member.getId()));
         mockMvc.perform(signedIn(get("/api/models/{id}", forestModel.getId()), owner.getId()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.updatedByName").value(DeletedUser.NAME));
+    }
+
+    /** Whatever the scope, a finished purge reports removing what its preview said it would. */
+    @ParameterizedTest
+    @EnumSource(PurgeScope.class)
+    void aPreviewCountsWhatThePurgeRemoves(PurgeScope scope) {
+        if (scope == PurgeScope.USER) leavingMember();
+        Long id = switch (scope) {
+            case ORGANIZATION -> organization.getId();
+            case USER -> member.getId();
+            case SCHEMA -> schema.getId();
+            case MODEL -> forestModel.getId();
+        };
+        PurgePreviewDto preview = purges.preview(superadmin.getId(), scope, id);
+        PurgeJobDto asked = purge(scope, id, preview.confirmation());
+        worker.work();
+
+        PurgeJobDto done = job(asked);
+        assertEquals(PurgeStatus.COMPLETED, done.status(), () -> Objects.toString(done.error()));
+        Map<String, Long> removed = new HashMap<>(done.counts());
+        removed.remove("preparedVersions");
+        Map<String, Long> previewed = new HashMap<>(preview.counts());
+        previewed.values().removeIf(count -> count == 0);
+        assertEquals(previewed, removed);
+    }
+
+    /** A member with a personal account, an invitation to their address and a team of their own with nothing in it. */
+    private void leavingMember() {
+        inTransaction(() -> {
+            entityManager.persist(Organization.personal(member, principals.of(member)));
+            Organization team = new Organization("solo-" + member.getId(), "Solo", null, principals.of(member));
+            entityManager.persist(team);
+            RoleDefinition role = new RoleDefinition(team, "Owner", "owner", "OWNER", principals.system());
+            entityManager.persist(role);
+            entityManager.persist(new OrganizationMembership(team, member, role, MembershipStatus.ACTIVE,
+                    principals.of(member)));
+        });
+        jdbc.update("""
+                INSERT INTO invitation (organization_id, created_by_principal_id, updated_by_principal_id,
+                    role_definition_id, email, status, expires_at, created_at, updated_at)
+                VALUES (?, (SELECT id FROM principal WHERE user_id = ?), (SELECT id FROM principal WHERE user_id = ?), ?, ?, 'REVOKED', now(), now(), now())""",
+                organization.getId(), owner.getId(), owner.getId(), ownerRole.getId(), member.getEmail());
     }
 
     @Test
