@@ -4878,6 +4878,9 @@
               "null"
             ]
           },
+          "changedByVisitor": {
+            "type": "boolean"
+          },
           "feedbackId": {
             "format": "int64",
             "type": "integer"
@@ -4937,6 +4940,7 @@
           "changedAt",
           "changedByName",
           "changedByUserId",
+          "changedByVisitor",
           "feedbackId",
           "id",
           "order",

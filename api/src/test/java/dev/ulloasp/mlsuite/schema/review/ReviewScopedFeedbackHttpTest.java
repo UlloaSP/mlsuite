@@ -114,6 +114,7 @@ class ReviewScopedFeedbackHttpTest extends PublicPredictionFixture {
         assertEquals("low", history.get(1).at("/value/output-feedback-assessment").asString());
         // An author is a member or a visitor; a visitor's cookie id is never part of the answer.
         assertEquals(false, history.get(0).get("byVisitor").asBoolean());
+        assertEquals(false, history.get(1).get("changedByVisitor").asBoolean());
         assertEquals(false, history.get(0).has("visitorId"));
     }
 

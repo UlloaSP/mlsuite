@@ -73,6 +73,7 @@ const revision = (
   change: "CREATED",
   changedByUserId: 21,
   changedByName: "Rui Reviewer",
+  changedByVisitor: false,
   changedAt: "2026-10-21T10:00:00Z",
   ...overrides,
 });
@@ -151,6 +152,7 @@ describe("answer history", () => {
           byVisitor: true,
           changedByUserId: null,
           changedByName: null,
+          changedByVisitor: true,
         }),
         revision({ id: 8, review: null, authorName: null, changedByName: null }),
       ]),
@@ -158,12 +160,13 @@ describe("answer history", () => {
     const { host } = await mount(<AnswerHistory version={version} steps={steps} />);
     await settle();
 
-    const [deletedReview, visitor] = [...host.querySelectorAll("li")].map(
-      (item) => item.textContent,
+    const [deletedReview, visitor] = [...host.querySelectorAll("li")];
+    expect(visitor?.textContent).toContain("A public page visitor’s answer · On the public page");
+    expect(visitor?.querySelector("div")?.textContent).toContain("A public page visitor");
+    expect(visitor?.textContent).not.toContain("Unknown");
+    expect(deletedReview?.textContent).toContain(
+      "Former member’s answer · In a review that was deleted",
     );
-    expect(visitor).toContain("A public page visitor’s answer · On the public page");
-    expect(visitor).toContain("Unknown");
-    expect(deletedReview).toContain("Former member’s answer · In a review that was deleted");
   });
 
   test("says when there is nothing yet", async () => {

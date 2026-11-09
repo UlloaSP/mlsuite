@@ -15,9 +15,9 @@ import jakarta.annotation.Nullable;
 /**
  * One change of an answer about a result: the answer it changed, the review it belongs to (none
  * for a public page's), its author (a member or a visitor), what it said after the change (nothing
- * once deleted), and who changed it, when. Authors outlive their accounts as principals, so a
- * member who no longer exists is named as their principal was left ("Deleted user"); a review
- * that no longer exists is null.
+ * once deleted), and who changed it (a member or the visitor), when. Authors outlive their
+ * accounts as principals, so a member who no longer exists is named as their principal was left
+ * ("Deleted user"); a review that no longer exists is null.
  */
 public record PredictionResultFeedbackRevisionDto(
         Long id,
@@ -34,6 +34,7 @@ public record PredictionResultFeedbackRevisionDto(
         PredictionResultFeedbackChange change,
         @Nullable Long changedByUserId,
         @Nullable String changedByName,
+        boolean changedByVisitor,
         OffsetDateTime changedAt) {
 
     public static PredictionResultFeedbackRevisionDto from(PredictionResultFeedbackRevision revision,
@@ -46,6 +47,6 @@ public record PredictionResultFeedbackRevisionDto(
                 review == null ? null : FeedbackRevisionReviewDto.from(review),
                 author.userId(), author.label(), author.isVisitor(),
                 revision.getType(), revision.getOrder(), revision.getValue(), revision.getChange(),
-                changedBy.userId(), changedBy.label(), revision.getChangedAt());
+                changedBy.userId(), changedBy.label(), changedBy.isVisitor(), revision.getChangedAt());
     }
 }

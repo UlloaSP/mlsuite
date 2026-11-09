@@ -4225,6 +4225,7 @@ export interface components {
             changedByName: string | null;
             /** Format: int64 */
             changedByUserId: number | null;
+            changedByVisitor: boolean;
             /** Format: int64 */
             feedbackId: number;
             /** Format: int64 */
