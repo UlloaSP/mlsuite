@@ -3,7 +3,7 @@ import { useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppSearchField } from "@/shared/ui/AppSearchField";
-import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
+import { useSearchText } from "@/shared/lib/use-search-text";
 import { useSearchFilters } from "@/shared/lib/use-search-filters";
 import { invitationsSearch } from "@/features/workspace/pages/workspace-search";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
@@ -34,7 +34,7 @@ export function InvitationCatalog({
   const [selected, setSelected] = useState<number[]>([]);
   const selectedIds = new Set(selected);
   const request = useInvitationCatalog(organizationId, {
-    search: useDebouncedValue(query.trim()),
+    search: query.trim(),
     filter: status.toLowerCase() === "all" ? "all" : status,
   });
   const invitations = request.data?.items ?? [];
@@ -45,6 +45,7 @@ export function InvitationCatalog({
     setSelected([]);
     filters.setFilters(changes);
   };
+  const searchBox = useSearchText(query, (q) => setFilter({ q }));
   return (
     <section className="flex min-h-0 flex-1 flex-col">
       <AppToolbar variant="flat">
@@ -62,8 +63,8 @@ export function InvitationCatalog({
                 }
               : undefined
           }
-          value={query}
-          onChange={(value) => setFilter({ q: value })}
+          value={searchBox.text}
+          onChange={searchBox.setText}
         />
         <AppSelect
           aria-label="Filter by status"

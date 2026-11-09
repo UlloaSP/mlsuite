@@ -2,7 +2,7 @@ import { getRouteApi } from "@tanstack/react-router";
 import { KeyRound } from "lucide-react";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSearchField } from "@/shared/ui/AppSearchField";
-import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
+import { useSearchText } from "@/shared/lib/use-search-text";
 import { useSearchFilters } from "@/shared/lib/use-search-filters";
 import { rolesSearch } from "@/features/workspace/pages/workspace-search";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
@@ -16,7 +16,8 @@ const route = getRouteApi(
 export function PermissionCatalog({ organizationId }: { organizationId: number }) {
   const filters = useSearchFilters(route.useSearch(), rolesSearch);
   const query = filters.values.q;
-  const request = usePermissionCatalog(organizationId, useDebouncedValue(query.trim()));
+  const searchBox = useSearchText(query, (q) => filters.setFilters({ q }));
+  const request = usePermissionCatalog(organizationId, query.trim());
   const groups = request.data?.items ?? [];
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -24,8 +25,8 @@ export function PermissionCatalog({ organizationId }: { organizationId: number }
         <AppSearchField
           label="Search permissions"
           placeholder="Search permissions…"
-          value={query}
-          onChange={(value) => filters.setFilters({ q: value })}
+          value={searchBox.text}
+          onChange={searchBox.setText}
         />
       </AppToolbar>
       <CatalogListPanel

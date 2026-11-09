@@ -96,7 +96,11 @@ independently of the pages the user has scrolled through.
   filter, and sort values. Everything before `"infinite"` names the catalog: new values keep
   that catalog's previous rows on screen while they load, and existing invalidations of the root
   still reach it.
-- Typed search reaches the server through `useDebouncedValue`; clearing it applies at once.
+- Typed search reaches the server through `useDebouncedValue`; clearing it applies at once. A
+  search box kept in the URL draws its text from `useSearchText` (which `useCatalogControls`
+  uses), writes the URL once typing pauses, and the page asks the server for the URL's value. A
+  box drawn straight from the URL lags behind typing: the router commits in a React transition.
+- New criteria keep a catalog list mounted (`CatalogListPanel resetKey`), never remount it.
 - Every virtual list asks for its next page through `useLoadMoreNearEnd`.
 - An invalidation refetches every loaded page of an active catalog, so mutations invalidate the
   narrowest key that covers what they changed.

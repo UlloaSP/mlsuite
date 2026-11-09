@@ -55,3 +55,24 @@ test("says so only when the search request fails", async () => {
 
   expect(document.body.textContent).toContain("Search failed. Try again in a moment.");
 });
+
+test("keeps the previous results on screen while the next query loads", async () => {
+  search.run.mockResolvedValue({
+    query: "ac",
+    groups: [
+      {
+        label: "Models",
+        results: [{ type: "model", id: "11", title: "Acme Model", href: "/models/11" }],
+      },
+    ],
+  });
+  await searchFor("ac");
+  search.run.mockReturnValue(new Promise(() => undefined));
+
+  await changeValue(document.querySelector<HTMLInputElement>("#global-search")!, "acm");
+  await searchDelay();
+
+  expect(search.run).toHaveBeenLastCalledWith("acm", expect.anything());
+  expect(document.body.textContent).toContain("Acme Model");
+  expect(document.body.textContent).not.toContain("Searching workspace");
+});

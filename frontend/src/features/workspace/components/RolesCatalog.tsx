@@ -1,7 +1,7 @@
 import { getRouteApi } from "@tanstack/react-router";
 import { Fragment } from "react";
 import { AppSearchField } from "@/shared/ui/AppSearchField";
-import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
+import { useSearchText } from "@/shared/lib/use-search-text";
 import { useSearchFilters } from "@/shared/lib/use-search-filters";
 import { rolesSearch } from "@/features/workspace/pages/workspace-search";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
@@ -35,7 +35,8 @@ export function RolesCatalog({
 }) {
   const filters = useSearchFilters(route.useSearch(), rolesSearch);
   const query = filters.values.q;
-  const search = useDebouncedValue(query.trim());
+  const searchBox = useSearchText(query, (q) => filters.setFilters({ q }));
+  const search = query.trim();
   const roles = useRoleCatalog(organizationId, search, tab === "roles");
   const templates = useRoleTemplateCatalog(organizationId, search, tab === "templates");
   const request = tab === "roles" ? roles : templates;
@@ -68,8 +69,8 @@ export function RolesCatalog({
         <AppSearchField
           label={`Search ${tab}`}
           placeholder={`Search ${tab}…`}
-          value={query}
-          onChange={(value) => filters.setFilters({ q: value })}
+          value={searchBox.text}
+          onChange={searchBox.setText}
         />
       </AppToolbar>
       <CatalogListPanel

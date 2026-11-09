@@ -40,7 +40,7 @@ import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
-import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
+import { useSearchText } from "@/shared/lib/use-search-text";
 import { useSearchFilters } from "@/shared/lib/use-search-filters";
 import { inferencesSearch } from "@/features/inferences/pages/inference-search";
 import type { PredictionRunCatalogItemDto } from "@/shared/api/openapi.gen";
@@ -62,7 +62,8 @@ export function InferencesPage({
   const urlFilters = useSearchFilters(route.useSearch(), inferencesSearch);
   const { q, schema, bookmark, status, feedback, origin, where } = urlFilters.values;
   const sort = normalizeInferenceSort(urlFilters.values.sort);
-  const query = useDebouncedValue(q.trim());
+  const searchBox = useSearchText(q, (value) => urlFilters.setFilters({ q: value }));
+  const query = q.trim();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filters = useMemo<InferenceFilters>(
     () => ({
@@ -229,10 +230,10 @@ export function InferencesPage({
           }
         />
         <InferenceCatalogToolbar
-          query={q}
+          query={searchBox.text}
           count={{ shown: totalItems, total: metadata.data?.totalItems ?? totalItems }}
           activeFilters={activeFilterCount(filters)}
-          onQueryChange={(query) => urlFilters.setFilters({ q: query })}
+          onQueryChange={searchBox.setText}
           onOpenFilters={() => setFiltersOpen(true)}
           onClearFilters={() =>
             applyFilters({

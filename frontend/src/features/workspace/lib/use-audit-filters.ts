@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
+import { useSearchText } from "@/shared/lib/use-search-text";
 import type { z } from "zod";
 import { useSearchFilters } from "@/shared/lib/use-search-filters";
 import { auditSearch } from "@/features/workspace/pages/workspace-search";
@@ -17,14 +17,17 @@ const dayStart = (day: string, addDays = 0) => {
 };
 
 /**
- * An audit catalog's filters, kept in the URL, and what they ask the API for. The period covers
- * the whole of both days picked: the API's end is exclusive, so it is the morning after.
+ * An audit catalog's filters, kept in the URL, and what they ask the API for. The two typed
+ * filters reach the URL once typing pauses. The period covers the whole of both days picked: the
+ * API's end is exclusive, so it is the morning after.
  */
 export function useAuditFilters(urlSearch: z.output<typeof auditSearch>) {
   const filters = useSearchFilters(urlSearch, auditSearch);
   const { q, action, actorKind, actor, target, from, to, organization } = filters.values;
-  const search = useDebouncedValue(q.trim());
-  const actorName = useDebouncedValue(actor.trim());
+  const searchBox = useSearchText(q, (value) => filters.setFilters({ q: value }));
+  const actorBox = useSearchText(actor, (value) => filters.setFilters({ actor: value }));
+  const search = q.trim();
+  const actorName = actor.trim();
   const controls = Object.fromEntries(
     Object.entries({
       search,
@@ -37,7 +40,7 @@ export function useAuditFilters(urlSearch: z.output<typeof auditSearch>) {
       organization: organization === "all" ? undefined : organization,
     }).filter((entry): entry is [string, string] => entry[1] !== undefined),
   );
-  return { ...filters, controls };
+  return { ...filters, searchBox, actorBox, controls };
 }
 
 export type AuditFilterState = ReturnType<typeof useAuditFilters>;
