@@ -20,9 +20,12 @@
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- The guard of what is written once: its trigger names the constraint the refusal reports.
+-- Every trigger's refusal ends as PostgreSQL's own check violations do ('violates check constraint
+-- "name"'): Hibernate reads the constraint's name from that text, not from CONSTRAINT, and the API
+-- answers a refusal by its constraint's name.
 CREATE FUNCTION refuse_change() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
-    RAISE EXCEPTION '% cannot change once written', TG_TABLE_NAME USING ERRCODE = 'check_violation',
+    RAISE EXCEPTION '% cannot change once written: violates check constraint "%"', TG_TABLE_NAME, TG_ARGV[0] USING ERRCODE = 'check_violation',
         CONSTRAINT = TG_ARGV[0], TABLE = TG_TABLE_NAME;
 END $$;
 
@@ -35,7 +38,7 @@ BEGIN
     EXECUTE format('SELECT purging_at IS NOT NULL FROM %I WHERE id = $1', TG_ARGV[0])
         INTO closing USING (to_jsonb(NEW) ->> TG_ARGV[1])::bigint;
     IF closing THEN
-        RAISE EXCEPTION 'The % is being deleted', TG_ARGV[0] USING ERRCODE = 'check_violation',
+        RAISE EXCEPTION 'The % is being deleted: violates check constraint "ck_%_not_purging"', TG_ARGV[0], TG_TABLE_NAME USING ERRCODE = 'check_violation',
             CONSTRAINT = 'ck_' || TG_TABLE_NAME || '_not_purging', TABLE = TG_TABLE_NAME;
     END IF;
     RETURN NEW;

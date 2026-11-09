@@ -115,7 +115,7 @@ CREATE FUNCTION result_feedback_by_a_reviewer() RETURNS trigger LANGUAGE plpgsql
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM schema_review_assignee a JOIN principal p ON p.user_id = a.user_id
             WHERE a.schema_review_id = NEW.schema_review_id AND p.id = NEW.created_by_principal_id) THEN
-        RAISE EXCEPTION 'Only a reviewer of the review answers in it' USING ERRCODE = 'check_violation',
+        RAISE EXCEPTION 'Only a reviewer of the review answers in it: violates check constraint "ck_result_feedback_reviewer"' USING ERRCODE = 'check_violation',
             CONSTRAINT = 'ck_result_feedback_reviewer', TABLE = 'prediction_result_feedback';
     END IF;
     RETURN NEW;
@@ -186,7 +186,7 @@ BEGIN
         RETURN NULL;
     END IF;
     IF actor IS NULL THEN
-        RAISE EXCEPTION 'Removing an answer names who removes it' USING ERRCODE = 'check_violation',
+        RAISE EXCEPTION 'Removing an answer names who removes it: violates check constraint "ck_feedback_revision_actor"' USING ERRCODE = 'check_violation',
             CONSTRAINT = 'ck_feedback_revision_actor', TABLE = 'prediction_result_feedback';
     END IF;
     INSERT INTO prediction_result_feedback_revision (feedback_id, prediction_result_id, schema_version_id,

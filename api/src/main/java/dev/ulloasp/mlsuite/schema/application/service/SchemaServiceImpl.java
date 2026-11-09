@@ -154,7 +154,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     public void deleteSchema(Long userId, Long schemaId) {
         Organization organization = authorizationService.requireCurrent(userId, PermissionKey.DELETE_MODELS);
         Schema schema = requireSchema(schemaId, organization.getId());
-        // A schema with runs or reviews is kept by their foreign keys.
+        // The database keeps a schema with runs (its snapshots' bindings refuse to go) or reviews (their keys).
         draftRepository.deleteBySchemaId(schemaId);
         bookmarkRepository.deleteBySchemaId(schemaId);
         versionRepository.findBySchemaIdOrderByVersionDesc(schemaId).forEach(version -> {

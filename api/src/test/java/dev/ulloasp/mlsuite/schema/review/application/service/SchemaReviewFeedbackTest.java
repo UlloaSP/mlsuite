@@ -180,6 +180,11 @@ class SchemaReviewFeedbackTest {
     }
 
     @Test
+    void anAnswerThatDoesNotExistIsNotFound() {
+        assertRefused(404, () -> service.updateFeedback(7L, REVIEW, RUN, update(91L)));
+    }
+
+    @Test
     void anAnswerOfAnotherRunIsNotChangedThroughThisOne() {
         ownAnswer.setResult(result(run(result.getRun().getSchemaVersion(), 51L), 78L));
 

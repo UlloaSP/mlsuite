@@ -2,7 +2,10 @@ package dev.ulloasp.mlsuite.schema;
 
 import dev.ulloasp.mlsuite.plugin.application.port.in.SnapshotPluginsUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaDraftStatus;
+import dev.ulloasp.mlsuite.util.ConstraintConflicts;
 import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import dev.ulloasp.mlsuite.support.PostgresDatabase;
@@ -91,12 +94,7 @@ class SchemaDeletionServiceTest {
 
     @Test
     void deletesSchemaWithDraftBookmarkAndBindingButKeepsModel() {
-        var model = new Model();
-        model.setName("QA model"); model.setFileName("qa.mlbundle");
-        model.setType("classifier"); model.setSpecificType("DecisionTreeClassifier");
-        model.setCreatedBy(principals.of(owner)); model.setUpdatedBy(model.getCreatedBy()); model.setOrganization(org);
-        entityManager.persist(TestFixtures.storedArtifact(model, new byte[] { 1 }));
-        entityManager.persist(new SchemaModelBinding(version, model, Map.of()));
+        Model model = bindModel();
         entityManager.persist(new SchemaBookmark(schema, version, "QA bookmark", principals.system()));
         var draft = new SchemaDraft(schema, version, "QA draft", Map.of(), List.of(), principals.system());
         draft.setPublishedVersion(version);
@@ -116,11 +114,13 @@ class SchemaDeletionServiceTest {
 
     @Test
     void predictionRunProtectsSchema() {
+        // A snapshot always binds a model, and its bindings stay while runs were made on it.
+        bindModel();
         entityManager.persist(new PredictionRun(version, "QA", Map.of(), PredictionRunStatus.SUCCESS, principals.system()));
         // Written and forgotten, as a request leaves it: only the database still knows it needs the schema.
         entityManager.flush();
         entityManager.clear();
-        assertKeptBy("fk_prediction_run_version");
+        assertKeptBy("ck_schema_binding_fixed");
     }
 
     @Test
@@ -158,5 +158,18 @@ class SchemaDeletionServiceTest {
         }
         assertNotNull(cause, () -> "not a constraint violation: " + error);
         assertEquals(constraint, ((ConstraintViolationException) cause).getConstraintName());
+        // The person deleting is told why, not given the generic conflict.
+        var conflict = ConstraintConflicts.of(new DataIntegrityViolationException("refused", cause)).orElseThrow();
+        assertEquals(HttpStatus.CONFLICT, conflict.status());
+    }
+
+    private Model bindModel() {
+        var model = new Model();
+        model.setName("QA model"); model.setFileName("qa.mlbundle");
+        model.setType("classifier"); model.setSpecificType("DecisionTreeClassifier");
+        model.setCreatedBy(principals.of(owner)); model.setUpdatedBy(model.getCreatedBy()); model.setOrganization(org);
+        entityManager.persist(TestFixtures.storedArtifact(model, new byte[] { 1 }));
+        entityManager.persist(new SchemaModelBinding(version, model, Map.of()));
+        return model;
     }
 }

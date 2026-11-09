@@ -162,7 +162,7 @@ public class SchemaReviewService implements SchemaReviewUseCase {
         SchemaReviewRun selected = openReviewRun(userId, publicId, reviewRunId);
         requireNotSubmitted(userId, selected);
         PredictionResultFeedback item = feedback.findById(request.feedbackId())
-                .orElseThrow(() -> badRequest("This answer is not one of yours in this review run"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Answer not found"));
         // Only the reviewer's own answer in this review: not another review's, nor a public page's.
         boolean invalid = !userId.equals(item.getCreatedBy().userId())
                 || !selected.getRun().getId().equals(item.getResult().getRun().getId())

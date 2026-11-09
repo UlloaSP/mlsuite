@@ -110,7 +110,7 @@ BEGIN
     IF results <> (SELECT count(*) FROM schema_model_binding WHERE schema_version_id = version_id)
         OR run_status <> (CASE WHEN succeeded = results THEN 'SUCCESS' WHEN succeeded = 0 THEN 'FAILED'
             ELSE 'PARTIAL_SUCCESS' END) THEN
-        RAISE EXCEPTION 'Run % does not agree with its results', run_id USING ERRCODE = 'check_violation',
+        RAISE EXCEPTION 'Run % does not agree with its results: violates check constraint "ck_prediction_run_results"', run_id USING ERRCODE = 'check_violation',
             CONSTRAINT = 'ck_prediction_run_results', TABLE = 'prediction_run';
     END IF;
     RETURN NULL;
@@ -126,7 +126,7 @@ CREATE FUNCTION prediction_result_goes_with_its_run() RETURNS trigger LANGUAGE p
 BEGIN
     IF EXISTS (SELECT 1 FROM prediction_run WHERE id = OLD.prediction_run_id)
         AND NOT EXISTS (SELECT 1 FROM purge_job_version WHERE schema_version_id = OLD.schema_version_id) THEN
-        RAISE EXCEPTION 'A result is removed only with its run' USING ERRCODE = 'check_violation',
+        RAISE EXCEPTION 'A result is removed only with its run: violates check constraint "ck_prediction_result_with_run"' USING ERRCODE = 'check_violation',
             CONSTRAINT = 'ck_prediction_result_with_run', TABLE = 'prediction_result';
     END IF;
     RETURN NULL;

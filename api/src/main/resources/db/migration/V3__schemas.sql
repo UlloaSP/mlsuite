@@ -75,7 +75,8 @@ BEGIN
         OR (TG_OP = 'INSERT' AND NOT EXISTS (SELECT 1 FROM schema_version
             WHERE id = NEW.schema_version_id AND created_xact = pg_current_xact_id()))
         OR (TG_OP = 'DELETE' AND EXISTS (SELECT 1 FROM prediction_run WHERE schema_version_id = OLD.schema_version_id)) THEN
-        RAISE EXCEPTION 'A snapshot''s % cannot change once it is written', TG_TABLE_NAME USING ERRCODE = 'check_violation',
+        RAISE EXCEPTION 'A snapshot''s % cannot change once it is written: violates check constraint "%"',
+            TG_TABLE_NAME, TG_ARGV[0] USING ERRCODE = 'check_violation',
             CONSTRAINT = TG_ARGV[0], TABLE = TG_TABLE_NAME;
     END IF;
     RETURN CASE TG_OP WHEN 'DELETE' THEN OLD ELSE NEW END;
@@ -88,7 +89,7 @@ CREATE FUNCTION schema_version_binds_a_model() RETURNS trigger LANGUAGE plpgsql 
 BEGIN
     IF EXISTS (SELECT 1 FROM schema_version WHERE id = NEW.id)
         AND NOT EXISTS (SELECT 1 FROM schema_model_binding WHERE schema_version_id = NEW.id) THEN
-        RAISE EXCEPTION 'A snapshot binds at least one model' USING ERRCODE = 'check_violation',
+        RAISE EXCEPTION 'A snapshot binds at least one model: violates check constraint "ck_schema_version_bound"' USING ERRCODE = 'check_violation',
             CONSTRAINT = 'ck_schema_version_bound', TABLE = 'schema_version';
     END IF;
     RETURN NULL;

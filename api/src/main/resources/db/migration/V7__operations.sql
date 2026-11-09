@@ -156,7 +156,7 @@ BEGIN
                 AND (j.scope <> 'SCHEMA' OR v.schema_id = j.target_id)
                 AND (j.scope <> 'MODEL' OR EXISTS (SELECT 1 FROM schema_model_binding b
                     WHERE b.schema_version_id = v.id AND b.model_id = j.target_id))) THEN
-        RAISE EXCEPTION 'A purge lists only the snapshots it destroys' USING ERRCODE = 'check_violation',
+        RAISE EXCEPTION 'A purge lists only the snapshots it destroys: violates check constraint "ck_purge_job_version_target"' USING ERRCODE = 'check_violation',
             CONSTRAINT = 'ck_purge_job_version_target', TABLE = 'purge_job_version';
     END IF;
     RETURN NEW;

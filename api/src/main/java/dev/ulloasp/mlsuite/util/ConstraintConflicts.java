@@ -43,8 +43,9 @@ public final class ConstraintConflicts {
                     "This prediction was already saved in a run; run the inference again to save another."),
             Map.entry("fk_schema_binding_model", MODEL_IN_USE),
             Map.entry("fk_prediction_run_version", RUNS_KEEP_IT),
-            // A snapshot's bindings go with it, and its results name them first.
-            Map.entry("fk_prediction_result_binding", RUNS_KEEP_IT),
+            // A snapshot's bindings and plugin pins go with it, and refuse to while runs were made on it.
+            Map.entry("ck_schema_binding_fixed", RUNS_KEEP_IT),
+            Map.entry("ck_schema_version_plugin_fixed", RUNS_KEEP_IT),
             Map.entry("fk_schema_review_schema", "A review is built on this schema; delete the review first."),
             Map.entry("fk_schema_review_version", "A review is built on this snapshot; delete the review first."),
             Map.entry("fk_schema_version_plugin_plugin",

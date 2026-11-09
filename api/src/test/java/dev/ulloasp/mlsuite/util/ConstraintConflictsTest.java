@@ -53,13 +53,14 @@ class ConstraintConflictsTest {
     }
 
     @Test
-    void aSchemaWhoseSnapshotsHaveResultsIsKeptWithItsOwnMessage() {
-        var refusal = refused("fk_prediction_result_binding",
-                "update or delete on table \"schema_model_binding\" violates foreign key constraint");
+    void aSchemaWhoseSnapshotsHaveRunsIsKeptWithItsOwnMessage() {
+        var conflict = new ConstraintConflicts.Conflict(HttpStatus.CONFLICT,
+                "Prediction runs were made on this schema, so it stays while they do. Archive it instead.");
 
-        assertEquals(new ConstraintConflicts.Conflict(HttpStatus.CONFLICT,
-                "Prediction runs were made on this schema, so it stays while they do. Archive it instead."),
-                ConstraintConflicts.of(refusal).orElseThrow());
+        assertEquals(conflict, ConstraintConflicts.of(refused("ck_schema_binding_fixed",
+                "A snapshot's schema_model_binding cannot change once it is written")).orElseThrow());
+        assertEquals(conflict, ConstraintConflicts.of(refused("ck_schema_version_plugin_fixed",
+                "A snapshot's schema_version_plugin cannot change once it is written")).orElseThrow());
     }
 
     @Test
