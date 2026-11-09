@@ -151,6 +151,19 @@ class InvitationLifecycleTest {
     }
 
     @Test
+    void revokeInvitation_RevokesAnExpiredInvitation() {
+        Organization org = organization();
+        Invitation expired = new Invitation(org, "target@example.com", reviewerRole(org), TestFixtures.principal(user(7L)),
+                OffsetDateTime.now(ZoneOffset.UTC).minusDays(1));
+        expired.setId(12L);
+        when(invitationRepository.findById(12L)).thenReturn(Optional.of(expired));
+
+        service.revokeInvitation(7L, 41L, 12L);
+
+        assertEquals(InvitationStatus.REVOKED, expired.getStatus());
+    }
+
+    @Test
     void revokeInvitation_RefusesAClosedInvitation() {
         Organization org = organization();
         for (InvitationStatus closed : List.of(InvitationStatus.REVOKED, InvitationStatus.DECLINED, InvitationStatus.ACCEPTED)) {

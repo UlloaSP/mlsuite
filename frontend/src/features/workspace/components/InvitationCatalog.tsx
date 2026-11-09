@@ -14,6 +14,7 @@ import {
   useResendInvitationMutation,
   useRevokeInvitationMutation,
 } from "@/features/workspace/api/invitation.mutations";
+import { isOpenInvitation } from "@/features/workspace/lib/invitation-status";
 import { InvitationCard } from "./InvitationCard";
 
 const statuses = ["ALL", "PENDING", "ACCEPTED", "EXPIRED", "REVOKED"];
@@ -31,13 +32,16 @@ export function InvitationCatalog({
 }) {
   const filters = useSearchFilters(route.useSearch(), invitationsSearch);
   const { q: query, status } = filters.values;
-  const [selected, setSelected] = useState<number[]>([]);
-  const selectedIds = new Set(selected);
+  const [checked, setSelected] = useState<number[]>([]);
   const request = useInvitationCatalog(organizationId, {
     search: query.trim(),
     filter: status.toLowerCase() === "all" ? "all" : status,
   });
   const invitations = request.data?.items ?? [];
+  // Only an open invitation can be revoked: one answered since it was checked leaves the selection.
+  const openIds = new Set(invitations.filter(isOpenInvitation).map((invite) => invite.id));
+  const selected = checked.filter((id) => openIds.has(id));
+  const selectedIds = new Set(selected);
   const bulkRevoke = useBulkRevokeInvitationsMutation(organizationId);
   const resend = useResendInvitationMutation(organizationId);
   const revoke = useRevokeInvitationMutation(organizationId);

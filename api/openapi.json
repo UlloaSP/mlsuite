@@ -2264,7 +2264,10 @@
           },
           "expiresAt": {
             "format": "date-time",
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "id": {
             "format": "int64",

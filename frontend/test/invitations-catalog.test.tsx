@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { QueryClient } from "@tanstack/react-query";
 import { act } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { InvitationCatalog } from "@/features/workspace/components/InvitationCatalog";
@@ -116,12 +117,73 @@ test("keeps selection while appending pages and clears it when searching", async
   await searchDelay();
   await settle();
   expect(host.textContent).not.toContain("Bulk revoke");
-  const trigger = host.querySelector('[aria-label="Open actions for person49@example.com"]')!;
+});
+test("offers resend, revoke and selection only on the invitations the API lets close", async () => {
+  const invites = ["PENDING", "EXPIRED", "ACCEPTED", "DECLINED", "REVOKED"].map(
+    (status, index) => ({
+      ...rows[0]!,
+      id: index + 1,
+      email: `${status.toLowerCase()}@example.com`,
+      status,
+      expiresAt: status === "PENDING" || status === "EXPIRED" ? "2026-10-01T00:00:00Z" : null,
+    }),
+  );
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            items: invites,
+            page: 0,
+            size: 24,
+            totalItems: invites.length,
+            hasNext: false,
+            totalInvitations: invites.length,
+          }),
+          { headers: { "content-type": "application/json" } },
+        ),
+    ),
+  );
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const { host } = await mount(<InvitationCatalog organizationId={3} canManage />, {
+    route: "/workspace/organizations/3/invitations",
+    queryClient,
+  });
+  await settle();
+
+  for (const { email, status } of invites) {
+    const open = status === "PENDING" || status === "EXPIRED";
+    const checkbox = host.querySelector<HTMLInputElement>(
+      `input[aria-label="Select invitation ${email}"]`,
+    );
+    expect(checkbox?.disabled, status).toBe(!open);
+    expect(host.querySelector(`[aria-label="Open actions for ${email}"]`) !== null, status).toBe(
+      open,
+    );
+  }
+  expect(host.textContent).toContain("Expired");
+  const trigger = host.querySelector('[aria-label="Open actions for expired@example.com"]')!;
   await act(async () =>
     trigger.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })),
   );
-  const resend = [...document.querySelectorAll('[role="menuitem"]')].find(
-    (node) => node.textContent === "Resend",
-  );
-  expect(resend?.getAttribute("aria-disabled")).toBe("true");
+  const items = [...document.querySelectorAll('[role="menuitem"]')];
+  expect(items.map((node) => [node.textContent, node.getAttribute("aria-disabled")])).toEqual([
+    ["Resend", null],
+    ["Revoke", null],
+  ]);
+  await click(items[1]!);
+  expect(hooks.mutate).toHaveBeenCalledWith(2);
+  await click(host.querySelector('input[aria-label="Select invitation expired@example.com"]')!);
+  await click("Bulk revoke (1)", host);
+  expect(hooks.bulk).toHaveBeenCalledWith([2]);
+  await settle();
+
+  // Accepted after it was checked, an invitation leaves the selection.
+  await click(host.querySelector('input[aria-label="Select invitation pending@example.com"]')!);
+  expect(host.textContent).toContain("Bulk revoke (1)");
+  invites[0]!.status = "ACCEPTED";
+  await act(async () => queryClient.invalidateQueries());
+  await settle();
+  expect(host.textContent).not.toContain("Bulk revoke");
 });

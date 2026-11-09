@@ -101,6 +101,30 @@ class InvitationCatalogTest extends PublicPredictionFixture {
     }
 
     @Test
+    void onlyAnOpenInvitationTellsWhenItExpires() throws Exception {
+        Map<String, InvitationStatus> stored = Map.of("pending", InvitationStatus.PENDING,
+                "expired", InvitationStatus.PENDING, "accepted", InvitationStatus.ACCEPTED,
+                "declined", InvitationStatus.DECLINED, "revoked", InvitationStatus.REVOKED);
+        inTransaction(() -> stored.forEach((name, status) -> {
+            Invitation invitation = invitation(organization, "%s-%s@test.example".formatted(name, mark));
+            invitation.setStatus(status);
+            if (name.equals("expired")) invitation.setExpiresAt(nextWeek.minusDays(14));
+            entityManager.persist(invitation);
+        }));
+        String path = organizationPath + "/invitations/catalog";
+
+        for (String name : stored.keySet()) {
+            boolean open = name.equals("pending") || name.equals("expired");
+            mockMvc.perform(asOwner(get(path).param("search", "%s-%s@".formatted(name, mark))))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.items.length()").value(1))
+                    .andExpect(jsonPath("$.items[0].status").value(name.toUpperCase(Locale.ROOT)))
+                    .andExpect(open ? jsonPath("$.items[0].expiresAt").isString()
+                            : jsonPath("$.items[0].expiresAt").isEmpty());
+        }
+    }
+
+    @Test
     void candidatesAreEnabledUsersOutsideTheOrganizationSearchedByNameOrEmail() throws Exception {
         inTransaction(() -> {
             for (int i = 0; i < 30; i++) {

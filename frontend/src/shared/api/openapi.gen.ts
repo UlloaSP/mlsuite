@@ -3468,7 +3468,7 @@ export interface components {
             createdByName: string;
             email: string;
             /** Format: date-time */
-            expiresAt: string;
+            expiresAt: string | null;
             /** Format: int64 */
             id: number;
             /** Format: int64 */
