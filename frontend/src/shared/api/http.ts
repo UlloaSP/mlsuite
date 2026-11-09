@@ -68,6 +68,17 @@ const isJson = (response: Response) =>
   response.headers.get("content-type")?.includes("application/json") ?? false;
 const nowIso = () => new Date().toISOString();
 
+/**
+ * Reads a body the caller has no use for to its end. A browser aborts a request whose body is
+ * left unread when the page navigates (Chromium logs it as net::ERR_ABORTED), so a request that
+ * succeeded would look failed. A body that fails to arrive changes nothing the status said.
+ */
+const drain = (response: Response) =>
+  response.arrayBuffer().then(
+    () => undefined,
+    () => undefined,
+  );
+
 /** Retry-After in whole seconds; the date form is not sent by this API and reads as unsaid. */
 const retryAfter = (response: Response) => {
   const value = response.headers.get("Retry-After");
@@ -98,10 +109,12 @@ export async function appFetch<T = unknown>(path: string, init?: RequestInit): P
     if (response.ok) {
       if (response.status === 204) return undefined as T;
       if (isJson(response)) return (await response.json()) as T;
+      await drain(response);
       return undefined as T;
     }
     if (isJson(response))
       throw new HttpError((await response.json()) as ErrorDto, retryAfter(response));
+    await drain(response);
     throw new HttpError(
       responseError(response, path, response.statusText || "Request error"),
       retryAfter(response),
