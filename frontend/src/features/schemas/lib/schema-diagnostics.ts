@@ -37,7 +37,7 @@ export const pointerToPos = (content: string, pointer: string) =>
   pathToPos(content, pointerSegments(pointer));
 
 const getBuiltinFieldKindsMessage = (): string =>
-  `Valor "kind" no valido. Tipos permitidos: ${builtinFieldKindsDisplay()}.`;
+  `Invalid "kind" value. Allowed kinds: ${builtinFieldKindsDisplay()}.`;
 
 export const getMarkerMessage = (
   content: string,
