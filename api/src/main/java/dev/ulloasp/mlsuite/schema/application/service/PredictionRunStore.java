@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -24,6 +25,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.util.ConstraintConflicts;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -66,7 +68,14 @@ public class PredictionRunStore {
         bindings.forEach(binding -> models.put(binding.getModel().getId(), binding.getModel()));
         PredictionRun candidate = new PredictionRun(bookmark, version, name, inputData, aggregateStatus(results),
                 principals.of(author));
-        PredictionRun run = runRepository.save(candidate);
+        PredictionRun run;
+        try {
+            run = runRepository.save(candidate);
+        } catch (DataIntegrityViolationException refused) {
+            // The database compares names ignoring case; the answer names the run as it was typed.
+            if (!ConstraintConflicts.refusedBy(refused, "uq_prediction_run_version_name")) throw refused;
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Prediction run name already exists: " + name);
+        }
         for (int index = 0; index < results.size(); index++) {
             saveResult(run, models.get(results.get(index).modelId()), results.get(index), seals.get(index));
         }

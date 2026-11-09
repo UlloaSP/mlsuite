@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.SQLException;
@@ -23,12 +24,13 @@ class ConstraintConflictsTest {
     }
 
     @Test
-    void aRefusedRunNamesTheRunWhoseNameIsTaken() {
-        var refusal = refused("uq_prediction_run_version_name",
-                "ERROR: duplicate key value\n  Detail: Key (schema_version_id, name)=(7, nightly, batch) already exists.");
+    void aCallerCanTellWhichConstraintRefusedTheWrite() {
+        var refusal = refused("uq_prediction_run_version_name", "duplicate key value");
 
-        assertEquals(new ConstraintConflicts.Conflict(HttpStatus.CONFLICT, "Prediction run name already exists: nightly, batch"),
-                ConstraintConflicts.of(refusal).orElseThrow());
+        assertTrue(ConstraintConflicts.refusedBy(refusal, "uq_prediction_run_version_name"));
+        assertFalse(ConstraintConflicts.refusedBy(refusal, "uq_schema_org_name"));
+        assertFalse(ConstraintConflicts.refusedBy(new DataIntegrityViolationException("no constraint named"),
+                "uq_prediction_run_version_name"));
     }
 
     @Test

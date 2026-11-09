@@ -42,9 +42,10 @@ class WorkspaceRunsBatchHttpTest extends PublicPredictionFixture {
     void aSavedBatchIsAllOrNoneAndNamesTheRunThatWasRefused() throws Exception {
         long runs = count("PredictionRun");
 
-        mockMvc.perform(saveMany(run("session-ok", seals()), run("session-ok", seals())))
+        // Names are unique ignoring case, and the refusal names the run as it was typed.
+        mockMvc.perform(saveMany(run("session-ok", seals()), run("Session-OK", seals())))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Prediction run name already exists: session-ok"));
+                .andExpect(jsonPath("$.message").value("Prediction run name already exists: Session-OK"));
         mockMvc.perform(saveMany(run("session-forged", List.of(seals().get(0), "not-a-seal"))))
                 .andExpect(status().isBadRequest());
 

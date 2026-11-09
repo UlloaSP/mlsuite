@@ -13,7 +13,7 @@ import {
 } from "@/features/schemas/api/schema-prediction-mutations";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
 import { inferenceSessionsAtom, type SessionEntry } from "./inference-session-store";
-import { createRunName } from "./run-name";
+import { createRunName, uniqueRunName } from "./run-name";
 import type {
   CreatePredictionRunRequest,
   PredictionRunDto,
@@ -106,7 +106,10 @@ export function useInferenceSession(
           {
             key,
             schemaVersionId,
-            name: createRunName(bookmarkName),
+            name: uniqueRunName(
+              createRunName(bookmarkName),
+              current.map((entry) => entry.name),
+            ),
             state: "running",
             inputData: {},
             results: [],

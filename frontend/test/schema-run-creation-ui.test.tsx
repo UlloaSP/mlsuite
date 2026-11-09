@@ -255,6 +255,28 @@ describe("schema run creation UI", () => {
     expect(rows()).toHaveLength(0);
   });
 
+  test("numbers a run started in the same second as another, so Save all is not refused", async () => {
+    const container = await renderSession();
+    const options = () => mountState.mount.mock.calls[0][0];
+    vi.setSystemTime(new Date("2026-08-24T14:51:00.000Z"));
+    for (const age of [1, 2]) {
+      await act(async () => {
+        options().onRunningChange(true);
+        options().onRunningChange(false);
+        options().onSubmit({ age }, completedRaw, false);
+        await vi.runAllTimersAsync();
+      });
+    }
+    await act(async () => {
+      buttonByText("Save all (2)", container)!.click();
+      await vi.runAllTimersAsync();
+    });
+    const name = createRunName("production", new Date("2026-08-24T14:51:00.000Z"));
+    expect(
+      pageState.saveMany.mock.calls[0]![0].runs.map((request: { name: string }) => request.name),
+    ).toEqual([name, `${name} (2)`]);
+  });
+
   test("saves every finished run in order, and asks before discarding unsaved ones", async () => {
     const container = await renderSession();
     const options = () => mountState.mount.mock.calls[0][0];

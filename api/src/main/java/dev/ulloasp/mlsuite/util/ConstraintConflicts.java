@@ -2,8 +2,6 @@ package dev.ulloasp.mlsuite.util;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -85,28 +83,21 @@ public final class ConstraintConflicts {
                 if (name.startsWith("ck_") && name.endsWith("_present")) {
                     return Optional.of(new Conflict(HttpStatus.BAD_REQUEST, "A name cannot be blank."));
                 }
-                if (name.equals("uq_prediction_run_version_name")) {
-                    // A batch of runs is refused whole; the run that was refused is named.
-                    return Optional.of(new Conflict(HttpStatus.CONFLICT,
-                            "Prediction run name already exists: " + lastKeyValue(violation)));
-                }
                 return Optional.ofNullable(IN_USE.get(name)).map(message -> new Conflict(HttpStatus.CONFLICT, message));
             }
         }
         return Optional.empty();
     }
 
-    /** The last value of the refused key, as PostgreSQL details it: "Key (a, b)=(1, value) already exists." */
-    private static String lastKeyValue(ConstraintViolationException violation) {
-        String message = String.valueOf(violation.getSQLException() == null ? null : violation.getSQLException().getMessage());
-        Matcher key = KEY.matcher(message);
-        if (!key.find()) return "";
-        int columns = key.group(1).split(",").length;
-        String[] values = key.group(2).split(", ", columns);
-        return values[values.length - 1];
+    /** Whether this constraint refused the write, for a caller that answers it in its own words. */
+    public static boolean refusedBy(DataIntegrityViolationException ex, String constraint) {
+        for (Throwable cause = ex; cause != null; cause = cause.getCause()) {
+            if (cause instanceof ConstraintViolationException violation) {
+                return constraint.equals(violation.getConstraintName());
+            }
+        }
+        return false;
     }
-
-    private static final Pattern KEY = Pattern.compile("Key \\((.*?)\\)=\\((.*)\\) already exists");
 
     /** PostgreSQL says "insert or update on table ..." when the written row is the one pointing. */
     private static boolean pointsAtAMissingParent(ConstraintViolationException violation) {
