@@ -86,6 +86,11 @@ test("passes search and status to the backend and displays its matches", async (
   expect(request.searchParams.get("filter")).toBe("ACCEPTED");
   expect(request.searchParams.get("search")).toBe("server-only");
 });
+test("filters by every status the API answers, declined included", async () => {
+  await render("?status=DECLINED");
+  const request = new URL(String(fetchMock.mock.calls[0]![0]));
+  expect(request.searchParams.get("filter")).toBe("DECLINED");
+});
 test("an accepted invitation shows as accepted, with no expiry", async () => {
   const accepted = await render("?status=ACCEPTED");
   expect(accepted.textContent).toContain("person49@example.com");

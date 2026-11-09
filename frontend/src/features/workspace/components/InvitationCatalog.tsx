@@ -17,7 +17,7 @@ import {
 import { isOpenInvitation } from "@/features/workspace/lib/invitation-status";
 import { InvitationCard } from "./InvitationCard";
 
-const statuses = ["ALL", "PENDING", "ACCEPTED", "EXPIRED", "REVOKED"];
+const statuses = ["ALL", "PENDING", "ACCEPTED", "DECLINED", "EXPIRED", "REVOKED"];
 
 const route = getRouteApi(
   "/protected/app/team-organization/workspace/organizations/$organizationId/invitations",
