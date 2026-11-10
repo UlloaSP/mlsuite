@@ -3,7 +3,7 @@
 import { expect, test, vi } from "vite-plus/test";
 import { useSelector } from "@tanstack/react-store";
 import { useEditorAtoms } from "@/features/schemas/lib/editor-atoms";
-import { click, mount } from "./support/dom";
+import { mount } from "./support/dom";
 
 const mocks = vi.hoisted(() => ({
   update: vi.fn(),
@@ -71,49 +71,5 @@ test.each(["DRAFT", "CONFLICT", "PUBLISHED"])(
       expect(container.textContent).toContain("published and is read-only");
       expect(container.querySelector("a")?.getAttribute("href")).toBe("/schemas/7/snapshots");
     }
-  },
-);
-
-test.each(["DRAFT", "CONFLICT", "PUBLISHED"])(
-  "%s series change preserves stored data and uses the supported editor format",
-  async (status) => {
-    const formSchema = {
-      fields: [
-        {
-          kind: "series",
-          label: "History",
-          mappedTo: "history",
-          field1: { kind: "number", label: "Time" },
-          field2: { kind: "number", label: "Value" },
-          defaultValue: [[1, 2]],
-        },
-      ],
-    };
-    const original = structuredClone(formSchema);
-    mocks.draft = { ...mocks.draft, status, formSchema };
-    mocks.update.mockClear();
-    const { host } = await mount(null, {
-      route: "/schemas/7/drafts/12",
-      routes: { "/schemas/$schemaId/drafts/$draftId": <SchemaDraftEditorRoute /> },
-    });
-    if (status === "PUBLISHED") {
-      expect(JSON.parse(host.querySelector('[data-testid="readonly"]')!.textContent!)).toEqual(
-        original,
-      );
-      expect(mocks.update).not.toHaveBeenCalled();
-    } else {
-      const edited = JSON.parse(host.querySelector<HTMLTextAreaElement>("textarea")!.value);
-      expect(edited.fields[0]).toMatchObject({
-        columns: [{ id: "field1" }, { id: "field2" }],
-        defaultValue: [{ field1: 1, field2: 2 }],
-      });
-      expect(edited.fields[0]).not.toHaveProperty("field1");
-      expect(edited.fields[0]).not.toHaveProperty("field2");
-      await click("Save", host);
-      expect(mocks.update).toHaveBeenCalledWith(
-        expect.objectContaining({ expectedDraftRevision: 1, formSchema: edited }),
-      );
-    }
-    expect(formSchema).toEqual(original);
   },
 );

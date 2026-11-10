@@ -5,29 +5,56 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ReportConfig, Transport } from "mlform/runtime";
 import type { ReportResult } from "mlform/schema";
-import { createFanoutTransport } from "mlform/transport";
+import { createFanoutTransport, type SubmitRequest } from "mlform/transport";
 import { appFetch, json } from "@/shared/api/http";
 import { retryWhileBusy } from "@/shared/api/busy-retry";
 import type { WorkspacePredictionDto, WorkspacePredictionRequest } from "@/shared/api/openapi.gen";
 import { getBackendBaseUrl } from "@/shared/config/runtime";
 import { applySchemaRunInputMapping } from "@/capabilities/prediction-runtime/mlform/model-input-mapping";
-import { reportTargetForBinding } from "@/capabilities/prediction-runtime/mlform/schema-run-report-mapping";
+import {
+  type RuntimeReportRoute,
+  runtimeReportRoutes,
+} from "@/capabilities/prediction-runtime/mlform/runtime-report-targets";
+import { findStoredReport } from "@/capabilities/prediction-runtime/data/stored-report";
 import {
   type JsonRecord,
   type PredictionPayloadField,
   isRecord,
+  storedReportPayload,
 } from "@/capabilities/prediction-runtime/mlform/shared";
 
 export type SchemaRunBinding = {
   modelId: number;
   modelName?: string;
-  pluginPolicy?: JsonRecord | null;
+  pluginPolicy?: JsonRecord;
 };
 
 /** The bookmark whose snapshot the form runs; the server runs each model for it. */
 export type SchemaRunTarget = {
   bookmarkId: number | string;
   schemaVersionId: number;
+};
+
+const requestRecord = (value: unknown): JsonRecord => (isRecord(value) ? value : {});
+
+/**
+ * The form's values as a run keeps them: the values the form gives its models and, under its
+ * display key, each series field's rows, which its models may receive only as aggregations.
+ */
+const runInputData = (
+  request: SubmitRequest,
+  fields: readonly PredictionPayloadField[],
+): JsonRecord => {
+  const series = new Set(
+    fields.filter((field) => field.kind === "series").map((field) => field.id),
+  );
+  const values = { ...requestRecord(request.modelValues) };
+  for (const input of request.inputs) {
+    if (series.has(input.fieldId) && input.displayKey) {
+      values[input.displayKey] = input.serializedValue;
+    }
+  }
+  return values;
 };
 
 /**
@@ -38,15 +65,17 @@ export type SchemaRunTarget = {
 const runBinding = (
   target: SchemaRunTarget,
   binding: SchemaRunBinding,
-  modelValues: JsonRecord,
+  form: SubmitRequest,
   fields: readonly PredictionPayloadField[],
-  signal?: AbortSignal,
 ): Promise<WorkspacePredictionDto> => {
   const request: WorkspacePredictionRequest = {
     schemaVersionId: target.schemaVersionId,
     modelId: binding.modelId,
-    modelInput: applySchemaRunInputMapping(modelValues, fields, binding),
+    modelInput: applySchemaRunInputMapping(requestRecord(form.modelValues), fields, binding),
+    // The form's values the record was mapped from: the seal vouches for them, and the saved run keeps them.
+    inputData: runInputData(form, fields),
   };
+  const { signal } = form;
   return retryWhileBusy(
     () =>
       appFetch<WorkspacePredictionDto>(
@@ -57,56 +86,51 @@ const runBinding = (
   );
 };
 
-const findReportPayload = (target: string, output: JsonRecord): JsonRecord | undefined =>
-  (Array.isArray(output.reports) ? output.reports.filter(isRecord) : []).find(
-    (item) => String(item.mappedTo) === target,
-  );
-
-const payloadValue = (report: JsonRecord): unknown => {
-  if ("payload" in report) return report.payload;
-  const { id: _id, kind: _kind, mappedTo: _mappedTo, ...payload } = report;
-  void _id;
-  void _kind;
-  void _mappedTo;
-  return payload;
-};
-
+/**
+ * One result for each report of the run form, routed as the form routes it: the stored copy
+ * of that report in its model's result. A report the server stored no copy of is pending: a
+ * plugin may still fetch it in the browser.
+ */
 const reportResults = (
   results: readonly WorkspacePredictionDto[],
-  bindings: readonly SchemaRunBinding[],
+  routes: readonly RuntimeReportRoute<SchemaRunBinding>[],
   reports: readonly ReportConfig[],
 ): ReportResult[] =>
   reports.map((report, index) => {
-    const binding = bindings.find((candidate) => reportTargetForBinding(report, candidate));
-    if (!binding) throw new Error(`Schema report ${index + 1} no coincide con ningún modelo`);
-    const mappedTo = reportTargetForBinding(report, binding);
-    if (!mappedTo) throw new Error(`Schema report ${index + 1} falta mappedTo`);
-    const backend = String(binding.modelName ?? binding.modelId);
-    const result = results.find((candidate) => candidate.modelId === binding.modelId);
+    const route = routes.find((candidate) => candidate.id === report.id);
+    if (!route) throw new Error(`Schema report ${index + 1} does not map to any bound model.`);
+    const { backend, key: mappedTo } = route;
+    const result = results.find((candidate) => candidate.modelId === route.binding.modelId);
     if (!result || result.status === "FAILED") {
       return { backend, mappedTo, status: "skipped", reason: result?.errorMessage ?? "no-result" };
     }
 
-    const meta = isRecord(result.output.meta) ? result.output.meta : {};
-    const context = { modelValues: result.modelInput, meta, raw: result.output };
-    const payload = findReportPayload(mappedTo, result.output);
-    return payload
-      ? { backend, mappedTo, status: "ready", payload: payloadValue(payload), context }
+    const output = result.output ?? {};
+    // The model and the record it was given are the result's own; meta is what the runtime added.
+    const meta = {
+      modelId: result.modelId,
+      backendFieldValues: result.modelInput,
+      ...(isRecord(output.meta) ? output.meta : {}),
+    };
+    const context = { modelValues: result.modelInput, meta, raw: output };
+    const copy = findStoredReport(output, route);
+    return copy
+      ? { backend, mappedTo, status: "ready", payload: storedReportPayload(copy), context }
       : { backend, mappedTo, status: "pending", context };
   });
 
-const requestRecord = (value: unknown): JsonRecord => (isRecord(value) ? value : {});
-
+/** Runs a stored schema's form against its bound models; `schema` is the form as stored. */
 export const createSchemaRunTransport = (
   target: SchemaRunTarget,
+  schema: unknown,
   bindings: readonly SchemaRunBinding[],
   fields: readonly PredictionPayloadField[],
-): Transport =>
-  createFanoutTransport({
+): Transport => {
+  const routes = runtimeReportRoutes(schema, bindings);
+  return createFanoutTransport({
     targets: bindings,
     failurePolicy: "fail-fast",
-    submit: (binding, request) =>
-      runBinding(target, binding, requestRecord(request.modelValues), fields, request.signal),
+    submit: (binding, request) => runBinding(target, binding, request, fields),
     merge: (outcomes, request) => {
       const reports = request.reports as readonly ReportConfig[];
       const canonical = requestRecord(request.modelValues);
@@ -115,7 +139,7 @@ export const createSchemaRunTransport = (
         if (outcome.status !== "fulfilled") throw outcome.reason;
         return outcome.value;
       });
-      const reportPayloads = reportResults(results, bindings, reports);
+      const reportPayloads = reportResults(results, routes, reports);
       const meta = {
         backendUrl: getBackendBaseUrl(),
         backendFieldValues: canonical,
@@ -134,3 +158,4 @@ export const createSchemaRunTransport = (
       };
     },
   });
+};

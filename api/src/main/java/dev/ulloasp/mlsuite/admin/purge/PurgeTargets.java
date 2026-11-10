@@ -58,7 +58,7 @@ class PurgeTargets {
         String table = switch (scope) {
             case ORGANIZATION -> "organization";
             case USER -> "app_user";
-            case SCHEMA -> "schema_artifact";
+            case SCHEMA -> "schema";
             case MODEL -> "model";
         };
         jdbc.queryForList("SELECT id FROM " + table + " WHERE id = ? FOR UPDATE", Long.class, id);
@@ -67,7 +67,7 @@ class PurgeTargets {
     void close(Target target) {
         switch (target.scope()) {
             case ORGANIZATION -> mark("organization", target.id());
-            case SCHEMA -> mark("schema_artifact", target.id());
+            case SCHEMA -> mark("schema", target.id());
             case MODEL -> mark("model", target.id());
             case USER -> {
                 mark("organization", target.organizationId());

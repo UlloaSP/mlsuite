@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.model;
 
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
@@ -69,6 +70,8 @@ class ModelControllerTest {
     void createModel_DelegatesCreationToService() {
         MockMultipartFile modelFile = new MockMultipartFile("model", "model.mlbundle", "application/octet-stream", "x".getBytes());
         Model model = new Model();
+        model.setCreatedBy(TestFixtures.system());
+        model.setUpdatedBy(TestFixtures.system());
         model.setId(11L);
         model.setName("demo");
         model.setVersion(0L);
@@ -83,6 +86,8 @@ class ModelControllerTest {
     @Test
     void getModelDetails_ReturnsWhatTheBundleSaysAboutTheModel() {
         Model model = new Model();
+        model.setCreatedBy(TestFixtures.system());
+        model.setUpdatedBy(TestFixtures.system());
         model.setBundleManifest(Map.of("writer_version", "0.1.0a3"));
         model.setFeatureImportances(List.of(Map.of("feature", "age", "importance", 62.5)));
         model.setModelSizeBytes(2048L);
@@ -100,6 +105,8 @@ class ModelControllerTest {
     @Test
     void getModelDetails_HasNoImportancesForAModelWithoutStructure() {
         Model model = new Model();
+        model.setCreatedBy(TestFixtures.system());
+        model.setUpdatedBy(TestFixtures.system());
         model.setModelSizeBytes(2048L);
         model.setArtifactSha256("abc");
         model.setEnvironmentKey(KEY);
@@ -113,6 +120,8 @@ class ModelControllerTest {
     @Test
     void retryEnvironment_AnswersTheModelPreparedAgain() {
         Model model = new Model();
+        model.setCreatedBy(TestFixtures.system());
+        model.setUpdatedBy(TestFixtures.system());
         model.setId(11L);
         model.setVersion(0L);
         model.setRuntimeState(ModelRuntimeState.PREPARING);
@@ -133,6 +142,8 @@ class ModelControllerTest {
     @Test
     void getAllModels_UsesInternalUserId() {
         Model model = new Model();
+        model.setCreatedBy(TestFixtures.system());
+        model.setUpdatedBy(TestFixtures.system());
         model.setVersion(0L);
         when(modelCatalogUseCase.getModels(4L)).thenReturn(List.of(model));
 
@@ -217,6 +228,8 @@ class ModelControllerTest {
 
     private Model model() {
         Model model = new Model();
+        model.setCreatedBy(TestFixtures.system());
+        model.setUpdatedBy(TestFixtures.system());
         model.setId(9L);
         model.setName("demo");
         model.setVersion(0L);

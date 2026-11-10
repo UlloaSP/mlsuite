@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.notification.application.service;
 
+import java.util.List;
+import java.util.Locale;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Map;
@@ -18,9 +20,9 @@ import dev.ulloasp.mlsuite.notification.application.port.in.NotificationUseCase;
 import dev.ulloasp.mlsuite.notification.domain.exception.NotificationNotFoundException;
 import dev.ulloasp.mlsuite.notification.domain.model.Notification;
 import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
-import dev.ulloasp.mlsuite.notification.domain.model.NotificationTargetType;
 import dev.ulloasp.mlsuite.util.CatalogPages;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import dev.ulloasp.mlsuite.util.PageDto;
 import lombok.RequiredArgsConstructor;
 
@@ -51,17 +53,34 @@ public class NotificationService implements NotificationUseCase {
         events.publishEvent(new NotificationsChanged(recipientUserId));
     }
 
-    /** What told the recipient about the target was dealt with: it stops counting as unread. */
+    /** What told someone about a target that no longer stands (a revoked invitation) is taken back. */
     @Transactional(propagation = Propagation.MANDATORY)
-    public void markTargetRead(Long recipientUserId, NotificationTargetType targetType, String targetId) {
-        notifications.markTargetRead(recipientUserId, targetType, targetId, now());
+    public void withdraw(NotificationKind kind, String targetId) {
+        List<Notification> told = notifications.findByKindAndTargetId(kind, targetId);
+        notifications.deleteAll(told);
+        told.stream().map(Notification::getRecipientUserId).distinct()
+                .forEach(recipient -> events.publishEvent(new NotificationsChanged(recipient)));
     }
 
-    /** Newest first; {@code filter} is {@code unread} or, by default, everything. */
+    /**
+     * The recipient answered what they were told about (an invitation): what told them stops
+     * counting as unread and keeps their answer under {@code answer}, for the inbox to show.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void recordAnswer(Long recipientUserId, NotificationKind kind, String targetId, String answer) {
+        List<Notification> told = notifications.findByRecipientUserIdAndKindAndTargetId(recipientUserId, kind, targetId);
+        OffsetDateTime at = now();
+        told.forEach(notification -> notification.answer(answer, at));
+        if (!told.isEmpty()) events.publishEvent(new NotificationsChanged(recipientUserId));
+    }
+
+    /** Newest first; {@code filter} is {@code unread} or {@code all}. */
     @Override
     @Transactional(readOnly = true)
     public PageDto<NotificationDto> catalog(Long userId, CatalogRequest request) {
-        Page<Notification> page = notifications.findCatalog(userId, "unread".equalsIgnoreCase(request.filter()),
+        String filter = CatalogValues.require("filter",
+                request.requireOneOrder().filter().toLowerCase(Locale.ROOT), List.of("all", "unread"));
+        Page<Notification> page = notifications.findCatalog(userId, filter.equals("unread"),
                 CatalogPages.pageable(request, NEWEST_FIRST));
         return PageDto.of(page, page.getContent().stream().map(NotificationDto::from).toList());
     }

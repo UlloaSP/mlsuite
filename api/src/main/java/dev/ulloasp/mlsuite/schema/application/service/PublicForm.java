@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import dev.ulloasp.mlsuite.schema.domain.model.BoundModel;
@@ -18,6 +19,11 @@ import dev.ulloasp.mlsuite.schema.domain.model.BoundModel;
  * opaque key ({@code in0}, {@code out0}, ...) and expands each report once per model that produces
  * it. The keys follow from the stored form and its binding order, so nothing is persisted and the
  * form read by a page is the form its run is routed with.
+ *
+ * A series field's aggregations are model features the server computes from the field's rows, as
+ * MLForm computes them in the workspace: a visitor sends the rows, never an aggregate. Each
+ * aggregation keeps a {@code mappedTo} of its own ({@code agg0}, ...) because MLForm requires one,
+ * but no run may carry a value under it.
  *
  * A {@code hidden} field never leaves the server. MLForm, which runs the form in the workspace,
  * leaves a hidden field out of a run unless the field says {@code inactiveFieldPolicy: "include"},
@@ -31,6 +37,7 @@ public final class PublicForm {
     private static final String MODEL_ROUTING = "mappedTo";
     private static final String STORED_VALUE = "defaultValue";
     private static final String ONE_HOT = "onehot-category";
+    private static final String SERIES = "series";
     private static final String QUESTIONNAIRE = "feedbackQuestionnaire";
     /** Report keys that belong to the workspace: editor bookkeeping. The questionnaire is asked of visitors too. */
     private static final Set<String> PRIVATE_REPORT_KEYS = Set.of(MODEL_ROUTING, "id", "source");
@@ -50,30 +57,61 @@ public final class PublicForm {
      * A value of a run and where it goes: a visitor's, sent under {@code key} and stored under
      * the field's {@code displayKey} as the workspace stores it, or the schema's own. A one-hot
      * field sends one key per option; the option whose key is active is the field's stored
-     * value, {@code optionValue}.
+     * value, {@code optionValue}. A series field's rows may route to no model ({@code mappedTo}
+     * null) and are stored all the same; each of its aggregations is a route with no display key
+     * whose value is computed from the rows sent under {@code key}.
      */
-    private record InputRoute(Object mappedTo, String key, String displayKey, Object optionValue, Object stored) {
+    private record InputRoute(Object mappedTo, String key, String displayKey, Object optionValue, Object stored,
+            Map<?, ?> aggregation) {
+
+        InputRoute(Object mappedTo, String key, String displayKey, Object optionValue, Object stored) {
+            this(mappedTo, key, displayKey, optionValue, stored, null);
+        }
+    }
+
+    /**
+     * The stored field an input key belongs to, by which a refusal names it to a visitor. A
+     * series field's one key, {@code rows}, takes the rows its {@code config} defines; every other
+     * key of a field takes one scalar.
+     */
+    public record InputField(Map<?, ?> config, boolean rows) {
+
+        public String label() {
+            String label = config.get("label") instanceof String text && !text.isBlank() ? text : displayKey(config);
+            return label == null ? "An input" : label;
+        }
+    }
+
+    /**
+     * A key a series' aggregation is shown with, which a run never carries: the server computes
+     * it from {@code field}'s rows. A refusal names the aggregation by its label.
+     */
+    public record Aggregate(InputField field, String label) {
     }
 
     private final List<BoundModel> models;
     /** In the order of the stored form, which is the order a run's values are routed in. */
     private final List<InputRoute> inputRoutes = new ArrayList<>();
     private final Set<String> inputKeys = new LinkedHashSet<>();
+    private final Map<String, InputField> inputFields = new LinkedHashMap<>();
+    private final Map<String, Aggregate> aggregates = new LinkedHashMap<>();
     private final List<ReportRoute> reportRoutes = new ArrayList<>();
+    private int aggregationCount;
     private final Map<String, Object> schema;
     private final int inputCount;
 
     private PublicForm(Map<String, Object> formSchema, List<BoundModel> models) {
         this.models = models;
-        Map<String, Object> source = formSchema == null ? Map.of() : formSchema;
-        List<?> storedFields = source.get(FIELDS) instanceof List<?> items ? items : List.of();
-        Object reports = source.get(REPORTS) instanceof List<?> items ? reportsPerModel(items) : List.of();
+        List<?> storedFields = formSchema.get(FIELDS) instanceof List<?> items ? items : List.of();
+        Object reports = formSchema.get(REPORTS) instanceof List<?> items ? reportsPerModel(items) : List.of();
         List<Object> shownFields = new ArrayList<>();
         for (Object field : storedFields) {
             if (field instanceof Map<?, ?> config && Boolean.TRUE.equals(config.get("hidden"))) {
                 routeStoredValue(config);
+            } else if (field instanceof Map<?, ?> config) {
+                shownFields.add(shownField(config));
             } else {
-                shownFields.add(withInputKeys(field, field instanceof Map<?, ?> config ? displayKey(config) : null, null));
+                shownFields.add(field);
             }
         }
         this.schema = Map.of(FIELDS, Collections.unmodifiableList(shownFields), REPORTS, reports);
@@ -127,6 +165,16 @@ public final class PublicForm {
         return inputKeys;
     }
 
+    /** The field a visitor's input key belongs to; none for a key the form does not have. */
+    public Optional<InputField> field(String key) {
+        return Optional.ofNullable(inputFields.get(key));
+    }
+
+    /** The aggregation a key is shown for; none for a key no aggregation has. */
+    public Optional<Aggregate> aggregate(String key) {
+        return Optional.ofNullable(aggregates.get(key));
+    }
+
     public List<ReportRoute> reportRoutes() {
         return reportRoutes;
     }
@@ -144,6 +192,10 @@ public final class PublicForm {
             if (feature == null) continue;
             if (route.key() == null) {
                 routed.put(featureName(feature), route.stored());
+            } else if (route.aggregation() != null) {
+                Object rows = values.get(route.key());
+                routed.put(featureName(feature),
+                        SeriesAggregation.calculate(rows instanceof List<?> list ? list : List.of(), route.aggregation()));
             } else if (values.containsKey(route.key())) {
                 routed.put(featureName(feature), values.get(route.key()));
             }
@@ -157,9 +209,49 @@ public final class PublicForm {
     }
 
     /**
+     * A field a visitor fills, its routes replaced by input keys. A series field's rows are what the
+     * visitor entered even when its models receive only their aggregations, so they are always sent,
+     * under a key of their own that no model reads, and stored. They are the field's one input:
+     * its aggregations are computed from them.
+     */
+    private Object shownField(Map<?, ?> field) {
+        int firstRoute = inputRoutes.size();
+        String displayKey = displayKey(field);
+        boolean series = SERIES.equals(field.get("kind"));
+        Object shown = withInputKeys(field, displayKey, null);
+        if (series && !isRouting(field.get(MODEL_ROUTING)) && shown instanceof Map<?, ?> copy) {
+            Map<Object, Object> withRows = new LinkedHashMap<>(copy);
+            withRows.put(MODEL_ROUTING, inputKey(null, displayKey, null));
+            shown = withRows;
+        }
+        for (InputRoute route : inputRoutes.subList(firstRoute, inputRoutes.size())) {
+            inputFields.put(route.key(), new InputField(field, series));
+        }
+        if (shown instanceof Map<?, ?> copy && copy.get("aggregations") instanceof List<?> shownAggregations) {
+            for (Object item : shownAggregations) {
+                if (item instanceof Map<?, ?> aggregation && aggregation.get(MODEL_ROUTING) instanceof String key) {
+                    Object label = aggregation.get("label");
+                    aggregates.put(key, new Aggregate(new InputField(field, true),
+                            label instanceof String text && !text.isBlank() ? text : String.valueOf(aggregation.get("operation"))));
+                }
+            }
+        }
+        if (series && field.get("aggregations") instanceof List<?> aggregations) {
+            String rowsKey = inputRoutes.get(firstRoute).key();
+            for (Object item : aggregations) {
+                if (item instanceof Map<?, ?> aggregation && isRouting(aggregation.get(MODEL_ROUTING))) {
+                    inputRoutes.add(new InputRoute(aggregation.get(MODEL_ROUTING), rowsKey, null, null, null, aggregation));
+                }
+            }
+        }
+        return shown;
+    }
+
+    /**
      * Options of a field route to models too, so the key is replaced at every depth. Every key
      * of a field is stored under the field's display key: a one-hot field's options all carry
-     * the one chosen value.
+     * the one chosen value. A series field's aggregations are model features computed from its
+     * rows, not values a visitor sends: each is shown with a key no run may carry.
      */
     private Object withInputKeys(Object value, String displayKey, Object optionValue) {
         if (value instanceof List<?> items) {
@@ -171,13 +263,13 @@ public final class PublicForm {
                 if ("options".equals(key) && entry instanceof List<?> options) {
                     copy.put(key, options.stream().map(option -> withInputKeys(option, displayKey,
                             option instanceof Map<?, ?> config ? optionValue(config) : null)).toList());
+                } else if ("aggregations".equals(key)) {
+                    copy.put(key, entry instanceof List<?> aggregations
+                            ? aggregations.stream().map(this::shownAggregation).toList() : entry);
                 } else if (!MODEL_ROUTING.equals(key)) {
                     copy.put(key, withInputKeys(entry, displayKey, optionValue));
                 } else if (isRouting(entry)) {
-                    String inputKey = "in" + inputKeys.size();
-                    inputKeys.add(inputKey);
-                    inputRoutes.add(new InputRoute(entry, inputKey, displayKey, optionValue, null));
-                    copy.put(key, inputKey);
+                    copy.put(key, inputKey(entry, displayKey, optionValue));
                 }
             });
             return copy;
@@ -185,12 +277,27 @@ public final class PublicForm {
         return value;
     }
 
+    private Object shownAggregation(Object aggregation) {
+        if (!(aggregation instanceof Map<?, ?> config)) return aggregation;
+        Map<Object, Object> copy = new LinkedHashMap<>(config);
+        copy.put(MODEL_ROUTING, "agg" + aggregationCount++);
+        return copy;
+    }
+
+    /** A new input key, routed to the features of {@code mappedTo} (none when null) and stored under {@code displayKey}. */
+    private String inputKey(Object mappedTo, String displayKey, Object optionValue) {
+        String inputKey = "in" + inputKeys.size();
+        inputKeys.add(inputKey);
+        inputRoutes.add(new InputRoute(mappedTo, inputKey, displayKey, optionValue, null));
+        return inputKey;
+    }
+
     private static Object optionValue(Map<?, ?> option) {
         return option.get("value") != null ? option.get("value") : option.get("label");
     }
 
     /** The key a stored run keeps a field's value under: the workspace's own resolution. */
-    private static String displayKey(Map<?, ?> field) {
+    static String displayKey(Map<?, ?> field) {
         for (String name : List.of("displayKey", "label", "id")) {
             if (field.get(name) instanceof String text && !text.isBlank()) return text;
         }
@@ -234,8 +341,7 @@ public final class PublicForm {
                 .filter(model -> featureFor(report.get(MODEL_ROUTING), model) != null)
                 .toList();
         String kind = String.valueOf(report.get("kind"));
-        String storedId = report.get("id") instanceof String id ? id
-                : report.get("label") instanceof String label ? label : String.valueOf(order);
+        String storedId = PublicRunReports.storedId(report, order);
         List<Object> expanded = new ArrayList<>();
         for (BoundModel model : producers) {
             String key = "out" + reportRoutes.size();

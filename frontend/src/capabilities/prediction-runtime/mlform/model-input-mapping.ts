@@ -3,9 +3,12 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { calculateSeriesAggregation, type SeriesAggregation } from "mlform/builtins";
+import { resolveDisplayKey } from "@/capabilities/prediction-runtime/mlform/display-key";
 import {
   type BindingIdentity,
   mappedTarget,
+  mappedTargets,
   targetKey,
 } from "@/capabilities/prediction-runtime/mlform/mapped-to";
 import type {
@@ -61,3 +64,32 @@ export const applySchemaRunInputMapping = (
     }
     return payload;
   }, {});
+
+/**
+ * A record that keeps each series field's rows under the field's display key, as a run stores
+ * them, with the model values the form submits for those rows: the rows under each feature they
+ * route to, and each aggregation computed from them as MLForm computes it.
+ */
+export const withSeriesModelValues = (
+  values: JsonRecord,
+  fields: readonly PredictionPayloadField[],
+): JsonRecord =>
+  fields.reduce<JsonRecord>(
+    (record, field) => {
+      const key = field.kind === "series" ? resolveDisplayKey(field) : undefined;
+      const rows = key === undefined ? undefined : values[key];
+      if (!Array.isArray(rows)) return record;
+      mappedTargets(field.mappedTo).forEach((target) => {
+        record[target] = rows;
+      });
+      if (!Array.isArray(field.aggregations)) return record;
+      field.aggregations.filter(isRecord).forEach((aggregation) => {
+        const value = calculateSeriesAggregation(rows, aggregation as SeriesAggregation);
+        mappedTargets(aggregation.mappedTo).forEach((target) => {
+          record[target] = value;
+        });
+      });
+      return record;
+    },
+    { ...values },
+  );

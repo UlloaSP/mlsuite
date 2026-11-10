@@ -7,14 +7,6 @@ import { useAtom, useSelector } from "@tanstack/react-store";
 import { nextThemeMode, setThemeMode, themeModeAtom } from "./appearance-state";
 import { fullscreenAtom } from "./ui-state";
 
-const restoreRouteTransition = (element: HTMLElement, previousValue: string) => {
-  if (previousValue) {
-    element.style.viewTransitionName = previousValue;
-  } else {
-    element.style.removeProperty("view-transition-name");
-  }
-};
-
 /** Cycles System → Light → Dark with the corner reveal used by the theme shortcut. */
 export function useThemeModeCycle() {
   const nextMode = nextThemeMode(useSelector(themeModeAtom));
@@ -28,18 +20,12 @@ export function useThemeModeCycle() {
     }
 
     const root = document.documentElement;
-    const content = document.querySelector<HTMLElement>(".app-content-transition");
-    const previousContentTransition = content?.style.viewTransitionName ?? "";
-    // The route cross-fade would fight the corner reveal, so it sits this one out.
-    if (content) content.style.viewTransitionName = "none";
-
     root.classList.add("theme-corner-transition");
     const transition = document.startViewTransition(() => setThemeMode(nextMode));
+    // Skipped when another transition starts first; the theme has changed all the same.
+    transition.ready.catch(() => undefined);
     void transition.finished.finally(() => {
-      window.setTimeout(() => {
-        root.classList.remove("theme-corner-transition");
-        if (content) restoreRouteTransition(content, previousContentTransition);
-      }, 120);
+      window.setTimeout(() => root.classList.remove("theme-corner-transition"), 120);
     });
   };
 

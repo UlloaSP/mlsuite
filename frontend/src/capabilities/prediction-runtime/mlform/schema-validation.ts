@@ -21,11 +21,6 @@ import type {
 } from "@/capabilities/prediction-runtime/mlform/shared";
 import { hasBlockingIssues, isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { withResolvedDisplayKeys } from "@/capabilities/prediction-runtime/mlform/display-key";
-import { withSeriesColumns } from "./series-schema";
-import {
-  allowStoredStatusJsonSchema,
-  withStoredStatusConditions,
-} from "./stored-status-conditions";
 import { questionnaireConfigError } from "@/capabilities/prediction-runtime/feedback/questionnaire-config";
 
 export type ValidateMlformSchemaOptions = {
@@ -47,6 +42,18 @@ const createValidationRegistry = (options: ValidateMlformSchemaOptions): Registr
   return registry;
 };
 
+/**
+ * MLForm leaves a hidden or disabled field out of a submission unless the field asks for
+ * `inactiveFieldPolicy: "include"`, and every field feeds a model input a run requires.
+ */
+const omittedWhileInactive = (field: Record<string, unknown>): boolean =>
+  (field.hidden === true ||
+    field.disabled === true ||
+    field.hiddenWhen !== undefined ||
+    field.disabledWhen !== undefined) &&
+  field.includeInSubmission !== false &&
+  field.inactiveFieldPolicy !== "include";
+
 const appendProductIssues = (schema: unknown, issues: CompatIssue[]): void => {
   if (!isRecord(schema)) return;
   const questionnaireError = questionnaireConfigError(schema);
@@ -55,12 +62,19 @@ const appendProductIssues = (schema: unknown, issues: CompatIssue[]): void => {
   if (Array.isArray(schema.fields)) {
     schema.fields.forEach((field, index) => {
       if (!isRecord(field)) return;
+      if (omittedWhileInactive(field)) {
+        issues.push({
+          path: ["fields", index, "inactiveFieldPolicy"],
+          message: `Schema field ${index + 1} is left out of runs while hidden or disabled, so its model input would be missing. Set "inactiveFieldPolicy": "include" to submit its value.`,
+          severity: "error",
+        });
+      }
       if (field.kind === "onehot-category" && Array.isArray(field.options)) {
         field.options.forEach((option, optionIndex) => {
           if (isRecord(option) && option.mappedTo === undefined) {
             issues.push({
               path: ["fields", index, "options", optionIndex, "mappedTo"],
-              message: `Schema field ${index + 1} option ${optionIndex + 1} falta mappedTo`,
+              message: `Schema field ${index + 1} option ${optionIndex + 1} has no mappedTo`,
               severity: "error",
             });
           }
@@ -75,7 +89,7 @@ const appendProductIssues = (schema: unknown, issues: CompatIssue[]): void => {
       ) {
         issues.push({
           path: ["fields", index, "mappedTo"],
-          message: `Schema field ${index + 1} falta mappedTo`,
+          message: `Schema field ${index + 1} has no mappedTo`,
           severity: "error",
         });
       }
@@ -86,7 +100,7 @@ const appendProductIssues = (schema: unknown, issues: CompatIssue[]): void => {
       if (isRecord(report) && report.mappedTo === undefined) {
         issues.push({
           path: ["reports", index, "mappedTo"],
-          message: `Schema report ${index + 1} falta mappedTo`,
+          message: `Schema report ${index + 1} has no mappedTo`,
           severity: "error",
         });
       }
@@ -116,9 +130,7 @@ export const validateMlformSchema = (
   schema: unknown,
   options: ValidateMlformSchemaOptions = {},
 ): CompatValidationResult => {
-  const runtimeSchema = withStoredStatusConditions(
-    withSeriesColumns(withResolvedDisplayKeys(schema)),
-  );
+  const runtimeSchema = withResolvedDisplayKeys(schema);
   const result = validateSchema(runtimeSchema, createValidationRegistry(options));
   const issues = result.issues.map((issue) => toCompatIssue(issue, runtimeSchema));
   appendProductIssues(runtimeSchema, issues);
@@ -139,8 +151,5 @@ export const toMlformSchema = (
   return result.data;
 };
 
-export const createMlformJsonSchema = (options: ValidateMlformSchemaOptions = {}) => {
-  const schema = toSchemaJsonSchema(createValidationRegistry(options));
-  allowStoredStatusJsonSchema(schema);
-  return schema;
-};
+export const createMlformJsonSchema = (options: ValidateMlformSchemaOptions = {}) =>
+  toSchemaJsonSchema(createValidationRegistry(options));

@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.application.dto;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 
 import jakarta.annotation.Nullable;
@@ -9,16 +10,14 @@ import tools.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackType;
-import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
-import dev.ulloasp.mlsuite.user.domain.model.User;
 
 public record PredictionResultFeedbackDto(
         Long id,
         Long resultId,
         /** Null when a visitor of the public page gave the feedback, or its member is gone. */
-        @Nullable Long userId,
-        @Nullable String userName,
-        @Nullable String userEmail,
+        @Nullable Long createdByUserId,
+        @Nullable String createdByName,
+        @Nullable String createdByEmail,
         PredictionResultFeedbackType type,
         int order,
         JsonNode value,
@@ -26,13 +25,13 @@ public record PredictionResultFeedbackDto(
         OffsetDateTime updatedAt) {
 
     public static PredictionResultFeedbackDto from(PredictionResultFeedback feedback) {
-        User user = feedback.getUser();
+        Principal author = feedback.getCreatedBy();
         return new PredictionResultFeedbackDto(
                 feedback.getId(),
                 feedback.getResult().getId(),
-                user == null ? null : user.getId(),
-                user == null && feedback.getVisitor() != null ? null : DeletedUser.nameOf(user),
-                user == null ? null : user.getEmail(),
+                author.userId(),
+                author.label(),
+                author.email(),
                 feedback.getType(),
                 feedback.getOrder(),
                 feedback.getValue(),

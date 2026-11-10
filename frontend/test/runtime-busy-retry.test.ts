@@ -75,7 +75,7 @@ describe("runs wait out a busy server", () => {
       if (modelId > 4 && refusals-- > 0) return busy("1");
       return ok(sealed(modelId, 42));
     });
-    const transport = createSchemaRunTransport(target, bindings, fields);
+    const transport = createSchemaRunTransport(target, {}, bindings, fields);
 
     const answered = transport.submit({
       inputs: [],

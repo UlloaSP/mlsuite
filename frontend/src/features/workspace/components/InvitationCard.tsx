@@ -5,8 +5,17 @@ import { RoleBadge } from "./RoleBadge";
 import { StatusBadge } from "./admin/StatusBadge";
 import { AppCheckbox } from "@/shared/ui/AppCheckbox";
 import type { InvitationDto } from "@/shared/api/openapi.gen";
+import { isOpenInvitation } from "@/features/workspace/lib/invitation-status";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: "short" });
+
+/** Only an open invitation has an expiry to tell; an answered or revoked one has its status alone. */
+const expiry = (invite: InvitationDto): string | null => {
+  if (!invite.expiresAt) return null;
+  const date = dateFormatter.format(Date.parse(invite.expiresAt));
+  if (invite.status === "PENDING") return `Expires ${date}`;
+  return invite.status === "EXPIRED" ? `Expired ${date}` : null;
+};
 
 export function InvitationCard({
   invite,
@@ -23,6 +32,7 @@ export function InvitationCard({
   onResend: () => void;
   onRevoke: () => void;
 }) {
+  const open = isOpenInvitation(invite);
   return (
     <CatalogEntry
       title={invite.email}
@@ -31,6 +41,7 @@ export function InvitationCard({
           <AppCheckbox
             aria-label={`Select invitation ${invite.email}`}
             checked={selected}
+            disabled={!open}
             onChange={(event) => onSelect(event.target.checked)}
           />
         ) : null
@@ -38,22 +49,16 @@ export function InvitationCard({
       metadata={
         <>
           <RoleBadge value={invite.roleDefinition.name} />
-          <span>Expires {dateFormatter.format(Date.parse(invite.expiresAt))}</span>
+          {expiry(invite) ? <span>{expiry(invite)}</span> : null}
         </>
       }
       details={<StatusBadge value={invite.status} />}
       actions={
-        canManage ? (
+        canManage && open ? (
           <AppActionsMenu
             label={`Open actions for ${invite.email}`}
             actions={[
-              {
-                key: "resend",
-                label: "Resend",
-                icon: RotateCcw,
-                disabled: invite.status === "ACCEPTED",
-                onSelect: onResend,
-              },
+              { key: "resend", label: "Resend", icon: RotateCcw, onSelect: onResend },
               { key: "revoke", label: "Revoke", icon: X, tone: "danger", onSelect: onRevoke },
             ]}
           />

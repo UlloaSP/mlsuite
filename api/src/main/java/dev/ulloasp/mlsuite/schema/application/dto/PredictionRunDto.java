@@ -14,7 +14,7 @@ import jakarta.annotation.Nullable;
 public record PredictionRunDto(
         Long id,
         Long schemaVersionId,
-        @Nullable Long schemaBookmarkId,
+        @Nullable Long bookmarkId,
         String name,
         Map<String, Object> inputData,
         PredictionRunStatus status,
@@ -22,7 +22,6 @@ public record PredictionRunDto(
         PredictionRunOrigin origin,
         List<PredictionResultDto> results,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt,
         @Nullable String createdByName,
         @Nullable String createdByEmail) {
 
@@ -37,7 +36,6 @@ public record PredictionRunDto(
                 run.getOrigin(),
                 PredictionResultDto.fromList(results),
                 run.getCreatedAt(),
-                run.getUpdatedAt(),
                 run.getCreatedByName(),
                 run.getCreatedByEmail());
     }

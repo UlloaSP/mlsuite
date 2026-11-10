@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.application.dto;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -7,8 +8,6 @@ import java.util.Map;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.user.application.dto.UserAvatarUrl;
-import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
-import dev.ulloasp.mlsuite.user.domain.model.User;
 
 import jakarta.annotation.Nullable;
 
@@ -29,7 +28,7 @@ public record SchemaCatalogItemDto(
 
     public static SchemaCatalogItemDto from(Schema schema, SchemaVersion latestVersion, long modelCount) {
         Map<String, Object> formSchema = latestVersion == null ? Map.of() : latestVersion.getFormSchema();
-        User modifier = schema.getUpdatedBy() == null ? schema.getCreatedBy() : schema.getUpdatedBy();
+        Principal modifier = schema.getUpdatedBy();
         return new SchemaCatalogItemDto(
                 schema.getId(),
                 schema.getOrganization().getId(),
@@ -38,9 +37,9 @@ public record SchemaCatalogItemDto(
                 schema.getCreatedAt(),
                 schema.getUpdatedAt(),
                 schema.getArchivedAt(),
-                DeletedUser.nameOf(modifier),
-                modifier == null ? null : modifier.getEmail(),
-                modifier == null ? null : UserAvatarUrl.of(modifier),
+                modifier.label(),
+                modifier.email(),
+                modifier.userId() == null ? null : UserAvatarUrl.of(modifier.userId(), modifier.getUserAvatarUpdatedAt()),
                 modelCount,
                 countVisibleFields(formSchema),
                 countReports(formSchema));

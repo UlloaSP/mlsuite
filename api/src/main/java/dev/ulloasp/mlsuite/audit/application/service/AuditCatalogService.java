@@ -1,16 +1,16 @@
 package dev.ulloasp.mlsuite.audit.application.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Stream;
 
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.audit.adapter.out.persistence.repository.AuditEventRepository;
 import dev.ulloasp.mlsuite.audit.application.dto.AuditEventDto;
@@ -22,6 +22,7 @@ import dev.ulloasp.mlsuite.audit.domain.model.AuditEvent;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.util.CatalogPages;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
@@ -75,12 +76,16 @@ public class AuditCatalogService implements AuditLogUseCase {
             long id = Long.parseLong(organization);
             return (root, query, builder) -> builder.equal(root.get("organizationId"), id);
         } catch (NumberFormatException notAnId) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown organization filter.");
+            throw CatalogValues.unknown("organization", organization, List.of(PLATFORM, "<id>"));
         }
     }
 
     private static Specification<AuditEvent> matching(CatalogRequest request, AuditFilters filters) {
-        AuditAction action = action(request.filter());
+        AuditAction action = action(request.requireOneOrder().filter());
+        if (filters.from() != null && filters.to() != null && filters.from().isAfter(filters.to())) {
+            throw new IllegalArgumentException("Invalid range: from '" + filters.from() + "' is after to '"
+                    + filters.to() + "'");
+        }
         String search = CatalogPages.likeLiteral(request.search());
         String actor = filters.actor() == null ? "" : filters.actor().strip();
         return (root, query, builder) -> {
@@ -114,7 +119,8 @@ public class AuditCatalogService implements AuditLogUseCase {
         try {
             return AuditAction.valueOf(filter.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException unknown) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown audit action.");
+            throw CatalogValues.unknown("filter", filter, Stream.concat(Stream.of("all"),
+                    Arrays.stream(AuditAction.values()).map(AuditAction::name)).toList());
         }
     }
 }

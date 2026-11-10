@@ -25,7 +25,6 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaDraft;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaDraftStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
-import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +42,6 @@ public class SchemaContentDeletionService implements SchemaContentDeletionUseCas
     private final SchemaBookmarkRepository bookmarks;
     private final SchemaModelBindingRepository bindings;
     private final PredictionRunRepository runs;
-    private final SchemaReviewRepository reviews;
     private final WorkspaceAuthorizationService authorization;
     private final AuditLogService auditLog;
     private final JdbcTemplate jdbc;
@@ -86,7 +84,7 @@ public class SchemaContentDeletionService implements SchemaContentDeletionUseCas
     public void deleteVersion(Long userId, Long versionId) {
         Long organizationId = authorization.requireCurrent(userId, PermissionKey.DELETE_MODELS).getId();
         SchemaVersion version = versions.findByIdAndOrganizationId(versionId, organizationId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema version not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema snapshot not found"));
         schemas.findForUpdate(version.getSchema().getId(), organizationId).orElseThrow();
         requireUnused(version);
         auditLog.record(AuditActor.user(userId), organizationId, AuditAction.SCHEMA_VERSION_DELETE, versionId,
@@ -103,9 +101,6 @@ public class SchemaContentDeletionService implements SchemaContentDeletionUseCas
         long inferences = runs.countBySchemaVersionId(versionId);
         if (inferences > 0) {
             throw conflict("Inferences ran on this snapshot (%d), so it stays while they do.".formatted(inferences));
-        }
-        if (reviews.existsBySchemaVersionId(versionId)) {
-            throw conflict("A review is built on this snapshot; delete the review first.");
         }
         List<SchemaBookmark> pinned = bookmarks.findByVersionId(versionId);
         if (!pinned.isEmpty()) {

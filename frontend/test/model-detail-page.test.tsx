@@ -24,6 +24,7 @@ vi.mock("@/features/models/api/model.queries", () => ({
 const model = (archivedAt: string | null): ModelDto => ({
   archivedAt,
   createdAt: "2026-10-01T10:00:00Z",
+  createdByName: "Ada Lovelace",
   fieldCount: 1,
   fileName: "risk.mlbundle",
   id: 12,

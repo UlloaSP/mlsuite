@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.schema.domain.model;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
+import jakarta.persistence.PrePersist;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
@@ -50,10 +52,25 @@ public class SchemaModelBinding {
     private Model model;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "plugin_policy_json")
+    @Column(name = "plugin_policy", nullable = false)
     private Map<String, Object> pluginPolicy;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime createdAt;
+
+    /** Carried from its parent for the composite foreign key that keeps it there. */
+    @Column(name = "organization_id", nullable = false, updatable = false)
+    private Long organizationId;
+
+    /** Written with its parent, by whoever wrote the parent. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
+
+    @PrePersist
+    void carryParentKeys() {
+        organizationId = schemaVersion.getOrganizationId();
+        if (createdBy == null) createdBy = schemaVersion.getCreatedBy();
+    }
 }

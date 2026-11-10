@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -23,6 +24,8 @@ import java.util.concurrent.Future;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -33,6 +36,7 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationPurgingExce
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
@@ -56,7 +60,10 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 /** The purge on PostgreSQL, with its real foreign keys, over an organization with a row of everything. */
 class PurgeIntegrationTest extends PublicPredictionFixture {
 
-    private static final List<String> ORGANIZATION_TABLES = List.of("model", "schema_artifact", "plugin_metadata",
+    @Autowired
+    private Principals principals;
+
+    private static final List<String> ORGANIZATION_TABLES = List.of("model", "schema", "plugin_metadata",
             "schema_review", "invitation", "organization_membership", "role_definition", "api_client", "api_request",
             "prediction_job");
 
@@ -82,59 +89,69 @@ class PurgeIntegrationTest extends PublicPredictionFixture {
             entityManager.persist(superadmin);
             entityManager.persist(member);
             entityManager.persist(new OrganizationMembership(organization, member,
-                    entityManager.getReference(RoleDefinition.class, ownerRole.getId()), MembershipStatus.ACTIVE));
+                    entityManager.getReference(RoleDefinition.class, ownerRole.getId()), MembershipStatus.ACTIVE, principals.of(member)));
             entityManager.createQuery("update OrganizationMembership m set m.roleDefinition = :role where m.user.id = :id")
                     .setParameter("role", ownerRole).setParameter("id", member.getId()).executeUpdate();
             answeredRun("first", owner);
-            entityManager.persist(new SchemaDraft(schema, version, "wip", Map.of("fields", List.of()), List.of()));
+            entityManager.persist(new SchemaDraft(schema, version, "wip", Map.of("fields", List.of()), List.of(), principals.system()));
         });
         Long job = jdbc.queryForObject("""
-                INSERT INTO prediction_job (organization_id, schema_bookmark_id, schema_version_id, created_by_user_id,
-                    status, total_rows, created_at, updated_at) VALUES (?, ?, ?, ?, 'RUNNING', 1, now(), now())
-                RETURNING id""", Long.class, organization.getId(), bookmark.getId(), version.getId(), owner.getId());
+                INSERT INTO prediction_job (organization_id, schema_id, schema_bookmark_id, schema_version_id,
+                    created_by_principal_id, updated_by_principal_id, status, total_rows, lease_owner, lease_expires_at,
+                    created_at, updated_at)
+                SELECT ?, b.schema_id, b.id, ?, (SELECT id FROM principal WHERE user_id = ?),
+                    (SELECT id FROM principal WHERE user_id = ?), 'RUNNING', 1, 'elsewhere', now() + interval '1 day', now(), now()
+                FROM schema_bookmark b WHERE b.id = ?
+                RETURNING id""", Long.class, organization.getId(), version.getId(), owner.getId(), owner.getId(),
+                bookmark.getId());
         jdbc.update("""
-                INSERT INTO prediction_job_row (job_id, row_index, name, input_data, model_inputs, status)
-                VALUES (?, 0, 'row', '{}', '[]', 'PENDING')""", job);
+                INSERT INTO prediction_job_row (prediction_job_id, schema_version_id, row_index, name, input_data,
+                    model_inputs, status)
+                SELECT id, schema_version_id, 0, 'row', '{}', '[]', 'PENDING' FROM prediction_job WHERE id = ?""", job);
         jdbc.update("""
-                INSERT INTO plugin_metadata (id, organization_id, plugin_type, file_name, content_type, object_key,
-                    size_bytes, sha256, storage_version_id, created_at, updated_at)
-                VALUES (?, ?, 'field', 'p.ts', 'text/plain', ?, 1, repeat('a', 64), 'v1', now(), now())""",
-                suffix, organization.getId(), "organizations/" + organization.getId() + "/plugins/items/" + suffix + ".json");
+                INSERT INTO plugin_metadata (public_id, organization_id, plugin_type, file_name, content_type, storage_bucket,
+                    storage_object_key, size_bytes, artifact_sha256, storage_version_id, created_by_principal_id,
+                    updated_by_principal_id, created_at, updated_at)
+                VALUES (?, ?, 'field', 'p.ts', 'text/plain', 'mlsuite-artifacts', ?, 1, repeat('a', 64), 'v1', (SELECT id FROM principal WHERE user_id = ?), (SELECT id FROM principal WHERE user_id = ?), now(), now())""",
+                suffix, organization.getId(), "organizations/" + organization.getId() + "/plugins/items/" + suffix + ".json",
+                owner.getId(), owner.getId());
         jdbc.update("""
-                INSERT INTO invitation (organization_id, invited_by_user_id, role_definition_id, email, status,
-                    expires_at, created_at, updated_at)
-                VALUES (?, ?, ?, 'x@example.test', 'REVOKED', now(), now(), now())""",
-                organization.getId(), owner.getId(), ownerRole.getId());
+                INSERT INTO invitation (organization_id, created_by_principal_id, updated_by_principal_id,
+                    role_definition_id, email, status, expires_at, created_at, updated_at)
+                VALUES (?, (SELECT id FROM principal WHERE user_id = ?), (SELECT id FROM principal WHERE user_id = ?), ?, 'x@example.test', 'REVOKED', now(), now(), now())""",
+                organization.getId(), owner.getId(), owner.getId(), ownerRole.getId());
         Long client = jdbc.queryForObject("""
-                INSERT INTO api_client (organization_id, name, created_by_name, created_at, updated_at)
-                VALUES (?, ?, 'Owner', now(), now()) RETURNING id""", Long.class, organization.getId(), "client-" + suffix);
-        jdbc.update("INSERT INTO api_client_bookmark (api_client_id, schema_bookmark_id) VALUES (?, ?)", client, bookmark.getId());
+                INSERT INTO api_client (organization_id, name, created_by_principal_id, updated_by_principal_id,
+                    created_at, updated_at)
+                VALUES (?, ?, (SELECT id FROM principal WHERE user_id = ?), (SELECT id FROM principal WHERE user_id = ?), now(), now()) RETURNING id""", Long.class, organization.getId(), "client-" + suffix,
+                owner.getId(), owner.getId());
+        jdbc.update("INSERT INTO api_client_bookmark (organization_id, schema_id, api_client_id, schema_bookmark_id, created_by_principal_id, created_at) SELECT c.organization_id, b.schema_id, c.id, b.id, (SELECT id FROM principal WHERE kind = 'SYSTEM'), now() FROM api_client c, schema_bookmark b WHERE c.id = ? AND b.id = ?", client, bookmark.getId());
         jdbc.update("""
-                INSERT INTO api_request (request_id, organization_id, api_client_id, client_name, key_prefix, status,
+                INSERT INTO api_request (request_id, organization_id, api_client_id, client_name, key_prefix, http_status,
                     duration_ms, created_at) VALUES (?, ?, ?, 'c', 'k', 200, 1, now())""",
                 UUID.randomUUID(), organization.getId(), client);
     }
 
     private void answeredRun(String name, User reviewer) {
         PredictionRun run = new PredictionRun(bookmark, version, name + "-" + UUID.randomUUID(), Map.of("Age", 1),
-                PredictionRunStatus.SUCCESS);
+                PredictionRunStatus.SUCCESS, principals.system());
         entityManager.persist(run);
         PredictionResult result = new PredictionResult(run, entityManager.find(forestModel.getClass(), forestModel.getId()),
                 Map.of(), Map.of(), PredictionResultStatus.SUCCESS, null, null);
         entityManager.persist(result);
         SchemaReview review = new SchemaReview(entityManager.getReference(Organization.class, organization.getId()),
-                schema, version, reviewer, OffsetDateTime.now().plusDays(1));
+                schema, version, principals.of(reviewer), OffsetDateTime.now().plusDays(1));
         entityManager.persist(review);
-        entityManager.persist(new SchemaReviewAssignee(review, reviewer));
+        entityManager.persist(new SchemaReviewAssignee(review, reviewer, principals.system()));
         SchemaReviewRun reviewRun = new SchemaReviewRun(review, run);
         entityManager.persist(reviewRun);
         entityManager.persist(new SchemaReviewRunSubmission(reviewRun, reviewer, OffsetDateTime.now()));
-        PredictionResultFeedback answer = new PredictionResultFeedback(result, reviewer, review,
+        PredictionResultFeedback answer = new PredictionResultFeedback(result, principals.of(reviewer), review,
                 PredictionResultFeedbackType.OUTPUT, 0, objectMapper.valueToTree(Map.of("a", 1)));
         entityManager.persist(answer);
         entityManager.flush();
         entityManager.persist(new PredictionResultFeedbackRevision(answer, PredictionResultFeedbackChange.CREATED,
-                reviewer.getId(), OffsetDateTime.now()));
+                principals.of(reviewer), OffsetDateTime.now()));
     }
 
     private PurgeJobDto purge(PurgeScope scope, Long id, String confirmation) {
@@ -176,10 +193,10 @@ class PurgeIntegrationTest extends PublicPredictionFixture {
         assertEquals(2, jdbc.queryForObject("SELECT count(*) FROM notification WHERE kind = 'ORGANIZATION_PURGED'"
                 + " AND target_id = ?", Long.class, organizationId.toString()));
         assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM storage_deletion_task WHERE organization_id = ?"
-                + " AND object_key = ? AND object_version_id = 'v1'", Long.class, organizationId,
-                forestModel.getStorageObjectKey()));
+                + " AND storage_object_key = ? AND storage_version_id = ?", Long.class, organizationId,
+                forestModel.getStorageObjectKey(), forestModel.getStorageVersionId()));
         assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM storage_deletion_task WHERE organization_id = ?"
-                + " AND object_key LIKE '%/plugins/%' AND object_version_id IS NULL", Long.class, organizationId));
+                + " AND storage_object_key LIKE '%/plugins/%' AND storage_version_id IS NULL", Long.class, organizationId));
         assertEquals(1, rows("app_user", "id", owner.getId()));
     }
 
@@ -241,11 +258,21 @@ class PurgeIntegrationTest extends PublicPredictionFixture {
 
     @Test
     void aPurgedModelTakesEverySnapshotThatBindsItAndLeavesTheSchema() {
-        Long keptVersion = jdbc.queryForObject("""
-                INSERT INTO schema_version (schema_id, version_number, name, form_schema_json, created_at)
-                VALUES (?, 9, 'other', '{"fields":[]}', now()) RETURNING id""", Long.class, schema.getId());
-        jdbc.update("INSERT INTO schema_model_binding (schema_version_id, model_id, created_at) VALUES (?, ?, now())",
-                keptVersion, netModel.getId());
+        Long[] written = new Long[1];
+        // A snapshot and its bindings are written together.
+        inTransaction(() -> {
+            written[0] = jdbc.queryForObject("""
+                    INSERT INTO schema_version (organization_id, schema_id, version_number, name, form_schema,
+                        created_by_principal_id, created_at)
+                    SELECT organization_id, id, 9, 'other', '{"fields":[]}', (SELECT id FROM principal WHERE kind = 'SYSTEM'), now()
+                    FROM schema WHERE id = ? RETURNING id""", Long.class, schema.getId());
+            jdbc.update("""
+                    INSERT INTO schema_model_binding (organization_id, schema_version_id, model_id, plugin_policy,
+                        created_by_principal_id, created_at)
+                    SELECT organization_id, id, ?, '{}', created_by_principal_id, now() FROM schema_version WHERE id = ?""",
+                    netModel.getId(), written[0]);
+        });
+        Long keptVersion = written[0];
         Long purgedVersion = version.getId();
         PurgeJobDto asked = purge(PurgeScope.MODEL, forestModel.getId(), "risk-forest");
 
@@ -257,7 +284,7 @@ class PurgeIntegrationTest extends PublicPredictionFixture {
         assertEquals(0, rows("schema_version", "id", purgedVersion));
         assertEquals(0, rows("schema_bookmark", "id", bookmark.getId()));
         assertEquals(1, rows("schema_version", "id", keptVersion));
-        assertEquals(1, rows("schema_artifact", "id", schema.getId()));
+        assertEquals(1, rows("schema", "id", schema.getId()));
     }
 
     @Test
@@ -267,7 +294,7 @@ class PurgeIntegrationTest extends PublicPredictionFixture {
         worker.work();
 
         assertEquals(PurgeStatus.COMPLETED, job(asked).status());
-        assertEquals(0, rows("schema_artifact", "id", schema.getId()));
+        assertEquals(0, rows("schema", "id", schema.getId()));
         assertEquals(2, rows("model", "organization_id", organization.getId()));
     }
 
@@ -275,16 +302,24 @@ class PurgeIntegrationTest extends PublicPredictionFixture {
     void aPersonLeavesTheirTeamsDataAuthoredByNobodyAndTheirPersonalAccountGoes() throws Exception {
         Long[] personal = new Long[1];
         inTransaction(() -> {
-            Organization account = Organization.personal(member);
+            Organization account = Organization.personal(member, principals.of(member));
             entityManager.persist(account);
             personal[0] = account.getId();
             answeredRun("by-member", entityManager.find(User.class, member.getId()));
-            entityManager.createQuery("update PredictionRun r set r.createdByName = 'Member' where r.schemaVersion.id = :v")
-                    .setParameter("v", version.getId()).executeUpdate();
         });
-        jdbc.update("UPDATE prediction_run SET created_by_email = ? WHERE schema_version_id = ?", member.getEmail(), version.getId());
-        jdbc.update("UPDATE model SET user_id = ? WHERE id = ?", member.getId(), forestModel.getId());
-        jdbc.update("UPDATE schema_review SET created_by_user_id = ? WHERE organization_id = ?", member.getId(), organization.getId());
+        inTransaction(() -> {
+            // Stands in for runs the member made: a run's author is otherwise written once.
+            jdbc.execute("SET LOCAL session_replication_role = replica");
+            jdbc.update("UPDATE prediction_run SET created_by_principal_id = (SELECT id FROM principal WHERE user_id = ?)"
+                    + " WHERE schema_version_id = ?", member.getId(), version.getId());
+        });
+        jdbc.update("UPDATE model SET created_by_principal_id = (SELECT id FROM principal WHERE user_id = ?),"
+                + " updated_by_principal_id = (SELECT id FROM principal WHERE user_id = ?) WHERE id = ?", member.getId(), member.getId(),
+                forestModel.getId());
+        jdbc.update("UPDATE schema_review SET created_by_principal_id = (SELECT id FROM principal WHERE user_id = ?) WHERE organization_id = ?", member.getId(),
+                organization.getId());
+        jdbc.update("UPDATE plugin_metadata SET updated_by_principal_id = (SELECT id FROM principal WHERE user_id = ?)"
+                + " WHERE organization_id = ?", member.getId(), organization.getId());
 
         PurgeJobDto asked = purge(PurgeScope.USER, member.getId(), member.getUsername());
         assertFalse(jdbc.queryForObject("SELECT enabled FROM app_user WHERE id = ?", Boolean.class, member.getId()));
@@ -294,17 +329,63 @@ class PurgeIntegrationTest extends PublicPredictionFixture {
         assertEquals(0, rows("app_user", "id", member.getId()));
         assertEquals(0, rows("organization", "id", personal[0]));
         assertEquals(1, rows("organization", "id", organization.getId()));
-        assertNull(jdbc.queryForObject("SELECT user_id FROM model WHERE id = ?", Long.class, forestModel.getId()));
+        // What the person authored keeps its author: their principal, left as "Deleted user".
+        assertEquals(DeletedUser.NAME, jdbc.queryForObject("SELECT p.former_label FROM model m JOIN principal p"
+                + " ON p.id = m.created_by_principal_id WHERE m.id = ? AND p.user_id IS NULL", String.class, forestModel.getId()));
         assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM prediction_result_feedback f JOIN prediction_result x"
                 + " ON x.id = f.prediction_result_id JOIN prediction_run r ON r.id = x.prediction_run_id"
-                + " WHERE r.schema_version_id = ? AND f.user_id IS NULL AND f.visitor_id IS NULL", Long.class, version.getId()));
-        assertEquals(DeletedUser.NAME, jdbc.queryForList(
-                "SELECT created_by_name FROM prediction_run WHERE schema_version_id = ?", String.class, version.getId()).get(0));
-        assertEquals(0, rows("prediction_run", "created_by_email", member.getEmail()));
+                + " JOIN principal p ON p.id = f.created_by_principal_id"
+                + " WHERE r.schema_version_id = ? AND p.user_id IS NULL AND p.kind = 'USER'", Long.class, version.getId()));
+        assertEquals(DeletedUser.NAME, jdbc.queryForList("SELECT p.former_label FROM prediction_run r JOIN principal p"
+                + " ON p.id = r.created_by_principal_id WHERE r.schema_version_id = ?", String.class, version.getId()).get(0));
+        assertEquals(DeletedUser.NAME, jdbc.queryForObject("SELECT p.former_label FROM plugin_metadata m JOIN principal p"
+                + " ON p.id = m.updated_by_principal_id WHERE m.organization_id = ?", String.class, organization.getId()));
         assertEquals(2, rows("schema_review", "organization_id", organization.getId()));
         assertEquals(0, rows("organization_membership", "user_id", member.getId()));
         mockMvc.perform(signedIn(get("/api/models/{id}", forestModel.getId()), owner.getId()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.updatedByName").value(DeletedUser.NAME));
+    }
+
+    /** Whatever the scope, a finished purge reports removing what its preview said it would. */
+    @ParameterizedTest
+    @EnumSource(PurgeScope.class)
+    void aPreviewCountsWhatThePurgeRemoves(PurgeScope scope) {
+        if (scope == PurgeScope.USER) leavingMember();
+        Long id = switch (scope) {
+            case ORGANIZATION -> organization.getId();
+            case USER -> member.getId();
+            case SCHEMA -> schema.getId();
+            case MODEL -> forestModel.getId();
+        };
+        PurgePreviewDto preview = purges.preview(superadmin.getId(), scope, id);
+        PurgeJobDto asked = purge(scope, id, preview.confirmation());
+        worker.work();
+
+        PurgeJobDto done = job(asked);
+        assertEquals(PurgeStatus.COMPLETED, done.status(), () -> Objects.toString(done.error()));
+        Map<String, Long> removed = new HashMap<>(done.counts());
+        removed.remove("preparedVersions");
+        Map<String, Long> previewed = new HashMap<>(preview.counts());
+        previewed.values().removeIf(count -> count == 0);
+        assertEquals(previewed, removed);
+    }
+
+    /** A member with a personal account, an invitation to their address and a team of their own with nothing in it. */
+    private void leavingMember() {
+        inTransaction(() -> {
+            entityManager.persist(Organization.personal(member, principals.of(member)));
+            Organization team = new Organization("solo-" + member.getId(), "Solo", null, principals.of(member));
+            entityManager.persist(team);
+            RoleDefinition role = new RoleDefinition(team, "Owner", "owner", "OWNER", principals.system());
+            entityManager.persist(role);
+            entityManager.persist(new OrganizationMembership(team, member, role, MembershipStatus.ACTIVE,
+                    principals.of(member)));
+        });
+        jdbc.update("""
+                INSERT INTO invitation (organization_id, created_by_principal_id, updated_by_principal_id,
+                    role_definition_id, email, status, expires_at, created_at, updated_at)
+                VALUES (?, (SELECT id FROM principal WHERE user_id = ?), (SELECT id FROM principal WHERE user_id = ?), ?, ?, 'REVOKED', now(), now(), now())""",
+                organization.getId(), owner.getId(), owner.getId(), ownerRole.getId(), member.getEmail());
     }
 
     @Test
@@ -354,8 +435,8 @@ class PurgeIntegrationTest extends PublicPredictionFixture {
         assertEquals(HttpStatus.BAD_REQUEST, assertThrows(ResponseStatusException.class,
                 () -> purge(PurgeScope.MODEL, forestModel.getId(), "risk-fores")).getStatusCode());
         inTransaction(() -> {
-            entityManager.persist(Organization.personal(member));
-            entityManager.persist(Organization.personal(superadmin));
+            entityManager.persist(Organization.personal(member, principals.of(member)));
+            entityManager.persist(Organization.personal(superadmin, principals.of(superadmin)));
         });
         assertEquals(HttpStatus.CONFLICT, assertThrows(ResponseStatusException.class,
                 () -> purge(PurgeScope.USER, superadmin.getId(), superadmin.getUsername())).getStatusCode());

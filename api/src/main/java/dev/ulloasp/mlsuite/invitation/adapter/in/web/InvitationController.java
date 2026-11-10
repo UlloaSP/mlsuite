@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.invitation.application.dto.CreateInvitationRequest;
@@ -42,6 +43,7 @@ public class InvitationController {
                 organizationId));
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/api/organizations/{organizationId}/invitations")
     public ResponseEntity<InvitationDto> createInvitation(
             CurrentUser user,
@@ -62,6 +64,7 @@ public class InvitationController {
                 invitationId));
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/api/organizations/{organizationId}/invitations/{invitationId}")
     public ResponseEntity<Void> revokeInvitation(
             CurrentUser user,
@@ -71,6 +74,7 @@ public class InvitationController {
         return ResponseEntity.noContent().build();
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @PostMapping("/api/organizations/{organizationId}/invitations/bulk-revoke")
     public ResponseEntity<Void> bulkRevokeInvitations(
             CurrentUser user,
@@ -93,6 +97,7 @@ public class InvitationController {
         return ResponseEntity.ok(invitationManagementUseCase.acceptInvitation(user.userId(), invitationId));
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @PostMapping("/api/invitations/{invitationId}/decline")
     public ResponseEntity<Void> declineInvitation(CurrentUser user, @PathVariable Long invitationId) {
         invitationManagementUseCase.declineInvitation(user.userId(), invitationId);

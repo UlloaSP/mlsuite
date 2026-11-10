@@ -14,14 +14,13 @@ import dev.ulloasp.mlsuite.plugin.domain.model.PluginMetadata;
 import dev.ulloasp.mlsuite.plugin.domain.model.StoredPlugin;
 import dev.ulloasp.mlsuite.storage.ArtifactIntegrityVerifier;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
-import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
 import dev.ulloasp.mlsuite.storage.StorageProperties;
 import lombok.RequiredArgsConstructor;
 
 /**
  * Reads a plugin as its metadata row pins it: the exact stored version, checked against its
- * SHA-256. A plugin is stored with its row in one transaction, so an object without a row is not a
- * plugin, and a plugin whose deletion is queued is already gone.
+ * size and SHA-256. A plugin is stored with its row in one transaction, and deleted with it, so an
+ * object without a row is not a plugin.
  */
 @Component
 @RequiredArgsConstructor
@@ -30,7 +29,6 @@ public class PluginObjectReader {
     private final StorageProperties properties;
     private final ObjectMapper mapper;
     private final PluginMetadataRepository metadata;
-    private final StorageDeletionQueue deletionQueue;
 
     @Transactional(readOnly = true)
     public StoredPlugin load(Long organizationId, String id) {
@@ -38,22 +36,19 @@ public class PluginObjectReader {
     }
 
     /**
-     * Empty when the plugin is queued for deletion or its object is gone. A caller that goes on after
+     * Empty when the plugin or its object is gone. A caller that goes on after
      * a missing plugin needs this instead of {@link #load}, whose exception dooms the transaction.
      */
     @Transactional(readOnly = true)
     public Optional<StoredPlugin> find(Long organizationId, String id) {
-        return metadata.findByIdAndOrganizationId(id, organizationId).flatMap(this::readPinned);
+        return metadata.findByPublicIdAndOrganizationId(id, organizationId).flatMap(this::readPinned);
     }
 
     @Transactional(readOnly = true)
     public Optional<StoredPlugin> readPinned(PluginMetadata item) {
-        if (deletionQueue.isDeletionRequested(properties.getBucket(), item.getObjectKey())) {
-            return Optional.empty();
-        }
-        return storage.loadOptional(properties.getBucket(), item.getObjectKey(), item.getStorageVersionId())
+        return storage.loadOptional(item.getStorageBucket(), item.getObjectKey(), item.getStorageVersionId())
                 .map(bytes -> {
-                    ArtifactIntegrityVerifier.verify("plugin " + item.getId(), null, item.getSha256(), bytes);
+                    ArtifactIntegrityVerifier.verify("plugin " + item.getPublicId(), item.getSizeBytes(), item.getSha256(), bytes);
                     return decode(bytes);
                 });
     }

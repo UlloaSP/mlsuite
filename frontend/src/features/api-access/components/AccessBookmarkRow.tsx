@@ -46,7 +46,7 @@ export function AccessBookmarkRow({ bookmark, disabled, onRevoke }: Props) {
               {bookmark.modelName}
             </span>
           ) : null}
-          {bookmark.apiId ? <span className="font-mono">{bookmark.apiId}</span> : null}
+          {bookmark.publicId ? <span className="font-mono">{bookmark.publicId}</span> : null}
         </p>
         {bookmark.refusal ? (
           <p className="mt-1 text-xs text-warning-fg">{bookmark.refusal}</p>

@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -67,6 +68,8 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationS
 class WorkspacePredictionServiceTest {
 
     /** A share that turns away at once a run finding it in use. */
+    /** The form values the record was mapped from. */
+    private static final Map<String, Object> FORM = Map.of("Age", 52);
     private static final RuntimeQueue NO_WAITING = new RuntimeQueue(0, 16, 0);
 
     private static final Instant NOW = Instant.parse("2026-10-27T10:00:00Z");
@@ -77,7 +80,7 @@ class WorkspacePredictionServiceTest {
             "bucket", "key", null, 3L, "abc123"),
             "e".repeat(64), ModelRuntimeState.READY);
     private static final Map<String, Object> CLASSIFIER = Map.of("kind", "classifier", "output", 0,
-            "mapping", List.of("low", "high"), "probabilities", List.of(List.of(0.2, 0.8)), "prediction", "high");
+            "mapping", List.of("low", "high"), "probabilities", List.of(0.2, 0.8), "prediction", "high");
 
     @Mock private WorkspaceAuthorizationService authorization;
     @Mock private SchemaBookmarkRepository bookmarks;
@@ -114,8 +117,14 @@ class WorkspacePredictionServiceTest {
         assertEquals("0", stored.get("mappedTo"));
         assertEquals(List.of(0.2, 0.8), stored.get("probabilities"));
         assertEquals(List.of("low", "high"), stored.get("labels"));
-        assertEquals(Map.of("modelId", "11", "backendFieldValues", INPUT), result.output().get("meta"));
-        AttestedPrediction sealed = attestations.open(result.attestation());
+        // The model and the record it was given are the result's own columns; meta is the runtime's own.
+        assertEquals(Map.of(), result.output().get("meta"));
+        SealedPrediction opened = attestations.open(result.attestation()).sealed();
+        // The seal vouches for who ran it, through which bookmark, on which form values.
+        assertEquals(7L, opened.userId());
+        assertEquals(70L, opened.schemaBookmarkId());
+        assertEquals(FORM, opened.inputData());
+        AttestedPrediction sealed = opened.prediction();
         assertEquals(41L, sealed.organizationId());
         assertEquals(9L, sealed.schemaVersionId());
         assertEquals(11L, sealed.modelId());
@@ -133,8 +142,9 @@ class WorkspacePredictionServiceTest {
         assertEquals(PredictionResultStatus.FAILED, result.status());
         assertEquals("age must be positive", result.errorMessage());
         assertEquals(Map.of("status", 422, "message", "age must be positive"), result.errorJson());
-        assertEquals(Map.of("meta", Map.of("modelId", "11", "backendFieldValues", INPUT)), result.output());
-        assertEquals(PredictionResultStatus.FAILED, attestations.open(result.attestation()).status());
+        // A failed result answered nothing but its error.
+        assertEquals(null, result.output());
+        assertEquals(PredictionResultStatus.FAILED, attestations.open(result.attestation()).sealed().prediction().status());
     }
 
     @Test
@@ -190,7 +200,7 @@ class WorkspacePredictionServiceTest {
 
     @Test
     void refusesASnapshotTheBookmarkNoLongerTargets() {
-        assertRefused(409, () -> service.predict(7L, 70L, new WorkspacePredictionRequest(8L, 11L, INPUT)));
+        assertRefused(409, () -> service.predict(7L, 70L, new WorkspacePredictionRequest(8L, 11L, INPUT, FORM)));
     }
 
     @Test
@@ -282,15 +292,15 @@ class WorkspacePredictionServiceTest {
     private void useReports(List<Map<String, Object>> reports) {
         Organization organization = new Organization();
         organization.setId(41L);
-        version = new SchemaVersion(new Schema(organization, "Risk", null), 1, "v1",
-                Map.of("fields", List.of(), "reports", reports));
+        version = new SchemaVersion(new Schema(organization, "Risk", null, TestFixtures.system()), 1, "v1",
+                Map.of("fields", List.of(), "reports", reports), TestFixtures.system());
         version.setId(9L);
         lenient().when(bookmarks.findByIdAndOrganizationId(70L, 41L))
-                .thenReturn(Optional.of(new SchemaBookmark(version.getSchema(), version, "production")));
+                .thenReturn(Optional.of(new SchemaBookmark(version.getSchema(), version, "production", TestFixtures.system())));
         lenient().when(bindings.findBoundModels(9L)).thenReturn(List.of(new BoundModel(11L, "forest", 10L)));
     }
 
     private static WorkspacePredictionRequest request(long modelId) {
-        return new WorkspacePredictionRequest(9L, modelId, INPUT);
+        return new WorkspacePredictionRequest(9L, modelId, INPUT, FORM);
     }
 }

@@ -67,7 +67,7 @@ public class AlertSignals {
             values.put(SystemAlertSignal.PREDICTION_ROWS_PENDING, row.getDouble(1));
             values.put(SystemAlertSignal.PREDICTION_OLDEST_AGE, (double) Math.round(row.getDouble(2)));
         }, OffsetDateTime.ofInstant(now, ZoneOffset.UTC));
-        values.put(SystemAlertSignal.MODELS_PREPARING, count("model WHERE runtime_state = 'PREPARING'"));
+        values.put(SystemAlertSignal.MODELS_PREPARING, count("model_preparation WHERE state = 'PREPARING'"));
         values.put(SystemAlertSignal.STORAGE_DELETIONS_FAILED, count("storage_deletion_task WHERE status = 'FAILED'"));
     }
 

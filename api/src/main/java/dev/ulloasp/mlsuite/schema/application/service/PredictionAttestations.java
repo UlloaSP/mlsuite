@@ -58,8 +58,8 @@ public class PredictionAttestations {
         this.clock = clock;
     }
 
-    /** The prediction as performed now, sealed. */
-    String seal(AttestedPrediction prediction) {
+    /** The prediction as performed now, with what it vouches for, sealed. */
+    String seal(SealedPrediction prediction) {
         try {
             byte[] payload = objectMapper.writeValueAsBytes(prediction);
             return ENCODER.encodeToString(payload) + "." + ENCODER.encodeToString(mac(payload));
@@ -77,7 +77,7 @@ public class PredictionAttestations {
      * What a seal holds, once it is known to be this server's and still valid. Anything else, a
      * malformed, altered, foreign or expired seal, is refused as a bad request.
      */
-    AttestedPrediction open(String seal) {
+    SealedPrediction.Opened open(String seal) {
         int dot = seal == null ? -1 : seal.indexOf('.');
         if (dot <= 0 || dot != seal.lastIndexOf('.')) throw notProduced();
         byte[] payload;
@@ -89,18 +89,28 @@ public class PredictionAttestations {
             throw notProduced();
         }
         if (!MessageDigest.isEqual(mac(payload), signature)) throw notProduced();
-        AttestedPrediction prediction;
+        SealedPrediction sealed;
         try {
-            prediction = objectMapper.readValue(payload, AttestedPrediction.class);
+            sealed = objectMapper.readValue(payload, SealedPrediction.class);
         } catch (JacksonException ex) {
             throw notProduced();
         }
-        long age = clock.millis() - prediction.issuedAt();
+        if (sealed.prediction() == null) throw notProduced();
+        long age = clock.millis() - sealed.prediction().issuedAt();
         if (age > LIFETIME.toMillis() || age < -CLOCK_SKEW.toMillis()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "A prediction result has expired; run the inference again before saving");
         }
-        return prediction;
+        return new SealedPrediction.Opened(sealed, sha256(seal));
+    }
+
+    private static String sha256(String seal) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(seal.getBytes(StandardCharsets.UTF_8));
+            return java.util.HexFormat.of().formatHex(digest);
+        } catch (GeneralSecurityException ex) {
+            throw new IllegalStateException("SHA-256 is unavailable", ex);
+        }
     }
 
     private byte[] mac(byte[] payload) {

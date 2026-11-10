@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.organization;
 
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -51,6 +52,7 @@ import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 @Import(SecurityConfig.class)
 @MockitoBean(types = { UserDetailsService.class, SessionAccountCheck.class })
 class OrganizationLogoHttpTest {
+
 
     private static final long USER_ID = 7L;
     private static final long ORG_ID = 41L;
@@ -116,7 +118,7 @@ class OrganizationLogoHttpTest {
 
     @Test
     void anyoneReadsTheLogoAndMayCacheItForGood() throws Exception {
-        when(logos.read(ORG_ID)).thenReturn(Optional.of(new OrganizationLogo(ORG_ID, PNG, "image/png", REPLACED)));
+        when(logos.read(ORG_ID)).thenReturn(Optional.of(new OrganizationLogo(ORG_ID, PNG, "image/png", REPLACED, TestFixtures.system())));
 
         mockMvc.perform(get("/api/public/organizations/{id}/logo", ORG_ID).param("v", "1"))
                 .andExpect(status().isOk())
@@ -134,7 +136,7 @@ class OrganizationLogoHttpTest {
     }
 
     private static OrganizationDto organization(String logoUrl) {
-        return new OrganizationDto(ORG_ID, "acme", "Acme", OrganizationKind.TEAM, null, logoUrl, REPLACED, REPLACED);
+        return new OrganizationDto(ORG_ID, "acme", "Acme", OrganizationKind.TEAM, null, logoUrl, REPLACED, REPLACED, "Owner", "Owner");
     }
 
     private static AbstractMockHttpServletRequestBuilder<?> signedIn(AbstractMockHttpServletRequestBuilder<?> request) {

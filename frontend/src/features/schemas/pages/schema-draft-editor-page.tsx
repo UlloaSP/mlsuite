@@ -11,7 +11,6 @@ import { useAtom, useSelector } from "@tanstack/react-store";
 import { AppLink } from "@/shared/ui/AppLink";
 import { toast } from "@/shared/ui/toast";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
-import { withSeriesColumns } from "@/capabilities/prediction-runtime/mlform/series-schema";
 import {
   useSchema,
   useSchemaDraft,
@@ -61,10 +60,8 @@ export function SchemaDraftEditorPage() {
 
   useEffect(() => {
     if (!draft) return;
-    const formSchema =
-      draft.status === "PUBLISHED" ? draft.formSchema : withSeriesColumns(draft.formSchema);
-    setSchema(formSchema);
-    setSchemaText(JSON.stringify(formSchema, null, 2));
+    setSchema(draft.formSchema);
+    setSchemaText(JSON.stringify(draft.formSchema, null, 2));
   }, [draft, setSchema, setSchemaText]);
 
   const save = async () => {

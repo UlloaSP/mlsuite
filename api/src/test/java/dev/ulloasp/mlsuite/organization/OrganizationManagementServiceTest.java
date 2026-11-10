@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.organization;
 
+import org.springframework.web.server.ResponseStatusException;
 import static dev.ulloasp.mlsuite.support.TestFixtures.user;
 import static dev.ulloasp.mlsuite.support.TestFixtures.organization;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -98,7 +99,8 @@ class OrganizationManagementServiceTest {
                 roleSeedService,
                 roleDefinitionRepository,
                 organizationDeletionService,
-                organizationStatsService, mock(AuditLogService.class));
+                organizationStatsService, mock(AuditLogService.class), TestFixtures.principals(),
+                org.mockito.Mockito.mock(dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewAssigneeRepository.class));
     }
 
     @Test
@@ -129,7 +131,7 @@ class OrganizationManagementServiceTest {
         when(workspaceAccessService.requireUser(7L)).thenReturn(actor);
         when(workspaceAccessService.isSuperadmin(7L)).thenReturn(false);
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ResponseStatusException.class,
                 () -> service.createOrganization(7L, new CreateOrganizationRequest("Acme", "acme", null, 8L)));
     }
 
@@ -183,7 +185,7 @@ class OrganizationManagementServiceTest {
         when(membershipRepository.findActiveByOrganizationIdOrderByCreatedAtAsc(41L))
                 .thenReturn(List.of(owner, target));
         when(membershipRepository.save(owner)).thenReturn(owner);
-        when(membershipRepository.save(target)).thenReturn(target);
+        when(membershipRepository.saveAndFlush(target)).thenReturn(target);
         RoleDefinition adminRole = orgRole(OrganizationRole.ADMIN);
         RoleDefinition ownerRole = orgRole(OrganizationRole.OWNER);
         when(roleSeedService.orgRole(target.getOrganization(), OrganizationRole.ADMIN)).thenReturn(adminRole);
@@ -237,7 +239,7 @@ class OrganizationManagementServiceTest {
                         List.of(RoleSummaryDto.from(reviewerRole))));
         when(roleDefinitionRepository.findByIdAndOrganizationId(5L, 41L))
                 .thenReturn(Optional.of(reviewerRole));
-        when(membershipRepository.save(target)).thenReturn(target);
+        when(membershipRepository.saveAndFlush(target)).thenReturn(target);
 
         var result = service.updateMemberRole(7L, 41L, 2L, new UpdateOrganizationMembershipRoleRequest(5L));
 
@@ -246,7 +248,7 @@ class OrganizationManagementServiceTest {
     }
 
     private OrganizationMembership membership(Long id, OrganizationRole role, MembershipStatus status) {
-        OrganizationMembership membership = new OrganizationMembership(organization(), user(id), orgRole(role), status);
+        OrganizationMembership membership = new OrganizationMembership(organization(), user(id), orgRole(role), status, TestFixtures.principal(user(id)));
         membership.setId(id);
         return membership;
     }

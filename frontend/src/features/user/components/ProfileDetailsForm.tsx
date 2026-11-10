@@ -14,6 +14,7 @@ import { AppSpinner } from "@/shared/ui/AppSpinner";
 import { AppSwitch } from "@/shared/ui/AppSwitch";
 import { AppTextArea } from "@/shared/ui/AppTextArea";
 import { AppTextField } from "@/shared/ui/AppTextField";
+import { useLeaveGuard } from "@/shared/ui/use-leave-guard";
 import type { UserDto } from "@/shared/api/openapi.gen";
 
 const BIO_MAX_LENGTH = 280;
@@ -21,7 +22,7 @@ const LINK_SLOTS = [0, 1, 2, 3];
 
 const draftOf = (user: UserDto) => ({
   fullName: user.fullName,
-  handle: user.userName,
+  handle: user.username,
   bio: user.bio ?? "",
   company: user.company ?? "",
   location: user.location ?? "",
@@ -35,6 +36,11 @@ const draftOf = (user: UserDto) => ({
 export function ProfileDetailsForm({ user }: { user: UserDto }) {
   const [draft, setDraft] = useState(() => draftOf(user));
   const update = useUpdateProfile();
+  // The saved profile comes back as `user`, so edits count as unsaved until it matches them.
+  const leaveGuard = useLeaveGuard(
+    JSON.stringify(draft) !== JSON.stringify(draftOf(user)),
+    "Your profile changes",
+  );
   const set = <K extends keyof typeof draft>(key: K, value: (typeof draft)[K]) => {
     update.reset();
     setDraft((current) => ({ ...current, [key]: value }));
@@ -50,6 +56,7 @@ export function ProfileDetailsForm({ user }: { user: UserDto }) {
 
   return (
     <form className="grid gap-5" onSubmit={submit}>
+      {leaveGuard}
       <h2 className="text-xl font-semibold text-fg">Details</h2>
       <AppFieldLabel label="Name">
         <AppTextField required maxLength={150} autoComplete="name" {...text("fullName")} />
@@ -57,7 +64,7 @@ export function ProfileDetailsForm({ user }: { user: UserDto }) {
       <AppFieldLabel label="Handle">
         <AppTextField required maxLength={39} autoComplete="username" {...text("handle")} />
       </AppFieldLabel>
-      {draft.handle.trim().toLowerCase() !== user.userName ? (
+      {draft.handle.trim().toLowerCase() !== user.username ? (
         <AppCopy>
           Your profile moves to the new handle. The old address stops working, and anyone can take
           the old handle.

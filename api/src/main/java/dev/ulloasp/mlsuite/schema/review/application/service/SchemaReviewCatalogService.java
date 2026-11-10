@@ -2,10 +2,12 @@ package dev.ulloasp.mlsuite.schema.review.application.service;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -41,6 +43,7 @@ import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewRunSubmission;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewState;
 import dev.ulloasp.mlsuite.util.CatalogPages;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -69,7 +72,7 @@ public class SchemaReviewCatalogService implements SchemaReviewCatalogUseCase {
     public ReviewInboxCatalogDto inboxRuns(Long userId, CatalogRequest request) {
         Long organizationId = reviewerOrganization(userId);
         OffsetDateTime now = now();
-        Page<ReviewerRun> page = reviewRuns.findInboxPage(organizationId, userId, now, request.filter(),
+        Page<ReviewerRun> page = reviewRuns.findInboxPage(organizationId, userId, now, runState(request),
                 CatalogPages.likeLiteral(request.search()), unsorted(request));
         List<ReviewerRun> rows = page.getContent();
         List<SchemaReviewRunListItemDto> runs = items(userId, rows);
@@ -106,8 +109,9 @@ public class SchemaReviewCatalogService implements SchemaReviewCatalogUseCase {
 
     @Override
     public PageDto<SchemaReviewRunListItemDto> reviewRuns(Long userId, String reviewId, CatalogRequest request) {
+        String state = runState(request);
         SchemaReview review = accessibleReview(userId, reviewId);
-        Page<ReviewerRun> page = reviewRuns.findReviewPage(review.getId(), userId, request.filter(),
+        Page<ReviewerRun> page = reviewRuns.findReviewPage(review.getId(), userId, state,
                 CatalogPages.likeLiteral(request.search()), unsorted(request));
         return PageDto.of(page, items(userId, page.getContent()));
     }
@@ -122,8 +126,10 @@ public class SchemaReviewCatalogService implements SchemaReviewCatalogUseCase {
     public PageDto<ManagedReviewDto> managed(Long userId, CatalogRequest request) {
         Long organizationId = workspaceAccess.requireCurrentOrganization(userId).getId();
         authorization.require(userId, organizationId, PermissionKey.MANAGE_REVIEWS);
+        String filter = CatalogValues.require("filter", request.requireOneOrder().filter(),
+                List.of("all", "open", "expired", "empty"));
         Page<SchemaReviewRepository.ManagedReview> page = reviews.findManagedPage(organizationId,
-                CatalogPages.likeLiteral(request.search()), request.filter(), now(), unsorted(request));
+                CatalogPages.likeLiteral(request.search()), filter, now(), unsorted(request));
         return PageDto.of(page, page.getContent().stream().map(ManagedReviewDto::from).toList());
     }
 
@@ -181,6 +187,13 @@ public class SchemaReviewCatalogService implements SchemaReviewCatalogUseCase {
     }
 
     /** The queries carry their own order, which a page request must not replace. */
+    /** A reviewer's runs: all, the active ones (not completed), or those in one state. */
+    private static String runState(CatalogRequest request) {
+        return CatalogValues.require("filter", request.requireOneOrder().filter(), Stream.concat(
+                Stream.of("all", "active"), Arrays.stream(SchemaReviewState.values()).map(SchemaReviewState::name))
+                .toList());
+    }
+
     private Pageable unsorted(CatalogRequest request) {
         return CatalogPages.pageable(request, Sort.unsorted());
     }

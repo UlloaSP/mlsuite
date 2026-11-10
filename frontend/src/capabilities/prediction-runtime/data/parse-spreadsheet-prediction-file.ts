@@ -7,6 +7,7 @@ import { readSheet } from "read-excel-file/browser";
 import { parseCsvPredictionFile } from "@/capabilities/prediction-runtime/data/parse-csv-prediction-file";
 import {
   parseTabularPredictionRecords,
+  rejectFile,
   type BulkPredictionRecord,
   type ParseBulkPredictionResult,
   type SkippedRecord,
@@ -53,24 +54,16 @@ export async function parseSpreadsheetPredictionFile(
   }
 
   if (!isXlsxFile(file)) {
-    return {
-      records: [],
-      skipped: [{ line: 0, reason: "Unsupported file type. Upload a CSV or XLSX file." }],
-    };
+    return rejectFile({ line: 0, reason: "Unsupported file type. Upload a CSV or XLSX file." });
   }
 
   try {
     const rows = await readSheet(file);
     return parseTabularPredictionRecords(toRows(rows), schemaDefinition, maxRecords, autoNameBase);
   } catch (error: unknown) {
-    return {
-      records: [],
-      skipped: [
-        {
-          line: 0,
-          reason: error instanceof Error ? error.message : "XLSX file could not be read",
-        },
-      ],
-    };
+    return rejectFile({
+      line: 0,
+      reason: error instanceof Error ? error.message : "XLSX file could not be read",
+    });
   }
 }

@@ -1,12 +1,12 @@
 package dev.ulloasp.mlsuite.schema.domain.model;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
-import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ForeignKey;
@@ -22,16 +22,18 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "schema_artifact", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_schema_artifact_org_name", columnNames = { "organization_id", "name" })
+@Table(name = "schema", uniqueConstraints = {
+        @UniqueConstraint(name = "uq_schema_org_name", columnNames = { "organization_id", "name" })
 })
 @Getter
 @Setter
 @NoArgsConstructor
 public class Schema {
 
-    public Schema(Organization organization, String name, String description) {
+    public Schema(Organization organization, String name, String description, Principal createdBy) {
         this.organization = organization;
+        this.createdBy = createdBy;
+        this.updatedBy = createdBy;
         this.name = name;
         this.description = description;
     }
@@ -41,7 +43,7 @@ public class Schema {
     private Long id;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "organization_id", nullable = false, foreignKey = @ForeignKey(name = "fk_schema_artifact_org"))
+    @JoinColumn(name = "organization_id", nullable = false, foreignKey = @ForeignKey(name = "fk_schema_org"))
     private Organization organization;
 
     @Column(name = "name", nullable = false, length = 180)
@@ -50,13 +52,15 @@ public class Schema {
     @Column(name = "description", length = 800)
     private String description;
 
-    @ManyToOne
-    @JoinColumn(name = "created_by", foreignKey = @ForeignKey(name = "fk_schema_artifact_created_by"))
-    private User createdBy;
+    /** Who created it. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
 
-    @ManyToOne
-    @JoinColumn(name = "updated_by", foreignKey = @ForeignKey(name = "fk_schema_artifact_updated_by"))
-    private User updatedBy;
+    /** Who changed it last. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "updated_by_principal_id", nullable = false)
+    private Principal updatedBy;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")

@@ -59,7 +59,7 @@ export function SchemaChangeCatalogItem({ baseSnapshotName, draft, onRename, sch
               {baseSnapshotName ?? "Snapshot"} · v{draft.baseVersion}
             </span>
             <span>
-              Updated <LiveRelativeTime value={draft.updatedAt} /> ago
+              Updated <LiveRelativeTime value={draft.updatedAt} />
             </span>
           </>
         }

@@ -22,9 +22,9 @@ import dev.ulloasp.mlsuite.role.application.dto.RoleDefinitionDto;
 import dev.ulloasp.mlsuite.role.application.dto.RoleTemplateDto;
 import dev.ulloasp.mlsuite.role.application.port.in.RoleListCatalogUseCase;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.util.CatalogPages;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -51,7 +51,7 @@ public class RoleListCatalogService implements RoleListCatalogUseCase {
     public RoleCatalogMetadataDto metadata(Long userId, Long organizationId) {
         catalog.requireReadable(userId, organizationId);
         return new RoleCatalogMetadataDto(
-                roleRepository.countByOrganizationIdAndScope(organizationId, RoleScope.ORGANIZATION),
+                roleRepository.countByOrganizationId(organizationId),
                 catalog.templates().size(),
                 catalog.catalog());
     }
@@ -61,7 +61,8 @@ public class RoleListCatalogService implements RoleListCatalogUseCase {
     public PageDto<RoleDefinitionDto> roles(Long userId, Long organizationId, CatalogRequest request) {
         catalog.requireReadable(userId, organizationId);
         WorkspacePermissionsDto permissions = authorization.workspacePermissions(userId, organizationId);
-        boolean withoutOwner = request.filter().equals("invitable") && !permissions.canTransferOwnership();
+        String filter = CatalogValues.require("filter", request.requireOneOrder().filter(), List.of("all", "invitable"));
+        boolean withoutOwner = filter.equals("invitable") && !permissions.canTransferOwnership();
         Page<RoleDefinition> page = roleRepository.findAll(
                 matching(organizationId, request.search(), withoutOwner),
                 CatalogPages.pageable(request, LOCKED_FIRST_BY_NAME));
@@ -75,6 +76,7 @@ public class RoleListCatalogService implements RoleListCatalogUseCase {
     @Override
     public PageDto<RoleTemplateDto> templates(Long userId, Long organizationId, CatalogRequest request) {
         catalog.requireReadable(userId, organizationId);
+        request.requireNoChoices();
         return CatalogPages.of(catalog.templates(), request,
                 item -> CatalogPages.contains(request.search(), item.name(), item.description()),
                 Comparator.comparing(RoleTemplateDto::name, String.CASE_INSENSITIVE_ORDER)
@@ -85,6 +87,7 @@ public class RoleListCatalogService implements RoleListCatalogUseCase {
     @Override
     public PageDto<PermissionGroupDto> permissions(Long userId, Long organizationId, CatalogRequest request) {
         catalog.requireReadable(userId, organizationId);
+        request.requireNoChoices();
         List<PermissionGroupDto> groups = catalog.catalog().stream()
                 .map(group -> new PermissionGroupDto(group.name(), group.permissions().stream()
                         .filter(item -> CatalogPages.contains(request.search(), group.name(), item.label(),
@@ -100,7 +103,6 @@ public class RoleListCatalogService implements RoleListCatalogUseCase {
             String pattern = CatalogPages.likeLiteral(search);
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(builder.equal(root.get("organization").get("id"), organizationId));
-            predicates.add(builder.equal(root.get("scope"), RoleScope.ORGANIZATION));
             predicates.add(builder.or(
                     builder.like(builder.lower(root.get("name")), pattern, '!'),
                     builder.like(builder.lower(root.get("description")), pattern, '!')));

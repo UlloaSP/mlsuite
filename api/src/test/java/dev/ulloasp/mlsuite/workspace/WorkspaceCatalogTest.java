@@ -17,16 +17,19 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
 /** The current workspace context and the organizations a user may switch to, on PostgreSQL. */
 class WorkspaceCatalogTest extends PublicPredictionFixture {
+
+    @Autowired
+    private Principals principals;
     private static final String CURRENT = "/api/workspace/context/current";
     private static final String ORGANIZATIONS = "/api/workspace/context/organizations/catalog";
 
@@ -64,7 +67,7 @@ class WorkspaceCatalogTest extends PublicPredictionFixture {
         mockMvc.perform(asOwner(select(north)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.currentOrganization.id").value(north.getId()))
-                .andExpect(jsonPath("$.currentMembership.roleDefinition.name").value("Member"))
+                .andExpect(jsonPath("$.currentMembership.roleDefinition.name").value("Workspace member"))
                 .andExpect(jsonPath("$.permissions.canTransferOwnership").value(false))
                 .andExpect(jsonPath("$.membershipCount").value(2));
         mockMvc.perform(asOwner(get(CURRENT)))
@@ -115,15 +118,15 @@ class WorkspaceCatalogTest extends PublicPredictionFixture {
     /** An organization named after the test, which the owner joined with that status, or not at all. */
     private Organization organization(String name, MembershipStatus membership) {
         Organization created = new Organization(name.toLowerCase() + "-" + schema.getId(), name + " " + mark, null,
-                owner);
+                principals.of(owner));
         entityManager.persist(created);
         roleSeedService.createOrganizationRoles(created);
         if (membership != null) {
             // This custom role must not occupy a system slug when another context seeds this database.
-            RoleDefinition role = new RoleDefinition(created, RoleScope.ORGANIZATION, "Member", "workspace-member", null);
+            RoleDefinition role = new RoleDefinition(created, "Workspace member", "workspace-member", null, principals.system());
             role.setPermissions(EnumSet.of(PermissionKey.VIEW_WORKSPACE));
             entityManager.persist(role);
-            entityManager.persist(new OrganizationMembership(created, owner, role, membership));
+            entityManager.persist(new OrganizationMembership(created, owner, role, membership, principals.of(owner)));
         }
         return created;
     }

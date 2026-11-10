@@ -5,8 +5,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 package dev.ulloasp.mlsuite.user.adapter.in.web;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkSummaryDto;
@@ -77,6 +79,7 @@ public class UserController {
     }
 
     /** The account closes now, and this session with it; its purge runs on the server afterwards. */
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/me")
     public ResponseEntity<Void> deleteAccount(CurrentUser user, @Valid @RequestBody DeleteAccountRequest request,
             HttpServletRequest servletRequest) {

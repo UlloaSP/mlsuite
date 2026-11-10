@@ -18,13 +18,12 @@ import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
 import { SchemaSnapshotCatalogItem } from "@/features/schemas/components/SchemaSnapshotCatalogItem";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
-type SnapshotFilter = "all" | "latest" | "withBindings";
+type SnapshotFilter = "all" | "latest";
 type SnapshotSort = "created" | "version" | "name";
 
 const FILTERS: Array<{ value: SnapshotFilter; label: string }> = [
   { value: "all", label: "All" },
   { value: "latest", label: "Latest" },
-  { value: "withBindings", label: "With bindings" },
 ];
 const SORTS: Array<{ value: SnapshotSort; label: string }> = [
   { value: "created", label: "Latest created" },

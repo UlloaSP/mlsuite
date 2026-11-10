@@ -31,7 +31,7 @@ export const answerHistoryGroups = (
           resultIds.has(revision.resultId) &&
           revision.type === step.type &&
           revision.order === step.order &&
-          (authorId === undefined || revision.userId === authorId),
+          (authorId === undefined || revision.authorUserId === authorId),
       )
       .sort((left, right) => right.id - left.id);
     return matching.length > 0 ? [{ step, revisions: matching }] : [];

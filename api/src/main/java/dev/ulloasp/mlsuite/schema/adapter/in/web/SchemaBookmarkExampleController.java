@@ -2,12 +2,14 @@ package dev.ulloasp.mlsuite.schema.adapter.in.web;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaBookmarkExampleDto;
@@ -33,6 +35,7 @@ public class SchemaBookmarkExampleController {
         return ResponseEntity.ok(examples.markExample(user.userId(), bookmarkId, runId));
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{runId}")
     public ResponseEntity<Void> unmark(CurrentUser user, @PathVariable Long bookmarkId, @PathVariable Long runId) {
         examples.unmarkExample(user.userId(), bookmarkId, runId);

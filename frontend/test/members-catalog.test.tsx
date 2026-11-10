@@ -16,7 +16,7 @@ const rows = Array.from({ length: 49 }, (_, index) => ({
   fullName: `Person ${index + 1}`,
   email: `person${index + 1}@example.com`,
   status: "ACTIVE",
-  role: {
+  roleDefinition: {
     id: index === 48 ? 9 : 3,
     name: index === 48 ? "Custom reviewer" : "Owner",
     systemKey: index === 48 ? null : "OWNER",
@@ -42,8 +42,8 @@ beforeEach(() => {
         JSON.stringify({
           items:
             url.searchParams.get("filter") === "9" || url.searchParams.get("search")
-              ? [rows[48]!.role]
-              : [rows[0]!.role, rows[48]!.role],
+              ? [rows[48]!.roleDefinition]
+              : [rows[0]!.roleDefinition, rows[48]!.roleDefinition],
           page: 0,
           size: 24,
           totalItems: 2,

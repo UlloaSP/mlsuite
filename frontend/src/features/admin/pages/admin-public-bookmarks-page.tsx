@@ -54,10 +54,10 @@ export function AdminPublicBookmarksPage() {
       accessFallback={<NotFoundError />}
       controls={controls}
       header={{
-        title: "Public bookmarks",
+        title: "Moderation",
         description:
           "Review what every organization has published and unpublish what should not be public.",
-        breadcrumbs: [{ label: "Public bookmarks" }],
+        breadcrumbs: [{ label: "Moderation" }],
       }}
       isActionPending={unpublish.isPending}
       loadingLabel="Loading public bookmarks…"

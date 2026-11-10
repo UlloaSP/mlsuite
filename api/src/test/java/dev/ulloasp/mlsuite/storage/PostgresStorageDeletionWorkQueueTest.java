@@ -71,7 +71,7 @@ class PostgresStorageDeletionWorkQueueTest {
     @Test
     void aClaimCarriesTheVersionItRemoves() {
         jdbc.update("TRUNCATE storage_deletion_task RESTART IDENTITY");
-        jdbc.update("INSERT INTO storage_deletion_task (bucket, object_key, object_version_id) VALUES ('models', 'k', 'v9')");
+        jdbc.update("INSERT INTO storage_deletion_task (storage_bucket, storage_object_key, storage_version_id) VALUES ('models', 'k', 'v9')");
 
         assertEquals("v9", queue.claim(1, 300, "worker").get(0).versionId());
     }
@@ -80,12 +80,12 @@ class PostgresStorageDeletionWorkQueueTest {
     void completedTasksArePrunedInBatchesOncePastTheCutoff() {
         jdbc.update("TRUNCATE storage_deletion_task RESTART IDENTITY");
         for (int index = 1; index <= 3; index++) {
-            jdbc.update("INSERT INTO storage_deletion_task (bucket, object_key, status, completed_at)"
+            jdbc.update("INSERT INTO storage_deletion_task (storage_bucket, storage_object_key, status, completed_at)"
                     + " VALUES ('models', ?, 'COMPLETED', now() - interval '10 days')", "old-" + index);
         }
-        jdbc.update("INSERT INTO storage_deletion_task (bucket, object_key, status, completed_at)"
+        jdbc.update("INSERT INTO storage_deletion_task (storage_bucket, storage_object_key, status, completed_at)"
                 + " VALUES ('models', 'recent', 'COMPLETED', now())");
-        jdbc.update("INSERT INTO storage_deletion_task (bucket, object_key, created_at) VALUES ('models', 'open', now() - interval '10 days')");
+        jdbc.update("INSERT INTO storage_deletion_task (storage_bucket, storage_object_key, created_at) VALUES ('models', 'open', now() - interval '10 days')");
         var cutoff = java.time.OffsetDateTime.now().minusDays(7);
 
         assertEquals(2, queue.pruneCompleted(cutoff, 2));
@@ -98,7 +98,7 @@ class PostgresStorageDeletionWorkQueueTest {
     void workersClaimDisjointBatchesAndExpiredLeasesAreFenced() {
         jdbc.update("TRUNCATE storage_deletion_task RESTART IDENTITY");
         for (int index = 1; index <= 3; index++) {
-            jdbc.update("INSERT INTO storage_deletion_task (bucket, object_key) VALUES ('models', ?)", "key-" + index);
+            jdbc.update("INSERT INTO storage_deletion_task (storage_bucket, storage_object_key) VALUES ('models', ?)", "key-" + index);
         }
 
         var firstClaim = queue.claim(2, 300, "worker-a");
@@ -110,7 +110,7 @@ class PostgresStorageDeletionWorkQueueTest {
         Set<Long> secondIds = secondClaim.stream().map(StorageDeletionWorkItem::id).collect(Collectors.toSet());
         assertEquals(Set.of(), firstIds.stream().filter(secondIds::contains).collect(Collectors.toSet()));
 
-        jdbc.update("UPDATE storage_deletion_task SET processing_started_at = now() - interval '10 minutes' WHERE id = ?",
+        jdbc.update("UPDATE storage_deletion_task SET lease_expires_at = now() - interval '5 minutes' WHERE id = ?",
                 firstClaim.getFirst().id());
         var reclaimed = queue.claim(1, 300, "worker-b").getFirst();
         assertEquals(firstClaim.getFirst().id(), reclaimed.id());
@@ -126,7 +126,7 @@ class PostgresStorageDeletionWorkQueueTest {
     @Test
     void failuresBackOffUntilTheAttemptLimitAndRejectAnExpiredToken() {
         jdbc.update("TRUNCATE storage_deletion_task RESTART IDENTITY");
-        jdbc.update("INSERT INTO storage_deletion_task (bucket, object_key) VALUES ('models', 'retry-me')");
+        jdbc.update("INSERT INTO storage_deletion_task (storage_bucket, storage_object_key) VALUES ('models', 'retry-me')");
 
         var firstClaim = queue.claim(1, 300, "first-token").getFirst();
         queue.fail(firstClaim.id(), "wrong-token", "must be ignored", 2);
@@ -148,7 +148,7 @@ class PostgresStorageDeletionWorkQueueTest {
         assertEquals("FAILED", status(secondClaim.id()));
         assertEquals(2, attempts(secondClaim.id()));
         assertEquals("permanent outage", jdbc.queryForObject(
-                "SELECT last_error FROM storage_deletion_task WHERE id = ?", String.class, secondClaim.id()));
+                "SELECT error_message FROM storage_deletion_task WHERE id = ?", String.class, secondClaim.id()));
     }
 
     private String status(Long id) {

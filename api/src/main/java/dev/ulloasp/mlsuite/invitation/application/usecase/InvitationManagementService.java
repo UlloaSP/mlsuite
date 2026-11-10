@@ -1,12 +1,16 @@
 package dev.ulloasp.mlsuite.invitation.application.usecase;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
@@ -23,7 +27,6 @@ import dev.ulloasp.mlsuite.invitation.domain.model.InvitationStatus;
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.notification.application.service.NotificationService;
 import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
-import dev.ulloasp.mlsuite.notification.domain.model.NotificationTargetType;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
@@ -35,7 +38,6 @@ import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
-import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
@@ -57,6 +59,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     private final RoleDefinitionRepository roleDefinitionRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final Principals principals;
 
     @Override
     public List<InvitationDto> listInvitations(Long userId, Long organizationId) {
@@ -86,21 +89,25 @@ public class InvitationManagementService implements InvitationManagementUseCase 
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
         organization.requireTeam(InvitationCatalogService.NO_INVITATIONS);
         RoleDefinition roleDefinition = resolveRoleDefinition(organization, request);
+        String email = request.email().strip().toLowerCase();
+        if (organizationMembershipRepository.existsActiveByOrganizationIdAndEmail(organizationId, email)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, email + " is already a member of this organization.");
+        }
         if (OrganizationRole.OWNER.name().equals(roleDefinition.getSystemKey())
                 && !workspaceAuthorizationService.has(userId, organizationId, PermissionKey.TRANSFER_OWNERSHIP)) {
             throw new IllegalArgumentException("Only owners can transfer ownership.");
         }
         Invitation invitation = new Invitation(
                 organization,
-                request.email().strip().toLowerCase(),
+                email,
                 roleDefinition,
-                user,
+                principals.of(user),
                 OffsetDateTime.now(ZoneOffset.UTC).plusDays(7));
         Invitation saved = invitationRepository.save(invitation);
         if (user.getSystemRole() == SystemRole.SUPERADMIN) {
             User invitee = userRepository.findByEmailIgnoreCase(saved.getEmail())
                     .orElseThrow(() -> new IllegalArgumentException("Invited user does not exist."));
-            acceptPendingInvitation(saved, invitee);
+            acceptPendingInvitation(saved, invitee, principals.of(user));
             if (!invitee.getId().equals(userId)) {
                 notificationService.notify(invitee.getId(), organizationId, NotificationKind.ORGANIZATION_JOINED,
                         organizationId.toString(), invited(saved));
@@ -118,10 +125,13 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         User user = workspaceAccessService.requireUser(userId);
         workspaceAuthorizationService.require(userId, organizationId, PermissionKey.MANAGE_INVITATIONS);
         Invitation invitation = requireOrganizationInvitation(organizationId, invitationId);
-        if (invitation.getStatus() == InvitationStatus.ACCEPTED) {
-            throw new IllegalArgumentException("Accepted invitation cannot be resent.");
+        // A revoked, declined or accepted invitation is closed: a new one is sent instead.
+        if (invitation.getStatus() != InvitationStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Only a pending or expired invitation can be resent; send a new invitation instead.");
         }
         invitation.setStatus(InvitationStatus.PENDING);
+        invitation.setUpdatedBy(principals.of(user));
         invitation.setExpiresAt(OffsetDateTime.now(ZoneOffset.UTC).plusDays(7));
         Invitation saved = invitationRepository.save(invitation);
         notifyInvitee(saved);
@@ -138,8 +148,15 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         if (!invitation.getOrganization().getId().equals(organizationId)) {
             throw new IllegalArgumentException("Invitation does not belong to organization.");
         }
+        if (invitation.getStatus() != InvitationStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "This invitation was already " + invitation.getStatus().name().toLowerCase() + ".");
+        }
         invitation.setStatus(InvitationStatus.REVOKED);
+        invitation.setUpdatedBy(principals.user(userId));
         invitationRepository.save(invitation);
+        // The invitee is no longer invited: what told them so is taken back.
+        notificationService.withdraw(NotificationKind.INVITATION_RECEIVED, invitationId.toString());
         auditLogService.record(AuditActor.user(userId), organizationId, AuditAction.INVITATION_REVOKE, invitationId,
                 AuditDetails.of("email", invitation.getEmail()));
     }
@@ -155,7 +172,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     public InvitationDto acceptInvitation(Long userId, Long invitationId) {
         User user = userLookupService.requireById(userId);
         Invitation invitation = requireOwnPendingInvitation(user, invitationId);
-        acceptPendingInvitation(invitation, user);
+        acceptPendingInvitation(invitation, user, principals.of(user));
         auditLogService.record(AuditActor.user(userId), invitation.getOrganization().getId(),
                 AuditAction.INVITATION_ACCEPT, invitationId, AuditDetails.of("role", invitation.getRoleDefinition().getName()));
         notifyAnswered(invitation, user, NotificationKind.INVITATION_ACCEPTED);
@@ -166,7 +183,8 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     public void declineInvitation(Long userId, Long invitationId) {
         User user = userLookupService.requireById(userId);
         Invitation invitation = requireOwnPendingInvitation(user, invitationId);
-        invitation.setStatus(InvitationStatus.REVOKED);
+        invitation.setStatus(InvitationStatus.DECLINED);
+        invitation.setUpdatedBy(principals.of(user));
         invitationRepository.save(invitation);
         auditLogService.record(AuditActor.user(userId), invitation.getOrganization().getId(),
                 AuditAction.INVITATION_DECLINE, invitationId);
@@ -195,27 +213,31 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         if (invitation.getStatus() != InvitationStatus.PENDING) {
             throw new IllegalArgumentException("Invitation is not pending.");
         }
-        if (invitation.getExpiresAt().isBefore(OffsetDateTime.now(ZoneOffset.UTC))) {
-            invitation.setStatus(InvitationStatus.EXPIRED);
-            invitationRepository.save(invitation);
+        if (invitation.statusAt(OffsetDateTime.now(ZoneOffset.UTC)) == InvitationStatus.EXPIRED) {
             throw new IllegalArgumentException("Invitation expired.");
         }
         return invitation;
     }
 
-    private void acceptPendingInvitation(Invitation invitation, User user) {
+    /**
+     * Makes the invitee a member. {@code by} is who did it: the invitee accepting, or the superadmin
+     * who added them directly.
+     */
+    private void acceptPendingInvitation(Invitation invitation, User user, Principal by) {
         RoleDefinition roleDefinition = invitation.getRoleDefinition();
         var existingMembership = organizationMembershipRepository
                 .findByOrganizationIdAndUserId(invitation.getOrganization().getId(), user.getId());
         OrganizationMembership membership = existingMembership.orElseGet(() -> new OrganizationMembership(
-                invitation.getOrganization(), user, roleDefinition, MembershipStatus.ACTIVE));
+                invitation.getOrganization(), user, roleDefinition, MembershipStatus.ACTIVE, by));
         if (existingMembership.isEmpty() || membership.getStatus() != MembershipStatus.ACTIVE) {
             membership.setStatus(MembershipStatus.ACTIVE);
+            membership.setUpdatedBy(by);
             membership.setRoleDefinition(roleDefinition);
             organizationMembershipRepository.save(membership);
         }
         user.setCurrentOrganization(invitation.getOrganization());
         invitation.setStatus(InvitationStatus.ACCEPTED);
+        invitation.setUpdatedBy(by);
         invitationRepository.save(invitation);
     }
 
@@ -228,16 +250,18 @@ public class InvitationManagementService implements InvitationManagementUseCase 
 
     private void notifyAnswered(Invitation invitation, User invitee, NotificationKind answer) {
         String id = invitation.getId().toString();
-        notificationService.markTargetRead(invitee.getId(), NotificationTargetType.INVITATION, id);
-        if (invitation.getInvitedBy() == null) return;
-        notificationService.notify(invitation.getInvitedBy().getId(), invitation.getOrganization().getId(), answer, id,
+        notificationService.recordAnswer(invitee.getId(), NotificationKind.INVITATION_RECEIVED, id,
+                invitation.getStatus().name());
+        Long inviter = invitation.getCreatedBy().userId();
+        if (inviter == null) return;
+        notificationService.notify(inviter, invitation.getOrganization().getId(), answer, id,
                 Map.of("organizationName", invitation.getOrganization().getName(),
                         "inviteeName", invitee.getFullName()));
     }
 
     private static Map<String, Object> invited(Invitation invitation) {
         return Map.of("organizationName", invitation.getOrganization().getName(),
-                "inviterName", DeletedUser.nameOf(invitation.getInvitedBy()),
+                "inviterName", invitation.getCreatedBy().label(),
                 "roleName", invitation.getRoleDefinition().getName());
     }
 

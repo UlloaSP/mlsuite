@@ -78,9 +78,9 @@ describe("MLForm builtin registry", () => {
     expect(result.success).toBe(false);
     expect(result.issues.map((issue) => issue.message)).toEqual(
       expect.arrayContaining([
-        "Schema field 1 falta mappedTo",
-        "Schema field 2 option 1 falta mappedTo",
-        "Schema report 1 falta mappedTo",
+        "Schema field 1 has no mappedTo",
+        "Schema field 2 option 1 has no mappedTo",
+        "Schema report 1 has no mappedTo",
       ]),
     );
   });

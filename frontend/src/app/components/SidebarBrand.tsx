@@ -52,7 +52,6 @@ export function SidebarBrand({ side }: { side: SidebarPosition }) {
     >
       <AppLink
         to="/home"
-        viewTransition
         data-user-guide-item="brand"
         aria-label="MLsuite home"
         className={cx(

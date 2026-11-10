@@ -18,7 +18,7 @@ import { prepareRuntimeReports } from "@/capabilities/prediction-runtime/mlform/
 type Binding = {
   modelId: number;
   modelName?: string;
-  pluginPolicy?: Record<string, unknown> | null;
+  pluginPolicy?: Record<string, unknown>;
 };
 
 type Options = {

@@ -16,6 +16,7 @@ import { BookmarkSnapshotDialog } from "@/features/schemas/components/BookmarkSn
 import { CloneSchemaDialog } from "@/features/schemas/components/CloneSchemaDialog";
 import { SchemaSnapshotPreviewPanel } from "@/features/schemas/components/SchemaSnapshotPreviewPanel";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
+import { schemaVersionLabel } from "@/features/schemas/lib/version-selection";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 const route = getRouteApi("/protected/app/can-view-models/schemas/$schemaId/versions/$versionId");
@@ -29,7 +30,7 @@ export function SchemaSnapshotDetailPage() {
   const { data: version } = useSchemaVersion(versionId);
   const [bookmarkTarget, setBookmarkTarget] = useState<SchemaVersionDto | null>(null);
   const [cloneTarget, setCloneTarget] = useState<SchemaVersionDto | null>(null);
-  const title = version ? `${version.name} · v${version.version}` : "Snapshot";
+  const title = version ? schemaVersionLabel(version) : "Snapshot";
 
   return (
     <AppPage>

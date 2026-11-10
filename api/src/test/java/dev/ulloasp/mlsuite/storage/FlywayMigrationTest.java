@@ -42,7 +42,7 @@ class FlywayMigrationTest {
                     FROM information_schema.columns
                     WHERE table_schema = 'fresh' AND table_name = 'model' AND is_nullable = 'NO'
                       AND column_name IN ('organization_id', 'storage_bucket', 'storage_object_key',
-                                          'storage_version_id', 'storage_etag', 'model_size_bytes',
+                                          'storage_version_id', 'storage_etag', 'size_bytes',
                                           'artifact_sha256', 'artifact_verified_at')
                     """)) {
                 assertTrue(result.next());
@@ -58,11 +58,10 @@ class FlywayMigrationTest {
                 assertTrue(result.next());
                 assertEquals(0, result.getInt(1));
             }
-            // Every bundle carries a lock: no frozen environment of bundles written before locks is left.
-            try (var result = statement.executeQuery(
-                    "SELECT COUNT(*) FROM runtime_environment WHERE environment_key = 'legacy'")) {
+            // The platform is the one principal a new installation starts with.
+            try (var result = statement.executeQuery("SELECT COUNT(*) FROM principal WHERE kind = 'SYSTEM'")) {
                 assertTrue(result.next());
-                assertEquals(0, result.getInt(1));
+                assertEquals(1, result.getInt(1));
             }
         }
     }
@@ -76,16 +75,18 @@ class FlywayMigrationTest {
             statement.execute("SET search_path TO identity, public");
             seedOrganization(statement);
             statement.execute("""
-                    INSERT INTO runtime_environment (environment_key, writer_version, python_version, packages,
-                        created_at) VALUES (repeat('e', 64), '0.3.1', '3.14.7', '[]', now())""");
+                    INSERT INTO runtime_environment (environment_key, lock_digest, writer_version, python_version,
+                        packages, lock_toml, created_at)
+                    VALUES (repeat('e', 64), repeat('d', 64), '0.3.1', '3.14.7', '[]', 'lock-version = "1.0"', now())""");
             String columns = """
-                    (organization_id, user_id, name, type, specific_type, file_name, storage_bucket,
-                     storage_object_key, storage_version_id, storage_etag, model_size_bytes, artifact_sha256,
-                     artifact_verified_at, input_schema, environment_key, runtime_state, created_at, updated_at)
+                    (organization_id, created_by_principal_id, updated_by_principal_id, name, type, specific_type,
+                     file_name, storage_bucket,
+                     storage_object_key, storage_version_id, storage_etag, size_bytes, artifact_sha256,
+                     artifact_verified_at, input_schema, bundle_manifest, environment_key, created_at, updated_at)
                     """;
             String values = """
-                    (1, 1, 'risk', 'classifier', 'Forest', 'risk.mlbundle', 'bucket', 'key', 'v1', 'etag', 5,
-                     %s, now(), '{}', repeat('e', 64), 'READY', now(), now())
+                    (1, 1, 1, 'risk', 'classifier', 'Forest', 'risk.mlbundle', 'bucket', 'key', 'v1', 'etag', 5,
+                     %s, now(), '{}', '{}', repeat('e', 64), now(), now())
                     """;
             statement.execute("INSERT INTO model " + columns + " VALUES "
                     + values.formatted("repeat('a', 64)"));
@@ -106,26 +107,35 @@ class FlywayMigrationTest {
             statement.execute("SET search_path TO examples, public");
             seedOrganization(statement);
             statement.execute("""
-                    INSERT INTO schema_artifact (organization_id, name, created_at, updated_at)
-                    VALUES (1, 'Risk', now(), now())
+                    INSERT INTO schema (organization_id, name, created_by_principal_id, updated_by_principal_id,
+                        created_at, updated_at)
+                    VALUES (1, 'Risk', 1, 1, now(), now())
+                    """);
+            // Stands in for a snapshot and runs written with their models and results, which this example
+            // leaves out.
+            statement.execute("SET session_replication_role = replica");
+            statement.execute("""
+                    INSERT INTO schema_version (organization_id, schema_id, version_number, form_schema,
+                        created_by_principal_id, created_at)
+                    VALUES (1, 1, 1, '{}', 1, now())
                     """);
             statement.execute("""
-                    INSERT INTO schema_version (schema_id, version_number, form_schema_json, created_at)
-                    VALUES (1, 1, '{}', now())
-                    """);
-            statement.execute("""
-                    INSERT INTO schema_bookmark (schema_id, schema_version_id, name, created_at, updated_at)
-                    VALUES (1, 1, 'production', now(), now()), (1, 1, 'staging', now(), now())
+                    INSERT INTO schema_bookmark (schema_id, schema_version_id, name, created_by_principal_id,
+                        updated_by_principal_id, created_at, updated_at)
+                    VALUES (1, 1, 'production', 1, 1, now(), now()), (1, 1, 'staging', 1, 1, now(), now())
                     """);
             statement.execute("""
                     INSERT INTO prediction_run
-                        (schema_version_id, schema_bookmark_id, name, input_data_json, status, origin, created_at, updated_at)
-                    VALUES (1, 1, 'first', '{}', 'SUCCESS', 'WORKSPACE', now(), now()),
-                           (1, NULL, 'second', '{}', 'SUCCESS', 'WORKSPACE', now(), now())
+                        (organization_id, schema_id, schema_version_id, schema_bookmark_id, name, input_data, status,
+                         origin, created_by_principal_id, created_by_kind, created_at)
+                    VALUES (1, 1, 1, 1, 'first', '{}', 'SUCCESS', 'WORKSPACE', 1, 'SYSTEM', now()),
+                           (1, 1, 1, NULL, 'second', '{}', 'SUCCESS', 'WORKSPACE', 1, 'SYSTEM', now())
                     """);
+            statement.execute("SET session_replication_role = origin");
             statement.execute("""
-                    INSERT INTO schema_bookmark_example (schema_bookmark_id, prediction_run_id, public_id, created_at)
-                    VALUES (1, 1, 'example-1', now()), (1, 2, 'example-2', now()), (2, 2, 'example-3', now())
+                    INSERT INTO schema_bookmark_example (schema_id, schema_bookmark_id, prediction_run_id, public_id,
+                        created_by_principal_id, created_at)
+                    VALUES (1, 1, 1, 'example-1', 1, now()), (1, 1, 2, 'example-2', 1, now()), (1, 2, 2, 'example-3', 1, now())
                     """);
 
             statement.execute("DELETE FROM prediction_run WHERE id = 2");
@@ -143,8 +153,8 @@ class FlywayMigrationTest {
                 VALUES ('owner', 'owner@example.test', 'hash', 'Owner', 'USER', true, now(), now())
                 """);
         statement.execute("""
-                INSERT INTO organization (slug, name, created_by_user_id, created_at, updated_at)
-                VALUES ('owner', 'Owner', 1, now(), now())
+                INSERT INTO organization (slug, name, created_by_principal_id, updated_by_principal_id, created_at, updated_at)
+                VALUES ('owner', 'Owner', 1, 1, now(), now())
                 """);
     }
 

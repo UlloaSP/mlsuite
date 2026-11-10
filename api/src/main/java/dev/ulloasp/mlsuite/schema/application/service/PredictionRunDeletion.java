@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ public class PredictionRunDeletion {
     private final PredictionResultFeedbackRepository answers;
     private final FeedbackHistory history;
     private final NamedParameterJdbcTemplate jdbc;
+    private final Principals principals;
 
     public record Deleted(int answers, int reviews) {
     }
@@ -34,16 +36,12 @@ public class PredictionRunDeletion {
         jdbc.query("SELECT id FROM prediction_result WHERE prediction_run_id IN (:runs) ORDER BY id FOR UPDATE", runs,
                 (rs, n) -> rs.getLong(1));
         List<PredictionResultFeedback> given = answers.findByResultRunIdIn(runIds);
-        history.delete(given, actorUserId);
-        answers.flush();
+        history.delete(given, principals.user(actorUserId));
         Set<Long> reviews = new HashSet<>(jdbc.queryForList(
                 "SELECT schema_review_id FROM schema_review_run WHERE prediction_run_id IN (:runs)", runs, Long.class));
-        jdbc.update("""
-                DELETE FROM schema_review_run_submission WHERE schema_review_run_id IN (
-                    SELECT id FROM schema_review_run WHERE prediction_run_id IN (:runs))""", runs);
         jdbc.update("DELETE FROM schema_review_run WHERE prediction_run_id IN (:runs)", runs);
         jdbc.update("""
-                DELETE FROM prediction_result_feedback_revision WHERE change <> 'DELETED' AND prediction_result_id IN (
+                DELETE FROM prediction_result_feedback_revision WHERE change_kind <> 'DELETED' AND prediction_result_id IN (
                     SELECT id FROM prediction_result WHERE prediction_run_id IN (:runs))""", runs);
         jdbc.update("DELETE FROM prediction_result WHERE prediction_run_id IN (:runs)", runs);
         jdbc.update("DELETE FROM prediction_run WHERE id IN (:runs)", runs);

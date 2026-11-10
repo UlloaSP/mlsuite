@@ -16,7 +16,7 @@ public enum PurgeScope {
     String versions() {
         return switch (this) {
             case ORGANIZATION, USER -> """
-                    SELECT v.id FROM schema_version v JOIN schema_artifact s ON s.id = v.schema_id
+                    SELECT v.id FROM schema_version v JOIN schema s ON s.id = v.schema_id
                     WHERE s.organization_id = :organization""";
             case SCHEMA -> "SELECT id FROM schema_version WHERE schema_id = :target";
             // A snapshot cannot run without every model it binds, so each one binding this model goes with it.

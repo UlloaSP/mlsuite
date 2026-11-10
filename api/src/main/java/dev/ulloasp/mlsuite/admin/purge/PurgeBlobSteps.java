@@ -29,7 +29,7 @@ class PurgeBlobSteps {
     private record StoredModel(Long organizationId, String bucket, String key, String version, String environment) {
     }
 
-    private record StoredPlugin(String key, Long organizationId) {
+    private record StoredPlugin(String bucket, String key, Long organizationId) {
     }
 
     List<PurgeStep> models(PurgeJob job) {
@@ -60,9 +60,10 @@ class PurgeBlobSteps {
             List<StoredPlugin> deleted = jdbc.query("""
                     DELETE FROM plugin_metadata WHERE id IN (
                         SELECT id FROM plugin_metadata WHERE organization_id = ? LIMIT ?)
-                    RETURNING object_key, organization_id""", (rs, n) -> new StoredPlugin(rs.getString(1), rs.getLong(2)),
+                    RETURNING storage_bucket, storage_object_key, organization_id""",
+                    (rs, n) -> new StoredPlugin(rs.getString(1), rs.getString(2), rs.getLong(3)),
                     job.organizationId(), limit);
-            deleted.forEach(plugin -> deletionQueue.enqueue(plugin.organizationId(), storage.getBucket(), plugin.key(), null));
+            deleted.forEach(plugin -> deletionQueue.enqueue(plugin.organizationId(), plugin.bucket(), plugin.key(), null));
             return deleted.size();
         }));
     }

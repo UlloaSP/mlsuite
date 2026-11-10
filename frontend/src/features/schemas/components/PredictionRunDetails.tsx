@@ -76,6 +76,7 @@ export function PredictionRunDetails({
   const catalog = useSchemaPluginCatalog(
     executableVersion?.formSchema,
     useCurrentOrganizationId() ?? "none",
+    run?.schemaVersionId,
   );
   const questionnaireError = questionnaireConfigError(executableVersion?.formSchema);
   const canReadHistory = useCan("canViewModels");

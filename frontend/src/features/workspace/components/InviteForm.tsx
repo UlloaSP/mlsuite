@@ -11,9 +11,12 @@ import type { InvitationCandidateDto, RoleDefinitionDto } from "@/shared/api/ope
 
 export function InviteForm({
   organizationId,
+  addsDirectly = false,
   onSubmit,
 }: {
   organizationId: number;
+  /** A superadmin's invitation is accepted at once: the user becomes a member right away. */
+  addsDirectly?: boolean;
   onSubmit: (payload: { email: string; roleDefinitionId: number }) => Promise<void>;
 }) {
   const [search, setSearch] = useState("");
@@ -46,12 +49,16 @@ export function InviteForm({
     void onSubmit({
       email: candidate.email,
       roleDefinitionId: selectedRoleId,
-    }).then(() => {
-      setCandidate(null);
-      setSearch("");
-      setRoleSearch("");
-      setPickedRole(undefined);
-    });
+    }).then(
+      () => {
+        setCandidate(null);
+        setSearch("");
+        setRoleSearch("");
+        setPickedRole(undefined);
+      },
+      // The mutation has shown why; the choice stays for a retry.
+      () => undefined,
+    );
   };
 
   if (noRoles) return <AppCopy>No assignable roles available.</AppCopy>;
@@ -84,7 +91,7 @@ export function InviteForm({
         }
       />
       <AppButton type="button" className="w-full lg:w-auto" disabled={!canSubmit} onClick={submit}>
-        Send invite
+        {addsDirectly ? "Add member" : "Send invite"}
       </AppButton>
     </div>
   );

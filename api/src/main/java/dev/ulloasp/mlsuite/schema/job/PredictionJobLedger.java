@@ -16,7 +16,6 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
-import dev.ulloasp.mlsuite.user.domain.model.DeletedUser;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -30,10 +29,14 @@ import lombok.RequiredArgsConstructor;
 class PredictionJobLedger {
 
     private static final String JOB_COLUMNS = "j.id, j.schema_bookmark_id, j.schema_version_id, j.status, j.total_rows, "
-            + "j.done_rows, j.failed_rows, COALESCE(u.full_name, '" + DeletedUser.NAME + "'), j.created_at, j.updated_at, j.finished_at";
+            + "j.done_rows, j.failed_rows, COALESCE(u.full_name, p.former_label), j.created_at, j.updated_at, j.finished_at";
+    /** The job's author, shown by their name, or by what their principal was left as once they are gone. */
+    private static final String AUTHOR = " FROM prediction_job j JOIN principal p ON p.id = j.created_by_principal_id"
+            + " LEFT JOIN app_user u ON u.id = p.user_id";
     private static final String OPEN = "('QUEUED', 'RUNNING')";
     private static final String FINISHED = " RETURNING id, organization_id, schema_bookmark_id,"
-            + " (SELECT b.name FROM schema_bookmark b WHERE b.id = schema_bookmark_id), created_by_user_id,"
+            + " (SELECT b.name FROM schema_bookmark b WHERE b.id = schema_bookmark_id),"
+            + " (SELECT p.user_id FROM principal p WHERE p.id = created_by_principal_id),"
             + " total_rows, done_rows, failed_rows, (SELECT o.name FROM organization o WHERE o.id = organization_id)";
 
     private final JdbcTemplate jdbc;
@@ -59,18 +62,21 @@ class PredictionJobLedger {
     long insert(Long organizationId, Long bookmarkId, Long schemaVersionId, Long userId,
             List<CreatePredictionJobRequest.PredictionJobRow> rows) {
         Long id = jdbc.queryForObject("""
-                INSERT INTO prediction_job (organization_id, schema_bookmark_id, schema_version_id, created_by_user_id,
-                    status, total_rows, created_at, updated_at)
-                VALUES (?, ?, ?, ?, 'QUEUED', ?, now(), now()) RETURNING id""", Long.class,
-                organizationId, bookmarkId, schemaVersionId, userId, rows.size());
+                INSERT INTO prediction_job (organization_id, schema_id, schema_bookmark_id, schema_version_id,
+                    created_by_principal_id, updated_by_principal_id, status, total_rows, created_at, updated_at)
+                SELECT ?, b.schema_id, b.id, ?, p.id, p.id, 'QUEUED', ?, now(), now()
+                FROM principal p, schema_bookmark b WHERE p.user_id = ? AND b.id = ?
+                RETURNING id""", Long.class,
+                organizationId, schemaVersionId, rows.size(), userId, bookmarkId);
         List<Object[]> values = new ArrayList<>(rows.size());
         for (int index = 0; index < rows.size(); index++) {
             CreatePredictionJobRequest.PredictionJobRow row = rows.get(index);
-            values.add(new Object[] { id, index, row.name(), json(row.inputData()), json(row.models()) });
+            values.add(new Object[] { id, schemaVersionId, index, row.name(), json(row.inputData()), json(row.models()) });
         }
         jdbc.batchUpdate("""
-                INSERT INTO prediction_job_row (job_id, row_index, name, input_data, model_inputs, status)
-                VALUES (?, ?, ?, ?::jsonb, ?::jsonb, 'PENDING')""", values);
+                INSERT INTO prediction_job_row (prediction_job_id, schema_version_id, row_index, name, input_data,
+                    model_inputs, status)
+                VALUES (?, ?, ?, ?, ?::jsonb, ?::jsonb, 'PENDING')""", values);
         return id;
     }
 
@@ -80,33 +86,34 @@ class PredictionJobLedger {
     }
 
     int countOpenOf(Long organizationId, Long userId) {
-        return jdbc.queryForObject("SELECT count(*) FROM prediction_job WHERE organization_id = ? AND created_by_user_id = ?"
+        return jdbc.queryForObject("SELECT count(*) FROM prediction_job WHERE organization_id = ? AND created_by_principal_id = (SELECT id FROM principal WHERE user_id = ?)"
                 + " AND status IN " + OPEN, Integer.class, organizationId, userId);
     }
 
     List<PredictionJobDto> list(Long organizationId, Long bookmarkId, int limit) {
-        return jdbc.query("SELECT " + JOB_COLUMNS + " FROM prediction_job j LEFT JOIN app_user u ON u.id = j.created_by_user_id"
+        return jdbc.query("SELECT " + JOB_COLUMNS + AUTHOR
                 + " WHERE j.organization_id = ? AND j.schema_bookmark_id = ? ORDER BY j.id DESC LIMIT ?",
                 PredictionJobLedger::job, organizationId, bookmarkId, limit);
     }
 
     Optional<PredictionJobDto> find(Long organizationId, Long jobId) {
-        return jdbc.query("SELECT " + JOB_COLUMNS + " FROM prediction_job j LEFT JOIN app_user u ON u.id = j.created_by_user_id"
+        return jdbc.query("SELECT " + JOB_COLUMNS + AUTHOR
                 + " WHERE j.organization_id = ? AND j.id = ?", PredictionJobLedger::job, organizationId, jobId)
                 .stream().findFirst();
     }
 
     List<PredictionJobFailureDto> failures(Long jobId) {
-        return jdbc.query("SELECT row_index, name, error FROM prediction_job_row WHERE job_id = ? AND status = 'FAILED'"
+        return jdbc.query("SELECT row_index, name, error_message FROM prediction_job_row WHERE prediction_job_id = ? AND status = 'FAILED'"
                 + " ORDER BY row_index", (rs, n) -> new PredictionJobFailureDto(rs.getInt(1), rs.getString(2),
                         rs.getString(3)), jobId);
     }
 
-    /** Cancels an open job; empty once it has finished. */
-    Optional<FinishedJob> cancel(Long organizationId, Long jobId) {
+    /** Cancels an open job for {@code userId}; empty once it has finished. */
+    Optional<FinishedJob> cancel(Long organizationId, Long jobId, Long userId) {
         return jdbc.query("UPDATE prediction_job SET status = 'CANCELLED', lease_owner = NULL, lease_expires_at = NULL,"
-                + " finished_at = now(), updated_at = now() WHERE id = ? AND organization_id = ? AND status IN " + OPEN
-                + FINISHED, PredictionJobLedger::finished, jobId, organizationId).stream().findFirst();
+                + " finished_at = now(), updated_at = now(), updated_by_principal_id = (SELECT id FROM principal WHERE user_id = ?)"
+                + " WHERE id = ? AND organization_id = ? AND status IN " + OPEN
+                + FINISHED, PredictionJobLedger::finished, userId, jobId, organizationId).stream().findFirst();
     }
 
     /** Removes a finished job and its rows; false while it is open. */
@@ -116,11 +123,13 @@ class PredictionJobLedger {
     }
 
     /** Puts a finished job's failed rows back to run; false when the job is still open. */
-    boolean retry(Long organizationId, Long jobId) {
-        int reopened = jdbc.update("UPDATE prediction_job SET status = 'QUEUED', finished_at = NULL, updated_at = now()"
-                + " WHERE id = ? AND organization_id = ? AND status NOT IN " + OPEN, jobId, organizationId);
+    boolean retry(Long organizationId, Long jobId, Long userId) {
+        int reopened = jdbc.update("UPDATE prediction_job SET status = 'QUEUED', finished_at = NULL, stop_reason = NULL,"
+                + " updated_at = now(),"
+                + " updated_by_principal_id = (SELECT id FROM principal WHERE user_id = ?)"
+                + " WHERE id = ? AND organization_id = ? AND status NOT IN " + OPEN, userId, jobId, organizationId);
         if (reopened == 0) return false;
-        jdbc.update("UPDATE prediction_job_row SET status = 'PENDING', error = NULL WHERE job_id = ? AND status = 'FAILED'",
+        jdbc.update("UPDATE prediction_job_row SET status = 'PENDING', error_message = NULL WHERE prediction_job_id = ? AND status = 'FAILED'",
                 jobId);
         refreshCounts(jobId);
         return true;
@@ -134,7 +143,8 @@ class PredictionJobLedger {
                 UPDATE prediction_job j SET status = 'RUNNING', lease_owner = ?, updated_at = now(),
                     lease_expires_at = now() + make_interval(secs => ?)
                 FROM next WHERE j.id = next.id
-                RETURNING j.id, j.organization_id, j.schema_bookmark_id, j.schema_version_id, j.created_by_user_id,
+                RETURNING j.id, j.organization_id, j.schema_bookmark_id, j.schema_version_id,
+                    (SELECT p.user_id FROM principal p WHERE p.id = j.created_by_principal_id),
                     next.status = 'QUEUED'""",
                 (rs, n) -> new Claim(rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getLong(4),
                         rs.getObject(5, Long.class), rs.getBoolean(6)),
@@ -149,21 +159,22 @@ class PredictionJobLedger {
 
     List<PendingRow> pending(Long jobId, int limit) {
         return jdbc.query("SELECT row_index, name, input_data, model_inputs FROM prediction_job_row"
-                + " WHERE job_id = ? AND status = 'PENDING' ORDER BY row_index LIMIT ?", this::pendingRow, jobId, limit);
+                + " WHERE prediction_job_id = ? AND status = 'PENDING' ORDER BY row_index LIMIT ?", this::pendingRow, jobId, limit);
     }
 
     void done(Long jobId, int rowIndex, Long runId) {
-        jdbc.update("UPDATE prediction_job_row SET status = 'DONE', prediction_run_id = ?, error = NULL"
-                + " WHERE job_id = ? AND row_index = ?", runId, jobId, rowIndex);
+        jdbc.update("UPDATE prediction_job_row SET status = 'DONE', prediction_run_id = ?, error_message = NULL,"
+                + " input_data = NULL, model_inputs = NULL"
+                + " WHERE prediction_job_id = ? AND row_index = ?", runId, jobId, rowIndex);
     }
 
     void fail(Long jobId, int rowIndex, String error) {
-        jdbc.update("UPDATE prediction_job_row SET status = 'FAILED', error = ? WHERE job_id = ? AND row_index = ?",
+        jdbc.update("UPDATE prediction_job_row SET status = 'FAILED', error_message = ? WHERE prediction_job_id = ? AND row_index = ?",
                 error, jobId, rowIndex);
     }
 
     void failPending(Long jobId, String error) {
-        jdbc.update("UPDATE prediction_job_row SET status = 'FAILED', error = ? WHERE job_id = ? AND status = 'PENDING'",
+        jdbc.update("UPDATE prediction_job_row SET status = 'FAILED', error_message = ? WHERE prediction_job_id = ? AND status = 'PENDING'",
                 error, jobId);
         refreshCounts(jobId);
     }
@@ -173,8 +184,8 @@ class PredictionJobLedger {
         jdbc.update("""
                 UPDATE prediction_job j SET updated_at = now(),
                     lease_expires_at = CASE WHEN j.lease_owner IS NULL THEN NULL ELSE now() + make_interval(secs => ?) END,
-                    done_rows = (SELECT count(*) FROM prediction_job_row r WHERE r.job_id = j.id AND r.status = 'DONE'),
-                    failed_rows = (SELECT count(*) FROM prediction_job_row r WHERE r.job_id = j.id AND r.status = 'FAILED')
+                    done_rows = (SELECT count(*) FROM prediction_job_row r WHERE r.prediction_job_id = j.id AND r.status = 'DONE'),
+                    failed_rows = (SELECT count(*) FROM prediction_job_row r WHERE r.prediction_job_id = j.id AND r.status = 'FAILED')
                 WHERE j.id = ?""", leaseSeconds, jobId);
     }
 
@@ -184,9 +195,17 @@ class PredictionJobLedger {
 
     /** Ends the job for the worker holding it; empty when that is no longer this worker. */
     Optional<FinishedJob> complete(Long jobId, String worker) {
-        return jdbc.query("UPDATE prediction_job SET status = 'COMPLETED', lease_owner = NULL, lease_expires_at = NULL,"
-                + " finished_at = now(), updated_at = now() WHERE id = ? AND lease_owner = ? AND status = 'RUNNING'"
-                + FINISHED, PredictionJobLedger::finished, jobId, worker).stream().findFirst();
+        return complete(jobId, worker, null);
+    }
+
+    /** Ends the job, saying why the system stopped it when it did. */
+    Optional<FinishedJob> complete(Long jobId, String worker, String stopReason) {
+        return jdbc.query("UPDATE prediction_job j SET status = 'COMPLETED', lease_owner = NULL, lease_expires_at = NULL,"
+                + " finished_at = now(), updated_at = now(), stop_reason = ?,"
+                + " done_rows = (SELECT count(*) FROM prediction_job_row r WHERE r.prediction_job_id = j.id AND r.status = 'DONE'),"
+                + " failed_rows = (SELECT count(*) FROM prediction_job_row r WHERE r.prediction_job_id = j.id AND r.status = 'FAILED')"
+                + " WHERE id = ? AND lease_owner = ? AND status = 'RUNNING'"
+                + FINISHED, PredictionJobLedger::finished, stopReason, jobId, worker).stream().findFirst();
     }
 
     boolean cancelled(Long jobId) {

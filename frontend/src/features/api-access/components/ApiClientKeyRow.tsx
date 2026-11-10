@@ -22,12 +22,12 @@ export function ApiClientKeyRow({ apiKey, disabled, onRevoke }: Props) {
         <p className="truncate text-sm font-semibold text-fg">{apiKey.name}</p>
         <p className="font-mono text-xs text-fg-secondary">{apiKey.prefix}…</p>
         <p className="mt-1 text-xs text-fg-muted">
-          Issued <LiveRelativeTime value={apiKey.createdAt} /> ago
+          Issued <LiveRelativeTime value={apiKey.createdAt} />
           {apiKey.createdByName ? ` by ${apiKey.createdByName}` : ""}
           {" · "}
           {apiKey.lastUsedAt ? (
             <>
-              Used <LiveRelativeTime value={apiKey.lastUsedAt} /> ago
+              Used <LiveRelativeTime value={apiKey.lastUsedAt} />
             </>
           ) : (
             "Never used"

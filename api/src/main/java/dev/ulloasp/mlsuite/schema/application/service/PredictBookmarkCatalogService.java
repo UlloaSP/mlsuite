@@ -26,6 +26,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.util.CatalogPages;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.transaction.Transactional;
@@ -67,11 +68,14 @@ public class PredictBookmarkCatalogService implements PredictBookmarkCatalogUseC
                 .toList();
     }
 
+    /** "updated", what a request without a sort holds, keeps the default order: by schema. */
     @Override
     public PageDto<PredictBookmarkDto> catalog(Long userId, CatalogRequest request) {
         Long organizationId = authorizationService.requireCurrent(userId, PermissionKey.VIEW_MODELS).getId();
+        String filter = CatalogValues.require("filter", request.filter(), List.of("all", "behind"));
+        String sort = CatalogValues.require("sort", request.sort(), List.of("schema", "name", "used", "recent", "updated"));
         var page = bookmarkRepository.findPredictCatalog(organizationId, CatalogPages.likeLiteral(request.search()),
-                request.filter(), request.sort(), CatalogPages.pageable(request, Sort.unsorted()));
+                filter, sort, CatalogPages.pageable(request, Sort.unsorted()));
         var bookmarks = bookmarkRepository.findAllById(page.getContent().stream().map(item -> item.getId()).toList())
                 .stream().collect(Collectors.toMap(SchemaBookmark::getId, Function.identity()));
         Set<Long> versionIds = bookmarks.values().stream().map(bookmark -> bookmark.getVersion().getId())
@@ -112,6 +116,7 @@ public class PredictBookmarkCatalogService implements PredictBookmarkCatalogUseC
         return new PredictBookmarkDto(
                 bookmark.getId(),
                 bookmark.getName(),
+                bookmark.getDescription(),
                 schema.getId(),
                 schema.getName(),
                 schema.getDescription(),

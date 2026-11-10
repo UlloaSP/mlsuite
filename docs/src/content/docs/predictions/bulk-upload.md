@@ -16,6 +16,9 @@ its records are sent once; the job then goes on if you close the tab or reload t
 - One column per **model input**, named after the feature the field maps to. A `onehot-category`
   field takes one column per option, holding `1` for the chosen option and `0` for the others. For a
   model that takes features by position, the field's label also works.
+- One column per `series` field, named after its display key (its label unless it sets
+  `displayKey`), holding the field's rows. Each run keeps the rows, and each model receives them, or
+  their aggregations, exactly as the form would send them. An aggregation has no column of its own.
 
 Every model input must be present, headers must be unique, and no other columns are allowed.
 
@@ -32,7 +35,7 @@ batch-applicant-02,24,18500,true,0,1,0
 | `number`, `rating` | A finite number. |
 | `boolean` | `true`, `1`, `yes` or `si`; `false`, `0` or `no`. |
 | `multi-choice` | Values separated by `;`. |
-| `series` | A JSON array. |
+| `series` | A JSON array of rows, each an object keyed by the series' column ids. |
 | Other kinds | The text value, or JSON. |
 
 ## Run and check
@@ -53,11 +56,12 @@ A problem with the file as a whole refuses it before anything runs:
 | Message | Cause |
 | --- | --- |
 | Missing input columns: … | A model input has no column. |
-| Unknown input columns: … | A column matches no model input. |
+| Unknown input columns: … | A column matches no model input or series field. |
 | Headers must be unique | Two columns share a name. |
 | File exceeds maximum of 10000 records | Too many rows. |
 | Unsupported file type | Not a CSV or XLSX file. |
 
 A problem with one record skips that record and the others still run: a missing required value, a
-number that is not finite, a boolean that is not one of the words above, or invalid JSON. One notice
+number that is not finite, a boolean that is not one of the words above, invalid JSON, or series
+rows the form would refuse. One notice
 reports how many lines were skipped and the reasons of the first ones, with their line numbers.

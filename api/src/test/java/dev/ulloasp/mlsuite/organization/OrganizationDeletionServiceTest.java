@@ -11,6 +11,7 @@ import dev.ulloasp.mlsuite.role.domain.model.*;
 import dev.ulloasp.mlsuite.support.TestFixtures;
 import dev.ulloasp.mlsuite.user.domain.model.*;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,9 +28,12 @@ import org.springframework.web.server.ResponseStatusException;
     "spring.profiles.active=test", "logging.file.name=target/org-delete-test.log"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import(OrganizationDeletionService.class)
+@Import({ OrganizationDeletionService.class, Principals.class })
 @ContextConfiguration(classes = OrganizationDeletionServiceTest.PersistenceConfig.class)
 class OrganizationDeletionServiceTest {
+
+    @Autowired
+    private Principals principals;
 
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry registry) {
@@ -47,13 +51,13 @@ class OrganizationDeletionServiceTest {
     void deletesEmptyCurrentOrganizationWithManagedOwnerAndRole() {
         var owner = new User("qa", "qa@example.test", "unused", "QA", SystemRole.USER);
         entityManager.persist(owner);
-        var org = new Organization("qa-empty", "QA", null, owner);
+        var org = new Organization("qa-empty", "QA", null, principals.of(owner));
         entityManager.persist(org);
         owner.setCurrentOrganization(org);
-        var role = new RoleDefinition(org, RoleScope.ORGANIZATION, "Owner", "owner", "OWNER");
+        var role = new RoleDefinition(org, "Owner", "owner", "OWNER", principals.system());
         role.getPermissions().add(PermissionKey.VIEW_MODELS);
         entityManager.persist(role);
-        var membership = new OrganizationMembership(org, owner, role, MembershipStatus.ACTIVE);
+        var membership = new OrganizationMembership(org, owner, role, MembershipStatus.ACTIVE, principals.of(owner));
         entityManager.persist(membership);
         entityManager.flush();
         Long orgId = org.getId();
@@ -78,14 +82,15 @@ class OrganizationDeletionServiceTest {
     void organizationWithModelIsPreserved() {
         var owner = new User("qa", "qa@example.test", "unused", "QA", SystemRole.USER);
         entityManager.persist(owner);
-        var org = new Organization("qa-used", "QA", null, owner);
+        var org = new Organization("qa-used", "QA", null, principals.of(owner));
         entityManager.persist(org);
         var model = new Model();
         model.setName("QA model");
         model.setFileName("qa.mlbundle");
         model.setType("classifier");
         model.setSpecificType("DecisionTreeClassifier");
-        model.setUser(owner);
+        model.setCreatedBy(principals.of(owner));
+        model.setUpdatedBy(model.getCreatedBy());
         model.setOrganization(org);
         entityManager.persist(TestFixtures.storedArtifact(model, new byte[] { 1 }));
         entityManager.flush();

@@ -264,4 +264,21 @@ describe("organizations for everyone", () => {
     expect(host.textContent).toContain("Owner");
     expect(state.create).toHaveBeenCalledWith(expect.objectContaining({ ownerUserId: 3 }));
   });
+
+  test("a superadmin's form starts with them as the owner, also when they load after it", async () => {
+    state.superadmin = true;
+    const signedIn = state.user;
+    state.user = { data: undefined };
+    const { host, rerender } = await mount(<CreateOrganizationRoute />, {
+      route: "/workspace/organizations/create",
+    });
+    const ownerField = () =>
+      host.querySelector<HTMLInputElement>('input[placeholder="Search owner"]');
+    expect(ownerField()?.value).toBe("");
+
+    state.user = signedIn;
+    await rerender(<CreateOrganizationRoute />);
+
+    expect(ownerField()?.value).toBe((signedIn?.data as { fullName: string }).fullName);
+  });
 });

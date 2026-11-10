@@ -1,7 +1,10 @@
 package dev.ulloasp.mlsuite.apiaccess.domain.model;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -18,10 +21,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -42,11 +46,12 @@ public class ApiClient {
     public static final int DESCRIPTION_MAX_LENGTH = 400;
     public static final int SUSPENSION_REASON_MAX_LENGTH = 400;
 
-    public ApiClient(Organization organization, String name, String description, String createdByName) {
+    public ApiClient(Organization organization, String name, String description, Principal createdBy) {
         this.organization = organization;
         this.name = name;
         this.description = description;
-        this.createdByName = createdByName;
+        this.createdBy = createdBy;
+        this.updatedBy = createdBy;
     }
 
     @Id
@@ -74,15 +79,41 @@ public class ApiClient {
     @Column(name = "suspended_at", columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime suspendedAt;
 
-    @ManyToMany
-    @JoinTable(name = "api_client_bookmark",
-            joinColumns = @JoinColumn(name = "api_client_id"),
-            inverseJoinColumns = @JoinColumn(name = "schema_bookmark_id"))
-    private Set<SchemaBookmark> bookmarks = new LinkedHashSet<>();
+    @Getter(AccessLevel.NONE)
+    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ApiClientBookmark> grants = new LinkedHashSet<>();
 
-    // Identity snapshot: who created the client, as they were named then.
-    @Column(name = "created_by_name", updatable = false)
-    private String createdByName;
+    /** The bookmarks it may run. */
+    public Set<SchemaBookmark> getBookmarks() {
+        Set<SchemaBookmark> bookmarks = new LinkedHashSet<>();
+        grants.forEach(grant -> bookmarks.add(grant.getBookmark()));
+        return Collections.unmodifiableSet(bookmarks);
+    }
+
+    /** Lets it run the bookmark; false when it already could. */
+    public boolean grant(SchemaBookmark bookmark, Principal by) {
+        if (grants.stream().anyMatch(grant -> grant.getBookmark().getId().equals(bookmark.getId()))) return false;
+        grants.add(new ApiClientBookmark(this, bookmark, by));
+        return true;
+    }
+
+    /** Stops it running the bookmark, if it could. */
+    public Optional<SchemaBookmark> revoke(Long bookmarkId) {
+        Optional<ApiClientBookmark> grant = grants.stream()
+                .filter(candidate -> candidate.getBookmark().getId().equals(bookmarkId)).findFirst();
+        grant.ifPresent(grants::remove);
+        return grant.map(ApiClientBookmark::getBookmark);
+    }
+
+    /** Who created it. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
+
+    /** Who changed it last. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "updated_by_principal_id", nullable = false)
+    private Principal updatedBy;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMPTZ")

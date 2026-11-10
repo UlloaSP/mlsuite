@@ -66,10 +66,11 @@ class AuditRecordingTest extends PublicPredictionFixture {
                 "Gone Person", SystemRole.USER);
         inTransaction(() -> entityManager.persist(gone));
         long orgId = jdbc.queryForObject("""
-                INSERT INTO organization (slug, name, created_by_user_id, created_at, updated_at)
-                VALUES (?, 'Gone Inc', ?, now(), now()) RETURNING id""", Long.class,
-                "gone-" + System.nanoTime(), gone.getId());
+                INSERT INTO organization (slug, name, created_by_principal_id, updated_by_principal_id, created_at, updated_at)
+                VALUES (?, 'Gone Inc', (SELECT id FROM principal WHERE user_id = ?), (SELECT id FROM principal WHERE user_id = ?), now(), now()) RETURNING id""", Long.class,
+                "gone-" + System.nanoTime(), gone.getId(), gone.getId());
 
+        Long author = jdbc.queryForObject("SELECT id FROM principal WHERE user_id = ?", Long.class, gone.getId());
         auditLog.record(AuditActor.user(gone.getId()), orgId, AuditAction.ORGANIZATION_UPDATE, orgId,
                 AuditDetails.of("name", AuditDetails.changed("Old", "Gone Inc")));
         jdbc.update("DELETE FROM organization WHERE id = ?", orgId);
@@ -78,7 +79,7 @@ class AuditRecordingTest extends PublicPredictionFixture {
         Map<String, Object> row = lastRow(AuditAction.ORGANIZATION_UPDATE);
         assertEquals("USER", row.get("actor_kind"));
         assertEquals("Gone Person", row.get("actor_label"));
-        assertEquals(gone.getId(), row.get("actor_user_id"));
+        assertEquals(author, row.get("actor_principal_id"));
         assertEquals("Gone Inc", row.get("organization_label"));
         assertEquals(orgId, row.get("organization_id"));
         assertEquals("ORGANIZATION", row.get("target_type"));
@@ -98,7 +99,7 @@ class AuditRecordingTest extends PublicPredictionFixture {
         assertEquals("SYSTEM", row.get("actor_kind"));
         assertNull(row.get("organization_id"));
         assertNull(row.get("organization_label"));
-        assertNull(row.get("ip"));
+        assertNull(row.get("address"));
         assertNull(row.get("request_id"));
         assertNull(row.get("metadata"));
     }
@@ -121,7 +122,7 @@ class AuditRecordingTest extends PublicPredictionFixture {
 
         Map<String, Object> row = lastRow(AuditAction.AUTH_LOGIN);
         assertEquals("Audited Person", row.get("actor_label"));
-        assertEquals(network, row.get("ip"));
+        assertEquals(network, row.get("address"));
         assertNotNull(row.get("request_id"));
         assertNull(row.get("organization_id"));
     }
@@ -138,7 +139,7 @@ class AuditRecordingTest extends PublicPredictionFixture {
         assertEquals(email, row.get("actor_label"));
         assertEquals("VISITOR", row.get("actor_kind"));
         assertNull(row.get("actor_user_id"));
-        assertEquals(network, row.get("ip"));
+        assertEquals(network, row.get("address"));
         assertFalse(String.valueOf(row.get("metadata")).contains("wrong-password"));
     }
 
@@ -154,7 +155,7 @@ class AuditRecordingTest extends PublicPredictionFixture {
         Map<String, Object> row = lastRow(AuditAction.AUTH_LOGOUT);
         assertEquals(owner.getId(), row.get("actor_user_id"));
         assertEquals("Owner", row.get("actor_label"));
-        assertEquals(network, row.get("ip"));
+        assertEquals(network, row.get("address"));
     }
 
     @Test
@@ -205,8 +206,9 @@ class AuditRecordingTest extends PublicPredictionFixture {
 
     private List<Long> insertAged(String age, int rows) {
         return jdbc.queryForList("""
-                INSERT INTO audit_event (actor_kind, actor_label, action, target_type, created_at)
-                SELECT 'SYSTEM', 'System', 'PLUGIN_DELETE', 'PLUGIN', now() - CAST(? AS interval)
+                INSERT INTO audit_event (actor_kind, actor_principal_id, actor_label, action, target_type, created_at)
+                SELECT 'SYSTEM', (SELECT id FROM principal WHERE kind = 'SYSTEM'), 'System', 'PLUGIN_DELETE', 'PLUGIN',
+                    now() - CAST(? AS interval)
                 FROM generate_series(1, ?) RETURNING id""", Long.class, age, rows);
     }
 
@@ -221,6 +223,6 @@ class AuditRecordingTest extends PublicPredictionFixture {
     }
 
     private Map<String, Object> lastRow(AuditAction action) {
-        return jdbc.queryForMap("SELECT * FROM audit_event WHERE action = ? ORDER BY id DESC LIMIT 1", action.name());
+        return jdbc.queryForMap("SELECT e.*, host(e.ip) AS address, p.user_id AS actor_user_id, p.api_client_id AS actor_client_id FROM audit_event e LEFT JOIN principal p ON p.id = e.actor_principal_id WHERE action = ? ORDER BY e.id DESC LIMIT 1", action.name());
     }
 }

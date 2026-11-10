@@ -44,7 +44,7 @@ const targetValue = (item: JsonRecord, path: string): string | number => {
   if (typeof item.mappedTo === "string" || typeof item.mappedTo === "number") {
     return item.mappedTo;
   }
-  throw new Error(`${path} falta mappedTo`);
+  throw new Error(`${path} has no mappedTo`);
 };
 
 const setMappedTo = (item: JsonRecord, key: string, target: string | number) => {

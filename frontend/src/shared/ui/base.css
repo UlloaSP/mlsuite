@@ -1,4 +1,5 @@
-/* Document-level styles: page chrome, scrollbars and transitions. */
+/* Document-level styles: page chrome, scrollbars and transitions. A page change shows the next
+   page in place; only the theme switch and shell layout changes animate (view transitions). */
 
 /* Interface and code sizes come from the typography preference; font families from tokens.css. */
 :root {
@@ -62,21 +63,6 @@ button:not(:disabled),
 
 :root.theme-corner-transition::view-transition-group(root) {
   animation: none !important;
-}
-
-::view-transition-old(app-content),
-::view-transition-new(app-content) {
-  animation-duration: var(--duration-base);
-  animation-timing-function: ease-out;
-  mix-blend-mode: normal;
-}
-
-::view-transition-old(app-content) {
-  animation-name: app-route-fade-out;
-}
-
-::view-transition-new(app-content) {
-  animation-name: app-route-fade-in;
 }
 
 /* Sidebar side and style changes morph the shell (see layout-transition.ts). */
@@ -146,28 +132,6 @@ button:not(:disabled),
   from {
     opacity: 0;
     transform: translateX(24px);
-  }
-}
-
-@keyframes app-route-fade-out {
-  from {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes app-route-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -242,9 +206,7 @@ html:has([data-navigation-position]) {
   }
 
   ::view-transition-old(root),
-  ::view-transition-new(root),
-  ::view-transition-old(app-content),
-  ::view-transition-new(app-content) {
+  ::view-transition-new(root) {
     animation: none !important;
   }
 }

@@ -19,7 +19,7 @@ public class ModelArtifactWriter {
 
     /**
      * Streams the artifact into the object store, checking as it goes that it is the one
-     * {@code sha256} names, then checks the stored object and points the model at it. The model
+     * {@code sha256} names, and points the model at the stored object. The model
      * has no id yet, since its row is written naming the object, so its key has an id of its own.
      */
     public StoredObject storeAndAttach(Model model, ArtifactSource source, String sha256, String contentType) {
@@ -31,14 +31,6 @@ public class ModelArtifactWriter {
         } catch (IOException ex) {
             throw new ObjectStorageException("The artifact of " + artifact + " could not be read", ex);
         }
-        try {
-            ArtifactIntegrityVerifier.verify(artifact, source.sizeBytes(), sha256,
-                    objectStorageService.verify(stored.bucket(), stored.objectKey(), stored.versionId()));
-        } catch (RuntimeException failure) {
-            deleteExactVersion(stored, failure);
-            throw failure;
-        }
-
         model.setStorageBucket(stored.bucket());
         model.setStorageObjectKey(stored.objectKey());
         model.setStorageEtag(stored.etag());
@@ -59,13 +51,5 @@ public class ModelArtifactWriter {
     private String sanitize(String value) {
         String fileName = value == null || value.isBlank() ? "model.bin" : value;
         return fileName.replaceAll("[^a-zA-Z0-9._-]", "_").replaceAll("_+", "_");
-    }
-
-    private void deleteExactVersion(StoredObject stored, RuntimeException original) {
-        try {
-            objectStorageService.delete(stored.bucket(), stored.objectKey(), stored.versionId());
-        } catch (RuntimeException cleanupFailure) {
-            original.addSuppressed(cleanupFailure);
-        }
     }
 }

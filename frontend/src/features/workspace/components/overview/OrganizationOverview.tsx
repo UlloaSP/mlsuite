@@ -80,7 +80,6 @@ export function OrganizationOverview({
                   <AppLink
                     to="/workspace/organizations/$organizationId/settings"
                     params={{ organizationId: String(organization.id) }}
-                    viewTransition
                     className={appButtonClass({ variant: "secondary" })}
                   >
                     <Settings size={15} />
@@ -146,7 +145,6 @@ export function OrganizationOverview({
         {permissions.canViewPlugins && isCurrent ? (
           <AppLink
             to="/plugins"
-            viewTransition
             className={cx(
               "group flex items-center gap-4 rounded-card border border-line bg-surface px-5 py-4 transition hover:border-line-strong hover:bg-surface-hover",
               FOCUS_RING,

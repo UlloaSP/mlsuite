@@ -19,7 +19,7 @@ public class SnapshotRunGuard {
                 SELECT s.purging_at IS NOT NULL OR o.purging_at IS NOT NULL OR EXISTS (
                     SELECT 1 FROM schema_model_binding b JOIN model m ON m.id = b.model_id
                     WHERE b.schema_version_id = v.id AND m.purging_at IS NOT NULL)
-                FROM schema_version v JOIN schema_artifact s ON s.id = v.schema_id
+                FROM schema_version v JOIN schema s ON s.id = v.schema_id
                 JOIN organization o ON o.id = s.organization_id
                 WHERE v.id = ?""", Boolean.class, schemaVersionId));
     }

@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.review.domain.model;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -9,7 +10,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
-import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -31,12 +31,13 @@ import lombok.Setter;
 @Table(name = "schema_review")
 public class SchemaReview {
     public SchemaReview(Organization organization, Schema schema, SchemaVersion schemaVersion,
-            User createdBy, OffsetDateTime expiresAt) {
+            Principal createdBy, OffsetDateTime expiresAt) {
         this.publicId = UUID.randomUUID().toString();
         this.organization = organization;
         this.schema = schema;
         this.schemaVersion = schemaVersion;
         this.createdBy = createdBy;
+        this.updatedBy = createdBy;
         this.expiresAt = expiresAt;
     }
 
@@ -59,10 +60,15 @@ public class SchemaReview {
     @JoinColumn(name = "schema_version_id", nullable = false, foreignKey = @ForeignKey(name = "fk_schema_review_version"))
     private SchemaVersion schemaVersion;
 
-    /** Null once the person who created it is gone. */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by_user_id", foreignKey = @ForeignKey(name = "fk_schema_review_creator"))
-    private User createdBy;
+    /** Who created it. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
+
+    /** Who changed it last. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "updated_by_principal_id", nullable = false)
+    private Principal updatedBy;
 
     @Column(name = "expires_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime expiresAt;

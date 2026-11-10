@@ -36,6 +36,7 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundExc
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
 import dev.ulloasp.mlsuite.util.PageDto;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import lombok.RequiredArgsConstructor;
 
 /** The superadmin side of API access; its controller admits superadmins alone. */
@@ -61,10 +62,7 @@ public class ApiTrafficService implements ApiTrafficUseCase {
     @Override
     @Transactional(readOnly = true)
     public PageDto<AdminApiClientDto> listClients(CatalogRequest request) {
-        String filter = switch (request.filter()) {
-            case "all", "active", "suspended" -> request.filter();
-            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown client filter.");
-        };
+        String filter = CatalogValues.require("filter", request.filter(), List.of("all", "active", "suspended"));
         Page<ApiClient> page = clientRepository.findPlatformCatalog(request.search(), filter,
                 PageDto.request(request.page(), request.size(), clientSort(request.sort())));
         return PageDto.of(page, describe(page.getContent()));
@@ -101,6 +99,7 @@ public class ApiTrafficService implements ApiTrafficUseCase {
     @Override
     @Transactional(readOnly = true)
     public PageDto<AdminApiOrganizationDto> listOrganizations(CatalogRequest request) {
+        request.requireNoChoices();
         Page<Organization> page = clientRepository.findOrganizationsWithClients(request.search(),
                 PageDto.request(request.page(), request.size(),
                         Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.asc("id"))));
@@ -171,11 +170,12 @@ public class ApiTrafficService implements ApiTrafficUseCase {
     }
 
     private static Sort clientSort(String mode) {
-        if ("name".equals(mode)) return Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.asc("id"));
-        if ("organization".equals(mode)) {
-            return Sort.by(Sort.Order.asc("organization.name").ignoreCase(), Sort.Order.asc("name").ignoreCase(),
-                    Sort.Order.asc("id"));
-        }
-        return Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.desc("id"));
+        return switch (mode) {
+            case "updated" -> Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.desc("id"));
+            case "name" -> Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.asc("id"));
+            case "organization" -> Sort.by(Sort.Order.asc("organization.name").ignoreCase(),
+                    Sort.Order.asc("name").ignoreCase(), Sort.Order.asc("id"));
+            default -> throw CatalogValues.unknown("sort", mode, List.of("updated", "name", "organization"));
+        };
     }
 }

@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import {
   parseTabularPredictionRecords,
+  rejectFile,
   type ParseBulkPredictionResult,
   type SkippedRecord,
   type TabularPredictionRow,
@@ -73,6 +74,6 @@ export function parseCsvPredictionFile(
   autoNameBase?: number | string,
 ): ParseCsvPredictionResult {
   const { rows, error } = parseCsvRows(text);
-  if (error) return { records: [], skipped: [error] };
+  if (error) return rejectFile(error);
   return parseTabularPredictionRecords(rows, schemaDefinition, maxRecords, autoNameBase);
 }

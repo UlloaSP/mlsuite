@@ -1,9 +1,11 @@
 package dev.ulloasp.mlsuite.audit.domain.model;
 
+import org.hibernate.annotations.ColumnTransformer;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.UUID;
 
+import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -33,7 +35,12 @@ public class AuditEvent {
     @Column(name = "actor_kind", nullable = false, length = 20)
     private AuditActorKind actorKind;
 
-    @Column(name = "actor_user_id")
+    /** The principal that acted; none for a visitor. */
+    @Column(name = "actor_principal_id")
+    private Long actorPrincipalId;
+
+    /** The person who acted, while their account exists. */
+    @Formula("(SELECT p.user_id FROM principal p WHERE p.id = actor_principal_id)")
     private Long actorUserId;
 
     @Column(name = "actor_label", nullable = false)
@@ -61,7 +68,8 @@ public class AuditEvent {
     @Column(name = "metadata", columnDefinition = "jsonb")
     private Map<String, Object> metadata;
 
-    @Column(name = "ip", length = 64)
+    @Column(name = "ip", columnDefinition = "inet")
+    @ColumnTransformer(read = "host(ip)")
     private String ip;
 
     @Column(name = "request_id")

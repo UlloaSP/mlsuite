@@ -42,7 +42,7 @@ export function ModelListItem({
   return (
     <CatalogEntry
       title={item.name}
-      titleAccessory={<ModelRuntimeBadge state={item.runtimeState} />}
+      titleAccessory={<ModelRuntimeBadge state={item.runtimeState} showReady />}
       icon={
         <div className="flex size-10 items-center justify-center rounded-control bg-surface-muted text-accent">
           {modelIcon(item.type)}

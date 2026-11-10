@@ -35,7 +35,7 @@ export function SandboxedReport({ result, report, plugin }: Props) {
   const view = JSON.stringify({
     kind: "report",
     report,
-    result: { modelId: result.modelId, modelInput: result.modelInput, output: result.output },
+    result: { modelId: result.modelId, modelInput: result.modelInput, output: result.output ?? {} },
     plugin,
     backendUrl: getBackendBaseUrl(),
   } satisfies SandboxReportView);

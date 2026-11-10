@@ -4,7 +4,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { mountForm } from "mlform/kit";
-import { connectStoredStatusConditions } from "./stored-status-conditions";
 import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
 import type { AfterSubmitContext, FormState, SubmitErrorContext, Transport } from "mlform/runtime";
 import { normalizeSchema } from "mlform/schema";
@@ -29,6 +28,7 @@ import type {
 import {
   reportStatesFromSnapshot,
   schemaRunReportsPending,
+  settleUnfetchableReports,
 } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
 
 type RunResultCallback = (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => void;
@@ -39,7 +39,7 @@ type Options = {
   bindings: readonly {
     modelId: number;
     modelName?: string;
-    pluginPolicy?: JsonRecord | null;
+    pluginPolicy?: JsonRecord;
   }[];
   theme: PredictionTheme;
   customFieldDefinitions?: readonly CatalogFieldDefinition[];
@@ -98,7 +98,11 @@ export const mountSchemaRunForm = ({
     registry: runtime.registry,
     descriptorRegistry: runtime.descriptorRegistry,
     primitiveRegistry: createBuiltinPrimitiveRegistry(),
-    transport: transport(runtime.normalizedFields),
+    transport: settleUnfetchableReports(
+      transport(runtime.normalizedFields),
+      normalized.reports,
+      runtime.registry,
+    ),
     hooks: {
       beforeSubmit() {
         onRunningChange?.(true);
@@ -123,7 +127,6 @@ export const mountSchemaRunForm = ({
     designSystem: getPredictionDesignSystem(theme),
   });
   const form = mounted;
-  connectStoredStatusConditions(form.form);
   hideRunTabTitles(form.host);
   let reported: Pick<FormState, "lastResult" | "reportStates"> | null = null;
   const reportUpdate = (state: FormState) => {

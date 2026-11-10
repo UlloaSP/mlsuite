@@ -152,9 +152,9 @@ export function ModelsPage() {
         header={{
           title: "Models",
           breadcrumbs: [{ label: "Models" }],
-          description: `Navigate models and inspect generated schema snapshots for ${
+          description: `The trained models of ${
             workspace?.currentOrganization.name ?? "the current workspace"
-          }.`,
+          }: whether each is ready to run, and the schemas built from it.`,
           actions: canCreateModels ? (
             <AppLink className={appButtonClass()} to="/models/create">
               <Plus size={16} /> New model

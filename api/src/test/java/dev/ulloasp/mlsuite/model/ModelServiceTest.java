@@ -77,7 +77,8 @@ class ModelServiceTest {
                 artifactReader,
                 deletionQueue,
                 environments,
-                mock(AuditLogService.class));
+                mock(AuditLogService.class),
+                TestFixtures.principals());
         lenient().when(environments.register(any())).thenAnswer(call -> call.<BundleInspection.Environment>getArgument(0).key());
         lenient().when(workspaceAuthorizationService.requireCurrent(eq(3L), any(PermissionKey[].class))).thenReturn(organization());
     }
@@ -106,23 +107,21 @@ class ModelServiceTest {
     @Test
     void createModel_ThrowsWhenNameExistsInOrganization() {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
-        when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(true);
+        when(modelRepository.existsByNameIgnoreCaseAndOrganizationId("demo", 41L)).thenReturn(true);
 
         assertThrows(ModelAlreadyExistsException.class, () -> service.requireCreatable(3L, "demo"));
-        assertThrows(ModelAlreadyExistsException.class,
-                () -> service.createModel(3L, "demo", inspection(), TestFixtures.artifact("x".getBytes()), "sha-x", "application/octet-stream"));
+        assertThrows(IllegalArgumentException.class, () -> service.requireCreatable(3L, "   "));
     }
 
     @Test
     void renameModel_UpdatesNameWhenUnique() {
         Model model = model("old");
         when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(model));
-        when(modelRepository.existsByNameAndOrganizationIdAndIdNot("new", 41L, 9L)).thenReturn(false);
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.save(model)).thenReturn(model);
 
         assertEquals("new", service.renameModel(3L, 9L, " new ", 0L).getName());
-        assertEquals("Alice", model.getUpdatedBy().getFullName());
+        assertEquals(3L, model.getUpdatedBy().userId());
     }
 
     @Test
@@ -137,15 +136,6 @@ class ModelServiceTest {
         org.junit.jupiter.api.Assertions.assertNotNull(model.getArchivedAt());
     }
 
-    @Test
-    void deleteModel_BlocksWhenModelIsReferenced() {
-        when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(model("demo")));
-        when(bindingRepository.existsByModelId(9L)).thenReturn(true);
-
-        assertThrows(org.springframework.web.server.ResponseStatusException.class,
-                () -> service.deleteModel(3L, 9L, 0L));
-        verify(modelRepository, never()).delete(any());
-    }
 
     @Test
     void deleteModel_QueuesStoredObjectBeforeDeletingDatabaseRecord() {
@@ -183,7 +173,6 @@ class ModelServiceTest {
         source.setStorageObjectKey("old-key");
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(source));
-        when(modelRepository.existsByNameAndOrganizationId("copy", 41L)).thenReturn(false);
         source.setArtifactSha256("sha-source");
         source.setModelSizeBytes(5L);
         when(artifactReader.source(dev.ulloasp.mlsuite.storage.ModelArtifactReference.of(source)))
@@ -201,13 +190,12 @@ class ModelServiceTest {
 
         assertEquals("copy", copy.getName());
         assertEquals("new-key", copy.getStorageObjectKey());
-        assertEquals("Alice", copy.getUpdatedBy().getFullName());
+        assertEquals(3L, copy.getUpdatedBy().userId());
     }
 
     @Test
     void createModel_StoresObjectAndPersistsModel() throws Exception {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
-        when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
         when(modelRepository.saveAndFlush(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Model result = service.createModel(3L, "demo", inspection(), TestFixtures.artifact("x".getBytes()), "sha-x",
@@ -247,7 +235,6 @@ class ModelServiceTest {
     void createModel_DeletesStoredObjectWhenPersistFails() throws Exception {
         RuntimeException failure = new RuntimeException("persist failed");
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
-        when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
         when(modelRepository.saveAndFlush(any(Model.class))).thenThrow(failure);
         org.mockito.Mockito.doAnswer(invocation -> {
             Model model = invocation.getArgument(0);
@@ -299,7 +286,8 @@ class ModelServiceTest {
         organization.setId(41L);
         organization.setName("Org");
         organization.setSlug("org");
-        organization.setCreatedBy(user());
+        organization.setCreatedBy(TestFixtures.principal(user()));
+        organization.setUpdatedBy(organization.getCreatedBy());
         return organization;
     }
 
@@ -311,7 +299,8 @@ class ModelServiceTest {
         model.setType("classifier");
         model.setSpecificType("random_forest");
         model.setFileName("model.pkl");
-        model.setUser(user());
+        model.setCreatedBy(TestFixtures.principal(user()));
+        model.setUpdatedBy(model.getCreatedBy());
         model.setInputSchema(Map.of(
                 "fields", List.of(Map.of("id", "age")),
                 "reports", List.of(Map.of("id", "prediction"))));

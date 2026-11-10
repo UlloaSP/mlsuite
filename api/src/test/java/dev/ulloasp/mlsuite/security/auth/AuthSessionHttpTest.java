@@ -73,7 +73,8 @@ class AuthSessionHttpTest extends AuthHttpFixture {
     void aDisabledAccountCannotSignIn() throws Exception {
         account.setEnabled(false);
 
-        mockMvc.perform(login(PASSWORD)).andExpect(status().isForbidden());
+        // Answered like a wrong password: the account's state is not told to whoever names it.
+        mockMvc.perform(login(PASSWORD)).andExpect(status().isUnauthorized());
     }
 
     @Test

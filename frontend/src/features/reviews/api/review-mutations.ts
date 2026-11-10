@@ -10,7 +10,7 @@ import { saveSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedb
 import type { SchemaFeedbackStep } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
 import { PREDICTION_RUN_CATALOG_QUERY_KEY } from "@/capabilities/prediction-runs/prediction-run-keys";
 import { INFERENCE_REVIEW_ASSIGNMENTS_ROOT_QUERY_KEY } from "@/capabilities/review-creation/review-creation-api";
-import { SCHEMA_REVIEW_INBOX_QUERY_KEY } from "./review-keys";
+import { REVIEW_INBOX_ITEMS_QUERY_KEY, SCHEMA_REVIEW_INBOX_QUERY_KEY } from "./review-keys";
 
 const saveSchemaReviewFeedbackMutation = (
   organizationId: number | string,
@@ -72,16 +72,27 @@ export const useCompleteSchemaReviewRunMutation = (reviewId: string, reviewRunId
 
 const submitSchemaReviewInboxMutation = (organizationId: number | string) =>
   mutationOptions({
+    // The inbox shows a refused submission next to its button.
+    meta: { errorHandledLocally: true },
     mutationFn: () => appFetch<void>("/api/schema-reviews/inbox/submit-pending", json("POST", {})),
-    onSuccess: (_data, _variables, _result, { client }) =>
-      Promise.all([
+    onSuccess: (_data, _variables, _result, { client }) => {
+      // The submitted runs leave the inbox: their own queries go stale but are not asked for
+      // again, since the page moves off them instead.
+      const items = REVIEW_INBOX_ITEMS_QUERY_KEY(organizationId);
+      const isItem = (key: readonly unknown[]) => key[items.length - 1] === "item";
+      return Promise.all([
         client.invalidateQueries({ queryKey: PREDICTION_RUN_CATALOG_QUERY_KEY(organizationId) }),
-        client.invalidateQueries({ queryKey: SCHEMA_REVIEW_INBOX_QUERY_KEY(organizationId) }),
+        client.invalidateQueries({
+          queryKey: SCHEMA_REVIEW_INBOX_QUERY_KEY(organizationId),
+          predicate: (query) => !isItem(query.queryKey),
+        }),
+        client.invalidateQueries({ queryKey: items, refetchType: "none" }),
         // Submitting completes the assignment every inference page lists.
         client.invalidateQueries({
           queryKey: INFERENCE_REVIEW_ASSIGNMENTS_ROOT_QUERY_KEY(organizationId),
         }),
-      ]),
+      ]);
+    },
   });
 
 export const useSubmitSchemaReviewInboxMutation = () =>

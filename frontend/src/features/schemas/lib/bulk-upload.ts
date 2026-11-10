@@ -8,9 +8,9 @@ import {
   mappedTargets,
   targetKey,
 } from "@/capabilities/prediction-runtime/mlform/mapped-to";
+import { resolveDisplayKey } from "@/capabilities/prediction-runtime/mlform/display-key";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
-import { seriesInputValue } from "@/capabilities/prediction-runtime/mlform/series-schema";
 
 type FieldRecord = JsonRecord & {
   id?: string;
@@ -51,6 +51,21 @@ const modelInputFields = (version: SchemaVersionDto): FieldRecord[] => {
       });
       return;
     }
+    if (field.kind === "series") {
+      // A series takes its rows as the form does, in one column: its runs map them to its features.
+      const key = resolveDisplayKey(field);
+      if (key) {
+        byKey.set(key, {
+          ...field,
+          id: key,
+          label: key,
+          displayKey: key,
+          mappedTo: key,
+          hidden: false,
+        });
+      }
+      return;
+    }
     mappedRoutes(field.mappedTo).forEach(({ mappedTo }) => {
       const key = targetKey(mappedTo)!;
       const positional = typeof mappedTo === "number";
@@ -63,14 +78,6 @@ const modelInputFields = (version: SchemaVersionDto): FieldRecord[] => {
         hidden: false,
       });
     });
-    if (field.kind === "series" && Array.isArray(field.aggregations)) {
-      field.aggregations.filter(isRecord).forEach((aggregation) => {
-        mappedRoutes(aggregation.mappedTo).forEach(({ mappedTo }) => {
-          const key = targetKey(mappedTo)!;
-          byKey.set(key, { kind: "number", id: key, label: key, displayKey: key, mappedTo });
-        });
-      });
-    }
   });
   return [...byKey.values()];
 };
@@ -109,11 +116,11 @@ export const toSchemaRunFieldValues = (
     }
     const modelKey = mappedTargets(field.mappedTo).find((target) => target in inputs);
     if (modelKey) {
-      payload[field.id] = seriesInputValue(field, inputs[modelKey]);
+      payload[field.id] = inputs[modelKey];
       return payload;
     }
     const key = displayKeysFor(field).find((candidate) => candidate in inputs);
-    if (key) payload[field.id] = seriesInputValue(field, inputs[key]);
+    if (key) payload[field.id] = inputs[key];
     return payload;
   }, {});
 

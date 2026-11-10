@@ -73,7 +73,6 @@ export function RolesPage() {
                       name: "",
                       slug: "",
                       description: "",
-                      scope: "ORGANIZATION",
                       locked: false,
                       systemKey: null,
                       userCount: 0,

@@ -57,7 +57,7 @@ const dashboard = {
       id: 1,
       fullName: "Ada Lovelace",
       email: "ada@acme.test",
-      role: { name: "Maintainer" },
+      roleDefinition: { name: "Maintainer" },
       createdAt: "2026-09-01T00:00:00Z",
     },
   ],

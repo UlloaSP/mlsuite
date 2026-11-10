@@ -90,6 +90,7 @@ export const mountSandboxedSchemaRunForm = ({
         const submission = ++submissions;
         const transport = createSchemaRunTransport(
           target,
+          schema,
           bindings,
           fields as PredictionPayloadField[],
         );

@@ -68,10 +68,10 @@ public interface ApiRequestRepository extends JpaRepository<ApiRequest, Long> {
 
     @Query(value = """
             SELECT COUNT(*) AS calls,
-                   COUNT(*) FILTER (WHERE status >= 400 AND status < 500) AS rejected,
-                   COUNT(*) FILTER (WHERE status >= 500) AS failed,
+                   COUNT(*) FILTER (WHERE http_status >= 400 AND http_status < 500) AS rejected,
+                   COUNT(*) FILTER (WHERE http_status >= 500) AS failed,
                    COUNT(*) FILTER (WHERE error_code = 'runtime_busy') AS busy,
-                   PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY duration_ms) FILTER (WHERE status = 200) AS p95,
+                   PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY duration_ms) FILTER (WHERE http_status = 200) AS p95,
                    COUNT(DISTINCT api_client_id) AS clients,
                    COUNT(DISTINCT organization_id) AS organizations
             FROM api_request WHERE """ + SCOPE, nativeQuery = true)
@@ -80,9 +80,9 @@ public interface ApiRequestRepository extends JpaRepository<ApiRequest, Long> {
     /** {@code unit} is {@code hour} or {@code day}, in UTC; each bucket starts at its epoch second. */
     @Query(value = """
             SELECT CAST(EXTRACT(EPOCH FROM DATE_TRUNC(:unit, created_at, 'UTC')) AS BIGINT) AS bucket,
-                   COUNT(*) FILTER (WHERE status < 400) AS succeeded,
-                   COUNT(*) FILTER (WHERE status >= 400 AND status < 500) AS rejected,
-                   COUNT(*) FILTER (WHERE status >= 500) AS failed
+                   COUNT(*) FILTER (WHERE http_status < 400) AS succeeded,
+                   COUNT(*) FILTER (WHERE http_status >= 400 AND http_status < 500) AS rejected,
+                   COUNT(*) FILTER (WHERE http_status >= 500) AS failed
             FROM api_request WHERE """ + SCOPE + """
             GROUP BY bucket ORDER BY bucket
             """, nativeQuery = true)
@@ -90,27 +90,20 @@ public interface ApiRequestRepository extends JpaRepository<ApiRequest, Long> {
 
     @Query(value = """
             SELECT api_client_id AS clientId, MAX(client_name) AS clientName, organization_id AS organizationId,
-                   COUNT(*) AS calls, COUNT(*) FILTER (WHERE status >= 400) AS errors
+                   COUNT(*) AS calls, COUNT(*) FILTER (WHERE http_status >= 400) AS errors
             FROM api_request WHERE api_client_id IS NOT NULL AND """ + SCOPE + """
             GROUP BY api_client_id, organization_id ORDER BY calls DESC, clientName LIMIT 5
             """, nativeQuery = true)
     List<ApiUsageClient> topClients(Long organizationId, Long clientId, OffsetDateTime since);
 
-    /**
-     * Logs one call. The client, key, bookmark and run are named by id only while they still
-     * exist when the call ends: a key revoked or a client deleted while its call ran leaves the
-     * call logged under their names alone.
-     */
+    /** Logs one call, under the ids and names its client, key, bookmark and run had. */
     @Modifying
     @Query(value = """
             INSERT INTO api_request (request_id, organization_id, api_client_id, client_name, api_client_key_id,
-                key_prefix, schema_bookmark_id, bookmark_name, prediction_run_id, status, error_code, duration_ms,
-                created_at)
-            VALUES (:requestId, :organizationId,
-                (SELECT id FROM api_client WHERE id = :clientId), :clientName,
-                (SELECT id FROM api_client_key WHERE id = :keyId), :keyPrefix,
-                (SELECT id FROM schema_bookmark WHERE id = :bookmarkId), :bookmarkName,
-                (SELECT id FROM prediction_run WHERE id = :runId), :status, :errorCode, :durationMs, :createdAt)
+                key_prefix, schema_bookmark_id, bookmark_name, prediction_run_id, http_status, error_code,
+                duration_ms, created_at)
+            VALUES (:requestId, :organizationId, :clientId, :clientName, :keyId, :keyPrefix, :bookmarkId,
+                :bookmarkName, :runId, :status, :errorCode, :durationMs, :createdAt)
             """, nativeQuery = true)
     int log(UUID requestId, Long organizationId, Long clientId, String clientName, Long keyId, String keyPrefix,
             Long bookmarkId, String bookmarkName, Long runId, int status, String errorCode, int durationMs,

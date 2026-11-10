@@ -13,9 +13,11 @@ import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
@@ -29,6 +31,9 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 
 /** A schema's snapshots, changes and bookmarks, filtered, searched, ordered and paged on PostgreSQL. */
 class SchemaRepositoryCatalogTest extends PublicPredictionFixture {
+
+    @Autowired
+    private Principals principals;
     private static final Map<String, Object> FIELD = Map.of("kind", "number", "label", "Value");
     private static final Map<String, Object> HIDDEN = Map.of("kind", "number", "label", "Secret", "hidden", true);
 
@@ -78,8 +83,7 @@ class SchemaRepositoryCatalogTest extends PublicPredictionFixture {
         catalog("versions", "filter", "latest")
                 .andExpect(jsonPath("$.totalItems").value(1))
                 .andExpect(jsonPath("$.items[0].version").value(34));
-        catalog("versions", "filter", "withBindings").andExpect(jsonPath("$.totalItems").value(2));
-        catalog("versions", "filter", "unknown").andExpect(jsonPath("$.totalItems").value(0));
+        refused("versions", "filter", "Unknown filter 'unknown'; expected one of: all, latest");
 
         catalog("versions", "search", "BASELINE")
                 .andExpect(jsonPath("$.totalItems").value(1))
@@ -117,7 +121,7 @@ class SchemaRepositoryCatalogTest extends PublicPredictionFixture {
         catalog("drafts", "filter", "draft").andExpect(jsonPath("$.totalItems").value(26));
         catalog("drafts", "filter", "CONFLICT").andExpect(jsonPath("$.totalItems").value(1));
         catalog("drafts", "filter", "published").andExpect(jsonPath("$.totalItems").value(0));
-        catalog("drafts", "filter", "unknown").andExpect(jsonPath("$.totalItems").value(0));
+        refused("drafts", "filter", "Unknown filter 'unknown'; expected one of: all, open, DRAFT, CONFLICT, PUBLISHED");
         catalog("drafts", "search", "change 2").andExpect(jsonPath("$.totalItems").value(6));
         // A status is searched as the text its badge shows.
         catalog("drafts", "search", "confl").andExpect(jsonPath("$.items[0].draft.name").value("Stuck"));
@@ -128,11 +132,11 @@ class SchemaRepositoryCatalogTest extends PublicPredictionFixture {
     void bookmarksFilterByTheNewestSnapshotAndCountExamplesOfThePageOnly() throws Exception {
         inTransaction(() -> {
             IntStream.range(0, 25).forEach(number -> entityManager.persist(
-                    new SchemaBookmark(schema, latest, "mark-%02d".formatted(number))));
-            entityManager.persist(new SchemaBookmark(schema, first, "legacy"));
-            PredictionRun run = new PredictionRun(bookmark, version, "example", Map.of(), PredictionRunStatus.SUCCESS);
+                    new SchemaBookmark(schema, latest, "mark-%02d".formatted(number), principals.system())));
+            entityManager.persist(new SchemaBookmark(schema, first, "legacy", principals.system()));
+            PredictionRun run = new PredictionRun(bookmark, version, "example", Map.of(), PredictionRunStatus.SUCCESS, principals.system());
             entityManager.persist(run);
-            entityManager.persist(new SchemaBookmarkExample(bookmark, run));
+            entityManager.persist(new SchemaBookmarkExample(bookmark, run, principals.system()));
         });
 
         catalog("bookmarks", "size", "24", "sort", "name")
@@ -146,7 +150,7 @@ class SchemaRepositoryCatalogTest extends PublicPredictionFixture {
                 .andExpect(jsonPath("$.items[2].version").value(1));
         catalog("bookmarks", "filter", "latest").andExpect(jsonPath("$.totalItems").value(25));
         catalog("bookmarks", "filter", "older").andExpect(jsonPath("$.totalItems").value(2));
-        catalog("bookmarks", "filter", "unknown").andExpect(jsonPath("$.totalItems").value(0));
+        refused("bookmarks", "filter", "Unknown filter 'unknown'; expected one of: all, latest, older");
         catalog("bookmarks", "search", "PRODUCTION")
                 .andExpect(jsonPath("$.totalItems").value(1))
                 .andExpect(jsonPath("$.items[0].exampleCount").value(1));
@@ -169,13 +173,13 @@ class SchemaRepositoryCatalogTest extends PublicPredictionFixture {
 
     private SchemaVersion snapshot(int number, String name, List<Map<String, Object>> fields) {
         SchemaVersion snapshot = new SchemaVersion(schema, number, name,
-                Map.of("fields", fields, "reports", List.of()));
+                Map.of("fields", fields, "reports", List.of()), principals.system());
         entityManager.persist(snapshot);
         return snapshot;
     }
 
     private void change(String name, SchemaVersion base, SchemaDraftStatus status) {
-        SchemaDraft draft = new SchemaDraft(schema, base, name, base.getFormSchema(), List.of());
+        SchemaDraft draft = new SchemaDraft(schema, base, name, base.getFormSchema(), List.of(), principals.system());
         draft.setStatus(status);
         // Publishing records the snapshot a draft became.
         if (status == SchemaDraftStatus.PUBLISHED) draft.setPublishedVersion(base);
@@ -183,6 +187,13 @@ class SchemaRepositoryCatalogTest extends PublicPredictionFixture {
     }
 
     /** One page of a schema's resource as its owner, with {@code parameters} as name and value pairs. */
+    /** A catalog refuses a value it does not offer instead of answering an empty page. */
+    private void refused(String resource, String parameter, String message) throws Exception {
+        mockMvc.perform(asOwner(get("/api/schemas/" + schema.getId() + "/" + resource + "/catalog")
+                .param(parameter, "unknown")))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").value(message));
+    }
+
     private ResultActions catalog(String resource, String... parameters) throws Exception {
         MockHttpServletRequestBuilder request = get("/api/schemas/" + schema.getId() + "/" + resource + "/catalog");
         for (int index = 0; index < parameters.length; index += 2) {

@@ -32,11 +32,10 @@ import lombok.Setter;
 })
 public class RoleTemplate {
 
-    public RoleTemplate(String name, String slug, String category, RoleScope scope) {
+    public RoleTemplate(String name, String slug, String category) {
         this.name = name;
         this.slug = slug;
         this.category = category;
-        this.scope = scope;
         this.locked = true;
     }
 
@@ -56,9 +55,6 @@ public class RoleTemplate {
     @Column(name = "category", nullable = false, length = 80)
     private String category;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "scope", nullable = false, length = 32)
-    private RoleScope scope;
 
     @Column(name = "locked", nullable = false)
     private boolean locked;

@@ -1,12 +1,11 @@
 package dev.ulloasp.mlsuite.apiaccess.domain.model;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -35,12 +34,12 @@ public class ApiClientKey {
 
     public static final int NAME_MAX_LENGTH = 80;
 
-    public ApiClientKey(ApiClient client, String name, String keyPrefix, String keyHash, String createdByName) {
+    public ApiClientKey(ApiClient client, String name, String keyPrefix, String keyHash, Principal createdBy) {
         this.client = client;
         this.name = name;
         this.keyPrefix = keyPrefix;
         this.keyHash = keyHash;
-        this.createdByName = createdByName;
+        this.createdBy = createdBy;
     }
 
     @Id
@@ -60,13 +59,13 @@ public class ApiClientKey {
     @Column(name = "key_prefix", nullable = false, updatable = false, length = 16)
     private String keyPrefix;
 
-    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "key_hash", nullable = false, updatable = false, unique = true, length = 64)
     private String keyHash;
 
-    // Identity snapshot: who issued the key, as they were named then.
-    @Column(name = "created_by_name", updatable = false)
-    private String createdByName;
+    /** Who created it. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMPTZ")

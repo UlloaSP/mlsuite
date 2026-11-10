@@ -17,7 +17,7 @@ public enum NotificationKind {
     MODEL_READY(NotificationTargetType.MODEL),
     /** modelName, reason. */
     MODEL_FAILED(NotificationTargetType.MODEL),
-    /** inviterName, roleName. */
+    /** inviterName, roleName; answer (ACCEPTED or DECLINED) once the invitee answered it. */
     INVITATION_RECEIVED(NotificationTargetType.INVITATION),
     /** inviteeName. */
     INVITATION_ACCEPTED(NotificationTargetType.INVITATION),
@@ -40,7 +40,9 @@ public enum NotificationKind {
     /** As SYSTEM_ALERT_RAISED, at its critical threshold. */
     SYSTEM_ALERT_ESCALATED(NotificationTargetType.SYSTEM_ALERT),
     /** As SYSTEM_ALERT_RAISED, at its clear threshold. */
-    SYSTEM_ALERT_RESOLVED(NotificationTargetType.SYSTEM_ALERT);
+    SYSTEM_ALERT_RESOLVED(NotificationTargetType.SYSTEM_ALERT),
+    /** bookmarkName, schemaName, schemaId: the platform's moderators took it off the public pages. */
+    BOOKMARK_UNPUBLISHED(NotificationTargetType.BOOKMARK);
 
     private final NotificationTargetType targetType;
 

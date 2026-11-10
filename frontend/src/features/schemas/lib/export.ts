@@ -4,10 +4,19 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { isBuiltinReportKind } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
+import { resolveDisplayKey } from "@/capabilities/prediction-runtime/mlform/display-key";
+import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { csvEscape, toCell } from "@/capabilities/prediction-runtime/data/export-csv";
-import { builtinPrediction } from "@/capabilities/prediction-runtime/data/report-normalization";
+import {
+  builtinPrediction,
+  classLabel,
+} from "@/capabilities/prediction-runtime/data/report-normalization";
 import { getOutputFeedbackFieldIds } from "@/capabilities/prediction-runtime/feedback/output-feedback-questionnaire";
-import { getQuestionnaireFieldIds } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
+import {
+  getQuestionnaireFieldDescriptors,
+  getQuestionnaireFieldIds,
+  type QuestionnaireFieldDescriptor,
+} from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
 import type { QuestionnaireSchema } from "@/capabilities/prediction-runtime/feedback/questionnaire-schema";
 import { getFormattedReportContent } from "@/capabilities/prediction-runtime/feedback/report-feedback-utils";
 import { formatTimestamp } from "@/shared/lib/date-time";
@@ -29,23 +38,14 @@ const safeFilePart = (value: string): string =>
     .slice(0, 80);
 
 export const schemaRunReviewerLabel = (item: PredictionResultFeedbackDto): string =>
-  item.userEmail || item.userName || (item.userId == null ? "Visitor" : `user-${item.userId}`);
+  item.createdByEmail ||
+  item.createdByName ||
+  (item.createdByUserId == null ? "Visitor" : `user-${item.createdByUserId}`);
 
 const feedbackRecord = (value: unknown): Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : { value };
-
-const reportsOf = (schema: unknown): Record<string, unknown>[] =>
-  typeof schema === "object" &&
-  schema !== null &&
-  !Array.isArray(schema) &&
-  Array.isArray((schema as { reports?: unknown }).reports)
-    ? (schema as { reports: unknown[] }).reports.filter(
-        (item): item is Record<string, unknown> =>
-          typeof item === "object" && item !== null && !Array.isArray(item),
-      )
-    : [];
 
 const modelInputColumn = (modelId: number, key: string): string => `input.${modelId}.${key}`;
 
@@ -53,19 +53,45 @@ const reportColumnId = (report: SchemaDisplayReport): string => report.id;
 
 const predictionValue = (report: SchemaDisplayReport): unknown => {
   const payload = feedbackRecord(report.payload);
-  const rawPrediction = builtinPrediction(payload);
-  if (typeof rawPrediction === "number") return report.labels?.[rawPrediction] ?? rawPrediction;
-  if (typeof rawPrediction === "string" && /^\d+$/.test(rawPrediction)) {
-    const index = Number(rawPrediction);
-    return report.labels?.[index] ?? rawPrediction;
-  }
-  return rawPrediction ?? report.payload;
+  return builtinPrediction(payload) ?? report.payload;
 };
 
-const outputFeedbackValue = (record: Record<string, unknown>, kind: string): unknown => {
-  const fieldIds = getOutputFeedbackFieldIds(kind);
-  return record[fieldIds.assessment] ?? record.assessment ?? Object.values(record)[0];
+/** A reviewer's assessment, a class written as the predicted class beside it is: by its schema label. */
+const outputFeedbackValue = (
+  record: Record<string, unknown>,
+  report: SchemaDisplayReport,
+): unknown => {
+  const fieldIds = getOutputFeedbackFieldIds(report.kind);
+  const value = record[fieldIds.assessment] ?? record.assessment ?? Object.values(record)[0];
+  return report.kind === "classifier"
+    ? classLabel(report.labels ?? [], report.classes ?? [], value)
+    : value;
 };
+
+const questionnaireOf = (report: SchemaDisplayReport | undefined): unknown =>
+  report?.config.feedbackQuestionnaire;
+
+const questionnaireFields = (
+  report: SchemaDisplayReport,
+): Map<string, QuestionnaireFieldDescriptor> => {
+  const questionnaire = questionnaireOf(report);
+  if (typeof questionnaire !== "object" || questionnaire === null) return new Map();
+  return new Map(
+    getQuestionnaireFieldDescriptors(questionnaire as QuestionnaireSchema).map((field) => [
+      field.id,
+      field,
+    ]),
+  );
+};
+
+/** An answer as the inference table shows it: a choice by its option's label, compared as text. */
+const questionnaireAnswer = (
+  value: unknown,
+  field: QuestionnaireFieldDescriptor | undefined,
+): unknown =>
+  typeof value === "string" || typeof value === "number" || typeof value === "boolean"
+    ? (field?.options?.find((option) => toCell(option.value) === String(value))?.label ?? value)
+    : value;
 
 const reportContentValue = (payload: unknown): string => {
   const formatted = getFormattedReportContent(payload);
@@ -101,6 +127,18 @@ const getSchemaRunModelInputValues = (run: PredictionRunDto): Map<string, unknow
     return values;
   }, new Map());
 
+/**
+ * The display keys of the shown series fields: a run keeps their rows under these, and their
+ * models may receive only aggregations of them, so the rows have columns of their own.
+ */
+const getSeriesKeys = (version: SchemaVersionDto): string[] =>
+  (Array.isArray(version.formSchema.fields) ? version.formSchema.fields : [])
+    .filter(isRecord)
+    .filter((field) => field.kind === "series" && field.hidden !== true)
+    .flatMap((field) => resolveDisplayKey(field) ?? []);
+
+const seriesColumn = (key: string): string => `series.${key}`;
+
 export const buildSchemaRunExport = (
   runs: readonly PredictionRunDto[],
   version: SchemaVersionDto,
@@ -108,12 +146,12 @@ export const buildSchemaRunExport = (
   delimiter = ",",
 ): { content: string; fileName: string } => {
   const inputLabels = getSchemaRunModelInputColumns(runs);
+  const seriesKeys = getSeriesKeys(version);
   const displayReports = runs.flatMap((run) =>
     run.results.flatMap((result) => getSchemaResultReports(version, result)),
   );
   const reportIds = Array.from(new Set(displayReports.map(reportColumnId)));
   const reviewers = Array.from(new Set(feedback.map(schemaRunReviewerLabel))).sort();
-  const reportConfigs = reportsOf(version.formSchema);
   const outputHeaders = reportIds.flatMap((reportId) => {
     const report = displayReports.find((item) => item.id === reportId);
     if (!report || !isBuiltinReportKind(report.kind)) return [];
@@ -123,8 +161,7 @@ export const buildSchemaRunExport = (
     ];
   });
   const reportHeaders = reportIds.flatMap((reportId) => {
-    const config = reportConfigs.find((item) => item.id === reportId);
-    const questionnaire = config?.feedbackQuestionnaire;
+    const questionnaire = questionnaireOf(displayReports.find((item) => item.id === reportId));
     const schemaFields =
       typeof questionnaire === "object" && questionnaire !== null
         ? getQuestionnaireFieldIds(questionnaire as QuestionnaireSchema)
@@ -146,6 +183,7 @@ export const buildSchemaRunExport = (
     "created_by",
     "model_count",
     ...inputLabels,
+    ...seriesKeys.map(seriesColumn),
     ...outputHeaders,
     ...reportHeaders,
   ];
@@ -158,16 +196,16 @@ export const buildSchemaRunExport = (
     run.results.forEach((result) => {
       getSchemaResultReports(version, result).forEach((report) => {
         const reportId = reportColumnId(report);
-        const config = reportConfigs.find((item) => item.id === reportId);
         if (isBuiltinReportKind(report.kind)) {
           builtInReportValues.set(
             outputPredictionColumn(reportId),
             toCell(predictionValue(report)),
           );
         }
-        if (config?.feedbackQuestionnaire) {
+        if (questionnaireOf(report)) {
           reportContent.set(reportContentColumn(reportId), reportContentValue(report.payload));
         }
+        const fields = questionnaireFields(report);
         reviewers.forEach((reviewer) => {
           const matches = feedback.filter(
             (item) =>
@@ -180,12 +218,15 @@ export const buildSchemaRunExport = (
             if (item.type === "OUTPUT") {
               outputFeedback.set(
                 outputFeedbackColumn(reportId, reviewer),
-                toCell(outputFeedbackValue(record, report.kind)),
+                toCell(outputFeedbackValue(record, report)),
               );
               return;
             }
             Object.entries(record).forEach(([field, value]) =>
-              reportFeedback.set(reportFeedbackColumn(reportId, field, reviewer), toCell(value)),
+              reportFeedback.set(
+                reportFeedbackColumn(reportId, field, reviewer),
+                toCell(questionnaireAnswer(value, fields.get(field))),
+              ),
             );
           });
         });
@@ -200,6 +241,7 @@ export const buildSchemaRunExport = (
       run.createdByName || run.createdByEmail || "",
       String(run.results.length),
       ...inputLabels.map((label) => toCell(inputs.get(label))),
+      ...seriesKeys.map((key) => toCell(run.inputData[key])),
       ...outputHeaders.map(
         (label) => builtInReportValues.get(label) ?? outputFeedback.get(label) ?? "",
       ),

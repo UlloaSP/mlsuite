@@ -64,7 +64,7 @@ export function RequestLog({
         sortOptions={[...SORTS]}
       />
       <CatalogListPanel
-        key={`${controls.search}:${controls.filter}`}
+        resetKey={`${controls.search}:${controls.filter}`}
         errorMessage={getCatalogErrorMessage(query.error)}
         hasNext={Boolean(query.data?.hasNext)}
         isBusy={query.isLoading || query.isFetching}

@@ -5,7 +5,7 @@ import { getRouteApi, useLocation } from "@tanstack/react-router";
 import { expect, test } from "vite-plus/test";
 import { useSearchUpdate } from "@/shared/lib/use-search-update";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
-import { mount } from "./support/dom";
+import { mount, searchDelay } from "./support/dom";
 
 // The platform's traffic page: a tab and a period beside its clients catalog's params.
 const route = getRouteApi("/protected/app/superadmin/admin/api-traffic");
@@ -53,6 +53,8 @@ test("changes made before the URL renders again all apply, from one hook or seve
     update({ period: "week" });
     catalog.setSort("name");
   });
+  // Typing reaches the URL once it pauses, on top of the changes made meanwhile.
+  await searchDelay();
 
   expect(Object.fromEntries(url())).toEqual({
     q: "ada",
@@ -83,6 +85,7 @@ test("a value the page does not know reads as its fallback and leaves with the n
   await act(async () => {
     catalog.setQuery("next");
   });
+  await searchDelay();
 
   expect(Object.fromEntries(url())).toEqual({ q: "next" });
 });

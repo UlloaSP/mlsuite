@@ -78,7 +78,7 @@ export function ModeratedBookmarkTile({
               {snapshotLabel(item.versionName, item.version)}
             </span>
             <span>
-              Updated <LiveRelativeTime value={item.updatedAt} /> ago
+              Updated <LiveRelativeTime value={item.updatedAt} />
             </span>
             {item.schemaArchived ? <span>Public page not available</span> : null}
           </>

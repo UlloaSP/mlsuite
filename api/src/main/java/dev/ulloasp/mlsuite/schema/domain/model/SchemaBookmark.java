@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.domain.model;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,8 +40,10 @@ public class SchemaBookmark {
     public static final int DESCRIPTION_MAX_LENGTH = 800;
     public static final int PUBLICATION_NOTE_MAX_LENGTH = 1000;
 
-    public SchemaBookmark(Schema schema, SchemaVersion version, String name) {
+    public SchemaBookmark(Schema schema, SchemaVersion version, String name, Principal createdBy) {
         this.schema = schema;
+        this.createdBy = createdBy;
+        this.updatedBy = createdBy;
         this.version = version;
         this.name = name;
     }
@@ -48,6 +51,16 @@ public class SchemaBookmark {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /** Who created it. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
+
+    /** Who changed it last. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "updated_by_principal_id", nullable = false)
+    private Principal updatedBy;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "schema_id", nullable = false, foreignKey = @ForeignKey(name = "fk_schema_bookmark_schema"))

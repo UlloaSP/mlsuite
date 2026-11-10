@@ -2,7 +2,6 @@ package dev.ulloasp.mlsuite.schema.application.service;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,8 +77,6 @@ public final class PublicRunReports {
         output.put("reports", reports);
         Map<String, Object> meta = new LinkedHashMap<>();
         if (answer.get("meta") instanceof Map<?, ?> given) given.forEach((key, value) -> meta.put(String.valueOf(key), value));
-        meta.put("modelId", String.valueOf(modelId));
-        meta.put("backendFieldValues", input);
         output.put("meta", meta);
         return output;
     }
@@ -92,8 +89,7 @@ public final class PublicRunReports {
      */
     public static void asWorkspaceStores(String kind, Map<String, Object> report) {
         if ("classifier".equals(kind)) {
-            List<Double> probabilities = numbers(report.get("probabilities") instanceof List<?> rows
-                    && !rows.isEmpty() && rows.get(0) instanceof List<?> first ? first : report.get("probabilities"));
+            List<Double> probabilities = numbers(report.get("probabilities"));
             List<String> labels = labels(report.get("mapping"));
             report.put("probabilities", probabilities);
             report.put("labels", labels);
@@ -121,61 +117,51 @@ public final class PublicRunReports {
         return null;
     }
 
+    /** The numbers of a list; anything else in it is left out. */
     private static List<Double> numbers(Object value) {
-        List<Double> numbers = new ArrayList<>();
-        if (value instanceof List<?> items) {
-            for (Object item : items) {
-                if (item instanceof Number number) {
-                    numbers.add(number.doubleValue());
-                } else if (item instanceof String text) {
-                    try {
-                        numbers.add(Double.valueOf(text.strip()));
-                    } catch (NumberFormatException ignored) {
-                        // Not a number: left out, as the workspace leaves it out.
-                    }
-                }
+        List<?> items = value instanceof List<?> list ? list : List.of();
+        return items.stream().filter(Number.class::isInstance).map(item -> ((Number) item).doubleValue()).toList();
+    }
+
+    /** Class labels in class order; anything that is not a label is left out. */
+    private static List<String> labels(Object mapping) {
+        List<?> items = mapping instanceof List<?> list ? list : List.of();
+        return items.stream().filter(String.class::isInstance).map(String.class::cast).toList();
+    }
+
+    /**
+     * The id a run stores a form report's copy under: the report's id, else its label, else its
+     * position in the form. The browser names stored copies by the same rule (stored-report.ts).
+     */
+    public static String storedId(Map<?, ?> report, int order) {
+        if (report.get("id") instanceof String id) return id;
+        return report.get("label") instanceof String label ? label : String.valueOf(order);
+    }
+
+    /**
+     * The copy a run stored of one form report among a model's stored reports: the one named by
+     * the report's stored id and routed to the output it reads. Two reports may read the same
+     * output (a class and its explanation), so the output alone does not tell them apart. The
+     * inference catalog and the browser read stored copies by this rule.
+     */
+    public static Optional<Map<?, ?>> storedCopy(List<?> reports, String storedId, String target) {
+        for (Object item : reports) {
+            if (item instanceof Map<?, ?> report && storedId.equals(report.get("id"))
+                    && target.equals(String.valueOf(report.get("mappedTo")))) {
+                return Optional.of(report);
             }
         }
-        return numbers;
-    }
-
-    /** Class labels in class order: a list as given, or a map keyed by class index. */
-    private static List<String> labels(Object mapping) {
-        if (mapping instanceof List<?> items) {
-            return items.stream().filter(String.class::isInstance).map(String.class::cast).toList();
-        }
-        if (mapping instanceof Map<?, ?> byIndex) {
-            return byIndex.entrySet().stream()
-                    .sorted(Comparator.comparingDouble(entry -> index(entry.getKey())))
-                    .map(Map.Entry::getValue)
-                    .filter(String.class::isInstance)
-                    .map(String.class::cast)
-                    .toList();
-        }
-        return List.of();
-    }
-
-    private static double index(Object key) {
-        try {
-            return Double.parseDouble(String.valueOf(key));
-        } catch (NumberFormatException ex) {
-            return Double.MAX_VALUE;
-        }
+        return Optional.empty();
     }
 
     private static Optional<Map<String, Object>> storedCopy(ReportRoute route, Map<String, Object> output) {
         List<?> reports = output.get("reports") instanceof List<?> items ? items : List.of();
-        for (Object item : reports) {
-            if (item instanceof Map<?, ?> report
-                    && route.storedId().equals(report.get("id"))
-                    && route.target().equals(String.valueOf(report.get("mappedTo")))) {
-                Map<String, Object> payload = new LinkedHashMap<>();
-                report.forEach((key, value) -> {
-                    if (!STORED_NAMING.contains(String.valueOf(key))) payload.put(String.valueOf(key), value);
-                });
-                return Optional.of(payload);
-            }
-        }
-        return Optional.empty();
+        return storedCopy(reports, route.storedId(), route.target()).map(report -> {
+            Map<String, Object> payload = new LinkedHashMap<>();
+            report.forEach((key, value) -> {
+                if (!STORED_NAMING.contains(String.valueOf(key))) payload.put(String.valueOf(key), value);
+            });
+            return payload;
+        });
     }
 }

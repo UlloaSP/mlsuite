@@ -8,10 +8,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
@@ -20,6 +22,9 @@ import dev.ulloasp.mlsuite.user.domain.model.User;
 
 /** People with something to show: their profile edits, and bookmarks in their personal account. */
 abstract class ProfileFixture extends PersonalAccountFixture {
+
+    @Autowired
+    private Principals principals;
 
     static final String ME = "/api/users/me";
     static final String PINS = ME + "/pins";
@@ -39,12 +44,12 @@ abstract class ProfileFixture extends PersonalAccountFixture {
     SchemaBookmark in(Organization account, String name, BookmarkVisibility visibility) {
         AtomicReference<SchemaBookmark> stored = new AtomicReference<>();
         inTransaction(() -> {
-            Schema owned = new Schema(account, name + " schema", null);
+            Schema owned = new Schema(account, name + " schema", null, principals.system());
             entityManager.persist(owned);
             SchemaVersion snapshot = new SchemaVersion(owned, 1, "First",
-                    Map.of("fields", List.of(), "reports", List.of()));
+                    Map.of("fields", List.of(), "reports", List.of()), principals.system());
             entityManager.persist(snapshot);
-            SchemaBookmark bookmark = new SchemaBookmark(owned, snapshot, name);
+            SchemaBookmark bookmark = new SchemaBookmark(owned, snapshot, name, principals.system());
             bookmark.setDescription("Private note of " + name);
             bookmark.setVisibility(visibility);
             bookmark.setPublicId(UUID.randomUUID().toString());

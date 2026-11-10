@@ -2,6 +2,7 @@ package dev.ulloasp.mlsuite.schema.catalog;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -23,6 +24,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.model.RecordedSql;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
@@ -37,6 +39,9 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 
 /** The inference catalog on PostgreSQL: counts, predicates, deterministic page boundaries and tenant scope. */
 class InferenceCatalogIntegrationTest extends PublicPredictionFixture {
+
+    @Autowired
+    private Principals principals;
     @Autowired InferenceCatalogService catalog;
     private final OffsetDateTime at = OffsetDateTime.parse("2026-10-01T10:00:00Z");
 
@@ -70,24 +75,27 @@ class InferenceCatalogIntegrationTest extends PublicPredictionFixture {
     void pagesAndScansAcrossEqualTimestampBoundariesWithoutLosingRowsOrTenantScope() throws Exception {
         long[] foreignId = { 0 };
         inTransaction(() -> {
-            var foreignOrg = new Organization("foreign-" + schema.getId(), "Foreign", null, owner);
+            var foreignOrg = new Organization("foreign-" + schema.getId(), "Foreign", null, principals.of(owner));
             entityManager.persist(foreignOrg);
-            var foreignSchema = new Schema(foreignOrg, "Foreign", null);
+            var foreignSchema = new Schema(foreignOrg, "Foreign", null, principals.system());
             entityManager.persist(foreignSchema);
             var foreignVersion = new SchemaVersion(foreignSchema, 1, "Foreign",
-                    Map.of("fields", List.of(), "reports", List.of()));
+                    Map.of("fields", List.of(), "reports", List.of()), principals.system());
             entityManager.persist(foreignVersion);
             var foreignRun = new PredictionRun(null, foreignVersion, "foreign-only", Map.of("Age", 999),
-                    PredictionRunStatus.SUCCESS);
+                    PredictionRunStatus.SUCCESS, principals.system());
             entityManager.persist(foreignRun);
             foreignId[0] = foreignRun.getId();
             for (int i = 0; i < 130; i++) {
                 entityManager.persist(new PredictionRun(bookmark, version, "case-" + i, Map.of("Age", i),
-                        i == 129 ? PredictionRunStatus.FAILED : PredictionRunStatus.SUCCESS));
+                        i == 129 ? PredictionRunStatus.FAILED : PredictionRunStatus.SUCCESS, principals.system()));
             }
+            // Stands in for runs created earlier: a run is otherwise written once.
+            entityManager.createNativeQuery("SET LOCAL session_replication_role = replica").executeUpdate();
             entityManager
                     .createQuery("update PredictionRun r set r.createdAt = :at where r.schemaVersion.id = :version")
                     .setParameter("at", at).setParameter("version", version.getId()).executeUpdate();
+            entityManager.createNativeQuery("SET LOCAL session_replication_role = origin").executeUpdate();
         });
         String ageColumn = schema.getId() + ":input:Age";
 
@@ -188,7 +196,7 @@ class InferenceCatalogIntegrationTest extends PublicPredictionFixture {
         inTransaction(() -> {
             for (int i = 0; i < 230; i++) {
                 entityManager.persist(new PredictionRun(bookmark, version, "summary-" + i, Map.of("Age", i),
-                        PredictionRunStatus.SUCCESS));
+                        PredictionRunStatus.SUCCESS, principals.system()));
             }
         });
         var byName = request(0, "", "name.desc", "all", List.of());
@@ -207,36 +215,37 @@ class InferenceCatalogIntegrationTest extends PublicPredictionFixture {
     void readsOnlyTheRunsInScopeAndFiltersByFeedbackOriginAndBookmark() {
         long[] other = { 0, 0 };
         inTransaction(() -> {
-            var otherSchema = new Schema(organization, "Appetite", null);
+            var otherSchema = new Schema(organization, "Appetite", null, principals.system());
             entityManager.persist(otherSchema);
             var otherVersion = new SchemaVersion(otherSchema, 4, "Second", Map.of(
                     "fields", List.of(Map.of("kind", "number", "label", "Weight")),
                     "reports", List.of(Map.of("kind", "regressor", "label", "Score",
-                            "mappedTo", Map.of("risk-net", "score")))));
+                            "mappedTo", Map.of("risk-net", "score")))), principals.system());
             entityManager.persist(otherVersion);
             entityManager.persist(new SchemaModelBinding(otherVersion, netModel, Map.of()));
             other[0] = otherSchema.getId();
             other[1] = otherVersion.getId();
             for (int i = 0; i < 3; i++) {
                 entityManager.persist(new PredictionRun(bookmark, version, "shared-main-" + i, Map.of("Age", i),
-                        PredictionRunStatus.SUCCESS));
+                        PredictionRunStatus.SUCCESS, principals.system()));
             }
-            var output = Map.<String, Object>of("reports", List.of(Map.of("mappedTo", "score", "value", 41.5)));
+            var output = Map.<String, Object>of("reports", List.of(Map.of("id", "Score", "kind", "regressor",
+                    "mappedTo", "score", "values", List.of(41.5))));
             var reviewed = new PredictionRun(null, otherVersion, "shared-reviewed", Map.of("Weight", 70),
-                    PredictionRunStatus.SUCCESS);
+                    PredictionRunStatus.SUCCESS, principals.system());
             entityManager.persist(reviewed);
             var result = new PredictionResult(reviewed, netModel, Map.of(), output, PredictionResultStatus.SUCCESS,
                     null, null);
             entityManager.persist(result);
-            entityManager.persist(new PredictionResultFeedback(result, owner, PredictionResultFeedbackType.OUTPUT, 0,
+            entityManager.persist(new PredictionResultFeedback(result, principals.of(owner), PredictionResultFeedbackType.OUTPUT, 0,
                     objectMapper.valueToTree(Map.of("output-feedback-assessment", 40))));
             var pending = new PredictionRun(null, otherVersion, "shared-pending", Map.of("Weight", 80),
-                    PredictionRunStatus.SUCCESS);
+                    PredictionRunStatus.SUCCESS, principals.system());
             entityManager.persist(pending);
             entityManager.persist(new PredictionResult(pending, netModel, Map.of(), output,
                     PredictionResultStatus.SUCCESS, null, null));
             var visitorRun = new PredictionRun(null, otherVersion, "shared-public", Map.of("Weight", 90),
-                    PredictionRunStatus.SUCCESS);
+                    PredictionRunStatus.SUCCESS, principals.system());
             visitorRun.setOrigin(PredictionRunOrigin.PUBLIC);
             entityManager.persist(visitorRun);
         });
@@ -257,8 +266,9 @@ class InferenceCatalogIntegrationTest extends PublicPredictionFixture {
             assertEquals(List.of("shared-public"), names(everything(query, "all", "all", "all", "PUBLIC")));
             assertEquals(5,
                     catalog.page(owner.getId(), everything(query, "all", "all", "all", "WORKSPACE")).totalItems());
-            assertEquals(List.of(), names(everything(query, "not-a-schema", "all", "all", "all")));
+            assertEquals(List.of(), names(everything(query, "0", "all", "all", "all")));
         }
+        assertThrows(IllegalArgumentException.class, () -> everything("", "not-a-schema", "all", "all", "all"));
         assertEquals(List.of("shared-reviewed"), names(everything("", "all", "all", "COMPLETED", "all")));
         assertEquals(List.of("shared-pending"), names(everything("", "all", "all", "PENDING", "all")));
         assertEquals(List.of("shared-public"), names(everything("", "all", "all", "NOT_REQUIRED", "all")));
@@ -276,7 +286,7 @@ class InferenceCatalogIntegrationTest extends PublicPredictionFixture {
 
         var metadata = catalog.metadata(owner.getId(), everything("", appetite, "all", "all", "all"));
         assertEquals(6, metadata.totalItems());
-        assertEquals(List.of("Weight", "Score", "Score · Second · v4 · Assessment · " + owner.getEmail()),
+        assertEquals(List.of("Weight", "Score", "Score · Second · v4 · Assessment · " + owner.getFullName()),
                 metadata.columns().stream().map(InferenceCatalogColumnDto::label).toList());
         assertTrue(metadata.columns().stream().allMatch(column -> column.schemaName().equals("Appetite")));
         assertEquals(List.of(new InferenceCatalogMetadataDto.Option(appetite, "Appetite"),

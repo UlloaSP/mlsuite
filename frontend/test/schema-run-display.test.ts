@@ -35,12 +35,11 @@ const schema = {
 
 describe("schema run display", () => {
   test.each([
-    { prediction: 1, expected: "High" },
-    { prediction: 0, probabilities: [0.2, 0.8], expected: "Low" },
-  ])("preserves the stored classifier prediction $prediction", ({ expected, ...payload }) => {
-    expect(
-      normalizeReportPayload({ kind: "classifier", labels: ["Low", "High"] }, payload),
-    ).toMatchObject({ prediction: expected, labels: ["Low", "High"] });
+    { labels: ["Low", "High"], expected: { prediction: "High", labels: ["Low", "High"] } },
+    { labels: undefined, expected: { prediction: "1", labels: ["0", "1"] } },
+  ])("names the stored class by the schema's labels $labels", ({ labels, expected }) => {
+    const payload = { prediction: "1", labels: ["0", "1"], probabilities: [0.2, 0.8] };
+    expect(normalizeReportPayload({ kind: "classifier", labels }, payload)).toMatchObject(expected);
   });
 
   test("reads visible inputs from displayKey data only", () => {
@@ -52,6 +51,40 @@ describe("schema run display", () => {
       "Blood Group": "B",
       Age: 52,
     });
+  });
+
+  test("shows and restores a series field's rows, not the aggregation its model received", () => {
+    const rows = [
+      { field1: 1, field2: 100 },
+      { field1: 2, field2: 120 },
+    ];
+    const houses = {
+      fields: [
+        {
+          id: "area_history",
+          kind: "series",
+          label: "Area history",
+          columns: [
+            { id: "field1", kind: "number", label: "Year" },
+            { id: "field2", kind: "number", label: "Area" },
+          ],
+          aggregations: [{ operation: "mean", label: "Mean", source: "field2", mappedTo: "area" }],
+        },
+      ],
+    };
+    const inputData = { area: 110, "Area history": rows };
+    expect(getVisibleSchemaInputs(houses, inputData)).toEqual([
+      {
+        key: "Area history",
+        label: "Area history",
+        value: rows,
+        columns: [
+          { id: "field1", kind: "number", label: "Year" },
+          { id: "field2", kind: "number", label: "Area" },
+        ],
+      },
+    ]);
+    expect(getSchemaRunPrefillInputs(houses, inputData)).toEqual({ "Area history": rows });
   });
 
   test("rebuilds visible inputs from ids, labels, or model columns", () => {
@@ -103,7 +136,7 @@ describe("schema run display", () => {
     });
   });
 
-  test("reads normal and plugin report payload aliases", () => {
+  test("reads each report from the copy the run stored under its id", () => {
     const version = {
       formSchema: {
         reports: [
@@ -128,12 +161,64 @@ describe("schema run display", () => {
       modelId: 1,
       output: {
         reports: [
-          { mappedTo: "normal_output", prediction: 1 },
-          { mappedTo: "plugin_output", explanation: "ok" },
+          {
+            id: "normal-report",
+            kind: "classifier",
+            mappedTo: "normal_output",
+            prediction: "1",
+            labels: ["0", "1"],
+          },
+          {
+            id: "plugin-report",
+            kind: "Crystal Tree",
+            mappedTo: "plugin_output",
+            explanation: "ok",
+          },
         ],
       },
     });
 
     expect(reports.map((report) => report.id)).toEqual(["normal-report", "plugin-report"]);
+  });
+
+  test("reads a class and its explanation on one output from their own stored copies", () => {
+    // Built from a model: the reports have no id, so a run stores them under their labels.
+    const version = {
+      formSchema: {
+        reports: [
+          {
+            label: "Predicted class",
+            kind: "classifier",
+            mappedTo: { risk: 0 },
+            labels: ["High risk", "Low risk"],
+          },
+          { label: "Why", kind: "Crystal Tree", mappedTo: { risk: 0 } },
+        ],
+      },
+      bindings: [{ modelId: 1, modelName: "risk" }],
+    };
+
+    const reports = getSchemaResultReports(version as never, {
+      modelId: 1,
+      output: {
+        reports: [
+          { kind: "classifier", output: 0, mapping: ["high", "low"], prediction: "low" },
+          { kind: "Crystal Tree", explanation: "age > 50" },
+          {
+            id: "Predicted class",
+            kind: "classifier",
+            mappedTo: "0",
+            labels: ["high", "low"],
+            prediction: "low",
+          },
+          { id: "Why", kind: "Crystal Tree", mappedTo: "0", explanation: "age > 50" },
+        ],
+      },
+    });
+
+    expect(reports.map(({ id, payload }) => [id, payload])).toEqual([
+      ["Predicted class", { labels: ["High risk", "Low risk"], prediction: "Low risk" }],
+      ["Why", { explanation: "age > 50" }],
+    ]);
   });
 });

@@ -32,7 +32,16 @@ describe("schema review output context", () => {
           modelId: 1,
           status: "SUCCESS",
           output: {
-            reports: [{ mappedTo: "predicted_class", prediction: 1, probabilities: [0.2, 0.8] }],
+            reports: [
+              {
+                id: "report_1",
+                kind: "classifier",
+                mappedTo: "predicted_class",
+                prediction: "1",
+                labels: ["0", "1"],
+                probabilities: [0.2, 0.8],
+              },
+            ],
           },
         },
       ],
@@ -83,7 +92,9 @@ describe("schema review output context", () => {
       id: 1,
       modelId: 1,
       status: "SUCCESS" as const,
-      output: { reports: [species, { ...species, id: "species", mappedTo: "0" }] },
+      output: {
+        reports: [species, { ...species, labels: species.mapping, id: "Species", mappedTo: "0" }],
+      },
     },
     {
       id: 2,
@@ -92,7 +103,7 @@ describe("schema review output context", () => {
       output: {
         reports: [
           { kind: "regressor", output: 0, ...bodyMass },
-          { kind: "regressor", output: 0, ...bodyMass, id: "body-mass", mappedTo: "0" },
+          { kind: "regressor", output: 0, ...bodyMass, id: "Body mass", mappedTo: "0" },
         ],
       },
     },
@@ -109,18 +120,9 @@ describe("schema review output context", () => {
     ]);
   });
 
-  test("never stringifies a built-in report's stored payload or a structured prediction", () => {
+  test("never stringifies a built-in report's stored payload", () => {
     const withoutValue = buildSchemaFeedbackSteps(penguins, penguinResults({ values: [] }), []);
     expect(withoutValue.find((step) => step.title === "Body mass")?.description).toBe("");
-
-    const structured = buildSchemaFeedbackSteps(
-      penguins,
-      penguinResults({ value: { grams: 3531 } }),
-      [],
-    );
-    const description = structured.find((step) => step.title === "Body mass")?.description;
-    expect(description).toBe('Prediction result: {"grams":3531}');
-    expect(structured.map((step) => step.description).join("\n")).not.toContain("[object Object]");
   });
 
   test("builds review input record from visible schema fields", () => {

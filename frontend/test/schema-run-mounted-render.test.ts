@@ -56,7 +56,9 @@ describe("schema run mounted render", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (_url: string, init?: RequestInit) =>
-        workspacePrediction(init, [{ mappedTo: "prediction", value: 1 }]),
+        workspacePrediction(init, [
+          { id: "prediction", kind: "regressor", mappedTo: "prediction", value: 1 },
+        ]),
       ),
     );
     const container = document.createElement("div");
@@ -94,7 +96,13 @@ describe("schema run mounted render", () => {
       "fetch",
       vi.fn(async (_url: string, init?: RequestInit) =>
         workspacePrediction(init, [
-          { mappedTo: "predicted", prediction: "0", probabilities: [0.25, 0.75] },
+          {
+            id: "report-2",
+            kind: "classifier",
+            mappedTo: "predicted",
+            prediction: "0",
+            probabilities: [0.25, 0.75],
+          },
         ]),
       ),
     );

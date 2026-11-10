@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.notification.adapter.out.persistence.repository;
 
+import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
+import java.util.List;
 import java.time.OffsetDateTime;
 
 import org.springframework.data.domain.Page;
@@ -11,9 +13,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import dev.ulloasp.mlsuite.notification.domain.model.Notification;
-import dev.ulloasp.mlsuite.notification.domain.model.NotificationTargetType;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
+
+    List<Notification> findByKindAndTargetId(NotificationKind kind, String targetId);
+
+    List<Notification> findByRecipientUserIdAndKindAndTargetId(Long recipientUserId, NotificationKind kind,
+            String targetId);
 
     @Query("""
             SELECT n FROM Notification n
@@ -32,14 +38,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Modifying
     @Query("UPDATE Notification n SET n.readAt = :now WHERE n.recipientUserId = :recipient AND n.readAt IS NULL")
     int markAllRead(@Param("recipient") Long recipient, @Param("now") OffsetDateTime now);
-
-    @Modifying
-    @Query("""
-            UPDATE Notification n SET n.readAt = :now
-            WHERE n.recipientUserId = :recipient AND n.targetType = :targetType AND n.targetId = :targetId
-            AND n.readAt IS NULL""")
-    int markTargetRead(@Param("recipient") Long recipient, @Param("targetType") NotificationTargetType targetType,
-            @Param("targetId") String targetId, @Param("now") OffsetDateTime now);
 
     @Modifying
     @Query("DELETE FROM Notification n WHERE n.id = :id AND n.recipientUserId = :recipient")

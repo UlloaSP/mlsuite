@@ -96,6 +96,12 @@ const PRESENT: Record<NotificationKind, (labels: Labels) => Presentation> = {
     icon: UserRoundX,
     tone: "warning",
   }),
+  BOOKMARK_UNPUBLISHED: (labels) => ({
+    title: "Bookmark unpublished by moderation",
+    description: `The platform took ${label(labels, "bookmarkName")} of ${label(labels, "schemaName")} off the public pages.`,
+    icon: SECTION_ICONS.organizations,
+    tone: "warning",
+  }),
   ORGANIZATION_JOINED: (labels) => ({
     title: `Added to ${label(labels, "organizationName")}`,
     description: `${label(labels, "inviterName")} added you as ${label(labels, "roleName")}.`,
@@ -175,6 +181,8 @@ export const notificationLink = (notification: NotificationDto): string | null =
       return "/admin/purges";
     case "SYSTEM_ALERT":
       return "/admin/infrastructure?tab=alerts";
+    case "BOOKMARK":
+      return `/schemas/${label(notification.payload, "schemaId")}/bookmarks`;
     case "INVITATION":
       return notification.kind === "INVITATION_RECEIVED"
         ? null

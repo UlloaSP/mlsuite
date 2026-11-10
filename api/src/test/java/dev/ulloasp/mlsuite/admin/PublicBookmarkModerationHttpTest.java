@@ -56,6 +56,7 @@ import dev.ulloasp.mlsuite.util.PageDto;
         UserDetailsService.class, SessionAccountCheck.class })
 class PublicBookmarkModerationHttpTest {
 
+
     private static final long SUPERADMIN_ID = 1L;
     private static final long MEMBER_ID = 7L;
     private static final long BOOKMARK_ID = 70L;
@@ -162,11 +163,11 @@ class PublicBookmarkModerationHttpTest {
 
     private static SchemaBookmark stored(BookmarkVisibility visibility) {
         Organization organization = TestFixtures.organization();
-        Schema schema = new Schema(organization, "Risk", null);
+        Schema schema = new Schema(organization, "Risk", null, TestFixtures.system());
         schema.setId(5L);
-        SchemaVersion version = new SchemaVersion(schema, 1, "v1", Map.of());
+        SchemaVersion version = new SchemaVersion(schema, 1, "v1", Map.of(), TestFixtures.system());
         version.setId(9L);
-        SchemaBookmark bookmark = new SchemaBookmark(schema, version, "production");
+        SchemaBookmark bookmark = new SchemaBookmark(schema, version, "production", TestFixtures.system());
         bookmark.setId(BOOKMARK_ID);
         bookmark.setVisibility(visibility);
         bookmark.setPublicId(PUBLIC_ID);

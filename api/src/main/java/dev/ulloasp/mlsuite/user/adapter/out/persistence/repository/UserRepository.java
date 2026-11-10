@@ -27,8 +27,6 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
     Optional<User> findByUsername(String username);
 
-    boolean existsByEmailIgnoreCase(String email);
-
     long countBySystemRoleAndEnabledTrue(SystemRole systemRole);
 
     @Query("SELECT u.id FROM User u WHERE u.systemRole = :systemRole AND u.enabled = true")

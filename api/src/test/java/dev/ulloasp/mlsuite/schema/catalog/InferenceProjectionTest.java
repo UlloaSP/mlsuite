@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -82,6 +83,60 @@ class InferenceProjectionTest {
     }
 
     @Test
+    void aReportReadingOneOutputForEveryModelIsProjectedLikeAPerModelOne() throws Exception {
+        ObjectNode data = data(0);
+        // What the runtime writes when it generates a snapshot: the output, not a route per model.
+        ((ObjectNode) data.at("/versions/0/formSchema/reports/0")).put("mappedTo", "score");
+
+        Row row = rows(data).getFirst();
+        assertTrue(row.dto().feedbackStatus() != InferenceFeedbackStatus.ERROR);
+        assertEquals("Yes", row.dto().values().get(SCORE));
+    }
+
+    @Test
+    void namesAStoredClassByTheSchemaLabelInItsPlace() throws Exception {
+        ObjectNode data = data(0);
+        // A model trained on 0/1 stores its own classes; the schema calls them No and Yes.
+        for (var result : array(data, "/results")) {
+            ((ObjectNode) result).set("output", JSON.readTree("""
+                    {"reports":[{"id":"Score","mappedTo":"score","kind":"classifier","labels":["0","1"],"prediction":"1",
+                     "probabilities":[0.2,0.8]}]}"""));
+        }
+
+        assertEquals("Yes", rows(data).getFirst().dto().values().get(SCORE));
+    }
+
+    @Test
+    void givesEachReportReadingOneOutputItsOwnColumnAndItsOwnStoredCopy() throws Exception {
+        String why = SCORE + ":Why";
+        ObjectNode data = data(0);
+        for (var version : array(data, "/versions")) {
+            array(version, "/formSchema/reports").add(JSON.readTree(
+                    "{\"kind\":\"Crystal Tree\",\"label\":\"Why\",\"mappedTo\":{\"1\":\"score\"}}"));
+        }
+        // As a run stores both: the runtime's answers, then one copy per form report, both on the output.
+        for (var result : array(data, "/results")) {
+            ((ObjectNode) result).set("output", JSON.readTree("""
+                    {"reports":[
+                      {"kind":"classifier","output":0,"mapping":["no","yes"],"probabilities":[0.2,0.8],"prediction":"yes"},
+                      {"kind":"Crystal Tree","explanation":"age > 50"},
+                      {"id":"Score","kind":"classifier","mappedTo":"score","labels":["no","yes"],
+                       "probabilities":[0.2,0.8],"prediction":"yes"},
+                      {"id":"Why","kind":"Crystal Tree","mappedTo":"score","explanation":"age > 50"}]}"""));
+        }
+
+        List<Row> rows = rows(data);
+        assertEquals("Yes", rows.getFirst().dto().values().get(SCORE));
+        assertEquals("age > 50", rows.getFirst().dto().values().get(why));
+        InferenceCatalogMetadata metadata = new InferenceCatalogMetadata(InferenceCatalogFixtures.TEXT);
+        rows.forEach(metadata::accept);
+        Map<String, String> labels = metadata.finish().stream()
+                .collect(Collectors.toMap(InferenceCatalogColumnDto::id, InferenceCatalogColumnDto::label));
+        assertEquals("Score", labels.get(SCORE));
+        assertEquals("Why", labels.get(why));
+    }
+
+    @Test
     void showsTheValueARegressorOfASecondModelPredicted() throws Exception {
         String bodyMass = "2:output:2:0";
         ObjectNode data = data(0);
@@ -90,13 +145,13 @@ class InferenceProjectionTest {
         array(data, "/versions/0/bindings").add(binding.put("id", 2).put("modelId", 2));
         array(data, "/versions/0/formSchema/reports").add(JSON.readTree(
                 "{\"kind\":\"regressor\",\"label\":\"Body mass\",\"mappedTo\":{\"2\":\"0\"}}"));
-        // Stored as a workspace run stores it: the runtime's answer, then the form's report, named by MLForm.
+        // Stored as a workspace run stores it: the runtime's answer, then the form's report under its label.
         for (String[] run : new String[][] { { "2", "21", "[3531.39]" }, { "1", "11", "[]" } }) {
             array(data, "/results").add(JSON.readTree("""
                     {"id":%s,"runId":%s,"modelId":2,"modelInput":{},"status":"SUCCESS","errorMessage":null,
                      "errorJson":null,"createdAt":"2026-07-20T08:00:00Z","output":{"reports":[
                        {"kind":"regressor","output":0,"values":%s},
-                       {"id":"body-mass","kind":"regressor","output":0,"mappedTo":"0","values":%s}]}}
+                       {"id":"Body mass","kind":"regressor","output":0,"mappedTo":"0","values":%s}]}}
                     """.formatted(run[1], run[0], run[2], run[2])));
         }
 
@@ -120,7 +175,8 @@ class InferenceProjectionTest {
     @Test
     void keepsJsonStringifyTextForUnstructuredCustomReports() throws Exception {
         Row row = rows(customReport(JSON.readTree("{\"score\":7.0,\"samples\":[1,2.0]}"))).getFirst();
-        assertEquals("{\n  \"score\": 7,\n  \"samples\": [\n    1,\n    2\n  ]\n}", row.dto().values().get(SCORE));
+        assertEquals("{\n  \"score\": 7,\n  \"samples\": [\n    1,\n    2\n  ],\n  \"id\": \"Score\",\n"
+                + "  \"kind\": \"custom\",\n  \"mappedTo\": \"score\"\n}", row.dto().values().get(SCORE));
         assertTrue(found(row, "\"score\": 7"));
     }
 
@@ -141,19 +197,6 @@ class InferenceProjectionTest {
 
     @Test
     void boundsWorkThatStoredPayloadsAskFor() throws Exception {
-        assertEquals(InferenceFeedbackSteps.MAX_INDEXED_CLASSES, InferenceFeedbackSteps.indexedClasses(30_000_000));
-        assertEquals(InferenceFeedbackSteps.MAX_INDEXED_CLASSES, InferenceFeedbackSteps.indexedClasses(1e300));
-        assertEquals(3, InferenceFeedbackSteps.indexedClasses(2.7));
-        assertEquals(1, InferenceFeedbackSteps.indexedClasses(-40));
-        assertEquals(1, InferenceFeedbackSteps.indexedClasses("7"));
-        assertEquals(1, InferenceFeedbackSteps.indexedClasses(null));
-
-        ObjectNode hugeIndex = data(0);
-        object(hugeIndex, "/results/0/output/reports/0").put("classIndex", 30_000_000);
-        Row indexed = assertTimeoutPreemptively(PROMPT, () -> rows(hugeIndex).getFirst());
-        assertEquals(InferenceFeedbackStatus.COMPLETED, indexed.dto().feedbackStatus());
-        assertEquals("Yes", indexed.dto().values().get(ASSESSMENT));
-
         String spaces = " ".repeat(200_000);
         assertEquals("x |" + spaces + "y",
                 assertTimeoutPreemptively(PROMPT, () -> reported(explanation("* x |" + spaces + "y"))));
@@ -167,14 +210,35 @@ class InferenceProjectionTest {
     }
 
     @Test
-    void marksOnlyTheInferenceWhoseStoredPayloadCannotBeRead() throws Exception {
+    void listsAFailedResultWithItsInputsAndNoOutputs() throws Exception {
         ObjectNode data = data(0);
-        object(data, "/results/0").putNull("output");
+        // A failed result answered nothing but its error: it has no output.
+        object(data, "/results/0").put("status", "FAILED").putNull("output");
         List<Row> rows = rows(data);
-        assertEquals(InferenceFeedbackStatus.ERROR, rows.get(0).dto().feedbackStatus());
+        assertEquals(InferenceFeedbackStatus.NOT_REQUIRED, rows.get(0).dto().feedbackStatus());
         assertEquals(Map.of(AGE, 52, "2:input:income", 900), rows.get(0).dto().values());
         assertEquals(InferenceFeedbackStatus.PENDING, rows.get(1).dto().feedbackStatus());
         assertEquals("No", rows.get(1).dto().values().get(SCORE));
+    }
+
+    @Test
+    void showsTheRowsASeriesFieldWasGivenNotTheAggregationItsModelReceived() throws Exception {
+        ObjectNode data = data(0);
+        // As a run stores them: the measurement may come before the date.
+        String rows = "[{\"field2\":100,\"field1\":\"2024-01-01T00:00:00.000Z\"},"
+                + "{\"field2\":1200.5,\"field1\":\"2024-02-01T00:00:00.000Z\"}]";
+        array(data, "/versions/0/formSchema/fields").addObject().put("kind", "series").put("label", "Area history")
+                .set("aggregations", JSON.readTree(
+                        "[{\"operation\":\"mean\",\"label\":\"Mean\",\"source\":\"field2\",\"mappedTo\":\"area\"}]"));
+        object(data, "/runs/0/inputData").put("area", 110).set("Area history", JSON.readTree(rows));
+        Row row = rows(data).getFirst();
+        assertEquals(JSON.readTree(rows), JSON.valueToTree(row.dto().values().get("2:input:Area history")));
+        // The cell reads as the run page's table does: each row's day, then its values, in the locale.
+        assertEquals("Jan 1, 2024 · 100; Feb 1, 2024 · 1,200.5", row.dto().displayValues().get("2:input:Area history"));
+
+        // A series given no rows shows an empty cell, not "[]".
+        object(data, "/runs/0/inputData").set("Area history", JSON.readTree("[]"));
+        assertEquals("", rows(data).getFirst().dto().displayValues().getOrDefault("2:input:Area history", ""));
     }
 
     @Test

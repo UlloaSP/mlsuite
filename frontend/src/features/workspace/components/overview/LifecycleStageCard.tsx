@@ -37,7 +37,6 @@ export function LifecycleStageCard({ stage, step }: { stage: LifecycleStage; ste
         {stage.to ? (
           <AppLink
             {...appHref(stage.to)}
-            viewTransition
             className={cx("rounded after:absolute after:inset-0 after:rounded-card", FOCUS_RING)}
           >
             {stage.label}
@@ -68,7 +67,6 @@ export function LifecycleStageCard({ stage, step }: { stage: LifecycleStage; ste
         {empty && stage.emptyAction ? (
           <AppLink
             {...appHref(stage.emptyAction.to)}
-            viewTransition
             className={cx(
               "relative z-10 inline-flex items-center gap-1.5 rounded text-xs font-semibold text-accent-strong hover:underline",
               FOCUS_RING,

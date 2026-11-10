@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.model;
 
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -54,7 +55,7 @@ class ModelReadPermissionTest {
                 mock(ModelArtifactWriter.class), mock(ModelArtifactContentReader.class),
                 mock(StorageDeletionQueue.class),
                 mock(RuntimeEnvironments.class),
-                mock(AuditLogService.class));
+                mock(AuditLogService.class), TestFixtures.principals());
     }
 
     @ParameterizedTest

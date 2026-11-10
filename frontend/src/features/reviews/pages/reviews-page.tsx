@@ -73,11 +73,20 @@ export function ReviewsPage() {
         to: "/review/$reviewId/runs/$reviewRunId",
         params: { reviewId: item.reviewId, reviewRunId: item.publicId },
         replace,
-        viewTransition: false,
       });
     },
     [navigate],
   );
+
+  // Saving a pending run's answers moves it to revision; the next run needing feedback opens.
+  const openNextPending = (saved: ReviewRailItem) => {
+    if (saved.reviewState !== "PENDING") return;
+    const pending = (inbox.data?.items ?? []).filter((item) => item.reviewState === "PENDING");
+    const at = pending.findIndex((item) => item.publicId === saved.publicId);
+    const next =
+      pending.slice(at + 1)[0] ?? pending.find((item) => item.publicId !== saved.publicId);
+    if (next) open(next);
+  };
 
   // The run the URL should name; `selected` itself is rebuilt on some renders, its ids are not.
   const selectedReviewId = selected?.reviewId;
@@ -85,8 +94,7 @@ export function ReviewsPage() {
   useEffect(() => {
     if (resolving || failure) return;
     if (!selectedReviewId || !selectedRunId) {
-      if (reviewId || reviewRunId)
-        void navigate({ to: "/review", replace: true, viewTransition: false });
+      if (reviewId || reviewRunId) void navigate({ to: "/review", replace: true });
       return;
     }
     if (selectedReviewId === reviewId && selectedRunId === reviewRunId) return;
@@ -102,7 +110,7 @@ export function ReviewsPage() {
     <AppPage>
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto xl:overflow-hidden">
         <AppPageHeader
-          title="Review inbox"
+          title="Review"
           description="Review the inferences assigned to you across every schema."
           actions={
             canManage ? (
@@ -134,6 +142,7 @@ export function ReviewsPage() {
                     reviewId={selected.reviewId}
                     reviewRunId={selected.publicId}
                     version={prepared.version}
+                    onSaved={() => openNextPending(selected)}
                   />
                 ) : (
                   // The tray stays in place while another review's snapshot loads.
@@ -150,8 +159,8 @@ export function ReviewsPage() {
               submitting={submitMutation.isPending}
               onSubmitRevision={() =>
                 submitMutation.mutate(undefined, {
-                  onSuccess: () =>
-                    navigate({ to: "/review", replace: true, viewTransition: false }),
+                  // The submitted runs are gone from the inbox: the first one left opens.
+                  onSuccess: () => navigate({ to: "/review", replace: true }),
                 })
               }
             />

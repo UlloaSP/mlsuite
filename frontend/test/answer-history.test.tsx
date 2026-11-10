@@ -39,7 +39,18 @@ const run = predictionRun({
     predictionResult({
       id: 11,
       modelId: 1,
-      output: { reports: [{ mappedTo: "score", prediction: 1, probabilities: [0.1, 0.9] }] },
+      output: {
+        reports: [
+          {
+            id: "report_1",
+            kind: "classifier",
+            mappedTo: "score",
+            prediction: "1",
+            labels: ["0", "1"],
+            probabilities: [0.1, 0.9],
+          },
+        ],
+      },
     }),
   ],
 });
@@ -53,15 +64,16 @@ const revision = (
   resultId: 11,
   reviewId: 8,
   review: { publicId: "rev-8", createdAt: "2026-10-20T09:00:00Z", createdByName: "Mia Manager" },
-  userId: 21,
-  userName: "Rui Reviewer",
-  visitorId: null,
+  authorUserId: 21,
+  authorName: "Rui Reviewer",
+  byVisitor: false,
   type: "OUTPUT",
   order: 0,
   value: { "output-feedback-assessment": "correct" },
   change: "CREATED",
   changedByUserId: 21,
   changedByName: "Rui Reviewer",
+  changedByVisitor: false,
   changedAt: "2026-10-21T10:00:00Z",
   ...overrides,
 });
@@ -78,8 +90,8 @@ const HISTORY = [
   }),
   revision({
     id: 4,
-    userId: 22,
-    userName: "Another reviewer",
+    authorUserId: 22,
+    authorName: "Another reviewer",
     changedByUserId: 22,
     changedByName: null,
   }),
@@ -135,24 +147,26 @@ describe("answer history", () => {
           id: 7,
           review: null,
           reviewId: null,
-          userId: null,
-          userName: null,
-          visitorId: "4b9f8e1c-0000-4000-8000-000000000001",
+          authorUserId: null,
+          authorName: null,
+          byVisitor: true,
           changedByUserId: null,
           changedByName: null,
+          changedByVisitor: true,
         }),
-        revision({ id: 8, review: null, userName: null, changedByName: null }),
+        revision({ id: 8, review: null, authorName: null, changedByName: null }),
       ]),
     );
     const { host } = await mount(<AnswerHistory version={version} steps={steps} />);
     await settle();
 
-    const [deletedReview, visitor] = [...host.querySelectorAll("li")].map(
-      (item) => item.textContent,
+    const [deletedReview, visitor] = [...host.querySelectorAll("li")];
+    expect(visitor?.textContent).toContain("A public page visitor’s answer · On the public page");
+    expect(visitor?.querySelector("div")?.textContent).toContain("A public page visitor");
+    expect(visitor?.textContent).not.toContain("Unknown");
+    expect(deletedReview?.textContent).toContain(
+      "Former member’s answer · In a review that was deleted",
     );
-    expect(visitor).toContain("A public page visitor’s answer · On the public page");
-    expect(visitor).toContain("Unknown");
-    expect(deletedReview).toContain("Former member’s answer · In a review that was deleted");
   });
 
   test("says when there is nothing yet", async () => {

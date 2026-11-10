@@ -277,7 +277,6 @@ describe("organization management", () => {
             locked: false,
             name: "Reviewer",
             permissions: [],
-            scope: "ORGANIZATION",
             slug: "reviewer",
             userCount: 2,
           },

@@ -1,12 +1,14 @@
 package dev.ulloasp.mlsuite.plugin.domain.model;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
-import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ForeignKey;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -23,7 +25,7 @@ import lombok.Setter;
 public class PluginMetadata {
 
     public PluginMetadata(
-            String id,
+            String publicId,
             Organization organization,
             String objectKey,
             String fileName,
@@ -31,10 +33,10 @@ public class PluginMetadata {
             long sizeBytes,
             OffsetDateTime createdAt,
             OffsetDateTime updatedAt,
-            User updatedBy,
+            Principal author,
             String pluginType,
             String kind) {
-        this.id = id;
+        this.publicId = publicId;
         this.organization = organization;
         this.objectKey = objectKey;
         this.fileName = fileName;
@@ -42,20 +44,28 @@ public class PluginMetadata {
         this.sizeBytes = sizeBytes;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
-        this.updatedBy = updatedBy;
+        this.createdBy = author;
+        this.updatedBy = author;
         this.pluginType = pluginType;
         this.kind = kind;
     }
 
     @Id
-    @Column(name = "id", nullable = false, length = 64)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /** The random id the plugin's object is stored under, and how the API names the plugin. */
+    @Column(name = "public_id", nullable = false, unique = true, updatable = false, length = 64)
+    private String publicId;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "organization_id", nullable = false, foreignKey = @ForeignKey(name = "fk_plugin_metadata_org"))
     private Organization organization;
 
-    @Column(name = "object_key", nullable = false, length = 512)
+    @Column(name = "storage_bucket", nullable = false, length = 100)
+    private String storageBucket;
+
+    @Column(name = "storage_object_key", nullable = false, length = 512)
     private String objectKey;
 
     @Column(name = "file_name", nullable = false, length = 255)
@@ -67,7 +77,7 @@ public class PluginMetadata {
     @Column(name = "size_bytes", nullable = false)
     private long sizeBytes;
 
-    @Column(name = "sha256", nullable = false, length = 64)
+    @Column(name = "artifact_sha256", nullable = false, length = 64)
     private String sha256;
 
     @Column(name = "storage_version_id", nullable = false, length = 255)
@@ -79,9 +89,15 @@ public class PluginMetadata {
     @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime updatedAt;
 
-    @ManyToOne
-    @JoinColumn(name = "updated_by_user_id", foreignKey = @ForeignKey(name = "fk_plugin_metadata_updated_by"))
-    private User updatedBy;
+    /** Who created it. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
+
+    /** Who changed it last. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "updated_by_principal_id", nullable = false)
+    private Principal updatedBy;
 
     @Column(name = "plugin_type", nullable = false, length = 32)
     private String pluginType;

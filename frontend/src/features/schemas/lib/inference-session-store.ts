@@ -81,7 +81,11 @@ export function useWarnOnUnsavedInferences() {
 
   useEffect(() => {
     if (unsaved === 0) return;
-    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      // Browsers that predate preventDefault() here only warn for a set returnValue.
+      event.returnValue = "";
+    };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [unsaved]);

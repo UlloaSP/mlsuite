@@ -3,7 +3,7 @@ import { useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppSearchField } from "@/shared/ui/AppSearchField";
-import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
+import { useSearchText } from "@/shared/lib/use-search-text";
 import { useSearchFilters } from "@/shared/lib/use-search-filters";
 import { invitationsSearch } from "@/features/workspace/pages/workspace-search";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
@@ -14,9 +14,10 @@ import {
   useResendInvitationMutation,
   useRevokeInvitationMutation,
 } from "@/features/workspace/api/invitation.mutations";
+import { isOpenInvitation } from "@/features/workspace/lib/invitation-status";
 import { InvitationCard } from "./InvitationCard";
 
-const statuses = ["ALL", "PENDING", "ACCEPTED", "EXPIRED", "REVOKED"];
+const statuses = ["ALL", "PENDING", "ACCEPTED", "DECLINED", "EXPIRED", "REVOKED"];
 
 const route = getRouteApi(
   "/protected/app/team-organization/workspace/organizations/$organizationId/invitations",
@@ -31,13 +32,16 @@ export function InvitationCatalog({
 }) {
   const filters = useSearchFilters(route.useSearch(), invitationsSearch);
   const { q: query, status } = filters.values;
-  const [selected, setSelected] = useState<number[]>([]);
-  const selectedIds = new Set(selected);
+  const [checked, setSelected] = useState<number[]>([]);
   const request = useInvitationCatalog(organizationId, {
-    search: useDebouncedValue(query.trim()),
+    search: query.trim(),
     filter: status.toLowerCase() === "all" ? "all" : status,
   });
   const invitations = request.data?.items ?? [];
+  // Only an open invitation can be revoked: one answered since it was checked leaves the selection.
+  const openIds = new Set(invitations.filter(isOpenInvitation).map((invite) => invite.id));
+  const selected = checked.filter((id) => openIds.has(id));
+  const selectedIds = new Set(selected);
   const bulkRevoke = useBulkRevokeInvitationsMutation(organizationId);
   const resend = useResendInvitationMutation(organizationId);
   const revoke = useRevokeInvitationMutation(organizationId);
@@ -45,6 +49,7 @@ export function InvitationCatalog({
     setSelected([]);
     filters.setFilters(changes);
   };
+  const searchBox = useSearchText(query, (q) => setFilter({ q }));
   return (
     <section className="flex min-h-0 flex-1 flex-col">
       <AppToolbar variant="flat">
@@ -62,8 +67,8 @@ export function InvitationCatalog({
                 }
               : undefined
           }
-          value={query}
-          onChange={(value) => setFilter({ q: value })}
+          value={searchBox.text}
+          onChange={searchBox.setText}
         />
         <AppSelect
           aria-label="Filter by status"
@@ -80,7 +85,13 @@ export function InvitationCatalog({
           <AppButton
             variant="danger"
             disabled={bulkRevoke.isPending}
-            onClick={() => void bulkRevoke.mutateAsync(selected).then(() => setSelected([]))}
+            onClick={() =>
+              // The mutation has shown why it failed; the selection stays for a retry.
+              void bulkRevoke.mutateAsync(selected).then(
+                () => setSelected([]),
+                () => undefined,
+              )
+            }
           >
             Bulk revoke ({selected.length})
           </AppButton>

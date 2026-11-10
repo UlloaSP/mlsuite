@@ -5,7 +5,7 @@ import { MemberRoleFilter } from "@/features/workspace/components/MemberRoleFilt
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
 import { AppSearchField } from "@/shared/ui/AppSearchField";
-import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
+import { useSearchText } from "@/shared/lib/use-search-text";
 import { useSearchFilters } from "@/shared/lib/use-search-filters";
 import { membersSearch } from "@/features/workspace/pages/workspace-search";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
@@ -29,7 +29,8 @@ export function MembersPage() {
   const dashboard = useOrganizationAdminDashboardQuery(id);
   const filters = useSearchFilters(route.useSearch(), membersSearch);
   const { q: query, role } = filters.values;
-  const search = useDebouncedValue(query.trim());
+  const searchBox = useSearchText(query, (q) => filters.setFilters({ q }));
+  const search = query.trim();
   const membersQuery = useMemberCatalog(
     id,
     { search, filter: role },
@@ -70,8 +71,8 @@ export function MembersPage() {
                     }
                   : undefined
               }
-              value={query}
-              onChange={(value) => filters.setFilters({ q: value })}
+              value={searchBox.text}
+              onChange={searchBox.setText}
             />
             <div className="w-full sm:w-56">
               <MemberRoleFilter

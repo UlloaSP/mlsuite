@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.admin;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -12,12 +14,12 @@ import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
-import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.PersonalAccountService;
 import jakarta.persistence.criteria.Predicate;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import dev.ulloasp.mlsuite.util.PageDto;
 import lombok.RequiredArgsConstructor;
 
@@ -43,9 +45,6 @@ public class AdminUserService {
 
     public AdminUserDto create(Long actorId, AdminCreateUserRequest request) {
         String email = request.email().trim().toLowerCase();
-        if (userRepository.existsByEmailIgnoreCase(email)) {
-            throw new UserAlreadyExistsException(email);
-        }
         User user = new User(
                 personalAccountService.claimHandle(request.username()),
                 email,
@@ -134,26 +133,28 @@ public class AdminUserService {
         };
     }
 
+    /** None for every role. */
     private SystemRole filterRole(String role) {
         if (role == null || role.isBlank() || "all".equalsIgnoreCase(role)) {
             return null;
         }
-        try {
-            return SystemRole.valueOf(role.trim().toUpperCase());
-        } catch (IllegalArgumentException ignored) {
-            return null;
-        }
+        return switch (role.trim().toUpperCase()) {
+            case "USER" -> SystemRole.USER;
+            case "SUPERADMIN" -> SystemRole.SUPERADMIN;
+            default -> throw CatalogValues.unknown("role", role, List.of("all", "USER", "SUPERADMIN"));
+        };
     }
 
     private Sort sort(String sort) {
         return switch (sort == null ? "current" : sort.trim().toLowerCase()) {
+            case "current" -> Sort.by(Sort.Order.asc("id"));
             case "name" -> Sort.by(
                     Sort.Order.asc("fullName").ignoreCase(),
                     Sort.Order.asc("email").ignoreCase(),
                     Sort.Order.asc("id"));
             case "newest" -> Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id"));
             case "oldest" -> Sort.by(Sort.Order.asc("createdAt"), Sort.Order.asc("id"));
-            default -> Sort.by(Sort.Order.asc("id"));
+            default -> throw CatalogValues.unknown("sort", sort, List.of("current", "name", "newest", "oldest"));
         };
     }
 }

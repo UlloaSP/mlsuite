@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
@@ -23,6 +24,7 @@ public class PredictionJobController {
 
     private final PredictionJobService jobs;
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/schema-bookmarks/{bookmarkId}/prediction-jobs")
     public ResponseEntity<PredictionJobDto> start(CurrentUser user, @PathVariable Long bookmarkId,
             @Valid @RequestBody CreatePredictionJobRequest request) {
@@ -49,6 +51,7 @@ public class PredictionJobController {
         return ResponseEntity.ok(jobs.cancel(user.userId(), jobId));
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/prediction-jobs/{jobId}")
     public ResponseEntity<Void> delete(CurrentUser user, @PathVariable Long jobId) {
         jobs.delete(user.userId(), jobId);

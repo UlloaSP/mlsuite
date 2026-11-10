@@ -36,8 +36,10 @@ public class TerminalSessions {
     @Transactional
     public TerminalSessionResponse open(Long actorId, TerminalSessionRequest request) {
         TerminalSessionResponse upstream = opsAgent.createTerminalSession(request);
-        jdbc.update("INSERT INTO terminal_session (id, opened_by_user_id, service_name) VALUES (?, ?, ?)",
-                upstream.sessionId(), actorId, request.serviceName());
+        jdbc.update("""
+                INSERT INTO terminal_session (session_key, created_by_principal_id, service_name)
+                SELECT ?, p.id, ? FROM principal p WHERE p.user_id = ?""",
+                upstream.sessionId(), request.serviceName(), actorId);
         auditLog.record(AuditActor.user(actorId), null, AuditAction.TERMINAL_SESSION_OPEN, upstream.sessionId(),
                 AuditDetails.of("service", request.serviceName()));
         return new TerminalSessionResponse(upstream.sessionId(), "/api/admin/infrastructure/terminal/" + upstream.sessionId());
@@ -55,7 +57,7 @@ public class TerminalSessions {
     @Transactional
     public void reap() {
         // Rows first: a session opened after this read is not judged by an older list of the agent's.
-        List<String> open = jdbc.queryForList("SELECT id FROM terminal_session", String.class);
+        List<String> open = jdbc.queryForList("SELECT session_key FROM terminal_session", String.class);
         if (open.isEmpty()) return;
         Set<String> live;
         try {
@@ -68,7 +70,7 @@ public class TerminalSessions {
     }
 
     private void forget(AuditActor actor, String sessionId, String reason) {
-        if (jdbc.update("DELETE FROM terminal_session WHERE id = ?", sessionId) == 1) {
+        if (jdbc.update("DELETE FROM terminal_session WHERE session_key = ?", sessionId) == 1) {
             auditLog.record(actor, null, AuditAction.TERMINAL_SESSION_CLOSE, sessionId, AuditDetails.of("reason", reason));
         }
     }

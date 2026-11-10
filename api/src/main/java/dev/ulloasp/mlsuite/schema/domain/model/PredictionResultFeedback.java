@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.schema.domain.model;
 
+import jakarta.persistence.PrePersist;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -10,8 +12,6 @@ import org.hibernate.type.SqlTypes;
 import tools.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReview;
-import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.visitor.domain.model.Visitor;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -43,29 +43,21 @@ import lombok.Setter;
 @Table(name = "prediction_result_feedback")
 public class PredictionResultFeedback {
 
-    public PredictionResultFeedback(PredictionResult result, User user, PredictionResultFeedbackType type,
+    public PredictionResultFeedback(PredictionResult result, Principal author, PredictionResultFeedbackType type,
             int order, JsonNode value) {
         this.result = result;
-        this.user = user;
+        this.createdBy = author;
+        this.updatedBy = author;
         this.type = type;
         this.order = order;
         this.value = value;
     }
 
     /** A reviewer's answer in a review. */
-    public PredictionResultFeedback(PredictionResult result, User user, SchemaReview review,
+    public PredictionResultFeedback(PredictionResult result, Principal author, SchemaReview review,
             PredictionResultFeedbackType type, int order, JsonNode value) {
-        this(result, user, type, order, value);
+        this(result, author, type, order, value);
         this.review = review;
-    }
-
-    public PredictionResultFeedback(PredictionResult result, Visitor visitor, PredictionResultFeedbackType type,
-            int order, JsonNode value) {
-        this.result = result;
-        this.visitor = visitor;
-        this.type = type;
-        this.order = order;
-        this.value = value;
     }
 
     @Id
@@ -77,13 +69,15 @@ public class PredictionResultFeedback {
             foreignKey = @ForeignKey(name = "fk_result_feedback_result"))
     private PredictionResult result;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", updatable = false, foreignKey = @ForeignKey(name = "fk_result_feedback_user"))
-    private User user;
+    /** Who gave the answer: a member or a visitor. One answer per author and question, in a review or outside any. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
 
-    @ManyToOne
-    @JoinColumn(name = "visitor_id", updatable = false, foreignKey = @ForeignKey(name = "fk_result_feedback_visitor"))
-    private Visitor visitor;
+    /** Who changed it last. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "updated_by_principal_id", nullable = false)
+    private Principal updatedBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schema_review_id", updatable = false,
@@ -94,7 +88,7 @@ public class PredictionResultFeedback {
     @Column(name = "feedback_type", nullable = false, length = 32)
     private PredictionResultFeedbackType type;
 
-    @Column(name = "orden", nullable = false)
+    @Column(name = "question_index", nullable = false)
     private int order;
 
     @JdbcTypeCode(SqlTypes.JSON)
@@ -108,4 +102,13 @@ public class PredictionResultFeedback {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime updatedAt;
+
+    /** Carried from its parent for the composite foreign key that keeps it there. */
+    @Column(name = "prediction_run_id", nullable = false, updatable = false)
+    private Long predictionRunId;
+
+    @PrePersist
+    void carryParentKeys() {
+        predictionRunId = result.getRun().getId();
+    }
 }

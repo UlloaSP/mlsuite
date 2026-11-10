@@ -12,6 +12,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
+import dev.ulloasp.mlsuite.audit.domain.model.AuditActorKind;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.security.identity.RequestOrigin;
 import jakarta.annotation.Nullable;
@@ -33,6 +34,14 @@ public class AuditLogService {
     private static final String DELETED_ACCOUNT = "Deleted account";
     private static final ObjectMapper JSON = JsonMapper.shared();
 
+    /** The principal that acted: a person's or a client's, or the platform's; a visitor is none. */
+    private static final String ACTOR = """
+            CASE CAST(? AS varchar)
+                WHEN 'USER' THEN (SELECT id FROM principal WHERE user_id = CAST(? AS bigint))
+                WHEN 'API_CLIENT' THEN (SELECT id FROM principal WHERE api_client_id = CAST(? AS bigint))
+                WHEN 'SYSTEM' THEN (SELECT id FROM principal WHERE kind = 'SYSTEM')
+            END""";
+
     private final JdbcTemplate jdbc;
 
     public void record(AuditActor actor, @Nullable Long organizationId, AuditAction action, @Nullable Object targetId) {
@@ -47,14 +56,16 @@ public class AuditLogService {
     public void record(AuditActor actor, @Nullable Long organizationId, AuditAction action, @Nullable Object targetId,
             Map<String, Object> details) {
         RequestOrigin origin = RequestOrigin.current();
+        Long userId = actor.kind() == AuditActorKind.USER ? actor.id() : null;
         jdbc.update("""
-                INSERT INTO audit_event (actor_kind, actor_user_id, actor_label, organization_id, organization_label,
+                INSERT INTO audit_event (actor_kind, actor_principal_id, actor_label, organization_id, organization_label,
                     action, target_type, target_id, metadata, ip, request_id, created_at)
-                VALUES (?, CAST(? AS bigint),
+                VALUES (?, %s,
                     COALESCE(CAST(? AS varchar), (SELECT full_name FROM app_user WHERE id = CAST(? AS bigint)), ?),
                     CAST(? AS bigint), (SELECT name FROM organization WHERE id = CAST(? AS bigint)),
-                    ?, ?, ?, CAST(? AS jsonb), ?, CAST(? AS uuid), now())""",
-                actor.kind().name(), actor.userId(), bounded(actor.label(), MAX_LABEL), actor.userId(), DELETED_ACCOUNT,
+                    ?, ?, ?, CAST(? AS jsonb), CAST(? AS inet), CAST(? AS uuid), now())""".formatted(ACTOR),
+                actor.kind().name(), actor.kind().name(), actor.id(), actor.id(), bounded(actor.label(), MAX_LABEL),
+                userId, DELETED_ACCOUNT,
                 organizationId, organizationId, action.name(), action.targetType().name(),
                 targetId == null ? null : bounded(targetId.toString(), MAX_TARGET_ID), json(details), origin.ip(),
                 uuid(origin.requestId()));

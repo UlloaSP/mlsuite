@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.review.application.service;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -21,7 +22,6 @@ import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.application.service.FeedbackHistory;
-import dev.ulloasp.mlsuite.schema.catalog.InferenceRows;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewAssigneeRepository;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
@@ -55,12 +55,12 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
     private final PredictionRunRepository runs;
     private final PredictionResultFeedbackRepository feedback;
     private final FeedbackHistory history;
-    private final InferenceRows inferenceRows;
     private final WorkspaceAccessService workspaceAccess;
     private final WorkspaceAuthorizationService authorization;
     private final AuditLogService auditLog;
     private final NotificationService notifications;
     private final UserRepository users;
+    private final Principals principals;
 
     @Transactional(readOnly = true)
     public List<SchemaReviewAssignmentStatusDto> assignmentStatus(Long userId, Long predictionRunId) {
@@ -131,11 +131,11 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
         Optional<SchemaReviewRunSubmission> submission = submissions
                 .findByReviewRunIdAndUserId(reviewRun.getId(), reviewerId);
         // Only this review's answers: the reviewer's answers in other reviews, and on public pages, stay.
-        List<PredictionResultFeedback> answers = feedback.findByResultRunIdAndUserIdAndReviewId(
+        List<PredictionResultFeedback> answers = feedback.findByResultRunIdAndCreatedByUserIdAndReviewId(
                 reviewRun.getRun().getId(), reviewerId, review.getId());
         if (submission.isEmpty() && answers.isEmpty()) throw conflict("Review response is already empty");
         submission.ifPresent(submissions::delete);
-        history.delete(answers, userId);
+        history.delete(answers, principals.user(userId));
         auditLog.record(AuditActor.user(userId), organizationId, AuditAction.REVIEW_RESPONSE_DELETE, reviewId,
                 AuditDetails.of("reviewRun", reviewRunId, "reviewerId", reviewerId, "answers", answers.size()));
     }
@@ -148,11 +148,7 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
                 .orElseThrow(SchemaReviewUnavailableException::new);
         auditLog.record(AuditActor.user(userId), organizationId, AuditAction.REVIEW_DELETE, reviewId,
                 AuditDetails.of("schema", review.getSchema().getName(), "schemaVersionId", review.getSchemaVersion().getId()));
-        // The answers leave with the review, at the database, so the runs they were on are told here.
-        feedback.findRunIdsAnsweredIn(review.getId()).forEach(inferenceRows::answersChanged);
-        submissions.deleteByReview(review.getId());
-        reviewRuns.deleteByReview(review.getId());
-        assignees.deleteByReview(review.getId());
+        // A review goes whole, at the database: its reviewers, runs, submissions, answers and their history.
         reviews.delete(review);
     }
 
@@ -163,7 +159,7 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
         SchemaReviewRunSubmission submission = submissions
                 .findByReviewRunIdAndUserId(reviewRun.getId(), reviewerId).orElse(null);
         SchemaReviewState state = submission != null ? SchemaReviewState.COMPLETED
-                : feedback.existsByResultRunIdAndUserIdAndReviewId(reviewRun.getRun().getId(), reviewerId,
+                : feedback.existsByResultRunIdAndCreatedByUserIdAndReviewId(reviewRun.getRun().getId(), reviewerId,
                         review.getId())
                         ? SchemaReviewState.IN_PROGRESS
                         : SchemaReviewState.PENDING;

@@ -88,7 +88,7 @@ class TerminalSessionAuditTest extends PublicPredictionFixture {
         terminals.reap();
 
         assertEquals(List.of(), events("CLOSE"));
-        assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM terminal_session WHERE id = ?", Integer.class,
+        assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM terminal_session WHERE session_key = ?", Integer.class,
                 sessionId));
     }
 

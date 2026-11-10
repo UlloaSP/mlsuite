@@ -1,6 +1,8 @@
 package dev.ulloasp.mlsuite.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
@@ -123,6 +125,32 @@ class DomainExceptionHandlerTest {
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("Request conflicts with the current persisted state.", response.getBody().message());
+    }
+
+    @Test
+    void handleBadRequest_NamesAnUnknownValueWithoutItsJavaType() {
+        DomainExceptionHandler handler = new DomainExceptionHandler();
+        when(request.getRequestURI()).thenReturn("/api/roles");
+
+        ResponseEntity<ErrorDto> response = handler.handleBadRequest(
+                new IllegalArgumentException("No enum constant dev.ulloasp.mlsuite.role.domain.model.PermissionKey.NOPE"),
+                request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Unknown value 'NOPE'.", response.getBody().message());
+    }
+
+    @Test
+    void handleTypeMismatch_NamesTheParameterAndTheValuesItTakes() {
+        DomainExceptionHandler handler = new DomainExceptionHandler();
+        when(request.getRequestURI()).thenReturn("/api/admin/audit");
+
+        ResponseEntity<ErrorDto> response = handler.handleTypeMismatch(new org.springframework.web.method.annotation
+                .MethodArgumentTypeMismatchException("GOD", HttpStatus.class, "status", null, null), request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertTrue(response.getBody().message().startsWith("Invalid value 'GOD' for 'status'. Expected one of: "));
+        assertFalse(response.getBody().message().contains("org.springframework"));
     }
 
     @Test

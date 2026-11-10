@@ -10,8 +10,23 @@ import {
 } from "@/capabilities/prediction-runtime/mlform/shared";
 import { resolveDisplayKey } from "@/capabilities/prediction-runtime/mlform/display-key";
 import { mappedTargets } from "@/capabilities/prediction-runtime/mlform/mapped-to";
+import { formatFormDate } from "@/shared/lib/date-time";
 
-type DisplayInput = { key: string; label: string; value: unknown };
+/** A column of a series field, by which its stored rows are read. */
+export type SeriesColumn = { id: string; kind: string; label: string };
+
+/** An input as a run shows it; a series field's also names the columns of its rows. */
+type DisplayInput = { key: string; label: string; value: unknown; columns?: SeriesColumn[] };
+
+const seriesColumns = (field: JsonRecord): SeriesColumn[] | undefined =>
+  field.kind === "series" && Array.isArray(field.columns)
+    ? field.columns.filter(isRecord).flatMap((column) => {
+        const id = getString(column.id);
+        return id
+          ? [{ id, kind: getString(column.kind) ?? "text", label: getString(column.label) ?? id }]
+          : [];
+      })
+    : undefined;
 
 const fieldsOf = (schema: unknown): JsonRecord[] =>
   isRecord(schema) && Array.isArray(schema.fields) ? schema.fields.filter(isRecord) : [];
@@ -41,7 +56,8 @@ export const getSchemaInputColumns = (schema: unknown, inputData: JsonRecord): D
     const key = resolveDisplayKey(field);
     const value = fieldValue(field, inputData);
     if (!key) return items;
-    items.push({ key, label: getString(field.label) ?? key, value });
+    const columns = seriesColumns(field);
+    items.push({ key, label: getString(field.label) ?? key, value, ...(columns && { columns }) });
     return items;
   }, []);
 
@@ -73,6 +89,17 @@ export const mergeSchemaRunInputs = (
     if (isRecord(result.modelInput)) Object.assign(merged, result.modelInput);
   }
   return merged;
+};
+
+/**
+ * One cell of a series row: a date as its day (the form stores a day as its midnight UTC), any
+ * other value as an input shows it, and an empty cell as "—".
+ */
+export const formatSeriesCell = (value: unknown, column: SeriesColumn): string => {
+  if (value === null || value === undefined || value === "") return "—";
+  return column.kind === "date" && typeof value === "string"
+    ? formatFormDate(value)
+    : formatDisplayValue(value);
 };
 
 export const formatDisplayValue = (value: unknown): string => {

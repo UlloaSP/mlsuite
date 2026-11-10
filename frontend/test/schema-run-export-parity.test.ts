@@ -62,8 +62,15 @@ const run = predictionRun({
       modelInput: { age: 52 },
       output: {
         reports: [
-          { mappedTo: "predicted_class", prediction: 1, probabilities: [0.2, 0.8] },
-          { mappedTo: "crystal", explanation: "tree path" },
+          {
+            id: "report_1",
+            kind: "classifier",
+            mappedTo: "predicted_class",
+            prediction: "1",
+            labels: ["0", "1"],
+            probabilities: [0.2, 0.8],
+          },
+          { id: "crystal_1", kind: "Crystal Tree", mappedTo: "crystal", explanation: "tree path" },
         ],
       },
     }),
@@ -76,8 +83,8 @@ describe("schema run export parity", () => {
       resultFeedback({
         id: 1,
         resultId: 1,
-        userId: 7,
-        userEmail: "reviewer@example.com",
+        createdByUserId: 7,
+        createdByEmail: "reviewer@example.com",
         type: "EXPLANATION",
         order: 1,
         value: { clarity: 5 },
@@ -108,7 +115,9 @@ describe("schema run export parity", () => {
       const stored = predictionRun({
         results: [
           predictionResult({
-            output: { reports: [{ kind: "regressor", output: 0, mappedTo: "0", values }] },
+            output: {
+              reports: [{ id: "body_mass", kind: "regressor", output: 0, mappedTo: "0", values }],
+            },
           }),
         ],
       });
@@ -120,6 +129,46 @@ describe("schema run export parity", () => {
     };
 
     expect(predictedCell([3531.39])).toBe("3531.39");
+  });
+
+  test("exports a series field's rows beside the aggregations its model received", () => {
+    const rows = [
+      { field1: 1, field2: 100 },
+      { field1: 2, field2: 120 },
+    ];
+    const houses = schemaVersion({
+      bindings: [binding(1)],
+      formSchema: {
+        fields: [
+          {
+            id: "area_history",
+            kind: "series",
+            label: "Area history",
+            columns: [
+              { id: "field1", kind: "number", label: "Year" },
+              { id: "field2", kind: "number", label: "Area" },
+            ],
+            aggregations: [
+              { operation: "mean", label: "Mean", source: "field2", mappedTo: "area" },
+            ],
+          },
+        ],
+        reports: [],
+      },
+    });
+    const stored = predictionRun({
+      inputData: { area: 110, "Area history": rows },
+      results: [predictionResult({ modelId: 1, modelInput: { area: 110 } })],
+    });
+    const [header, row] = buildSchemaRunExport([stored], houses, [], ";")
+      .content.replace("\uFEFF", "")
+      .split("\n")
+      .map((line) => line.split(";"));
+    expect(row[header.indexOf("input.1.area")]).toBe("110");
+    // RFC 4180 quotes the JSON and doubles its quotes.
+    expect(row[header.indexOf("series.Area history")]).toBe(
+      `"${JSON.stringify(rows).replaceAll('"', '""')}"`,
+    );
   });
 
   test("exports who made each run and through which door", () => {
@@ -153,5 +202,143 @@ describe("schema run export parity", () => {
       ["PUBLIC", ""],
       ["WORKSPACE", "a@b.c"],
     ]);
+  });
+
+  test("exports each report on one output, and a reviewer's class as the label shown", () => {
+    // Built from a model: no report ids, a class and its explanation read the same output.
+    const fromModel = schemaVersion({
+      bindings: [binding(1)],
+      formSchema: {
+        fields: [],
+        reports: [
+          {
+            label: "Predicted class",
+            kind: "classifier",
+            mappedTo: { "model-1": 0 },
+            labels: ["High risk", "Low risk"],
+          },
+          {
+            label: "Why",
+            kind: "Crystal Tree",
+            mappedTo: { "model-1": 0 },
+            feedbackQuestionnaire: {
+              steps: [{ id: "why", fields: [{ kind: "rating", id: "clarity", label: "Clarity" }] }],
+            },
+          },
+        ],
+      },
+    });
+    const stored = predictionRun({
+      results: [
+        predictionResult({
+          id: 1,
+          output: {
+            reports: [
+              { kind: "classifier", output: 0, mapping: ["high", "low"], prediction: "low" },
+              { kind: "Crystal Tree", explanation: "age > 50" },
+              {
+                id: "Predicted class",
+                kind: "classifier",
+                mappedTo: "0",
+                labels: ["high", "low"],
+                prediction: "low",
+              },
+              { id: "Why", kind: "Crystal Tree", mappedTo: "0", explanation: "age > 50" },
+            ],
+          },
+        }),
+      ],
+    });
+    const answer = (id: number, type: "OUTPUT" | "EXPLANATION", order: number, value: object) =>
+      resultFeedback({ id, resultId: 1, createdByEmail: "r@x.org", type, order, value });
+    const feedback = [
+      answer(1, "OUTPUT", 0, { "output-feedback-assessment": "low" }),
+      answer(2, "EXPLANATION", 1, { clarity: 4 }),
+    ];
+
+    const [header, row] = buildSchemaRunExport([stored], fromModel, feedback, ";")
+      .content.replace("﻿", "")
+      .split("\n")
+      .map((line) => line.split(";"));
+    const cell = (column: string) => row[header.indexOf(column)];
+
+    expect(cell("output.Predicted class.predicted")).toBe("Low risk");
+    expect(cell("output.Predicted class.feedback.r@x.org")).toBe("Low risk");
+    expect(cell("report.Why.content")).toContain("age > 50");
+    expect(cell("report.Why.clarity.r@x.org")).toBe("4");
+  });
+
+  test("exports a questionnaire's choice by the option label the table shows", () => {
+    const asked = schemaVersion({
+      bindings: [binding(1)],
+      formSchema: {
+        fields: [],
+        reports: [
+          {
+            id: "why",
+            label: "Why",
+            kind: "Crystal Tree",
+            mappedTo: { "model-1": 0 },
+            feedbackQuestionnaire: {
+              steps: [
+                {
+                  id: "why",
+                  fields: [
+                    {
+                      kind: "category",
+                      id: "useful",
+                      label: "Useful?",
+                      options: [
+                        { label: "Yes", value: "yes" },
+                        { label: "No", value: "no" },
+                      ],
+                    },
+                    {
+                      kind: "category",
+                      id: "level",
+                      label: "Level",
+                      options: [{ label: "Two", value: 2 }],
+                    },
+                    { kind: "text", id: "note", label: "Note" },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    });
+    const stored = predictionRun({
+      results: [
+        predictionResult({
+          id: 1,
+          output: {
+            reports: [{ id: "why", kind: "Crystal Tree", mappedTo: "0", explanation: "x" }],
+          },
+        }),
+      ],
+    });
+    const feedback = [
+      resultFeedback({
+        id: 1,
+        resultId: 1,
+        createdByEmail: "r@x.org",
+        type: "EXPLANATION",
+        order: 0,
+        value: { useful: "yes", level: "2", note: "no" },
+      }),
+    ];
+
+    const [header, row] = buildSchemaRunExport([stored], asked, feedback, ";")
+      .content.replace("﻿", "")
+      .split("\n")
+      .map((line) => line.split(";"));
+    const cell = (column: string) => row[header.indexOf(column)];
+
+    expect(cell("report.why.useful.r@x.org")).toBe("Yes");
+    // Compared as text, as the table compares them.
+    expect(cell("report.why.level.r@x.org")).toBe("Two");
+    // A field without options keeps the answer as given, whatever an option elsewhere is valued.
+    expect(cell("report.why.note.r@x.org")).toBe("no");
   });
 });

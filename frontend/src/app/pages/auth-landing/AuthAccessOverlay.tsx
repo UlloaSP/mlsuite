@@ -10,10 +10,13 @@ import type { AuthReveal } from "./useAuthAccess";
 
 export function AuthAccessOverlay({
   mode,
+  succeeded,
   open,
   reveal,
 }: {
   mode: AuthMode;
+  /** The server accepted the attempt; until then the welcome is not in the document at all. */
+  succeeded: boolean;
   open: boolean;
   reveal: AuthReveal;
 }) {
@@ -25,28 +28,30 @@ export function AuthAccessOverlay({
 
   return (
     <div className="auth-overlay" data-open={open} style={style} aria-hidden={!open}>
-      <div className="auth-overlay-content" role="status">
-        <img alt="" className="h-[72px] w-auto" height="512" src="/mlsuite.png" width="960" />
-        <p className="text-center text-[min(84px,10vw)] leading-[0.92] tracking-[-0.05em]">
-          {mode === "login" ? (
-            <>
-              <span className="font-extralight">Welcome to </span>
-              <MLSuiteWordmark suffix="." />
-            </>
-          ) : (
-            <>
-              <span className="font-extralight">Account </span>
-              <span className="font-extrabold">created.</span>
-            </>
-          )}
-        </p>
-        <div className="flex flex-col items-center gap-3">
-          <span className="font-mono text-xs tracking-[0.35em]">OPENING WORKSPACE</span>
-          <div aria-hidden="true" className="auth-overlay-bar">
-            <span />
+      {succeeded ? (
+        <div className="auth-overlay-content" role="status">
+          <img alt="" className="h-[72px] w-auto" height="512" src="/mlsuite.png" width="960" />
+          <p className="text-center text-[min(84px,10vw)] leading-[0.92] tracking-[-0.05em]">
+            {mode === "login" ? (
+              <>
+                <span className="font-extralight">Welcome to </span>
+                <MLSuiteWordmark suffix="." />
+              </>
+            ) : (
+              <>
+                <span className="font-extralight">Account </span>
+                <span className="font-extrabold">created.</span>
+              </>
+            )}
+          </p>
+          <div className="flex flex-col items-center gap-3">
+            <span className="font-mono text-xs tracking-[0.35em]">OPENING WORKSPACE</span>
+            <div aria-hidden="true" className="auth-overlay-bar">
+              <span />
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

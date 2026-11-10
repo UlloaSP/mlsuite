@@ -15,6 +15,7 @@ import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepositor
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.util.CatalogPages;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import dev.ulloasp.mlsuite.util.PageDto;
 import lombok.RequiredArgsConstructor;
 
@@ -35,6 +36,7 @@ public class PurgeRequestService {
 
     @Transactional(readOnly = true)
     public PageDto<PurgeJobDto> list(CatalogRequest request) {
+        CatalogValues.require("filter", request.requireOneOrder().filter(), List.of("all", "open", "completed"));
         String search = CatalogPages.likeLiteral(request.search());
         long total = ledger.count(search, request.filter());
         List<PurgeJobDto> items = ledger.page(search, request.filter(), request.page(), request.size());
@@ -69,7 +71,7 @@ public class PurgeRequestService {
 
     private Long start(PurgeTargets.Target target, User requester) {
         targets.close(target);
-        Long jobId = ledger.insert(target, requester.getId(), requester.getFullName());
+        Long jobId = ledger.insert(target, requester.getId());
         auditLog.record(AuditActor.user(requester.getId()), target.organizationId(), AuditAction.PURGE_REQUEST, jobId,
                 AuditDetails.of("scope", target.scope(), "targetId", target.id(), "target", target.label(),
                         "counts", previews.count(target)));
@@ -79,7 +81,7 @@ public class PurgeRequestService {
     public PurgeJobDto retry(Long actorId, Long jobId) {
         PurgeJobDto job = ledger.find(jobId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Purge not found"));
-        if (!ledger.retry(jobId)) {
+        if (!ledger.retry(jobId, actorId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Only a failed purge can be retried.");
         }
         auditLog.record(AuditActor.user(actorId), null, AuditAction.PURGE_RETRY, jobId,

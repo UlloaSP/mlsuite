@@ -1,4 +1,4 @@
-import { Children, type ReactNode } from "react";
+import { Children, useEffect, useRef, type ReactNode } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
@@ -27,6 +27,11 @@ export type CatalogListPanelProps = {
   /** "flush" rows touch each other and the panel's edges: a list inside a bordered box. */
   density?: "spaced" | "flush";
   scrollMemoryKey?: string | false;
+  /**
+   * The search, filter and sort the rows answer: a new value starts the list at the top. The rows
+   * stay mounted, so the previous results remain in place until the new ones arrive.
+   */
+  resetKey?: string;
   loadingLabel: string;
   onRetry?: () => void;
   onLoadMore: () => unknown;
@@ -43,6 +48,7 @@ export function CatalogListPanel({
   layout = "list",
   density = "spaced",
   scrollMemoryKey = "list",
+  resetKey,
   loadingLabel,
   onRetry,
   onLoadMore,
@@ -53,6 +59,12 @@ export function CatalogListPanel({
   const { columnCount, scrollRef, setFocusedItem, measureItem, virtualizer } =
     useCatalogVirtualizer(items, layout, scrollMemoryKey, gap);
   const showLoading = useStableLoading(isLoading);
+  const shownFor = useRef(resetKey);
+  useEffect(() => {
+    if (shownFor.current === resetKey) return;
+    shownFor.current = resetKey;
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [resetKey, scrollRef]);
   const rows = virtualizer.getVirtualItems();
   useLoadMoreNearEnd({
     scrollRef,

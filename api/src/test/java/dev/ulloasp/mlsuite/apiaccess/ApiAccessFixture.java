@@ -23,6 +23,7 @@ import dev.ulloasp.mlsuite.apiaccess.application.port.in.ApiClientAccessUseCase;
 import dev.ulloasp.mlsuite.apiaccess.application.port.in.ApiClientUseCase;
 import dev.ulloasp.mlsuite.apiaccess.domain.model.ApiClientKey;
 import dev.ulloasp.mlsuite.apiaccess.domain.model.ApiRequest;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
@@ -35,6 +36,9 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
  * forest alone, for the tests of the client API and its management.
  */
 abstract class ApiAccessFixture extends PublicPredictionFixture {
+
+    @Autowired
+    private Principals principals;
 
     static final String FEATURES = "{\"features\":{\"age\":52,\"sex__male\":1}}";
     /** The mlbundle runtime's answer: one report per model output, by output position. */
@@ -62,15 +66,15 @@ abstract class ApiAccessFixture extends PublicPredictionFixture {
                     "fields", List.of(Map.of("kind", "number", "label", "Age", "mappedTo", Map.of("risk-forest", "age"))),
                     "reports", List.of(
                             Map.of("kind", "classifier", "label", "Risk", "mappedTo", Map.of("risk-forest", 0)),
-                            Map.of("kind", "regressor", "label", "Score", "mappedTo", Map.of("risk-forest", 1)))));
+                            Map.of("kind", "regressor", "label", "Score", "mappedTo", Map.of("risk-forest", 1)))), principals.system());
             entityManager.persist(singleVersion);
             entityManager.persist(new SchemaModelBinding(singleVersion, forestModel, Map.of()));
-            single = new SchemaBookmark(stored, singleVersion, "consumers");
+            single = new SchemaBookmark(stored, singleVersion, "consumers", principals.system());
             entityManager.persist(single);
         });
         clientId = clients.createClient(owner.getId(), new CreateApiClientRequest("Lab2Pressure", null)).client().id();
         secret = issue(clientId, "Production");
-        apiId = access.grantBookmark(owner.getId(), clientId, single.getId()).bookmarks().getFirst().apiId();
+        apiId = access.grantBookmark(owner.getId(), clientId, single.getId()).bookmarks().getFirst().publicId();
         when(analyzer.post(eq("/predict"), any())).thenReturn(ANSWER);
     }
 

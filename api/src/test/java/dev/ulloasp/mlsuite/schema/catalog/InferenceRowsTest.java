@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import dev.ulloasp.mlsuite.model.RecordedSql;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunCatalogItemDto;
 import dev.ulloasp.mlsuite.schema.application.service.FeedbackHistory;
@@ -41,11 +42,14 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
  */
 class InferenceRowsTest extends PublicPredictionFixture {
 
+    @Autowired
+    private Principals principals;
+
     private static final List<Object> AGES = List.of("élan", "Elan", "elan", "ELAN", "file10", "file2", "file02",
             "Zebra", "zebra", "ñandú", "nandu", "Ärger", "ärger", "arg", "z", "å", "Ångström", "ı", "I", "i",
             "  spaced", "x-ray", "x ray", "xray", "10", "9", "-3", "1e3", 42, 7.5, -0.25, 0, 1000000, 3,
             true, false, Map.of("k", 1), List.of(1, 2), "", "😀", "中文", "日本");
-    private static final Map<String, Object> RISK = Map.of("reports", List.of(Map.of("mappedTo", "risk",
+    private static final Map<String, Object> RISK = Map.of("reports", List.of(Map.of("id", "Risk", "mappedTo", "risk",
             "kind", "classifier", "prediction", "high", "mapping", List.of("low", "high"))));
 
     @Autowired InferenceCatalogService catalog;
@@ -66,31 +70,34 @@ class InferenceRowsTest extends PublicPredictionFixture {
                     "fields", List.of(Map.of("kind", "number", "label", "Age"),
                             Map.of("kind", "number", "label", "Cholesterol")),
                     "reports", List.of(Map.of("kind", "classifier", "label", "Risk",
-                            "mappedTo", Map.of("risk-forest", "risk")))));
+                            "mappedTo", Map.of("risk-forest", "risk")))), principals.system());
             entityManager.persist(snapshot);
             entityManager.persist(new SchemaModelBinding(snapshot, forestModel, Map.of()));
             for (int i = 0; i < AGES.size(); i++) {
                 Map<String, Object> inputs = new HashMap<>();
                 inputs.put("Age", AGES.get(i));
-                entityManager.persist(new PredictionRun(null, snapshot, "vary-" + i, inputs, PredictionRunStatus.SUCCESS));
+                entityManager.persist(new PredictionRun(null, snapshot, "vary-" + i, inputs, PredictionRunStatus.SUCCESS, principals.system()));
             }
             for (int i = 0; i < 6; i++) {
-                // Runs without the column, which go last in either direction, and two that were reviewed.
+                // Runs without the column, which go last in either direction, and two that were answered.
                 PredictionRun run = new PredictionRun(null, snapshot, "none-" + i, Map.of("Cholesterol", i),
-                        PredictionRunStatus.SUCCESS);
+                        PredictionRunStatus.SUCCESS, principals.system());
                 entityManager.persist(run);
+                PredictionResult result = new PredictionResult(run, forestModel, Map.of(), RISK,
+                        PredictionResultStatus.SUCCESS, null, null);
+                entityManager.persist(result);
                 if (i < 2) {
-                    PredictionResult result = new PredictionResult(run, forestModel, Map.of(), RISK,
-                            PredictionResultStatus.SUCCESS, null, null);
-                    entityManager.persist(result);
-                    history.save(answer(result, i == 0 ? "high" : "low"), owner.getId());
+                    history.save(answer(result, i == 0 ? "high" : "low"), principals.of(owner));
                 }
             }
             entityManager.flush();
             // Half share one creation time, so ties fall back to the table's own order.
+            // Stands in for runs created earlier: a run is otherwise written once.
+            entityManager.createNativeQuery("SET LOCAL session_replication_role = replica").executeUpdate();
             entityManager.createQuery("update PredictionRun r set r.createdAt = :at where r.schemaVersion.id = :version"
                     + " and mod(r.id, 2) = 0").setParameter("at", at).setParameter("version", snapshot.getId())
                     .executeUpdate();
+            entityManager.createNativeQuery("SET LOCAL session_replication_role = origin").executeUpdate();
         });
     }
 
@@ -107,10 +114,10 @@ class InferenceRowsTest extends PublicPredictionFixture {
             assertEquals(expected, paged(sort, locale), sort);
             assertEquals(expected, selected(sort, locale), sort);
             // Half of them no longer current: those are projected, the rest read.
-            jdbc.update("UPDATE inference_row SET answer_changes = answer_changes + 1 WHERE mod(prediction_run_id, 2) = 1"
+            jdbc.update("UPDATE prediction_run_projection SET answer_changes = answer_changes + 1 WHERE mod(prediction_run_id, 2) = 1"
                     + " AND prediction_run_id = ANY(?)", (Object) runs().toArray(Long[]::new));
             assertEquals(expected, paged(sort, locale), sort);
-            jdbc.update("DELETE FROM inference_row WHERE prediction_run_id = ANY(?)", (Object) runs().toArray(Long[]::new));
+            jdbc.update("DELETE FROM prediction_run_projection WHERE prediction_run_id = ANY(?)", (Object) runs().toArray(Long[]::new));
         }
     }
 
@@ -119,7 +126,7 @@ class InferenceRowsTest extends PublicPredictionFixture {
         inTransaction(() -> {
             for (int i = 0; i < 230; i++) {
                 entityManager.persist(new PredictionRun(null, snapshot, "more-" + i, Map.of("Age", i),
-                        PredictionRunStatus.SUCCESS));
+                        PredictionRunStatus.SUCCESS, principals.system()));
             }
         });
         String sort = age() + ".asc";
@@ -128,7 +135,7 @@ class InferenceRowsTest extends PublicPredictionFixture {
 
         List<String> current = RecordedSql.during(() -> catalog.page(owner.getId(), request(3, sort, "fi-FI")));
         List<String> columns = RecordedSql.during(() -> catalog.metadata(owner.getId(), request(0, sort, "fi-FI")));
-        jdbc.update("UPDATE inference_row SET answer_changes = answer_changes + 1 WHERE prediction_run_id = ANY(?)",
+        jdbc.update("UPDATE prediction_run_projection SET answer_changes = answer_changes + 1 WHERE prediction_run_id = ANY(?)",
                 (Object) runs().subList(0, 3).toArray(Long[]::new));
         List<String> threeStale = RecordedSql.during(() -> catalog.page(owner.getId(), request(0, sort, "pl-PL")));
 
@@ -136,7 +143,7 @@ class InferenceRowsTest extends PublicPredictionFixture {
         assertEquals(2, payloadReads(current), current::toString);
         assertEquals(2, payloadReads(columns), columns::toString);
         assertEquals(4, payloadReads(threeStale), threeStale::toString);
-        jdbc.update("UPDATE inference_row SET answer_changes = answer_changes - 1 WHERE prediction_run_id = ANY(?)",
+        jdbc.update("UPDATE prediction_run_projection SET answer_changes = answer_changes - 1 WHERE prediction_run_id = ANY(?)",
                 (Object) runs().subList(0, 3).toArray(Long[]::new));
         assertEquals(stored, checksum());
     }
@@ -147,11 +154,10 @@ class InferenceRowsTest extends PublicPredictionFixture {
         refresher.refresh();
         Long pending = runId("none-2");
         inTransaction(() -> {
-            PredictionRun run = entityManager.find(PredictionRun.class, pending);
-            PredictionResult result = new PredictionResult(run, forestModel, Map.of(), RISK,
-                    PredictionResultStatus.SUCCESS, null, null);
-            entityManager.persist(result);
-            history.save(answer(result, "high"), owner.getId());
+            PredictionResult result = entityManager.createQuery(
+                    "select x from PredictionResult x where x.run.id = :run", PredictionResult.class)
+                    .setParameter("run", pending).getSingleResult();
+            history.save(answer(result, "high"), principals.of(owner));
         });
 
         assertTrue(rows.stale(runs()).contains(pending));
@@ -159,7 +165,7 @@ class InferenceRowsTest extends PublicPredictionFixture {
         refresher.refresh();
         assertEquals(Set.of(), rows.stale(runs()));
         assertEquals("COMPLETED", jdbc.queryForObject(
-                "SELECT feedback_status FROM inference_row WHERE prediction_run_id = ?", String.class, pending));
+                "SELECT feedback_status FROM prediction_run_projection WHERE prediction_run_id = ?", String.class, pending));
         assertEquals(projectedOrder(sort, "en-US"), paged(sort, "en-US"));
 
         // An answer counted after a projection read what it derives from leaves that projection stale.
@@ -170,7 +176,7 @@ class InferenceRowsTest extends PublicPredictionFixture {
                 new InferenceRowProjector(InferenceCatalogText.of("en-US")).project(table)));
         inTransaction(() -> history.delete(entityManager.createQuery(
                 "select f from PredictionResultFeedback f where f.result.run.id = :run", PredictionResultFeedback.class)
-                .setParameter("run", answered).getResultList(), owner.getId()));
+                .setParameter("run", answered).getResultList(), principals.of(owner)));
         rows.store(projected, sources);
         assertEquals(Set.of(answered), rows.stale(List.of(answered)));
         assertEquals(projectedOrder(sort, "en-US"), paged(sort, "en-US"));
@@ -216,10 +222,10 @@ class InferenceRowsTest extends PublicPredictionFixture {
         for (String locale : List.of("en-US", "es-ES", "sv-SE")) {
             assertEquals(projectedColumns(locale), columns(locale), locale);
         }
-        // A reviewer's new address names their answers' column although no row changes.
+        // A reviewer's new name names their answers' column although no row changes.
         String stored = checksum();
-        jdbc.update("UPDATE app_user SET email = ? WHERE id = ?", "renamed-" + owner.getEmail(), owner.getId());
-        assertTrue(columns("en-US").stream().anyMatch(column -> column.label().endsWith("renamed-" + owner.getEmail())));
+        jdbc.update("UPDATE app_user SET full_name = ? WHERE id = ?", "Renamed Owner", owner.getId());
+        assertTrue(columns("en-US").stream().anyMatch(column -> column.label().endsWith("Renamed Owner")));
         assertEquals(projectedColumns("en-US"), columns("en-US"));
         assertEquals(stored, checksum());
     }
@@ -232,15 +238,15 @@ class InferenceRowsTest extends PublicPredictionFixture {
         List<Row> projected = new ArrayList<>();
         reader.selected(owner.getId(), List.of(gone, kept), table -> projected.addAll(
                 new InferenceRowProjector(InferenceCatalogText.of("en-US")).project(table)));
-        jdbc.update("DELETE FROM prediction_run WHERE id = ?", gone);
+        deleteRun(gone);
 
         rows.store(projected, sources);
 
         assertEquals(List.of(kept), jdbc.queryForList(
-                "SELECT prediction_run_id FROM inference_row WHERE prediction_run_id = ANY(?)", Long.class,
+                "SELECT prediction_run_id FROM prediction_run_projection WHERE prediction_run_id = ANY(?)", Long.class,
                 (Object) new Long[] { gone, kept }));
-        jdbc.update("DELETE FROM prediction_run WHERE id = ?", kept);
-        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM inference_row WHERE prediction_run_id = ?",
+        deleteRun(kept);
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM prediction_run_projection WHERE prediction_run_id = ?",
                 Long.class, kept));
     }
 
@@ -295,13 +301,13 @@ class InferenceRowsTest extends PublicPredictionFixture {
     }
 
     private long projectedRows() {
-        return jdbc.queryForObject("SELECT count(*) FROM inference_row WHERE cell_values IS NOT NULL"
+        return jdbc.queryForObject("SELECT count(*) FROM prediction_run_projection WHERE cell_values IS NOT NULL"
                 + " AND prediction_run_id = ANY(?)", Long.class, (Object) runs().toArray(Long[]::new));
     }
 
     /** Every stored row of the database, as one value. */
     private String checksum() {
-        return jdbc.queryForObject("SELECT count(*) || ':' || coalesce(sum(hashtext(k::text)), 0) FROM inference_row k",
+        return jdbc.queryForObject("SELECT count(*) || ':' || coalesce(sum(hashtext(k::text)), 0) FROM prediction_run_projection k",
                 String.class);
     }
 
@@ -310,7 +316,7 @@ class InferenceRowsTest extends PublicPredictionFixture {
     }
 
     private PredictionResultFeedback answer(PredictionResult result, String assessment) {
-        return new PredictionResultFeedback(result, owner, PredictionResultFeedbackType.OUTPUT, 0,
+        return new PredictionResultFeedback(result, principals.of(owner), PredictionResultFeedbackType.OUTPUT, 0,
                 objectMapper.valueToTree(Map.of("output-feedback-assessment", assessment)));
     }
 
@@ -321,5 +327,13 @@ class InferenceRowsTest extends PublicPredictionFixture {
     private InferenceCatalogRequest request(int page, String sort, String locale) {
         return new InferenceCatalogRequest(page, 10, "", String.valueOf(schema.getId()), "all", "all", "all", "all",
                 sort, locale, List.of());
+    }
+
+    /** A run goes with its results, in one transaction. */
+    private void deleteRun(Long run) {
+        inTransaction(() -> {
+            jdbc.update("DELETE FROM prediction_result WHERE prediction_run_id = ?", run);
+            jdbc.update("DELETE FROM prediction_run WHERE id = ?", run);
+        });
     }
 }

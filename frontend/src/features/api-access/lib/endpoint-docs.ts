@@ -125,7 +125,7 @@ const shellQuote = (text: string) => `'${text.replaceAll("'", "'\\''")}'`;
 type Input = {
   /** Resolves an API path to the absolute address clients call. */
   url: (path: string) => string;
-  bookmark: { apiId: string; name: string; refusal: string | null; modelName: string | null };
+  bookmark: { publicId: string; name: string; refusal: string | null; modelName: string | null };
   /** The bound model, once known; read only when clients can run the bookmark. */
   model: DocumentedModel | undefined;
 };
@@ -135,7 +135,7 @@ export function buildApiDocs({ url, bookmark, model }: Input): ApiDocs {
   const base = {
     title: `${bookmark.name}: prediction API`,
     method: "POST" as const,
-    url: url(`/api/v1/bookmarks/${bookmark.apiId}/predictions`),
+    url: url(`/api/v1/bookmarks/${bookmark.publicId}/predictions`),
     authentication: { lines: AUTHENTICATION, header: `${API_KEY_HEADER}: <your key>` },
     limits: LIMITS,
     errors: ERRORS,
@@ -162,7 +162,7 @@ export function buildApiDocs({ url, bookmark, model }: Input): ApiDocs {
   );
   const response = {
     requestId: "3f0c6a8e-2b1d-4c5e-9a7f-0d1e2f3a4b5c",
-    bookmark: { id: bookmark.apiId, name: bookmark.name },
+    bookmark: { id: bookmark.publicId, name: bookmark.name },
     snapshot: { version: 1, name: "<snapshot name>" },
     model: { name: bookmark.modelName ?? "<model name>", sha256: "<artifact SHA-256>" },
     outputs: outputs.map((output) => output.entry),

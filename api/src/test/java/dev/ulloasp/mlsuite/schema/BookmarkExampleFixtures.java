@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.schema;
 
+import dev.ulloasp.mlsuite.support.TestFixtures;
+import dev.ulloasp.mlsuite.user.domain.model.User;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -69,17 +71,19 @@ final class BookmarkExampleFixtures {
 
     /** Another snapshot of the bookmark's schema, for it to move to. */
     static SchemaVersion nextVersion(SchemaBookmark bookmark) {
-        SchemaVersion version = new SchemaVersion(bookmark.getSchema(), 2, "v2", formSchema());
+        SchemaVersion version = new SchemaVersion(bookmark.getSchema(), 2, "v2", formSchema(), TestFixtures.system());
         version.setId(10L);
         return version;
     }
 
     static PredictionRun run(Long id, SchemaBookmark bookmark, SchemaVersion version, String name,
             Map<String, Object> inputData) {
-        PredictionRun run = new PredictionRun(bookmark, version, name, inputData, PredictionRunStatus.SUCCESS);
+        User alice = TestFixtures.user(21L);
+        alice.setFullName("Alice Owner");
+        alice.setEmail("alice.owner@example.test");
+        PredictionRun run = new PredictionRun(bookmark, version, name, inputData, PredictionRunStatus.SUCCESS,
+                TestFixtures.principal(alice));
         run.setId(id);
-        run.setCreatedByName("Alice Owner");
-        run.setCreatedByEmail("alice.owner@example.test");
         return run;
     }
 

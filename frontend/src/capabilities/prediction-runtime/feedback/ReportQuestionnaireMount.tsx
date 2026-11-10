@@ -20,12 +20,7 @@ import {
   toQuestionnaireSchema,
 } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
 import { getPredictionDesignSystem } from "@/capabilities/prediction-runtime/mlform/headless-prediction";
-import { withSeriesColumns } from "@/capabilities/prediction-runtime/mlform/series-schema";
 import { createMlSuiteRegistry } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
-import {
-  connectStoredStatusConditions,
-  withStoredStatusConditions,
-} from "@/capabilities/prediction-runtime/mlform/stored-status-conditions";
 import { attachQuestionnaireSubmission } from "./questionnaire-submission";
 
 export type ReportQuestionnaireMountHandle = {
@@ -115,9 +110,7 @@ const mountQuestionnaireHost = ({
 }: MountQuestionnaireHostOptions): (() => void) => {
   try {
     const mounted = mountForm(container, {
-      schema: withStoredStatusConditions(
-        withSeriesColumns(buildQuestionnaireFormSchema(effectiveSchema)),
-      ),
+      schema: buildQuestionnaireFormSchema(effectiveSchema),
       registry: createMlSuiteRegistry(),
       layout: buildQuestionnaireWizardLayout(effectiveSchema),
       transport: transport ?? createLocalQuestionnaireTransport(),
@@ -130,7 +123,6 @@ const mountQuestionnaireHost = ({
       reportPane: "hidden",
     });
 
-    connectStoredStatusConditions(mounted.form);
     attachQuestionnaireSubmission(mounted, onSubmitted, onSubmittingChange);
 
     if (mode === "embedded") {

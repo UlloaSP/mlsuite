@@ -9,7 +9,7 @@ import { mountSchemaRunForm } from "@/capabilities/prediction-runtime/mlform/sch
 import { RUN_TARGET } from "./api-fixtures";
 
 type Options = Parameters<typeof createSchemaRunRuntime>[0] & {
-  bindings: Parameters<typeof createSchemaRunTransport>[1];
+  bindings: Parameters<typeof createSchemaRunTransport>[2];
 };
 
 /**
@@ -20,7 +20,12 @@ export const schemaRunRuntime = (options: Options) => {
   const runtime = createSchemaRunRuntime(options);
   return {
     ...runtime,
-    transport: createSchemaRunTransport(RUN_TARGET, options.bindings, runtime.normalizedFields),
+    transport: createSchemaRunTransport(
+      RUN_TARGET,
+      options.schema,
+      options.bindings,
+      runtime.normalizedFields,
+    ),
   };
 };
 
@@ -30,5 +35,6 @@ export const mountRunForm = (
 ) =>
   mountSchemaRunForm({
     ...options,
-    transport: (fields) => createSchemaRunTransport(RUN_TARGET, options.bindings, fields),
+    transport: (fields) =>
+      createSchemaRunTransport(RUN_TARGET, options.schema, options.bindings, fields),
   });

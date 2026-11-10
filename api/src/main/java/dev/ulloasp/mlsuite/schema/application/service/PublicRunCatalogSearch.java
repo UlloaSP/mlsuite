@@ -3,7 +3,6 @@ package dev.ulloasp.mlsuite.schema.application.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
@@ -18,21 +17,21 @@ class PublicRunCatalogSearch {
     private static final int BATCH_SIZE = 100;
     private final EntityManager entities;
 
-    List<Long> matchingIds(UUID visitorId, Long bookmarkId, String search) {
+    List<Long> matchingIds(Long authorId, Long bookmarkId, String search) {
         List<Long> ids = entities.createQuery("""
                 SELECT r.id FROM PredictionRun r
-                WHERE r.visitor.id = :visitorId AND r.schemaBookmark.id = :bookmarkId
+                WHERE r.createdBy.id = :authorId AND r.schemaBookmark.id = :bookmarkId
                 ORDER BY r.createdAt DESC, r.id ASC
-                """, Long.class).setParameter("visitorId", visitorId).setParameter("bookmarkId", bookmarkId)
+                """, Long.class).setParameter("authorId", authorId).setParameter("bookmarkId", bookmarkId)
                 .getResultList();
         List<Long> matching = new ArrayList<>();
         for (int offset = 0; offset < ids.size(); offset += BATCH_SIZE) {
             var batch = ids.subList(offset, Math.min(ids.size(), offset + BATCH_SIZE));
             var rows = entities.createQuery("""
                     SELECT r.id, r.createdAt, r.inputData, r.schemaVersion.formSchema FROM PredictionRun r
-                    WHERE r.id IN :ids AND r.visitor.id = :visitorId AND r.schemaBookmark.id = :bookmarkId
+                    WHERE r.id IN :ids AND r.createdBy.id = :authorId AND r.schemaBookmark.id = :bookmarkId
                     ORDER BY r.createdAt DESC, r.id ASC
-                    """, Object[].class).setParameter("ids", batch).setParameter("visitorId", visitorId)
+                    """, Object[].class).setParameter("ids", batch).setParameter("authorId", authorId)
                     .setParameter("bookmarkId", bookmarkId).getResultList();
             rows.stream().filter(row -> matches(row, search)).forEach(row -> matching.add((Long) row[0]));
         }

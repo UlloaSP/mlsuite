@@ -9,7 +9,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
   width: 400px;
   max-width: 100%;
   zoom: var(--auth-scale, 1);
-  height: 582px;
+  /* A minimum, not a height: an error line grows the pass instead of covering its actions. */
+  min-height: 582px;
   align-self: flex-start;
   display: flex;
   flex-direction: column;
@@ -28,7 +29,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 }
 
 .auth-pass-top {
-  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .auth-pass-top > .auth-glass {
@@ -53,7 +54,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 }
 
 .auth-pass-bottom > .auth-glass {
-  height: 332px;
+  min-height: 332px;
   padding: 0 32px 26px;
   border-top: 0;
   border-radius: 0 0 26px 26px;
@@ -75,8 +76,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
   transform: translateY(120px) rotate(7deg);
   opacity: 0;
   transition:
-    transform 0.7s cubic-bezier(0.5, 0, 0.8, 0.4),
-    opacity 0.55s ease-in;
+    transform 0.45s cubic-bezier(0.5, 0, 0.8, 0.4),
+    opacity 0.4s ease-in;
 }
 
 .auth-slot {

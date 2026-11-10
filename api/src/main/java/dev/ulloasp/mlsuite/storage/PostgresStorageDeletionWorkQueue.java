@@ -22,28 +22,27 @@ public class PostgresStorageDeletionWorkQueue implements StorageDeletionWorkQueu
                     SELECT id
                     FROM storage_deletion_task
                     WHERE (status = 'PENDING' AND next_attempt_at <= CURRENT_TIMESTAMP)
-                       OR (status = 'RUNNING' AND processing_started_at
-                           < CURRENT_TIMESTAMP - (? * INTERVAL '1 second'))
+                       OR (status = 'RUNNING' AND lease_expires_at < CURRENT_TIMESTAMP)
                     ORDER BY id
                     FOR UPDATE SKIP LOCKED
                     LIMIT ?
                 )
                 UPDATE storage_deletion_task AS target
                 SET status = 'RUNNING',
-                    processing_started_at = CURRENT_TIMESTAMP,
-                    processing_token = ?
+                    lease_expires_at = CURRENT_TIMESTAMP + (? * INTERVAL '1 second'),
+                    lease_owner = ?
                 FROM candidates
                 WHERE target.id = candidates.id
-                RETURNING target.id, target.organization_id, target.bucket, target.object_key, target.object_version_id
+                RETURNING target.id, target.organization_id, target.storage_bucket, target.storage_object_key, target.storage_version_id
                 """,
                 (result, row) -> new StorageDeletionWorkItem(
                         result.getLong("id"),
                         result.getObject("organization_id", Long.class),
-                        result.getString("bucket"),
-                        result.getString("object_key"),
-                        result.getString("object_version_id")),
-                staleAfterSeconds,
+                        result.getString("storage_bucket"),
+                        result.getString("storage_object_key"),
+                        result.getString("storage_version_id")),
                 batchSize,
+                staleAfterSeconds,
                 claimToken);
     }
 
@@ -54,10 +53,10 @@ public class PostgresStorageDeletionWorkQueue implements StorageDeletionWorkQueu
                 UPDATE storage_deletion_task
                 SET status = 'COMPLETED',
                     completed_at = CURRENT_TIMESTAMP,
-                    last_error = NULL,
-                    processing_started_at = NULL,
-                    processing_token = NULL
-                WHERE id = ? AND status = 'RUNNING' AND processing_token = ?
+                    error_message = NULL,
+                    lease_expires_at = NULL,
+                    lease_owner = NULL
+                WHERE id = ? AND status = 'RUNNING' AND lease_owner = ?
                 """, id, claimToken);
     }
 
@@ -70,10 +69,10 @@ public class PostgresStorageDeletionWorkQueue implements StorageDeletionWorkQueu
                     status = CASE WHEN attempts + 1 >= ? THEN 'FAILED' ELSE 'PENDING' END,
                     next_attempt_at = CURRENT_TIMESTAMP
                         + LEAST(3600, power(2, LEAST(attempts + 1, 10))) * INTERVAL '1 second',
-                    last_error = ?,
-                    processing_started_at = NULL,
-                    processing_token = NULL
-                WHERE id = ? AND status = 'RUNNING' AND processing_token = ?
+                    error_message = ?,
+                    lease_expires_at = NULL,
+                    lease_owner = NULL
+                WHERE id = ? AND status = 'RUNNING' AND lease_owner = ?
                 RETURNING status
                 """, (result, row) -> "FAILED".equals(result.getString(1)), maxAttempts, error, id, claimToken)
                 .stream().findFirst().orElse(false);

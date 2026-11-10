@@ -57,6 +57,12 @@ class ApiPredictionRefusalTest extends ApiAccessFixture {
                     .andExpect(status().isUnauthorized())
                     .andExpect(jsonPath("$.code").value("invalid_key"));
         }
+        // A caller without a valid key learns nothing about what a body should hold.
+        for (String body : List.of("", "not json", "{\"features\":1}")) {
+            mockMvc.perform(predicting("mls_not-a-key", body))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.code").value("invalid_key"));
+        }
         verify(analyzer, times(1)).post(eq("/predict"), any());
         assertEquals(1, calls().size());
     }
@@ -101,14 +107,19 @@ class ApiPredictionRefusalTest extends ApiAccessFixture {
     @Test
     void aClientRunsOnlyABookmarkOfOneModelThatFitsTheSizeLimit() throws Exception {
         String twoModels = access.grantBookmark(owner.getId(), clientId, bookmark.getId()).bookmarks().stream()
-                .filter(given -> given.id().equals(bookmark.getId())).findFirst().orElseThrow().apiId();
+                .filter(given -> given.id().equals(bookmark.getId())).findFirst().orElseThrow().publicId();
         mockMvc.perform(predicting(secret, twoModels, FEATURES))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("bookmark_not_runnable"))
                 .andExpect(jsonPath("$.detail").value("Clients run a bookmark of exactly one model; this bookmark runs 2."));
         assertEquals("production", calls().getFirst().getBookmarkName());
 
-        inTransaction(() -> entityManager.find(Model.class, forestModel.getId()).setModelSizeBytes(MB + 1));
+        // Stands in for a model uploaded too large: a stored artifact never changes, so the database's
+        // guard on it is set aside for this one write.
+        inTransaction(() -> {
+            entityManager.createNativeQuery("SET LOCAL session_replication_role = replica").executeUpdate();
+            entityManager.find(Model.class, forestModel.getId()).setModelSizeBytes(MB + 1);
+        });
         mockMvc.perform(predicting(secret, FEATURES))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value("This bookmark's model is too large to run for clients."));
@@ -132,14 +143,14 @@ class ApiPredictionRefusalTest extends ApiAccessFixture {
 
     @ParameterizedTest
     @ValueSource(strings = { "{", "[]", "{\"features\":[]}", "null", "{}", "{\"features\":null}" })
-    void aBodyThatIsNotTheEndpointsJsonIsRefusedBeforeTheKeyIsRead(String body) throws Exception {
+    void aBodyThatIsNotTheEndpointsJsonIsRefusedAsACallOfItsKey(String body) throws Exception {
         mockMvc.perform(predicting(secret, body))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.code").value("invalid_body"));
 
         verifyNoInteractions(analyzer);
-        assertEquals(List.of(), calls());
+        assertEquals(List.of(400), calls().stream().map(ApiRequest::getStatus).toList());
     }
 
     @Test
@@ -156,7 +167,12 @@ class ApiPredictionRefusalTest extends ApiAccessFixture {
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.code").value("runtime_failed"))
                 .andExpect(jsonPath("$.detail").value("The prediction could not be completed. Try again later."));
-        inTransaction(() -> entityManager.find(Model.class, forestModel.getId()).setArtifactSha256("0".repeat(64)));
+        // Stands in for a stored object that no longer matches its row: the database's guard on a
+        // model's artifact is set aside for this one write.
+        inTransaction(() -> {
+            entityManager.createNativeQuery("SET LOCAL session_replication_role = replica").executeUpdate();
+            entityManager.find(Model.class, forestModel.getId()).setArtifactSha256("0".repeat(64));
+        });
         mockMvc.perform(predicting(secret, FEATURES)).andExpect(status().isBadGateway());
         assertEquals(List.of(), runsOf(single));
         assertEquals(List.of(502, 502, 422), calls().stream().map(ApiRequest::getStatus).toList());

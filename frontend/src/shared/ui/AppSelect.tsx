@@ -9,6 +9,7 @@ import { type ComponentPropsWithoutRef } from "react";
 import { CONTROL_HEIGHT } from "./control-size";
 import { cx } from "./cx";
 import { FOCUS_RING } from "./focus-ring";
+import { useFieldId } from "./field-id";
 
 // Radix reserves "" for clearing the selection, so an empty option value travels under a sentinel.
 const EMPTY_VALUE = "__mlsuite_empty_select_value__";
@@ -59,6 +60,7 @@ export function AppSelect({
   value,
   ...selectProps
 }: AppSelectProps) {
+  const fieldId = useFieldId(id);
   const menuLabel = label ?? ariaLabel ?? title ?? placeholder;
   const widestLabel = [placeholder, ...options.map((option) => option.label)]
     .filter((item): item is string => Boolean(item))
@@ -82,7 +84,7 @@ export function AppSelect({
           FOCUS_RING,
           className,
         )}
-        id={id}
+        id={fieldId}
         title={title}
       >
         <span className="grid min-w-0 text-left">

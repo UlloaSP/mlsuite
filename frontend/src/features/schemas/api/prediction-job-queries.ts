@@ -33,6 +33,9 @@ export const predictionJobsQueryOptions = (organizationId: number | string, book
     meta: { errorHandledLocally: true },
     refetchInterval: (query) =>
       query.state.data?.some(isOpenJob) ? PREDICTION_JOB_POLL_MS : false,
+    // A job runs on the server whether or not this tab has focus; its list keeps up meanwhile,
+    // so it never says "Queued" after the job's notification said it finished.
+    refetchIntervalInBackground: true,
   });
 
 export const usePredictionJobs = (bookmarkId: string, enabled = true) =>

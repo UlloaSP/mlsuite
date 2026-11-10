@@ -160,9 +160,11 @@ export function OrganizationMenuContent({
                     "absolute left-0 top-0 h-14 w-full justify-between py-2.5",
                   )}
                   onSelect={() => {
-                    void selectOrganization.mutateAsync(organization.id).then(() => {
-                      void navigate({ to: "/home" });
-                    });
+                    // A refused switch stays put; the mutation has shown why.
+                    void selectOrganization.mutateAsync(organization.id).then(
+                      () => navigate({ to: "/home" }),
+                      () => undefined,
+                    );
                   }}
                 >
                   <span className="flex min-w-0 items-center gap-2.5">

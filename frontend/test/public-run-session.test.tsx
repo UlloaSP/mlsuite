@@ -75,7 +75,13 @@ const bookmark: PublicBookmarkDto = {
 };
 const classified = (high: number) => ({
   key: "out0",
-  payload: { kind: "classifier", mapping: ["low", "high"], probabilities: [[1 - high, high]] },
+  payload: {
+    kind: "classifier",
+    mapping: ["low", "high"],
+    labels: ["low", "high"],
+    probabilities: [1 - high, high],
+    prediction: high > 0.5 ? "high" : "low",
+  },
 });
 const run = (id: number, overrides: Partial<PublicRunDto> = {}): PublicRunDto => ({
   id,

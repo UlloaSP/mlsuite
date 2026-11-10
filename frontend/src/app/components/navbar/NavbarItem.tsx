@@ -84,7 +84,6 @@ export function NavbarItem({
         {...common}
         {...appHref(item.to)}
         state={RESTORE_SCROLL_STATE}
-        viewTransition
         aria-current={active ? "page" : undefined}
         className={itemClass(active)}
       >

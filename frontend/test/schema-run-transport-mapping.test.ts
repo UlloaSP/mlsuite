@@ -12,13 +12,22 @@ describe("schema run transport mapping", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (_url: string, init?: RequestInit) => {
-        const { modelInput } = predictionRequest(init);
+        const { modelId, modelInput } = predictionRequest(init);
         if (Object.keys(modelInput).length === 0) {
           return workspacePrediction(init, [], "missing features");
         }
-        return workspacePrediction(init, [
-          { kind: "classifier", mappedTo: "0", prediction: 0, probabilities: [0.8, 0.2] },
-        ]);
+        const ids = modelId === 1 ? ["report-1", "report-1-extra"] : [`report-${modelId}`];
+        return workspacePrediction(
+          init,
+          ids.map((id) => ({
+            id,
+            kind: "classifier",
+            mappedTo: "0",
+            prediction: "0",
+            labels: ["0", "1"],
+            probabilities: [0.8, 0.2],
+          })),
+        );
       }),
     );
     const bindings = Array.from({ length: 6 }, (_, index) => ({
@@ -45,7 +54,7 @@ describe("schema run transport mapping", () => {
         },
       ];
     });
-    const transport = createSchemaRunTransport(RUN_TARGET, bindings, [
+    const transport = createSchemaRunTransport(RUN_TARGET, { reports }, bindings, [
       {
         id: "rec_uci_hours",
         label: "TOTAL HORAS UCI",
@@ -77,9 +86,12 @@ describe("schema run transport mapping", () => {
   test("asks the API to run each model for the bookmark's snapshot", async () => {
     const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => workspacePrediction(init));
     vi.stubGlobal("fetch", fetchMock);
-    const transport = createSchemaRunTransport(RUN_TARGET, [{ modelId: 1, modelName: "risk" }], [
-      { id: "age", label: "Age", kind: "number", mappedTo: "age" },
-    ] as never);
+    const transport = createSchemaRunTransport(
+      RUN_TARGET,
+      {},
+      [{ modelId: 1, modelName: "risk" }],
+      [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }] as never,
+    );
 
     const result = await transport.submit({
       modelValues: { age: 52 },
@@ -95,6 +107,8 @@ describe("schema run transport mapping", () => {
       schemaVersionId: 1,
       modelId: 1,
       modelInput: { age: 52 },
+      // The form's values, which the seal vouches for and the saved run keeps.
+      inputData: { age: 52 },
     });
     expect((result as { raw: { results: unknown[] } }).raw.results).toEqual([
       expect.objectContaining({ modelId: 1, status: "SUCCESS", attestation: "seal-1" }),
@@ -116,9 +130,12 @@ describe("schema run transport mapping", () => {
         ),
       ),
     );
-    const transport = createSchemaRunTransport(RUN_TARGET, [{ modelId: 1, modelName: "risk" }], [
-      { id: "age", label: "Age", kind: "number", mappedTo: "age" },
-    ] as never);
+    const transport = createSchemaRunTransport(
+      RUN_TARGET,
+      {},
+      [{ modelId: 1, modelName: "risk" }],
+      [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }] as never,
+    );
 
     await expect(
       transport.submit({

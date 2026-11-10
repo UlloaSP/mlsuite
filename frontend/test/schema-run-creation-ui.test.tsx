@@ -16,6 +16,7 @@ import { buttonByText, changeValue, click, mount } from "./support/dom";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 import { binding, schemaVersion, workspacePrediction } from "./support/api-fixtures";
 import { mountRunForm } from "./support/schema-run-runtime";
+import { createRunName } from "@/features/schemas/lib/run-name";
 
 const mountState = vi.hoisted(() => ({
   mount: vi.fn(),
@@ -201,7 +202,9 @@ describe("schema run creation UI", () => {
     await act(async () => options().onRunningChange(true));
     expect(rows()).toHaveLength(1);
     expect(rows()[0].textContent).toContain("Running…");
-    expect(nameInputs()[0].value).toBe("run-2026-08-24T14:49:00.000Z");
+    expect(nameInputs()[0].value).toBe(
+      createRunName("production", new Date("2026-08-24T14:49:00.000Z")),
+    );
 
     await act(async () => {
       options().onRunningChange(false);
@@ -234,7 +237,6 @@ describe("schema run creation UI", () => {
     expect(pageState.mutateAsync).toHaveBeenLastCalledWith({
       name: "Reviewed case",
       schemaVersionId: 1,
-      inputData: { age: 42 },
       results: [{ attestation: "seal-1" }],
     });
     expect(rows()[0].textContent).toContain("Saved");
@@ -251,6 +253,28 @@ describe("schema run creation UI", () => {
 
     await click(removeButton(rows()[0]));
     expect(rows()).toHaveLength(0);
+  });
+
+  test("numbers a run started in the same second as another, so Save all is not refused", async () => {
+    const container = await renderSession();
+    const options = () => mountState.mount.mock.calls[0][0];
+    vi.setSystemTime(new Date("2026-08-24T14:51:00.000Z"));
+    for (const age of [1, 2]) {
+      await act(async () => {
+        options().onRunningChange(true);
+        options().onRunningChange(false);
+        options().onSubmit({ age }, completedRaw, false);
+        await vi.runAllTimersAsync();
+      });
+    }
+    await act(async () => {
+      buttonByText("Save all (2)", container)!.click();
+      await vi.runAllTimersAsync();
+    });
+    const name = createRunName("production", new Date("2026-08-24T14:51:00.000Z"));
+    expect(
+      pageState.saveMany.mock.calls[0]![0].runs.map((request: { name: string }) => request.name),
+    ).toEqual([name, `${name} (2)`]);
   });
 
   test("saves every finished run in order, and asks before discarding unsaved ones", async () => {
@@ -272,7 +296,11 @@ describe("schema run creation UI", () => {
     expect(pageState.saveMany).toHaveBeenCalledTimes(1);
     expect(
       pageState.saveMany.mock.calls[0]![0].runs.map((request: { name: string }) => request.name),
-    ).toEqual(["run-2026-08-24T14:51:00.000Z", "run-2026-08-24T14:52:00.000Z"]);
+    ).toEqual(
+      ["2026-08-24T14:51:00.000Z", "2026-08-24T14:52:00.000Z"].map((at) =>
+        createRunName("production", new Date(at)),
+      ),
+    );
     expect(container.textContent).toContain("All saved");
 
     await act(async () => {
@@ -345,7 +373,7 @@ describe("schema run creation UI", () => {
 });
 
 function SessionHarness() {
-  const session = useInferenceSession("bookmark-1", version.id);
+  const session = useInferenceSession("bookmark-1", version.id, "production");
   return <BookmarkPredictPanel bookmarkId="bookmark-1" version={version} session={session} />;
 }
 

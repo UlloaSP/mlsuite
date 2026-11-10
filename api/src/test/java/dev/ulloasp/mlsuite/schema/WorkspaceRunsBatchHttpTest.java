@@ -42,9 +42,10 @@ class WorkspaceRunsBatchHttpTest extends PublicPredictionFixture {
     void aSavedBatchIsAllOrNoneAndNamesTheRunThatWasRefused() throws Exception {
         long runs = count("PredictionRun");
 
-        mockMvc.perform(saveMany(run("session-ok", seals()), run("session-ok", seals())))
+        // Names are unique ignoring case, and the refusal names the run as it was typed.
+        mockMvc.perform(saveMany(run("session-ok", seals()), run("Session-OK", seals())))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Prediction run name already exists: session-ok"));
+                .andExpect(jsonPath("$.message").value("Prediction run name already exists: Session-OK"));
         mockMvc.perform(saveMany(run("session-forged", List.of(seals().get(0), "not-a-seal"))))
                 .andExpect(status().isBadRequest());
 
@@ -58,7 +59,7 @@ class WorkspaceRunsBatchHttpTest extends PublicPredictionFixture {
 
     private String seal(long modelId, Map<String, Object> input) throws Exception {
         String body = objectMapper.writeValueAsString(Map.of("schemaVersionId", version.getId(), "modelId", modelId,
-                "modelInput", input));
+                "modelInput", input, "inputData", Map.of("Age", 52)));
         return json(mockMvc.perform(signedIn(post("/api/schema-bookmarks/{id}/predictions", bookmark.getId())
                 .contentType(MediaType.APPLICATION_JSON).content(body), owner.getId()))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8))
@@ -66,8 +67,7 @@ class WorkspaceRunsBatchHttpTest extends PublicPredictionFixture {
     }
 
     private Map<String, Object> run(String name, List<String> seals) {
-        return Map.of("schemaVersionId", version.getId(), "name", name, "inputData", Map.of("Age", 52),
-                "results", seals.stream().map(seal -> Map.of("attestation", seal)).toList());
+        return Map.of("schemaVersionId", version.getId(), "name", name, "results", seals.stream().map(seal -> Map.of("attestation", seal)).toList());
     }
 
     @SafeVarargs

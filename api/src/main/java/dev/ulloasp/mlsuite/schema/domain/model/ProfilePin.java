@@ -1,5 +1,9 @@
 package dev.ulloasp.mlsuite.schema.domain.model;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import java.time.OffsetDateTime;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -29,8 +33,10 @@ public class ProfilePin {
 
     public static final int MAX_PINS = 6;
 
-    public ProfilePin(Long userId, SchemaBookmark bookmark, int slot) {
+    public ProfilePin(Long userId, SchemaBookmark bookmark, int slot, Principal createdBy) {
         this.userId = userId;
+        this.createdBy = createdBy;
+        this.updatedBy = createdBy;
         this.bookmark = bookmark;
         this.slot = slot;
     }
@@ -47,7 +53,31 @@ public class ProfilePin {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Setter
     @Column(name = "slot", nullable = false)
     private int slot;
+
+    /** Moves the pin to another slot of its profile. */
+    public void move(int slot, Principal by) {
+        if (this.slot == slot) return;
+        this.slot = slot;
+        this.updatedBy = by;
+    }
+
+    /** Who created it. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
+
+    /** Who last moved it. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "updated_by_principal_id", nullable = false)
+    private Principal updatedBy;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime updatedAt;
 }

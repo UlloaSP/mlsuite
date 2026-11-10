@@ -47,7 +47,9 @@ const bookmark = (overrides: Partial<SchemaBookmarkDto> = {}): SchemaBookmarkDto
   exampleCount: 0,
   staleExampleCount: 0,
   createdAt: AT,
+  createdByName: "Ada Lovelace",
   updatedAt: AT,
+  updatedByName: "Ada Lovelace",
   ...overrides,
 });
 
@@ -64,7 +66,7 @@ const marked = (
 });
 
 const run = (id: number, schemaVersionId = PINNED_VERSION_ID) =>
-  predictionRun({ id, name: `case-${id}`, schemaBookmarkId: BOOKMARK_ID, schemaVersionId });
+  predictionRun({ id, name: `case-${id}`, bookmarkId: BOOKMARK_ID, schemaVersionId });
 
 const FORM_SCHEMA = {
   fields: [

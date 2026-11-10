@@ -4,24 +4,16 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { toast } from "@/shared/ui/toast";
-import { HttpError, isHttpError } from "@/shared/api/http";
-import type { ErrorDto } from "@/shared/api/openapi.gen";
+import { isHttpError } from "@/shared/api/http";
 
-const toastErrorDto = (error: ErrorDto) => {
-  toast.error(error.message || "Request failed", {
-    description: `${error.status} ${error.path}`,
-  });
-};
-
+/**
+ * Toasts a failure no screen owns with what the server said about it. Status codes and request
+ * paths are for developers, so the toast never shows them.
+ */
 export function emitErrorFromUnknown(err: unknown) {
-  if (isHttpError(err)) {
-    toastErrorDto((err as HttpError).dto);
+  if (isHttpError(err) && err.status !== 0 && err.message) {
+    toast.error(err.message);
     return;
   }
-  toastErrorDto({
-    timestamp: new Date().toISOString(),
-    status: 0,
-    message: "Network or unknown error",
-    path: typeof window !== "undefined" ? window.location.pathname : "/",
-  });
+  toast.error("The server could not be reached. Check your connection and try again.");
 }

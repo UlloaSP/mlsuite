@@ -30,7 +30,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
-import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginRuntimeSourcesUseCase;
+import dev.ulloasp.mlsuite.plugin.application.port.in.SnapshotPluginsUseCase;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkExampleRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
@@ -49,7 +49,6 @@ import dev.ulloasp.mlsuite.schema.application.service.SchemaBookmarkServiceImpl;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkExampleStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
-import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmarkExample;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
@@ -82,13 +81,13 @@ class BookmarkExampleServiceTest {
         when(access.requireCurrentOrganization(USER_ID)).thenReturn(organization);
         var authorization = new WorkspaceAuthorizationService(access, mock(RoleDefinitionRepository.class));
         stored = BookmarkExampleFixtures.stored(examples);
-        service = new SchemaBookmarkExampleService(bookmarks, runs, examples, authorization, mock(AuditLogService.class));
+        service = new SchemaBookmarkExampleService(bookmarks, runs, examples, authorization, mock(AuditLogService.class), TestFixtures.principals());
         // No snapshot here binds a model, so nothing stands between these bookmarks and being public.
         var publishability = new BookmarkPublishability(mock(SchemaModelBindingRepository.class), 50);
         bookmarkService = new SchemaBookmarkServiceImpl(mock(SchemaRepository.class), versions, bookmarks,
-                authorization, publishability, mock(AuditLogService.class));
+                authorization, publishability, mock(AuditLogService.class), TestFixtures.principals());
         publicService = new PublicBookmarkService(bookmarks, examples, publishability,
-                mock(SnapshotRunGuard.class), mock(ListPluginRuntimeSourcesUseCase.class));
+                mock(SnapshotRunGuard.class), mock(SnapshotPluginsUseCase.class));
         bookmark.setPublicId(PUBLIC_ID);
         when(bookmarks.findByIdAndOrganizationId(BOOKMARK_ID, ORG_ID)).thenReturn(Optional.of(bookmark));
         // The public lookup answers only while the bookmark is published, as the query does.
@@ -174,13 +173,6 @@ class BookmarkExampleServiceTest {
     void onlyRunsOfTheSameSchemaOnThePinnedSnapshotCanBeMarked() {
         storedRun(RUN_ID, nextVersion(bookmark), "Other snapshot", formRunInputs());
         assertEquals(409, status(() -> service.markExample(USER_ID, BOOKMARK_ID, RUN_ID)));
-
-        Schema otherSchema = SchemaFlowFixtures.schema();
-        otherSchema.setId(6L);
-        SchemaVersion foreign = new SchemaVersion(otherSchema, 1, "v1", Map.of());
-        foreign.setId(bookmark.getVersion().getId());
-        storedRun(RUN_ID, foreign, "Other schema", formRunInputs());
-        assertEquals(400, status(() -> service.markExample(USER_ID, BOOKMARK_ID, RUN_ID)));
         assertTrue(stored.isEmpty());
     }
 

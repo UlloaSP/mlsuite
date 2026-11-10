@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.organization.application.usecase;
 
+import java.time.ZoneOffset;
+import java.time.OffsetDateTime;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +37,8 @@ public class OrganizationStatsService {
                 permissions.canViewMembers() ? membershipRepository.countActiveByOrganizationId(organizationId) : 0,
                 models ? modelRepository.countByOrganizationId(organizationId) : 0,
                 permissions.canViewInvitations()
-                        ? invitationRepository.countByOrganizationIdAndStatus(organizationId, InvitationStatus.PENDING)
+                        ? invitationRepository.countByOrganizationIdAndStatusAndExpiresAtAfter(organizationId,
+                                InvitationStatus.PENDING, OffsetDateTime.now(ZoneOffset.UTC))
                         : 0,
                 models ? schemaRepository.countByOrganizationId(organizationId) : 0,
                 models ? predictionRunRepository.countByOrganizationId(organizationId) : 0,

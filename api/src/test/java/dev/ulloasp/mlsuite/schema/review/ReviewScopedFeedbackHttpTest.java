@@ -15,10 +15,12 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
 import tools.jackson.databind.JsonNode;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
@@ -36,6 +38,9 @@ import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewRun;
  */
 class ReviewScopedFeedbackHttpTest extends PublicPredictionFixture {
 
+    @Autowired
+    private Principals principals;
+
     private PredictionResult result;
     private final List<SchemaReview> reviews = new ArrayList<>();
     private final List<SchemaReviewRun> reviewRuns = new ArrayList<>();
@@ -46,16 +51,16 @@ class ReviewScopedFeedbackHttpTest extends PublicPredictionFixture {
         authorizeOwner();
         inTransaction(() -> {
             PredictionRun run = new PredictionRun(bookmark, version, "reviewed-" + System.nanoTime(),
-                    Map.of("Age", 52), PredictionRunStatus.SUCCESS);
+                    Map.of("Age", 52), PredictionRunStatus.SUCCESS, principals.system());
             entityManager.persist(run);
             result = new PredictionResult(run, forestModel, Map.of("age", 52), Map.of("reports", List.of()),
                     PredictionResultStatus.SUCCESS, null, null);
             entityManager.persist(result);
             for (int i = 0; i < 2; i++) {
-                SchemaReview review = new SchemaReview(organization, schema, version, owner,
+                SchemaReview review = new SchemaReview(organization, schema, version, principals.of(owner),
                         OffsetDateTime.now().plusDays(7));
                 entityManager.persist(review);
-                entityManager.persist(new SchemaReviewAssignee(review, owner));
+                entityManager.persist(new SchemaReviewAssignee(review, owner, principals.system()));
                 SchemaReviewRun reviewRun = new SchemaReviewRun(review, run);
                 entityManager.persist(reviewRun);
                 reviews.add(review);
@@ -85,7 +90,7 @@ class ReviewScopedFeedbackHttpTest extends PublicPredictionFixture {
         assertEquals(owner.getId(), history.get(2).get("changedByUserId").asLong());
         assertEquals(reviews.get(0).getId(), history.get(2).get("reviewId").asLong());
         // Who answered, who removed it and in which review, named as people tell them apart.
-        assertEquals(owner.getFullName(), history.get(2).get("userName").asString());
+        assertEquals(owner.getFullName(), history.get(2).get("authorName").asString());
         assertEquals(owner.getFullName(), history.get(2).get("changedByName").asString());
         assertEquals(reviews.get(0).getPublicId(), history.get(2).at("/review/publicId").asString());
         assertEquals(reviews.get(1).getPublicId(), history.get(1).at("/review/publicId").asString());
@@ -107,6 +112,10 @@ class ReviewScopedFeedbackHttpTest extends PublicPredictionFixture {
         assertEquals(List.of("CREATED", "UPDATED"), changes(history));
         assertEquals("high", history.get(0).at("/value/output-feedback-assessment").asString());
         assertEquals("low", history.get(1).at("/value/output-feedback-assessment").asString());
+        // An author is a member or a visitor; a visitor's cookie id is never part of the answer.
+        assertEquals(false, history.get(0).get("byVisitor").asBoolean());
+        assertEquals(false, history.get(1).get("changedByVisitor").asBoolean());
+        assertEquals(false, history.get(0).has("visitorId"));
     }
 
     @Test

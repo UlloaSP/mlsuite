@@ -1,10 +1,14 @@
 package dev.ulloasp.mlsuite.invitation.application.usecase;
 
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import java.util.Arrays;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.Locale;
+import java.util.stream.Stream;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
@@ -26,6 +30,7 @@ import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.util.CatalogPages;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +62,7 @@ public class InvitationCatalogService {
 
     public PageDto<InvitationCandidateDto> candidates(Long userId, Long organizationId, CatalogRequest request) {
         authorization.require(userId, organizationId, PermissionKey.INVITE_MEMBERS);
+        request.requireNoChoices();
         organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId))
                 .requireTeam(NO_INVITATIONS);
@@ -67,6 +73,7 @@ public class InvitationCatalogService {
     }
 
     public PageDto<InvitationDto> pending(Long userId, CatalogRequest request) {
+        request.requireNoChoices();
         String email = users.requireById(userId).getEmail().toLowerCase(Locale.ROOT);
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         Specification<Invitation> matching = (root, query, builder) -> builder.and(
@@ -82,25 +89,39 @@ public class InvitationCatalogService {
         return PageDto.of(page, page.getContent().stream().map(InvitationDto::from).toList());
     }
 
+    /** {@code filter} is "all" or an invitation status, in any case. */
     private Specification<Invitation> matching(Long organizationId, CatalogRequest request) {
+        Optional<InvitationStatus> status = status(request.requireOneOrder().filter());
         return (root, query, builder) -> {
             var inOrganization = builder.equal(root.get("organization").get("id"), organizationId);
             var email = builder.like(builder.lower(root.get("email")),
                     CatalogPages.likeLiteral(request.search()), '!');
-            if (request.filter().equalsIgnoreCase("all")) {
-                return builder.and(inOrganization, email);
-            }
-            // A filter that names no status matches no invitation.
-            var status = status(request.filter())
-                    .map(value -> builder.equal(root.get("status"), value))
-                    .orElseGet(builder::disjunction);
-            return builder.and(inOrganization, email, status);
+            return status.map(value -> builder.and(inOrganization, email, stored(root, builder, value)))
+                    .orElseGet(() -> builder.and(inOrganization, email));
         };
     }
 
+    /** EXPIRED is not stored: it is a PENDING invitation whose time has passed. */
+    private static Predicate stored(Root<Invitation> root, CriteriaBuilder builder, InvitationStatus status) {
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        return switch (status) {
+            case EXPIRED -> builder.and(builder.equal(root.get("status"), InvitationStatus.PENDING),
+                    builder.lessThan(root.get("expiresAt"), now));
+            case PENDING -> builder.and(builder.equal(root.get("status"), InvitationStatus.PENDING),
+                    builder.greaterThanOrEqualTo(root.get("expiresAt"), now));
+            default -> builder.equal(root.get("status"), status);
+        };
+    }
+
+    /** None for every status. */
     private Optional<InvitationStatus> status(String filter) {
-        return Arrays.stream(InvitationStatus.values())
+        if (filter.equalsIgnoreCase("all")) {
+            return Optional.empty();
+        }
+        return Optional.of(Arrays.stream(InvitationStatus.values())
                 .filter(status -> status.name().equalsIgnoreCase(filter))
-                .findFirst();
+                .findFirst()
+                .orElseThrow(() -> CatalogValues.unknown("filter", filter, Stream.concat(Stream.of("all"),
+                        Arrays.stream(InvitationStatus.values()).map(InvitationStatus::name)).toList())));
     }
 }

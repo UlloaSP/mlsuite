@@ -30,7 +30,7 @@ never commit `.env`.
 | `SPRING_PROFILES_ACTIVE` | `prod` | Spring profile. |
 | `LOG_PATH` | `/tmp/mlsuite` | Directory of the API's log file. |
 | `VITE_BACKEND_URL` | | API origin baked into a development build of the frontend. Blank: same origin. |
-| `COMPOSE_PROJECT_NAME` | `mlsuite` | Compose project; backups derive volume names from it. |
+| `COMPOSE_PROJECT_NAME` | `mlsuite` | Compose project; backups derive volume names from it, and the ops agent watches and controls the project the stack actually runs under, `-p` included. |
 
 ## Database
 
@@ -125,7 +125,6 @@ password or system role changes.
 | `OPS_AGENT_SHARED_SECRET` | | Shared by the API and the agent. Required: the agent refuses to start without it. |
 | `OPS_AGENT_HOST`, `OPS_AGENT_PORT` | `0.0.0.0`, `8091` | Agent bind address. |
 | `OPS_AGENT_DOCKER_BIN` | `docker` | Docker CLI. |
-| `OPS_AGENT_COMPOSE_PROJECT` | `mlsuite` | Must match the project the stack runs under. |
 | `OPS_AGENT_MANAGED_SERVICES` | `postgres,py-analyzer,runtime-builder,rustfs,spring-app,frontend` | Services the Infrastructure page shows and controls. |
 | `OPS_AGENT_SAMPLE_INTERVAL_SECONDS`, `OPS_AGENT_RETENTION_MINUTES` | `5`, `60` | Metric sampling and history. |
 | `OPS_AGENT_TERMINAL_SERVICES` | | Services that allow a shell. Blank: none. |

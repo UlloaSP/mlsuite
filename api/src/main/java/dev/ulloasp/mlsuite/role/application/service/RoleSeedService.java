@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.role.application.service;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -15,7 +17,6 @@ import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitio
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleTemplateRepository;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.role.domain.model.RoleTemplate;
 import lombok.RequiredArgsConstructor;
 
@@ -33,6 +34,7 @@ public class RoleSeedService implements ApplicationRunner {
 
     private final RoleDefinitionRepository roleDefinitionRepository;
     private final RoleTemplateRepository roleTemplateRepository;
+    private final Principals principals;
 
     @Override
     @Transactional
@@ -47,12 +49,13 @@ public class RoleSeedService implements ApplicationRunner {
     /** Gives an organization just saved its system roles and its Reviewer role. */
     @Transactional
     public void createOrganizationRoles(Organization organization) {
+        Principal platform = principals.system();
         for (OrganizationRole role : OrganizationRole.values()) {
-            save(new RoleDefinition(organization, RoleScope.ORGANIZATION, label(role.name()),
-                    role.name().toLowerCase(), role.name()), systemPermissions(role));
+            save(new RoleDefinition(organization, label(role.name()),
+                    role.name().toLowerCase(), role.name(), platform), systemPermissions(role));
         }
-        RoleDefinition reviewer = new RoleDefinition(organization, RoleScope.ORGANIZATION, "Reviewer", "reviewer",
-                REVIEWER_SYSTEM_KEY);
+        RoleDefinition reviewer = new RoleDefinition(organization, "Reviewer", "reviewer",
+                REVIEWER_SYSTEM_KEY, platform);
         reviewer.setLocked(false);
         save(reviewer, Set.of(PermissionKey.REVIEW));
     }
@@ -72,7 +75,7 @@ public class RoleSeedService implements ApplicationRunner {
 
     private void template(String slug, String name, String category, Set<PermissionKey> permissions) {
         roleTemplateRepository.findBySlug(slug).orElseGet(() -> {
-            RoleTemplate template = new RoleTemplate(name, slug, category, RoleScope.ORGANIZATION);
+            RoleTemplate template = new RoleTemplate(name, slug, category);
             template.setDescription(name);
             template.setPermissionKeys(permissions);
             return roleTemplateRepository.save(template);

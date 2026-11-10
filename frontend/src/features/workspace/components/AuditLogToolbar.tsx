@@ -43,7 +43,7 @@ export function AuditLogToolbar({
   more: boolean;
   children?: ReactNode;
 }) {
-  const { q, action, actorKind, actor, target, from, to } = filters.values;
+  const { action, actorKind, target, from, to } = filters.values;
   return (
     <AppToolbar variant="flat" className="justify-start">
       <AppSearchField
@@ -61,8 +61,8 @@ export function AuditLogToolbar({
                 noun: loaded === 1 && !more ? "entry" : "entries",
               }
         }
-        value={q}
-        onChange={(value) => filters.setFilters({ q: value })}
+        value={filters.searchBox.text}
+        onChange={filters.searchBox.setText}
       />
       {children}
       <AppSelect
@@ -83,8 +83,8 @@ export function AuditLogToolbar({
         aria-label="Filter by actor name"
         className="w-full sm:w-44"
         placeholder="Actor name"
-        value={actor}
-        onChange={(event) => filters.setFilters({ actor: event.currentTarget.value })}
+        value={filters.actorBox.text}
+        onChange={(event) => filters.actorBox.setText(event.currentTarget.value)}
       />
       <AppSelect
         aria-label="Filter by kind of target"

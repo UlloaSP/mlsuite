@@ -64,21 +64,14 @@ public class InferenceRows {
     record Column(Map<Long, Object> values, Map<Long, InferenceFeedbackStatus> statuses, Set<Long> stale) {
     }
 
-    /** Counts a change of the run's answers, in the transaction that makes it: its row is no longer current. */
-    public void answersChanged(Long runId) {
-        jdbc.update("""
-                INSERT INTO inference_row (prediction_run_id, answer_changes) VALUES (?, 1)
-                ON CONFLICT (prediction_run_id) DO UPDATE SET answer_changes = inference_row.answer_changes + 1""",
-                runId);
-    }
-
     /** The given runs without a current row. */
     Set<Long> stale(List<Long> ids) {
         Set<Long> stale = new HashSet<>();
         if (!ids.isEmpty()) {
             jdbc.query(connection -> statement(connection, STAMPS + """
-                    SELECT s.id FROM unnest(?::bigint[]) AS s(id) LEFT JOIN inference_row k ON k.prediction_run_id = s.id
-                    LEFT JOIN stamps st ON st.id = k.schema_version_id WHERE NOT %s""".formatted(CURRENT), ids),
+                    SELECT s.id FROM unnest(?::bigint[]) AS s(id) LEFT JOIN prediction_run r ON r.id = s.id
+                    LEFT JOIN prediction_run_projection k ON k.prediction_run_id = s.id
+                    LEFT JOIN stamps st ON st.id = r.schema_version_id WHERE NOT %s""".formatted(CURRENT), ids),
                     rs -> {
                         stale.add(rs.getLong(1));
                     });
@@ -95,8 +88,9 @@ public class InferenceRows {
         jdbc.query(connection -> {
             PreparedStatement statement = statement(connection, STAMPS + """
                     SELECT s.id, %s, k.cell_values -> ?, k.feedback_status
-                    FROM unnest(?::bigint[]) AS s(id) LEFT JOIN inference_row k ON k.prediction_run_id = s.id
-                    LEFT JOIN stamps st ON st.id = k.schema_version_id""".formatted(CURRENT), ids, 2);
+                    FROM unnest(?::bigint[]) AS s(id) LEFT JOIN prediction_run r ON r.id = s.id
+                    LEFT JOIN prediction_run_projection k ON k.prediction_run_id = s.id
+                    LEFT JOIN stamps st ON st.id = r.schema_version_id""".formatted(CURRENT), ids, 2);
             statement.setString(1, column);
             return statement;
         }, rs -> {
@@ -120,9 +114,9 @@ public class InferenceRows {
             return List.of();
         }
         return jdbc.query(connection -> statement(connection, """
-                SELECT first.id FROM (SELECT DISTINCT ON (k.layout) s.id, s.n
-                    FROM unnest(?::bigint[]) WITH ORDINALITY AS s(id, n) JOIN inference_row k ON k.prediction_run_id = s.id
-                    ORDER BY k.layout, s.n) first
+                SELECT first.id FROM (SELECT DISTINCT ON (k.layout_sha256) s.id, s.n
+                    FROM unnest(?::bigint[]) WITH ORDINALITY AS s(id, n) JOIN prediction_run_projection k ON k.prediction_run_id = s.id
+                    ORDER BY k.layout_sha256, s.n) first
                 ORDER BY first.n""", ids), (rs, n) -> rs.getLong(1));
     }
 
@@ -133,7 +127,7 @@ public class InferenceRows {
         }
         return jdbc.query(connection -> statement(connection, """
                 SELECT e.key, e.value FROM unnest(?::bigint[]) AS s(id)
-                JOIN inference_row k ON k.prediction_run_id = s.id CROSS JOIN jsonb_each(k.cell_values) AS e
+                JOIN prediction_run_projection k ON k.prediction_run_id = s.id CROSS JOIN jsonb_each(k.cell_values) AS e
                 GROUP BY e.key, e.value""", ids), (rs, n) -> Map.entry(rs.getString(1), parse(rs.getString(2))));
     }
 
@@ -142,8 +136,8 @@ public class InferenceRows {
         Map<Long, Long> stale = new LinkedHashMap<>();
         jdbc.query(STAMPS + """
                 SELECT r.id, s.organization_id FROM prediction_run r
-                JOIN schema_version v ON v.id = r.schema_version_id JOIN schema_artifact s ON s.id = v.schema_id
-                LEFT JOIN inference_row k ON k.prediction_run_id = r.id LEFT JOIN stamps st ON st.id = r.schema_version_id
+                JOIN schema_version v ON v.id = r.schema_version_id JOIN schema s ON s.id = v.schema_id
+                LEFT JOIN prediction_run_projection k ON k.prediction_run_id = r.id LEFT JOIN stamps st ON st.id = r.schema_version_id
                 WHERE NOT %s ORDER BY r.id DESC LIMIT %d""".formatted(CURRENT, limit), rs -> {
             stale.put(rs.getLong(1), rs.getLong(2));
         });
@@ -156,7 +150,7 @@ public class InferenceRows {
         jdbc.query(connection -> statement(connection, STAMPS + """
                 SELECT r.id, coalesce(k.answer_changes, 0), coalesce(st.models, '')
                 FROM unnest(?::bigint[]) AS s(id) JOIN prediction_run r ON r.id = s.id
-                LEFT JOIN inference_row k ON k.prediction_run_id = r.id LEFT JOIN stamps st ON st.id = r.schema_version_id""",
+                LEFT JOIN prediction_run_projection k ON k.prediction_run_id = r.id LEFT JOIN stamps st ON st.id = r.schema_version_id""",
                 ids), rs -> {
             sources.put(rs.getLong(1), new Source(rs.getLong(2), rs.getString(3)));
         });
@@ -174,7 +168,6 @@ public class InferenceRows {
         }
         List<Object> ids = new ArrayList<>();
         List<Object> changes = new ArrayList<>();
-        List<Object> versions = new ArrayList<>();
         List<Object> models = new ArrayList<>();
         List<Object> layouts = new ArrayList<>();
         List<Object> statuses = new ArrayList<>();
@@ -183,7 +176,6 @@ public class InferenceRows {
             Source source = sources.get(row.dto().item().id());
             ids.add(row.dto().item().id());
             changes.add(source.changes());
-            versions.add(row.dto().item().schemaVersionId());
             models.add(source.models());
             layouts.add(layout(row));
             statuses.add(row.dto().feedbackStatus().name());
@@ -191,19 +183,18 @@ public class InferenceRows {
         }
         jdbc.update(connection -> {
             var statement = connection.prepareStatement("""
-                    INSERT INTO inference_row (prediction_run_id, projected_changes, projection_version, schema_version_id,
-                        models_stamp, layout, feedback_status, cell_values)
-                    SELECT u.id, u.changes, ?, u.version, u.models, u.layout, u.status, u.cell_values::jsonb
-                    FROM unnest(?::bigint[], ?::bigint[], ?::bigint[], ?::text[], ?::text[], ?::text[], ?::text[])
-                        AS u(id, changes, version, models, layout, status, cell_values)
+                    INSERT INTO prediction_run_projection (prediction_run_id, projected_changes, projection_version, models_stamp,
+                        layout_sha256, feedback_status, cell_values)
+                    SELECT u.id, u.changes, ?, u.models, u.layout, u.status, u.cell_values::jsonb
+                    FROM unnest(?::bigint[], ?::bigint[], ?::text[], ?::text[], ?::text[], ?::text[])
+                        AS u(id, changes, models, layout, status, cell_values)
                     WHERE EXISTS (SELECT 1 FROM prediction_run r WHERE r.id = u.id)
                     ON CONFLICT (prediction_run_id) DO UPDATE SET projected_changes = excluded.projected_changes,
-                        projection_version = excluded.projection_version, schema_version_id = excluded.schema_version_id,
-                        models_stamp = excluded.models_stamp, layout = excluded.layout,
+                        projection_version = excluded.projection_version, models_stamp = excluded.models_stamp, layout_sha256 = excluded.layout_sha256,
                         feedback_status = excluded.feedback_status, cell_values = excluded.cell_values""");
             statement.setInt(1, PROJECTION_VERSION);
             int index = 2;
-            for (var array : List.of(ids, changes, versions)) {
+            for (var array : List.of(ids, changes)) {
                 statement.setArray(index++, connection.createArrayOf("bigint", array.toArray()));
             }
             for (var array : List.of(models, layouts, statuses, values)) {

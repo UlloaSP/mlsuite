@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.admin;
 
+import dev.ulloasp.mlsuite.notification.domain.model.NotificationKind;
+import dev.ulloasp.mlsuite.notification.application.service.NotificationService;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import dev.ulloasp.mlsuite.support.PostgresDatabase;
@@ -36,6 +38,7 @@ import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditActor;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
@@ -53,9 +56,12 @@ import jakarta.persistence.EntityManager;
         "spring.profiles.active=test", "logging.file.name=target/bookmark-moderation-test.log"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import(PublicBookmarkModerationService.class)
+@Import({ PublicBookmarkModerationService.class, Principals.class })
 @ContextConfiguration(classes = PublicBookmarkModerationServiceTest.PersistenceConfig.class)
 class PublicBookmarkModerationServiceTest {
+
+    @Autowired
+    private Principals principals;
 
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry registry) {
@@ -85,6 +91,8 @@ class PublicBookmarkModerationServiceTest {
     private SchemaBookmarkRepository bookmarks;
     @MockitoBean
     private AuditLogService auditLog;
+    @MockitoBean
+    private NotificationService notifications;
 
     private User moderator;
     private Organization acme;
@@ -152,6 +160,21 @@ class PublicBookmarkModerationServiceTest {
 
         verify(auditLog).record(AuditActor.user(moderator.getId()), acme.getId(),
                 AuditAction.BOOKMARK_MODERATION_UNPUBLISH, acmePublic.getId(), AuditDetails.of("bookmark", "production"));
+        // The platform last wrote this bookmark: nobody is there to be told.
+        verifyNoInteractions(notifications);
+    }
+
+    @Test
+    void unpublishingTellsWhoeverLastChangedTheBookmark() {
+        User editor = user("grace", SystemRole.USER);
+        acmePublic.setUpdatedBy(principals.of(editor));
+        entityManager.flush();
+
+        service.unpublish(moderator.getId(), acmePublic.getId());
+
+        verify(notifications).notify(editor.getId(), acme.getId(), NotificationKind.BOOKMARK_UNPUBLISHED,
+                acmePublic.getId().toString(), Map.of("bookmarkName", "production", "schemaName", "Cardio risk",
+                        "schemaId", acmePublic.getSchema().getId()));
     }
 
     @Test
@@ -160,7 +183,7 @@ class PublicBookmarkModerationServiceTest {
         entityManager.flush();
 
         assertEquals(BookmarkVisibility.PRIVATE, result.getVisibility());
-        verifyNoInteractions(auditLog);
+        verifyNoInteractions(auditLog, notifications);
         assertEquals(3, service.list(0, 8, "", "name").totalItems());
     }
 
@@ -193,19 +216,19 @@ class PublicBookmarkModerationServiceTest {
 
     private Organization organization(String name) {
         String slug = name.toLowerCase().replace(' ', '-');
-        Organization organization = new Organization(slug, name, null, user(slug + "-owner", SystemRole.USER));
+        Organization organization = new Organization(slug, name, null, principals.of(user(slug + "-owner", SystemRole.USER)));
         entityManager.persist(organization);
         return organization;
     }
 
     private SchemaBookmark bookmark(Organization organization, String schemaName, String name, String publicId,
             boolean archived) {
-        Schema schema = new Schema(organization, schemaName, null);
+        Schema schema = new Schema(organization, schemaName, null, principals.system());
         if (archived) schema.setArchivedAt(OffsetDateTime.now());
         entityManager.persist(schema);
-        SchemaVersion version = new SchemaVersion(schema, 1, "v1", Map.of());
+        SchemaVersion version = new SchemaVersion(schema, 1, "v1", Map.of(), principals.system());
         entityManager.persist(version);
-        SchemaBookmark bookmark = new SchemaBookmark(schema, version, name);
+        SchemaBookmark bookmark = new SchemaBookmark(schema, version, name, principals.system());
         if (publicId != null) {
             bookmark.setPublicId(publicId);
             bookmark.setVisibility(BookmarkVisibility.PUBLIC);

@@ -46,12 +46,12 @@ public class SchemaReviewAssignmentService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reviewer selection invalid");
         }
         selected.forEach(id -> {
-            assignees.save(new SchemaReviewAssignee(review, eligible.get(id)));
-            if (!id.equals(review.getCreatedBy().getId())) {
+            assignees.save(new SchemaReviewAssignee(review, eligible.get(id), review.getUpdatedBy()));
+            if (!id.equals(review.getCreatedBy().userId())) {
                 notifications.notify(id, review.getOrganization().getId(), NotificationKind.REVIEW_ASSIGNED,
                         review.getPublicId(), Map.of("organizationName", review.getOrganization().getName(),
                                 "schemaName", review.getSchema().getName(),
-                                "assignerName", review.getCreatedBy().getFullName()));
+                                "assignerName", review.getCreatedBy().label()));
             }
         });
     }

@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.notification.domain.model;
 
 import java.time.OffsetDateTime;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -65,4 +66,12 @@ public class Notification {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime createdAt;
+
+    /** The recipient answered it: it is read, and its payload keeps the answer. */
+    public void answer(String answer, OffsetDateTime at) {
+        Map<String, Object> answered = new LinkedHashMap<>(payload);
+        answered.put("answer", answer);
+        payload = answered;
+        if (readAt == null) readAt = at;
+    }
 }

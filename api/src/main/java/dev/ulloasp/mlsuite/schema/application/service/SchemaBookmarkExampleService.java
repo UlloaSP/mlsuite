@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -42,6 +43,7 @@ public class SchemaBookmarkExampleService implements SchemaBookmarkExampleUseCas
     private final SchemaBookmarkExampleRepository exampleRepository;
     private final WorkspaceAuthorizationService authorizationService;
     private final AuditLogService auditLog;
+    private final Principals principals;
 
     @Override
     public List<SchemaBookmarkExampleDto> listExamples(Long userId, Long bookmarkId) {
@@ -63,10 +65,7 @@ public class SchemaBookmarkExampleService implements SchemaBookmarkExampleUseCas
         SchemaBookmark bookmark = requireBookmark(bookmarkId, organizationId);
         PredictionRun run = runRepository.findByIdAndOrganizationId(runId, organizationId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Prediction run not found"));
-        if (!run.getSchemaVersion().getSchema().getId().equals(bookmark.getSchema().getId())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Run outside the bookmark's schema");
-        }
-        SchemaBookmarkExample candidate = new SchemaBookmarkExample(bookmark, run);
+        SchemaBookmarkExample candidate = new SchemaBookmarkExample(bookmark, run, principals.user(userId));
         if (!candidate.isOnPinnedSnapshot()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Only runs of the snapshot the bookmark points to can be its examples");

@@ -2,6 +2,7 @@ package dev.ulloasp.mlsuite.plugin.adapter.in.web;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,6 +25,7 @@ public class PluginController {
 
     private final PluginCatalogUseCase pluginCatalogUseCase;
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public ResponseEntity<PluginDto> upload(
             CurrentUser user,
@@ -54,6 +56,7 @@ public class PluginController {
         return ResponseEntity.ok(pluginCatalogUseCase.stats(user.userId()));
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping
     public ResponseEntity<Void> delete(CurrentUser user, @RequestParam("id") String id) {
         pluginCatalogUseCase.delete(user.userId(), id);

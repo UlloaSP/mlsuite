@@ -123,7 +123,7 @@ export function CatalogResourcePage<TItem, TFilter extends string, TSort extends
             {toolbarChildren}
           </CatalogToolbar>
           <CatalogListPanel
-            key={`${controls.search}:${controls.filter}:${controls.sort}`}
+            resetKey={`${controls.search}:${controls.filter}:${controls.sort}`}
             errorMessage={getCatalogErrorMessage(query.error)}
             hasNext={Boolean(query.data?.hasNext)}
             isBusy={isBusy}

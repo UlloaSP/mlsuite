@@ -77,6 +77,26 @@ describe("schema form preview", () => {
     expect(formRoot?.querySelectorAll("mlf-report-frame")).toHaveLength(1);
   });
 
+  test("labels its results as samples the model did not compute", async () => {
+    const { host: container } = await mount(
+      <SchemaFormPreview
+        schema={{
+          fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
+          reports: [{ id: "prediction", kind: "classifier", mappedTo: "prediction" }],
+        }}
+      />,
+      { queryClient },
+    );
+
+    await flush();
+    await flush();
+    expect(container.querySelector('[role="note"]')?.textContent).toContain(
+      "not computed by the model",
+    );
+    const formRoot = container.querySelector("mlf-form")?.shadowRoot;
+    expect(formRoot?.textContent ?? "").not.toContain("Run preview");
+  });
+
   test("preserves backend routes when mapped targets share a value", async () => {
     const response = await createSchemaPreviewTransport().submit({
       reports: [

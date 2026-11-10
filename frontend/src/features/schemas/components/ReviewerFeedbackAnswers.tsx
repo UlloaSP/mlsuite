@@ -45,7 +45,7 @@ export function ReviewerFeedbackAnswers({ runId, reviewerId, reviewerName, pollM
   });
   const reviewerFeedback = feedbackQueries
     .flatMap((query) => query.data ?? [])
-    .filter((item) => String(item.userId) === String(reviewerId));
+    .filter((item) => String(item.createdByUserId) === String(reviewerId));
 
   if (isError)
     return (

@@ -32,11 +32,15 @@ import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationKind;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
 /** Personal accounts and a user's way back to their own account, on the whole application. */
 class PersonalAccountTest extends PersonalAccountFixture {
+
+    @Autowired
+    private Principals principals;
 
     @Autowired AuditLogService auditLog;
 
@@ -44,7 +48,7 @@ class PersonalAccountTest extends PersonalAccountFixture {
         inTransaction(() -> {
             var team = entityManager.find(Organization.class, organizationId);
             var viewer = roles.findByOrganizationIdAndSystemKey(organizationId, "VIEWER").orElseThrow();
-            entityManager.persist(new OrganizationMembership(team, user, viewer, MembershipStatus.ACTIVE));
+            entityManager.persist(new OrganizationMembership(team, user, viewer, MembershipStatus.ACTIVE, principals.of(user)));
         });
     }
 

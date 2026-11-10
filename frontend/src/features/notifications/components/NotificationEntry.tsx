@@ -18,9 +18,15 @@ const TILE: Record<NotificationTone, string> = {
   info: "bg-info-subtle text-info-fg",
 };
 
+/** What the invitee answered an invitation they were told of (the API's payload answer). */
+const ANSWERED: Record<string, { label: string; tone: "success" | "neutral" }> = {
+  ACCEPTED: { label: "Accepted", tone: "success" },
+  DECLINED: { label: "Declined", tone: "neutral" },
+};
+
 type Props = {
   notification: NotificationDto;
-  /** An invitation it announced can no longer be answered. */
+  /** An invitation it announced is no longer waiting: answered, or no longer open. */
   closed: boolean;
   /** Its organization can no longer be entered. */
   unavailable: boolean;
@@ -40,6 +46,7 @@ export function NotificationEntry({
   const { title, description, icon: Icon, tone } = presentNotification(notification);
   const organizationName = notification.payload.organizationName;
   const unread = notification.readAt === null;
+  const answered = ANSWERED[String(notification.payload.answer)];
 
   return (
     <CatalogEntry
@@ -47,7 +54,9 @@ export function NotificationEntry({
       titleAccessory={
         <>
           {unread ? <AppBadge tone="accent">New</AppBadge> : null}
-          {closed ? <AppBadge>No longer open</AppBadge> : null}
+          {closed ? (
+            <AppBadge tone={answered?.tone}>{answered?.label ?? "No longer open"}</AppBadge>
+          ) : null}
           {unavailable ? <AppBadge>No longer available</AppBadge> : null}
         </>
       }

@@ -70,7 +70,7 @@ class ModelPreparationWorker {
         if (found.isEmpty()) return; // deleted since it was claimed
         RunnableModel model = found.get();
         try {
-            RuntimeEnvironment environment = environments.findById(model.environmentKey()).orElseThrow();
+            RuntimeEnvironment environment = environments.findByKey(model.environmentKey()).orElseThrow();
             builder.build(environment);
             Map<String, Object> answer = runtime.verify(model);
             ledger.ready(modelId, worker, importances(answer.get("featureImportances")));

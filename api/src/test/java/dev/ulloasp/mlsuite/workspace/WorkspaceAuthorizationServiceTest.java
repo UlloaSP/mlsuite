@@ -24,7 +24,6 @@ import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.workspace.application.dto.MembershipActionsDto;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -126,7 +125,7 @@ class WorkspaceAuthorizationServiceTest {
     void organizationMemberActions_LimitAdminAgainstOwner() {
         memberWith(9L, PermissionKey.VIEW_MEMBERS, PermissionKey.MANAGE_MEMBER_ROLES, PermissionKey.REMOVE_MEMBERS);
         Organization organization = organization();
-        when(roleDefinitionRepository.findByOrganizationIdAndScopeOrderByLockedDescNameAsc(41L, RoleScope.ORGANIZATION))
+        when(roleDefinitionRepository.findByOrganizationIdOrderByLockedDescNameAsc(41L))
                 .thenReturn(List.of(role(organization, "OWNER"), role(organization, "ADMIN"),
                         role(organization, "MEMBER"), role(organization, "VIEWER")));
 

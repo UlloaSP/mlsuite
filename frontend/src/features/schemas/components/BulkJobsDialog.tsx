@@ -12,6 +12,7 @@ import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppSpinner } from "@/shared/ui/AppSpinner";
 import { BulkJobEntry } from "@/features/schemas/components/BulkJobEntry";
+import { BulkSkippedLines } from "@/features/schemas/components/BulkSkippedLines";
 import { MAX_BULK_ROWS, useBulkJobUpload } from "@/features/schemas/lib/use-bulk-job-upload";
 import type { PredictionJobDto, SchemaVersionDto } from "@/shared/api/openapi.gen";
 
@@ -61,6 +62,7 @@ export function BulkJobsDialog({ open, onClose, bookmarkId, version, jobs }: Pro
             {upload.preparing ? "Preparing rows…" : "Upload a file"}
           </AppButton>
         </div>
+        {upload.skipped.lines.length > 0 ? <BulkSkippedLines skipped={upload.skipped} /> : null}
         {jobs.isError ? (
           <AppEmptyState
             compact

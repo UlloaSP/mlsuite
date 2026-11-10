@@ -5,11 +5,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 package dev.ulloasp.mlsuite.util;
 
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.beans.TypeMismatchException;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+import java.util.Arrays;
 import java.time.Instant;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -54,12 +57,12 @@ import dev.ulloasp.mlsuite.security.auth.AuthAttemptLimitException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
 import jakarta.servlet.http.HttpServletRequest;
+import tools.jackson.databind.exc.ValueInstantiationException;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice
 public class DomainExceptionHandler {
 
-    private static final Set<String> HANDLE_CONSTRAINTS = Set.of("uq_app_user_username", "uq_organization_slug");
     private static final String UNSERVED_REQUEST = "This endpoint does not accept this request.";
 
     // ---- 404 NOT FOUND ----
@@ -93,17 +96,10 @@ public class DomainExceptionHandler {
     public ResponseEntity<ErrorDto> handleDataConflict(
             DataIntegrityViolationException ex,
             HttpServletRequest req) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ErrorDto.of(HttpStatus.CONFLICT.value(), dataConflictMessage(ex), req.getRequestURI()));
-    }
-
-    /** Two requests can pass the check for a free handle at once; the database then decides between them. */
-    private static String dataConflictMessage(DataIntegrityViolationException ex) {
-        if (ex.getCause() instanceof ConstraintViolationException violation
-                && HANDLE_CONSTRAINTS.contains(String.valueOf(violation.getConstraintName()))) {
-            return "That handle was just taken.";
-        }
-        return "Request conflicts with the current persisted state.";
+        ConstraintConflicts.Conflict conflict = ConstraintConflicts.of(ex).orElseGet(() -> new ConstraintConflicts.Conflict(
+                HttpStatus.CONFLICT, "Request conflicts with the current persisted state."));
+        return ResponseEntity.status(conflict.status())
+                .body(ErrorDto.of(conflict.status().value(), conflict.message(), req.getRequestURI()));
     }
 
     // ---- 403 FORBIDDEN ----
@@ -118,14 +114,14 @@ public class DomainExceptionHandler {
         return respond(HttpStatus.FORBIDDEN, ex, req);
     }
 
-    @ExceptionHandler(DisabledException.class)
-    public ResponseEntity<ErrorDto> handleDisabled(DisabledException ex, HttpServletRequest req) {
-        return respond(HttpStatus.FORBIDDEN, ex, req);
-    }
-
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ErrorDto> handleBadCredentials(BadCredentialsException ex, HttpServletRequest req) {
-        return respond(HttpStatus.UNAUTHORIZED, ex, req);
+    /**
+     * A wrong password and a disabled account are answered alike: the account's state is checked
+     * before its password, so telling them apart would describe an account to anyone who names it.
+     */
+    @ExceptionHandler({ BadCredentialsException.class, DisabledException.class })
+    public ResponseEntity<ErrorDto> handleBadCredentials(RuntimeException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorDto.of(HttpStatus.UNAUTHORIZED.value(),
+                "The email or password is incorrect.", req.getRequestURI()));
     }
 
     // ---- 429 TOO MANY REQUESTS ----
@@ -166,19 +162,51 @@ public class DomainExceptionHandler {
                 .body(SchemaMappingErrorDto.of(ex, HttpStatus.BAD_REQUEST.value(), req.getRequestURI()));
     }
 
+    /**
+     * Also the cause of a query object that refused its values while it was bound, e.g. an unknown
+     * catalog sort: typed as the cause, so the answer carries its words, not the binder's.
+     */
     @ExceptionHandler({
             IllegalArgumentException.class
     })
-    public ResponseEntity<ErrorDto> handleBadRequest(RuntimeException ex, HttpServletRequest req) {
-        return respond(HttpStatus.BAD_REQUEST, ex, req);
+    public ResponseEntity<ErrorDto> handleBadRequest(IllegalArgumentException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorDto.of(HttpStatus.BAD_REQUEST.value(), readable(ex.getMessage()), req.getRequestURI()));
     }
 
-    /** A body the endpoint cannot read is the caller's mistake; the parser's own words stay out of the answer. */
+    /** A query or path value of the wrong type: which parameter, never the Java type it was read into. */
+    @ExceptionHandler(TypeMismatchException.class)
+    public ResponseEntity<ErrorDto> handleTypeMismatch(TypeMismatchException ex, HttpServletRequest req) {
+        String name = ex instanceof MethodArgumentTypeMismatchException argument ? argument.getName() : ex.getPropertyName();
+        Class<?> type = ex.getRequiredType();
+        String expected = type != null && type.isEnum()
+                ? " Expected one of: " + String.join(", ", Arrays.stream(type.getEnumConstants()).map(String::valueOf).toList()) + "."
+                : "";
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorDto.of(HttpStatus.BAD_REQUEST.value(),
+                "Invalid value '" + ex.getValue() + "' for '" + name + "'." + expected, req.getRequestURI()));
+    }
+
+    /** "No enum constant a.b.Type.VALUE", from reading a name into an enum, said without the Java type. */
+    private static String readable(String message) {
+        if (message == null) return "Invalid request.";
+        Matcher constant = ENUM_CONSTANT.matcher(message);
+        return constant.find() ? "Unknown value '" + constant.group(1) + "'." : message;
+    }
+
+    private static final Pattern ENUM_CONSTANT = Pattern.compile("No enum constant [\\w.$]+\\.(\\w+)$");
+
+    /**
+     * A body the endpoint cannot read is the caller's mistake; the parser's own words stay out of the
+     * answer. A body read into a request that refused its values says which, in the request's words.
+     */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorDto> handleUnreadableBody(HttpMessageNotReadableException ex, HttpServletRequest req) {
+        String message = ex.getCause() instanceof ValueInstantiationException refused
+                && refused.getCause() instanceof IllegalArgumentException invalid
+                ? readable(invalid.getMessage())
+                : "The request body is not valid JSON for this endpoint.";
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ErrorDto.of(HttpStatus.BAD_REQUEST.value(), "The request body is not valid JSON for this endpoint.",
-                        req.getRequestURI()));
+                .body(ErrorDto.of(HttpStatus.BAD_REQUEST.value(), message, req.getRequestURI()));
     }
 
     /** A request no endpoint can take (route, method, media type, a missing part) is not a server failure. */

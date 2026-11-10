@@ -47,7 +47,7 @@ export function TrafficOrganizationsCatalog() {
         sortOptions={SORTS}
       />
       <CatalogListPanel
-        key={controls.search}
+        resetKey={controls.search}
         errorMessage={getCatalogErrorMessage(query.error)}
         hasNext={Boolean(query.data?.hasNext)}
         isBusy={query.isLoading || query.isFetching}

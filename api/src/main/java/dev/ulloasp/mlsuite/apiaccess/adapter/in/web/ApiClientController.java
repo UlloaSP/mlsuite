@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.apiaccess.application.dto.ApiClientDto;
@@ -40,6 +41,7 @@ public class ApiClientController {
         return clients.listClients(user.userId(), request);
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public ResponseEntity<ApiClientDto> createApiClient(CurrentUser user, @RequestBody CreateApiClientRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(clients.createClient(user.userId(), request));
@@ -56,6 +58,7 @@ public class ApiClientController {
         return clients.updateClient(user.userId(), clientId, request);
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{clientId}")
     public ResponseEntity<Void> deleteApiClient(CurrentUser user, @PathVariable Long clientId) {
         clients.deleteClient(user.userId(), clientId);
@@ -63,12 +66,14 @@ public class ApiClientController {
     }
 
     /** The answer carries the key's secret, which is never shown again. */
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/{clientId}/keys")
     public ResponseEntity<IssuedApiClientKeyDto> issueApiClientKey(CurrentUser user, @PathVariable Long clientId,
             @RequestBody CreateApiClientKeyRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(access.issueKey(user.userId(), clientId, request));
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{clientId}/keys/{keyId}")
     public ResponseEntity<Void> revokeApiClientKey(CurrentUser user, @PathVariable Long clientId,
             @PathVariable Long keyId) {

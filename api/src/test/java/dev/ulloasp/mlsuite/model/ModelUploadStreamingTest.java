@@ -100,9 +100,9 @@ class ModelUploadStreamingTest extends PublicPredictionFixture {
         assertTrue(allocated < SIZE / 2, "allocated " + allocated + " bytes to store a " + SIZE + " byte bundle");
         assertEquals(SIZE, stored[0].sizeBytes());
         assertEquals(sha256, stored[0].sha256());
-        Map<String, Object> row = jdbc.queryForMap("SELECT model_size_bytes, artifact_sha256, storage_bucket, "
+        Map<String, Object> row = jdbc.queryForMap("SELECT size_bytes, artifact_sha256, storage_bucket, "
                 + "storage_version_id, storage_etag FROM model WHERE id = ?", model.getId());
-        assertEquals((long) SIZE, ((Number) row.get("model_size_bytes")).longValue());
+        assertEquals((long) SIZE, ((Number) row.get("size_bytes")).longValue());
         assertEquals(sha256, row.get("artifact_sha256"));
         assertEquals("models", row.get("storage_bucket"));
         assertEquals("v1", row.get("storage_version_id"));

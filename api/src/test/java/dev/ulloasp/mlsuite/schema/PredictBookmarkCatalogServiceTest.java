@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema;
 
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -49,7 +50,7 @@ class PredictBookmarkCatalogServiceTest {
     @Test
     void describesWhatEachBookmarkRunsAndHowItIsUsed() {
         SchemaBookmark used = bookmark();
-        SchemaBookmark unused = new SchemaBookmark(schema(), used.getVersion(), "staging");
+        SchemaBookmark unused = new SchemaBookmark(schema(), used.getVersion(), "staging", TestFixtures.system());
         unused.setId(71L);
         OffsetDateTime lastRun = OffsetDateTime.parse("2026-09-20T10:00:00Z");
         when(bookmarks.findActiveByOrganizationId(41L)).thenReturn(List.of(used, unused));

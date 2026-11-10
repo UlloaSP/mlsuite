@@ -20,6 +20,7 @@ import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunCatalogItemDto;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import dev.ulloasp.mlsuite.util.CatalogPages;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import dev.ulloasp.mlsuite.util.PageDto;
 import lombok.RequiredArgsConstructor;
 
@@ -57,7 +58,8 @@ public class CatalogSelectionService {
             case "runs" -> runItems(runs.summaries(userId, request.ids()), request);
             case "snapshots" -> distinct(runs.summaries(userId, request.ids()), CatalogSelectionService::snapshot);
             case "bookmarks" -> distinct(runs.summaries(userId, request.ids()), CatalogSelectionService::bookmark);
-            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown selection catalog");
+            default -> throw CatalogValues.unknown("kind", request.kind(),
+                    List.of("runs", "reviewers", "snapshots", "bookmarks"));
         };
     }
 

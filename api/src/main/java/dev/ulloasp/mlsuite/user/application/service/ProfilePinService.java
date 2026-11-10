@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.user.application.service;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,7 @@ class ProfilePinService {
     private final SchemaBookmarkRepository bookmarkRepository;
     private final ProfilePinRepository pinRepository;
     private final AuditLogService auditLog;
+    private final Principals principals;
 
     void replace(Long userId, List<String> publicIds) {
         List<String> wanted = publicIds.stream().distinct().toList();
@@ -45,9 +47,9 @@ class ProfilePinService {
             SchemaBookmark bookmark = bookmarks.get(wanted.get(slot));
             ProfilePin pin = pinned.get(bookmark.getId());
             if (pin == null) {
-                pinRepository.save(new ProfilePin(userId, bookmark, slot));
+                pinRepository.save(new ProfilePin(userId, bookmark, slot, principals.user(userId)));
             } else {
-                pin.setSlot(slot);
+                pin.move(slot, principals.user(userId));
             }
         }
         List<String> after = wanted.stream().map(id -> bookmarks.get(id).getName()).toList();

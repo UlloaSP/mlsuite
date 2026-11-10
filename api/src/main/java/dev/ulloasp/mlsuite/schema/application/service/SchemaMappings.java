@@ -31,7 +31,7 @@ final class SchemaMappings {
     record Signature(Long id, String name, Set<String> inputs, Set<String> outputs) {
 
         static Signature of(Model model) {
-            Map<String, Object> schema = model.getInputSchema() == null ? Map.of() : model.getInputSchema();
+            Map<String, Object> schema = model.getInputSchema();
             Set<String> inputs = new LinkedHashSet<>();
             collectTargets(schema.get("fields"), inputs);
             Set<String> outputs = new LinkedHashSet<>();

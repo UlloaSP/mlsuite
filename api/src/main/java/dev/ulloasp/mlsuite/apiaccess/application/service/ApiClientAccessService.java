@@ -50,7 +50,7 @@ public class ApiClientAccessService implements ApiClientAccessUseCase {
         }
         String secret = ApiKeySecrets.issue();
         ApiClientKey key = keyRepository.save(new ApiClientKey(client, name, ApiKeySecrets.prefix(secret),
-                ApiKeySecrets.hash(secret), clients.memberName(userId)));
+                ApiKeySecrets.hash(secret), clients.member(userId)));
         clients.audit(client, userId, AuditAction.API_KEY_ISSUE, key.getId(),
                 AuditDetails.of("client", client.getName(), "key", name, "prefix", key.getKeyPrefix()));
         return new IssuedApiClientKeyDto(ApiClientKeyDto.from(key), secret);
@@ -82,7 +82,7 @@ public class ApiClientAccessService implements ApiClientAccessUseCase {
         SchemaBookmark bookmark = bookmarkRepository.findActiveByIdAndOrganizationId(bookmarkId, organization.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema bookmark not found"));
         if (bookmark.getPublicId() == null) bookmark.setPublicId(UUID.randomUUID().toString());
-        if (client.getBookmarks().add(bookmark)) {
+        if (client.grant(bookmark, clients.member(userId))) {
             clients.audit(client, userId, AuditAction.API_ACCESS_GRANT, clientId,
                     AuditDetails.of("client", client.getName(), "bookmark", bookmark.getName()));
         }
@@ -92,12 +92,8 @@ public class ApiClientAccessService implements ApiClientAccessUseCase {
     @Override
     public ApiClientDto revokeBookmark(Long userId, Long clientId, Long bookmarkId) {
         ApiClient client = clients.require(clients.manageable(userId), clientId);
-        client.getBookmarks().stream().filter(bookmark -> bookmark.getId().equals(bookmarkId)).findFirst()
-                .ifPresent(bookmark -> {
-                    client.getBookmarks().remove(bookmark);
-                    clients.audit(client, userId, AuditAction.API_ACCESS_REVOKE, clientId,
-                            AuditDetails.of("client", client.getName(), "bookmark", bookmark.getName()));
-                });
+        client.revoke(bookmarkId).ifPresent(bookmark -> clients.audit(client, userId, AuditAction.API_ACCESS_REVOKE,
+                clientId, AuditDetails.of("client", client.getName(), "bookmark", bookmark.getName())));
         return clients.detail(client);
     }
 }

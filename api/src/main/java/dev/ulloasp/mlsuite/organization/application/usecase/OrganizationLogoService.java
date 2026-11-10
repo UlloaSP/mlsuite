@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.organization.application.usecase;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -21,6 +23,7 @@ import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.util.SquareImage;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -37,32 +40,42 @@ public class OrganizationLogoService {
     private final OrganizationRepository organizationRepository;
     private final OrganizationLogoRepository logoRepository;
     private final AuditLogService auditLog;
+    private final EntityManager entityManager;
+    private final Principals principals;
 
     public OrganizationDto replace(Long userId, Long organizationId, MultipartFile upload) {
         workspaceAuthorizationService.require(userId, organizationId, PermissionKey.EDIT_ORGANIZATION);
         Organization organization = requireOrganization(organizationId);
         SquareImage.Normalized logo = SquareImage.normalize(upload, "logo");
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        logoRepository.save(new OrganizationLogo(organizationId, logo.content(), logo.contentType(), now));
-        organization.setLogoUpdatedAt(now);
-        organization.setUpdatedBy(workspaceAccessService.requireUser(userId));
+        Principal author = principals.user(userId);
+        logoRepository.findByOrganizationId(organizationId).ifPresentOrElse(
+                stored -> stored.replace(logo.content(), logo.contentType(), now, author),
+                () -> logoRepository.save(new OrganizationLogo(organizationId, logo.content(), logo.contentType(), now, author)));
+        organization.setUpdatedBy(author);
         auditLog.record(AuditActor.user(userId), organizationId, AuditAction.ORGANIZATION_LOGO_REPLACE, organizationId);
-        return OrganizationDto.from(organizationRepository.save(organization));
+        return OrganizationDto.from(reread(organization));
     }
 
     public OrganizationDto remove(Long userId, Long organizationId) {
         workspaceAuthorizationService.require(userId, organizationId, PermissionKey.EDIT_ORGANIZATION);
         Organization organization = requireOrganization(organizationId);
-        logoRepository.deleteById(organizationId);
-        organization.setLogoUpdatedAt(null);
-        organization.setUpdatedBy(workspaceAccessService.requireUser(userId));
+        logoRepository.deleteByOrganizationId(organizationId);
+        organization.setUpdatedBy(principals.user(userId));
         auditLog.record(AuditActor.user(userId), organizationId, AuditAction.ORGANIZATION_LOGO_REMOVE, organizationId);
-        return OrganizationDto.from(organizationRepository.save(organization));
+        return OrganizationDto.from(reread(organization));
     }
 
     @Transactional(readOnly = true)
     public Optional<OrganizationLogo> read(Long organizationId) {
-        return logoRepository.findById(organizationId);
+        return logoRepository.findByOrganizationId(organizationId);
+    }
+
+    /** The logo's time is read from the logo row, so the organization is read again once it is written. */
+    private Organization reread(Organization organization) {
+        entityManager.flush();
+        entityManager.refresh(organization);
+        return organization;
     }
 
     private Organization requireOrganization(Long organizationId) {

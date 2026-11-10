@@ -101,7 +101,7 @@ class UserProfileTest extends ProfileFixture {
 
         mockMvc.perform(editing(ada, Map.of("handle", after.toUpperCase())))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.userName").value(after));
+                .andExpect(jsonPath("$.username").value(after));
 
         assertEquals(after, personalOf(ada).getSlug());
         mockMvc.perform(get(PROFILE, before)).andExpect(status().isNotFound());
@@ -175,7 +175,8 @@ class UserProfileTest extends ProfileFixture {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.profile.handle").value(ada.getUsername()))
                 .andExpect(jsonPath("$.schemas").value(2))
-                .andExpect(jsonPath("$.models").value(0))
+                // The model its published bookmark's snapshot binds.
+                .andExpect(jsonPath("$.models").value(1))
                 .andExpect(jsonPath("$.plugins").value(0))
                 .andExpect(jsonPath("$.inferences").value(0));
     }

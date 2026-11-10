@@ -58,13 +58,13 @@ class ModelPreparationTest extends PublicPredictionFixture {
     void theForestNeedsAnEnvironmentOfItsOwn() {
         authorizeOwner();
         jdbc.update("""
-                INSERT INTO runtime_environment (environment_key, environment_id, writer_version, python_version,
+                INSERT INTO runtime_environment (environment_key, lock_digest, writer_version, python_version,
                     packages, lock_toml, created_at)
                 VALUES (?, ?, '0.3.0', '3.14.7', '[{"name": "scikit-learn", "version": "1.9.1"}]'::jsonb,
                     'lock-version = "1.0"', now())
                 ON CONFLICT DO NOTHING""", KEY, "i".repeat(64));
-        jdbc.update("UPDATE model SET environment_key = ?, runtime_state = 'PREPARING', feature_importances = NULL"
-                + " WHERE id = ?", KEY, forestModel.getId());
+        jdbc.update("UPDATE model SET environment_key = ?, feature_importances = NULL WHERE id = ?", KEY, forestModel.getId());
+        jdbc.update("UPDATE model_preparation SET state = 'PREPARING' WHERE model_id = ?", forestModel.getId());
     }
 
     @Test
@@ -113,12 +113,12 @@ class ModelPreparationTest extends PublicPredictionFixture {
         worker.work();
 
         assertEquals("PREPARING", state());
-        assertEquals(1, jdbc.queryForObject("SELECT runtime_attempts FROM model WHERE id = ?", Integer.class,
+        assertEquals(1, jdbc.queryForObject("SELECT attempts FROM model_preparation WHERE model_id = ?", Integer.class,
                 forestModel.getId()));
         assertEquals("none", lastEntry());
-        assertTrue(jdbc.queryForObject("SELECT runtime_lease_expires_at > now() FROM model WHERE id = ?",
+        assertTrue(jdbc.queryForObject("SELECT next_attempt_at > now() FROM model_preparation WHERE model_id = ?",
                 Boolean.class, forestModel.getId()), "not claimed again before its delay");
-        jdbc.update("UPDATE model SET runtime_lease_expires_at = now() - interval '1 second' WHERE id = ?",
+        jdbc.update("UPDATE model_preparation SET next_attempt_at = now() - interval '1 second' WHERE model_id = ?",
                 forestModel.getId());
 
         worker.work();
@@ -129,8 +129,8 @@ class ModelPreparationTest extends PublicPredictionFixture {
 
     @Test
     void aFailedModelIsPreparedAgainOnRequestAndOnlyAFailedOne() throws Exception {
-        jdbc.update("UPDATE model SET runtime_state = 'FAILED', runtime_error = 'boom', runtime_attempts = 2"
-                + " WHERE id = ?", forestModel.getId());
+        jdbc.update("UPDATE model_preparation SET state = 'FAILED', error_message = 'boom', attempts = 2"
+                + " WHERE model_id = ?", forestModel.getId());
 
         mockMvc.perform(signedIn(post("/api/models/{id}/environment/retry", forestModel.getId()), owner.getId()))
                 .andExpect(status().isOk())
@@ -144,13 +144,14 @@ class ModelPreparationTest extends PublicPredictionFixture {
     @Test
     void aModelBeingPreparedIsAnswered503AndAFailedOne409WithoutReachingTheRuntime() throws Exception {
         String request = objectMapper.writeValueAsString(Map.of("schemaVersionId", version.getId(),
-                "modelId", forestModel.getId(), "modelInput", Map.of("age", 52)));
+                "modelId", forestModel.getId(), "modelInput", Map.of("age", 52), "inputData", Map.of("Age", 52)));
 
         mockMvc.perform(signedIn(post("/api/schema-bookmarks/{id}/predictions", bookmark.getId()), owner.getId())
                 .contentType(MediaType.APPLICATION_JSON).content(request))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(header().exists("Retry-After"));
-        jdbc.update("UPDATE model SET runtime_state = 'FAILED' WHERE id = ?", forestModel.getId());
+        jdbc.update("UPDATE model_preparation SET state = 'FAILED', error_message = 'boom', lease_owner = NULL,"
+                + " lease_expires_at = NULL WHERE model_id = ?", forestModel.getId());
         mockMvc.perform(signedIn(post("/api/schema-bookmarks/{id}/predictions", bookmark.getId()), owner.getId())
                 .contentType(MediaType.APPLICATION_JSON).content(request))
                 .andExpect(status().isConflict());
@@ -160,10 +161,10 @@ class ModelPreparationTest extends PublicPredictionFixture {
 
     @Test
     void aResultKeepsTheEnvironmentThatComputedIt() throws Exception {
-        jdbc.update("UPDATE model SET runtime_state = 'READY' WHERE id = ?", forestModel.getId());
+        jdbc.update("UPDATE model_preparation SET state = 'READY' WHERE model_id = ?", forestModel.getId());
         when(analyzer.post(eq("/predict"), any())).thenReturn(Map.of("reports", List.of(CLASSIFIER)));
         String run = objectMapper.writeValueAsString(Map.of("name", "with-environment",
-                "inputData", Map.of("age", 52), "schemaVersionId", version.getId(),
+                "schemaVersionId", version.getId(),
                 "results", List.of(sealed(forestModel.getId()), sealed(netModel.getId()))));
 
         mockMvc.perform(signedIn(post("/api/schema-bookmarks/{id}/runs", bookmark.getId()), owner.getId())
@@ -207,7 +208,7 @@ class ModelPreparationTest extends PublicPredictionFixture {
         assertEquals(List.of(), told());
         assertEquals(0, entries("MODEL_PREPARATION_FAILED"));
 
-        jdbc.update("UPDATE model SET runtime_lease_expires_at = now() - interval '1 second' WHERE id = ?",
+        jdbc.update("UPDATE model_preparation SET next_attempt_at = now() - interval '1 second' WHERE model_id = ?",
                 forestModel.getId());
         worker.work();
         assertEquals(List.of("MODEL_FAILED"), told());
@@ -228,7 +229,7 @@ class ModelPreparationTest extends PublicPredictionFixture {
         assertEquals(List.of(), told());
         assertEquals(0, entries("MODEL_PREPARATION_READY"));
 
-        jdbc.update("UPDATE model SET runtime_lease_expires_at = now() - interval '1 second' WHERE id = ?",
+        jdbc.update("UPDATE model_preparation SET next_attempt_at = now() - interval '1 second' WHERE model_id = ?",
                 forestModel.getId());
         worker.work();
 
@@ -239,7 +240,8 @@ class ModelPreparationTest extends PublicPredictionFixture {
 
     @Test
     void aWorkerThatLostTheModelTellsNobody() {
-        jdbc.update("UPDATE model SET runtime_lease_owner = 'the-next-worker' WHERE id = ?", forestModel.getId());
+        jdbc.update("UPDATE model_preparation SET lease_owner = 'the-next-worker', lease_expires_at = now() + interval '1 minute'"
+                + " WHERE model_id = ?", forestModel.getId());
 
         ledger.ready(forestModel.getId(), "a-worker-that-stalled", null);
         ledger.fail(forestModel.getId(), "a-worker-that-stalled", "too late");
@@ -251,7 +253,7 @@ class ModelPreparationTest extends PublicPredictionFixture {
 
     private Map<String, String> sealed(Long modelId) throws Exception {
         String request = objectMapper.writeValueAsString(Map.of("schemaVersionId", version.getId(),
-                "modelId", modelId, "modelInput", Map.of("age", 52)));
+                "modelId", modelId, "modelInput", Map.of("age", 52), "inputData", Map.of("Age", 52)));
         String prediction = mockMvc.perform(signedIn(post("/api/schema-bookmarks/{id}/predictions",
                 bookmark.getId()), owner.getId()).contentType(MediaType.APPLICATION_JSON).content(request))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
@@ -276,11 +278,11 @@ class ModelPreparationTest extends PublicPredictionFixture {
     }
 
     private String state() {
-        return jdbc.queryForObject("SELECT runtime_state FROM model WHERE id = ?", String.class, forestModel.getId());
+        return jdbc.queryForObject("SELECT state FROM model_preparation WHERE model_id = ?", String.class, forestModel.getId());
     }
 
     private String error() {
-        return jdbc.queryForObject("SELECT runtime_error FROM model WHERE id = ?", String.class, forestModel.getId());
+        return jdbc.queryForObject("SELECT error_message FROM model_preparation WHERE model_id = ?", String.class, forestModel.getId());
     }
 
     /** The latest system entry about the forest, as actor and action. */

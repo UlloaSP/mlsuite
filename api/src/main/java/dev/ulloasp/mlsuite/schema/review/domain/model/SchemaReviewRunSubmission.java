@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.review.domain.model;
 
+import jakarta.persistence.PrePersist;
 import java.time.OffsetDateTime;
 
 import dev.ulloasp.mlsuite.user.domain.model.User;
@@ -44,4 +45,13 @@ public class SchemaReviewRunSubmission {
 
     @Column(name = "submitted_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime submittedAt;
+
+    /** Carried from its parent for the composite foreign key that keeps it there. */
+    @Column(name = "schema_review_id", nullable = false, updatable = false)
+    private Long schemaReviewId;
+
+    @PrePersist
+    void carryParentKeys() {
+        schemaReviewId = reviewRun.getReview().getId();
+    }
 }

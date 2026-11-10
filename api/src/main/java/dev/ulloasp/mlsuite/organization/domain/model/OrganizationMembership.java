@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.organization.domain.model;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -9,6 +10,7 @@ import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.ForeignKey;
@@ -32,8 +34,11 @@ import lombok.Setter;
 })
 public class OrganizationMembership {
 
-    public OrganizationMembership(Organization organization, User user, RoleDefinition roleDefinition, MembershipStatus status) {
+    public OrganizationMembership(Organization organization, User user, RoleDefinition roleDefinition,
+            MembershipStatus status, Principal createdBy) {
         this.organization = organization;
+        this.createdBy = createdBy;
+        this.updatedBy = createdBy;
         this.user = user;
         this.roleDefinition = roleDefinition;
         this.status = status;
@@ -54,6 +59,26 @@ public class OrganizationMembership {
     @ManyToOne(optional = false)
     @JoinColumn(name = "role_definition_id", nullable = false, foreignKey = @ForeignKey(name = "fk_org_membership_role_definition"))
     private RoleDefinition roleDefinition;
+
+    /** Who created it; memberships are listed by the hundred and never show it, so it is read only on demand. */
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
+
+    /** Who changed it last. */
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "updated_by_principal_id", nullable = false)
+    private Principal updatedBy;
+
+    /** A membership a superadmin acts through without one being stored; it has no author. */
+    public static OrganizationMembership unstored(Organization organization, User user, RoleDefinition roleDefinition) {
+        OrganizationMembership membership = new OrganizationMembership();
+        membership.organization = organization;
+        membership.user = user;
+        membership.roleDefinition = roleDefinition;
+        membership.status = MembershipStatus.ACTIVE;
+        return membership;
+    }
 
     public boolean isOwner() {
         return roleDefinition != null && OrganizationRole.OWNER.name().equals(roleDefinition.getSystemKey());

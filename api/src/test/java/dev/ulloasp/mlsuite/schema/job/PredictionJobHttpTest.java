@@ -80,7 +80,7 @@ class PredictionJobHttpTest extends PublicPredictionFixture {
         read(job).andExpect(jsonPath("$.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.doneRows").value(3)).andExpect(jsonPath("$.failedRows").value(0));
         assertEquals(runs + 3, count("PredictionRun"));
-        assertEquals("high", jdbc.queryForObject("SELECT r.output_json -> 'reports' -> 1 ->> 'prediction'"
+        assertEquals("high", jdbc.queryForObject("SELECT r.output -> 'reports' -> 1 ->> 'prediction'"
                 + " FROM prediction_result r JOIN prediction_run p ON p.id = r.prediction_run_id"
                 + " WHERE p.name = 'job-row-0' AND r.model_id = ?", String.class, forestModel.getId()));
         // Two chunks of two rows at most, one runtime call per model each.
@@ -251,7 +251,7 @@ class PredictionJobHttpTest extends PublicPredictionFixture {
                 INSERT INTO app_user (username, email, full_name, password_hash, enabled, system_role, created_at, updated_at)
                 VALUES (?, ?, 'Starter', 'unused', TRUE, 'USER', now(), now()) RETURNING id""", Long.class,
                 "starter" + theirs, "starter" + theirs + "@example.test");
-        jdbc.update("UPDATE prediction_job SET created_by_user_id = ? WHERE id = ?", starter, theirs);
+        jdbc.update("UPDATE prediction_job SET created_by_principal_id = (SELECT id FROM principal WHERE user_id = ?) WHERE id = ?", starter, theirs);
 
         mockMvc.perform(signedIn(post("/api/prediction-jobs/{id}/cancel", theirs), owner.getId()))
                 .andExpect(status().isOk());
@@ -311,6 +311,9 @@ class PredictionJobHttpTest extends PublicPredictionFixture {
                 "SELECT metadata ->> 'stopped' FROM audit_event WHERE action = 'PREDICTION_JOB_COMPLETED'"
                         + " AND target_id = ?", String.class, String.valueOf(job)));
         assertEquals(List.of("PREDICTION_JOB_STOPPED"), told(job));
+        // The job itself keeps why it stopped, whoever reads it later.
+        assertEquals("The member who started the upload may no longer run predictions", jdbc.queryForObject(
+                "SELECT stop_reason FROM prediction_job WHERE id = ?", String.class, job));
     }
 
     @Test
@@ -325,8 +328,11 @@ class PredictionJobHttpTest extends PublicPredictionFixture {
 
         assertEquals(List.of(), told(job));
         assertEquals(List.of("USER PREDICTION_JOB_START"), trail(String.valueOf(job)));
-        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM prediction_job_row WHERE job_id = ? AND status = 'FAILED'",
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM prediction_job_row WHERE prediction_job_id = ? AND status = 'FAILED'",
                 Integer.class, job));
+        // The next worker ran the row, then ends the job; ending it again changes nothing.
+        jdbc.update("UPDATE prediction_job_row SET status = 'DONE', input_data = NULL, model_inputs = NULL"
+                + " WHERE prediction_job_id = ?", job);
         outcomes.complete(job, "the-next-worker");
         outcomes.complete(job, "the-next-worker");
         assertEquals(List.of("PREDICTION_JOB_COMPLETED"), told(job));

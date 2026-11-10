@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema;
 
+import static org.mockito.Mockito.mock;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import dev.ulloasp.mlsuite.support.PostgresDatabase;
@@ -36,7 +37,8 @@ import tools.jackson.databind.json.JsonMapper;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginRuntimeSourceDto;
-import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginRuntimeSourcesUseCase;
+import dev.ulloasp.mlsuite.plugin.application.port.in.SnapshotPluginsUseCase;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkSummaryDto;
 import dev.ulloasp.mlsuite.schema.application.service.BookmarkPublishability;
@@ -57,10 +59,13 @@ import jakarta.persistence.EntityManager;
         "spring.profiles.active=test", "logging.file.name=target/public-bookmark-feed-test.log"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({ PublicBookmarkService.class, BookmarkPublishability.class,
+@Import({ Principals.class, PublicBookmarkService.class, BookmarkPublishability.class,
         dev.ulloasp.mlsuite.schema.application.service.SnapshotRunGuard.class })
 @ContextConfiguration(classes = PublicBookmarkFeedServiceTest.PersistenceConfig.class)
 class PublicBookmarkFeedServiceTest {
+
+    @Autowired
+    private Principals principals;
 
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry registry) {
@@ -80,7 +85,7 @@ class PublicBookmarkFeedServiceTest {
     @Autowired
     PublicBookmarkService service;
     @MockitoBean
-    ListPluginRuntimeSourcesUseCase plugins;
+    SnapshotPluginsUseCase plugins;
 
     private SchemaBookmark cardio;
     private SchemaBookmark churn;
@@ -96,6 +101,7 @@ class PublicBookmarkFeedServiceTest {
 
         cardio = bookmark(schema(acme, "Cardio risk", "Internal notes on the cohort."), "production",
                 "Estimates cardiovascular risk.", BookmarkVisibility.PUBLIC, DAY.plusDays(1));
+        entityManager.createNativeQuery("SET LOCAL session_replication_role = replica").executeUpdate(); // stands in for a snapshot written with this form
         cardio.getVersion().setFormSchema(Map.of(
                 "fields", List.of(
                         Map.of("kind", "number", "label", "Age", "mappedTo", "age"),
@@ -103,7 +109,7 @@ class PublicBookmarkFeedServiceTest {
                         Map.of("kind", "number", "label", "Site", "hidden", true, "mappedTo", "site")),
                 "reports", List.of(Map.of("kind", "classifier", "label", "Risk", "mappedTo", "prediction"))));
         for (String name : List.of("risk-model", "risk-net")) {
-            Model model = new Model(owner, name, "classifier", "Estimator", name + ".bin");
+            Model model = new Model(principals.of(owner), name, "classifier", "Estimator", name + ".bin");
             model.setOrganization(acme);
             entityManager.persist(TestFixtures.storedArtifact(model, new byte[] { 1 }));
             entityManager.persist(new SchemaModelBinding(cardio.getVersion(), model, Map.of()));
@@ -137,6 +143,7 @@ class PublicBookmarkFeedServiceTest {
 
     @Test
     void aPublishedFormServesThePluginsItsSchemaUsesAndNoOthers() {
+        entityManager.createNativeQuery("SET LOCAL session_replication_role = replica").executeUpdate(); // stands in for a snapshot written with this form
         cardio.getVersion().setFormSchema(Map.of(
                 "fields", List.of(
                         Map.of("kind", "number", "label", "Age", "mappedTo", "age"),
@@ -148,10 +155,8 @@ class PublicBookmarkFeedServiceTest {
         OffsetDateTime at = DAY;
         List<PluginRuntimeSourceDto> served = List.of(new PluginRuntimeSourceDto(
                 "body-map", "body-map.ts", "text/typescript", 12, at, at, "export default {}"));
-        Long acme = cardio.getSchema().getOrganization().getId();
-        // Every kind the schema names is asked for; the plugin catalog knows which are plugins.
-        when(plugins.listUsed(acme, Set.of("number", "body-map", "series", "dose-picker", "risk-gauge")))
-                .thenReturn(served);
+        // The page serves the plugins its snapshot was published with, not the library's current ones.
+        when(plugins.pinned(cardio.getSchema().getOrganization().getId(), cardio.getVersion().getId())).thenReturn(served);
 
         assertEquals(served, service.listPublishedPlugins(cardio.getPublicId()));
     }
@@ -216,8 +221,9 @@ class PublicBookmarkFeedServiceTest {
     void ordersByNameOrByLatestUpdateAndPagesTheResult() {
         assertEquals(List.of(churn.getPublicId(), cardio.getPublicId()),
                 publicIds(service.getPublishedBookmarkPage(0, 24, "", "name")));
-        assertEquals(List.of(churn.getPublicId(), cardio.getPublicId()),
-                publicIds(service.getPublishedBookmarkPage(0, 24, "", "unknown-sort")));
+        assertEquals("Unknown sort 'unknown-sort'; expected one of: updated, name", assertThrows(
+                IllegalArgumentException.class, () -> service.getPublishedBookmarkPage(0, 24, "", "unknown-sort"))
+                .getMessage());
 
         PageDto<PublicBookmarkSummaryDto> first = service.getPublishedBookmarkPage(0, 1, "", "updated");
         assertEquals(List.of(churn.getPublicId()), publicIds(first));
@@ -246,13 +252,13 @@ class PublicBookmarkFeedServiceTest {
     }
 
     private Organization organization(String slug, String name, User owner) {
-        Organization organization = new Organization(slug, name, null, owner);
+        Organization organization = new Organization(slug, name, null, principals.of(owner));
         entityManager.persist(organization);
         return organization;
     }
 
     private Schema schema(Organization organization, String name, String description) {
-        Schema schema = new Schema(organization, name, description);
+        Schema schema = new Schema(organization, name, description, principals.system());
         entityManager.persist(schema);
         return schema;
     }
@@ -260,9 +266,9 @@ class PublicBookmarkFeedServiceTest {
     /** Every bookmark has a public id, as one that was published once and unpublished does. */
     private SchemaBookmark bookmark(Schema schema, String name, String description,
             BookmarkVisibility visibility, OffsetDateTime updatedAt) {
-        SchemaVersion version = new SchemaVersion(schema, 3, "Baseline", Map.of());
+        SchemaVersion version = new SchemaVersion(schema, 3, "Baseline", Map.of(), principals.system());
         entityManager.persist(version);
-        SchemaBookmark bookmark = new SchemaBookmark(schema, version, name);
+        SchemaBookmark bookmark = new SchemaBookmark(schema, version, name, principals.system());
         bookmark.setDescription(description);
         bookmark.setVisibility(visibility);
         bookmark.setPublicId(UUID.randomUUID().toString());

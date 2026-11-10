@@ -1,6 +1,9 @@
 package dev.ulloasp.mlsuite.schema.review.application.service;
 
+import org.springframework.jdbc.core.JdbcTemplate;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -32,7 +35,6 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDenie
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
-import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRevisionRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
@@ -42,7 +44,6 @@ import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultFeedback
 import dev.ulloasp.mlsuite.schema.application.dto.UpdatePredictionResultFeedbackRequest;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.application.service.FeedbackHistory;
-import dev.ulloasp.mlsuite.schema.catalog.InferenceRows;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackChange;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackType;
@@ -82,8 +83,7 @@ class SchemaReviewFeedbackTest {
     @Mock private PredictionRunRepository runs;
     @Mock private PredictionResultRepository results;
     @Mock private PredictionResultFeedbackRepository feedback;
-    @Mock private PredictionResultFeedbackRevisionRepository revisions;
-    @Mock private InferenceRows inferenceRows;
+    @Mock private JdbcTemplate jdbc;
 
     private SchemaReviewService service;
     private PredictionResult result;
@@ -95,17 +95,17 @@ class SchemaReviewFeedbackTest {
                 authorization, users, mock(SchemaRepository.class),
                 mock(SchemaVersionRepository.class),
                 mock(SchemaModelBindingRepository.class), runs, results, feedback,
-                new FeedbackHistory(feedback, revisions, inferenceRows), mock(AuditLogService.class));
+                new FeedbackHistory(feedback, jdbc), mock(AuditLogService.class), TestFixtures.principals());
         Organization organization = new Organization();
         organization.setId(41L);
-        Schema schema = new Schema(organization, "Risk", null);
-        SchemaVersion version = new SchemaVersion(schema, 1, "v1", Map.of("fields", List.of()));
-        SchemaReview review = new SchemaReview(organization, schema, version, user(1L),
+        Schema schema = new Schema(organization, "Risk", null, TestFixtures.system());
+        SchemaVersion version = new SchemaVersion(schema, 1, "v1", Map.of("fields", List.of()), TestFixtures.system());
+        SchemaReview review = new SchemaReview(organization, schema, version, TestFixtures.principal(user(1L)),
                 OffsetDateTime.now().plusDays(1));
         review.setId(88L);
         PredictionRun run = run(version, 50L);
         result = result(run, 77L);
-        ownAnswer = new PredictionResultFeedback(result, user(7L), review, PredictionResultFeedbackType.OUTPUT, 0,
+        ownAnswer = new PredictionResultFeedback(result, TestFixtures.principal(user(7L)), review, PredictionResultFeedbackType.OUTPUT, 0,
                 JsonNodeFactory.instance.objectNode().put("correct", true));
         ownAnswer.setId(90L);
         lenient().when(workspaceAccess.requireCurrentOrganization(7L)).thenReturn(organization);
@@ -123,13 +123,21 @@ class SchemaReviewFeedbackTest {
     void anAssignedReviewerAnswersTheRunUnderReviewInThatReviewAndTheAnswerIsKeptInItsHistory() {
         var saved = service.createFeedback(7L, REVIEW, RUN, create(77L));
 
-        assertEquals(77L, saved.resultId());
+        assertTrue(saved.created());
+        assertEquals(77L, saved.feedback().resultId());
         verify(authorization).require(7L, 41L, PermissionKey.REVIEW, PermissionKey.MANAGE_REVIEWS);
         verify(feedback).saveAndFlush(argThat(answer -> answer.getReview() != null && answer.getReview().getId() == 88L));
-        verify(revisions).save(argThat(revision -> revision.getChange() == PredictionResultFeedbackChange.CREATED
-                && revision.getReviewId() == 88L && revision.getChangedByUserId() == 7L));
-        // The run's stored inferences row is no longer current.
-        verify(inferenceRows).answersChanged(50L);
+    }
+
+    @Test
+    void answeringAQuestionAgainChangesTheAnswerAlreadyGiven() {
+        when(feedback.findByResultIdAndCreatedByUserIdAndTypeAndOrderAndReviewId(77L, 7L, PredictionResultFeedbackType.OUTPUT,
+                0, 88L)).thenReturn(Optional.of(ownAnswer));
+
+        var saved = service.createFeedback(7L, REVIEW, RUN, create(77L));
+
+        assertEquals(false, saved.created());
+        assertEquals(90L, saved.feedback().id());
     }
 
     @Test
@@ -137,15 +145,13 @@ class SchemaReviewFeedbackTest {
         var saved = service.updateFeedback(7L, REVIEW, RUN, update(90L));
 
         assertEquals(false, saved.value().get("correct").asBoolean());
-        verify(revisions).save(argThat(revision -> revision.getChange() == PredictionResultFeedbackChange.UPDATED
-                && !revision.getValue().get("correct").asBoolean()));
     }
 
     @Test
     void anAnswerGivenInAnotherReviewIsNotChangedThroughThisOne() {
         SchemaReview other = new SchemaReview(ownAnswer.getResult().getRun().getSchemaVersion().getSchema().getOrganization(),
                 ownAnswer.getResult().getRun().getSchemaVersion().getSchema(), ownAnswer.getResult().getRun().getSchemaVersion(),
-                user(1L), OffsetDateTime.now().plusDays(1));
+                TestFixtures.principal(user(1L)), OffsetDateTime.now().plusDays(1));
         other.setId(99L);
         ownAnswer.setReview(other);
 
@@ -156,21 +162,26 @@ class SchemaReviewFeedbackTest {
     void aSubmittedReviewTakesNoNewAnswer() {
         when(submissions.existsByReviewRunIdAndUserId(null, 7L)).thenReturn(true);
 
-        assertRefused(404, () -> service.createFeedback(7L, REVIEW, RUN, create(77L)));
+        assertRefused(409, () -> service.createFeedback(7L, REVIEW, RUN, create(77L)));
     }
 
     @Test
     void aSubmittedReviewKeepsItsAnswers() {
         when(submissions.existsByReviewRunIdAndUserId(null, 7L)).thenReturn(true);
 
-        assertRefused(404, () -> service.updateFeedback(7L, REVIEW, RUN, update(90L)));
+        assertRefused(409, () -> service.updateFeedback(7L, REVIEW, RUN, update(90L)));
     }
 
     @Test
     void noOneRewritesAnotherReviewersAnswer() {
-        ownAnswer.setUser(user(8L));
+        ownAnswer.setCreatedBy(TestFixtures.principal(user(8L)));
 
         assertRefused(403, () -> service.updateFeedback(7L, REVIEW, RUN, update(90L)));
+    }
+
+    @Test
+    void anAnswerThatDoesNotExistIsNotFound() {
+        assertRefused(404, () -> service.updateFeedback(7L, REVIEW, RUN, update(91L)));
     }
 
     @Test
@@ -184,7 +195,7 @@ class SchemaReviewFeedbackTest {
     void aResultOfAnotherRunIsNotAnsweredThroughThisOne() {
         when(results.findById(78L)).thenReturn(Optional.of(result(run(result.getRun().getSchemaVersion(), 51L), 78L)));
 
-        assertRefused(404, () -> service.createFeedback(7L, REVIEW, RUN, create(78L)));
+        assertRefused(400, () -> service.createFeedback(7L, REVIEW, RUN, create(78L)));
     }
 
     @Test
@@ -210,7 +221,6 @@ class SchemaReviewFeedbackTest {
 
         assertEquals(status, error.getStatusCode().value());
         verify(feedback, never()).saveAndFlush(any());
-        verify(revisions, never()).save(any());
     }
 
     private static CreatePredictionResultFeedbackRequest create(long resultId) {
@@ -224,7 +234,7 @@ class SchemaReviewFeedbackTest {
     }
 
     private static PredictionRun run(SchemaVersion version, long id) {
-        PredictionRun run = new PredictionRun(version, "case-" + id, Map.of(), PredictionRunStatus.SUCCESS);
+        PredictionRun run = new PredictionRun(version, "case-" + id, Map.of(), PredictionRunStatus.SUCCESS, TestFixtures.system());
         run.setId(id);
         return run;
     }

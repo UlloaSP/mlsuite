@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.workspace.application.usecase;
 
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
@@ -11,7 +12,6 @@ import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.Organ
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationDto;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationMembershipDto;
-import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
@@ -20,6 +20,7 @@ import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepositor
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.util.CatalogPages;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.workspace.application.dto.SelectOrganizationRequest;
 import dev.ulloasp.mlsuite.workspace.application.dto.WorkspaceContextDto;
@@ -106,8 +107,10 @@ public class WorkspaceContextService implements WorkspaceContextUseCase {
     @Override
     public PageDto<OrganizationDto> organizations(Long userId, CatalogRequest request) {
         workspaceAccessService.requireUser(userId);
+        String filter = CatalogValues.require("filter",
+                request.requireOneOrder().filter().toLowerCase(Locale.ROOT), List.of("all", "team"));
         Page<Organization> page = organizationRepository.findAccessiblePage(userId,
-                workspaceAccessService.isSuperadmin(userId), request.filter().equalsIgnoreCase("team"),
+                workspaceAccessService.isSuperadmin(userId), filter.equals("team"),
                 CatalogPages.likeLiteral(request.search()),
                 CatalogPages.pageable(request, Sort.by("kind", "name", "id")));
         return PageDto.of(page, page.getContent().stream().map(OrganizationDto::from).toList());
@@ -124,10 +127,7 @@ public class WorkspaceContextService implements WorkspaceContextUseCase {
 
     /** A superadmin has no stored membership and acts as the owner of the organization they select. */
     private OrganizationMembership ownerMembership(User user, Organization organization) {
-        return new OrganizationMembership(
-                organization,
-                user,
-                roleSeedService.orgRole(organization, OrganizationRole.OWNER),
-                MembershipStatus.ACTIVE);
+        return OrganizationMembership.unstored(organization, user,
+                roleSeedService.orgRole(organization, OrganizationRole.OWNER));
     }
 }

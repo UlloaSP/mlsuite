@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
@@ -36,6 +37,7 @@ public class PurgeController {
         return purges.preview(actor.userId(), scope, targetId);
     }
 
+    @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping
     public ResponseEntity<PurgeJobDto> request(CurrentUser actor, @Valid @RequestBody RequestPurgeRequest request) {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(purges.request(actor.userId(), request));

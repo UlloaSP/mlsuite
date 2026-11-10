@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.apiaccess.application.service;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -19,6 +21,7 @@ import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
 import dev.ulloasp.mlsuite.util.PageDto;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -37,10 +40,7 @@ public class ApiClientService implements ApiClientUseCase {
     @Transactional(readOnly = true)
     public PageDto<ApiClientSummaryDto> listClients(Long userId, CatalogRequest request) {
         Organization organization = clients.readable(userId);
-        String filter = switch (request.filter()) {
-            case "all", "active", "suspended" -> request.filter();
-            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown client filter.");
-        };
+        String filter = CatalogValues.require("filter", request.filter(), List.of("all", "active", "suspended"));
         Page<ApiClient> page = clientRepository.findCatalog(organization.getId(), request.search(), filter,
                 PageDto.request(request.page(), request.size(), sort(request.sort())));
         return PageDto.of(page, clients.summaries(page.getContent()));
@@ -56,11 +56,8 @@ public class ApiClientService implements ApiClientUseCase {
     public ApiClientDto createClient(Long userId, CreateApiClientRequest request) {
         Organization organization = clients.manageable(userId);
         String name = name(request.name());
-        if (clientRepository.existsByOrganizationIdAndNameIgnoreCase(organization.getId(), name)) {
-            throw duplicate(name);
-        }
         ApiClient client = clientRepository.save(new ApiClient(organization, name, description(request.description()),
-                clients.memberName(userId)));
+                clients.member(userId)));
         clients.audit(client, userId, AuditAction.API_CLIENT_CREATE, client.getId(), AuditDetails.of("name", name));
         return clients.detail(client);
     }
@@ -70,9 +67,6 @@ public class ApiClientService implements ApiClientUseCase {
         Organization organization = clients.manageable(userId);
         ApiClient client = clients.require(organization, clientId);
         String name = name(request.name());
-        if (clientRepository.existsByOrganizationIdAndNameIgnoreCaseAndIdNot(organization.getId(), name, clientId)) {
-            throw duplicate(name);
-        }
         clients.audit(client, userId, AuditAction.API_CLIENT_UPDATE, clientId,
                 AuditDetails.of("client", name, "name", AuditDetails.changed(client.getName(), name)));
         client.setName(name);
@@ -105,14 +99,13 @@ public class ApiClientService implements ApiClientUseCase {
         return description.isEmpty() ? null : description;
     }
 
-    private static ResponseStatusException duplicate(String name) {
-        return new ResponseStatusException(HttpStatus.CONFLICT,
-                "This organization already has a client named \"%s\".".formatted(name));
-    }
 
     private static Sort sort(String mode) {
-        if ("name".equals(mode)) return Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.asc("id"));
-        if ("created".equals(mode)) return Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
-        return Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.desc("id"));
+        return switch (mode) {
+            case "updated" -> Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.desc("id"));
+            case "name" -> Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.asc("id"));
+            case "created" -> Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
+            default -> throw CatalogValues.unknown("sort", mode, List.of("updated", "name", "created"));
+        };
     }
 }

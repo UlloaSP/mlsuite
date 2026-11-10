@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.admin.purge;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -46,6 +48,9 @@ import dev.ulloasp.mlsuite.user.domain.model.User;
  */
 class PurgeProfileRowsTest extends PublicPredictionFixture {
 
+    @Autowired
+    private Principals principals;
+
     private static final String PROFILE = "/api/public/users/{handle}";
 
     @Autowired PurgeRequestService purges;
@@ -66,7 +71,7 @@ class PurgeProfileRowsTest extends PublicPredictionFixture {
             person = new User("ada-" + suffix, "ada-" + suffix + "@example.test", "x", "Ada", SystemRole.USER);
             entityManager.persist(superadmin);
             entityManager.persist(person);
-            account = Organization.personal(person);
+            account = Organization.personal(person, principals.of(person));
             entityManager.persist(account);
         });
     }
@@ -74,12 +79,12 @@ class PurgeProfileRowsTest extends PublicPredictionFixture {
     private SchemaBookmark published(Organization owner, String name, Model bound) {
         AtomicReference<SchemaBookmark> stored = new AtomicReference<>();
         inTransaction(() -> {
-            Schema owned = new Schema(owner, name, null);
+            Schema owned = new Schema(owner, name, null, principals.system());
             entityManager.persist(owned);
-            SchemaVersion snapshot = new SchemaVersion(owned, 1, "First", Map.of("fields", List.of(), "reports", List.of()));
+            SchemaVersion snapshot = new SchemaVersion(owned, 1, "First", Map.of("fields", List.of(), "reports", List.of()), principals.system());
             entityManager.persist(snapshot);
             if (bound != null) entityManager.persist(new SchemaModelBinding(snapshot, bound, Map.of()));
-            SchemaBookmark pinnable = new SchemaBookmark(owned, snapshot, name);
+            SchemaBookmark pinnable = new SchemaBookmark(owned, snapshot, name, principals.system());
             pinnable.setVisibility(BookmarkVisibility.PUBLIC);
             pinnable.setPublicId(UUID.randomUUID().toString());
             entityManager.persist(pinnable);
@@ -89,7 +94,9 @@ class PurgeProfileRowsTest extends PublicPredictionFixture {
     }
 
     private void pinned(Long userId, SchemaBookmark pin, int slot) {
-        jdbc.update("INSERT INTO profile_pin (schema_bookmark_id, user_id, slot) VALUES (?, ?, ?)", pin.getId(), userId, slot);
+        jdbc.update("INSERT INTO profile_pin (schema_bookmark_id, user_id, slot, created_by_principal_id,"
+                + " updated_by_principal_id, created_at, updated_at) SELECT ?, ?, ?, id, id, now(), now()"
+                + " FROM principal WHERE user_id = ?", pin.getId(), userId, slot, userId);
     }
 
     private long rows(String table, String column, Long value) {
@@ -136,7 +143,7 @@ class PurgeProfileRowsTest extends PublicPredictionFixture {
     void aPurgedModelTakesThePinOfEverySnapshotThatBindsIt() {
         AtomicReference<Model> stored = new AtomicReference<>();
         inTransaction(() -> {
-            Model model = new Model(person, "own-model", "classifier", "Estimator", "own.mlbundle");
+            Model model = new Model(principals.of(person), "own-model", "classifier", "Estimator", "own.mlbundle");
             model.setOrganization(account);
             entityManager.persist(TestFixtures.storedArtifact(model, "own-artifact".getBytes()));
             stored.set(model);
@@ -166,8 +173,8 @@ class PurgeProfileRowsTest extends PublicPredictionFixture {
         SchemaBookmark pin = published(account, "shown", null);
         pinned(person.getId(), pin, 0);
         jdbc.update("""
-                INSERT INTO user_avatar (user_id, content, content_type, updated_at)
-                VALUES (?, '\\x89'::bytea, 'image/png', now())""", person.getId());
+                INSERT INTO user_avatar (user_id, content, content_type, created_at, updated_at)
+                VALUES (?, '\\x89'::bytea, 'image/png', now(), now())""", person.getId());
 
         PurgeJobDto job = purges.request(superadmin.getId(),
                 new RequestPurgeRequest(PurgeScope.USER, person.getId(), person.getUsername()));
@@ -188,20 +195,26 @@ class PurgeProfileRowsTest extends PublicPredictionFixture {
         Long[] run = new Long[1];
         inTransaction(() -> {
             PredictionRun reviewed = new PredictionRun(bookmark, version, "reviewed-" + UUID.randomUUID(), Map.of(),
-                    PredictionRunStatus.SUCCESS);
+                    PredictionRunStatus.SUCCESS, principals.system());
             entityManager.persist(reviewed);
             entityManager.persist(new PredictionResult(reviewed, entityManager.find(Model.class, forestModel.getId()),
                     Map.of(), Map.of(), PredictionResultStatus.SUCCESS, null, null));
             SchemaReview review = new SchemaReview(entityManager.getReference(Organization.class, organization.getId()),
-                    schema, version, owner, OffsetDateTime.now().plusDays(1));
+                    schema, version, principals.of(owner), OffsetDateTime.now().plusDays(1));
             entityManager.persist(review);
-            entityManager.persist(new SchemaReviewAssignee(review, owner));
+            entityManager.persist(new SchemaReviewAssignee(review, owner, principals.system()));
             entityManager.persist(new SchemaReviewRun(review, reviewed));
             run[0] = reviewed.getId();
         });
-        jdbc.update("UPDATE schema_review SET created_by_user_id = NULL WHERE organization_id = ?", organization.getId());
-        jdbc.update("UPDATE model SET user_id = NULL, updated_by_user_id = NULL WHERE id = ?", forestModel.getId());
-        jdbc.update("UPDATE app_user SET avatar_updated_at = now() WHERE id = ?", owner.getId());
+        // The authors are gone: their principals are left as "Deleted user".
+        Long gone = jdbc.queryForObject("INSERT INTO principal (kind, former_label) VALUES ('USER', 'Deleted user') RETURNING id",
+                Long.class);
+        jdbc.update("UPDATE schema_review SET created_by_principal_id = ? WHERE organization_id = ?", gone, organization.getId());
+        jdbc.update("UPDATE model SET created_by_principal_id = ?, updated_by_principal_id = ? WHERE id = ?", gone, gone,
+                forestModel.getId());
+        jdbc.update("""
+                INSERT INTO user_avatar (user_id, content, content_type, created_at, updated_at)
+                VALUES (?, '\\x89'::bytea, 'image/png', now(), now()) ON CONFLICT (user_id) DO NOTHING""", owner.getId());
 
         mockMvc.perform(signedIn(get("/api/schema-reviews/inferences/{run}/assignments/catalog", run[0]), owner.getId()))
                 .andExpect(status().isOk())
@@ -212,10 +225,11 @@ class PurgeProfileRowsTest extends PublicPredictionFixture {
                 .andExpect(jsonPath("$.updatedByName").value(DeletedUser.NAME))
                 .andExpect(jsonPath("$.updatedByAvatarUrl").isEmpty());
 
-        SchemaCatalogItemDto authorless = SchemaCatalogItemDto.from(new Schema(organization, "Gone", null), null, 0);
+        Principal goneAuthor = entityManager.find(Principal.class, gone);
+        SchemaCatalogItemDto authorless = SchemaCatalogItemDto.from(new Schema(organization, "Gone", null, goneAuthor), null, 0);
         assertEquals(DeletedUser.NAME, authorless.updatedByName());
         assertNull(authorless.updatedByAvatarUrl());
-        assertNull(OrganizationCatalogItemDto.from(new Organization("gone", "Gone", null, null), DeletedUser.NAME, null,
+        assertNull(OrganizationCatalogItemDto.from(new Organization("gone", "Gone", null, goneAuthor), DeletedUser.NAME, null,
                 null, 0, 0, 0, 0, 0).updatedByAvatarUrl());
     }
 }

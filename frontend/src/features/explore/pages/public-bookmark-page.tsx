@@ -14,7 +14,7 @@ import { PublicationNote } from "@/features/explore/components/PublicationNote";
 import { PublicFormSize } from "@/capabilities/public-bookmarks/PublicFormSize";
 import { PublisherName } from "@/capabilities/public-bookmarks/PublisherName";
 import { WorkspaceBookmarkLink } from "@/features/explore/components/WorkspaceBookmarkLink";
-import { formatDate } from "@/shared/lib/date-time";
+import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
@@ -97,7 +97,9 @@ export function PublicBookmarkPage() {
           <PublicFormSize inputCount={bookmark.inputCount} reportCount={bookmark.reportCount} />
           <div className={FACT}>
             <dt>Updated</dt>
-            <dd>{formatDate(bookmark.updatedAt)}</dd>
+            <dd>
+              <LiveRelativeTime value={bookmark.updatedAt} />
+            </dd>
           </div>
         </dl>
         {bookmark.publicationNote ? (

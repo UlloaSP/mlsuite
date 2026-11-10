@@ -7,16 +7,10 @@ import { mountForm } from "mlform/kit";
 import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
 import type { ReportConfig, SubmitErrorContext, SubmitRequest, Transport } from "mlform/runtime";
 import { normalizeSchema, validateSchema, type ReportResult } from "mlform/schema";
-import { toPublicReportPayload } from "@/capabilities/prediction-runtime/data/report-normalization";
 import { withResolvedDisplayKeys } from "@/capabilities/prediction-runtime/mlform/display-key";
 import type { PredictionCatalogDefinitions } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 import type { PublicRunReport } from "@/capabilities/prediction-runtime/sandbox/sandbox-protocol";
 import { createRunRegistries } from "./runtime-assembly";
-import { withSeriesColumns } from "./series-schema";
-import {
-  connectStoredStatusConditions,
-  withStoredStatusConditions,
-} from "./stored-status-conditions";
 import { getPredictionDesignSystem } from "@/capabilities/prediction-runtime/mlform/headless-prediction";
 import {
   type JsonRecord,
@@ -34,7 +28,8 @@ type Options = {
   container: HTMLElement;
   /**
    * A public form schema: fields and reports whose `mappedTo` is an opaque key.
-   * MLForm serializes each value under its key; the server maps the keys back to models.
+   * MLForm serializes each value under its key; the server maps the keys back to models
+   * and computes a series field's aggregations from its rows.
    */
   schema: unknown;
   /** The plugin kinds the schema uses, as the bookmark's page serves them. */
@@ -66,15 +61,34 @@ const PUBLIC_RUN_RULES = `
 /** MLForm's name for the backend behind a `mappedTo` that is a bare key. */
 const BACKEND = "default";
 
+/**
+ * The keys MLForm submits a series field's aggregations under. The server computes each
+ * aggregation from the field's rows and refuses a run that carries one, so none is sent.
+ */
+const aggregationKeys = (schema: unknown): ReadonlySet<string> => {
+  const fields = isRecord(schema) && Array.isArray(schema.fields) ? schema.fields : [];
+  return new Set(
+    fields
+      .filter(isRecord)
+      .flatMap((field) =>
+        field.kind === "series" && Array.isArray(field.aggregations) ? field.aggregations : [],
+      )
+      .flatMap((aggregation) =>
+        isRecord(aggregation) && typeof aggregation.mappedTo === "string"
+          ? [aggregation.mappedTo]
+          : [],
+      ),
+  );
+};
+
 const toReportResult = (
   report: ReportConfig,
   answered: readonly PublicRunReport[],
 ): ReportResult => {
   const mappedTo = typeof report.mappedTo === "string" ? report.mappedTo : "";
   const answer = answered.find((item) => item.key === mappedTo);
-  const normalized = answer && toPublicReportPayload(report, answer.payload);
-  if (!normalized) return { backend: BACKEND, mappedTo, status: "skipped", reason: "No result" };
-  const { kind: _kind, ...payload } = normalized;
+  if (!answer) return { backend: BACKEND, mappedTo, status: "skipped", reason: "No result" };
+  const { kind: _kind, ...payload } = answer.payload;
   void _kind;
   return { backend: BACKEND, mappedTo, status: "ready", payload };
 };
@@ -98,13 +112,11 @@ export const mountPublicRunForm = ({
     plugins?.fieldDefinitions ?? [],
     plugins?.reportDefinitions ?? [],
   );
-  const result = validateSchema(
-    withStoredStatusConditions(withSeriesColumns(withResolvedDisplayKeys(schema))),
-    registry,
-  );
+  const result = validateSchema(withResolvedDisplayKeys(schema), registry);
   if (!result.success) throw new Error(result.issues[0]?.message ?? "Invalid MLForm schema.");
   // Layout references use the ids MLForm gives fields and reports once normalized.
   const normalized = normalizeSchema(result.data, registry);
+  const computedKeys = aggregationKeys(schema);
   let host: HTMLElement | undefined;
   // The reports of the last run that was made: a refused one leaves them on screen.
   let shown: readonly PublicRunReport[] = [];
@@ -116,8 +128,9 @@ export const mountPublicRunForm = ({
     submit: async (request: SubmitRequest) => {
       const reports = request.reports as readonly ReportConfig[];
       try {
+        const values = isRecord(request.modelValues) ? request.modelValues : {};
         const answered = await run(
-          isRecord(request.modelValues) ? request.modelValues : {},
+          Object.fromEntries(Object.entries(values).filter(([key]) => !computedKeys.has(key))),
           request.signal,
         );
         shown = answered ?? shown;
@@ -166,7 +179,6 @@ export const mountPublicRunForm = ({
     designSystem: getPredictionDesignSystem(theme),
   });
   host = mounted.host;
-  connectStoredStatusConditions(mounted.form);
   hideRunTabTitles(mounted.host);
   adoptShadowRules(mounted.host, PUBLIC_RUN_RULES);
   return {

@@ -1,5 +1,4 @@
 import { Shield } from "lucide-react";
-import { badgeLabel } from "@/shared/ui/badge-label";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppDialog } from "@/shared/ui/AppDialog";
 import type { RoleDefinitionDto } from "@/shared/api/openapi.gen";
@@ -61,10 +60,6 @@ export function RoleDetailsDialog({
         <div>
           <dt className="text-xs font-semibold text-fg-secondary">Assigned users</dt>
           <dd className="mt-1 text-sm font-semibold">{role.userCount}</dd>
-        </div>
-        <div>
-          <dt className="text-xs font-semibold text-fg-secondary">Scope</dt>
-          <dd className="mt-1 text-sm font-semibold">{badgeLabel(role.scope)}</dd>
         </div>
       </dl>
 

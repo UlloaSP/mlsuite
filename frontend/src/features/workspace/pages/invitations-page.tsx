@@ -5,6 +5,7 @@ import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
+import { useCurrentUserIsSuperadmin } from "@/capabilities/workspace-context/session";
 import { useCreateInvitationMutation } from "@/features/workspace/api/invitation.mutations";
 import { InviteForm } from "@/features/workspace/components/InviteForm";
 import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/workspace.queries";
@@ -24,6 +25,8 @@ export function InvitationsPage() {
   const canView = Boolean(permissions?.canViewInvitations);
   const canInvite = Boolean(permissions?.canInviteMembers);
   const canManage = Boolean(permissions?.canManageInvitations);
+  // The API accepts a superadmin's invitation on the spot, so they add members rather than invite.
+  const addsDirectly = useCurrentUserIsSuperadmin();
   if (!Number.isFinite(id)) return <RouteStatusPage status={404} />;
   if (dashboard.isError)
     return <RouteStatusPage status={organizationRouteErrorStatus(dashboard.error)} />;
@@ -41,14 +44,17 @@ export function InvitationsPage() {
           <section className="border-y border-line py-5">
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
-                <AppSectionTitle>Invite member</AppSectionTitle>
+                <AppSectionTitle>{addsDirectly ? "Add member" : "Invite member"}</AppSectionTitle>
                 <AppCopy className="mt-1">
-                  Search existing users outside this organization and assign their starting access.
+                  {addsDirectly
+                    ? "Search existing users outside this organization. As a superadmin, you add them at once with the role you choose; there is no invitation to accept."
+                    : "Search existing users outside this organization and assign their starting access."}
                 </AppCopy>
               </div>
             </div>
             <InviteForm
               organizationId={id}
+              addsDirectly={addsDirectly}
               onSubmit={async (payload) => {
                 await create.mutateAsync(payload);
               }}

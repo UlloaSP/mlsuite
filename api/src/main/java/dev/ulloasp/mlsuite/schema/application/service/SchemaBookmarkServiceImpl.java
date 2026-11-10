@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import java.util.List;
 import java.util.UUID;
 
@@ -38,6 +39,7 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
     private final WorkspaceAuthorizationService authorizationService;
     private final BookmarkPublishability publishability;
     private final AuditLogService auditLog;
+    private final Principals principals;
 
     @Override
     public List<SchemaBookmark> listBookmarks(Long userId, Long schemaId) {
@@ -62,11 +64,13 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
     public SchemaBookmark createBookmark(Long userId, Long schemaId, CreateSchemaBookmarkRequest request) {
         Long orgId = requireOperate(userId);
         Schema schema = requireSchema(schemaId, orgId);
+        if (schema.getArchivedAt() != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "An archived schema takes no bookmarks; restore it first");
+        }
         SchemaVersion version = requireVersion(request.versionId(), orgId);
-        if (!version.getSchema().getId().equals(schemaId)) throw badRequest("Bookmark version outside schema");
         String name = cleanName(request.name());
-        SchemaBookmark bookmark = bookmarkRepository.findBySchemaIdAndName(schemaId, name)
-                .orElseGet(() -> new SchemaBookmark(schema, version, name));
+        SchemaBookmark bookmark = bookmarkRepository.findBySchemaIdAndNameIgnoreCase(schemaId, name)
+                .orElseGet(() -> new SchemaBookmark(schema, version, name, principals.user(userId)));
         point(bookmark, version);
         String description = cleanText(request.description());
         if (description != null) bookmark.setDescription(description);
@@ -83,9 +87,6 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
         Long orgId = requireOperate(userId);
         SchemaBookmark bookmark = requireBookmark(bookmarkId, orgId);
         SchemaVersion version = requireVersion(request.versionId(), orgId);
-        if (!version.getSchema().getId().equals(bookmark.getSchema().getId())) {
-            throw badRequest("Bookmark version outside schema");
-        }
         auditLog.record(AuditActor.user(userId), orgId, AuditAction.BOOKMARK_MOVE, bookmarkId,
                 AuditDetails.of("bookmark", bookmark.getName(),
                         "schemaVersionId", AuditDetails.changed(bookmark.getVersion().getId(), version.getId())));
@@ -98,13 +99,6 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
         Long orgId = requireOperate(userId);
         SchemaBookmark bookmark = requireBookmark(bookmarkId, orgId);
         String name = cleanName(request.name());
-        boolean taken = bookmarkRepository.findBySchemaIdAndName(bookmark.getSchema().getId(), name)
-                .filter(other -> !other.getId().equals(bookmark.getId()))
-                .isPresent();
-        if (taken) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "This schema already has a bookmark named \"%s\".".formatted(name));
-        }
         auditLog.record(AuditActor.user(userId), orgId, AuditAction.BOOKMARK_UPDATE, bookmarkId,
                 AuditDetails.of("bookmark", name, "name", AuditDetails.changed(bookmark.getName(), name),
                         "description", AuditDetails.changed(bookmark.getDescription(), cleanText(request.description())),
@@ -113,7 +107,7 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
         bookmark.setName(name);
         bookmark.setDescription(cleanText(request.description()));
         bookmark.setPublicationNote(cleanText(request.publicationNote()));
-        return bookmark;
+        return bookmarkRepository.saveAndFlush(bookmark);
     }
 
     @Override
@@ -179,7 +173,7 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
 
     private SchemaVersion requireVersion(Long versionId, Long orgId) {
         return versionRepository.findByIdAndOrganizationId(versionId, orgId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema version not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema snapshot not found"));
     }
 
     private SchemaBookmark requireBookmark(Long bookmarkId, Long orgId) {

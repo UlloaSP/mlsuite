@@ -60,6 +60,12 @@ public interface OrganizationMembershipRepository
     @Query("SELECT m FROM OrganizationMembership m WHERE m.id = :membershipId AND m.organization.id = :organizationId AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE")
     Optional<OrganizationMembership> findActiveByIdAndOrganizationId(Long membershipId, Long organizationId);
 
+    @Query("""
+            SELECT COUNT(m) > 0 FROM OrganizationMembership m WHERE m.organization.id = :organizationId
+            AND lower(m.user.email) = :email AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE
+            """)
+    boolean existsActiveByOrganizationIdAndEmail(Long organizationId, String email);
+
     @Query("SELECT COUNT(m) FROM OrganizationMembership m WHERE m.organization.id = :organizationId AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE")
     long countActiveByOrganizationId(Long organizationId);
 

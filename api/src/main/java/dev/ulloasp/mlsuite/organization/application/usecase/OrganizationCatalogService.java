@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.organization.application.usecase;
 
+import java.util.List;
+
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -11,6 +13,7 @@ import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.Organ
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationCatalogItemDto;
 import dev.ulloasp.mlsuite.user.application.dto.UserAvatarUrl;
+import dev.ulloasp.mlsuite.util.CatalogValues;
 import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
@@ -74,8 +77,11 @@ public class OrganizationCatalogService {
 
     private Sort sort(String mode) {
         Sort.Order byId = Sort.Order.asc("id");
-        if ("name".equals(mode)) return Sort.by(Sort.Order.asc("name").ignoreCase(), byId);
-        if ("created".equals(mode)) return Sort.by(Sort.Order.desc("createdAt"), byId);
-        return Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("name").ignoreCase(), byId);
+        return switch (mode) {
+            case "updated" -> Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("name").ignoreCase(), byId);
+            case "created" -> Sort.by(Sort.Order.desc("createdAt"), byId);
+            case "name" -> Sort.by(Sort.Order.asc("name").ignoreCase(), byId);
+            default -> throw CatalogValues.unknown("sort", mode, List.of("updated", "created", "name"));
+        };
     }
 }

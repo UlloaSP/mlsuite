@@ -4,12 +4,16 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { toast } from "@/shared/ui/toast";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { parseSpreadsheetPredictionFile } from "@/capabilities/prediction-runtime/data/parse-spreadsheet-prediction-file";
-import { applySchemaRunInputMapping } from "@/capabilities/prediction-runtime/mlform/model-input-mapping";
+import {
+  applySchemaRunInputMapping,
+  withSeriesModelValues,
+} from "@/capabilities/prediction-runtime/mlform/model-input-mapping";
 import type { PredictionPayloadField } from "@/capabilities/prediction-runtime/mlform/shared";
-import { predictionCatalogQueryOptions } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
+import { snapshotCatalogQueryOptions } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
 import { prepareSchemaRun } from "@/capabilities/prediction-runtime/sandbox/plugin-sandbox-services";
 import { useStartPredictionJob } from "@/features/schemas/api/prediction-job-queries";
 import { getModelInputBulkSchema } from "@/features/schemas/lib/bulk-upload";
@@ -17,17 +21,16 @@ import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 /** The most rows one bulk upload holds (mlsuite.prediction-jobs.max-rows on the server). */
 export const MAX_BULK_ROWS = 10000;
-const REASONS_SHOWN = 3;
+
+/** A line of the last file that was not sent, and why; line 0 is the whole file. */
+export type SkippedBulkLine = { line: number; reason: string };
+
+/** What of the last file was not sent: some data lines, or the whole file and why. */
+export type SkippedBulkFile = { lines: SkippedBulkLine[]; fileRejected: boolean };
+
+const NOTHING_SKIPPED: SkippedBulkFile = { lines: [], fileRejected: false };
 
 const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
-
-const describe = (reasons: readonly string[]) => {
-  const distinct = [...new Set(reasons)];
-  const shown = distinct.slice(0, REASONS_SHOWN).join("; ");
-  return distinct.length > REASONS_SHOWN
-    ? `${shown}; and ${distinct.length - REASONS_SHOWN} more`
-    : shown;
-};
 
 /**
  * Starts a bulk upload: the file is read and each row mapped to every bound model's record here,
@@ -38,39 +41,41 @@ export function useBulkJobUpload(bookmarkId: string, version: SchemaVersionDto) 
   const organizationId = useCurrentOrganizationId() ?? "none";
   const queryClient = useQueryClient();
   const { mutateAsync: startJob } = useStartPredictionJob(bookmarkId);
+  // Shown in the dialog that started the upload, until the next file replaces them.
+  const [skipped, setSkipped] = useState<SkippedBulkFile>(NOTHING_SKIPPED);
 
   // Resolves to the number of rows sent to the server, 0 when the file had none to run.
   const upload = useMutation({
     mutationFn: async (file: File) => {
+      setSkipped(NOTHING_SKIPPED);
       const parsed = await parseSpreadsheetPredictionFile(
         file,
         getModelInputBulkSchema(version),
         MAX_BULK_ROWS,
         `bulk-upload-${crypto.randomUUID()}`,
       );
-      if (parsed.skipped.length > 0) {
-        const lines = parsed.skipped.length;
-        toast.error(`Skipped ${lines} line${lines === 1 ? "" : "s"}`, {
-          description: describe(
-            parsed.skipped.map((entry) => `line ${entry.line}: ${entry.reason}`),
-          ),
-        });
-      }
+      setSkipped({ lines: parsed.skipped, fileRejected: parsed.fileRejected });
       if (parsed.records.length === 0) return 0;
-      const plugins = await queryClient.fetchQuery(predictionCatalogQueryOptions(organizationId));
+      const plugins = await queryClient.fetchQuery(
+        snapshotCatalogQueryOptions(organizationId, version.id),
+      );
       // The schema is normalized with its plugins in the sandbox, as for a single run.
       const run = await prepareSchemaRun(version.formSchema, version.bindings, plugins);
       const fields = run.fields as unknown as PredictionPayloadField[];
       await startJob({
         schemaVersionId: version.id,
-        rows: parsed.records.map((record) => ({
-          name: record.name,
-          inputData: record.inputs,
-          models: version.bindings.map((binding) => ({
-            modelId: binding.modelId,
-            modelInput: applySchemaRunInputMapping(record.inputs, fields, binding),
-          })),
-        })),
+        rows: parsed.records.map((record) => {
+          // A series column's rows are kept as entered; its models receive what the form sends.
+          const modelValues = withSeriesModelValues(record.inputs, fields);
+          return {
+            name: record.name,
+            inputData: record.inputs,
+            models: version.bindings.map((binding) => ({
+              modelId: binding.modelId,
+              modelInput: applySchemaRunInputMapping(modelValues, fields, binding),
+            })),
+          };
+        }),
       });
       return parsed.records.length;
     },
@@ -83,5 +88,5 @@ export function useBulkJobUpload(bookmarkId: string, version: SchemaVersionDto) 
     meta: { errorHandledLocally: true },
   });
 
-  return { start: upload.mutate, preparing: upload.isPending };
+  return { start: upload.mutate, preparing: upload.isPending, skipped };
 }

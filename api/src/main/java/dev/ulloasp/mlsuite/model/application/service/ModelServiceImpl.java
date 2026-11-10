@@ -5,13 +5,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 package dev.ulloasp.mlsuite.model.application.service;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.audit.domain.model.AuditAction;
@@ -58,6 +57,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
     private final StorageDeletionQueue deletionQueue;
     private final RuntimeEnvironments environments;
     private final AuditLogService auditLog;
+    private final Principals principals;
 
     public ModelServiceImpl(
             UserLookupService userLookupService,
@@ -70,7 +70,8 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
             ModelArtifactContentReader artifactReader,
             StorageDeletionQueue deletionQueue,
             RuntimeEnvironments environments,
-            AuditLogService auditLog) {
+            AuditLogService auditLog,
+            Principals principals) {
         this.userLookupService = userLookupService;
         this.modelRepository = modelRepository;
         this.objectStorageService = objectStorageService;
@@ -82,13 +83,15 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         this.deletionQueue = deletionQueue;
         this.environments = environments;
         this.auditLog = auditLog;
+        this.principals = principals;
         this.catalogReader = new ModelCatalogReader(modelRepository, workspaceAuthorizationService);
     }
 
     @Override
     public void requireCreatable(Long userId, String name) {
         Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.CREATE_MODELS);
-        if (modelRepository.existsByNameAndOrganizationId(name, organization.getId())) {
+        name = normalizeName(name);
+        if (modelRepository.existsByNameIgnoreCaseAndOrganizationId(name, organization.getId())) {
             throw new ModelAlreadyExistsException(name, organization.getName());
         }
     }
@@ -98,16 +101,13 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
             String sha256, String contentType) {
         User user = userLookupService.requireById(userId);
         Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.CREATE_MODELS);
-        // Checked again: another upload may have taken the name while the runtime read this one.
-        if (modelRepository.existsByNameAndOrganizationId(name, organization.getId())) {
-            throw new ModelAlreadyExistsException(name, organization.getName());
-        }
-
+        // Another upload may have taken the name while the runtime read this one: uq_model_name_org
+        // refuses the row, and storeArtifact removes the object again.
         Model model = new Model();
-        model.setUser(user);
-        model.setUpdatedBy(user);
+        model.setCreatedBy(principals.of(user));
+        model.setUpdatedBy(model.getCreatedBy());
         model.setOrganization(organization);
-        model.setName(name);
+        model.setName(normalizeName(name));
         model.setType(inspection.type());
         model.setSpecificType(inspection.specificType());
         model.setFileName(inspection.fileName());
@@ -158,13 +158,10 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         Model model = requireModel(userId, organization.getId(), modelId);
         ModelVersionGuard.requireCurrent(model, expectedVersion);
         String nextName = normalizeName(name);
-        if (modelRepository.existsByNameAndOrganizationIdAndIdNot(nextName, organization.getId(), modelId)) {
-            throw new ModelAlreadyExistsException(nextName, organization.getName());
-        }
         auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.MODEL_RENAME, modelId,
                 AuditDetails.of("name", AuditDetails.changed(model.getName(), nextName)));
         model.setName(nextName);
-        model.setUpdatedBy(userLookupService.requireById(userId));
+        model.setUpdatedBy(principals.user(userId));
         return modelRepository.save(model);
     }
 
@@ -178,7 +175,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
             auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.MODEL_ARCHIVE, modelId,
                     AuditDetails.of("name", model.getName()));
         }
-        model.setUpdatedBy(userLookupService.requireById(userId));
+        model.setUpdatedBy(principals.user(userId));
         return modelRepository.save(model);
     }
 
@@ -193,7 +190,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
                     AuditDetails.of("name", model.getName()));
         }
         model.setArchivedAt(null);
-        model.setUpdatedBy(userLookupService.requireById(userId));
+        model.setUpdatedBy(principals.user(userId));
         return modelRepository.save(model);
     }
 
@@ -203,10 +200,6 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.CREATE_MODELS);
         Model source = requireModel(userId, organization.getId(), modelId);
         String nextName = normalizeName(name);
-        if (modelRepository.existsByNameAndOrganizationId(nextName, organization.getId())) {
-            throw new ModelAlreadyExistsException(nextName, organization.getName());
-        }
-
         ArtifactSource artifact = artifactReader.source(ModelArtifactReference.of(source));
         Model copy = storeArtifact(copyModel(user, organization, source, nextName), artifact,
                 source.getArtifactSha256(), "application/octet-stream");
@@ -220,9 +213,7 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
         Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.DELETE_MODELS);
         Model model = requireModel(userId, organization.getId(), modelId);
         ModelVersionGuard.requireCurrent(model, expectedVersion);
-        if (bindingRepository.existsByModelId(modelId) || resultRepository.existsByModelId(modelId)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Model is used by schemas or prediction runs. Archive it instead.");
-        }
+        // A model bound by a schema or named by a result is kept by their foreign keys.
         deletionQueue.enqueue(organization.getId(), model.getStorageBucket(), model.getStorageObjectKey(),
                 model.getStorageVersionId());
         auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.MODEL_DELETE, modelId,
@@ -245,8 +236,8 @@ public class ModelServiceImpl implements ModelCatalogUseCase {
 
     private Model copyModel(User user, Organization organization, Model source, String name) {
         Model copy = new Model();
-        copy.setUser(user);
-        copy.setUpdatedBy(user);
+        copy.setCreatedBy(principals.of(user));
+        copy.setUpdatedBy(copy.getCreatedBy());
         copy.setOrganization(organization);
         copy.setName(name);
         copy.setType(source.getType());

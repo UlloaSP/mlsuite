@@ -147,7 +147,7 @@ final class InferenceRowProjector {
                         .map(binding -> target(report.config().get("mappedTo"), binding))
                         .filter(route -> route != null && !route.isEmpty())
                         .count();
-                cells.add(cells.id("output:" + modelId + ":" + report.target()),
+                cells.add(cells.id("output:" + modelId + ":" + report.column()),
                         InferenceColumnGroup.outputs,
                         producers > 1 ? report.label() + " · Model " + modelId : report.label(),
                         InferenceReportValues.value(report));

@@ -72,6 +72,8 @@ const workspaceBookmark: SchemaBookmarkDto = {
   exampleCount: 0,
   staleExampleCount: 0,
   createdAt: AT,
+  createdByName: "Ada Lovelace",
+  updatedByName: "Ada Lovelace",
   updatedAt: AT,
 };
 
@@ -91,7 +93,13 @@ const classified = (low: number, high: number) =>
       reports: [
         {
           key: "out0",
-          payload: { kind: "classifier", mapping: ["low", "high"], probabilities: [[low, high]] },
+          payload: {
+            kind: "classifier",
+            mapping: ["low", "high"],
+            labels: ["low", "high"],
+            probabilities: [low, high],
+            prediction: high > low ? "high" : "low",
+          },
         },
       ],
       feedback: [],
@@ -252,6 +260,44 @@ describe("running a public bookmark", () => {
 
     expect(runRequests()).toHaveLength(0);
     expect(reportText(host)).not.toContain("80.0 %");
+  });
+
+  test("a series field sends its rows and no aggregate, which the server computes", async () => {
+    const rows = [{ date: "2024-01-01T00:00:00.000Z", area: 90 }];
+    const bookmark = publicBookmark();
+    answers[BOOKMARK_PATH] = [
+      json({
+        ...bookmark,
+        formSchema: {
+          ...bookmark.formSchema,
+          fields: [
+            {
+              kind: "series",
+              label: "Area history",
+              mappedTo: "in0",
+              columns: [
+                { id: "date", kind: "date", label: "Date" },
+                { id: "area", kind: "number", label: "Area" },
+              ],
+              aggregations: [
+                { operation: "mean", label: "Mean area", source: "area", mappedTo: "agg0" },
+              ],
+              defaultValue: rows,
+            },
+          ],
+        },
+      }),
+    ];
+    answers[RUN_PATH] = [classified(0.2, 0.8)];
+    const host = await openPage();
+
+    await run(host);
+
+    expect(runRequests()).toHaveLength(1);
+    expect(JSON.parse(runRequests()[0][1].body as string)).toEqual({
+      version: 2,
+      values: { in0: rows },
+    });
   });
 
   test.each([

@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.apiaccess.application.service;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +26,8 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionR
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.application.service.BookmarkPublishability;
-import dev.ulloasp.mlsuite.schema.application.service.PublicBookmarkService;
 import dev.ulloasp.mlsuite.schema.application.service.PublicForm;
+import dev.ulloasp.mlsuite.schema.application.service.PublicFormValues;
 import dev.ulloasp.mlsuite.schema.application.service.PublicRunReports;
 import dev.ulloasp.mlsuite.schema.application.service.SnapshotRunGuard;
 import dev.ulloasp.mlsuite.schema.domain.model.BoundModel;
@@ -62,6 +63,7 @@ public class ApiRunService {
     private final BookmarkPublishability publishability;
     private final SnapshotRunGuard guard;
     private final AuditLogService auditLog;
+    private final Principals principals;
 
     /** The key's holder; a missing key is answered like a wrong one. */
     @Transactional(readOnly = true)
@@ -103,7 +105,7 @@ public class ApiRunService {
                     "This bookmark's model is too large to run for clients.");
         });
         features.forEach((name, value) -> {
-            if (!PublicBookmarkService.isFormValue(value)) {
+            if (!PublicFormValues.isScalar(value)) {
                 throw new ApiProblem(ApiErrorCode.INVALID_FEATURES,
                         "Feature \"%s\" must be a number, a boolean, a text of at most 256 characters, or null."
                                 .formatted(name.length() <= MAX_KEY_ECHO ? name : name.substring(0, MAX_KEY_ECHO)));
@@ -123,9 +125,8 @@ public class ApiRunService {
                         "This bookmark changed while it ran. Run it again."));
         OffsetDateTime now = OffsetDateTime.now();
         PredictionRun run = new PredictionRun(bookmark, bookmark.getVersion(), runName(now), plan.features(),
-                PredictionRunStatus.SUCCESS);
+                PredictionRunStatus.SUCCESS, principals.client(plan.caller().clientId()));
         run.setOrigin(PredictionRunOrigin.API);
-        run.setCreatedByName(plan.caller().clientName());
         run = runRepository.save(run);
         resultRepository.save(new PredictionResult(run, modelRepository.getReferenceById(plan.modelId()),
                 plan.features(), PublicRunReports.storedOutput(plan.modelId(), plan.features(), answer, plan.reports()),
@@ -133,7 +134,7 @@ public class ApiRunService {
         // A key revoked while its run was in the runtime has nothing left to mark; the run stands
         // under the name its client had when the call was accepted.
         keyRepository.markUsed(plan.caller().keyId(), now);
-        auditLog.record(AuditActor.apiClient(plan.caller().clientName()), plan.caller().organizationId(),
+        auditLog.record(AuditActor.apiClient(plan.caller().clientId(), plan.caller().clientName()), plan.caller().organizationId(),
                 AuditAction.PREDICTION_RUN, bookmark.getId(), AuditDetails.of("runId", run.getId(),
                         "clientId", plan.caller().clientId(), "modelId", plan.modelId(),
                         "schemaVersionId", plan.versionId(), "status", run.getStatus()));

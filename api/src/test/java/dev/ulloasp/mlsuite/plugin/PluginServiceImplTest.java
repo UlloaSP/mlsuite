@@ -1,7 +1,12 @@
 package dev.ulloasp.mlsuite.plugin;
 
+import dev.ulloasp.mlsuite.support.TestFixtures;
+import static org.mockito.Mockito.never;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.lenient;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -46,7 +51,11 @@ import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StorageProperties;
 import dev.ulloasp.mlsuite.storage.StoredObject;
 import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
+import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
+import dev.ulloasp.mlsuite.principal.domain.model.PrincipalKind;
+import org.springframework.test.util.ReflectionTestUtils;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
@@ -75,7 +84,7 @@ class PluginServiceImplTest {
         StorageProperties storageProperties = new StorageProperties();
         storageProperties.setBucket("bucket");
         PluginObjectReader reader = new PluginObjectReader(
-                objectStorageService, storageProperties, objectMapper, pluginMetadataRepository, deletionQueue);
+                objectStorageService, storageProperties, objectMapper, pluginMetadataRepository);
         service = new PluginServiceImpl(
                 objectStorageService,
                 storageProperties,
@@ -85,7 +94,7 @@ class PluginServiceImplTest {
                 pluginMetadataRepository,
                 deletionQueue,
                 reader,
-                organizations, mock(AuditLogService.class));
+                organizations, mock(AuditLogService.class), TestFixtures.principals());
         objects = Map.of(
                 "organizations/41/plugins/items/field.json", bytes(plugin(
                         "field", "alpha.ts", "export default defineFieldKind({ kind: \"alpha-field\" });")),
@@ -101,7 +110,7 @@ class PluginServiceImplTest {
 
     /** Each plugin's row pins version v1 of its object and that object's SHA-256. */
     private void prepareStoredObjects() {
-        lenient().when(pluginMetadataRepository.findByIdAndOrganizationId(anyString(), eq(41L)))
+        lenient().when(pluginMetadataRepository.findByPublicIdAndOrganizationId(anyString(), eq(41L)))
                 .thenAnswer(invocation -> Optional.of(row(invocation.getArgument(0))));
         when(objectStorageService.loadOptional(eq("bucket"), anyString(), eq("v1")))
                 .thenAnswer(invocation -> Optional.ofNullable(objects.get(invocation.getArgument(1))));
@@ -110,11 +119,14 @@ class PluginServiceImplTest {
     private PluginMetadata row(String id) {
         String key = "organizations/41/plugins/items/" + id + ".json";
         PluginMetadata row = new PluginMetadata();
-        row.setId(id);
+        row.setPublicId(id);
         row.setObjectKey(key);
         row.setStorageVersionId("v1");
-        row.setSha256(ArtifactHash.sha256(objects.getOrDefault(key, new byte[0])));
-        row.setUpdatedBy(new User());
+        row.setStorageBucket("bucket");
+        byte[] stored = objects.getOrDefault(key, new byte[0]);
+        row.setSizeBytes(stored.length);
+        row.setSha256(ArtifactHash.sha256(stored));
+        row.setUpdatedBy(TestFixtures.principal(new User("alice", "alice@example.com", "x", "Alice", SystemRole.USER)));
         return row;
     }
 
@@ -143,6 +155,23 @@ class PluginServiceImplTest {
     }
 
     @Test
+    void list_NamesAnAuthorWhoseAccountIsGoneAsTheirPrincipalDoes() {
+        prepareStoredObjects();
+        PluginMetadata row = row("report");
+        Principal gone = new Principal();
+        ReflectionTestUtils.setField(gone, "kind", PrincipalKind.USER);
+        ReflectionTestUtils.setField(gone, "formerLabel", "Deleted user");
+        row.setUpdatedBy(gone);
+        when(pluginMetadataRepository.findCatalogPage(eq(41L), anyString(), anyString(), anyString(), any()))
+                .thenAnswer(invocation -> new PageImpl<>(List.of(row), invocation.getArgument(4), 1));
+
+        PluginDto listed = service.list(7L, 0, 10, "all", "", "updated").items().getFirst();
+
+        assertEquals("Deleted user", listed.updatedByName());
+        assertNull(listed.updatedByEmail());
+    }
+
+    @Test
     void stats_CountsPluginTypesSeparatelyFromPagedList() {
         when(pluginMetadataRepository.countByOrganizationIdAndPluginType(41L, "field")).thenReturn(1L);
         when(pluginMetadataRepository.countByOrganizationIdAndPluginType(41L, "report")).thenReturn(1L);
@@ -156,7 +185,7 @@ class PluginServiceImplTest {
     void list_SortsByBackendDisplayName() {
         prepareStoredObjects();
         catalogAnswers(3, "report", "field", "invalid");
-        PageDto<PluginDto> page = service.list(7L, 0, 10, "unknown", null, "name");
+        PageDto<PluginDto> page = service.list(7L, 0, 10, "all", null, "name");
 
         // The database orders the page; the service keeps that order and asks for it by name.
         assertEquals(List.of("zeta-report", "alpha-field", "invalid.ts"),
@@ -171,24 +200,6 @@ class PluginServiceImplTest {
         PageDto<PluginDto> page = service.list(7L, 0, 10, "all", "", "updated");
 
         assertEquals(List.of("field"), page.items().stream().map(PluginDto::id).toList());
-    }
-
-    @Test
-    void deletedPluginStaysAbsentWhileObjectDeletionIsQueued() {
-        prepareStoredObjects();
-        // The page was read before the deletion removed the plugin's row.
-        catalogAnswers(3, "field", "invalid", "report");
-        User user = new User();
-        user.setId(7L);
-        lenient().when(userLookupService.requireById(7L)).thenReturn(user);
-        when(deletionQueue.isDeletionRequested(
-                "bucket", "organizations/41/plugins/items/field.json")).thenReturn(false, true);
-
-        service.delete(7L, "field");
-        PageDto<PluginDto> page = service.list(7L, 0, 10, "all", "", "name");
-
-        assertEquals(List.of("invalid", "report"), page.items().stream().map(PluginDto::id).toList());
-        verify(deletionQueue).enqueue(41L, "bucket", "organizations/41/plugins/items/field.json", null);
     }
 
     @Test
@@ -216,13 +227,25 @@ class PluginServiceImplTest {
         }
     }
 
+    @Test
+    void aFileThatDefinesNoFieldOrReportIsNotStored() {
+        User user = new User();
+        user.setId(7L);
+        lenient().when(userLookupService.requireById(7L)).thenReturn(user);
+        MockMultipartFile program = new MockMultipartFile("file", "x.exe", "application/octet-stream", "MZ".getBytes());
+
+        IllegalArgumentException refused = assertThrows(IllegalArgumentException.class, () -> service.upload(7L, program));
+
+        assertTrue(refused.getMessage().startsWith("This file is not a plugin"));
+        verify(objectStorageService, never()).store(anyString(), anyString(), anyString(), any(byte[].class));
+    }
+
     private byte[] bytes(StoredPlugin plugin) throws Exception {
         return objectMapper.writeValueAsBytes(plugin);
     }
 
     private StoredPlugin plugin(String id, String fileName, String source) {
-        return new StoredPlugin(id, fileName, "application/typescript", source.length(), now(), now(),
-                "Alice", "alice@example.com", source);
+        return new StoredPlugin(id, fileName, "application/typescript", source.length(), now(), now(), source);
     }
 
     private OffsetDateTime now() {

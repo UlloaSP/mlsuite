@@ -15,10 +15,12 @@ export function AppPageLoader({
   /** Before the app shell exists: fill the screen on the page background. */
   viewport?: boolean;
 }) {
+  // The whole card waits for the reveal delay: a fast load, or loaders that follow one another
+  // (startup check, then session), paints only the page background instead of flashing a card.
   const page = (
     <AppPage>
-      <AppSurface className="flex flex-1 flex-col gap-6 overflow-hidden">
-        <div aria-hidden="true" className="app-loading-reveal flex flex-col gap-3">
+      <AppSurface className="app-loading-reveal flex flex-1 flex-col gap-6 overflow-hidden">
+        <div aria-hidden="true" className="flex flex-col gap-3">
           <AppSkeleton className="h-3 w-24" />
           <AppSkeleton className="h-8 w-72 max-w-full" />
           <AppSkeleton className="h-4 w-96 max-w-full" />

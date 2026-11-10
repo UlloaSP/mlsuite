@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.schema;
 
+import dev.ulloasp.mlsuite.plugin.application.port.in.SnapshotPluginsUseCase;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -16,6 +18,7 @@ import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.model.*;
+import dev.ulloasp.mlsuite.principal.adapter.out.persistence.repository.PrincipalRepository;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.application.service.*;
 import dev.ulloasp.mlsuite.role.domain.model.*;
@@ -24,7 +27,6 @@ import dev.ulloasp.mlsuite.schema.application.port.in.SchemaVersionUseCase;
 import dev.ulloasp.mlsuite.schema.application.service.*;
 import dev.ulloasp.mlsuite.schema.domain.model.*;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
-import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.*;
 
@@ -53,21 +55,22 @@ class SchemaReadPermissionTest {
         organization.setId(41L);
         when(access.requireCurrentOrganization(3L)).thenReturn(organization);
         var auth = new WorkspaceAuthorizationService(access, mock(RoleDefinitionRepository.class));
-        schemaService = new SchemaServiceImpl(users, schemas, versions, bindings, runs,
-                mock(SchemaReviewRepository.class), auth, drafts, bookmarks, mock(AuditLogService.class));
+        schemaService = new SchemaServiceImpl(users, schemas, versions, bindings,
+                auth, drafts, bookmarks, mock(AuditLogService.class), TestFixtures.principals(), mock(SnapshotPluginsUseCase.class));
         versionService = new SchemaVersionServiceImpl(users, schemas, versions, bindings,
-                mock(ModelRepository.class), auth, mock(SchemaMappingCheck.class), mock(AuditLogService.class));
+                mock(ModelRepository.class), auth, mock(SchemaMappingCheck.class), mock(AuditLogService.class), TestFixtures.principals(), mock(SnapshotPluginsUseCase.class));
         draftService = new SchemaDraftServiceImpl(users, schemas, versions, drafts,
                 mock(SchemaVersionUseCase.class), mock(SchemaDraftDiffService.class),
-                auth, mock(SchemaMappingCheck.class), mock(AuditLogService.class));
+                auth, mock(SchemaMappingCheck.class), mock(AuditLogService.class), TestFixtures.principals());
         bookmarkService = new SchemaBookmarkServiceImpl(schemas, versions, bookmarks, auth,
-                new BookmarkPublishability(bindings, 50), mock(AuditLogService.class));
+                new BookmarkPublishability(bindings, 50), mock(AuditLogService.class), TestFixtures.principals());
         predictCatalog = new PredictBookmarkCatalogService(auth, bookmarks, versions, bindings, runs);
         runService = new PredictionRunServiceImpl(users, bookmarks, runs, mock(PredictionRunDeletion.class),
                 mock(SnapshotRunGuard.class), auth,
                 mock(PredictionAttestations.class), mock(PredictionRunStore.class), mock(AuditLogService.class));
         feedbackService = new PredictionResultFeedbackService(auth, results, feedback, runs,
-                mock(PredictionResultFeedbackRevisionRepository.class), mock(UserRepository.class),
+                mock(PredictionResultFeedbackRevisionRepository.class),
+                mock(PrincipalRepository.class),
                 mock(SchemaReviewRepository.class));
     }
 

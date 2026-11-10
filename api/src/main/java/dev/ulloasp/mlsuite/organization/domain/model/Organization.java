@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.organization.domain.model;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -7,6 +8,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import dev.ulloasp.mlsuite.organization.domain.exception.PersonalAccountException;
 import dev.ulloasp.mlsuite.user.domain.model.User;
+import org.hibernate.annotations.Formula;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -32,16 +34,17 @@ import lombok.Setter;
 })
 public class Organization {
 
-    public Organization(String slug, String name, String description, User createdBy) {
+    public Organization(String slug, String name, String description, Principal createdBy) {
         this.slug = slug;
         this.name = name;
         this.description = description;
         this.createdBy = createdBy;
+        this.updatedBy = createdBy;
     }
 
     /** The namespace {@code owner} works in on their own, named after them. */
-    public static Organization personal(User owner) {
-        Organization organization = new Organization(owner.getUsername(), owner.getFullName(), null, owner);
+    public static Organization personal(User owner, Principal author) {
+        Organization organization = new Organization(owner.getUsername(), owner.getFullName(), null, author);
         organization.kind = OrganizationKind.PERSONAL;
         organization.ownerUser = owner;
         return organization;
@@ -67,7 +70,7 @@ public class Organization {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "slug", nullable = false, length = 120)
+    @Column(name = "slug", nullable = false, length = 39)
     private String slug;
 
     @Column(name = "name", nullable = false, length = 150)
@@ -85,8 +88,8 @@ public class Organization {
     @JoinColumn(name = "owner_user_id", foreignKey = @ForeignKey(name = "fk_organization_owner_user"))
     private User ownerUser;
 
-    /** When the logo in {@code organization_logo} was last replaced; null while there is none. */
-    @Column(name = "logo_updated_at", columnDefinition = "TIMESTAMPTZ")
+    /** When the logo in {@code organization_logo} was last replaced; null while there is none. Read from it. */
+    @Formula("(SELECT l.updated_at FROM organization_logo l WHERE l.organization_id = id)")
     private OffsetDateTime logoUpdatedAt;
 
     /** The calls its API clients may make in a calendar month; null follows the instance default. */
@@ -94,13 +97,15 @@ public class Organization {
     private Integer apiMonthlyCallLimit;
 
     /** Null once the person who created it is gone. */
-    @ManyToOne
-    @JoinColumn(name = "created_by_user_id", foreignKey = @ForeignKey(name = "fk_organization_creator"))
-    private User createdBy;
+    /** Who created it. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
 
-    @ManyToOne
-    @JoinColumn(name = "updated_by_user_id", foreignKey = @ForeignKey(name = "fk_organization_updated_by"))
-    private User updatedBy;
+    /** Who changed it last. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "updated_by_principal_id", nullable = false)
+    private Principal updatedBy;
 
     /** When a purge of it was asked for; written only by the purge, so saving this row never clears it. */
     @Column(name = "purging_at", insertable = false, updatable = false, columnDefinition = "TIMESTAMPTZ")

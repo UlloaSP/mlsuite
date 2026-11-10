@@ -1,5 +1,9 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
+import jakarta.annotation.Nullable;
+import dev.ulloasp.mlsuite.principal.adapter.out.persistence.repository.PrincipalRepository;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -45,13 +49,9 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunOrigin;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.security.identity.PublicCaller;
-import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
-import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.util.CatalogPages;
 import dev.ulloasp.mlsuite.util.CatalogRequest;
 import dev.ulloasp.mlsuite.util.PageDto;
-import dev.ulloasp.mlsuite.visitor.adapter.out.persistence.repository.VisitorRepository;
-import dev.ulloasp.mlsuite.visitor.domain.model.Visitor;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -78,10 +78,10 @@ public class PublicRunService implements PublicRunUseCase {
     private final PredictionResultFeedbackRepository feedbackRepository;
     private final FeedbackHistory history;
     private final ModelRepository modelRepository;
-    private final VisitorRepository visitorRepository;
-    private final UserLookupService userLookupService;
+    private final PrincipalRepository principalRepository;
     private final PublicRunCatalogSearch catalogSearch;
     private final AuditLogService auditLog;
+    private final Principals principals;
 
     /**
      * How stale a visitor's last-seen time may be. Concurrent runs of one visitor would otherwise
@@ -93,7 +93,7 @@ public class PublicRunService implements PublicRunUseCase {
      * A run kept, whether it started a new visitor whose id the browser must be given, and when
      * that visitor had last been seen before it.
      */
-    public record Recorded(PublicRunDto run, UUID visitorId, boolean issued, OffsetDateTime lastSeenAt) {
+    public record Recorded(PublicRunDto run, @Nullable UUID visitorId, boolean issued, @Nullable OffsetDateTime lastSeenAt) {
     }
 
     /** Keeps a run the runtime answered. {@code answers} are the runtime's replies by model. */
@@ -103,18 +103,15 @@ public class PublicRunService implements PublicRunUseCase {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT,
                         "This bookmark changed while it ran. Reload the page and run it again."));
         OffsetDateTime now = OffsetDateTime.now();
-        Optional<Visitor> known = Optional.ofNullable(caller.visitorId()).flatMap(visitorRepository::findById);
-        Visitor visitor = known.orElseGet(() -> visitorRepository.save(new Visitor(UUID.randomUUID(), now)));
+        // A browser without a cookie naming a known visitor is a visitor met now, and is given one.
+        boolean issued = !caller.signedIn() && (caller.visitorId() == null
+                || principalRepository.findByVisitorToken(caller.visitorId()).isEmpty());
+        UUID visitorId = caller.signedIn() ? null : issued ? UUID.randomUUID() : caller.visitorId();
+        Principal author = caller.signedIn() ? principals.user(caller.userId()) : principals.visitor(visitorId, now);
 
         PredictionRun run = new PredictionRun(bookmark, bookmark.getVersion(), runName(now), plan.storedInputs(),
-                PredictionRunStatus.SUCCESS);
+                PredictionRunStatus.SUCCESS, author);
         run.setOrigin(PredictionRunOrigin.PUBLIC);
-        run.setVisitor(visitor);
-        if (caller.signedIn()) {
-            User user = userLookupService.requireById(caller.userId());
-            run.setCreatedByName(user.getFullName());
-            run.setCreatedByEmail(user.getEmail());
-        }
         run = runRepository.save(run);
         List<PredictionResult> results = new ArrayList<>();
         for (ModelCall call : plan.calls()) {
@@ -127,8 +124,8 @@ public class PublicRunService implements PublicRunUseCase {
                 bookmark.getId(), AuditDetails.of("runId", run.getId(), "schemaVersionId", plan.versionId(),
                         "status", run.getStatus()));
         PublicForm form = publicBookmarks.formOf(run.getSchemaVersion());
-        return new Recorded(dto(run, form, results, List.of()), visitor.getId(), known.isEmpty(),
-                visitor.getLastSeenAt());
+        return new Recorded(dto(run, form, results, List.of()), visitorId, issued,
+                author.getLastSeenAt());
     }
 
     /**
@@ -139,8 +136,8 @@ public class PublicRunService implements PublicRunUseCase {
     public void markSeen(Recorded recorded) {
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime since = now.minus(SEEN_PRECISION);
-        if (recorded.lastSeenAt().isBefore(since)) {
-            visitorRepository.markSeen(recorded.visitorId(), now, since);
+        if (recorded.visitorId() != null && recorded.lastSeenAt().isBefore(since)) {
+            principalRepository.markSeen(recorded.visitorId(), now, since);
         }
     }
 
@@ -148,9 +145,10 @@ public class PublicRunService implements PublicRunUseCase {
     @Transactional(readOnly = true)
     public List<PublicRunDto> list(String publicId, PublicCaller caller) {
         SchemaBookmark bookmark = publicBookmarks.requirePublic(publicId);
-        if (caller.visitorId() == null) return List.of();
-        List<PredictionRun> runs = runRepository.findByVisitorIdAndSchemaBookmarkIdOrderByCreatedAtDescIdDesc(
-                caller.visitorId(), bookmark.getId(), PageRequest.of(0, SESSION_SIZE));
+        Optional<Long> author = sessionAuthor(caller);
+        if (author.isEmpty()) return List.of();
+        List<PredictionRun> runs = runRepository.findByCreatedByIdAndSchemaBookmarkIdOrderByCreatedAtDescIdDesc(
+                author.get(), bookmark.getId(), PageRequest.of(0, SESSION_SIZE));
         return dtos(runs, caller);
     }
 
@@ -158,18 +156,20 @@ public class PublicRunService implements PublicRunUseCase {
     @Transactional(readOnly = true)
     public PageDto<PublicRunDto> catalog(String publicId, PublicCaller caller, CatalogRequest request) {
         SchemaBookmark bookmark = publicBookmarks.requirePublic(publicId);
-        if (caller.visitorId() == null) {
+        request.requireNoChoices();
+        Optional<Long> author = sessionAuthor(caller);
+        if (author.isEmpty()) {
             return new PageDto<>(List.of(), request.page(), request.size(), 0, false);
         }
         Specification<PredictionRun> owned = (root, query, builder) -> builder.and(
-                builder.equal(root.get("visitor").get("id"), caller.visitorId()),
+                builder.equal(root.get("createdBy").get("id"), author.get()),
                 builder.equal(root.get("schemaBookmark").get("id"), bookmark.getId()));
         Sort newestFirst = Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id"));
         if (request.search().isEmpty()) {
             Page<PredictionRun> page = runRepository.findAll(owned, CatalogPages.pageable(request, newestFirst));
             return PageDto.of(page, dtos(page.getContent(), caller));
         }
-        PageDto<Long> page = CatalogPages.page(catalogSearch.matchingIds(caller.visitorId(), bookmark.getId(),
+        PageDto<Long> page = CatalogPages.page(catalogSearch.matchingIds(author.get(), bookmark.getId(),
                 request.search()), request);
         Map<Long, PredictionRun> found = runRepository.findAllById(page.items()).stream()
                 .collect(Collectors.toMap(PredictionRun::getId, Function.identity()));
@@ -205,7 +205,7 @@ public class PublicRunService implements PublicRunUseCase {
         PredictionRun run = ownRun(publicId, runId, caller);
         PublicForm form = publicBookmarks.formOf(run.getSchemaVersion());
         List<PredictionResult> results = resultRepository.findByRunIdOrderByIdAsc(runId);
-        User user = caller.signedIn() ? userLookupService.requireById(caller.userId()) : null;
+        Principal author = run.getCreatedBy();
         for (PublicRunFeedbackRequest.Item item : request.items()) {
             ReportRoute route = form.reportRoutes().stream()
                     .filter(candidate -> candidate.key().equals(item.reportKey()))
@@ -218,15 +218,12 @@ public class PublicRunService implements PublicRunUseCase {
                     .filter(candidate -> candidate.getModel().getId().equals(route.modelId()))
                     .findFirst()
                     .orElseThrow(() -> badRequest("The run has no result for report \"%s\".".formatted(item.reportKey())));
-            PredictionResultFeedback feedback = (user != null
-                    ? feedbackRepository.findByResultIdAndUserIdAndTypeAndOrderAndReviewIsNull(result.getId(), user.getId(),
+            PredictionResultFeedback feedback = feedbackRepository
+                    .findByResultIdAndCreatedByIdAndTypeAndOrderAndReviewIsNull(result.getId(), author.getId(),
                             item.type(), route.order())
-                    : feedbackRepository.findByResultIdAndVisitorIdAndTypeAndOrder(result.getId(), run.getVisitor().getId(), item.type(), route.order()))
-                    .orElseGet(() -> user != null
-                            ? new PredictionResultFeedback(result, user, item.type(), route.order(), item.value())
-                            : new PredictionResultFeedback(result, run.getVisitor(), item.type(), route.order(), item.value()));
+                    .orElseGet(() -> new PredictionResultFeedback(result, author, item.type(), route.order(), item.value()));
             feedback.setValue(item.value());
-            history.save(feedback, user == null ? null : user.getId());
+            history.save(feedback, author);
         }
         auditLog.record(actor(caller), run.getSchemaBookmark().getSchema().getOrganization().getId(),
                 AuditAction.PUBLIC_FEEDBACK_SAVE, runId, AuditDetails.of("answers", request.items().size()));
@@ -241,17 +238,21 @@ public class PublicRunService implements PublicRunUseCase {
     private PredictionRun ownRun(String publicId, Long runId, PublicCaller caller) {
         SchemaBookmark bookmark = publicBookmarks.requirePublic(publicId);
         return runRepository.findById(runId)
-                .filter(run -> run.getVisitor() != null && run.getVisitor().getId().equals(caller.visitorId()))
+                .filter(run -> sessionAuthor(caller).filter(run.getCreatedBy().getId()::equals).isPresent())
                 .filter(run -> run.getSchemaBookmark() != null && run.getSchemaBookmark().getId().equals(bookmark.getId()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Run not found"));
     }
 
     private List<PredictionResultFeedback> ownFeedback(List<Long> runIds, PublicCaller caller) {
-        if (caller.signedIn()) {
-            return feedbackRepository.findByResultRunIdInAndUserIdAndReviewIsNullOrderByIdAsc(runIds, caller.userId());
-        }
-        if (caller.visitorId() == null) return List.of();
-        return feedbackRepository.findByResultRunIdInAndVisitorIdOrderByIdAsc(runIds, caller.visitorId());
+        return sessionAuthor(caller)
+                .map(author -> feedbackRepository.findByResultRunIdInAndCreatedByIdAndReviewIsNullOrderByIdAsc(runIds, author))
+                .orElse(List.of());
+    }
+
+    /** Whose public session this is: the signed-in account, or the visitor its cookie names; none for a new browser. */
+    private Optional<Long> sessionAuthor(PublicCaller caller) {
+        if (caller.signedIn()) return Optional.of(principals.user(caller.userId()).getId());
+        return Optional.ofNullable(caller.visitorId()).flatMap(principalRepository::findByVisitorToken).map(Principal::getId);
     }
 
     private static PublicRunDto dto(PredictionRun run, PublicForm form, List<PredictionResult> results,
@@ -263,7 +264,8 @@ public class PublicRunService implements PublicRunUseCase {
     }
 
     private static String runName(OffsetDateTime now) {
-        return "visitor-" + now.toInstant() + "-" + UUID.randomUUID().toString().substring(0, 8);
+        // Made from the bookmark's public page, by a visitor or a signed-in person alike.
+        return "public-" + now.toInstant() + "-" + UUID.randomUUID().toString().substring(0, 8);
     }
 
     private static ResponseStatusException badRequest(String message) {

@@ -6,7 +6,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Copy, GitCommitHorizontal, PencilLine, Tag, Trash2 } from "lucide-react";
 import { useCan } from "@/capabilities/workspace-context/workspace-context";
 import { useDeleteSchemaContent } from "@/features/schemas/api/schema-content-deletion";
-import { schemaVersionId, schemaVersionName } from "@/features/schemas/lib/version-selection";
+import {
+  hasOwnVersionName,
+  schemaVersionId,
+  schemaVersionLabel,
+  schemaVersionName,
+} from "@/features/schemas/lib/version-selection";
 import { AppActionsMenu, type AppMenuAction } from "@/shared/ui/AppActionsMenu";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
@@ -80,12 +85,13 @@ export function SchemaSnapshotCatalogItem({
         icon={<GitCommitHorizontal size={16} className="mt-1 text-fg-secondary" />}
         metadata={
           <span>
-            v{version.version} · Published <LiveRelativeTime value={version.createdAt} /> ago
+            {hasOwnVersionName(version) ? `v${version.version} · ` : null}
+            Published <LiveRelativeTime value={version.createdAt} />
           </span>
         }
         actions={
           <AppActionsMenu
-            label={`Open actions for ${version.name} v${version.version}`}
+            label={`Open actions for ${schemaVersionLabel(version)}`}
             actions={actions}
           />
         }

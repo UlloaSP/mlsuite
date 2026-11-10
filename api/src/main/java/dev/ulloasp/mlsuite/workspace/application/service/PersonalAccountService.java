@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.workspace.application.service;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class PersonalAccountService {
     private final OrganizationRepository organizationRepository;
     private final OrganizationMembershipRepository membershipRepository;
     private final RoleSeedService roleSeedService;
+    private final Principals principals;
 
     /** The handle a new user takes; every user's handle is a slug, so the slugs alone say what is taken. */
     public String claimHandle(String raw) {
@@ -35,13 +38,15 @@ public class PersonalAccountService {
 
     /** Opens the account of a user just saved, who owns it from then on. */
     public void open(User user) {
-        Organization personal = organizationRepository.save(Organization.personal(user));
+        Principal owner = principals.of(user);
+        Organization personal = organizationRepository.save(Organization.personal(user, owner));
         roleSeedService.createOrganizationRoles(personal);
         membershipRepository.save(new OrganizationMembership(
                 personal,
                 user,
                 roleSeedService.orgRole(personal, OrganizationRole.OWNER),
-                MembershipStatus.ACTIVE));
+                MembershipStatus.ACTIVE,
+                owner));
     }
 
     /** Changes the user's handle, unless it is the one they already have. */
@@ -56,6 +61,6 @@ public class PersonalAccountService {
         Organization personal = organizationRepository.findByOwnerUserId(user.getId()).orElseThrow();
         personal.setSlug(user.getUsername());
         personal.setName(user.getFullName());
-        personal.setUpdatedBy(user);
+        personal.setUpdatedBy(principals.of(user));
     }
 }

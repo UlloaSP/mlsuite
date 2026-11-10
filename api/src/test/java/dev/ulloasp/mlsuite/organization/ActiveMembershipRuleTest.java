@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.organization;
 
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -10,7 +11,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -31,7 +31,6 @@ import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
@@ -61,17 +60,17 @@ class ActiveMembershipRuleTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = MembershipStatus.class, names = { "PENDING", "REMOVED" })
+    @EnumSource(value = MembershipStatus.class, names = { "REMOVED" })
     void acceptingInvitationActivatesInactiveMembershipWithInvitedRole(MembershipStatus inactiveStatus) {
         User user = user(7L);
         Organization organization = organization(41L);
         RoleDefinition viewer = new RoleDefinition(
-                organization, RoleScope.ORGANIZATION, "Viewer", "viewer", "VIEWER");
+                organization, "Viewer", "viewer", "VIEWER", TestFixtures.system());
         Invitation invitation = new Invitation(
                 organization,
                 user.getEmail(),
                 viewer,
-                user(8L),
+                TestFixtures.principal(user(8L)),
                 OffsetDateTime.now().plusDays(1));
         invitation.setId(5L);
         OrganizationMembership inactive = membership(organization, user, inactiveStatus);
@@ -89,7 +88,7 @@ class ActiveMembershipRuleTest {
                 mock(AuditLogService.class),
                 mock(RoleDefinitionRepository.class),
                 mock(UserRepository.class),
-                mock(NotificationService.class));
+                mock(NotificationService.class), TestFixtures.principals());
         when(users.requireById(7L)).thenReturn(user);
         when(invitations.findById(5L)).thenReturn(Optional.of(invitation));
         when(memberships.findByOrganizationIdAndUserId(41L, 7L)).thenReturn(Optional.of(inactive));
@@ -108,14 +107,14 @@ class ActiveMembershipRuleTest {
         User user = user(7L);
         Organization organization = organization(41L);
         RoleDefinition admin = new RoleDefinition(
-                organization, RoleScope.ORGANIZATION, "Admin", "admin", "ADMIN");
+                organization, "Admin", "admin", "ADMIN", TestFixtures.system());
         RoleDefinition viewer = new RoleDefinition(
-                organization, RoleScope.ORGANIZATION, "Viewer", "viewer", "VIEWER");
+                organization, "Viewer", "viewer", "VIEWER", TestFixtures.system());
         Invitation invitation = new Invitation(
                 organization,
                 user.getEmail(),
                 viewer,
-                user(8L),
+                TestFixtures.principal(user(8L)),
                 OffsetDateTime.now().plusDays(1));
         invitation.setId(5L);
         OrganizationMembership active = membership(organization, user, MembershipStatus.ACTIVE);
@@ -133,7 +132,7 @@ class ActiveMembershipRuleTest {
                 mock(AuditLogService.class),
                 mock(RoleDefinitionRepository.class),
                 mock(UserRepository.class),
-                mock(NotificationService.class));
+                mock(NotificationService.class), TestFixtures.principals());
         when(users.requireById(7L)).thenReturn(user);
         when(invitations.findById(5L)).thenReturn(Optional.of(invitation));
         when(memberships.findByOrganizationIdAndUserId(41L, 7L)).thenReturn(Optional.of(active));
@@ -150,7 +149,7 @@ class ActiveMembershipRuleTest {
             User user,
             MembershipStatus status) {
         return new OrganizationMembership(organization, user,
-                new RoleDefinition(organization, RoleScope.ORGANIZATION, "Member", "member", "MEMBER"), status);
+                new RoleDefinition(organization, "Member", "member", "MEMBER", TestFixtures.system()), status, TestFixtures.principal(user));
     }
 
     private Organization organization(Long id) {

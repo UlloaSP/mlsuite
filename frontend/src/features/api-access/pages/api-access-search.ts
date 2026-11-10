@@ -21,7 +21,7 @@ export const apiClientsSearch = z.object(
   catalogSearch(["all", "active", "suspended"], "all", ["updated", "name", "created"], "updated"),
 );
 
-export const API_CLIENT_TABS = ["overview", "keys", "access", "requests", "settings"] as const;
+export const API_CLIENT_TABS = ["overview", "keys", "bookmarks", "requests", "settings"] as const;
 
 /** One client: `?tab=…&period=…`, and the request log's params on its requests tab. */
 export const apiClientSearch = z.object({

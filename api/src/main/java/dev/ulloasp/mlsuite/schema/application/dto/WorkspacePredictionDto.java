@@ -12,7 +12,8 @@ import jakarta.annotation.Nullable;
 public record WorkspacePredictionDto(
         Long modelId,
         Map<String, Object> modelInput,
-        Map<String, Object> output,
+        // Null for a failed result: it answered nothing but its error.
+        @Nullable Map<String, Object> output,
         PredictionResultStatus status,
         @Nullable String errorMessage,
         @Nullable Map<String, Object> errorJson,

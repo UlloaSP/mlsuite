@@ -13,8 +13,9 @@ import { parseSearch, stringifySearch } from "./search-params";
 export const routeTree = rootRoute.addChildren([publicRoutes, sessionFrameRoutes, protectedRoutes]);
 
 /**
- * The app's router. Every navigation is a view transition unless it opts out, an address no
- * route matches renders the root's not-found page, and search params stay plain strings.
+ * The app's router. A navigation shows the next page in place, with no transition between the
+ * two; an address no route matches renders the root's not-found page, and search params stay
+ * plain strings.
  * Loaders fill `queryClient`, which owns caching, so every preload or navigation asks it and a
  * link preloads its page and data while the pointer rests on it.
  */
@@ -25,7 +26,6 @@ export const createAppRouter = (queryClient: QueryClient, history?: RouterHistor
     context: { queryClient },
     defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
-    defaultViewTransition: true,
     notFoundMode: "root",
     parseSearch,
     stringifySearch,

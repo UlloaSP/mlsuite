@@ -1,5 +1,6 @@
 # Local agent configuration
 .codex/
+.claude/
 
 # Generated analysis output
 graphify-out/

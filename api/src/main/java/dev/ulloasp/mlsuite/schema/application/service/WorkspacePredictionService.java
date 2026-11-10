@@ -63,15 +63,12 @@ public class WorkspacePredictionService implements WorkspacePredictionUseCase {
             // The explanation shares the prediction's slot.
             prediction = admission.run(() -> perform(plan, request.modelInput()));
         }
+        SealedPrediction sealed = new SealedPrediction(prediction, bookmarkId, userId, request.inputData());
         auditLog.record(AuditActor.user(userId), prediction.organizationId(), AuditAction.PREDICTION_RUN, bookmarkId,
                 AuditDetails.of("modelId", prediction.modelId(), "schemaVersionId", prediction.schemaVersionId(),
                         "status", prediction.status()));
-        return sealed(prediction);
-    }
-
-    private WorkspacePredictionDto sealed(AttestedPrediction prediction) {
         return new WorkspacePredictionDto(prediction.modelId(), prediction.modelInput(), prediction.output(),
-                prediction.status(), prediction.errorMessage(), prediction.errorJson(), attestations.seal(prediction));
+                prediction.status(), prediction.errorMessage(), prediction.errorJson(), attestations.seal(sealed));
     }
 
     private AttestedPrediction perform(Plan plan, Map<String, Object> input) {
@@ -126,15 +123,12 @@ public class WorkspacePredictionService implements WorkspacePredictionUseCase {
                 PredictionResultStatus.SUCCESS, null, null, attestations.now());
     }
 
-    /** A failed result keeps no reports, only the record the model was given. */
+    /** A failed result keeps no output: the record the model was given and the error say it all. */
     private AttestedPrediction failed(Plan plan, Map<String, Object> input, int runtimeStatus, String detail) {
         String message = detail == null || detail.isBlank() ? "Analyzer Error" : detail;
         int status = runtimeStatus > 0 ? runtimeStatus : HttpStatus.BAD_GATEWAY.value();
-        Map<String, Object> meta = new LinkedHashMap<>();
-        meta.put("modelId", String.valueOf(plan.modelId()));
-        meta.put("backendFieldValues", input);
         return new AttestedPrediction(plan.organizationId(), plan.schemaVersionId(), plan.modelId(), input,
-                Map.of("meta", meta), PredictionResultStatus.FAILED, message,
+                null, PredictionResultStatus.FAILED, message,
                 Map.of("status", status, "message", message), attestations.now());
     }
 

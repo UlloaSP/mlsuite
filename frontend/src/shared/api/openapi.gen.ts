@@ -1659,7 +1659,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["plugins"];
+        get: operations["plugins_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2500,6 +2500,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/schema-versions/{versionId}/plugins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["plugins"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/schemas": {
         parameters: {
             query?: never;
@@ -2965,7 +2981,6 @@ export interface components {
             totalItems: number;
         };
         ApiAccessBookmarkDto: {
-            apiId: string | null;
             clientNames: string[];
             /** Format: int64 */
             id: number;
@@ -2973,6 +2988,7 @@ export interface components {
             modelId: number | null;
             modelName: string | null;
             name: string;
+            publicId: string | null;
             refusal: string | null;
             /** Format: int64 */
             schemaId: number;
@@ -3060,11 +3076,6 @@ export interface components {
             };
             /** Format: double */
             value?: number;
-        };
-        ApiPredictionRequest: {
-            features: {
-                [key: string]: unknown;
-            };
         };
         ApiPredictionSnapshot: {
             name: string | null;
@@ -3265,9 +3276,6 @@ export interface components {
             attestation: string;
         };
         CreatePredictionRunRequest: {
-            inputData: {
-                [key: string]: unknown;
-            };
             name: string;
             results: components["schemas"]["CreatePredictionResultRequest"][];
             /** Format: int64 */
@@ -3457,9 +3465,10 @@ export interface components {
         InvitationDto: {
             /** Format: date-time */
             createdAt: string;
+            createdByName: string;
             email: string;
             /** Format: date-time */
-            expiresAt: string;
+            expiresAt: string | null;
             /** Format: int64 */
             id: number;
             /** Format: int64 */
@@ -3467,7 +3476,7 @@ export interface components {
             organizationName: string;
             roleDefinition: components["schemas"]["RoleSummaryDto"];
             /** @enum {string} */
-            status: "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED";
+            status: "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED" | "DECLINED";
         };
         IssuedApiClientKeyDto: {
             key: components["schemas"]["ApiClientKeyDto"];
@@ -3533,6 +3542,7 @@ export interface components {
             archivedAt: string | null;
             /** Format: date-time */
             createdAt: string;
+            createdByName: string;
             /** Format: int64 */
             fieldCount: number;
             fileName: string;
@@ -3584,7 +3594,7 @@ export interface components {
             /** Format: int64 */
             id: number;
             /** @enum {string} */
-            kind: "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_COMPLETED_WITH_FAILURES" | "PREDICTION_JOB_STOPPED" | "PREDICTION_JOB_CANCELLED" | "MODEL_READY" | "MODEL_FAILED" | "INVITATION_RECEIVED" | "INVITATION_ACCEPTED" | "INVITATION_DECLINED" | "ORGANIZATION_JOINED" | "REVIEW_ASSIGNED" | "REVIEW_REOPENED" | "ORGANIZATION_PURGED" | "PURGE_COMPLETED" | "PURGE_FAILED" | "SYSTEM_ALERT_RAISED" | "SYSTEM_ALERT_ESCALATED" | "SYSTEM_ALERT_RESOLVED";
+            kind: "PREDICTION_JOB_COMPLETED" | "PREDICTION_JOB_COMPLETED_WITH_FAILURES" | "PREDICTION_JOB_STOPPED" | "PREDICTION_JOB_CANCELLED" | "MODEL_READY" | "MODEL_FAILED" | "INVITATION_RECEIVED" | "INVITATION_ACCEPTED" | "INVITATION_DECLINED" | "ORGANIZATION_JOINED" | "REVIEW_ASSIGNED" | "REVIEW_REOPENED" | "ORGANIZATION_PURGED" | "PURGE_COMPLETED" | "PURGE_FAILED" | "SYSTEM_ALERT_RAISED" | "SYSTEM_ALERT_ESCALATED" | "SYSTEM_ALERT_RESOLVED" | "BOOKMARK_UNPUBLISHED";
             /** Format: int64 */
             organizationId: number | null;
             payload: {
@@ -3594,7 +3604,7 @@ export interface components {
             readAt: string | null;
             targetId: string;
             /** @enum {string} */
-            targetType: "PREDICTION_JOB" | "MODEL" | "INVITATION" | "ORGANIZATION" | "REVIEW" | "PURGE_JOB" | "SYSTEM_ALERT";
+            targetType: "PREDICTION_JOB" | "MODEL" | "INVITATION" | "ORGANIZATION" | "REVIEW" | "PURGE_JOB" | "SYSTEM_ALERT" | "BOOKMARK";
         };
         Option: {
             label: string;
@@ -3654,6 +3664,7 @@ export interface components {
         OrganizationDto: {
             /** Format: date-time */
             createdAt: string;
+            createdByName: string;
             description: string | null;
             /** Format: int64 */
             id: number;
@@ -3664,6 +3675,7 @@ export interface components {
             slug: string;
             /** Format: date-time */
             updatedAt: string;
+            updatedByName: string;
         };
         OrganizationMembershipDto: {
             avatarUrl: string | null;
@@ -3678,7 +3690,7 @@ export interface components {
             profileHandle: string | null;
             roleDefinition: components["schemas"]["RoleSummaryDto"];
             /** @enum {string} */
-            status: "ACTIVE" | "PENDING" | "REMOVED";
+            status: "ACTIVE" | "REMOVED";
             /** Format: int64 */
             userId: number;
         };
@@ -3694,9 +3706,9 @@ export interface components {
             /** Format: int64 */
             organizationId: number;
             profileHandle: string | null;
-            role: components["schemas"]["RoleSummaryDto"];
+            roleDefinition: components["schemas"]["RoleSummaryDto"];
             /** @enum {string} */
-            status: "ACTIVE" | "PENDING" | "REMOVED";
+            status: "ACTIVE" | "REMOVED";
             /** Format: int64 */
             userId: number;
         };
@@ -4087,6 +4099,7 @@ export interface components {
             reportPlugins: number;
         };
         PredictBookmarkDto: {
+            description: string | null;
             /** Format: int32 */
             fieldCount: number;
             /** Format: int64 */
@@ -4175,7 +4188,7 @@ export interface components {
             };
             output: {
                 [key: string]: unknown;
-            };
+            } | null;
             /** Format: int64 */
             runId: number;
             /** @enum {string} */
@@ -4184,6 +4197,10 @@ export interface components {
         PredictionResultFeedbackDto: {
             /** Format: date-time */
             createdAt: string;
+            createdByEmail: string | null;
+            createdByName: string | null;
+            /** Format: int64 */
+            createdByUserId: number | null;
             /** Format: int64 */
             id: number;
             /** Format: int32 */
@@ -4194,13 +4211,13 @@ export interface components {
             type: "OUTPUT" | "EXPLANATION";
             /** Format: date-time */
             updatedAt: string;
-            userEmail: string | null;
-            /** Format: int64 */
-            userId: number | null;
-            userName: string | null;
             value: components["schemas"]["JsonNode"];
         };
         PredictionResultFeedbackRevisionDto: {
+            authorName: string | null;
+            /** Format: int64 */
+            authorUserId: number | null;
+            byVisitor: boolean;
             /** @enum {string} */
             change: "CREATED" | "UPDATED" | "DELETED";
             /** Format: date-time */
@@ -4208,6 +4225,7 @@ export interface components {
             changedByName: string | null;
             /** Format: int64 */
             changedByUserId: number | null;
+            changedByVisitor: boolean;
             /** Format: int64 */
             feedbackId: number;
             /** Format: int64 */
@@ -4221,12 +4239,7 @@ export interface components {
             reviewId: number | null;
             /** @enum {string} */
             type: "OUTPUT" | "EXPLANATION";
-            /** Format: int64 */
-            userId: number | null;
-            userName: string | null;
             value: components["schemas"]["JsonNode"] | null;
-            /** Format: uuid */
-            visitorId: string | null;
         };
         PredictionRunCatalogItemDto: {
             /** Format: int64 */
@@ -4251,10 +4264,10 @@ export interface components {
             schemaVersionName: string | null;
             /** @enum {string} */
             status: "SUCCESS" | "PARTIAL_SUCCESS" | "FAILED";
-            /** Format: date-time */
-            updatedAt: string;
         };
         PredictionRunDto: {
+            /** Format: int64 */
+            bookmarkId: number | null;
             /** Format: date-time */
             createdAt: string;
             createdByEmail: string | null;
@@ -4269,13 +4282,9 @@ export interface components {
             origin: "WORKSPACE" | "PUBLIC" | "API";
             results: components["schemas"]["PredictionResultDto"][];
             /** Format: int64 */
-            schemaBookmarkId: number | null;
-            /** Format: int64 */
             schemaVersionId: number;
             /** @enum {string} */
             status: "SUCCESS" | "PARTIAL_SUCCESS" | "FAILED";
-            /** Format: date-time */
-            updatedAt: string;
         };
         PublicBookmarkDto: {
             description: string | null;
@@ -4514,8 +4523,6 @@ export interface components {
             locked: boolean;
             name: string;
             permissions: components["schemas"]["PermissionDto"][];
-            /** @enum {string} */
-            scope: "SYSTEM" | "ORGANIZATION";
             slug: string;
             systemKey: string | null;
             /** Format: int64 */
@@ -4534,8 +4541,6 @@ export interface components {
             id: number;
             locked: boolean;
             name: string;
-            /** @enum {string} */
-            scope: "SYSTEM" | "ORGANIZATION";
             slug: string;
             systemKey: string | null;
         };
@@ -4546,8 +4551,6 @@ export interface components {
             id: number;
             name: string;
             permissionKeys: ("VIEW_WORKSPACE" | "VIEW_ORGANIZATION" | "EDIT_ORGANIZATION" | "DELETE_ORGANIZATION" | "TRANSFER_OWNERSHIP" | "VIEW_MEMBERS" | "INVITE_MEMBERS" | "MANAGE_MEMBER_ROLES" | "REMOVE_MEMBERS" | "VIEW_INVITATIONS" | "MANAGE_INVITATIONS" | "VIEW_MODELS" | "CREATE_MODELS" | "EDIT_MODELS" | "DELETE_MODELS" | "RUN_PREDICTIONS" | "EXPORT_PREDICTIONS" | "PUBLISH_BOOKMARKS" | "REVIEW" | "MANAGE_REVIEWS" | "VIEW_PLUGINS" | "MANAGE_PLUGINS" | "VIEW_AUDIT_LOG" | "VIEW_API_ACCESS" | "MANAGE_API_ACCESS")[];
-            /** @enum {string} */
-            scope: "SYSTEM" | "ORGANIZATION";
         };
         RolesResponseDto: {
             permissionCatalog: components["schemas"]["PermissionGroupDto"][];
@@ -4564,6 +4567,7 @@ export interface components {
         SchemaBookmarkDto: {
             /** Format: date-time */
             createdAt: string;
+            createdByName: string;
             description: string | null;
             /** Format: int64 */
             exampleCount: number;
@@ -4579,6 +4583,7 @@ export interface components {
             staleExampleCount: number;
             /** Format: date-time */
             updatedAt: string;
+            updatedByName: string;
             /** Format: int32 */
             version: number;
             /** Format: int64 */
@@ -4654,6 +4659,7 @@ export interface components {
             }[];
             /** Format: date-time */
             createdAt: string;
+            createdByName: string;
             formSchema: {
                 [key: string]: unknown;
             };
@@ -4668,6 +4674,7 @@ export interface components {
             status: "DRAFT" | "CONFLICT" | "PUBLISHED";
             /** Format: date-time */
             updatedAt: string;
+            updatedByName: string;
         };
         SchemaDraftMergeRequest: {
             expectedCurrentDocumentHash: string;
@@ -4697,6 +4704,7 @@ export interface components {
             archivedAt: string | null;
             /** Format: date-time */
             createdAt: string;
+            createdByName: string;
             description: string | null;
             /** Format: int64 */
             id: number;
@@ -4705,6 +4713,7 @@ export interface components {
             organizationId: number;
             /** Format: date-time */
             updatedAt: string;
+            updatedByName: string;
         };
         SchemaMappingErrorDto: {
             issues: components["schemas"]["SchemaMappingIssueDto"][];
@@ -4727,7 +4736,7 @@ export interface components {
             modelName: string;
             pluginPolicy: {
                 [key: string]: unknown;
-            } | null;
+            };
             /** Format: int64 */
             schemaVersionId: number;
         };
@@ -4783,6 +4792,7 @@ export interface components {
             bindings: components["schemas"]["SchemaModelBindingDto"][];
             /** Format: date-time */
             createdAt: string;
+            createdByName: string;
             formSchema: {
                 [key: string]: unknown;
             };
@@ -4966,7 +4976,7 @@ export interface components {
             profileShowsOrganizations: boolean;
             /** @enum {string} */
             systemRole: "USER" | "SUPERADMIN";
-            userName: string;
+            username: string;
             website: string | null;
         };
         WorkspaceContextDto: {
@@ -5025,11 +5035,14 @@ export interface components {
             };
             output: {
                 [key: string]: unknown;
-            };
+            } | null;
             /** @enum {string} */
             status: "SUCCESS" | "FAILED";
         };
         WorkspacePredictionRequest: {
+            inputData: {
+                [key: string]: unknown;
+            };
             /** Format: int64 */
             modelId: number;
             modelInput: {
@@ -5069,7 +5082,6 @@ export type ApiPredictionBookmark = components['schemas']['ApiPredictionBookmark
 export type ApiPredictionDto = components['schemas']['ApiPredictionDto'];
 export type ApiPredictionModel = components['schemas']['ApiPredictionModel'];
 export type ApiPredictionOutput = components['schemas']['ApiPredictionOutput'];
-export type ApiPredictionRequest = components['schemas']['ApiPredictionRequest'];
 export type ApiPredictionSnapshot = components['schemas']['ApiPredictionSnapshot'];
 export type ApiRequestDto = components['schemas']['ApiRequestDto'];
 export type ApiUsageDto = components['schemas']['ApiUsageDto'];
@@ -5513,8 +5525,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5581,8 +5593,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5676,8 +5688,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Accepted */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5771,8 +5783,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5849,8 +5861,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5995,8 +6007,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6039,8 +6051,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6135,8 +6147,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6158,8 +6170,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6204,8 +6216,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6342,8 +6354,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6395,8 +6407,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6461,8 +6473,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6554,8 +6566,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6766,8 +6778,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6835,8 +6847,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7012,8 +7024,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7038,8 +7050,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7087,8 +7099,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7260,8 +7272,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7547,8 +7559,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7678,8 +7690,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7700,8 +7712,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7782,8 +7794,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8076,8 +8088,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8232,7 +8244,7 @@ export interface operations {
             };
         };
     };
-    plugins: {
+    plugins_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -8656,8 +8668,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8748,8 +8760,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8794,8 +8806,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8868,8 +8880,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8894,8 +8906,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9059,8 +9071,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9155,8 +9167,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9239,8 +9251,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9454,8 +9466,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9553,8 +9565,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9575,8 +9587,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9599,8 +9611,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9641,8 +9653,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9668,6 +9680,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SchemaModelBindingDto"][];
+                };
+            };
+        };
+    };
+    plugins: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                versionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PluginRuntimeSourceDto"][];
                 };
             };
         };
@@ -9711,8 +9745,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9755,8 +9789,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9799,8 +9833,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9891,8 +9925,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9967,8 +10001,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10020,8 +10054,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10090,8 +10124,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10184,8 +10218,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10301,8 +10335,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10365,9 +10399,9 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
-                "application/json": components["schemas"]["ApiPredictionRequest"];
+                "application/json": string;
             };
         };
         responses: {

@@ -11,6 +11,7 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -22,6 +23,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import dev.ulloasp.mlsuite.support.TestFixtures;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
@@ -29,6 +32,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.RollbackException;
 
+@Import(Principals.class)
 @DataJpaTest(properties = {
         "logging.file.name=target/model-lock-test.log",
         "spring.flyway.enabled=true",
@@ -39,6 +43,9 @@ import jakarta.persistence.RollbackException;
 @ContextConfiguration(classes = ModelOptimisticLockTest.PersistenceConfig.class)
 @Testcontainers(disabledWithoutDocker = true)
 class ModelOptimisticLockTest {
+
+    @Autowired
+    private Principals principals;
 
     @Container
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:18.6")
@@ -95,15 +102,22 @@ class ModelOptimisticLockTest {
         }
     }
 
+    /** The principal the database wrote with {@code user}, read in the same uncommitted transaction. */
+    private static Principal principalOf(EntityManager entityManager, User user) {
+        entityManager.flush();
+        return entityManager.createQuery("select p from Principal p where p.userId = :user",
+                Principal.class).setParameter("user", user.getId()).getSingleResult();
+    }
+
     private Long createModel() {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             entityManager.getTransaction().begin();
             User owner = new User("owner", "owner@example.test", "hash", "Owner", SystemRole.USER);
             entityManager.persist(owner);
-            Organization organization = new Organization("owner-org", "Owner", null, owner);
+            Organization organization = new Organization("owner-org", "Owner", null, principalOf(entityManager, owner));
             entityManager.persist(organization);
-            Model model = new Model(owner, "original", "classifier", "test", "model.bin");
+            Model model = new Model(principalOf(entityManager, owner), "original", "classifier", "test", "model.bin");
             model.setOrganization(organization);
             model.setInputSchema(Map.of());
             entityManager.persist(TestFixtures.storedArtifact(model, new byte[] {1}));

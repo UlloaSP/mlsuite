@@ -24,14 +24,11 @@ public interface SchemaVersionRepository extends JpaRepository<SchemaVersion, Lo
                     SELECT max(latest.version_number) FROM schema_version latest
                     WHERE latest.schema_id = :schemaId
                 ))
-                OR (:filter = 'withBindings' AND EXISTS (
-                    SELECT 1 FROM schema_model_binding binding WHERE binding.schema_version_id = sv.id
-                ))
             )
             AND lower(concat_ws(' ', sv.name, sv.id, 'v' || sv.version_number, (
                 SELECT count(*) FROM jsonb_array_elements(
-                    CASE WHEN jsonb_typeof(sv.form_schema_json -> 'fields') = 'array'
-                        THEN sv.form_schema_json -> 'fields' ELSE CAST('[]' AS jsonb) END) AS field
+                    CASE WHEN jsonb_typeof(sv.form_schema -> 'fields') = 'array'
+                        THEN sv.form_schema -> 'fields' ELSE CAST('[]' AS jsonb) END) AS field
                 WHERE jsonb_typeof(field) = 'object'
                 AND field -> 'hidden' IS DISTINCT FROM CAST('true' AS jsonb)
             ) || ' fields')) LIKE :search ESCAPE '!'
@@ -71,8 +68,8 @@ public interface SchemaVersionRepository extends JpaRepository<SchemaVersion, Lo
     int findMaxVersionBySchemaId(Long schemaId);
 
     /**
-     * One page of a schema's snapshots. {@code filter} is "all", "latest" or "withBindings"; any other
-     * matches nothing. {@code sort} is "name", "version" or creation time, newest first. The search
+     * One page of a schema's snapshots. {@code filter} is "all" or "latest". {@code sort} is
+     * "name", "version" or otherwise creation time, newest first. The search
      * reads what a snapshot card shows, including how many fields its form leaves visible.
      */
     @Query(value = "SELECT sv.* " + SNAPSHOTS + SNAPSHOT_ORDER,

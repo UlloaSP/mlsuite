@@ -8,9 +8,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.apiaccess.application.dto.ApiPredictionDto;
-import dev.ulloasp.mlsuite.apiaccess.application.dto.ApiPredictionRequest;
 import dev.ulloasp.mlsuite.apiaccess.application.port.in.ApiPredictionUseCase;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -27,13 +25,13 @@ public class ApiPredictionController {
 
     private final ApiPredictionUseCase predictions;
 
-    /** A missing key is answered like a wrong one, by the service. */
+    /** A missing key is answered like a wrong one, by the service, before the body is read. */
     @PostMapping("/api/v1/bookmarks/{bookmarkId}/predictions")
     public ResponseEntity<ApiPredictionDto> predictBookmark(
             @RequestHeader(name = KEY_HEADER, required = false) String key,
             @PathVariable String bookmarkId,
-            @Valid @RequestBody ApiPredictionRequest request) {
-        ApiPredictionDto prediction = predictions.predict(key, bookmarkId, request);
+            @RequestBody(required = false) String body) {
+        ApiPredictionDto prediction = predictions.predict(key, bookmarkId, body);
         return ResponseEntity.ok().header(REQUEST_ID_HEADER, prediction.requestId().toString()).body(prediction);
     }
 }

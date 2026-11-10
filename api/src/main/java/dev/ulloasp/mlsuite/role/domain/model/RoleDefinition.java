@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.role.domain.model;
 
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.time.OffsetDateTime;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -8,7 +9,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
-import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -33,13 +33,14 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Table(name = "role_definition", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_role_org_scope_slug", columnNames = { "organization_id", "scope", "slug" })
+        @UniqueConstraint(name = "uq_role_org_slug", columnNames = { "organization_id", "slug" })
 })
 public class RoleDefinition {
 
-    public RoleDefinition(Organization org, RoleScope scope, String name, String slug, String systemKey) {
+    public RoleDefinition(Organization org, String name, String slug, String systemKey, Principal createdBy) {
         this.organization = org;
-        this.scope = scope;
+        this.createdBy = createdBy;
+        this.updatedBy = createdBy;
         this.name = name;
         this.slug = slug;
         this.systemKey = systemKey;
@@ -50,13 +51,10 @@ public class RoleDefinition {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "organization_id", foreignKey = @ForeignKey(name = "fk_role_org"))
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "organization_id", nullable = false, foreignKey = @ForeignKey(name = "fk_role_org"))
     private Organization organization;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "scope", nullable = false, length = 32)
-    private RoleScope scope;
 
     @Column(name = "name", nullable = false, length = 120)
     private String name;
@@ -73,9 +71,15 @@ public class RoleDefinition {
     @Column(name = "system_key", length = 64)
     private String systemKey;
 
-    @ManyToOne
-    @JoinColumn(name = "created_by_user_id", foreignKey = @ForeignKey(name = "fk_role_created_by"))
-    private User createdBy;
+    /** Who created it. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "created_by_principal_id", nullable = false, updatable = false)
+    private Principal createdBy;
+
+    /** Who changed it last. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "updated_by_principal_id", nullable = false)
+    private Principal updatedBy;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "role_permission", joinColumns = @JoinColumn(name = "role_definition_id"))

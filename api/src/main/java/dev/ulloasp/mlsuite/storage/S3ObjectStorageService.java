@@ -55,9 +55,7 @@ class S3ObjectStorageService implements ObjectStorageService {
                     .bucket(properties.getBucket())
                     .key(objectKey)
                     .contentType(effectiveContentType);
-            if (sha256 != null) {
-                request.metadata(Map.of(SHA256_METADATA, sha256));
-            }
+            request.metadata(Map.of(SHA256_METADATA, sha256));
 
             PutObjectResponse response = client.putObject(
                     request.build(), RequestBody.fromInputStream(inputStream, sizeBytes));
@@ -67,7 +65,7 @@ class S3ObjectStorageService implements ObjectStorageService {
             }
             StoredObjectMetadata metadata = metadata(
                     properties.getBucket(), objectKey, head(properties.getBucket(), objectKey, versionId));
-            if (metadata.sizeBytes() != sizeBytes || sha256 != null && !sha256.equals(metadata.sha256())) {
+            if (metadata.sizeBytes() != sizeBytes) {
                 throw new ObjectStorageException("Object verification failed for " + objectKey);
             }
 
@@ -81,7 +79,7 @@ class S3ObjectStorageService implements ObjectStorageService {
         } catch (ObjectStorageException ex) {
             throw ex;
         } catch (Exception ex) {
-            throw new ObjectStorageException("No se pudo almacenar el objeto", ex);
+            throw new ObjectStorageException("Could not store the object", ex);
         }
     }
 
@@ -96,7 +94,7 @@ class S3ObjectStorageService implements ObjectStorageService {
                     .versionId(blankToNull(versionId))
                     .build());
         } catch (Exception ex) {
-            throw new ObjectStorageException("No se pudo cargar el objeto", ex);
+            throw new ObjectStorageException("Could not load the object", ex);
         }
     }
 
@@ -113,7 +111,7 @@ class S3ObjectStorageService implements ObjectStorageService {
         } catch (NoSuchKeyException ex) {
             return Optional.empty();
         } catch (Exception ex) {
-            throw new ObjectStorageException("No se pudo comprobar el objeto", ex);
+            throw new ObjectStorageException("Could not check the object", ex);
         }
     }
 
@@ -132,7 +130,7 @@ class S3ObjectStorageService implements ObjectStorageService {
         } catch (ObjectStorageException ex) {
             throw ex;
         } catch (Exception ex) {
-            throw new ObjectStorageException("No se pudo verificar el objeto", ex);
+            throw new ObjectStorageException("Could not verify the object", ex);
         }
     }
 
@@ -160,7 +158,7 @@ class S3ObjectStorageService implements ObjectStorageService {
 
             return items;
         } catch (Exception ex) {
-            throw new ObjectStorageException("No se pudieron listar los objetos", ex);
+            throw new ObjectStorageException("Could not list the objects", ex);
         }
     }
 
@@ -175,7 +173,7 @@ class S3ObjectStorageService implements ObjectStorageService {
                     .versionId(blankToNull(versionId))
                     .build());
         } catch (Exception ex) {
-            throw new ObjectStorageException("No se pudo eliminar el objeto", ex);
+            throw new ObjectStorageException("Could not delete the object", ex);
         }
     }
 
@@ -193,7 +191,7 @@ class S3ObjectStorageService implements ObjectStorageService {
         } catch (ObjectStorageException ex) {
             throw ex;
         } catch (Exception ex) {
-            throw new ObjectStorageException("No se pudo eliminar el objeto", ex);
+            throw new ObjectStorageException("Could not delete the object", ex);
         }
     }
 
@@ -208,7 +206,7 @@ class S3ObjectStorageService implements ObjectStorageService {
             } catch (NoSuchBucketException missing) {
                 if (!properties.isAutoCreateBucket()) {
                     throw new ObjectStorageException(
-                            "El bucket '" + properties.getBucket() + "' no existe y auto-create está desactivado");
+                            "Bucket '" + properties.getBucket() + "' does not exist and auto-create is disabled");
                 }
 
                 client.createBucket(request -> request.bucket(properties.getBucket()));
@@ -218,7 +216,7 @@ class S3ObjectStorageService implements ObjectStorageService {
         } catch (ObjectStorageException ex) {
             throw ex;
         } catch (Exception ex) {
-            throw new ObjectStorageException("No se pudo inicializar el bucket", ex);
+            throw new ObjectStorageException("Could not initialize the bucket", ex);
         }
     }
 

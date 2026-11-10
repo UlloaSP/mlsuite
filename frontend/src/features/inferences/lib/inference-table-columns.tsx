@@ -23,7 +23,8 @@ import type { PredictionRunCatalogItemDto } from "@/shared/api/openapi.gen";
 export type InferenceTableMeta = {
   /** The row's name cell, which opens its preview. */
   renderName: (row: InferenceTableRow) => ReactNode;
-  renderActions: (row: InferenceTableRow) => ReactNode;
+  /** The row's actions; without them the table has no actions column. */
+  renderActions?: (row: InferenceTableRow) => ReactNode;
 };
 
 export const inferenceTableFeatures = tableFeatures({
@@ -161,11 +162,12 @@ export const dataGroupLabel = (column: InferenceDataColumn, multipleSchemas: boo
 export const SUMMARY_GROUP_ID = "inference";
 
 /**
- * The summary every inference has, then each schema's inputs, outputs, and feedback,
- * each under its group header, then the row actions.
+ * The row actions, if any, then the summary every inference has, then each schema's inputs,
+ * outputs, and feedback, each under its group header.
  */
 export const buildInferenceColumns = (
   dataColumns: readonly InferenceDataColumn[],
+  withActions = true,
 ): InferenceColumnDef[] => {
   const multipleSchemas = new Set(dataColumns.map((column) => column.schemaId)).size > 1;
   // Data columns arrive ordered by schema then group, so consecutive runs form the groups.
@@ -179,16 +181,20 @@ export const buildInferenceColumns = (
   const groupColumns = groups.map(({ id, header, columns }) =>
     helper.group({ id, header, columns: columns.map(dataColumn) }),
   );
-  const actions = helper.display({
-    id: "actions",
-    header: () => <span className="sr-only">Actions</span>,
-    size: 56,
-    cell: ({ row, table }) => table.options.meta?.renderActions(row.original),
-  });
-  if (groupColumns.length === 0) return [...summaryColumns(), actions];
+  const actions = withActions
+    ? [
+        helper.display({
+          id: "actions",
+          header: () => <span className="sr-only">Actions</span>,
+          size: 56,
+          cell: ({ row, table }) => table.options.meta?.renderActions?.(row.original),
+        }),
+      ]
+    : [];
+  if (groupColumns.length === 0) return [...actions, ...summaryColumns()];
   return [
+    ...actions,
     helper.group({ id: SUMMARY_GROUP_ID, header: "Inference", columns: summaryColumns() }),
     ...groupColumns,
-    actions,
   ];
 };

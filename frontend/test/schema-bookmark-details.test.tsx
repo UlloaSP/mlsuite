@@ -33,7 +33,9 @@ const bookmark = (overrides: Partial<SchemaBookmarkDto> = {}): SchemaBookmarkDto
   exampleCount: 0,
   staleExampleCount: 0,
   createdAt: AT,
+  createdByName: "Ada Lovelace",
   updatedAt: AT,
+  updatedByName: "Ada Lovelace",
   ...overrides,
 });
 

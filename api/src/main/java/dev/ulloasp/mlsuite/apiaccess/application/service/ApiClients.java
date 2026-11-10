@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.apiaccess.application.service;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +49,7 @@ class ApiClients {
     private final ApiAccessBookmarks accessBookmarks;
     private final UserLookupService userLookup;
     private final AuditLogService auditLog;
+    private final Principals principals;
 
     Organization readable(Long userId) {
         return authorization.requireCurrent(userId, PermissionKey.VIEW_API_ACCESS, PermissionKey.MANAGE_API_ACCESS);
@@ -92,11 +95,13 @@ class ApiClients {
         }).toList();
     }
 
-    String memberName(Long userId) {
-        return userLookup.requireById(userId).getFullName();
+    Principal member(Long userId) {
+        return principals.user(userId);
     }
 
+    /** Every change to a client, its keys or its access is audited, and names the member who changed it last. */
     void audit(ApiClient client, Long userId, AuditAction action, Long targetId, Map<String, Object> details) {
+        client.setUpdatedBy(principals.user(userId));
         auditLog.record(AuditActor.user(userId), client.getOrganization().getId(), action, targetId, details);
     }
 }

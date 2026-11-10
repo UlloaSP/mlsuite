@@ -1,5 +1,10 @@
 package dev.ulloasp.mlsuite.organization.application.usecase;
 
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
+import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewAssigneeRepository;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -56,6 +61,8 @@ public class OrganizationManagementService implements OrganizationManagementUseC
     private final OrganizationDeletionService organizationDeletionService;
     private final OrganizationStatsService organizationStatsService;
     private final AuditLogService auditLog;
+    private final Principals principals;
+    private final SchemaReviewAssigneeRepository reviewAssignees;
 
     @Override
     public List<OrganizationDto> listOrganizations(Long userId) {
@@ -72,17 +79,18 @@ public class OrganizationManagementService implements OrganizationManagementUseC
     @Override
     public OrganizationDto createOrganization(Long userId, CreateOrganizationRequest request) {
         User actor = workspaceAccessService.requireUser(userId);
+        Principal author = principals.of(actor);
         User owner = resolveOwner(actor, request.ownerUserId());
         boolean named = request.slug() != null && !request.slug().isBlank();
         Organization organization = organizationRepository.save(new Organization(
                 Handle.claim(named ? request.slug() : Handle.fromName(request.name()), organizationRepository::existsBySlug),
                 request.name().strip(),
                 request.description(),
-                actor));
-        organization.setUpdatedBy(actor);
+                author));
         roleSeedService.createOrganizationRoles(organization);
         membershipRepository.save(new OrganizationMembership(
-                organization, owner, roleSeedService.orgRole(organization, OrganizationRole.OWNER), MembershipStatus.ACTIVE));
+                organization, owner, roleSeedService.orgRole(organization, OrganizationRole.OWNER), MembershipStatus.ACTIVE,
+                author));
         auditLog.record(AuditActor.user(userId), organization.getId(), AuditAction.ORGANIZATION_CREATE,
                 organization.getId(), AuditDetails.of("name", organization.getName(), "slug", organization.getSlug(),
                         "owner", owner.getFullName()));
@@ -134,9 +142,10 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         organization.setName(request.name().strip());
         organization.setSlug(slug);
         organization.setDescription(request.description());
-        organization.setUpdatedBy(workspaceAccessService.requireUser(userId));
+        organization.setUpdatedBy(principals.user(userId));
         auditLog.record(AuditActor.user(userId), organizationId, AuditAction.ORGANIZATION_UPDATE, organizationId, changes);
-        return OrganizationDto.from(organizationRepository.save(organization));
+        // Flushed first, so the answer carries the update time the row now has.
+        return OrganizationDto.from(organizationRepository.saveAndFlush(organization));
     }
 
     @Override
@@ -164,7 +173,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
             UpdateOrganizationMembershipRoleRequest request) {
         workspaceAuthorizationService.require(userId, organizationId, PermissionKey.VIEW_MEMBERS);
         OrganizationMembership membership = membershipRepository.findActiveByIdAndOrganizationId(membershipId, organizationId)
-                .orElseThrow(() -> new IllegalArgumentException("Membership does not exist."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Membership does not exist."));
         membership.getOrganization().requireTeam(NO_MEMBERS);
         var actions = workspaceAuthorizationService.organizationMemberActions(userId, organizationId, membership);
         Long nextRoleId = request.roleDefinitionId();
@@ -178,19 +187,21 @@ public class OrganizationManagementService implements OrganizationManagementUseC
                 AuditDetails.of("member", membership.getUser().getFullName(),
                         "role", AuditDetails.changed(membership.getRoleDefinition().getName(), nextRole.getName())));
         membership.setRoleDefinition(nextRole);
-        return OrganizationMembershipDto.from(membershipRepository.save(membership));
+        return OrganizationMembershipDto.from(membershipRepository.saveAndFlush(membership));
     }
 
     @Override
     public void removeMember(Long userId, Long organizationId, Long membershipId) {
         workspaceAuthorizationService.require(userId, organizationId, PermissionKey.VIEW_MEMBERS);
         OrganizationMembership membership = membershipRepository.findActiveByIdAndOrganizationId(membershipId, organizationId)
-                .orElseThrow(() -> new IllegalArgumentException("Membership does not exist."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Membership does not exist."));
         membership.getOrganization().requireTeam(NO_MEMBERS);
         if (!workspaceAuthorizationService.organizationMemberActions(userId, organizationId, membership).canRemove()
                 || membership.isOwner()) {
             throw new IllegalArgumentException("Cannot remove organization owner.");
         }
+        // A member who is gone has nothing left to review here; the answers they gave stay.
+        reviewAssignees.deleteMemberAssignments(organizationId, membership.getUser().getId());
         membership.setStatus(MembershipStatus.REMOVED);
         membershipRepository.save(membership);
         User removed = membership.getUser();
@@ -209,7 +220,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         workspaceAuthorizationService.require(userId, organizationId, PermissionKey.TRANSFER_OWNERSHIP);
         OrganizationMembership nextOwner = membershipRepository.findActiveByIdAndOrganizationId(
                 request.nextOwnerMembershipId(), organizationId)
-                .orElseThrow(() -> new IllegalArgumentException("Membership does not exist."));
+                .orElseThrow(() -> new IllegalArgumentException("The new owner must be an active member."));
         nextOwner.getOrganization().requireTeam("A personal account keeps the owner it was opened for.");
         OrganizationMembership currentOwner = membershipRepository
                 .findActiveByOrganizationIdOrderByCreatedAtAsc(organizationId)
@@ -222,12 +233,12 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         }
         currentOwner.setRoleDefinition(roleSeedService.orgRole(nextOwner.getOrganization(), OrganizationRole.ADMIN));
         nextOwner.setRoleDefinition(roleSeedService.orgRole(nextOwner.getOrganization(), OrganizationRole.OWNER));
-        nextOwner.getOrganization().setUpdatedBy(workspaceAccessService.requireUser(userId));
+        nextOwner.getOrganization().setUpdatedBy(principals.user(userId));
         membershipRepository.save(currentOwner);
         auditLog.record(AuditActor.user(userId), organizationId, AuditAction.OWNERSHIP_TRANSFER, organizationId,
                 AuditDetails.of("owner", AuditDetails.changed(currentOwner.getUser().getFullName(),
                         nextOwner.getUser().getFullName())));
-        return OrganizationMembershipDto.from(membershipRepository.save(nextOwner));
+        return OrganizationMembershipDto.from(membershipRepository.saveAndFlush(nextOwner));
     }
 
     private User resolveOwner(User actor, Long ownerUserId) {
@@ -235,7 +246,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
             return actor;
         }
         if (!workspaceAccessService.isSuperadmin(actor.getId())) {
-            throw new IllegalArgumentException("Only superadmins can choose another owner.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only superadmins can choose another owner.");
         }
         return workspaceAccessService.requireUser(ownerUserId);
     }

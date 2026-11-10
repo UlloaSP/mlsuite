@@ -71,7 +71,6 @@ export function Navbar({ position }: { position: "top" | "bottom" }) {
     >
       <AppLink
         to="/home"
-        viewTransition
         data-user-guide-item="brand"
         aria-label="MLsuite home"
         className={cx(

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
@@ -42,6 +43,7 @@ public class PredictionRunController {
         return ResponseEntity.ok(workspacePredictionUseCase.predict(user.userId(), bookmarkId, request));
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/schema-bookmarks/{bookmarkId}/runs")
     public ResponseEntity<PredictionRunDto> createForBookmark(CurrentUser user,
             @PathVariable Long bookmarkId, @Valid @RequestBody CreatePredictionRunRequest request) {
@@ -49,6 +51,7 @@ public class PredictionRunController {
         return ResponseEntity.status(HttpStatus.CREATED).body(toDto(run));
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/schema-bookmarks/{bookmarkId}/runs/batch")
     public ResponseEntity<CreatedPredictionRunsDto> createManyForBookmark(CurrentUser user,
             @PathVariable Long bookmarkId, @Valid @RequestBody CreatePredictionRunsRequest request) {
@@ -66,6 +69,7 @@ public class PredictionRunController {
         return ResponseEntity.ok(PredictionRunCatalogItemDto.from(predictionRunUseCase.getRun(user.userId(), runId)));
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/prediction-runs/{runId}")
     public ResponseEntity<Void> delete(CurrentUser user, @PathVariable Long runId) {
         predictionRunUseCase.deleteRun(user.userId(), runId);

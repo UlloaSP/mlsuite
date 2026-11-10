@@ -22,6 +22,7 @@ public class AdminOwnerCatalogService {
     private final UserRepository users;
 
     public PageDto<AdminUserDto> list(CatalogRequest request) {
+        request.requireNoChoices();
         String search = CatalogPages.likeLiteral(request.search());
         Specification<User> enabledAndMatching = (root, query, builder) -> builder.and(
                 builder.isTrue(root.get("enabled")),

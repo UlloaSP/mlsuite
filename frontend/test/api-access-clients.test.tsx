@@ -50,7 +50,7 @@ const key = (overrides: Partial<ApiClientKeyDto> = {}): ApiClientKeyDto => ({
 });
 const accessBookmark = (overrides: Partial<ApiAccessBookmarkDto> = {}): ApiAccessBookmarkDto => ({
   id: 70,
-  apiId: "pub-70",
+  publicId: "pub-70",
   name: "production",
   schemaId: 5,
   schemaName: "Risk",
@@ -239,7 +239,7 @@ describe("API clients", () => {
   });
 
   test("a client is given a bookmark it does not have yet, and loses one after confirming", async () => {
-    await open("/api-access/clients/9?tab=access");
+    await open("/api-access/clients/9?tab=bookmarks");
     expect(document.body.textContent).toContain("Runnable");
 
     await click("Give bookmark");
@@ -271,7 +271,7 @@ describe("API clients", () => {
       ...client,
       client: summary({ status: "SUSPENDED", suspensionReason: "Scraping", suspendedAt: AT }),
     };
-    const host = await open("/api-access/clients/9?tab=access");
+    const host = await open("/api-access/clients/9?tab=bookmarks");
 
     expect(host.textContent).toContain("Suspended by the platform");
     expect(host.textContent).toContain("Scraping");

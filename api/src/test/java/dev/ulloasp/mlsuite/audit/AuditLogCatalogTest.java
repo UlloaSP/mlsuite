@@ -25,15 +25,18 @@ import dev.ulloasp.mlsuite.audit.domain.model.AuditDetails;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
 /** An organization's audit log as recorded, paged over PostgreSQL behind the real security chain. */
 class AuditLogCatalogTest extends PublicPredictionFixture {
+
+    @Autowired
+    private Principals principals;
 
     /** Role ids no bookmark of the fixture reaches, so a search by target id matches only them. */
     private static final int TARGET = 7_000_000;
@@ -68,11 +71,11 @@ class AuditLogCatalogTest extends PublicPredictionFixture {
                     "Viewer", SystemRole.USER);
             entityManager.persist(viewer);
             // Not a seeded slug: organizations outlive the test and are seeded again on later startups.
-            RoleDefinition viewing = new RoleDefinition(current, RoleScope.ORGANIZATION, "Model reader",
-                    "model-reader", null);
+            RoleDefinition viewing = new RoleDefinition(current, "Model reader",
+                    "model-reader", null, principals.system());
             viewing.setPermissions(EnumSet.of(PermissionKey.VIEW_WORKSPACE, PermissionKey.VIEW_MODELS));
             entityManager.persist(viewing);
-            entityManager.persist(new OrganizationMembership(current, viewer, viewing, MembershipStatus.ACTIVE));
+            entityManager.persist(new OrganizationMembership(current, viewer, viewing, MembershipStatus.ACTIVE, principals.of(viewer)));
             for (int i = 0; i < 30; i++) {
                 auditLog.record(AuditActor.user(actor.getId()), current.getId(),
                         i % 3 == 0 ? AuditAction.ROLE_DELETE : AuditAction.ROLE_UPDATE, TARGET + i,
@@ -80,7 +83,7 @@ class AuditLogCatalogTest extends PublicPredictionFixture {
             }
             auditLog.record(AuditActor.user(moderator.getId()), current.getId(),
                     AuditAction.BOOKMARK_MODERATION_UNPUBLISH, bookmark.getId(), AuditDetails.of("bookmark", "production"));
-            other = new Organization("other-" + unique, "Other", null, actor);
+            other = new Organization("other-" + unique, "Other", null, principals.of(actor));
             entityManager.persist(other);
             auditLog.record(AuditActor.user(actor.getId()), other.getId(), AuditAction.ROLE_DELETE, TARGET + 5,
                     AuditDetails.of("name", "Analyst 05"));

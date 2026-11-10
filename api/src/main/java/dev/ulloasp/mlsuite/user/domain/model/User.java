@@ -15,6 +15,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import org.hibernate.annotations.Formula;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -37,8 +38,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+// The address is unique whatever its case: uq_app_user_email_lower, an index on lower(email).
 @Table(name = "app_user", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_app_user_email", columnNames = { "email" }),
         @UniqueConstraint(name = "uq_app_user_username", columnNames = { "username" })
 })
 public class User {
@@ -61,7 +62,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "username", nullable = false, length = 50)
+    @Column(name = "username", nullable = false, length = 39)
     private String username;
 
     @Column(name = "email", nullable = false, length = 100)
@@ -70,8 +71,8 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    /** When the avatar in {@code user_avatar} was last replaced; null while there is none. */
-    @Column(name = "avatar_updated_at", columnDefinition = "TIMESTAMPTZ")
+    /** When the avatar in {@code user_avatar} was last replaced; null while there is none. Read from it. */
+    @Formula("(SELECT a.updated_at FROM user_avatar a WHERE a.user_id = id)")
     private OffsetDateTime avatarUpdatedAt;
 
     @Column(name = "full_name", nullable = false, length = 150)

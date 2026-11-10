@@ -31,12 +31,14 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.web.context.request.ServletWebRequest;
 
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicRunQuotaDto;
 import dev.ulloasp.mlsuite.schema.application.service.PublicPredictionQuota;
@@ -57,6 +59,9 @@ import dev.ulloasp.mlsuite.security.identity.PublicCallerArgumentResolver;
         "mlsuite.public-prediction.anonymous-runs-per-day=3",
         "mlsuite.public-prediction.signed-in-runs-per-day=5" })
 class PublicPredictionQuotaTest extends PublicPredictionFixture {
+
+    @Autowired
+    private Principals principals;
 
     private static final Instant START = Instant.parse("2026-10-06T10:00:00Z");
     private static final PublicCaller OTHER_VISITOR = PublicCaller.anonymous("address:other", null);
@@ -296,7 +301,7 @@ class PublicPredictionQuotaTest extends PublicPredictionFixture {
     private SchemaBookmark other() {
         SchemaBookmark[] other = new SchemaBookmark[1];
         inTransaction(() -> {
-            other[0] = new SchemaBookmark(schema, version, "staging");
+            other[0] = new SchemaBookmark(schema, version, "staging", principals.system());
             other[0].setVisibility(BookmarkVisibility.PUBLIC);
             other[0].setPublicId(bookmark.getPublicId() + "-staging");
             entityManager.persist(other[0]);

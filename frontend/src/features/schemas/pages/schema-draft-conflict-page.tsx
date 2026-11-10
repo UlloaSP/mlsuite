@@ -10,6 +10,7 @@ import { AppLink } from "@/shared/ui/AppLink";
 import { toast } from "@/shared/ui/toast";
 import { AppButton } from "@/shared/ui/AppButton";
 import { appButtonClass } from "@/shared/ui/button-styles";
+import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -93,6 +94,8 @@ export function SchemaDraftConflictPage() {
         : undefined,
     [draft],
   );
+  // Publishing a change that changes nothing would only repeat the current snapshot.
+  const unchanged = Boolean(diff && !needsMerge && !diff.changes.some((c) => c.draftChanged));
   const unresolved =
     diff && needsMerge
       ? diff.changes.filter((change) => change.conflict && !resolutions[change.path]).length
@@ -203,7 +206,10 @@ export function SchemaDraftConflictPage() {
                   {unresolved > 0 ? `Resolve ${unresolved} paths` : "Apply merge"}
                 </AppButton>
               ) : (
-                <AppButton disabled={!draft || publishMutation.isPending} onClick={publish}>
+                <AppButton
+                  disabled={!draft || unchanged || publishMutation.isPending}
+                  onClick={publish}
+                >
                   {publishMutation.isPending ? (
                     <AppSpinner size={16} />
                   ) : (
@@ -234,6 +240,12 @@ export function SchemaDraftConflictPage() {
               Retry
             </AppButton>
           </AppPanel>
+        ) : unchanged ? (
+          <AppEmptyState
+            compact
+            title={`No changes against v${currentVersion.version}`}
+            description="This change matches the current snapshot. Edit it to have something to publish."
+          />
         ) : (
           <SchemaMergeDiffViewer
             className="flex-1"
@@ -257,7 +269,7 @@ const normalizeBindings = (bindings: Array<SchemaDraftBindingDto | SchemaModelBi
   bindings.map(({ modelId, modelName, pluginPolicy }) => ({
     modelId,
     modelName,
-    pluginPolicy: pluginPolicy ?? {},
+    pluginPolicy,
   }));
 
 const toCodeLabel = (value: string) =>

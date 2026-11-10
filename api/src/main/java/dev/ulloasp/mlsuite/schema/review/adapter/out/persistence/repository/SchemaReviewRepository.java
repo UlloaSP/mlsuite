@@ -36,7 +36,9 @@ public interface SchemaReviewRepository extends JpaRepository<SchemaReview, Long
     @Query(value = """
             SELECT review AS review,
                 (SELECT COUNT(rr) FROM SchemaReviewRun rr WHERE rr.review = review) AS runs,
-                (SELECT COUNT(a) FROM SchemaReviewAssignee a WHERE a.review = review) AS reviewers
+                (SELECT COUNT(a) FROM SchemaReviewAssignee a, OrganizationMembership m
+                    WHERE a.review = review AND m.organization = review.organization AND m.user = a.user
+                    AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE) AS reviewers
             """ + MANAGED + "ORDER BY review.createdAt DESC, review.id ASC",
             countQuery = "SELECT COUNT(review) " + MANAGED)
     Page<ManagedReview> findManagedPage(Long organizationId, String search, String filter, OffsetDateTime now,
@@ -45,10 +47,6 @@ public interface SchemaReviewRepository extends JpaRepository<SchemaReview, Long
     Optional<SchemaReview> findByPublicIdAndOrganizationId(String publicId, Long organizationId);
 
     List<SchemaReview> findByOrganizationIdOrderByCreatedAtDesc(Long organizationId);
-
-    boolean existsBySchemaId(Long schemaId);
-
-    boolean existsBySchemaVersionId(Long schemaVersionId);
 
     long countByOrganizationId(Long organizationId);
 }

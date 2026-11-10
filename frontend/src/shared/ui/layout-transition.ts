@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { flushSync } from "react-dom";
 
 // Names are applied only for this transition: permanent names would pull the
-// sidebar out of the theme reveal and the content out of its route fade.
+// sidebar and the content out of the theme reveal.
 const PARTS = [
   { selector: "[data-app-sidebar]", name: "app-layout-sidebar" },
   { selector: ".app-content-transition", name: "app-layout-main" },
@@ -38,5 +38,7 @@ export function animateLayoutChange(update: () => void) {
 
   // The new snapshot is taken when the callback returns, so React must commit synchronously.
   const transition = document.startViewTransition(() => flushSync(update));
+  // Skipped when another transition starts first; the layout has changed all the same.
+  transition.ready.catch(() => undefined);
   void transition.finished.finally(restore);
 }

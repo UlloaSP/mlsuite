@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
+import dev.ulloasp.mlsuite.principal.adapter.out.persistence.repository.PrincipalRepository;
+import dev.ulloasp.mlsuite.principal.domain.model.Principal;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -22,8 +24,6 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackRevision;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReview;
-import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
-import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +38,7 @@ public class PredictionResultFeedbackService implements PredictionResultFeedback
     private final PredictionResultFeedbackRepository feedbackRepository;
     private final PredictionRunRepository runRepository;
     private final PredictionResultFeedbackRevisionRepository revisionRepository;
-    private final UserRepository userRepository;
+    private final PrincipalRepository principalRepository;
     private final SchemaReviewRepository reviewRepository;
 
     @Override
@@ -70,17 +70,17 @@ public class PredictionResultFeedbackService implements PredictionResultFeedback
             throw notFound("Prediction result not found");
         }
         List<PredictionResultFeedbackRevision> revisions = revisionRepository.findByResultIdOrderByIdAsc(resultId);
-        // Revisions keep ids only, so a removed member or review leaves the record intact and unnamed.
-        Map<Long, String> names = userRepository.findAllById(revisions.stream()
-                .flatMap(revision -> Stream.of(revision.getUserId(), revision.getChangedByUserId()))
-                .filter(Objects::nonNull).collect(Collectors.toSet()))
-                .stream().collect(Collectors.toMap(User::getId, User::getFullName));
+        // Revisions keep ids only, so a removed review leaves the record intact; authors are principals.
+        Map<Long, Principal> principals = principalRepository.findAllById(revisions.stream()
+                .flatMap(revision -> Stream.of(revision.getAuthorId(), revision.getChangedById()))
+                .collect(Collectors.toSet()))
+                .stream().collect(Collectors.toMap(Principal::getId, Function.identity()));
         Map<Long, SchemaReview> reviews = reviewRepository.findAllById(revisions.stream()
                 .map(PredictionResultFeedbackRevision::getReviewId)
                 .filter(Objects::nonNull).collect(Collectors.toSet()))
                 .stream().collect(Collectors.toMap(SchemaReview::getId, Function.identity()));
         return revisions.stream()
-                .map(revision -> PredictionResultFeedbackRevisionDto.from(revision, names, reviews))
+                .map(revision -> PredictionResultFeedbackRevisionDto.from(revision, principals, reviews))
                 .toList();
     }
 

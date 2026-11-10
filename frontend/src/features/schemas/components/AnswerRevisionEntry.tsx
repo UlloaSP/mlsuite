@@ -29,8 +29,13 @@ type Props = {
 const person = (name: string | null, id: number | null) =>
   name ?? (id === null ? "Unknown" : "Former member");
 
+const VISITOR = "A public page visitor";
+
 const author = (revision: PredictionResultFeedbackRevisionDto) =>
-  revision.visitorId ? "A public page visitor" : person(revision.userName, revision.userId);
+  revision.byVisitor ? VISITOR : person(revision.authorName, revision.authorUserId);
+
+const changer = (revision: PredictionResultFeedbackRevisionDto) =>
+  revision.changedByVisitor ? VISITOR : person(revision.changedByName, revision.changedByUserId);
 
 const where = ({ review, reviewId }: PredictionResultFeedbackRevisionDto) => {
   if (review) {
@@ -52,9 +57,7 @@ export function AnswerRevisionEntry({ revision, schema, modelName }: Props) {
     <li className="flex flex-col gap-2 border-t border-line py-3 first:border-t-0">
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <AppBadge tone={change.tone}>{change.label}</AppBadge>
-        <span className="font-medium text-fg">
-          {person(revision.changedByName, revision.changedByUserId)}
-        </span>
+        <span className="font-medium text-fg">{changer(revision)}</span>
         <time className="text-fg-muted" dateTime={revision.changedAt}>
           {formatTimestamp(revision.changedAt)}
         </time>

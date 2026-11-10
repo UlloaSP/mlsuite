@@ -10,6 +10,8 @@ import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -28,10 +30,14 @@ import lombok.NoArgsConstructor;
 public class RuntimeEnvironment {
 
     @Id
-    @Column(name = "environment_key", length = 64)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /** How models, results and the runtime name the environment. */
+    @Column(name = "environment_key", nullable = false, unique = true, updatable = false, length = 64)
     private String key;
 
-    @Column(name = "environment_id", length = 64)
+    @Column(name = "lock_digest", nullable = false, length = 64)
     private String environmentId;
 
     @Column(name = "writer_version", nullable = false, length = 64)
@@ -44,7 +50,7 @@ public class RuntimeEnvironment {
     @Column(name = "packages", nullable = false)
     private List<Map<String, Object>> packages;
 
-    @Column(name = "lock_toml")
+    @Column(name = "lock_toml", nullable = false)
     private String lockToml;
 
     @CreationTimestamp

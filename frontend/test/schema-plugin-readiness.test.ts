@@ -113,7 +113,7 @@ describe("schema plugin readiness failures", () => {
         bindings: [{ modelId: 1, modelName: "model-1" }],
         customReportDefinitions: [crystal()],
       }),
-    ).toThrow("Schema report 1 falta mappedTo");
+    ).toThrow("Schema report 1 has no mappedTo");
   });
 
   test("normalized report ids still map and call explanations", async () => {

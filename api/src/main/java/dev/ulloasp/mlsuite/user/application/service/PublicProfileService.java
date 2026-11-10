@@ -72,7 +72,7 @@ public class PublicProfileService implements PublicProfileUseCase {
 
     @Override
     public Optional<UserAvatar> avatar(Long userId, @Nullable Long viewerId) {
-        return avatarRepository.findById(userId)
+        return avatarRepository.findByUserId(userId)
                 .filter(avatar -> userRepository.findById(userId).filter(person -> mayView(person, viewerId)).isPresent());
     }
 

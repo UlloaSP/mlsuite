@@ -5,12 +5,20 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ReportConfig } from "mlform/runtime";
 import { isBuiltinReportKind } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
-import { isRecord, type JsonRecord } from "@/capabilities/prediction-runtime/mlform/shared";
+import {
+  isRecord,
+  storedReportPayload,
+  type JsonRecord,
+} from "@/capabilities/prediction-runtime/mlform/shared";
 import { reportTargetForBinding } from "@/capabilities/prediction-runtime/mlform/schema-run-report-mapping";
 import {
+  classLabel,
   mappingLabels,
-  toStoredBuiltinPayload,
 } from "@/capabilities/prediction-runtime/data/report-normalization";
+import {
+  findStoredReport,
+  storedReportId,
+} from "@/capabilities/prediction-runtime/data/stored-report";
 import type { PredictionResultDto, SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type SchemaVersion = Pick<SchemaVersionDto, "formSchema" | "bindings">;
@@ -24,6 +32,8 @@ export type SchemaDisplayReport = {
   config: ReportConfig;
   payload?: JsonRecord;
   labels?: string[];
+  /** The classes the run stored, which `labels` name in order. */
+  classes?: string[];
 };
 
 const reportsOf = (schema: unknown): ReportConfig[] =>
@@ -31,31 +41,12 @@ const reportsOf = (schema: unknown): ReportConfig[] =>
     ? (schema.reports.filter(isRecord) as ReportConfig[])
     : [];
 
-const reportId = (report: ReportConfig): string | undefined =>
-  typeof report.id === "string"
-    ? report.id
-    : typeof report.label === "string"
-      ? report.label
-      : undefined;
-
 const reportLabel = (report: ReportConfig): string =>
-  typeof report.label === "string" ? report.label : (reportId(report) ?? "Report");
-
-const payloadFor = (
-  target: string,
-  output: JsonRecord,
-  aliases: readonly string[] = [],
-): JsonRecord | undefined => {
-  const reports = Array.isArray(output.reports) ? output.reports.filter(isRecord) : [];
-  const match = reports.find(
-    (report) =>
-      String(report.mappedTo) === target ||
-      aliases.some((alias) => String(report.id) === alias || String(report.mappedTo) === alias),
-  );
-  if (!match) return undefined;
-  const payload = "payload" in match ? match.payload : match;
-  return isRecord(payload) ? payload : { value: payload };
-};
+  typeof report.label === "string"
+    ? report.label
+    : typeof report.id === "string"
+      ? report.id
+      : "Report";
 
 const reportLabels = (report: ReportConfig): string[] =>
   Array.isArray((report as JsonRecord).labels)
@@ -64,37 +55,19 @@ const reportLabels = (report: ReportConfig): string[] =>
       )
     : [];
 
-/** A stored report as it is shown: a predicted class index reads as the class's label. */
+/**
+ * A stored report as it is shown: a schema's class labels name the stored classes in order, so
+ * the predicted class reads as the label in its place.
+ */
 export const normalizeReportPayload = (
   report: ReportConfig,
   payload?: JsonRecord,
 ): JsonRecord | undefined => {
   if (!payload) return undefined;
-  // Visitor runs kept before stored outputs were unified hold the runtime's raw answer.
-  payload = toStoredBuiltinPayload(report.kind, payload) ?? payload;
   const labels = reportLabels(report);
-  const payloadOnlyLabels = mappingLabels(payload.labels) ?? [];
-  const payloadLabels =
-    labels.length > 0
-      ? labels
-      : payloadOnlyLabels.length > 0
-        ? payloadOnlyLabels
-        : (mappingLabels(payload.mapping) ?? []);
-  if (payloadLabels.length > 0) payload = { ...payload, labels: payloadLabels };
-  if (payloadLabels.length === 0) return payload;
-  const prediction = payload.prediction;
-  if (typeof prediction === "string" && payloadLabels.includes(prediction)) return payload;
-  const index =
-    typeof prediction === "number"
-      ? prediction
-      : typeof prediction === "string" && /^\d+$/.test(prediction)
-        ? Number(prediction)
-        : -1;
-  return {
-    ...payload,
-    labels: payloadLabels,
-    prediction: payloadLabels[index] ?? prediction,
-  };
+  if (labels.length === 0) return payload;
+  const classes = mappingLabels(payload.labels) ?? [];
+  return { ...payload, labels, prediction: classLabel(labels, classes, payload.prediction) };
 };
 
 const METADATA_KEYS = new Set(["endpoint", "modelId", "backendUrl", "status"]);
@@ -122,12 +95,15 @@ export const getSchemaResultReports = (
 ): SchemaDisplayReport[] => {
   const binding = version.bindings.find((item) => item.modelId === result.modelId);
   return reportsOf(version.formSchema).reduce<SchemaDisplayReport[]>((items, report, order) => {
-    const id = reportId(report);
     const kind = typeof report.kind === "string" ? report.kind : "report";
     const target = reportTargetForBinding(report, binding);
-    const rawPayload = target ? payloadFor(target, result.output, [id ?? ""]) : undefined;
-    const payload = normalizeReportPayload(report, rawPayload);
-    if (!id || !target || !isRenderablePayload(report, payload)) return items;
+    const named = typeof report.id === "string" || typeof report.label === "string";
+    if (!named || !target) return items;
+    const id = storedReportId(report, order);
+    const copy = findStoredReport(result.output ?? {}, { storedId: id, target });
+    const stored = copy && storedReportPayload(copy);
+    const payload = normalizeReportPayload(report, stored);
+    if (!isRenderablePayload(report, payload)) return items;
     items.push({
       id,
       order,
@@ -135,6 +111,7 @@ export const getSchemaResultReports = (
       kind,
       config: report,
       labels: reportLabels(report),
+      classes: mappingLabels(stored?.labels) ?? [],
       payload,
     });
     return items;

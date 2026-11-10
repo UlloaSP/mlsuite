@@ -42,6 +42,7 @@ vi.mock("@/capabilities/workspace-context/session", async (importOriginal) => ({
 const model = (overrides: Partial<ModelDto> = {}): ModelDto => ({
   archivedAt: null,
   createdAt: "2026-10-01T10:00:00Z",
+  createdByName: "Ada Lovelace",
   fieldCount: 1,
   fileName: "risk.mlbundle",
   id: 12,
@@ -93,6 +94,7 @@ afterEach(() => {
 
 test.each([
   ["PREPARING", "Preparing environment"],
+  ["READY", "Ready"],
   ["FAILED", "Environment failed"],
 ] as const)("a %s model is badged in the catalog", async (runtimeState, label) => {
   const { host } = await mount(
@@ -112,25 +114,15 @@ test.each([
   expect(host.textContent?.includes(NUMPY_REFUSED)).toBe(runtimeState === "FAILED");
 });
 
-test("a ready model carries no environment badge in the catalog or the schema picker", async () => {
+test("a ready model carries no environment badge in the schema picker", async () => {
   const { host } = await mount(
-    <>
-      <ModelListItem
-        canDelete={false}
-        canDuplicate={false}
-        canEdit={false}
-        item={model()}
-        schemaCount={1}
-        to="/models/12"
-        onAction={vi.fn()}
-      />
-      <SchemaModelOption available model={model()} selected={false} onToggle={vi.fn()} />
-    </>,
+    <SchemaModelOption available model={model()} selected={false} onToggle={vi.fn()} />,
     { route: "/models" },
   );
 
   expect(host.textContent).not.toContain("Preparing environment");
   expect(host.textContent).not.toContain("Environment failed");
+  expect(host.textContent).not.toContain("Ready");
 });
 
 test("the schema picker badges a model that is still being prepared and lets it be chosen", async () => {

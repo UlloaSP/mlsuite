@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 
@@ -12,19 +13,29 @@ import org.springframework.data.domain.Sort;
 class PageDtoTest {
 
     @Test
-    void clampSize_DefaultsNonPositiveSizesAndCapsLargeOnes() {
-        assertEquals(24, PageDto.clampSize(0));
-        assertEquals(24, PageDto.clampSize(-3));
-        assertEquals(10, PageDto.clampSize(10));
-        assertEquals(100, PageDto.clampSize(500));
+    void request_KeepsAPageAndSizeInRange() {
+        PageRequest request = PageDto.request(3, 100, Sort.by("id"));
+
+        assertEquals(3, request.getPageNumber());
+        assertEquals(100, request.getPageSize());
+        assertEquals(1, PageDto.size(1));
+        assertEquals(0, PageDto.page(0));
     }
 
     @Test
-    void request_ClampsPageAndSize() {
-        PageRequest request = PageDto.request(-1, 0, Sort.unsorted());
+    void request_RefusesANegativePage() {
+        IllegalArgumentException refused = assertThrows(IllegalArgumentException.class,
+                () -> PageDto.request(-1, 24, Sort.unsorted()));
 
-        assertEquals(0, request.getPageNumber());
-        assertEquals(24, request.getPageSize());
+        assertEquals("Invalid page '-1'; expected 0 or more", refused.getMessage());
+    }
+
+    @Test
+    void request_RefusesASizeOutOfRange() {
+        assertEquals("Invalid size '0'; expected 1 to 100", assertThrows(IllegalArgumentException.class,
+                () -> PageDto.request(0, 0, Sort.unsorted())).getMessage());
+        assertEquals("Invalid size '101'; expected 1 to 100", assertThrows(IllegalArgumentException.class,
+                () -> PageDto.size(101)).getMessage());
     }
 
     @Test

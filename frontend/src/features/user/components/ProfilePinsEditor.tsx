@@ -16,6 +16,7 @@ import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
 import { AppSearchField } from "@/shared/ui/AppSearchField";
 import { AppSpinner } from "@/shared/ui/AppSpinner";
 import { AppTooltip } from "@/shared/ui/AppTooltip";
+import { useLeaveGuard } from "@/shared/ui/use-leave-guard";
 import type { PublicBookmarkSummaryDto } from "@/shared/api/openapi.gen";
 
 const MAX_PINS = 6;
@@ -47,6 +48,7 @@ export function ProfilePinsEditor({ pinned }: { pinned: PublicBookmarkSummaryDto
   const unchanged =
     draft.length === pinned.length &&
     draft.every((bookmark, index) => bookmark.publicId === pinned[index]?.publicId);
+  const leaveGuard = useLeaveGuard(!unchanged, "Your pin changes");
   const change = (next: PublicBookmarkSummaryDto[]) => {
     save.reset();
     setDraft(next);
@@ -54,6 +56,7 @@ export function ProfilePinsEditor({ pinned }: { pinned: PublicBookmarkSummaryDto
 
   return (
     <section className="grid gap-4">
+      {leaveGuard}
       <div>
         <h2 className="text-xl font-semibold text-fg">Pinned bookmarks</h2>
         <AppCopy className="mt-1">

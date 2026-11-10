@@ -28,6 +28,8 @@ const bookmark: SchemaBookmarkDto = {
   exampleCount: 0,
   staleExampleCount: 0,
   createdAt: "2026-09-24T12:00:00Z",
+  createdByName: "Ada Lovelace",
+  updatedByName: "Ada Lovelace",
   updatedAt: "2026-09-24T12:00:00Z",
 };
 

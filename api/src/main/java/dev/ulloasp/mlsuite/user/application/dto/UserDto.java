@@ -15,7 +15,7 @@ import jakarta.annotation.Nullable;
 
 public record UserDto(
         Long id,
-        String userName,
+        String username,
         String email,
         String fullName,
         @Nullable String avatarUrl,

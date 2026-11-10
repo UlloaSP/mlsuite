@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.schema.review.application.service;
 
+import dev.ulloasp.mlsuite.schema.review.application.dto.SavedFeedback;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.HashSet;
@@ -75,6 +77,7 @@ public class SchemaReviewService implements SchemaReviewUseCase {
     private final PredictionResultFeedbackRepository feedback;
     private final FeedbackHistory history;
     private final AuditLogService auditLog;
+    private final Principals principals;
 
     public void create(Long userId, CreateSchemaReviewRequest request) {
         Long organizationId = organizationId(userId);
@@ -82,13 +85,12 @@ public class SchemaReviewService implements SchemaReviewUseCase {
         Schema schema = schemas.findByIdAndOrganizationId(request.schemaId(), organizationId)
                 .orElseThrow(() -> badRequest("Schema unavailable"));
         SchemaVersion version = versions.findByIdAndOrganizationId(request.versionId(), organizationId)
-                .filter(candidate -> candidate.getSchema().getId().equals(schema.getId()))
-                .orElseThrow(() -> badRequest("Schema version unavailable"));
-        List<PredictionRun> selectedRuns = selectedRuns(request.runIds(), organizationId, version.getId());
+                .orElseThrow(() -> badRequest("Schema snapshot unavailable"));
+        List<PredictionRun> selectedRuns = selectedRuns(request.runIds(), organizationId);
         OffsetDateTime expiresAt = request.expiresAt() == null ? now().plusDays(30) : request.expiresAt();
         if (!expiresAt.isAfter(now())) throw badRequest("Review expiry must be in the future");
         SchemaReview review = reviewRepository.save(new SchemaReview(
-                schema.getOrganization(), schema, version, users.requireById(userId), expiresAt));
+                schema.getOrganization(), schema, version, principals.user(userId), expiresAt));
         assignments.assign(review, request.reviewerIds());
         selectedRuns.forEach(run -> reviewRunRepository.save(new SchemaReviewRun(review, run)));
         auditLog.record(AuditActor.user(userId), organizationId, AuditAction.REVIEW_CREATE, review.getPublicId(),
@@ -136,21 +138,23 @@ public class SchemaReviewService implements SchemaReviewUseCase {
         return new SchemaReviewRunDetailDto(PredictionRunDto.from(selected.getRun(), runResults), userFeedback);
     }
 
-    public PredictionResultFeedbackDto createFeedback(Long userId, String publicId, String reviewRunId,
+    public SavedFeedback createFeedback(Long userId, String publicId, String reviewRunId,
             CreatePredictionResultFeedbackRequest request) {
         SchemaReviewRun selected = openReviewRun(userId, publicId, reviewRunId);
         requireNotSubmitted(userId, selected);
-        PredictionResult result = results.findById(request.resultId()).orElseThrow(SchemaReviewUnavailableException::new);
-        if (!result.getRun().getId().equals(selected.getRun().getId())) throw new SchemaReviewUnavailableException();
+        PredictionResult result = results.findById(request.resultId())
+                .filter(found -> found.getRun().getId().equals(selected.getRun().getId()))
+                .orElseThrow(() -> badRequest("This result is not one of the review run's results"));
         PredictionResultFeedback item = feedback
-                .findByResultIdAndUserIdAndTypeAndOrderAndReviewId(result.getId(), userId, request.type(),
+                .findByResultIdAndCreatedByUserIdAndTypeAndOrderAndReviewId(result.getId(), userId, request.type(),
                         request.order(), selected.getReview().getId())
-                .orElseGet(() -> new PredictionResultFeedback(result, users.requireById(userId),
+                .orElseGet(() -> new PredictionResultFeedback(result, principals.user(userId),
                         selected.getReview(), request.type(), request.order(), request.value()));
         item.setValue(request.value());
-        recordFeedback(userId, selected, item.getId() == null ? AuditAction.REVIEW_FEEDBACK_CREATE
+        boolean created = item.getId() == null;
+        recordFeedback(userId, selected, created ? AuditAction.REVIEW_FEEDBACK_CREATE
                 : AuditAction.REVIEW_FEEDBACK_UPDATE, request.type());
-        return PredictionResultFeedbackDto.from(history.save(item, userId));
+        return new SavedFeedback(PredictionResultFeedbackDto.from(history.save(item, principals.user(userId))), created);
     }
 
     public PredictionResultFeedbackDto updateFeedback(Long userId, String publicId, String reviewRunId,
@@ -158,15 +162,15 @@ public class SchemaReviewService implements SchemaReviewUseCase {
         SchemaReviewRun selected = openReviewRun(userId, publicId, reviewRunId);
         requireNotSubmitted(userId, selected);
         PredictionResultFeedback item = feedback.findById(request.feedbackId())
-                .orElseThrow(SchemaReviewUnavailableException::new);
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Answer not found"));
         // Only the reviewer's own answer in this review: not another review's, nor a public page's.
-        boolean invalid = item.getUser() == null || !userId.equals(item.getUser().getId())
+        boolean invalid = !userId.equals(item.getCreatedBy().userId())
                 || !selected.getRun().getId().equals(item.getResult().getRun().getId())
                 || item.getReview() == null || !item.getReview().getId().equals(selected.getReview().getId());
         if (invalid) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         item.setValue(request.value());
         recordFeedback(userId, selected, AuditAction.REVIEW_FEEDBACK_UPDATE, item.getType());
-        return PredictionResultFeedbackDto.from(history.save(item, userId));
+        return PredictionResultFeedbackDto.from(history.save(item, principals.user(userId)));
     }
 
     /** The answer's value is the reviewer's judgement of a prediction, and stays out of the log. */
@@ -238,10 +242,10 @@ public class SchemaReviewService implements SchemaReviewUseCase {
                 reviewState, stateAt, submission == null ? null : submission.getSubmittedAt());
     }
 
-    private List<PredictionRun> selectedRuns(List<Long> ids, Long organizationId, Long versionId) {
+    /** Runs of another snapshot are refused by fk_schema_review_run_prediction when the review is saved. */
+    private List<PredictionRun> selectedRuns(List<Long> ids, Long organizationId) {
         List<PredictionRun> selected = ids.stream().distinct()
                 .map(id -> runs.findByIdAndOrganizationId(id, organizationId)
-                        .filter(run -> run.getSchemaVersion().getId().equals(versionId))
                         .orElseThrow(() -> badRequest("Prediction run unavailable")))
                 .toList();
         if (selected.isEmpty() || selected.size() != new HashSet<>(ids).size()) throw badRequest("Run list invalid");
@@ -250,7 +254,8 @@ public class SchemaReviewService implements SchemaReviewUseCase {
 
     private void requireNotSubmitted(Long userId, SchemaReviewRun reviewRun) {
         if (submissionRepository.existsByReviewRunIdAndUserId(reviewRun.getId(), userId)) {
-            throw new SchemaReviewUnavailableException();
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "You already submitted this run; a review manager can reopen it for you to change your answers");
         }
     }
 

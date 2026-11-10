@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.schema.application.dto.BookmarkExampleCounts;
@@ -57,6 +58,7 @@ public class SchemaBookmarkController {
         return predictCatalog.catalog(user.userId(), request);
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/schemas/{schemaId}/bookmarks")
     public ResponseEntity<SchemaBookmarkDto> create(CurrentUser user, @PathVariable Long schemaId,
             @Valid @RequestBody CreateSchemaBookmarkRequest request) {

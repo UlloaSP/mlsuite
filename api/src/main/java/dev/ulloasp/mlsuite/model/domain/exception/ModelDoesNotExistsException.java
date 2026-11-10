@@ -8,7 +8,7 @@ package dev.ulloasp.mlsuite.model.domain.exception;
 public class ModelDoesNotExistsException extends RuntimeException {
 
     public ModelDoesNotExistsException(Long modelId, String userName) {
-        super("Model with ID '" + modelId + "' does not exist for user '" + userName + "'.");
+        super("Model with ID '" + modelId + "' does not exist in this organization.");
     }
 }
 

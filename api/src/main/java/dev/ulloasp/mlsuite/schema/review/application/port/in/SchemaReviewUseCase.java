@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.review.application.port.in;
 
+import dev.ulloasp.mlsuite.schema.review.application.dto.SavedFeedback;
 import java.util.List;
 
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultFeedbackRequest;
@@ -19,7 +20,7 @@ public interface SchemaReviewUseCase {
 
     SchemaReviewRunDetailDto detail(Long userId, String publicId, String reviewRunId);
 
-    PredictionResultFeedbackDto createFeedback(Long userId, String publicId, String reviewRunId,
+    SavedFeedback createFeedback(Long userId, String publicId, String reviewRunId,
             CreatePredictionResultFeedbackRequest request);
 
     PredictionResultFeedbackDto updateFeedback(Long userId, String publicId, String reviewRunId,

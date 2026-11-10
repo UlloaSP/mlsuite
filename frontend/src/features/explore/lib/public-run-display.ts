@@ -4,10 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ReportConfig } from "mlform/runtime";
-import {
-  mappingLabels,
-  toPublicReportPayload,
-} from "@/capabilities/prediction-runtime/data/report-normalization";
+import { mappingLabels } from "@/capabilities/prediction-runtime/data/report-normalization";
 import {
   normalizeReportPayload,
   type SchemaDisplayReport,
@@ -46,7 +43,7 @@ export const publicRunDisplayReports = (
     const answer = run.reports.find((report) => report.key === key);
     if (!answer || !isRecord(answer.payload)) return [];
     const payload = answer.payload;
-    const normalized = normalizeReportPayload(config, toPublicReportPayload(config, payload));
+    const normalized = normalizeReportPayload(config, payload);
     if (!normalized) return [];
     const kind = typeof config.kind === "string" ? config.kind : "report";
     const labels = mappingLabels((config as JsonRecord).labels) ?? mappingLabels(payload.mapping);

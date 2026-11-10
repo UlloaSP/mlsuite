@@ -56,7 +56,8 @@ export function PredictBookmarkCard({ bookmark }: { bookmark: PredictBookmarkDto
       </header>
 
       <p className="line-clamp-2 min-h-10 text-sm leading-5 text-fg-secondary">
-        {bookmark.schemaDescription?.trim() ||
+        {bookmark.description?.trim() ||
+          bookmark.schemaDescription?.trim() ||
           `Snapshot ${snapshotLabel(bookmark.versionName, bookmark.version)}.`}
       </p>
 
@@ -90,7 +91,7 @@ export function PredictBookmarkCard({ bookmark }: { bookmark: PredictBookmarkDto
             <span className="text-warning-fg">v{bookmark.latestVersion} is available</span>
           ) : bookmark.lastRunAt ? (
             <>
-              Last run <LiveRelativeTime value={bookmark.lastRunAt} /> ago
+              Last run <LiveRelativeTime value={bookmark.lastRunAt} />
             </>
           ) : (
             "Not run yet"

@@ -7,9 +7,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.util.CatalogRequest;
 
+/** A selection catalog's query; a missing page or size keeps its default. */
 public record CatalogSelectionRequest(
-        int page,
-        int size,
+        Integer page,
+        Integer size,
         String search,
         String kind,
         List<Long> ids,

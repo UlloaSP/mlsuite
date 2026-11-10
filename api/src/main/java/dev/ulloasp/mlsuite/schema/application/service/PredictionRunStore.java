@@ -1,15 +1,18 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
@@ -22,6 +25,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.util.ConstraintConflicts;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -37,25 +41,45 @@ public class PredictionRunStore {
     private final SchemaModelBindingRepository bindingRepository;
     private final PredictionRunRepository runRepository;
     private final PredictionResultRepository resultRepository;
-    private final ModelRepository modelRepository;
+    private final Principals principals;
 
     public PredictionRun store(Long organizationId, User author, SchemaBookmark bookmark, String name,
             Map<String, Object> inputData, List<AttestedPrediction> results) {
+        return store(organizationId, author, bookmark, name, inputData, results,
+                Collections.nCopies(results.size(), null));
+    }
+
+    /**
+     * Stores a run whose results came sealed: each with the SHA-256 of its seal, which the
+     * database lets a result be stored under once, so one execution is saved in one run.
+     */
+    public PredictionRun store(Long organizationId, User author, SchemaBookmark bookmark, String name,
+            Map<String, Object> inputData, List<AttestedPrediction> results, List<String> seals) {
         SchemaVersion version = bookmark.getVersion();
-        if (runRepository.existsBySchemaVersionIdAndName(version.getId(), name)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Prediction run name already exists: " + name);
-        }
         results.forEach(result -> {
             if (!result.organizationId().equals(organizationId) || !result.schemaVersionId().equals(version.getId())) {
                 throw badRequest("A prediction result was produced for another snapshot; run the inference again");
             }
         });
-        validateResults(bindingRepository.findBySchemaVersionId(version.getId()), results);
-        PredictionRun candidate = new PredictionRun(bookmark, version, name, inputData, aggregateStatus(results));
-        candidate.setCreatedByName(author.getFullName());
-        candidate.setCreatedByEmail(author.getEmail());
-        PredictionRun run = runRepository.save(candidate);
-        results.forEach(result -> saveResult(organizationId, run, result));
+        List<SchemaModelBinding> bindings = bindingRepository.findBySchemaVersionId(version.getId());
+        validateResults(bindings, results);
+        // A result's model is one its snapshot binds, so it is the binding's, of the run's organization.
+        Map<Long, Model> models = new HashMap<>();
+        bindings.forEach(binding -> models.put(binding.getModel().getId(), binding.getModel()));
+        PredictionRun candidate = new PredictionRun(bookmark, version, name,
+                SeriesDates.inStoredInputs(version.getFormSchema(), inputData), aggregateStatus(results),
+                principals.of(author));
+        PredictionRun run;
+        try {
+            run = runRepository.save(candidate);
+        } catch (DataIntegrityViolationException refused) {
+            // The database compares names ignoring case; the answer names the run as it was typed.
+            if (!ConstraintConflicts.refusedBy(refused, "uq_prediction_run_version_name")) throw refused;
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Prediction run name already exists: " + name);
+        }
+        for (int index = 0; index < results.size(); index++) {
+            saveResult(run, models.get(results.get(index).modelId()), results.get(index), seals.get(index));
+        }
         return run;
     }
 
@@ -84,11 +108,11 @@ public class PredictionRunStore {
         return successCount == 0 ? PredictionRunStatus.FAILED : PredictionRunStatus.PARTIAL_SUCCESS;
     }
 
-    private void saveResult(Long organizationId, PredictionRun run, AttestedPrediction result) {
-        Model model = modelRepository.findByIdAndOrganizationId(result.modelId(), organizationId)
-                .orElseThrow(() -> badRequest("Model unavailable"));
-        resultRepository.save(new PredictionResult(run, model, result.modelInput(), result.output(),
-                result.status(), result.errorMessage(), result.errorJson()));
+    private void saveResult(PredictionRun run, Model model, AttestedPrediction result, String seal) {
+        PredictionResult stored = new PredictionResult(run, model, result.modelInput(), result.output(),
+                result.status(), result.errorMessage(), result.errorJson());
+        stored.setAttestationSha256(seal);
+        resultRepository.save(stored);
     }
 
     private static ResponseStatusException badRequest(String message) {

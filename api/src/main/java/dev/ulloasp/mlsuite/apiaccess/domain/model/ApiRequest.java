@@ -56,7 +56,7 @@ public class ApiRequest {
     @Column(name = "prediction_run_id", updatable = false)
     private Long predictionRunId;
 
-    @Column(name = "status", nullable = false, updatable = false)
+    @Column(name = "http_status", nullable = false, updatable = false)
     private int status;
 
     @Column(name = "error_code", updatable = false, length = 40)

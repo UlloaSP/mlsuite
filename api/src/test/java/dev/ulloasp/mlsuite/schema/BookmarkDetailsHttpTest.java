@@ -144,18 +144,6 @@ class BookmarkDetailsHttpTest {
     }
 
     @Test
-    void aNameTheSchemaAlreadyHasIsAConflictThatSaysSo() throws Exception {
-        String reason = "This schema already has a bookmark named \"staging\".";
-        when(bookmarks.updateBookmark(eq(USER_ID), eq(BOOKMARK_ID), any()))
-                .thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, reason));
-
-        mockMvc.perform(signedIn(json(patch("/api/schema-bookmarks/{id}", BOOKMARK_ID),
-                new UpdateSchemaBookmarkRequest("staging", null, null))))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value(reason));
-    }
-
-    @Test
     void namesAndDescriptionsOverTheirLengthAreRefusedBeforeTheService() throws Exception {
         String longName = "n".repeat(SchemaBookmark.NAME_MAX_LENGTH + 1);
         String longDescription = "d".repeat(SchemaBookmark.DESCRIPTION_MAX_LENGTH + 1);

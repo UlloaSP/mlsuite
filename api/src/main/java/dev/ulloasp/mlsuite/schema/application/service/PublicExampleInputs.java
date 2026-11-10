@@ -24,7 +24,7 @@ final class PublicExampleInputs {
 
     static Map<String, Object> of(Map<String, Object> formSchema, Map<String, Object> inputData) {
         Map<String, Object> inputs = new LinkedHashMap<>();
-        if (formSchema == null || inputData == null || !(formSchema.get("fields") instanceof List<?> fields)) {
+        if (!(formSchema.get("fields") instanceof List<?> fields)) {
             return inputs;
         }
         for (Object item : fields) {

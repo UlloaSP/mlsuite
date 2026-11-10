@@ -48,8 +48,8 @@ vi.mock("@/features/schemas/api/schema-queries", () => ({
   predictionResultFeedbackQueryOptions: (_organizationId: number, resultId: string) => ({
     queryKey: ["feedback", resultId],
     queryFn: async () => [
-      { id: "f1", resultId, userId: "4", type: "OUTPUT", order: 0, value: { ok: true } },
-      { id: "f2", resultId, userId: "9", type: "OUTPUT", order: 0, value: { ok: false } },
+      { id: "f1", resultId, createdByUserId: "4", type: "OUTPUT", order: 0, value: { ok: true } },
+      { id: "f2", resultId, createdByUserId: "9", type: "OUTPUT", order: 0, value: { ok: false } },
     ],
   }),
 }));

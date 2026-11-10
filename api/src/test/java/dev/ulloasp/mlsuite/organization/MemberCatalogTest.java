@@ -14,19 +14,23 @@ import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.principal.application.service.Principals;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.schema.PublicPredictionFixture;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
 /** Members, owner candidates and assignable roles of an organization, listed and paged on PostgreSQL. */
 class MemberCatalogTest extends PublicPredictionFixture {
+
+    @Autowired
+    private Principals principals;
     private final List<Long> roleIds = new ArrayList<>();
     private final List<Long> membershipIds = new ArrayList<>();
     private RoleDefinition ownerRole;
@@ -42,12 +46,12 @@ class MemberCatalogTest extends PublicPredictionFixture {
                 String name = "member-" + schema.getId() + "-" + i;
                 User user = new User(name, name + "@test.example", "unused", "Person " + i, SystemRole.USER);
                 entityManager.persist(user);
-                RoleDefinition role = new RoleDefinition(organization, RoleScope.ORGANIZATION, "Custom " + i,
-                        "custom-" + i, null);
+                RoleDefinition role = new RoleDefinition(organization, "Custom " + i,
+                        "custom-" + i, null, principals.system());
                 entityManager.persist(role);
                 roleIds.add(role.getId());
                 OrganizationMembership membership = new OrganizationMembership(organization, user, role,
-                        MembershipStatus.ACTIVE);
+                        MembershipStatus.ACTIVE, principals.of(user));
                 entityManager.persist(membership);
                 membershipIds.add(membership.getId());
             }
@@ -150,7 +154,7 @@ class MemberCatalogTest extends PublicPredictionFixture {
                 User user = new User(name, name + "@test.example", "unused", "Person " + i, SystemRole.USER);
                 entityManager.persist(user);
                 entityManager.persist(new OrganizationMembership(organization, user,
-                        entityManager.find(RoleDefinition.class, roleIds.getFirst()), MembershipStatus.ACTIVE));
+                        entityManager.find(RoleDefinition.class, roleIds.getFirst()), MembershipStatus.ACTIVE, principals.of(user)));
             }
         });
 

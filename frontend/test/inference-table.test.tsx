@@ -63,6 +63,7 @@ const version = (id: number, fields: object[], reports?: object[]): SchemaVersio
   version: id,
   name: null,
   createdAt: "2026-07-20T08:00:00Z",
+  createdByName: "Ada Lovelace",
   bindings: [{ id: 1, modelId: 1, schemaVersionId: id, pluginPolicy: null } as never],
   formSchema: {
     fields,
@@ -77,7 +78,7 @@ const result = (runId: number, prediction = 1) => ({
   runId,
   modelId: 1,
   modelInput: {},
-  output: { reports: [{ mappedTo: "score", prediction }] },
+  output: { reports: [{ id: "Score", kind: "classifier", mappedTo: "score", prediction }] },
   status: "SUCCESS" as const,
   errorMessage: null,
   errorJson: null,
@@ -87,9 +88,9 @@ const result = (runId: number, prediction = 1) => ({
 const answer = (runId: number, value: string): PredictionResultFeedbackDto => ({
   id: runId,
   resultId: runId * 10,
-  userId: 1,
-  userName: "Grace",
-  userEmail: "grace@example.com",
+  createdByUserId: 1,
+  createdByName: "Grace",
+  createdByEmail: "grace@example.com",
   type: "OUTPUT",
   order: 0,
   value: { "output-feedback-assessment": value },
@@ -268,7 +269,13 @@ describe("inference table view", () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
-  function Harness({ rows }: { rows: InferenceTableRow[] }) {
+  function Harness({
+    rows,
+    withActions = true,
+  }: {
+    rows: InferenceTableRow[];
+    withActions?: boolean;
+  }) {
     const [sort, setSort] = useState("createdAt.desc");
     const [open, setOpen] = useState<string>();
     const table = useInferenceTable({
@@ -279,7 +286,9 @@ describe("inference table view", () => {
       sort,
       onSortChange: setSort,
       renderName: ({ item }) => item.name,
-      renderActions: () => null,
+      renderActions: withActions
+        ? ({ item }) => <button type="button">Actions for {item.name}</button>
+        : undefined,
     });
     return (
       <>
@@ -300,7 +309,7 @@ describe("inference table view", () => {
   }
 
   const rowNames = (host: HTMLElement) =>
-    [...host.querySelectorAll("tbody tr")].map((row) => row.firstElementChild?.textContent);
+    [...host.querySelectorAll("tbody tr")].map((row) => row.children[1]?.textContent);
 
   test("groups backend columns, requests sorting without reordering loaded pages, and opens a row", async () => {
     const rows = serverRows;
@@ -318,6 +327,30 @@ describe("inference table view", () => {
     expect(host.querySelector('th[aria-sort="ascending"]')?.textContent).toBe("Age (years)");
     await click(host.querySelector("tbody tr")!);
     expect(host.querySelector("[data-open]")?.textContent).toBe("2");
+  });
+
+  test("puts the row actions first and keeps them and the name in view", async () => {
+    const { host } = await mount(<Harness rows={serverRows} />);
+    const [actions, name] = [...host.querySelectorAll<HTMLElement>("tbody tr:first-child td")];
+    const columnTitles = [...host.querySelectorAll("thead tr:last-child th")].map(
+      (th) => th.textContent,
+    );
+
+    expect(columnTitles.slice(0, 2)).toEqual(["Actions", "Name"]);
+    expect(actions?.querySelector("button")?.textContent).toBe("Actions for Case 2");
+    expect(actions?.className).toContain("sticky");
+    expect(actions?.style.left).toBe("0px");
+    expect(name?.className).toContain("sticky");
+    expect(name?.style.left).toBe("56px");
+  });
+
+  test("leaves the actions column out when no row has actions", async () => {
+    const { host } = await mount(<Harness rows={serverRows} withActions={false} />);
+    const name = host.querySelector<HTMLElement>("tbody tr:first-child td");
+
+    expect(name?.textContent).toBe("Case 2");
+    expect(name?.style.left).toBe("0px");
+    expect(host.textContent).not.toContain("Actions");
   });
 
   test("hides the repeated Schema column when scoped and remembers column choices", async () => {

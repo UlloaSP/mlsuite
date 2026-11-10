@@ -30,6 +30,16 @@ const version = schemaVersion({
     fields: [
       { id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" },
       { id: "sex", label: "Sex", kind: "text", displayKey: "sex", mappedTo: "sex" },
+      {
+        id: "history",
+        label: "Area history",
+        kind: "series",
+        columns: [
+          { id: "date", kind: "date", label: "Date" },
+          { id: "area", kind: "number", label: "Area" },
+        ],
+        aggregations: [{ operation: "mean", label: "Mean area", source: "area", mappedTo: "area" }],
+      },
     ],
     reports: [
       {
@@ -44,24 +54,33 @@ const version = schemaVersion({
 
 const run = predictionRun({
   schemaVersionId: version.id,
-  schemaBookmarkId: 1,
+  bookmarkId: 1,
   name: "manito",
   createdAt: "2026-08-24T15:15:00Z",
-  inputData: { age: 52, sex: "Female" },
+  inputData: {
+    age: 52,
+    sex: "Female",
+    "Area history": [
+      { date: "2024-01-01T00:00:00.000Z", area: 1250.5 },
+      { date: "2024-02-01T00:00:00.000Z", area: null },
+    ],
+  },
   results: [
     predictionResult({
       id: 1,
       modelId: 1,
       createdAt: "2026-08-24T15:15:00Z",
       modelInput: { age: 52, sex: "Female" },
-      output: { reports: [{ mappedTo: "score", value: "High" }] },
+      output: { reports: [{ id: "score", kind: "regressor", mappedTo: "score", value: "High" }] },
     }),
     predictionResult({
       id: 2,
       modelId: 2,
       createdAt: "2026-08-24T15:15:00Z",
       modelInput: { age: 52 },
-      output: { reports: [{ mappedTo: "score-2", value: "Low" }] },
+      output: {
+        reports: [{ id: "score", kind: "regressor", mappedTo: "score-2", value: "Low" }],
+      },
     }),
   ],
 });
@@ -147,7 +166,7 @@ describe("prediction run details", () => {
     expect(container.textContent).toContain("2 models");
     const initialTabs = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
     expect(initialTabs.map((item) => item.textContent)).toEqual([
-      "Inputs2",
+      "Inputs3",
       "Outputs2",
       "Reviews1/2",
     ]);
@@ -183,7 +202,24 @@ describe("prediction run details", () => {
   test("offers no Reviews tab to members who cannot manage reviews", async () => {
     const container = await renderPage(false);
     const tabs = [...container.querySelectorAll('[role="tab"]')].map((item) => item.textContent);
-    expect(tabs).toEqual(["Inputs2", "Outputs2"]);
+    expect(tabs).toEqual(["Inputs3", "Outputs2"]);
+  });
+
+  test("shows a series' rows as a table of its columns, its dates as days", async () => {
+    const container = await renderPage();
+
+    const table = container.querySelector<HTMLTableElement>('table[aria-label="Area history"]')!;
+    const cells = (selector: string) =>
+      [...table.querySelectorAll(selector)].map((cell) => cell.textContent);
+    expect(cells("th")).toEqual(["Date", "Area"]);
+    const day = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeZone: "UTC" });
+    expect(cells("td")).toEqual([
+      day.format(Date.UTC(2024, 0, 1)),
+      (1250.5).toLocaleString(),
+      day.format(Date.UTC(2024, 1, 1)),
+      "—",
+    ]);
+    expect(container.textContent).not.toContain('"date"');
   });
 
   test("explains a run that cannot be loaded", async () => {
